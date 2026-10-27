@@ -6,6 +6,7 @@ import { FileUp, Upload, X } from "lucide-react";
 import { Button, Icon, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
 import { uploadedFileLabel, uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
@@ -171,6 +172,8 @@ function PackUploadDialog({
   onClose: () => void;
 }) {
   const raise = useWardRaise("officer");
+  // The dialog closes only once the upload is accepted; a refusal stays here with the choices kept.
+  const save = useWardFormSave(`officer-pack-${movement.id}-${slot.key}`);
   const [code, setCode] = useState<string | undefined>(slot.codes.length === 1 ? slot.codes[0] : initialCode);
   const [file, setFile] = useState<{ name: string; size: number; type: string } | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -251,6 +254,11 @@ function PackUploadDialog({
           <p className={styles.modalLead}>
             Records the file type and size on this job. The file name and contents are not stored.
           </p>
+          {save.error ? (
+            <p role="alert" data-testid="ward-officer-pack-upload-error">
+              {save.error}
+            </p>
+          ) : null}
         </div>
         <footer className={styles.modalFoot}>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -259,17 +267,26 @@ function PackUploadDialog({
           <Button
             variant="pri"
             size="sm"
-            aria-disabled={ready ? undefined : "true"}
-            title={ready ? undefined : needsCode ? "Choose the form and a file first." : "Choose a file first."}
+            loading={save.pending}
+            disabledReason={
+              ready
+                ? undefined
+                : needsCode && code === undefined
+                  ? "Choose the form and a file first."
+                  : "Choose a file first."
+            }
             onClick={() => {
               if (!ready || !file) return;
-              raise("UPLOAD_PATIENT_FORM", {
-                movementId: movement.id,
-                formName: formNameFor(slot, code),
-                fileType: uploadedFileTypeOf(file.name, file.type),
-                sizeBytes: file.size,
-              });
-              onClose();
+              save.submit(
+                () =>
+                  raise("UPLOAD_PATIENT_FORM", {
+                    movementId: movement.id,
+                    formName: formNameFor(slot, code),
+                    fileType: uploadedFileTypeOf(file.name, file.type),
+                    sizeBytes: file.size,
+                  }),
+                onClose,
+              );
             }}
           >
             Add to pack

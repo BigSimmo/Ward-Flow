@@ -54,7 +54,7 @@ import {
 const NO_OBSERVATION_VALUE = "";
 
 export function EdRaiseIntoMovementSection({ ctx }: { ctx: EdScreenContext }) {
-  const { referralOpen, setReferralOpen, setRaisingFromReferralId } = ctx;
+  const { referralOpen, setReferralOpen, setRaisingFromReferralId, setDraft } = ctx;
   return (
     <section
       id="ward-ed-referral-intake"
@@ -68,7 +68,10 @@ export function EdRaiseIntoMovementSection({ ctx }: { ctx: EdScreenContext }) {
           type="button"
           className={styles.inboxBtn}
           onClick={() => {
+            // Close discards the draft, as Cancel does, so nothing answered for this person is
+            // waiting on the form when it next opens for someone else.
             setReferralOpen(false);
+            setDraft(DEFAULT_DRAFT);
             setRaisingFromReferralId(undefined);
           }}
         >

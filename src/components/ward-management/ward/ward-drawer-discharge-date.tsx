@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from "react";
 import { Button } from "@/components/wf";
-import { formatInstantWithDay } from "../ward-clock";
+import { dayOf, formatInstantWithDay, type Instant } from "../ward-clock";
+import { clockInputValue } from "../capacity/planned-admissions-draft";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { useWardFormSave } from "../use-ward-form-save";
@@ -14,16 +15,18 @@ import styles from "./ward-drawer-discharge-date.module.css";
  * Walk-through WT-16 (26 Oct 2026): the bed drawer showed "No date" for going out with no way to
  * set it, so only the coordinator could. The nurse in charge now sets or changes the expected
  * discharge date here, with the same day list and typed time as the Patient page. The time is the
- * one typed; nothing is worked out.
+ * one typed; nothing is worked out. Changing a recorded date opens on that date, so a nudge is
+ * one change, and Save waits until it is moved.
  */
 export function WardDrawerDischargeDate({
   admissionId,
   unitId,
-  hasDate,
+  recordedAt,
 }: {
   admissionId: string;
   unitId: string;
-  hasDate: boolean;
+  /** The expected discharge already recorded, or null. */
+  recordedAt: Instant | null;
 }) {
   const { dayZero } = useWardFlowSelect("dayZero");
   const now = useWardFlowClock();
@@ -36,6 +39,11 @@ export function WardDrawerDischargeDate({
   const [time, setTime] = useState("");
   const parsed = typedTimeToInstant(time, day, now);
   const future = parsed !== undefined && parsed > now;
+  const unchanged = parsed !== undefined && parsed === recordedAt;
+  const hasDate = recordedAt !== null;
+  // The recorded day and time, when it is still on the day list; otherwise today and a blank time.
+  const recordedDay = recordedAt === null ? undefined : dayOf(recordedAt) - dayOf(now);
+  const startOnRecorded = recordedDay !== undefined && DISCHARGE_DAYS.includes(recordedDay);
   if (!open) {
     return (
       <span className={styles.actions}>
@@ -45,6 +53,8 @@ export function WardDrawerDischargeDate({
           disabledReason={gate.reason}
           onClick={() => {
             save.forget();
+            setDay(startOnRecorded ? recordedDay : 0);
+            setTime(startOnRecorded && recordedAt !== null ? clockInputValue(recordedAt) : "");
             setOpen(true);
           }}
           data-testid="ward-drawer-discharge-date-open"
@@ -56,7 +66,7 @@ export function WardDrawerDischargeDate({
   }
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!future || parsed === undefined || !gate.allowed) return;
+    if (!future || unchanged || parsed === undefined || !gate.allowed) return;
     save.submit(
       () =>
         raise("UPDATE_EXPECTED_DISCHARGE", {
@@ -95,13 +105,15 @@ export function WardDrawerDischargeDate({
       <p className={styles.hint} aria-live="polite">
         {parsed === undefined
           ? "Type the time"
-          : future
-            ? formatInstantWithDay(parsed, now)
-            : "That time has already passed"}
+          : !future
+            ? "That time has already passed"
+            : unchanged
+              ? "Change the day or time to save"
+              : formatInstantWithDay(parsed, now)}
       </p>
       {save.error ? <p role="alert">{save.error}</p> : null}
       <div className={styles.actions}>
-        <Button variant="pri" size="sm" type="submit" disabled={!future || save.pending}>
+        <Button variant="pri" size="sm" type="submit" disabled={!future || unchanged || save.pending}>
           Save date
         </Button>
         <Button variant="sec" size="sm" onClick={() => setOpen(false)}>

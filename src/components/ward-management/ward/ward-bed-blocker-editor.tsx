@@ -60,8 +60,8 @@ export function BlockerEditor({
   save: BlockerSave;
   blockReason: string | undefined;
   open: boolean;
-  selected: BedReleaseBlocker;
-  setSelected: (blocker: BedReleaseBlocker) => void;
+  selected: BedReleaseBlocker | "";
+  setSelected: (blocker: BedReleaseBlocker | "") => void;
   selectRef: RefObject<HTMLSelectElement | null>;
 }): ReactNode {
   const submit = save.submit;
@@ -83,8 +83,9 @@ export function BlockerEditor({
             className={styles.select}
             value={selected}
             aria-label="Discharge blocker"
-            onChange={(e) => setSelected(e.target.value as BedReleaseBlocker)}
+            onChange={(e) => setSelected(e.target.value as BedReleaseBlocker | "")}
           >
+            <option value="">Choose what is holding them up</option>
             {BED_RELEASE_BLOCKERS.map((blocker) => (
               <option key={blocker} value={blocker}>
                 {blocker}
@@ -96,7 +97,10 @@ export function BlockerEditor({
             className={styles.pill}
             data-testid="ward-blocker-save"
             aria-disabled={busy}
-            onClick={() => submit(selected)}
+            disabledReason={selected ? undefined : "Choose what is holding them up first."}
+            onClick={() => {
+              if (selected) submit(selected);
+            }}
           >
             Save blocker
           </Button>

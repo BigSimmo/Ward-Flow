@@ -5,6 +5,7 @@
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { DisabledReason } from "@/components/wf";
 import {
   changeReasonLabels,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
@@ -172,8 +173,8 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             Direct referral to Community Mental Health Team. No bed is requested by this referral.
           </p>
           <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
-            Legal status:{" "}
-            {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Voluntary")}
+            Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
+            {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
           </p>
           {recordedSuburb ? (
             <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
@@ -243,9 +244,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               Confirm CMHT referral
             </button>
             {!cmhtReady ? (
-              <span id={`ward-ed-cmht-reason-${movement.id}`} className="sr-only">
-                {cmhtMissing}
-              </span>
+              <DisabledReason id={`ward-ed-cmht-reason-${movement.id}`}>{cmhtMissing}</DisabledReason>
             ) : null}
             <button
               type="button"
@@ -327,9 +326,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             </p>
           ) : null}
           {examinationOutcome ? null : (
-            <span id={`ward-ed-examine-choose-${movement.id}`} className="sr-only">
-              Choose an outcome first
-            </span>
+            <DisabledReason id={`ward-ed-examine-choose-${movement.id}`}>Choose an outcome first</DisabledReason>
           )}
         </form>
       ) : null}
@@ -481,9 +478,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             </p>
           ) : null}
           {urgencyDraft.reason === undefined ? (
-            <span id={`ward-change-urgency-blocked-${movement.id}`} className="sr-only">
-              {URGENCY_REASON_UNCHOSEN}
-            </span>
+            <DisabledReason id={`ward-change-urgency-blocked-${movement.id}`}>{URGENCY_REASON_UNCHOSEN}</DisabledReason>
           ) : null}
         </form>
       ) : null}
@@ -494,6 +489,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitLegalStatusChange(event, movement.id)}
           data-testid={`ward-change-legal-status-${movement.id}`}
         >
+          <p className={styles.cardMeta} data-testid={`ward-change-legal-status-now-${movement.id}`}>
+            Now: {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
+          </p>
           <label className={styles.referralField} htmlFor={`ward-change-legal-status-value-${movement.id}`}>
             Legal status for {patientInfo.displayName}
             <select
@@ -563,9 +561,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             </p>
           ) : null}
           {legalStatusBlocked ? (
-            <span id={`ward-change-legal-status-blocked-${movement.id}`} className="sr-only">
-              {legalStatusBlocked}
-            </span>
+            <DisabledReason id={`ward-change-legal-status-blocked-${movement.id}`}>{legalStatusBlocked}</DisabledReason>
           ) : null}
         </form>
       ) : null}
@@ -641,9 +637,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             </p>
           ) : null}
           {legalFormExpirySaveBlocked ? (
-            <span id={`ward-ed-legal-form-expiry-reason-${movement.id}`} className="sr-only">
+            <DisabledReason id={`ward-ed-legal-form-expiry-reason-${movement.id}`}>
               {legalFormExpirySaveBlockedReason}
-            </span>
+            </DisabledReason>
           ) : null}
         </form>
       ) : null}
@@ -710,9 +706,9 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             </p>
           ) : null}
           {receiptCorrectionReasonDraft === undefined ? (
-            <span id={`ed-correct-form-receipt-reason-hint-${movement.id}`} className="sr-only">
+            <DisabledReason id={`ed-correct-form-receipt-reason-hint-${movement.id}`}>
               Choose a reason for the receipt correction first.
-            </span>
+            </DisabledReason>
           ) : null}
         </form>
       ) : null}

@@ -43,7 +43,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
-import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
@@ -184,7 +184,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
-  const { run: runStep, offer: offerStep } = useUndoableStep({
+  const {
+    run: runStep,
+    runRecorded,
+    offer: offerStep,
+  } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -201,8 +205,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const [recordOpen, setRecordOpen] = useState(
     () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
   );
+  // MHA forms are never prefilled: the form type opens blank and is chosen from the paper.
   const [recordDraft, setRecordDraft] = useState<RecordDraft>({
-    form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "",
+    form: "",
     movement: recordOnOpen ? (initialMovementId ?? "") : "",
   });
   const [extendId, setExtendId] = useState<string | null>(null);
@@ -478,21 +483,21 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       onClose={() => setSelectedId(null)}
       focusGap={focusGap}
       refusal={lastWrittenRefusal?.reason}
-      onSaveWritten={({ writtenAt, region, ageBand }) => {
+      onSaveWritten={({ writtenAt, region, ageBand }, onAccepted) => {
         if (!recordGate.allowed) return;
         const formCode = selected.legalForm?.code;
         if (!isOwnedLegalFormCode(formCode)) return;
         const movementId = selected.id;
-        runStep(
-          {
-            type: "RECORD_LEGAL_FORM_WRITTEN",
-            role: routeRole,
-            now,
-            movementId,
-            formCode,
-            writtenAt,
-            region,
-            ageBand,
+        runRecorded(
+          () => {
+            const written = { movementId, formCode, writtenAt, region, ageBand };
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
+            // The panel's Change form closes only once the engine has accepted the time.
+            const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
+              outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
+            if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
+            else closeIfAccepted(completion);
+            return completion;
           },
           {
             success: "Form time recorded",
@@ -1137,7 +1142,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 },
                 { completion: outcome },
               );
-              return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
+              if (outcome?.status === "accepted") return outcome.isCurrent?.() ?? true;
+              // The sheet shows the refusal itself, so the person is not left with a Save that did nothing.
+              return outcome?.status === "refused"
+                ? `Not recorded: ${outcome.message ?? "The action was refused."}`
+                : (outcome?.message ?? SAVE_NOT_CONFIRMED);
             };
             const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
             return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);

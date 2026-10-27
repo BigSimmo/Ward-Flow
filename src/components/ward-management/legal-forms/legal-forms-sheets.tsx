@@ -15,12 +15,11 @@ import {
   Sheet,
   StatusGlyph,
   TextInput,
-  Textarea,
   Timer,
   cx,
   type ErrorSummaryItem,
 } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -53,32 +52,20 @@ const MINUTES_PER_DAY = 1440;
  * typed, never the save moment standing in for one, and a form cannot have been written after now.
  * The date lets a form written at 23:50 be recorded at 00:10 (audit 24-6 TC-03); it is read on the
  * Perth calendar through `instantFromDateAndTimeInputs`, the same reading the extend sheet uses.
+ * The time is read by the shared clock rule, so "0930" from the iPhone number pad counts as 09:30.
  */
 export function parseWrittenInstant(value: string, now: Instant, date = "", dayZero?: Date): Instant | null {
   const trimmed = value.trim();
   if (!trimmed) return null;
   if (date !== "") {
-    if (!dayZero || !/^\d{1,2}:\d{2}$/.test(trimmed)) return null;
+    if (!dayZero) return null;
     const dated = instantFromDateAndTimeInputs(date, trimmed, dayZero);
     return dated === undefined || dated > now ? null : dated;
   }
-  const match = /^(\d{1,2}):(\d{2})$/.exec(trimmed);
-  if (!match) return null;
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
-  if (
-    !Number.isInteger(hours) ||
-    !Number.isInteger(minutes) ||
-    hours < 0 ||
-    hours > 23 ||
-    minutes < 0 ||
-    minutes > 59
-  ) {
-    return null;
-  }
+  const minuteOfDay = minuteOfDayFromClockText(trimmed);
+  if (minuteOfDay === undefined) return null;
   const dayOffset = ((now % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const startOfDay = now - dayOffset;
-  const candidate = startOfDay + hours * 60 + minutes;
+  const candidate = now - dayOffset + minuteOfDay;
   return candidate > now ? null : candidate;
 }
 
@@ -178,12 +165,21 @@ export function RecordFormSheet({
   labelOf: (movement: Movement) => string;
   now?: Instant;
   recordUnavailable?: string;
-  onSaveForm?: (input: { movementId: string; formCode: string; writtenAt: Instant }) => boolean | Promise<boolean>;
+  /** True when accepted; a string is the refusal to show in the sheet; false is refused with no reason. */
+  onSaveForm?: (input: {
+    movementId: string;
+    formCode: string;
+    writtenAt: Instant;
+  }) => boolean | string | Promise<boolean | string>;
   /** The movement a patient record's "Record a form" link opened the sheet for (&record=1). */
   targetMovement?: string;
 }) {
-  // Bumped by Clear to remount the uncontrolled clinician, time and notes fields.
+  // Bumped by Clear to remount the form's fields.
   const [formKey, setFormKey] = useState(0);
+  // The engine's refusal of the last save, shown in the sheet with the typed values kept.
+  const [saveRefusal, setSaveRefusal] = useState<string | null>(null);
+  // Said once when choosing another movement clears a time typed for the one before.
+  const [timeClearedNote, setTimeClearedNote] = useState(false);
   const [timeOnForm, setTimeOnForm] = useState("");
   const [dateOnForm, setDateOnForm] = useState("");
   const [saving, setSaving] = useState(false);
@@ -314,10 +310,12 @@ export function RecordFormSheet({
               submissionVersion.current += 1;
               setSaving(false);
               clearDraft();
-              onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+              onDraft({ form: "", movement: "" });
               setTimeOnForm("");
               setDateOnForm("");
               setRefusedSaves(0);
+              setSaveRefusal(null);
+              setTimeClearedNote(false);
               setFormKey((key) => key + 1);
             }}
           >
@@ -337,26 +335,33 @@ export function RecordFormSheet({
               const owner = draftSessionVersion();
               const submission = ++submissionVersion.current;
               setSaving(true);
-              const finish = (accepted: boolean) => {
+              setSaveRefusal(null);
+              const finish = (answer: boolean | string) => {
                 if (submission !== submissionVersion.current) return;
                 // Release this request's spinner even if its session has ended. The owner fence
                 // still prevents an old acceptance from clearing or closing a newer draft.
                 setSaving(false);
                 if (owner !== draftSessionVersion()) return;
-                if (accepted) {
+                if (answer === true) {
                   clearDraft();
                   setTimeOnForm("");
                   setDateOnForm("");
                   setRefusedSaves(0);
-                  onDraft({ form: SELECTABLE_LEGAL_FORMS[0]?.code ?? "", movement: "" });
+                  setTimeClearedNote(false);
+                  onDraft({ form: "", movement: "" });
                   onClose();
+                } else {
+                  // Refused: the typed values stay, and the reason shows here, not only behind the sheet.
+                  setSaveRefusal(
+                    typeof answer === "string" && answer ? answer : "Not recorded. Check the form and try again.",
+                  );
                 }
               };
               try {
                 const result =
                   onSaveForm?.({ movementId: draft.movement, formCode: draft.form, writtenAt: parsedWrittenAt }) ??
                   false;
-                if (typeof result === "boolean") finish(result);
+                if (typeof result === "boolean" || typeof result === "string") finish(result);
                 else void result.then(finish, () => finish(false));
               } catch {
                 finish(false);
@@ -379,6 +384,8 @@ export function RecordFormSheet({
             value={draft.form}
             onChange={(event) => onDraft({ ...draft, form: event.target.value })}
           >
+            {/* MHA forms are never prefilled: the form type is chosen from the paper every time. */}
+            <option value="">Choose a form type</option>
             {SELECTABLE_LEGAL_FORMS.map((form) => (
               <option key={form.code} value={form.code}>
                 {legalFormName(form)}
@@ -391,9 +398,15 @@ export function RecordFormSheet({
             disabled={saving}
             value={draft.movement}
             onChange={(event) => {
-              clearDraft();
-              setTimeOnForm("");
-              setDateOnForm("");
+              // A time typed before any movement was chosen is kept. Replacing a chosen movement
+              // clears the time typed for it, and says so.
+              const replacing = draft.movement !== "" && event.target.value !== draft.movement;
+              if (replacing && (timeOnForm || dateOnForm)) {
+                clearDraft();
+                setTimeOnForm("");
+                setDateOnForm("");
+                setTimeClearedNote(true);
+              } else setTimeClearedNote(false);
               onDraft({ ...draft, movement: event.target.value });
             }}
           >
@@ -405,10 +418,12 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
+        {timeClearedNote ? (
+          <p className={styles.note} role="status" data-testid="ward-legal-forms-time-cleared">
+            Time cleared because the patient changed.
+          </p>
+        ) : null}
         <div className={styles.fieldPair}>
-          <Field label="Clinician" id={`${baseId}-legal-forms-new-clinician`}>
-            <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
-          </Field>
           <Field label="Time on form" id={timeId} error={problemFor(timeId)}>
             <TextInput
               icon={Clock}
@@ -422,36 +437,28 @@ export function RecordFormSheet({
               onBlur={() => setTimeLeft(true)}
             />
           </Field>
+          {dayZero ? (
+            <Field
+              label="Date on form"
+              id={`${baseId}-legal-forms-new-date`}
+              help="Leave blank for today. Use it for a form written before midnight."
+            >
+              <TextInput
+                type="date"
+                data-testid="ward-legal-forms-new-date"
+                autoComplete="off"
+                disabled={saving}
+                value={dateOnForm}
+                onChange={(event) => setDateOnForm(event.target.value)}
+              />
+            </Field>
+          ) : null}
         </div>
-        {dayZero ? (
-          <Field
-            label="Date on form"
-            id={`${baseId}-legal-forms-new-date`}
-            help="Leave blank for today. Use it for a form written before midnight."
-          >
-            <TextInput
-              type="date"
-              data-testid="ward-legal-forms-new-date"
-              autoComplete="off"
-              disabled={saving}
-              value={dateOnForm}
-              onChange={(event) => setDateOnForm(event.target.value)}
-            />
-          </Field>
+        {saveRefusal ? (
+          <p className={styles.note} role="alert" data-testid="ward-legal-forms-record-refusal">
+            {saveRefusal}
+          </p>
         ) : null}
-        <Field label="Notes" id={`${baseId}-legal-forms-new-notes`}>
-          <Textarea
-            readOnly
-            disabled
-            maxLength={280}
-            rows={2}
-            placeholder="Free-text grounds are not stored in prototype (D6)"
-            data-gramm="false"
-            data-enable-grammarly="false"
-            spellCheck={false}
-            autoComplete="off"
-          />
-        </Field>
       </div>
     </Sheet>
   );
@@ -591,9 +598,6 @@ function ExtendSheetContent({
           <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />
           </Field>
-          <Field label="Authorising specialist" id={`${baseId}-legal-forms-renew-specialist`}>
-            <TextInput locked readOnly placeholder="Not stored in prototype (D6)" autoComplete="off" />
-          </Field>
           <div className={styles.fieldPair}>
             <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`}>
               <TextInput
@@ -633,19 +637,6 @@ function ExtendSheetContent({
                 : null}
             </p>
           ) : null}
-          <Field label="Justification" id={`${baseId}-legal-forms-renew-justification`}>
-            <Textarea
-              readOnly
-              disabled
-              maxLength={280}
-              rows={3}
-              placeholder="Free-text justification is not stored in prototype (D6)"
-              data-gramm="false"
-              data-enable-grammarly="false"
-              spellCheck={false}
-              autoComplete="off"
-            />
-          </Field>
           <p className={styles.note}>Ward Flow does not notify the owner. Tell {target.owner} separately.</p>
         </div>
       ) : null}

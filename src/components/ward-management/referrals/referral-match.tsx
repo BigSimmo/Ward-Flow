@@ -543,7 +543,7 @@ export function ReferralMatchView({
                   arm.destination.kind === "psychiatric_ward" && (
                     <option key={arm.destination.unitId} value={arm.destination.unitId}>
                       {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
-                      {arm.state}
+                      {referralAddressingStateLabel(arm).replace(/\.$/u, "")}
                     </option>
                   ),
               )}
@@ -949,7 +949,7 @@ export function ReferralMatchView({
               arm.destination.kind === "psychiatric_ward" && (
                 <option key={arm.destination.unitId} value={arm.destination.unitId}>
                   {units.find((unit) => unit.id === arm.destination.unitId)?.name ?? arm.destination.unitId} ·{" "}
-                  {arm.state}
+                  {referralAddressingStateLabel(arm).replace(/\.$/u, "")}
                 </option>
               ),
           )}

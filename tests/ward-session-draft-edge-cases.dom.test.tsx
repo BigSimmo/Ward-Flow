@@ -66,6 +66,22 @@ describe("legal save session ownership edge", () => {
       expect(close).not.toHaveBeenCalled();
     },
   );
+  it("keeps a time typed before the movement, and says so when replacing the movement clears it", () => {
+    render(<LegalDraft save={vi.fn(async () => true)} close={vi.fn()} />);
+    // Form-friction 201: the locked fields that stored nothing are gone.
+    expect(screen.queryByLabelText("Clinician")).toBeNull();
+    expect(screen.queryByLabelText("Notes")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "0000" } });
+    fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+    expect(screen.getByLabelText("Time on form")).toHaveValue("0000");
+    expect(screen.queryByTestId("ward-legal-forms-time-cleared")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[1]!.id } });
+    expect(screen.getByLabelText("Time on form")).toHaveValue("");
+    expect(screen.getByTestId("ward-legal-forms-time-cleared")).toHaveTextContent(
+      "Time cleared because the patient changed.",
+    );
+  });
+
   it("does not release a newer save when a cleared older request completes", async () => {
     const completions: Array<(accepted: boolean) => void> = [];
     const save = vi.fn(
@@ -77,6 +93,8 @@ describe("legal save session ownership edge", () => {
     const close = vi.fn();
     render(<LegalDraft save={save} close={close} />);
     const fill = (time: string) => {
+      // Clear empties the form type too (MHA forms are never prefilled), so each fill chooses it.
+      fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
       fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
       fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: time } });
       fireEvent.click(screen.getByRole("button", { name: "Save form" }));

@@ -143,9 +143,12 @@ describe("Ask more wards on a community referral (fix plan item 16, D-76)", () =
     expect(within(after).getByRole("button", { name: "Ask more wards" })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByTestId("ward-referral-match-decline-open")).toBeInTheDocument();
     // On phone too, the coordinator chooses which waiting ward to answer for.
-    expect(
-      within(screen.getByRole("combobox", { name: /Review recipient ward/u })).getAllByRole("option"),
-    ).toHaveLength(3);
+    const options = within(screen.getByRole("combobox", { name: /Review recipient ward/u })).getAllByRole("option");
+    expect(options).toHaveLength(3);
+    // Form-friction 134: each ward's state reads as words, never the raw state token.
+    for (const option of options) {
+      expect(option.textContent).not.toMatch(/·\s*(queued|declined|cancelled|accepted)$/u);
+    }
   });
 
   it("keeps ticks a search hides, so the slots left still cap the wards asked", () => {

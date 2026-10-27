@@ -16,7 +16,16 @@ import {
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { declineReasonBlockedReason } from "./ed-blocked-reasons";
 import type { EdScreenContext } from "./ed-screen-context";
-import { edReferralClockLines, NO_DECLINE_REASON_VALUE, referralWardGender } from "./ed-screen-model";
+import {
+  COHORT_OPTIONS,
+  DEFAULT_DRAFT,
+  edReferralClockLines,
+  NO_DECLINE_REASON_VALUE,
+  NO_DIAGNOSIS_VALUE,
+  referralWardGender,
+  SEX_OPTIONS,
+  URGENCY_OPTIONS,
+} from "./ed-screen-model";
 import styles from "./ed.module.css";
 
 export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
@@ -160,14 +169,26 @@ export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
                       data-testid={`ward-ed-inbox-raise-${referral.id}`}
                       onClick={() => {
                         setRaisingFromReferralId(referral.id);
-                        setDraft((current) => ({
-                          ...current,
+                        const record =
+                          referral.patientId === undefined
+                            ? undefined
+                            : registryPatients.find((candidate) => candidate.id === referral.patientId);
+                        // Every raise starts from the blank draft, so one person's answers never
+                        // carry onto the next. Only facts this referral or the person's record
+                        // already hold are filled in, and each stays editable. Legal status is
+                        // never filled in here.
+                        setDraft({
+                          ...DEFAULT_DRAFT,
                           gender: referralWardGender(referral),
                           // A2-1: the referral already says who it is for: its person, or
                           // nobody yet identified. Either stays editable on the form.
                           patientId: referral.patientId,
                           unidentified: referral.patientId === undefined,
-                        }));
+                          cohort: COHORT_OPTIONS.find((option) => option === referral.ageBand),
+                          urgency: URGENCY_OPTIONS.find((option) => option === referral.urgency),
+                          tentativeDiagnosis: referral.tentativeDiagnosis ?? NO_DIAGNOSIS_VALUE,
+                          sex: SEX_OPTIONS.find((option) => option === record?.sex),
+                        });
                         setReferralOpen(true);
                       }}
                     >

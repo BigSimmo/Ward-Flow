@@ -9,8 +9,8 @@ import { FIXTURE_HISTORY } from "./ward-referral-history";
  * suites test that form's own fields, so they reach it the way a clinician now does: a referral
  * addressed to this department arrives, and its inbox row's raise button opens the form.
  *
- * The referral names no ward arm, so nothing on the form is prefilled from it (the gender prefill
- * is proved separately in `ward-ed-raise-from-referral-gender-prefill.dom.test.tsx`).
+ * The referral names no ward arm and no person, so only its own age band and urgency fill in the
+ * cohort and urgency (proved in `ward-ed-raise-from-referral-gender-prefill.dom.test.tsx`).
  */
 export function EdInboxReferralFixture({ edId }: { edId: string }) {
   const flow = useWardFlow();

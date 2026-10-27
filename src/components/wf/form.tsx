@@ -61,7 +61,9 @@ export function Field({ label, hint, help, error, id: idProp, children, classNam
         </div>
         {children}
         {error ? (
-          <span id={errorId} role="alert" className={cx(styles.help, styles.error, styles.errorText)}>
+          // Not role="alert": the ErrorSummary takes focus after a refused save, and the field is
+          // linked by aria-describedby and aria-invalid, so each error is not announced again.
+          <span id={errorId} className={cx(styles.help, styles.error, styles.errorText)}>
             <StatusGlyph tone="danger" size={9} />
             {error}
           </span>

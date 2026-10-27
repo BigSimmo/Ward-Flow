@@ -78,5 +78,16 @@ describe("the ward sets the discharge date from the bed drawer (WT-16)", () => {
     expect(screen.getByTestId("rejections").textContent).toBe("");
     expect(screen.getByTestId("edd").textContent).toBe(String(tomorrowTen));
     expect(screen.queryByTestId("ward-drawer-discharge-date")).toBeNull();
+
+    // Form-friction 63: changing a recorded date opens on that day and time, and Save waits for a change.
+    fireEvent.click(screen.getAllByTestId("ward-drawer-discharge-date-open")[0]);
+    const again = screen.getByTestId("ward-drawer-discharge-date");
+    expect(within(again).getByLabelText("Day")).toHaveValue("1");
+    expect(within(again).getByLabelText("Expected discharge time")).toHaveValue("10:00");
+    expect(within(again).getByRole("button", { name: "Save date" })).toBeDisabled();
+    expect(again).toHaveTextContent("Change the day or time to save");
+    fireEvent.change(within(again).getByLabelText("Expected discharge time"), { target: { value: "11:00" } });
+    fireEvent.click(within(again).getByRole("button", { name: "Save date" }));
+    expect(screen.getByTestId("edd").textContent).toBe(String(tomorrowTen + 60));
   });
 });
