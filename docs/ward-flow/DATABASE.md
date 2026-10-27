@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-10-24 -->
 
-_Updated 2026-10-26 - runtime compatibility runs to migration <!-- fact:latest-migration -->014-archived-records<!-- /fact -->; migration grants commit with the schema; Documentation owns._
+_Updated 2026-10-26 - runtime compatibility runs to the latest migration named below; migration grants commit with the schema; Documentation owns._
 
 **Current database and sign-in: Supabase** (decision [D-55](decisions.md), 15 October 2026).
 
