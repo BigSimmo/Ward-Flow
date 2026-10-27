@@ -28,7 +28,11 @@ import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-reg
 import { WardRail } from "@/components/ward-management/shell/ward-rail-lazy";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import {
+  WardWorkspaceHost,
+  WardExecutiveChromeMount,
+  WardPreviewChrome,
+} from "@/components/ward-management/shell/ward-workspace-host";
 import { demoDayZero } from "@/components/ward-management/ward-clock";
 import {
   WardAccessBanner,
@@ -144,88 +148,107 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
   const tablet = guessTabletFromRequest(userAgent, clientHintMobile);
   // Serialize the calendar origin with the HTML so hydration does not choose a different Perth day.
   const initialDayZero = demoDayZero(new Date()).getTime();
+  const executiveShell = (
+    <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+      <OverlayScope className={styles.overlayScope} />
+      <WardFirstDocumentOnly>
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }} />
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_DESK_EARLY_SCRIPT }} />
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }} />
+      </WardFirstDocumentOnly>
+      <WardAccessibility />
+      <WardRowDensity />
+      <WardLiveRegion />
+      <WardPwaRegistration />
+      <WardOfflineLinks />
+      <WardFeatureFlagLink />
+      <WardExecutiveChromeMount>{children}</WardExecutiveChromeMount>
+    </ToastProvider>
+  );
   return (
     <WfServerPhoneProvider phone={phone} tablet={tablet}>
-      <WardFlowProvider initialDayZero={initialDayZero}>
+      <WardWorkspaceHost initialDayZero={initialDayZero} executiveChildren={executiveShell}>
         {/* Role access plan PR 1: everything below reads the workspace scoped to the desk's role and
           place, chrome included. Does nothing while the role-access flag is off (shell/ward-access.tsx). */}
         <WardAccessScope>
-          {/* Remembers a header tap made before the app is ready, for the header to press once it is
+          <WardPreviewChrome executiveChildren={executiveShell}>
+            {/* Remembers a header tap made before the app is ready, for the header to press once it is
           (ward-early-tap.ts). It sits ahead of the header so it runs before the header is drawn. */}
-          <WardFirstDocumentOnly>
-            <script
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }}
-            />
-            {/* H-0111: marks a first load whose stored desk is not the coordinator's (ward-desk-early.ts). */}
-            <script
-              nonce={nonce}
-              suppressHydrationWarning
-              dangerouslySetInnerHTML={{ __html: WARD_DESK_EARLY_SCRIPT }}
-            />
-          </WardFirstDocumentOnly>
-          {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
+            <WardFirstDocumentOnly>
+              <script
+                nonce={nonce}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }}
+              />
+              {/* H-0111: marks a first load whose stored desk is not the coordinator's (ward-desk-early.ts). */}
+              <script
+                nonce={nonce}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{ __html: WARD_DESK_EARLY_SCRIPT }}
+              />
+            </WardFirstDocumentOnly>
+            {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
-          <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
-            {/* Sheets, dialogs and toasts are portalled outside `.shellRow`, so they take the Ward tokens from here. */}
-            <OverlayScope className={styles.overlayScope} />
-            <WardAccessibility />
-            <WardRowDensity />
-            <WardLiveRegion />
-            <WardActNowNotifier />
-            <WardPwaRegistration />
-            <WardOfflineLinks />
-            {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
-            <WardFeatureFlagLink />
-            {/* WS-18: Home's second skip link, straight after the page's "Skip to main content". */}
-            <WardSkipToActNow />
-            <div className={styles.shellRow}>
-              <WardRail />
-              {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
+            <ToastProvider offlineNote={WARD_OFFLINE_SAVED_NOTE}>
+              {/* Sheets, dialogs and toasts are portalled outside `.shellRow`, so they take the Ward tokens from here. */}
+              <OverlayScope className={styles.overlayScope} />
+              <WardAccessibility />
+              <WardRowDensity />
+              <WardLiveRegion />
+              <WardActNowNotifier />
+              <WardPwaRegistration />
+              <WardOfflineLinks />
+              {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}
+              <WardFeatureFlagLink />
+              {/* WS-18: Home's second skip link, straight after the page's "Skip to main content". */}
+              <WardSkipToActNow />
+              <div className={styles.shellRow}>
+                <WardRail />
+                {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
-              <WardFirstDocumentOnly>
-                <script
-                  nonce={nonce}
-                  suppressHydrationWarning
-                  dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
-                />
-              </WardFirstDocumentOnly>
-              <div className={styles.shellContent} data-wf-scroller="">
-                <WardBarMount />
-                {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
+                <WardFirstDocumentOnly>
+                  <script
+                    nonce={nonce}
+                    suppressHydrationWarning
+                    dangerouslySetInnerHTML={{ __html: WARD_RAIL_EARLY_SCRIPT }}
+                  />
+                </WardFirstDocumentOnly>
+                <div className={styles.shellContent} data-wf-scroller="">
+                  <WardBarMount />
+                  {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
-                <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
-                  Loading, not live yet. Taps work once this goes.
-                </p>
-                <WardRecoveryNotice />
-                {/* `data-wf-bar-notes`: the band counts these notes as part of the header (wf/band.ts), so a
+                  <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
+                    Loading, not live yet. Taps work once this goes.
+                  </p>
+                  <WardRecoveryNotice />
+                  {/* `data-wf-bar-notes`: the band counts these notes as part of the header (wf/band.ts), so a
                 page still opens on its hero band while a note is showing. */}
-                <div className={styles.bannerHolder} data-wf-bar-notes="">
-                  <WardBroadcastBanner />
-                  <WardOfflineBanner />
-                  {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
-                  <WardDowntimePackLine />
-                  <WardDemoNotSavedNote />
-                  <WardAccessBanner />
-                </div>
-                <WardPhoneDesktopOnly />
-                {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
+                  <div className={styles.bannerHolder} data-wf-bar-notes="">
+                    <WardBroadcastBanner />
+                    <WardOfflineBanner />
+                    {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
+                    <WardDowntimePackLine />
+                    <WardDemoNotSavedNote />
+                    <WardAccessBanner />
+                  </div>
+                  <WardPhoneDesktopOnly />
+                  {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
                 H-0111: a stored desk other than the coordinator's keeps the page area hidden on first
                 load until it is drawn for that desk (shell/ward-desk-early.ts). */}
-                <WardAccessGate>
-                  <WardGround>{children}</WardGround>
-                </WardAccessGate>
-                <WardDeskPendingClear />
-                <WardPrintFooter />
-                <WardIdleLock />
-                {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}
-                <TvLockGuard />
+                  <WardAccessGate>
+                    <WardGround>{children}</WardGround>
+                  </WardAccessGate>
+                  <WardDeskPendingClear />
+                  <WardPrintFooter />
+                  <WardIdleLock />
+                  {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}
+                  <TvLockGuard />
+                </div>
               </div>
-            </div>
-          </ToastProvider>
+            </ToastProvider>
+          </WardPreviewChrome>
         </WardAccessScope>
-      </WardFlowProvider>
+      </WardWorkspaceHost>
     </WfServerPhoneProvider>
   );
 }

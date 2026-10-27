@@ -33,6 +33,7 @@ const view: WardPartialView = {
       progress: "escalated",
     },
     { id: "WF-SYNTHETIC-RECEIVER", kind: "restricted", restriction: "receiving" },
+    { id: "WF-SYNTHETIC-GRANT", kind: "restricted", restriction: "grant" },
   ],
 };
 
@@ -43,11 +44,12 @@ describe("sender display lookup", () => {
     expect(lookup.movementFor({ id: "WF-SYNTHETIC-SENDER" })).toBe(view.movements[0]);
   });
 
-  it("preserves existing scoped receiving and grant presentations", () => {
+  it("preserves receiving facts but marks grant-only destination progress unavailable", () => {
     const lookup = senderPresentationLookup(view, true);
     expect(lookup.referralFor({ id: "RF-SYNTHETIC-RECEIVER" })).toBeUndefined();
     expect(lookup.referralFor({ id: "RF-SYNTHETIC-GRANT" })).toBeUndefined();
     expect(lookup.movementFor({ id: "WF-SYNTHETIC-RECEIVER" })).toBeUndefined();
+    expect(lookup.movementFor({ id: "WF-SYNTHETIC-GRANT" })).toBeNull();
   });
 
   it.each([null, view])("marks missing required summaries unavailable: %j", (current) => {
@@ -77,7 +79,7 @@ describe("sender display lookup", () => {
     expect(after.movementFor({ id: "WF-SYNTHETIC-SENDER" })).toBeNull();
     expect(after.referralFor({ id: "RF-SYNTHETIC-RECEIVER" })).toBeUndefined();
     expect(view.referrals).toHaveLength(3);
-    expect(view.movements).toHaveLength(2);
+    expect(view.movements).toHaveLength(3);
   });
 });
 

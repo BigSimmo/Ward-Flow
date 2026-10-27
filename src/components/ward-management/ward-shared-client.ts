@@ -19,6 +19,8 @@ import {
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
+import type { ExecutiveAggregateSnapshot } from "./ward-shared-executive-snapshot";
+export type { ExecutiveAggregateSnapshot, SharedWorkspaceSnapshot } from "./ward-shared-executive-snapshot";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
@@ -69,6 +71,10 @@ type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-author
 export type SharedRoleChoice = { workingAs: string; role: string; scope: unknown };
 export type SharedView = {
   snapshot: SharedSnapshot | null;
+  /** Aggregate-only reports never enter the operational payload/archive/command path. */
+  executiveSnapshot?: ExecutiveAggregateSnapshot | null;
+  /** Local display lifetime, changed when the accepted actor/access/variant is replaced or cleared. */
+  viewEpoch?: number;
   receivedAt: number;
   status: SharedStatus;
   error: string | null;
@@ -408,6 +414,8 @@ export class SharedWorkspaceClient {
       recoveryStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
       /** Which of this account's roles to work as. The membership id only, never a name. */
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
+      /** Actual current Auth identity; required before an executive report may be adopted. */
+      authenticatedActorId?: () => string | null;
     },
   ) {}
   private held() {
@@ -604,18 +612,33 @@ export class SharedWorkspaceClient {
     if (this.disposed) return;
     if (update.snapshot === null) {
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
-      update = { accessUntil: undefined, recovery: undefined, ...update };
+      update = { executiveSnapshot: null, accessUntil: undefined, recovery: undefined, ...update };
       this.archive = null;
       this.archiveAsked = null;
       this.rawPayload = null;
       this.liveSibling = undefined;
+      this.recordDetail = new RecordDetailHold();
       this.archiveEpoch++;
     }
+    if (update.snapshot) update = { ...update, executiveSnapshot: null };
+    const before = this.view.executiveSnapshot ?? this.view.snapshot;
+    const after =
+      "executiveSnapshot" in update || "snapshot" in update
+        ? (update.executiveSnapshot ?? update.snapshot ?? null)
+        : before;
+    const changedLifetime =
+      before !== after &&
+      (!before ||
+        !after ||
+        "kind" in before !== "kind" in after ||
+        before.accessContext !== after.accessContext ||
+        ("actorId" in before && "actorId" in after && before.actorId !== after.actorId));
     this.syncUnloadWarning();
     this.view = {
       ...this.view,
       boardCurrent: false,
       ...update,
+      viewEpoch: (this.view.viewEpoch ?? 0) + (changedLifetime ? 1 : 0),
       recovering: this.recoveryPending,
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
     };
@@ -739,12 +762,31 @@ export class SharedWorkspaceClient {
     body: PendingCommand | Record<string, unknown> | undefined,
     retried: boolean,
   ) {
+    const executiveDesk =
+      this.view.executiveSnapshot || (this.view.access as { role?: unknown } | undefined)?.role === "executive";
+    if (
+      executiveDesk &&
+      (path.startsWith("/v1/workspace/archive") ||
+        path === "/v1/workspace/record-access" ||
+        path === "/v1/workspace/commands")
+    )
+      throw new Error("Record operations are unavailable for aggregate reporting.");
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
+    const authenticatedActor = this.options.authenticatedActorId?.();
     const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
     const tvRead = workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting");
     const current = () => {
+      if (
+        this.options.authenticatedActorId &&
+        (!authenticatedActor || authenticatedActor !== this.options.authenticatedActorId())
+      ) {
+        this.cancelForRoleChange();
+        this.clearRecovery();
+        this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "unavailable" });
+        throw new Error("The signed-in account changed; reconnect.");
+      }
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
@@ -776,6 +818,7 @@ export class SharedWorkspaceClient {
     if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
     const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
+    let sentBinding: { access: string; context: string; epoch: number; grant: number } | undefined;
     const send = async (as: string | null) => {
       // A token wait may outlive the ready board. Check at the actual access-write boundary too.
       if (
@@ -790,6 +833,23 @@ export class SharedWorkspaceClient {
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
+      const context = this.view.snapshot?.accessContext;
+      if (
+        body &&
+        this.options.authenticatedActorId &&
+        authenticatedActor === this.view.actorId &&
+        this.view.access &&
+        (this.view.access as { role?: unknown }).role !== "executive" &&
+        !this.view.executiveSnapshot &&
+        typeof context === "string" &&
+        /^[a-f0-9]{64}$/.test(context)
+      )
+        sentBinding = {
+          access: JSON.stringify(this.view.access),
+          context,
+          epoch: this.roleEpoch,
+          grant: this.grantGeneration,
+        };
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -915,6 +975,74 @@ export class SharedWorkspaceClient {
       throw gate({ status: "choose-role", choices });
     }
     if (value === null) throw new Error("Workspace unavailable");
+    if (this.options.authenticatedActorId && (workspaceRead || value.snapshot || path === "/v1/workspace/commands")) {
+      const { parseStoredAccess } = await import("./shell/ward-access-store");
+      current();
+      const access = parseStoredAccess(JSON.stringify(value.access), { shared: true });
+      const aggregate = value.snapshot?.kind === "executive-aggregate";
+      const explicitAuthority = Object.hasOwn(value, "actorId") || Object.hasOwn(value, "access");
+      const boundWrite =
+        !!body &&
+        sentBinding &&
+        sentBinding.epoch === this.roleEpoch &&
+        sentBinding.grant === this.grantGeneration &&
+        authenticatedActor === this.view.actorId &&
+        sentBinding.access === JSON.stringify(this.view.access) &&
+        sentBinding.context === this.view.snapshot?.accessContext &&
+        (!Number.isFinite(this.view.accessUntil) || this.view.accessUntil! > Date.now()) &&
+        (!Number.isFinite(value.accessUntil) || value.accessUntil > Date.now()) &&
+        (!Number.isFinite(value.snapshot?.accessUntil) || value.snapshot.accessUntil > Date.now()) &&
+        !this.view.executiveSnapshot &&
+        !aggregate &&
+        (!value.snapshot || sentBinding.context === value.snapshot.accessContext) &&
+        (!explicitAuthority ||
+          (value.actorId === authenticatedActor && !!access && JSON.stringify(access) === sentBinding.access));
+      const validRead =
+        !body &&
+        !!access &&
+        value.actorId === authenticatedActor &&
+        (!Number.isFinite(value.accessUntil) || value.accessUntil > Date.now()) &&
+        (!Number.isFinite(value.snapshot?.accessUntil) || value.snapshot.accessUntil > Date.now()) &&
+        (access.role === "executive" ? workspaceRead && aggregate : !aggregate);
+      if (!(body ? boundWrite : validRead)) {
+        // The HTTP answer remains definitive for this command alone. Its display/undo/covered
+        // data belongs to an unverified binding, so clear it and reconcile with a validated GET.
+        if (path === "/v1/workspace/commands" && body && "commandId" in body && response.status < 500) {
+          this.cancelQueued();
+          this.clearRecovery();
+          this.roleEpoch++;
+          this.roleLifetime.abort();
+          this.roleLifetime = new AbortController();
+          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
+          return {
+            response,
+            value: { responseBindingChanged: true, commandRevision: value.commandRevision },
+          };
+        }
+        if (path === "/v1/workspace/break-glass" && body && response.ok) {
+          // Opening a record deliberately changes the grant context. Older servers send no
+          // outer authority here; confirm that new view with GET before publishing any rows.
+          this.cancelQueued();
+          if (!this.pending) this.clearRecovery();
+          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
+          return { response, value: { responseBindingChanged: true } };
+        }
+        this.cancelForRoleChange();
+        this.clearRecovery();
+        this.publish({
+          snapshot: null,
+          eventLog: [],
+          access: undefined,
+          actorId: null,
+        });
+        throw new Error("The working view changed; reconnect before viewing records.");
+      }
+      if (aggregate && this.view.snapshot) {
+        this.cancelForRoleChange();
+        this.clearRecovery();
+        this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
+      }
+    }
     return { response, value };
   }
   async refresh() {
@@ -926,8 +1054,9 @@ export class SharedWorkspaceClient {
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
+    const authenticatedActor = this.options.authenticatedActorId?.();
     try {
-      const current = this.view.snapshot;
+      const current = this.view.executiveSnapshot ?? this.view.snapshot;
       const epoch = this.roleEpoch;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       // A desk's access context lets the server say "not modified" to a member desk too (audit
@@ -944,10 +1073,131 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
+      const incomingContext = value.snapshot?.accessContext;
+      const incomingAggregate = value.snapshot?.kind === "executive-aggregate";
+      const incomingExecutive = value.access?.role === "executive";
+      if (
+        current &&
+        value.notModified !== true &&
+        (Boolean(this.view.executiveSnapshot) !== incomingAggregate ||
+          (incomingExecutive && !this.view.executiveSnapshot) ||
+          (Boolean(this.options.authenticatedActorId || incomingAggregate || this.view.executiveSnapshot) &&
+            incomingContext !== current.accessContext))
+      ) {
+        // Clear an ended binding in this call stack, before either lazy validator can yield.
+        this.cancelForRoleChange();
+        this.clearRecovery();
+        this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
+      }
+      let actualAccess = value.access;
+      if (this.options.authenticatedActorId) {
+        if (
+          !authenticatedActor ||
+          authenticatedActor !== this.options.authenticatedActorId() ||
+          value.actorId !== authenticatedActor ||
+          !value.access
+        ) {
+          this.cancelForRoleChange();
+          this.clearRecovery();
+          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null });
+          throw new Error("Current account and role must be confirmed");
+        }
+        const { parseStoredAccess } = await import("./shell/ward-access-store");
+        if (
+          this.disposed ||
+          roleSignal.aborted ||
+          generation !== this.viewGeneration ||
+          grantGeneration !== this.grantGeneration ||
+          epoch !== this.roleEpoch
+        )
+          return;
+        actualAccess = parseStoredAccess(JSON.stringify(value.access), { shared: true });
+        if (!actualAccess || authenticatedActor !== this.options.authenticatedActorId()) {
+          this.cancelForRoleChange();
+          this.clearRecovery();
+          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null });
+          throw new Error("Current account and role must be confirmed");
+        }
+      }
+      const aggregate = value?.snapshot?.kind === "executive-aggregate";
+      const executive = actualAccess?.role === "executive";
+      if (aggregate || executive || this.view.executiveSnapshot) {
+        // A changed role cannot keep operational rows while the lazy schema loads. Unknown or
+        // malformed executive replies clear both holders; they never select an old-server board.
+        const invalid = () => {
+          this.cancelForRoleChange();
+          this.clearRecovery();
+          this.publish({ snapshot: null, eventLog: [], access: actualAccess, actorId: value.actorId ?? null });
+          throw new Error("Incompatible executive reporting data");
+        };
+        if (aggregate || executive) {
+          if (this.view.snapshot) {
+            this.cancelForRoleChange();
+            this.clearRecovery();
+            this.publish({
+              snapshot: null,
+              eventLog: [],
+              access: actualAccess,
+              actorId: value.actorId ?? null,
+              status: "loading",
+            });
+          }
+          const { bindExecutiveAggregateSnapshot } = await import("./ward-shared-executive-snapshot");
+          if (
+            this.disposed ||
+            roleSignal.aborted ||
+            generation !== this.viewGeneration ||
+            grantGeneration !== this.grantGeneration ||
+            epoch !== this.roleEpoch
+          )
+            return;
+          const accepted = bindExecutiveAggregateSnapshot(
+            value.snapshot,
+            { ...value, access: actualAccess },
+            this.options.authenticatedActorId?.(),
+            Date.now(),
+          );
+          if (!accepted || value.notModified === true) return invalid();
+          const held = this.view.executiveSnapshot;
+          if (
+            held &&
+            accepted.accessContext === held.accessContext &&
+            accepted.actorId === held.actorId &&
+            accepted.revision < held.revision
+          )
+            return;
+          this.cancelForRoleChange();
+          this.clearRecovery();
+          forgetDowntimePack();
+          this.publish({
+            snapshot: null,
+            executiveSnapshot: accepted,
+            receivedAt: Date.now(),
+            status: "ready",
+            error: null,
+            access: { role: "executive", scope: { ...accepted.report.network.scope } },
+            actorId: accepted.actorId,
+            accessUntil: accepted.accessUntil,
+            workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
+            canSwitch: !!this.workingAs(),
+            choices: undefined,
+            canRequest: undefined,
+            eventLog: [],
+            receiptScope: undefined,
+            recovery: undefined,
+          });
+          this.fullReadAt = Date.now();
+          return;
+        }
+        // A genuine replacement operational desk may proceed, but an executive clock-only
+        // response cannot refresh authority or rewrite a report's as-at time.
+        if (value.notModified === true) return invalid();
+        this.publish({ snapshot: null, eventLog: [], access: actualAccess, actorId: value.actorId ?? null });
+      }
       if (Number.isFinite(value.accessUntil) && value.accessUntil <= Date.now())
         throw new Error("Access verification expired");
       if (value?.notModified === true) {
-        if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
+        if (!current || "kind" in current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
         if (this.view.snapshot === current)
           this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
@@ -970,7 +1220,7 @@ export class SharedWorkspaceClient {
               error: "Your last change was not confirmed. The board is up to date. Press Retry to send it.",
             }
           : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
-        access: value.access,
+        access: actualAccess,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
         canSwitch: !!this.workingAs(),
@@ -1093,6 +1343,13 @@ export class SharedWorkspaceClient {
         if (response.status >= 500) throw new Error("Save not confirmed");
         this.sentCommandId = null;
         this.clearRecovery();
+        if (value.responseBindingChanged) {
+          this.pending = null;
+          this.settle(command.commandId, response.ok ? "accepted" : "refused");
+          this.needsRefresh = true;
+          this.publish({ status: "unavailable", error: boardNotRefreshed(response.ok) });
+          break;
+        }
         let reconciliationFailed = false;
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
@@ -1290,6 +1547,7 @@ export class SharedWorkspaceClient {
    * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
    */
   async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
+    if (this.view.executiveSnapshot || !this.view.snapshot) return false;
     const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
     try {
       const { response, value } = await this.request("/v1/workspace/record-access", { patientId, surface });
@@ -1437,7 +1695,7 @@ export class SharedWorkspaceClient {
       this.grantGeneration += 1;
       try {
         let opened = value;
-        if (grantGeneration !== this.grantGeneration - 1) {
+        if (value.responseBindingChanged || grantGeneration !== this.grantGeneration - 1) {
           // Response order is not commit order. Once another opening has answered, re-read the
           // server's full current grant set instead of accepting an earlier response's subset.
           const latest = await this.request("/v1/workspace");
@@ -1445,10 +1703,23 @@ export class SharedWorkspaceClient {
           if (!latest.response.ok) throw new Error("Opened view unavailable");
           opened = latest.value;
         }
-        if (opened?.snapshot) this.adopt(opened.snapshot);
+        if (opened?.snapshot) {
+          this.adopt(opened.snapshot);
+          if (this.options.authenticatedActorId)
+            this.publish({
+              access: opened.access,
+              actorId: opened.actorId,
+              accessUntil: opened.accessUntil,
+              status: this.pending ? "saving" : "ready",
+            });
+        }
       } catch {
         // The next poll reads the board again.
         if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
+        if (value.responseBindingChanged) {
+          this.needsRefresh = this.busy;
+          this.publish({ status: "unavailable", error: boardNotRefreshed(true) });
+        }
       }
       return null;
     }

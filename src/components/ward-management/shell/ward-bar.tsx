@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { WardBarFrame } from "./ward-chrome-frame";
 import { RotateCcwClock, Wrench } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
@@ -953,7 +954,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     : allWaitingCount;
 
   return (
-    <header
+    <WardBarFrame
       ref={barRef}
       className={styles.bar}
       aria-label="Header"
@@ -1331,7 +1332,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
       {/* Help (fix plan item 12): its sheet loads only when the rail, the phone menu or Settings opens it. */}
       <WardHelpHost />
-    </header>
+    </WardBarFrame>
   );
 }
 

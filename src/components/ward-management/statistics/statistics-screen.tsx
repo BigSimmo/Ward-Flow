@@ -58,6 +58,7 @@ import {
   type BedRelease,
   type Movement,
   type Referral,
+  type DeclineReason,
 } from "@/components/ward-management/ward-model";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
@@ -95,7 +96,13 @@ import { StatCard, StatisticsHero, useStatisticsLive } from "./statistics-hero";
 import { StatisticsSessionTrendsCard } from "./statistics-session-trends-card";
 import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
-import { NetworkOverviewCards } from "./statistics-network-cards";
+import {
+  NetworkOverviewCards,
+  ExecutiveNetworkOverviewCards,
+  type SummaryModel,
+  type SummarySlots,
+  type SummaryEd,
+} from "./statistics-network-cards";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
@@ -103,6 +110,16 @@ import { hoursText, occupiedBeds } from "./statistics-occupancy";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  withheldBar,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import type { FinderEntry, FinderKind } from "./statistics-unit-finder";
 
 /**
  * THE COORDINATOR STATISTICS SCREEN — the v6 Summary page.
@@ -212,7 +229,127 @@ function SiteCodeKey({ sites }: { sites: readonly { code: string; name: string }
   );
 }
 
-export function StatisticsScreen({
+type StatisticsInputs = {
+  admissions?: Admission[];
+  referrals?: Referral[];
+  bedReleases?: BedRelease[];
+  movements?: Movement[];
+};
+export function StatisticsScreen(props: StatisticsInputs = {}) {
+  const access = useEffectiveWardAccess();
+  const control = useExecutiveStatisticsControl();
+  return control.executive || access.role === "executive" ? (
+    <ExecutiveStatisticsScreen />
+  ) : (
+    <OperationalStatisticsScreen {...props} />
+  );
+}
+function ExecutiveStatisticsScreen() {
+  const data = useExecutiveStatistics();
+  const control = useExecutiveStatisticsControl();
+  if (!data) return <ExecutiveStatisticsUnavailable />;
+  const { network, networkDetails: details } = data;
+  const scopeLabel = network.scope.kind === "statewide" ? "whole network" : network.scope.service;
+  const dayZero = new Date(network.asAt.dayZero);
+  const now = network.asAt.now;
+  const beds = network.beds;
+  const people = network.people;
+  const wardRows = data.wards.map((ward) => ({
+    id: ward.id,
+    name: ward.name,
+    site: ward.siteCode,
+    hospital: data.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode,
+    beds: ward.beds.total,
+    ready: ward.beds.ready,
+    occupancyRate: ward.beds.total ? ward.beds.inUse / ward.beds.total : 0,
+    referred: ward.awaitingAnswer,
+  }));
+  const edRows = data.emergencyDepartments.map((ed) => ({
+    id: ed.id,
+    name: shortSiteName(ed.name),
+    site: ed.siteCode,
+    waiting: ed.onTheList,
+    longest: ed.longestWaitMinutes,
+    median: ed.medianWaitMinutes,
+    over8: ed.over8h,
+    over24: ed.over24h,
+  }));
+  return (
+    <StatisticsSummaryView
+      model={{
+        executive: true,
+        directory: {
+          services: data.services.map((service) => service.service),
+          teams: data.teams.map((team) => ({ id: team.id, name: team.name })),
+          edIds: data.openableEmergencyDepartmentIds,
+        },
+        now,
+        dayZero,
+        paused: control.paused,
+        togglePause: control.togglePause,
+        scopeLabel,
+        refused: { count: people.refused, openMovementCount: people.stillOpen, escalatedCount: people.escalated },
+        preparingCount: data.capacity.preparingCount,
+        arrivals: details.arrivals,
+        declinesReadout: {
+          ok: true,
+          value: {
+            totalCount: details.declines.total,
+            movementsWithDeclinesCount: details.declines.movementsWithDeclines,
+            movementCount: details.declines.movementsExamined,
+            vocabularySize: details.declines.byReason.length,
+            tallies: details.declines.byReason.map((entry) => ({
+              reason: entry.reason as DeclineReason,
+              count: entry.count,
+            })),
+          },
+        },
+        blocked: {
+          totalCount: details.blocked.total,
+          admissionCount: details.blocked.admissionsExamined,
+          vocabularySize: details.blocked.byReason.length,
+          tallies: details.blocked.byReason,
+        },
+        totalBeds: beds.total,
+        occupiedCount: beds.occupied,
+        inUseCount: beds.inUse,
+        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 1000) / 10 : 0,
+        availableNow: beds.ready,
+        pendingPreparation: data.capacity.pendingPreparation,
+        waitingCount: people.waitingInEd,
+        stillOpenCount: people.stillOpen,
+        admissionsCount: people.admissionsArrivedToday,
+        dischargesCount: people.admissionsEndedToday,
+        emergencyDepts: edRows,
+        totalEdWaiting: details.listedEdJourneys,
+        networkMedianWait: details.medianWaitMinutes,
+        totalEdOver8: details.listedOver8h,
+        totalEdOver24: details.listedOver24h,
+        allPressureWards: wardRows,
+        refRaised: details.todayBedReferrals.raised,
+        refAccepted: details.todayBedReferrals.accepted,
+        refDeclined: details.todayBedReferrals.declined,
+        refOpen: details.todayBedReferrals.open,
+        arrivalBands: details.arrivalBands.map((band) => ({ id: band.id, label: band.label, value: band.count })),
+        parallelReferralCap: data.settings.parallelReferralCap,
+      }}
+      slots={{
+        capacity: (
+          <StatisticsCapacityChart
+            aggregate={data}
+            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+            scopeLabel={scopeLabel}
+          />
+        ),
+        overview: <ExecutiveNetworkOverviewCards data={data} />,
+        journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} />,
+        map: <StatisticsMapView />,
+        operationalExtra: null,
+      }}
+    />
+  );
+}
+function OperationalStatisticsScreen({
   admissions,
   referrals,
   bedReleases,
@@ -235,8 +372,7 @@ export function StatisticsScreen({
     configuration,
   } = live.state;
   const now = live.now;
-  const service = useServiceScope();
-  const { countsOnly, small } = useStatisticsCounts();
+  const { countsOnly } = useStatisticsCounts();
   const isPhone = useIsPhone();
 
   const sourceAdmissions = admissions ?? liveAdmissions;
@@ -270,8 +406,6 @@ export function StatisticsScreen({
   ).length;
   const dischargesCount = sourceAdmissions.filter((a) => a.leftAt !== null && dayOf(a.leftAt) === dayOf(now)).length;
 
-  const reportDayCaption = `${formatReportDay(now, dayZero)}, midnight to midnight, across all wards`;
-
   // Emergency departments
   const emergencyDepts = useMemo(() => {
     return allEmergencyDepartments()
@@ -294,39 +428,9 @@ export function StatisticsScreen({
   }, [sourceMovements, now]);
 
   const totalEdWaiting = emergencyDepts.reduce((s, d) => s + d.waiting, 0);
-  const longestEd = emergencyDepts.reduce<(typeof emergencyDepts)[number] | null>(
-    (best, d) => (d.longest !== null && (best === null || (best.longest ?? 0) < d.longest) ? d : best),
-    null,
-  );
   const networkMedianWait = median(emergencyDepts.flatMap((d) => d.waits));
   const totalEdOver8 = emergencyDepts.reduce((s, d) => s + d.over8, 0);
   const totalEdOver24 = emergencyDepts.reduce((s, d) => s + d.over24, 0);
-
-  // Table state
-  const [wardSearchQuery, setWardSearchQuery] = useState("");
-  const [wardOverLine, setWardOverLine] = useState(false);
-  const [wardShowAll, setWardShowAll] = useState(false);
-  const [wardSortCol, setWardSortCol] = useState<WardSortKey>("occ");
-  const [wardSortAsc, setWardSortAsc] = useState(false);
-  const [edSearchQuery, setEdSearchQuery] = useState("");
-  const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
-  const [edSortAsc, setEdSortAsc] = useState(false);
-
-  const handleWardSort = (col: WardSortKey) => {
-    if (wardSortCol === col) setWardSortAsc((prev) => !prev);
-    else {
-      setWardSortCol(col);
-      setWardSortAsc(col === "name");
-    }
-  };
-
-  const handleEdSort = (col: EdSortKey) => {
-    if (edSortCol === col) setEdSortAsc((prev) => !prev);
-    else {
-      setEdSortCol(col);
-      setEdSortAsc(col === "name");
-    }
-  };
 
   const allPressureWards = useMemo(() => {
     return units.map((u) => {
@@ -344,64 +448,6 @@ export function StatisticsScreen({
       };
     });
   }, [units, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
-
-  const overLineCount = allPressureWards.filter(
-    (w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
-  ).length;
-
-  const filteredAndSortedWards = useMemo(() => {
-    if (isPhone) return [];
-    let list = allPressureWards.slice();
-    const q = wardSearchQuery.trim().toLowerCase();
-    if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
-    const value = (w: (typeof list)[number]): number | string =>
-      wardSortCol === "name"
-        ? w.name
-        : wardSortCol === "beds"
-          ? w.beds
-          : wardSortCol === "ready"
-            ? w.ready
-            : wardSortCol === "ref"
-              ? w.referred
-              : w.occupancyRate;
-    list.sort((a, b) => {
-      const vA = value(a);
-      const vB = value(b);
-      if (vA < vB) return wardSortAsc ? -1 : 1;
-      if (vA > vB) return wardSortAsc ? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-    return list;
-  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
-
-  const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
-
-  const filteredAndSortedEds = useMemo(() => {
-    if (isPhone) return [];
-    let list = emergencyDepts.slice();
-    const q = edSearchQuery.trim().toLowerCase();
-    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
-    const value = (d: (typeof list)[number]): number | string =>
-      edSortCol === "name"
-        ? d.site
-        : edSortCol === "longest"
-          ? (d.longest ?? -1)
-          : edSortCol === "median"
-            ? (d.median ?? -1)
-            : edSortCol === "over8"
-              ? d.over8
-              : edSortCol === "over24"
-                ? d.over24
-                : d.waiting;
-    list.sort((a, b) => {
-      const vA = value(a);
-      const vB = value(b);
-      if (vA < vB) return edSortAsc ? -1 : 1;
-      if (vA > vB) return edSortAsc ? 1 : -1;
-      return a.site.localeCompare(b.site);
-    });
-    return list;
-  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -441,35 +487,266 @@ export function StatisticsScreen({
     }));
   }, [isPhone, sourceAdmissions, configuration.pullHoldMinutes]);
 
-  const finderLists = useMemo(
-    () =>
-      isPhone
-        ? { ward: [], ed: [], service: [], team: [] }
-        : {
-            ward: units
-              .map((u) => ({
-                id: u.id,
-                name: u.name,
-                code: u.siteCode,
-                meta: `${readyBedsNow(u, sourceAdmissions, sourceBedReleases)} ready`,
-                ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
-              }))
-              .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name)),
-            ed: emergencyDepts.map((d) => ({
-              id: d.id,
-              name: d.name,
-              code: d.site,
-              meta: `${d.waiting} open ED journeys`,
-            })),
-            service: HEALTH_SERVICES.map((svc) => {
-              const count = units.filter((u) => siteByCode(u.siteCode)?.service === svc).length;
-              return { id: svc, name: svc, meta: `${count} ${count === 1 ? "ward" : "wards"}` };
-            }),
-            team: COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
-          },
-    [isPhone, units, sourceAdmissions, sourceBedReleases, emergencyDepts],
+  return (
+    <StatisticsSummaryView
+      model={{
+        executive: false,
+        now,
+        dayZero,
+        paused: live.paused,
+        togglePause: live.togglePause,
+        scopeLabel: "whole network",
+        refused,
+        preparingCount,
+        arrivals,
+        declinesReadout,
+        blocked,
+        totalBeds,
+        occupiedCount,
+        inUseCount,
+        occupiedPct,
+        availableNow,
+        pendingPreparation,
+        waitingCount,
+        stillOpenCount,
+        admissionsCount,
+        dischargesCount,
+        emergencyDepts: emergencyDepts.map(({ id, name, site, waiting, longest, median, over8, over24 }) => ({
+          id,
+          name,
+          site,
+          waiting,
+          longest,
+          median,
+          over8,
+          over24,
+        })),
+        totalEdWaiting,
+        networkMedianWait,
+        totalEdOver8,
+        totalEdOver24,
+        allPressureWards,
+        refRaised,
+        refAccepted,
+        refDeclined,
+        refOpen,
+        arrivalBands,
+        parallelReferralCap: configuration.parallelReferralCap,
+      }}
+      slots={{
+        capacity: (
+          <StatisticsCapacityChart
+            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+            units={units}
+            bedReleases={sourceBedReleases}
+            admissions={sourceAdmissions}
+            leaveBeds={leaveBeds}
+          />
+        ),
+        overview: (
+          <NetworkOverviewCards
+            units={units}
+            admissions={sourceAdmissions}
+            bedReleases={sourceBedReleases}
+            leaveBeds={leaveBeds}
+          />
+        ),
+        journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} live={{ state: live.state, now }} />,
+        map: <StatisticsMapView live={{ state: live.state, now }} />,
+        operationalExtra: (
+          <>
+            {" "}
+            {/* Forecasting build (Josh, 23 Oct 2026, screen 8). Not on the count-only executive view. */}
+            {countsOnly ? null : (
+              <ForecastTrackRecordCard
+                now={now}
+                units={units}
+                admissions={sourceAdmissions}
+                movements={sourceMovements}
+              />
+            )}
+            {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
+            {countsOnly ? null : (
+              // Layout sweep STATS-01: the two wide closing-the-loop cards take full rows of their
+              // own instead of two narrow cells of the three-up grid.
+              <div className={styles.gridRow}>
+                <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
+                <FixedQuestionsCard
+                  movements={sourceMovements}
+                  bedReleases={sourceBedReleases}
+                  admissions={sourceAdmissions}
+                  units={units}
+                  now={now}
+                />
+              </div>
+            )}
+          </>
+        ),
+      }}
+    />
   );
+}
 
+function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: SummarySlots }) {
+  const {
+    executive,
+    directory,
+    now,
+    dayZero,
+    paused,
+    togglePause,
+    scopeLabel,
+    refused,
+    preparingCount,
+    arrivals,
+    declinesReadout,
+    blocked,
+    totalBeds,
+    occupiedCount,
+    inUseCount,
+    occupiedPct,
+    availableNow,
+    pendingPreparation,
+    waitingCount,
+    stillOpenCount,
+    admissionsCount,
+    dischargesCount,
+    emergencyDepts,
+    totalEdWaiting,
+    networkMedianWait,
+    totalEdOver8,
+    totalEdOver24,
+    allPressureWards,
+    refRaised,
+    refAccepted,
+    refDeclined,
+    refOpen,
+    arrivalBands,
+    parallelReferralCap,
+  } = model;
+  const service = useServiceScope();
+  const { small: operationalSmall } = useStatisticsCounts();
+  const small = (count: StatisticsCount) => statisticsCountText(count, operationalSmall);
+  const barValue = (count: StatisticsCount) => withheldBar(exactStatisticsCount(count) ?? 0, small(count));
+  const isPhone = useIsPhone();
+  const reportDayCaption =
+    formatReportDay(now, dayZero) +
+    ", midnight to midnight, across " +
+    (scopeLabel === "whole network" ? "all wards" : scopeLabel);
+  const longestEd = emergencyDepts.reduce<SummaryEd | null>(
+    (best, ed) => (ed.longest !== null && (best === null || (best.longest ?? 0) < ed.longest) ? ed : best),
+    null,
+  );
+  // Table state
+  const [wardSearchQuery, setWardSearchQuery] = useState("");
+  const [wardOverLine, setWardOverLine] = useState(false);
+  const [wardShowAll, setWardShowAll] = useState(false);
+  const [wardSortCol, setWardSortCol] = useState<WardSortKey>("occ");
+  const [wardSortAsc, setWardSortAsc] = useState(false);
+  const [edSearchQuery, setEdSearchQuery] = useState("");
+  const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
+  const [edSortAsc, setEdSortAsc] = useState(false);
+
+  const handleWardSort = (col: WardSortKey) => {
+    if (wardSortCol === col) setWardSortAsc((prev) => !prev);
+    else {
+      setWardSortCol(col);
+      setWardSortAsc(col === "name");
+    }
+  };
+
+  const handleEdSort = (col: EdSortKey) => {
+    if (edSortCol === col) setEdSortAsc((prev) => !prev);
+    else {
+      setEdSortCol(col);
+      setEdSortAsc(col === "name");
+    }
+  };
+
+  const overLineCount = allPressureWards.filter(
+    (w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
+  ).length;
+
+  const filteredAndSortedWards = useMemo(() => {
+    if (isPhone) return [];
+    let list = allPressureWards.slice();
+    const q = wardSearchQuery.trim().toLowerCase();
+    if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
+    const value = (w: (typeof list)[number]): number | string | null =>
+      wardSortCol === "name"
+        ? w.name
+        : wardSortCol === "beds"
+          ? w.beds
+          : wardSortCol === "ready"
+            ? w.ready
+            : wardSortCol === "ref"
+              ? exactStatisticsCount(w.referred)
+              : w.occupancyRate;
+    list.sort((a, b) => {
+      const vA = value(a);
+      const vB = value(b);
+      if (vA === null || vB === null) return vA === vB ? a.name.localeCompare(b.name) : vA === null ? 1 : -1;
+      if (vA < vB) return wardSortAsc ? -1 : 1;
+      if (vA > vB) return wardSortAsc ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+    return list;
+  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+
+  const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
+
+  const filteredAndSortedEds = useMemo(() => {
+    if (isPhone) return [];
+    let list = emergencyDepts.slice();
+    const q = edSearchQuery.trim().toLowerCase();
+    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
+    const value = (d: (typeof list)[number]): number | string | null =>
+      edSortCol === "name"
+        ? d.site
+        : edSortCol === "longest"
+          ? (d.longest ?? -1)
+          : edSortCol === "median"
+            ? (d.median ?? -1)
+            : edSortCol === "over8"
+              ? exactStatisticsCount(d.over8)
+              : edSortCol === "over24"
+                ? exactStatisticsCount(d.over24)
+                : exactStatisticsCount(d.waiting);
+    list.sort((a, b) => {
+      const vA = value(a);
+      const vB = value(b);
+      if (vA === null || vB === null) return vA === vB ? a.site.localeCompare(b.site) : vA === null ? 1 : -1;
+      if (vA < vB) return edSortAsc ? -1 : 1;
+      if (vA > vB) return edSortAsc ? 1 : -1;
+      return a.site.localeCompare(b.site);
+    });
+    return list;
+  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+
+  const finderLists: Record<FinderKind, FinderEntry[]> = {
+    ward: allPressureWards
+      .map((ward) => ({
+        id: ward.id,
+        name: ward.name,
+        code: ward.site,
+        meta: String(ward.ready) + " ready",
+        ready: ward.ready,
+      }))
+      .sort((left, right) => right.ready - left.ready || left.name.localeCompare(right.name)),
+    ed: emergencyDepts
+      .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
+      .map((ed) => ({
+        id: ed.id,
+        name: ed.name,
+        code: ed.site,
+        meta: String(small(ed.waiting)) + " open ED journeys",
+      })),
+    service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
+      const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
+      return { id: name, name, meta: String(count) + (count === 1 ? " ward" : " wards") };
+    }),
+    team: directory?.teams ?? COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
+  };
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
 
@@ -523,9 +800,9 @@ export function StatisticsScreen({
               longest: arrivals.longestMinutes,
             },
           }}
-          wardCount={units.length}
-          paused={live.paused}
-          onTogglePause={live.togglePause}
+          wardCount={allPressureWards.length}
+          paused={paused}
+          onTogglePause={togglePause ?? undefined}
         />
         {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
             hours and no total fit a phone's width without a sideways scroll. */}
@@ -542,7 +819,7 @@ export function StatisticsScreen({
         <StatisticsHero
           section="hub"
           navTestId="ward-statistics-index"
-          eyebrow={`Statistics · whole network · as at ${formatInstant(now)}`}
+          eyebrow={`Statistics · ${scopeLabel} · as at ${formatInstant(now)}`}
           // H-0887: the page heading names the page, not only the count.
           title={
             <>
@@ -551,11 +828,11 @@ export function StatisticsScreen({
             </>
           }
           now={now}
-          paused={live.paused}
-          onTogglePause={live.togglePause}
+          paused={paused}
+          onTogglePause={togglePause ?? undefined}
           exportFigures={{
             stem: "network",
-            scope: "Whole network",
+            scope: scopeLabel,
             figures: () => [
               ["Beds ready now", availableNow],
               ["Beds", totalBeds],
@@ -599,7 +876,7 @@ export function StatisticsScreen({
           }
         />
 
-        {service === null ? null : (
+        {service === null || scopeLabel !== "whole network" ? null : (
           <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
             {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
             <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
@@ -612,23 +889,13 @@ export function StatisticsScreen({
 
         {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
         {view === "board" ? null : <div id="board" hidden />}
-        {view === "journey" ? (
-          <StatisticsJourneyView onShowBoard={() => chooseView("board")} live={{ state: live.state, now }} />
-        ) : (
-          <div id="journey" hidden />
-        )}
-        {view === "map" ? <StatisticsMapView live={{ state: live.state, now }} /> : <div id="map" hidden />}
+        {view === "journey" ? slots.journey(() => chooseView("board")) : <div id="journey" hidden />}
+        {view === "map" ? slots.map : <div id="map" hidden />}
         {view !== "board" ? null : (
           <div id="board" className={styles.stack}>
             <FlushRow layout="lead2" id="beds">
               <div className={styles.stack} data-testid="ward-statistics-patients">
-                <StatisticsCapacityChart
-                  asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
-                  units={units}
-                  bedReleases={sourceBedReleases}
-                  admissions={sourceAdmissions}
-                  leaveBeds={leaveBeds}
-                />
+                {slots.capacity}
               </div>
 
               <Follow stack>
@@ -639,47 +906,63 @@ export function StatisticsScreen({
                   title="Referrals today"
                   data-testid="ward-statistics-referrals-for-bed"
                   action={
-                    <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
-                      Open referrals
-                    </Link>
+                    executive ? undefined : (
+                      <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
+                        Open referrals
+                      </Link>
+                    )
                   }
                 >
                   <CardBody className={styles.bodyStack}>
                     <dl className={styles.figures} id="refBand" aria-label="Referrals for a bed today">
                       <div className={styles.figure}>
                         <dt className={styles.figureLabel}>Raised</dt>
-                        <dd className={styles.figureValue}>{refRaised}</dd>
+                        <dd className={styles.figureValue}>{small(refRaised)}</dd>
                       </div>
                       <div className={styles.figure}>
                         <dt className={styles.figureLabel}>
                           <StatusGlyph tone="success" size={9} />
                           Accepted
                         </dt>
-                        <dd className={styles.figureValue}>{refAccepted}</dd>
+                        <dd className={styles.figureValue}>{small(refAccepted)}</dd>
                       </div>
                       <div className={styles.figure}>
                         <dt className={styles.figureLabel}>
                           <StatusGlyph tone="closed" size={9} />
                           Declined
                         </dt>
-                        <dd className={styles.figureValue}>{refDeclined}</dd>
+                        <dd className={styles.figureValue}>{small(refDeclined)}</dd>
                       </div>
                       <div className={styles.figure}>
                         <dt className={styles.figureLabel}>
                           <StatusGlyph tone="neutral" size={9} />
                           Still open
                         </dt>
-                        <dd className={styles.figureValue}>{refOpen}</dd>
+                        <dd className={styles.figureValue}>{small(refOpen)}</dd>
                       </div>
                     </dl>
-                    <StackBar
-                      label="Referrals raised today"
-                      segments={[
-                        { id: "accepted", label: "Accepted", value: refAccepted, fill: "data-1" },
-                        { id: "declined", label: "Declined", value: refDeclined, fill: "data-2" },
-                        { id: "open", label: "Still open", value: refOpen, fill: "data-3" },
-                      ]}
-                    />
+                    {[refAccepted, refDeclined, refOpen].some((count) => exactStatisticsCount(count) === null) ? (
+                      <p className={styles.muted}>{statisticsCountText({ kind: "withheld" })}</p>
+                    ) : (
+                      <StackBar
+                        label="Referrals raised today"
+                        segments={[
+                          {
+                            id: "accepted",
+                            label: "Accepted",
+                            value: exactStatisticsCount(refAccepted)!,
+                            fill: "data-1",
+                          },
+                          {
+                            id: "declined",
+                            label: "Declined",
+                            value: exactStatisticsCount(refDeclined)!,
+                            fill: "data-2",
+                          },
+                          { id: "open", label: "Still open", value: exactStatisticsCount(refOpen)!, fill: "data-3" },
+                        ]}
+                      />
+                    )}
                     {/* Two across so no label is cut (device audit 11 Oct 2026: "Refused so fa..."). */}
                     <div className={`${styles.tiles} ${styles.tilesTwo}`} data-testid="ward-statistics-refused-so-far">
                       <div className={styles.tile}>
@@ -688,11 +971,11 @@ export function StatisticsScreen({
                           Refused so far
                         </p>
                         <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-count">
-                          <span data-testid="ward-statistics-refused-so-far-value">{refused.count}</span>
+                          <span data-testid="ward-statistics-refused-so-far-value">{small(refused.count)}</span>
                           <small>
                             of{" "}
                             <span data-testid="ward-statistics-refused-so-far-open-count">
-                              {refused.openMovementCount}
+                              {small(refused.openMovementCount)}
                             </span>
                           </small>
                         </p>
@@ -702,10 +985,10 @@ export function StatisticsScreen({
                           Escalated
                         </p>
                         <p className={styles.tileValue} aria-hidden="true">
-                          {refused.escalatedCount}
+                          {small(refused.escalatedCount)}
                         </p>
                         <span className={styles.srOnly}>
-                          {` ${refused.escalatedCount} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
+                          {` ${small(refused.escalatedCount)} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
                         </span>
                       </div>
                       <div className={styles.tile}>
@@ -716,13 +999,13 @@ export function StatisticsScreen({
                           </span>
                         </p>
                         <p className={styles.tileValue}>
-                          <span data-testid="ward-statistics-admissions-today-count">{admissionsCount}</span>
+                          <span data-testid="ward-statistics-admissions-today-count">{small(admissionsCount)}</span>
                         </p>
                       </div>
                       <div className={styles.tile}>
                         <p className={styles.tileLabel}>Parallel cap</p>
                         <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-cap">
-                          {configuration.parallelReferralCap}
+                          {parallelReferralCap}
                         </p>
                       </div>
                     </div>
@@ -732,12 +1015,7 @@ export function StatisticsScreen({
             </FlushRow>
 
             {/* D-77 (change 9): Overview's figures that this page lacked, once each, above the pressure. */}
-            <NetworkOverviewCards
-              units={units}
-              admissions={sourceAdmissions}
-              bedReleases={sourceBedReleases}
-              leaveBeds={leaveBeds}
-            />
+            {slots.overview}
 
             <div className={styles.grid2}>
               <StatCard
@@ -854,7 +1132,11 @@ export function StatisticsScreen({
                                 </span>
                               </span>
                             </td>
-                            <td className={`${styles.num} ${w.referred === 0 ? styles.zero : ""}`}>{w.referred}</td>
+                            <td
+                              className={`${styles.num} ${exactStatisticsCount(w.referred) === 0 ? styles.zero : ""}`}
+                            >
+                              {small(w.referred)}
+                            </td>
                           </tr>
                         );
                       })}
@@ -962,7 +1244,9 @@ export function StatisticsScreen({
                               {d.name}
                             </span>
                           </th>
-                          <td className={`${styles.num} ${d.waiting === 0 ? styles.zero : ""}`}>{d.waiting}</td>
+                          <td className={`${styles.num} ${exactStatisticsCount(d.waiting) === 0 ? styles.zero : ""}`}>
+                            {small(d.waiting)}
+                          </td>
                           <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
                             <span className={styles.flagged}>
                               {d.longest !== null && d.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
@@ -976,19 +1260,23 @@ export function StatisticsScreen({
                           <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>
                             {medianText(d.median)}
                           </td>
-                          <td className={`${styles.num} ${d.over8 === 0 ? styles.zero : ""}`}>{d.over8}</td>
-                          <td className={`${styles.num} ${d.over24 === 0 ? styles.zero : ""}`}>{d.over24}</td>
+                          <td className={`${styles.num} ${exactStatisticsCount(d.over8) === 0 ? styles.zero : ""}`}>
+                            {small(d.over8)}
+                          </td>
+                          <td className={`${styles.num} ${exactStatisticsCount(d.over24) === 0 ? styles.zero : ""}`}>
+                            {small(d.over24)}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr>
                         <th scope="row">All {emergencyDepts.length} departments</th>
-                        <td className={styles.num}>{totalEdWaiting}</td>
+                        <td className={styles.num}>{small(totalEdWaiting)}</td>
                         <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
                         <td className={styles.num}>{medianText(networkMedianWait)}</td>
-                        <td className={styles.num}>{totalEdOver8}</td>
-                        <td className={styles.num}>{totalEdOver24}</td>
+                        <td className={styles.num}>{small(totalEdOver8)}</td>
+                        <td className={styles.num}>{small(totalEdOver24)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -1003,10 +1291,12 @@ export function StatisticsScreen({
                 data-testid="ward-statistics-blocked-discharges-by-reason"
                 aside={
                   <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-total">{blocked.totalCount}</span>{" "}
+                    <span data-testid="ward-statistics-blocked-discharges-by-reason-total">
+                      {small(blocked.totalCount)}
+                    </span>{" "}
                     of{" "}
                     <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                      {blocked.admissionCount}
+                      {small(blocked.admissionCount)}
                     </span>{" "}
                     not departed
                   </span>
@@ -1017,17 +1307,17 @@ export function StatisticsScreen({
                     label="Discharges held up, by reason"
                     labelWidth="10.5rem"
                     axis
-                    max={axisMax(blocked.tallies.map((tally) => tally.count))}
+                    max={axisMax(blocked.tallies.map((tally) => barValue(tally.count).value))}
                     rows={blocked.tallies.map((tally) => ({
                       id: tally.reason,
                       label: (
                         <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>
                       ),
                       labelText: tally.reason,
-                      value: tally.count,
+                      ...barValue(tally.count),
                       display: (
                         <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
-                          {tally.count === 0 ? "none" : tally.count}
+                          {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
                         </span>
                       ),
                     }))}
@@ -1050,17 +1340,17 @@ export function StatisticsScreen({
                   declinesReadout.ok ? (
                     <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
                       <span data-testid="ward-statistics-declines-by-reason-total">
-                        {declinesReadout.value.totalCount}
+                        {small(declinesReadout.value.totalCount)}
                       </span>{" "}
                       {declinesReadout.value.totalCount === 1 ? "decline" : "declines"},{" "}
                       <span data-testid="ward-statistics-declines-by-reason-movements-with">
-                        {declinesReadout.value.movementsWithDeclinesCount}
+                        {small(declinesReadout.value.movementsWithDeclinesCount)}
                       </span>
                       <span className={styles.srOnly}>
                         {" "}
                         of{" "}
                         <span data-testid="ward-statistics-declines-by-reason-movements">
-                          {declinesReadout.value.movementCount}
+                          {small(declinesReadout.value.movementCount)}
                         </span>
                       </span>{" "}
                       {declinesReadout.value.movementsWithDeclinesCount === 1 ? "movement" : "movements"}
@@ -1079,7 +1369,7 @@ export function StatisticsScreen({
                         label="Declines by reason"
                         labelWidth="10.5rem"
                         axis
-                        max={axisMax(declinesReadout.value.tallies.map((tally) => tally.count))}
+                        max={axisMax(declinesReadout.value.tallies.map((tally) => barValue(tally.count).value))}
                         rows={declinesReadout.value.tallies.map((tally) => ({
                           id: tally.reason,
                           label: (
@@ -1088,10 +1378,10 @@ export function StatisticsScreen({
                             </span>
                           ),
                           labelText: DECLINE_REASON_LABELS[tally.reason],
-                          value: tally.count,
+                          ...barValue(tally.count),
                           display: (
                             <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>
-                              {tally.count === 0 ? "none" : tally.count}
+                              {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
                             </span>
                           ),
                         }))}
@@ -1113,7 +1403,7 @@ export function StatisticsScreen({
                 data-testid="ward-statistics-pull-to-arrival"
                 aside={
                   <span className={styles.muted}>
-                    <span data-testid="ward-statistics-arrival-measured-count">{arrivals.measuredCount}</span>{" "}
+                    <span data-testid="ward-statistics-arrival-measured-count">{small(arrivals.measuredCount)}</span>{" "}
                     admissions
                   </span>
                 }
@@ -1146,25 +1436,29 @@ export function StatisticsScreen({
                       Every measured arrival took the same time in this synthetic data, so there is no spread to chart.
                     </p>
                   ) : (
-                    <ColumnChart label="Pull to arrival, admissions by band" height={110} columns={arrivalBands} />
+                    <ColumnChart
+                      label="Pull to arrival, admissions by band"
+                      height={110}
+                      columns={arrivalBands.map((band) => ({ ...band, ...barValue(band.value) }))}
+                    />
                   )}
                   <dl className={styles.tiles}>
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Awaiting</dt>
                       <dd className={styles.tileValue} data-testid="ward-statistics-arrival-awaiting-count">
-                        {arrivals.awaitingArrivalCount}
+                        {small(arrivals.awaitingArrivalCount)}
                       </dd>
                     </div>
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Ended</dt>
                       <dd className={styles.tileValue} data-testid="ward-statistics-arrival-ended-count">
-                        {arrivals.endedCount}
+                        {small(arrivals.endedCount)}
                       </dd>
                     </div>
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Excluded</dt>
                       <dd className={styles.tileValue} data-testid="ward-statistics-arrival-incoherent">
-                        {arrivals.incoherentCount}
+                        {small(arrivals.incoherentCount)}
                       </dd>
                     </div>
                     <div className={styles.tile}>
@@ -1179,31 +1473,7 @@ export function StatisticsScreen({
 
               <StatisticsSessionTrendsCard now={now} />
 
-              {/* Forecasting build (Josh, 23 Oct 2026, screen 8). Not on the count-only executive view. */}
-              {countsOnly ? null : (
-                <ForecastTrackRecordCard
-                  now={now}
-                  units={units}
-                  admissions={sourceAdmissions}
-                  movements={sourceMovements}
-                />
-              )}
-
-              {/* Closing-the-loop features (Josh, 24 Oct 2026). Not on the count-only executive view. */}
-              {countsOnly ? null : (
-                // Layout sweep STATS-01: the two wide closing-the-loop cards take full rows of their
-                // own instead of two narrow cells of the three-up grid.
-                <div className={styles.gridRow}>
-                  <WaitingStagesCard movements={sourceMovements} admissions={sourceAdmissions} now={now} />
-                  <FixedQuestionsCard
-                    movements={sourceMovements}
-                    bedReleases={sourceBedReleases}
-                    admissions={sourceAdmissions}
-                    units={units}
-                    now={now}
-                  />
-                </div>
-              )}
+              {slots.operationalExtra}
             </div>
           </div>
         )}

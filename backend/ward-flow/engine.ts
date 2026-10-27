@@ -2,6 +2,7 @@
 import "../../src/components/ward-management/ward-flow-reducer-slices";
 import { commandMetadata } from "../../src/components/ward-management/ward-command-metadata";
 import { projectWardPartialView } from "../../src/components/ward-management/ward-partial-view-projector";
+import { projectExecutiveReportingFoundation } from "../../src/components/ward-management/statistics/executive-statistics-projector";
 import { activeActNowItems } from "../../src/components/ward-management/ward-act-now-items";
 import { communityAlerts, jobAlerts, type RoleAlertKind } from "../../src/components/ward-management/ward-role-alerts";
 import { wardAccessPlaces, wardPlaceLookup } from "../../src/components/ward-management/ward-access-places";
@@ -53,6 +54,16 @@ import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
 export { checkSyntheticPayload };
 
 export type SharedWorld = { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
+
+/** The full world stays on the server; executive desks receive only its reporting contract. */
+export function executiveReport(world: SharedWorld, access: WardAccess, at: Date) {
+  return projectExecutiveReportingFoundation(world.state, access, {
+    now: worldNow(world, at),
+    dayZero: world.dayZero,
+    startedAt: world.startedAt,
+    places: getWardPlaceLookup(world.state.units),
+  });
+}
 function stripUndefined<T>(value: T): T {
   if (Array.isArray(value)) {
     for (let i = 0; i < value.length; i += 1) {
@@ -503,12 +514,19 @@ export function wholeNetwork(access: WardAccess): boolean {
  * The workspace this desk may be sent. A statewide coordinator gets the world itself. Every other
  * desk gets `scopeWardFlowState`, the same rule the screens use, plus any break glass grants.
  */
-export function scopeWorld(world: SharedWorld, access: WardAccess, at: Date, grants: readonly StoredGrant[] = []) {
+export function scopeWorld(
+  world: SharedWorld,
+  access: WardAccess,
+  at: Date,
+  grants: readonly StoredGrant[] = [],
+  reviewableBreakGlassEventIds: readonly string[] = [],
+) {
   if (accessIsWholeNetwork(access)) return world;
   const { state } = scopeWardFlowState(world.state, access, {
     now: worldNow(world, at),
     places: getWardPlaceLookup(world.state.units),
     grants: worldGrants(world, grants, at),
+    reviewableBreakGlassEventIds: new Set(reviewableBreakGlassEventIds),
   });
   return { ...world, state };
 }
@@ -598,6 +616,7 @@ export function commandRefusal(
   supplied: Record<string, unknown>,
   at: Date,
   grants: readonly StoredGrant[] = [],
+  reviewableBreakGlassEventIds: readonly string[] = [],
 ): string | null {
   const type = supplied.type as WardFlowEvent["type"];
   const role = supplied.role;
@@ -622,6 +641,7 @@ export function commandRefusal(
     now: worldNow(world, at),
     places: getWardPlaceLookup(world.state.units),
     grants: worldGrants(world, grants, at),
+    reviewableBreakGlassEventIds: new Set(reviewableBreakGlassEventIds),
   });
 }
 

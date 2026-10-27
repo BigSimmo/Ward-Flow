@@ -111,6 +111,23 @@ import {
 } from "@/components/ward-management/ward-flow-persistence-classification";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
+import { WardAuthorisedExecutivePreview } from "./shell/ward-chrome-frame";
+import {
+  WardShellAuthorityProvider,
+  WardShellPublicProvider,
+  wardShellLifetime,
+} from "./shell/ward-shell-public-context";
+import {
+  useEffectiveWardAccess,
+  parseStoredAccess,
+  readWardAccessSnapshot,
+  endAccessPreview,
+  setWardAccess,
+} from "./shell/ward-access-store";
+import { STATEWIDE_COORDINATOR } from "./ward-role-access";
+import { accessPlaceLabel } from "./shell/ward-access-labels";
+import { wardPlaceLookup } from "./ward-access-places";
+import { ExecutiveStatisticsUnavailable } from "./statistics/statistics-small-numbers";
 import {
   broadcastDispatchEvent,
   getOrCreateBroadcastInstanceId,
@@ -410,6 +427,8 @@ export function useWardClock(fallback?: Instant): Instant {
 const EMPTY_ARRAY = Object.freeze([]) as never[];
 
 type WardFlowProviderProps = {
+  /** An outer workspace host owns this one connection; never start a second poller. */
+  sharedConnection?: WardSharedConnection;
   children: ReactNode;
   /**
    * Pins the clock at this instant and stops it from ticking. Tests and any deterministic
@@ -490,8 +509,44 @@ export type { AssertNever, UnreviewedStringOrUnknownKeys };
  * opening day; local restore still refuses yesterday's save. The opening day then stays fixed for
  * this session, and a shared snapshot's own day remains authoritative.
  */
-export function WardFlowProvider({ children, initialNow, initialDayZero }: WardFlowProviderProps) {
-  const shared = useWardShared(initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true");
+export function WardFlowProvider(props: WardFlowProviderProps) {
+  return props.sharedConnection ? (
+    <WardFlowConnection {...props} shared={props.sharedConnection} />
+  ) : (
+    <WardFlowOwnConnection {...props} />
+  );
+}
+function WardFlowOwnConnection(props: WardFlowProviderProps) {
+  const shared = useWardShared(
+    props.initialNow === undefined && process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true",
+  );
+  return <WardFlowConnection {...props} shared={shared} />;
+}
+function WardFlowConnection({ shared, ...props }: WardFlowProviderProps & { shared: WardSharedConnection }) {
+  const access = parseStoredAccess(JSON.stringify(shared.access ?? null));
+  if (shared.enabled && (!shared.signedIn || !shared.snapshot || !access || access.role === "executive")) {
+    return (
+      <WardSharedAccess connection={shared}>
+        {access?.role === "executive" ? <ExecutiveStatisticsUnavailable /> : null}
+      </WardSharedAccess>
+    );
+  }
+  const identity = shared.enabled
+    ? JSON.stringify([shared.actorId, shared.workingAs, shared.snapshot?.accessContext])
+    : "local";
+  const runtime = <WardFlowRuntime key={identity} {...props} shared={shared} />;
+  return shared.enabled && access ? (
+    <WardShellAuthorityProvider access={access}>{runtime}</WardShellAuthorityProvider>
+  ) : (
+    runtime
+  );
+}
+function WardFlowRuntime({
+  children,
+  initialNow,
+  initialDayZero,
+  shared,
+}: WardFlowProviderProps & { shared: WardSharedConnection }) {
   useEffect(() => {
     clearLegacySessionDrafts();
   }, []);
@@ -616,6 +671,7 @@ function WardFlowWorld({
     initialDayZero === undefined ? demoDayZero(new Date()) : new Date(initialDayZero),
   );
   const localDayZero = adoptedDayZero ?? firstDayZero;
+  const [localStartedAt] = useState(() => new Date().toISOString());
   // Key on the primitive dayZero string, not the snapshot object: SharedWorkspaceClient.adopt
   // publishes a fresh snapshot every 3s even when the revision is unchanged, and dayZero feeds
   // the context value memo — so object identity would re-render every consumer every poll.
@@ -635,14 +691,24 @@ function WardFlowWorld({
     anchorOffsetMinutes,
     // A pinned `now` never reads a saved session, so it starts adopted and holds no replay queue.
     (offset): WardFlowContainer => {
+      if (shared.enabled) {
+        if (!shared.snapshot) throw new Error("An authenticated workspace requires its validated scoped snapshot.");
+        const world = shared.snapshot.payload.state;
+        syncWorldGlobals(world);
+        return {
+          world,
+          sharedRevision: shared.snapshot.revision,
+          sharedAccessContext: shared.snapshot.accessContext,
+          typedTextSeen: true,
+          restoredElapsed: 0,
+          sessionAdopted: true,
+          sessionRestored: true,
+          eventLog: [],
+        };
+      }
       const world = seedWardFlowStateAt(offset);
       syncWorldGlobals(world);
-      return {
-        world,
-        typedTextSeen: false,
-        restoredElapsed: 0,
-        sessionAdopted: initialNow !== undefined,
-      };
+      return { world, typedTextSeen: false, restoredElapsed: 0, sessionAdopted: initialNow !== undefined };
     },
   );
   // Scope changes must be visible in this render, before the adoption effect copies the new desk.
@@ -756,25 +822,9 @@ function WardFlowWorld({
   const [, setTick] = useState(0);
   useEffect(() => {
     if (!shared.enabled) return;
-    if (!shared.snapshot) {
-      dispatchContainer({
-        type: "ADOPT_SAVED_SESSION",
-        [ADOPT_SESSION]: (current) =>
-          current.sharedRevision === undefined
-            ? current
-            : {
-                ...current,
-                world: seedWardFlowStateAt(anchorOffsetMinutes),
-                sharedRevision: undefined,
-                sharedAccessContext: undefined,
-                eventLog: [],
-                sessionAdopted: true,
-                sessionRestored: false,
-                preAdoptionEvents: undefined,
-              },
-      });
-      return;
-    }
+    // The connection host unmounts this branch when access/snapshot is absent. It must never
+    // replace an authenticated workspace with a seeded local demonstration while that happens.
+    if (!shared.snapshot) return;
     const snapshot = shared.snapshot;
     openRequestSequence.current = Math.max(
       openRequestSequence.current,
@@ -1286,35 +1336,93 @@ function WardFlowWorld({
     ],
   );
 
+  const shellAccess = useEffectiveWardAccess();
+  const switchPublicRole = useCallback(() => {
+    if (readWardAccessSnapshot().previewOf) endAccessPreview();
+    else if (!shared.enabled) setWardAccess(STATEWIDE_COORDINATOR);
+    else shared.switchRole?.();
+  }, [shared]);
+  const shellPublic = useMemo(
+    () => ({
+      places: wardPlaceLookup(state.units),
+      placeLabel: accessPlaceLabel(shellAccess, state.units),
+      now,
+      authenticated: shared.enabled,
+      switchRole: switchPublicRole,
+      accessLifetime: wardShellLifetime(shared, state.scenario, state.worldGeneration, shellAccess),
+    }),
+    [state.units, state.scenario, state.worldGeneration, shellAccess, now, shared, switchPublicRole],
+  );
+  const previewSource = useMemo(
+    () => ({
+      state,
+      access: shellAccess,
+      now,
+      dayZero: dayZero.toISOString(),
+      startedAt: shared.snapshot?.payload.startedAt ?? localStartedAt,
+      events: shared.enabled ? (shared.eventLog ?? EMPTY_ARRAY) : (container.eventLog ?? EMPTY_ARRAY),
+    }),
+    [
+      state,
+      shellAccess,
+      now,
+      dayZero,
+      shared.snapshot?.payload.startedAt,
+      localStartedAt,
+      shared.enabled,
+      shared.eventLog,
+      container.eventLog,
+    ],
+  );
+  // Actual authority is checked above World construction. Only a coordinator can preview here.
+  const previewAuthority = JSON.stringify([
+    shared.actorId,
+    shared.workingAs,
+    shared.snapshot?.accessContext,
+    shared.viewEpoch,
+    shellAccess,
+  ]);
+  const previewChildren =
+    shellAccess.role === "executive" ? (
+      <WardAuthorisedExecutivePreview key={previewAuthority} source={previewSource}>
+        {children}
+      </WardAuthorisedExecutivePreview>
+    ) : (
+      children
+    );
   const screenKey =
     (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
   return (
-    <WardFlowOverride value={value}>
-      <WardClockContext.Provider value={now}>
-        <WardRecoveryNoticeContext.Provider
-          value={
-            storageUnavailable
-              ? container.recoveryNotice && container.recoveryNotice !== STORAGE_UNAVAILABLE
-                ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice}`
-                : STORAGE_UNAVAILABLE
-              : (!container.recoveryNoticeQuiet && container.recoveryNotice) || null
-          }
-        >
-          <WardDemoNotSavedContext.Provider
-            value={shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice}
+    <WardShellPublicProvider value={shellPublic}>
+      <WardFlowOverride value={value}>
+        <WardClockContext.Provider value={now}>
+          <WardRecoveryNoticeContext.Provider
+            value={
+              storageUnavailable
+                ? container.recoveryNotice && container.recoveryNotice !== STORAGE_UNAVAILABLE
+                  ? `${STORAGE_UNAVAILABLE} ${container.recoveryNotice}`
+                  : STORAGE_UNAVAILABLE
+                : (!container.recoveryNoticeQuiet && container.recoveryNotice) || null
+            }
           >
-            <ToastDeviceSaveContext.Provider value={savesOnDevice}>
-              <WardFlowClockContext.Provider value={now}>
-                {/* New worlds/access contexts retire forms; ordinary shared saves retain edits. */}
-                <WardSharedAccess connection={sharedConnection}>
-                  <Fragment key={screenKey}>{children}</Fragment>
-                </WardSharedAccess>
-              </WardFlowClockContext.Provider>
-            </ToastDeviceSaveContext.Provider>
-          </WardDemoNotSavedContext.Provider>
-        </WardRecoveryNoticeContext.Provider>
-      </WardClockContext.Provider>
-    </WardFlowOverride>
+            <WardDemoNotSavedContext.Provider
+              value={
+                shared.enabled || initialNow !== undefined || !container.typedTextSeen ? undefined : savingOnDevice
+              }
+            >
+              <ToastDeviceSaveContext.Provider value={savesOnDevice}>
+                <WardFlowClockContext.Provider value={now}>
+                  {/* New worlds/access contexts retire forms; ordinary shared saves retain edits. */}
+                  <WardSharedAccess connection={sharedConnection}>
+                    <Fragment key={screenKey}>{previewChildren}</Fragment>
+                  </WardSharedAccess>
+                </WardFlowClockContext.Provider>
+              </ToastDeviceSaveContext.Provider>
+            </WardDemoNotSavedContext.Provider>
+          </WardRecoveryNoticeContext.Provider>
+        </WardClockContext.Provider>
+      </WardFlowOverride>
+    </WardShellPublicProvider>
   );
 }
 

@@ -26,6 +26,14 @@ import { StatisticsNav } from "./statistics-nav";
 import { PhoneDotKey } from "./statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */
 export type PhoneWard = {
@@ -39,16 +47,23 @@ export type PhoneWard = {
   percent: number;
 };
 
-export type PhoneEd = { id: string; name: string; site: string; waiting: number; longest: number | null };
+export type PhoneEd = {
+  id: string;
+  name: string;
+  site: string;
+  waiting: StatisticsCount;
+  longest: number | null;
+  openable?: boolean;
+};
 
-type PhoneTally = { id: string; label: string; count: number };
+type PhoneTally = { id: string; label: string; count: StatisticsCount };
 
 /** The desktop page's blocked discharges, declines and pull to arrival, for the More figures sheet. */
 export type PhoneMoreFigures = {
-  blocked: { total: number; admissions: number; tallies: readonly PhoneTally[] };
+  blocked: { total: StatisticsCount; admissions: StatisticsCount; tallies: readonly PhoneTally[] };
   /** `statement` when the declines cannot be read, in the desktop card's own words. */
-  declines: { total: number; tallies: readonly PhoneTally[] } | { statement: string };
-  arrivals: { measured: number; average: number | null; shortest: number | null; longest: number | null };
+  declines: { total: StatisticsCount; tallies: readonly PhoneTally[] } | { statement: string };
+  arrivals: { measured: StatisticsCount; average: number | null; shortest: number | null; longest: number | null };
 };
 
 type Sheet = { title: string; description?: string; body: ReactNode } | null;
@@ -75,11 +90,20 @@ const countText = (count: number | string) => (count === 0 ? "none" : count);
 
 function TallyList({ label, tallies }: { label: string; tallies: readonly PhoneTally[] }) {
   // Executive: the parts add up to the total above them, so they hide together, as on the desktop.
-  const shown = useStatisticsCounts().parts(tallies.map((tally) => tally.count));
+  const { small, parts } = useStatisticsCounts();
+  const numeric = tallies.every((tally) => typeof tally.count === "number");
+  const shown = numeric
+    ? parts(tallies.map((tally) => tally.count as number))
+    : tallies.map((tally) => statisticsCountText(tally.count, small));
   return (
     <ul className={styles.list} aria-label={label}>
       {tallies.map((tally, index) => (
-        <PhoneListRow key={tally.id} as="li" name={tally.label} value={countText(shown[index] ?? tally.count)} />
+        <PhoneListRow
+          key={tally.id}
+          as="li"
+          name={tally.label}
+          value={countText(shown[index] ?? statisticsCountText(tally.count, small))}
+        />
       ))}
     </ul>
   );
@@ -88,7 +112,8 @@ function TallyList({ label, tallies }: { label: string; tallies: readonly PhoneT
 /** The More figures sheet: blocked discharges, declines by reason and pull to arrival. */
 function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
   const { blocked, declines, arrivals } = figures;
-  const { small } = useStatisticsCounts();
+  const { small: operationalSmall } = useStatisticsCounts();
+  const small = (count: StatisticsCount) => statisticsCountText(count, operationalSmall);
   const duration = (minutes: number | null) => (minutes === null ? "Not recorded" : durMinutes(minutes));
   return (
     <>
@@ -129,7 +154,34 @@ function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
  * referral figures as rows that open bottom sheets. Every figure is passed in from the desktop
  * screen's own derivations, so the two never disagree.
  */
-export function StatisticsSummaryPhone({
+type PhoneSummaryProps = Omit<Parameters<typeof StatisticsSummaryPhoneView>[0], "now"> & { now?: number };
+
+export function StatisticsSummaryPhone(props: PhoneSummaryProps) {
+  const control = useExecutiveStatisticsControl();
+  const data = useExecutiveStatistics();
+  const access = useEffectiveWardAccess();
+  if (control.executive || access.role === "executive")
+    return data ? (
+      <StatisticsSummaryPhoneView
+        key={JSON.stringify(data.network.scope)}
+        {...props}
+        eds={props.eds.map((ed) => ({ ...ed, openable: data.openableEmergencyDepartmentIds.includes(ed.id) }))}
+        now={data.network.asAt.now}
+        paused={control.paused}
+        onTogglePause={control.togglePause ?? undefined}
+      />
+    ) : (
+      <ExecutiveStatisticsUnavailable />
+    );
+  return <OperationalSummaryPhone {...props} />;
+}
+
+function OperationalSummaryPhone(props: PhoneSummaryProps) {
+  const now = useWardFlowClock();
+  return <StatisticsSummaryPhoneView {...props} now={props.now ?? now} />;
+}
+
+function StatisticsSummaryPhoneView({
   ready,
   beingMadeReady,
   occupied,
@@ -143,23 +195,24 @@ export function StatisticsSummaryPhone({
   wardCount,
   paused,
   onTogglePause,
+  now,
 }: {
   ready: number;
   beingMadeReady: number;
   /** Beds in use: Occupied + Pulled, the one occupancy count (`ward-occupancy.ts`). */
   occupied: number;
   occupiedPct: number;
-  waitingInEd: number;
-  endedToday: number;
+  waitingInEd: StatisticsCount;
+  endedToday: StatisticsCount;
   wards: readonly PhoneWard[];
   eds: readonly PhoneEd[];
-  referrals: { raised: number; accepted: number; declined: number; open: number };
+  referrals: { raised: StatisticsCount; accepted: StatisticsCount; declined: StatisticsCount; open: StatisticsCount };
   moreFigures: PhoneMoreFigures;
   wardCount: number;
   paused: boolean;
-  onTogglePause: () => void;
+  onTogglePause?: () => void;
+  now: number;
 }) {
-  const now = useWardFlowClock();
   const [group, setGroup] = useState<"hospital" | "ward">("hospital");
   const [sheet, setSheet] = useState<Sheet>(null);
   const [showAll, setShowAll] = useState(false);
@@ -180,7 +233,8 @@ export function StatisticsSummaryPhone({
     .sort((a, b) => b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name));
   const byReady = [...wards].sort((a, b) => b.ready - a.ready || b.percent - a.percent || a.name.localeCompare(b.name));
   const overCount = wards.filter((ward) => overLine(ward.percent)).length;
-  const edsWaiting = eds.filter((ed) => ed.waiting > 0);
+  const edsWaiting = eds.filter((ed) => exactStatisticsCount(ed.waiting) !== 0);
+  const edPresenceKnown = eds.every((ed) => exactStatisticsCount(ed.waiting) !== null);
   const longestEd = eds.reduce<number | null>(
     (most, ed) => (ed.longest !== null && (most === null || ed.longest > most) ? ed.longest : most),
     null,
@@ -209,8 +263,8 @@ export function StatisticsSummaryPhone({
           figures={[
             // Phone review F-26: the big figure says what it counts, with its share beside it.
             { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
-            { id: "ed", value: waitingInEd, label: "Open ED journeys" },
-            { id: "ended", value: endedToday, label: "Ended today" },
+            { id: "ed", value: statisticsCountText(waitingInEd), label: "Open ED journeys" },
+            { id: "ended", value: statisticsCountText(endedToday), label: "Ended today" },
           ]}
           eyebrow="Statistics · Network now"
           chip={
@@ -283,7 +337,7 @@ export function StatisticsSummaryPhone({
           <GroupHead
             title="Referrals today"
             variant="letter"
-            aside={`${referrals.raised} raised`}
+            aside={`${statisticsCountText(referrals.raised)} raised`}
             className={styles.groupHead}
           />
           <dl className={styles.tiles}>
@@ -291,23 +345,23 @@ export function StatisticsSummaryPhone({
               <dt>
                 <StatusGlyph tone="success" size={9} /> Accepted
               </dt>
-              <dd>{referrals.accepted}</dd>
+              <dd>{statisticsCountText(referrals.accepted)}</dd>
             </div>
             <div className={styles.tile}>
               <dt>
                 <StatusGlyph tone="closed" size={9} /> Declined
               </dt>
-              <dd>{referrals.declined}</dd>
+              <dd>{statisticsCountText(referrals.declined)}</dd>
             </div>
             <div className={styles.tile}>
               <dt>
                 <StatusGlyph tone="neutral" size={9} /> Still open
               </dt>
-              <dd>{referrals.open}</dd>
+              <dd>{statisticsCountText(referrals.open)}</dd>
             </div>
             <div className={styles.tile}>
               <dt>Raised</dt>
-              <dd>{referrals.raised}</dd>
+              <dd>{statisticsCountText(referrals.raised)}</dd>
             </div>
           </dl>
         </section>
@@ -361,10 +415,16 @@ export function StatisticsSummaryPhone({
                         key={ed.id}
                         as="li"
                         name={ed.name}
-                        meta={ed.longest === null ? "No open ED journeys" : `Longest ${durMinutes(ed.longest)}`}
-                        value={ed.waiting}
+                        meta={
+                          ed.longest === null
+                            ? exactStatisticsCount(ed.waiting) === 0
+                              ? "No open ED journeys"
+                              : "Longest not recorded"
+                            : `Longest ${durMinutes(ed.longest)}`
+                        }
+                        value={statisticsCountText(ed.waiting)}
                         time="open ED journeys"
-                        href={edStatisticsHref(ed.id)}
+                        href={ed.openable === false ? undefined : edStatisticsHref(ed.id)}
                       />
                     ))}
                   </ul>
@@ -376,12 +436,14 @@ export function StatisticsSummaryPhone({
             <span className={styles.navText}>
               <b>Open ED journeys</b>
               <span>
-                {longestEd === null ? (
+                {!edPresenceKnown ? (
+                  <>{statisticsCountText(waitingInEd)} open ED journeys · department totals protected</>
+                ) : longestEd === null ? (
                   `${edsWaiting.length} of ${eds.length} departments with open ED journeys`
                 ) : (
                   <>
-                    Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {waitingInEd} open journeys from{" "}
-                    {edsWaiting.length} of {eds.length}
+                    Longest <b className={styles.num}>{durMinutes(longestEd)}</b> · {statisticsCountText(waitingInEd)}{" "}
+                    open journeys from {edsWaiting.length} of {eds.length}
                   </>
                 )}
               </span>

@@ -36,7 +36,7 @@ export function SettingsTargetsColumn({
   rules: ReturnType<typeof fullRules>;
   saved: ReturnType<typeof fullRules>;
   setRule: (patch: Partial<WardConfiguration>) => void;
-  ruleChanges: ConfigurationAuditEvent[];
+  ruleChanges: ConfigurationAuditEvent[] | null;
   now: Instant;
   /** Why the rules are read-only for this desk; unset when it may change them. */
   unavailableReason?: string;
@@ -176,15 +176,21 @@ export function SettingsTargetsColumn({
           icon={History}
           title="Recent changes"
           action={
-            <Link
-              className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-              href="/ward-flow/governance"
-            >
-              Full audit
-            </Link>
+            ruleChanges === null ? undefined : (
+              <Link
+                className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
+                href="/ward-flow/governance"
+              >
+                Full audit
+              </Link>
+            )
           }
         />
-        {ruleChanges.length === 0 ? (
+        {ruleChanges === null ? (
+          <p className={styles.cardEmpty}>
+            Individual changes and audit entries are unavailable for executive reporting.
+          </p>
+        ) : ruleChanges.length === 0 ? (
           <p className={styles.cardEmpty}>No rule saves this session.</p>
         ) : (
           <ol className={styles.changeList}>

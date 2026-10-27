@@ -80,6 +80,78 @@ const request = (path = "", data, token = "Bearer test") =>
     ...(data ? { body: JSON.stringify(data) } : {}),
   });
 
+test("executive archive is denied before an adapter runs and aggregate expiry is checked at send", async () => {
+  let archiveCalls = 0;
+  const executive = {
+    actorId: coordinator,
+    membershipId: other,
+    status: "ok",
+    access: { role: "executive", scope: { kind: "statewide" } },
+    grants: [],
+    accessUntil: Date.now() + 60_000,
+  };
+  const snapshot = { kind: "executive-aggregate", dataMode: "prototype", accessUntil: Date.now() - 1 };
+  const { handler } = setup(coordinator, "prototype", {
+    viewer: async () => executive,
+    archive: async () => {
+      archiveCalls++;
+      return { records: [{ private: true }] };
+    },
+    read: async () => snapshot,
+    logList: async () => assert.fail("Aggregate reporting is not a record list read"),
+  });
+  assert.equal((await handler(request("/archive"))).status, 403);
+  assert.equal(archiveCalls, 0);
+  const expired = await handler(request());
+  assert.equal(expired.status, 403);
+  assert.equal(JSON.stringify(await expired.json()).includes("snapshot"), false);
+});
+
+test("executive aggregate reads and command replies enforce the session deadline after awaited work", async () => {
+  const originalNow = Date.now;
+  const initial = originalNow();
+  let now = initial;
+  Date.now = () => now;
+  try {
+    const snapshot = { kind: "executive-aggregate", dataMode: "prototype", accessUntil: initial + 24 * 60 * 60_000 };
+    const viewer = async () => ({
+      actorId: coordinator,
+      membershipId: other,
+      status: "ok",
+      access: { role: "executive", scope: { kind: "statewide" } },
+      grants: [],
+      accessUntil: snapshot.accessUntil,
+    });
+    for (const command of [false, true]) {
+      now = initial;
+      const finish = async () => {
+        now = initial + 721 * 60_000;
+        return snapshot;
+      };
+      const { handler } = setup(coordinator, "prototype", {
+        viewer,
+        read: finish,
+        command: async () => ({ status: 422, body: { outcome: "denied", snapshot: await finish() } }),
+      });
+      const response = await handler(request(command ? "/commands" : "", command ? body : undefined));
+      assert.equal(response.status, 401);
+      const value = await response.json();
+      assert.equal(value.code, "session-limit");
+      assert.equal(Object.hasOwn(value, "snapshot"), false);
+    }
+    now = initial;
+    const { handler } = setup(coordinator, "prototype", {
+      viewer,
+      command: async () => ({ status: 422, body: { outcome: "denied", snapshot } }),
+    });
+    const response = await handler(request("/commands", body));
+    assert.equal(response.status, 422);
+    assert.equal((await response.json()).snapshot.accessUntil, initial + 720 * 60_000);
+  } finally {
+    Date.now = originalNow;
+  }
+});
+
 test("a named coordinator can read the entire shared workspace", async () => {
   const { calls, handler } = setup();
   const response = await handler(request());

@@ -15,6 +15,8 @@ import type { WardCommandOutcome } from "../ward-shared-client";
 import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels, type WardScenario } from "../ward-scenarios";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import styles from "./ward-tools-sheet.module.css";
+import { useWardShellAuthority } from "../shell/ward-shell-public-context";
+import { useExecutiveStatistics } from "../statistics/executive-statistics-context";
 
 /**
  * Tools, Demo (Tools review item 9, 15 Oct 2026): the one place the prototype's scenario, clock and
@@ -27,6 +29,51 @@ import styles from "./ward-tools-sheet.module.css";
  * Phone Tools keeps both until a phone mock-up is approved.
  */
 export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
+  return useWardShellAuthority()?.role === "executive" ? (
+    <ExecutiveDemoPanel />
+  ) : (
+    <OperationalDemoPanel oneList={oneList} />
+  );
+}
+function ExecutiveDemoPanel() {
+  const report = useExecutiveStatistics();
+  return (
+    <div className={styles.toolBody} data-testid="ward-tools-demo-panel">
+      <p className={styles.demoNotice}>Demo tools. They change the synthetic data only, never a clinical record.</p>
+      <p className={styles.note} data-testid="ward-tools-demo-off">
+        {DEMO_CONTROLS_OFF}
+      </p>
+      <div className={styles.scenarioGrid} role="radiogroup" aria-label="Demo scenario">
+        {WARD_SCENARIOS.map((scenario) => (
+          <button
+            key={scenario}
+            type="button"
+            role="radio"
+            disabled
+            aria-checked={report?.sampleScenario === scenario}
+            className={styles.scenarioCard}
+          >
+            <strong>{scenarioLabels[scenario]}</strong>
+            {report?.sampleScenario === scenario && <em>Loaded</em>}
+          </button>
+        ))}
+      </div>
+      <div className={styles.demoRow}>
+        <span className={styles.demoClock}>Demo clock {report && <b>{formatInstant(report.network.asAt.now)}</b>}</span>
+        <button type="button" disabled className={styles.secondaryButton}>
+          +15 min
+        </button>
+        <button type="button" disabled className={styles.secondaryButton}>
+          +1 hour
+        </button>
+      </div>
+      <button type="button" disabled className={styles.resetButton} data-testid="ward-tools-demo-reset">
+        Reset demo
+      </button>
+    </div>
+  );
+}
+function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
   const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice, worldGeneration, shared } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",

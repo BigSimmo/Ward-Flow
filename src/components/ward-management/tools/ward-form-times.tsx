@@ -8,6 +8,7 @@ import { AUDITABLE_FORM_CODES } from "../ward-audit";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "../ward-legal-clock";
 import { formatStatutoryDateTime, parseDateTimeInput } from "./ward-form-time-input";
 import styles from "./ward-tools-sheet.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 
 function formLabel(code: string) {
   const title = formTitleForCode(code);
@@ -27,11 +28,25 @@ function gapText(minutes: number) {
  * cover instructions (rule D5: typed times only). Lives on the Legal forms page, with a Tools link.
  */
 export function WardFormTimes() {
+  return useExecutiveStatisticsControl().executive ? <ExecutiveFormTimes /> : <OperationalFormTimes />;
+}
+function ExecutiveFormTimes() {
+  const report = useExecutiveStatistics();
+  return report ? (
+    <FormTimesView now={new Date(Date.parse(report.network.asAt.dayZero) + report.network.asAt.now * 60_000)} />
+  ) : (
+    <p role="status">Form times are unavailable until this report is ready.</p>
+  );
+}
+function OperationalFormTimes() {
   const demoNow = useWardFlowClock();
   // The demo clock counts minutes from the provider's scenario day, the same anchor every board
   // date uses, so a typed date compares against the same day the board shows.
   const { dayZero } = useWardFlowSelect("dayZero");
   const now = useMemo(() => new Date(dayZero.getTime() + demoNow * 60_000), [dayZero, demoNow]);
+  return <FormTimesView now={now} />;
+}
+function FormTimesView({ now }: { now: Date }) {
   // Form and date start empty too: a form type or a date already chosen would stand in for one the
   // person read off the form (rule D5, and the owner rule that MHA forms are never prefilled).
   const [code, setCode] = useState("");

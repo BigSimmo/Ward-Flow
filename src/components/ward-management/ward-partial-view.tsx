@@ -16,10 +16,11 @@ const PartialViewContext = createContext<BoundWardPartialView | null>(null);
 const PartialDisplayContext = createContext<WardPartialView | null>(null);
 const PartialDisplayHostContext = createContext<{
   shared: boolean;
+  accessContext: string | null;
   previewAllowed: boolean;
   senderRequired: boolean;
   readSource: SenderReadSource | null;
-}>({ shared: false, previewAllowed: false, senderRequired: false, readSource: null });
+}>({ shared: false, accessContext: null, previewAllowed: false, senderRequired: false, readSource: null });
 
 /** Host capability only: supplied by the actual connection, never inferred from display metadata. */
 export function useWardPartialDisplayHost() {
@@ -87,6 +88,16 @@ export function WardPartialViewProvider({
   const host = useMemo(
     () => ({
       shared,
+      // Every shared role has this outer-snapshot lifetime, even when it receives no sender sibling.
+      accessContext:
+        shared &&
+        currentRevision !== null &&
+        Number.isSafeInteger(currentRevision) &&
+        currentRevision > 0 &&
+        typeof currentAccessContext === "string" &&
+        /^[a-f0-9]{64}$/u.test(currentAccessContext)
+          ? currentAccessContext
+          : null,
       previewAllowed: currentReadSource?.access.role === "coordinator",
       senderRequired:
         shared &&
@@ -95,7 +106,7 @@ export function WardPartialViewProvider({
           currentReadSource?.access.role === "bed_manager"),
       readSource: currentReadSource,
     }),
-    [shared, currentReadSource, senderRequired],
+    [shared, currentReadSource, senderRequired, currentRevision, currentAccessContext],
   );
   return (
     <PartialDisplayHostContext.Provider value={host}>

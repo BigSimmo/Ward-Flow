@@ -600,6 +600,7 @@ export function reduceReferralSendEvent(
           at: event.now,
           outcome: "did_not_proceed",
           reason: event.reason ?? `Referred to community mental health team: ${event.team}`,
+          referralId,
         },
         blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
