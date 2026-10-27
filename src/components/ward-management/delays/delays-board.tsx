@@ -573,7 +573,7 @@ export function DelaysBoard({
         data-form-due={isPinned(row, thresholds) ? "true" : undefined}
         data-testid={`delays-row-${movement.id}`}
         onClick={(event) => {
-          if ((event.target as HTMLElement).closest("button, a") === null) select(movement.id);
+          if ((event.target as HTMLElement).closest("button, a, [data-legal-tip]") === null) select(movement.id);
         }}
       >
         <td role="cell" className={styles.who}>
