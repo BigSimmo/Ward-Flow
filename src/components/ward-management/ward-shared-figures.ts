@@ -227,7 +227,7 @@ export function inEdTierOverdue(movement: Movement, now: Instant): boolean {
  * P003: a chip narrowed to one ED's journeys says so, by the site's short name: "Tier 1, RPH only".
  * Without a chosen ED the chip keeps its own label.
  */
-export function scopedChipLabel(label: string, scopedLabel: string, siteShort: string | undefined): string {
+function scopedChipLabel(label: string, scopedLabel: string, siteShort: string | undefined): string {
   return siteShort ? `${scopedLabel}, ${siteShort} only` : label;
 }
 
