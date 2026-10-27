@@ -3,11 +3,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import {
-  useOptionalWardFlowSelect,
-  useWardFlowClock,
-  useWardFlowSelect,
-} from "@/components/ward-management/ward-flow-provider";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { Button, Dialog, useOptionalToast } from "@/components/wf";
 
@@ -35,26 +32,26 @@ function ReleaseOwnershipControl({
   subjectLine: string;
   disabledReason?: string;
 }) {
-  const { dispatch } = useWardFlowSelect("dispatch");
-  const now = useWardFlowClock();
-  const nowRef = useRef(now);
+  const raise = useWardRaise("coordinator");
+  // The undo runs later, so it raises through the latest clock, not the one at the time of the click.
+  const raiseRef = useRef(raise);
   useEffect(() => {
-    nowRef.current = now;
-  }, [now]);
+    raiseRef.current = raise;
+  }, [raise]);
   const toast = useOptionalToast();
   const [asking, setAsking] = useState(false);
 
   function confirm() {
     setAsking(false);
     const inboxItemId = item.id;
-    dispatch({ type: "RELEASE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: nowRef.current, inboxItemId });
+    raiseRef.current("RELEASE_INBOX_ITEM_OWNERSHIP", { inboxItemId });
     toast?.push({
       tone: "success",
       title: `Released ${item.title}`,
       undo: {
         durationMs: UNDO_TOAST_MS,
         onUndo: () => {
-          dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: nowRef.current, inboxItemId });
+          raiseRef.current("TAKE_INBOX_ITEM_OWNERSHIP", { inboxItemId });
         },
       },
     });
