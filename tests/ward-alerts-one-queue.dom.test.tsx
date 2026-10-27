@@ -25,6 +25,7 @@ vi.mock("next/navigation", () => ({
 
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -123,7 +124,8 @@ describe("the drawer with one Alerts queue", () => {
     if (!transport) throw new Error("fixture drifted: the seeded inbox has no transport alert");
     const action = within(drawer).getByTestId(`ward-task-action-${transport.id}`);
     expect(action).toHaveTextContent("Chase transport");
-    expect(action).toHaveAttribute("href", "/ward-flow/movements");
+    // H-0975: the row opens its own movement, not the general Movements list.
+    expect(action).toHaveAttribute("href", movementHref(transport.movementId));
     fireEvent.click(action);
     expect(onClose).toHaveBeenCalled();
     const row = action.closest("li")!;

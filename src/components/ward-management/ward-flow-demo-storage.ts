@@ -12,6 +12,7 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
   WARD_FLOW_STORED_STATE_VERSION,
 } from "./ward-flow-demo-storage-constants";
+import { markDemoSaveCurrent } from "./ward-flow-demo-save-marker";
 
 export { RESTORED_NOTICE_PREFIX, STORAGE_UNAVAILABLE, WARD_FLOW_DEMO_STORAGE_KEY };
 
@@ -68,7 +69,8 @@ export type WardFlowDemoPayload = {
   state: WardFlowState;
 };
 
-export type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string };
+/** `quietRecoveryNotice` is the restore line for a current save, said only if the restore closed something open. */
+export type DemoRead = { saved?: WardFlowDemoPayload; recoveryNotice?: string; quietRecoveryNotice?: string };
 
 let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
 
@@ -232,11 +234,13 @@ export function tryWriteDemoState(
     };
     const serialized = JSON.stringify(payload);
     window.sessionStorage.setItem(WARD_FLOW_DEMO_STORAGE_KEY, serialized);
+    markDemoSaveCurrent(true);
     if (senderId) {
       broadcastDispatchEvent("SYNC_SAVED_STATE", senderId, serialized);
     }
     return true;
   } catch {
+    markDemoSaveCurrent(false);
     return false;
   }
 }
@@ -245,6 +249,7 @@ export function clearWardFlowDemoState(): boolean {
   if (typeof window === "undefined") return false;
   try {
     window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    markDemoSaveCurrent(false);
     return true;
   } catch {
     return false;

@@ -462,6 +462,10 @@ export function DocumentationPanel({
                 onToFollow={(marked) => changeToFollow("observation", marked)}
               />
             </div>
+            {/* #823: a blank image passes, so say plainly what the check covers. */}
+            <p className={styles.bodyMeta} data-testid="ward-referral-chart-check-note">
+              Ward Flow checks only the file type and size, not what the file shows. Check you attached the right chart.
+            </p>
             <YesNo
               label="Anything else to attach?"
               firstId={`${id}-additional`}

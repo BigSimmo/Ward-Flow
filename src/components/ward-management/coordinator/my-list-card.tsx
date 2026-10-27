@@ -22,6 +22,7 @@ import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
+import { ACT_NOW_TARGET_ID } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { Button, buttonClass, Card, Sheet, StatusGlyph } from "@/components/wf";
 // Closing-the-loop package A (24 Oct 2026): chase count and overdue promise on a referral row, and
 // the coordinated call sheet. The sheet's code loads only when it is opened.
@@ -491,7 +492,8 @@ export function MyListCard({
   );
 
   const actGroup = (
-    <section className={alertStyles.group} aria-label="Act now">
+    // WS-18: the target of the shell's "Skip to Act now" link (shell/ward-skip-to-act-now.tsx).
+    <section className={alertStyles.group} aria-label="Act now" id={ACT_NOW_TARGET_ID} tabIndex={-1}>
       <GroupHead tone="danger" label="Act now" count={actCount} aside="needs a person now" />
       {toPull.length > 0 ? pullRows : null}
       {act.length > 0 ? (

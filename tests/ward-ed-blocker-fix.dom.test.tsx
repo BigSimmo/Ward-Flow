@@ -115,11 +115,12 @@ describe("greyed actions on the ED board", () => {
     expect(note.textContent).toContain("Transport not logged");
     fireEvent.click(within(note).getByRole("button", { name: "Log transport booking" }));
     expect(screen.getByTestId("ward-ed-book-transport-toggle-WF-011").getAttribute("aria-expanded")).toBe("true");
-    // The community referral waits on an examination; Record exam is already pinned on this
-    // sheet, so the words stand alone and no second Record examination is offered (D-77).
+    // The community referral waits on an examination. H-0974 (26 Oct 2026): with the bed pulled,
+    // Transport booked is this sheet's pinned next step, not Record exam, so the note offers
+    // Record examination beside its words.
     const cmht = screen.getByTestId("ward-ed-unavailable-cmht-WF-011");
     expect(cmht.textContent).toContain("Examination outcome not recorded");
-    expect(within(cmht).queryByRole("button")).toBeNull();
+    expect(within(cmht).getByRole("button", { name: "Record examination" })).toBeInTheDocument();
   });
 });
 

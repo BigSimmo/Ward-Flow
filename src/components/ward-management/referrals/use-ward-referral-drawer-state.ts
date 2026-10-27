@@ -49,10 +49,11 @@ import {
   communityUrgency,
 } from "./community-short-form";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
-import { documentationError, EMPTY_DOCUMENTATION, intakeCharts, type DocumentationDraft } from "./referral-flow-panels";
+import { documentationError, intakeCharts, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
+  draftFingerprint,
   draftNeedsChartReattachment,
   keepReferralDraft,
   readKeptReferralDraftAt,
@@ -63,6 +64,7 @@ import {
 } from "./referral-draft-store";
 import { useReferralSectionNavigation } from "./use-referral-section-navigation";
 import { drawerFootStatus } from "./referral-drawer-foot-status";
+import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
@@ -310,23 +312,15 @@ export function useWardReferralDrawerState({
   const movementCohort = liveMovement?.cohort;
   const effectiveCohort: Cohort | "" = movementCohort ?? ageBand;
   const arrivalRole = initialCategory === "community" ? "community" : initialCategory === "ed" ? "ed" : "ward";
-  const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
+  const recordState = { patients, referrals, movements }; // WS-06, WS-08, WS-11: referral-record-prefill.ts
+  const [documentation, setDocumentation] = useState<DocumentationDraft>(
+    () => kept?.documentation ?? fromRecord.documentationFromBoard(liveMovement),
+  );
   const isMedicalCleared = documentation.medical === "yes";
-  // A2-6: the details last sent in this tab fill in, so the referrer types them once. Failing that,
-  // opened from an entry point, the referrer's own details come from their profile when one is set.
-  const [contact, setContact] = useState<ReferralContact>(() => {
-    if (kept?.contact) return kept.contact;
-    const lastSent = readLastReferrerContact<ReferralContact>();
-    if (lastSent) return lastSent;
-    if (
-      (effectiveInitialPatientId || effectiveInitialOriginSiteCode || initialSendingTeam) &&
-      myProfile.status === "available"
-    ) {
-      const { name, role, phone, email, location } = myProfile.profile;
-      return { name, role, phone, email, location };
-    }
-    return { name: "", email: "", phone: "", role: "", location: "" };
-  });
+  // A2-6 and WS-07 (H-0972): the draft, the details last sent in this tab, then the desk's profile.
+  const [contact, setContact] = useState<ReferralContact>(() =>
+    fromRecord.initialReferrerContact(kept?.contact, readLastReferrerContact<ReferralContact>(), myProfile),
+  );
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
   const [catchmentSuburb, setCatchmentSuburb] = useState(kept?.catchmentSuburb ?? defaultPatient.suburb);
@@ -336,12 +330,14 @@ export function useWardReferralDrawerState({
   const [catchmentService, setCatchmentService] = useState<HealthService | "">(
     kept?.catchmentService ?? HEALTH_SERVICES.find((service) => service === urlPrefill?.service) ?? "",
   );
+  const [recordedRegion] = useState(() => fromRecord.recordedHomeRegion(patientRecord?.id, liveMovement, recordState));
   const [catchmentConfirmed, setCatchmentConfirmed] = useState(
     kept?.catchmentConfirmed ??
-      (fromEntryPoint && !!(initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment)?.trim()),
+      ((fromEntryPoint && !!(initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment)?.trim()) ||
+        fromRecord.catchmentFromRecord(patientRecord, catchmentTeam, recordedRegion)),
   );
   const [catchmentEditing, setCatchmentEditing] = useState(false);
-  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
+  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? recordedRegion ?? "");
   const [activeSection, setActiveSection] = useState<DrawerSection>(
     (kept?.destType === "community" && kept.activeSection === "documentation" ? "referral" : kept?.activeSection) ??
       (catchmentConfirmed && !!homeRegion && !!liveMovement?.cohort ? "referral" : "patient"),
@@ -362,8 +358,9 @@ export function useWardReferralDrawerState({
       (liveOriginSite || initialCategory === "ed" || deskOriginSite ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
-    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? deskOriginSite ?? "",
+    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? deskOriginSite ?? liveOriginSite ?? "",
   );
+  const openJourney = fromRecord.openEdJourneyFor(patientRecord?.id, recordState);
   const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? deskSendingTeam ?? "");
   // WS-01 (workflow speed audit, 26 Oct 2026): from the record, else the journey the ED board shows.
   const [known] = useState(() => recordedSexAndGender(patientRecord, liveMovement));
@@ -452,8 +449,8 @@ export function useWardReferralDrawerState({
     unidentified,
     notOnWard,
   };
-  const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
-  const draftJson = JSON.stringify(draftNow);
+  const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
+  const draftJson = draftFingerprint(draftNow);
 
   // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
   // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
@@ -472,7 +469,7 @@ export function useWardReferralDrawerState({
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const dirty = !sentReferralId && draftJson !== openingDraft;
-  const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: JSON.stringify(kept) } : null));
+  const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: draftFingerprint(kept) } : null));
   const {
     sessionSaved: draftSessionSaved,
     keptAt: draftKeptAt,
@@ -482,7 +479,7 @@ export function useWardReferralDrawerState({
     draft: draftNow,
     storageKey: draftStorageKey,
     draftJson,
-    contentJson: JSON.stringify({ ...draftNow, activeSection: undefined }),
+    contentJson: draftFingerprint({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
     dirty,
     initialKeptAt: initialKept?.at ?? null,
@@ -626,25 +623,27 @@ export function useWardReferralDrawerState({
     setSelectedUnitIds([]);
     setSelectedRecipient("");
     setCommunityPurpose("");
-    setDocumentation(EMPTY_DOCUMENTATION);
+    const matchedMovement = movements.find((movement) => movement.id === key);
+    setDocumentation(fromRecord.documentationFromBoard(matchedMovement));
     setCatchmentSuburb(p.suburb);
     const teams = catchmentRoutingDestinations(lookupCatchment(p.suburb));
-    setCatchmentTeam(teams?.length === 1 ? teams[0] : p.catchment);
+    const team = teams?.length === 1 ? teams[0]! : p.catchment;
+    setCatchmentTeam(team);
     setCatchmentService("");
-    setCatchmentConfirmed(false);
     setCatchmentEditing(false);
-    setHomeRegion(movements.find((movement) => movement.id === key)?.homeRegion ?? "");
-    const originSite = edById(movements.find((movement) => movement.id === key)?.originEdId ?? "")?.siteCode;
-    if (originSite) {
+    const originSite = edById(matchedMovement?.originEdId ?? "")?.siteCode;
+    if (originSite && !deskOriginSite) {
       setSourceKind("ed");
       setOriginSiteCode(originSite);
     }
-    const matchedMovement = movements.find((movement) => movement.id === key);
     const record = matchedMovement
       ? resolveSubjectPatient(matchedMovement, { patients, referrals, movements }).patient
       : key.startsWith(PATIENT_KEY_PREFIX)
         ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
         : undefined;
+    const region = fromRecord.recordedHomeRegion(record?.id, matchedMovement, recordState);
+    setHomeRegion(region ?? "");
+    setCatchmentConfirmed(fromRecord.catchmentFromRecord(record, team, region));
     const identity = recordedSexAndGender(record, matchedMovement);
     setReferralSex(identity.sex);
     setReferralGender(identity.gender);
@@ -1272,6 +1271,7 @@ export function useWardReferralDrawerState({
     kept,
     keepsAnotherPersonsDraft,
     fromEntryPoint,
+    openJourney,
     initialPatientKey,
     activePatientKey,
     setActivePatientKey,

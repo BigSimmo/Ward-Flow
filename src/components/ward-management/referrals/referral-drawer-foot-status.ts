@@ -1,5 +1,6 @@
 import type { WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { isMissingContactMessage } from "./referral-submission";
 import { recipientSummary } from "./ward-referral-drawer-model";
 
 /** What the referral slide-out's footer says, from the inbox through to Send. Moved out of the drawer state hook. */
@@ -43,7 +44,10 @@ export function drawerFootStatus(f: {
     };
   }
   const second = recipientSummary(f.recipientLabels);
-  if (f.flowError) return { tone: "danger", first: f.flowError, second, alert: true };
+  // #823: a refused Send's "Enter your name…" line is a snapshot. The live contact count below takes
+  // its place, so the warning goes as soon as the contact fields are valid, not at the next Send.
+  const contactSnapshot = f.flowError !== null && isMissingContactMessage(f.flowError);
+  if (f.flowError && !contactSnapshot) return { tone: "danger", first: f.flowError, second, alert: true };
   if (f.confirmationOpen) {
     return {
       tone: f.contactNeeded ? (f.contactAttempted ? "danger" : "neutral") : "success",

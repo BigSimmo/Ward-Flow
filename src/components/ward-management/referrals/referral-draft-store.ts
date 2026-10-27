@@ -1,5 +1,6 @@
 /** Compatibility entry point. Provider/auth cleanup can import the React-free cache directly. */
 export {
+  draftFingerprint,
   draftNeedsChartReattachment,
   clearReferralDraftSession,
   keepReferralDraft,

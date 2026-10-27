@@ -956,7 +956,7 @@ function WardFlowWorld({
   useEffect(() => {
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !demoRead) return;
-    const { saved, recoveryNotice } = demoRead;
+    const { saved, recoveryNotice, quietRecoveryNotice } = demoRead;
     if (saved) freshSeedRef.current = false; // a restored day is not the untouched seed (DA-01)
     // Never move the allocator backwards: a record opened before adoption already used its number.
     if (saved)
@@ -991,7 +991,9 @@ function WardFlowWorld({
             sessionAdopted: false,
             sessionRestored: true,
             recoveryNotice:
-              touched && recoveryNotice ? `${recoveryNotice} ${OPEN_ITEMS_CLOSED_NOTICE}` : recoveryNotice,
+              touched && (recoveryNotice ?? quietRecoveryNotice)
+                ? `${recoveryNotice ?? quietRecoveryNotice} ${OPEN_ITEMS_CLOSED_NOTICE}`
+                : recoveryNotice,
           };
           for (const event of current.preAdoptionEvents ?? [])
             restored = trackWardFlowTypedTextDispatch(restored, event);

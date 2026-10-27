@@ -31,3 +31,8 @@ export const BedsGapCard = dynamic(() => loadBedsGapCard().then((m) => m.BedsGap
 
 preloadWhenIdle(loadChosenAlertCard);
 preloadWhenIdle(loadBedsGapCard);
+
+// H-0977: Home's in-place "Release bed" sheet, fetched on first use so it stays off the first load.
+export const HomeReleaseSheet = dynamic(() => import("./home-release-sheet").then((m) => m.HomeReleaseSheet), {
+  loading: () => null,
+});
