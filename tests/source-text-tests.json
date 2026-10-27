@@ -179,6 +179,7 @@
     "tests/ward-scenario-networks-lazy.test.ts",
     "tests/ward-screen-no-invented-log-claims.test.ts",
     "tests/ward-screen-verification-lib.test.ts",
+    "tests/ward-seclusion-room-targets.test.ts",
     "tests/ward-segmented-overlaps.test.ts",
     "tests/ward-shared-clock.test.ts",
     "tests/ward-shell-tablet.dom.test.tsx",
