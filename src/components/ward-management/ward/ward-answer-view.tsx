@@ -1647,7 +1647,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       ) : null}
 
       {/* Action Toast */}
-      <div role="status" aria-live="polite">
+      {/* Outside a phone sheet's background inerting, so a failure is still said and Close still works while the decline sheet stays open. */}
+      <div role="status" aria-live="polite" data-sheet-inert-skip="">
         {toastMessage ? (
           <div
             className={styles.toast}

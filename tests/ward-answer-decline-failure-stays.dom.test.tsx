@@ -54,6 +54,8 @@ describe("Ward answer decline failure (A-2)", () => {
     expect(toast).toHaveAttribute("data-tone", "warning");
     expect(toast).toHaveTextContent("Decline was not confirmed");
     expect(toast.parentElement).toHaveAttribute("role", "status");
+    // Codex on #983: a phone decline sheet inerts the page behind it, so the region opts out.
+    expect(toast.parentElement).toHaveAttribute("data-sheet-inert-skip");
     fireEvent.click(screen.getByTestId("ward-answer-toast-close"));
     expect(screen.queryByTestId("ward-answer-toast")).toBeNull();
     expect(screen.getByTestId("ward-decline-failure-WF-002")).toHaveTextContent("Decline was not confirmed");
