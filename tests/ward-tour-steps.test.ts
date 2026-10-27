@@ -157,3 +157,13 @@ describe("help and tour audit fixes", () => {
     }
   });
 });
+
+describe("beds-ready step wording (Josh, 27 Oct 2026)", () => {
+  it("says locked beds are counted within the total, not apart", () => {
+    const text = ROLES.flatMap((role) => DEVICES.map((device) => JSON.stringify(tourSteps(role, device, FULL)))).join(
+      "\n",
+    );
+    expect(text).toContain("locked beds counted within the total");
+    expect(text).not.toContain("locked and open beds counted apart");
+  });
+});
