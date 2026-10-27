@@ -365,6 +365,17 @@
   background: var(--wf-hero-1);
 }
 
+/* It changes colour with the header, at the header's own pace (ward-bar.module.css). */
+.bannerHolder {
+  transition: background-color var(--wf-t-enter) var(--wf-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bannerHolder {
+    transition: none;
+  }
+}
+
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */
 @media print {
   /* The document's dark colour scheme also paints the paper canvas outside the routed content.

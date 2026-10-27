@@ -60,7 +60,9 @@ export function useBandScrolled(barRef: RefObject<HTMLElement | null>, enabled: 
     const update = () => {
       frame = 0;
       const offset = Math.max(scroller?.scrollTop ?? 0, window.scrollY);
-      setScrolled(offset > WF_BAND_SCROLLED_PX);
+      // Header audit (27 Oct 2026): the same entry and exit thresholds as the phone bar, so a small
+      // scroll reversal or bounce near the top does not flick the header between ink and light.
+      setScrolled((previous) => offset > (previous ? RESTING_BELOW_PX : WF_BAND_SCROLLED_PX));
     };
     const onScroll = () => {
       if (!frame) frame = window.requestAnimationFrame(update);
