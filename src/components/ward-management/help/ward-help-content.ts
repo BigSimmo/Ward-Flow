@@ -591,6 +591,12 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "NMHS", meaning: "North Metropolitan Health Service." },
   { term: "SMHS", meaning: "South Metropolitan Health Service." },
   { term: "WACHS", meaning: "WA Country Health Service." },
+  { term: "AWST", meaning: "Australian Western Standard Time, Perth time. Every time in Ward Flow is in AWST." },
+  { term: "CAMHS", meaning: "Child and Adolescent Mental Health Service." },
+  { term: "HDU", meaning: "High dependency unit: a ward area for patients who need closer care." },
+  { term: "KPI", meaning: "Key performance indicator, such as the national seven-day follow-up measure." },
+  { term: "MHERL", meaning: "Mental Health Emergency Response Line, the WA crisis phone line." },
+  { term: "PIR", meaning: "Post-incident review. The PIR chronology lists one patient's events in time order." },
 ];
 
 /**
