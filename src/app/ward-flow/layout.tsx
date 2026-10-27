@@ -39,7 +39,9 @@ import {
 } from "@/components/ward-management/shell/ward-access";
 import { WardRowDensity } from "@/components/ward-management/settings/row-density";
 import { WardGround } from "@/components/ward-management/ward-shell";
+import { WardAccessFirstPaintHold } from "@/components/ward-management/shell/ward-access-hold";
 
+import WardFlowLoading from "./loading";
 import styles from "./ward-flow-layout.module.css";
 
 /**
@@ -200,10 +202,19 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   <WardAccessBanner />
                 </div>
                 <WardPhoneDesktopOnly />
-                {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx). */}
-                <WardAccessGate>
-                  <WardGround>{children}</WardGround>
-                </WardAccessGate>
+                {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
+                H-0111: on first load the page waits for this device's desk (shell/ward-access-hold.tsx). */}
+                <WardAccessFirstPaintHold
+                  fallback={
+                    <WardGround>
+                      <WardFlowLoading />
+                    </WardGround>
+                  }
+                >
+                  <WardAccessGate>
+                    <WardGround>{children}</WardGround>
+                  </WardAccessGate>
+                </WardAccessFirstPaintHold>
                 <WardPrintFooter />
                 <WardIdleLock />
                 {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}
