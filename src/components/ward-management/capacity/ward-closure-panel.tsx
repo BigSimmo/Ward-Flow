@@ -7,7 +7,8 @@ import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/co
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
-import { useWardRaise } from "../ward-flow-raise";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { useUndoableStep } from "../use-undoable-step";
 import type { Unit } from "../ward-model";
 import {
   WARD_CLOSURE_REASONS,
@@ -45,7 +46,12 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   const mayAct = actor.role === "coordinator" || (actor.role === "ward" && actor.actingUnitId === unit.id);
   const refusal = mayAct ? undefined : "Only this ward or the coordinator can close or reopen it.";
   const actingUnitId = actor.role === "ward" ? actor.actingUnitId : undefined;
-  const raise = useWardRaise(actor.role === "ward" ? "ward" : "coordinator");
+  const role = actor.role === "ward" ? "ward" : "coordinator";
+  // NB-01: the outcome is said on the toast, recorded or refused, not left to the panel changing.
+  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
+  // The live clock stamps the step; `now` may be a paused page clock, kept for display only.
+  const at = useWardFlowClock();
+  const { run } = useUndoableStep({ dispatch, rejections, now: at, routeRole: role });
 
   if (!unit.isClosed) {
     const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
@@ -109,19 +115,25 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           onClose={() => setConfirming(false)}
           size="sm"
           title={`Close ${unit.name} to admissions?`}
-          description={`${unit.name} stops being offered for new patients until a person reopens it. Beds already pulled here, and patients already accepted here, stay where they are.`}
+          description={`Reason: ${reason === "" ? "none chosen" : wardClosureReasonLabel(reason)}. ${unit.name} stops being offered for new patients until a person reopens it. Beds already pulled here, and patients already accepted here, stay where they are.`}
           secondary={[{ label: "Cancel", onAction: () => setConfirming(false) }]}
           primary={{
             label: `Close ${unit.name}`,
             onAction: () => {
               setConfirming(false);
               if (closeRefusal || reason === "") return;
-              raise("CLOSE_WARD_TO_ADMISSIONS", {
-                unitId: unit.id,
-                ...(actingUnitId !== undefined ? { actingUnitId } : {}),
-                reason,
-                ...(reopenAfter !== "" ? { until: now + Number(reopenAfter) * 60 } : {}),
-              });
+              run(
+                {
+                  type: "CLOSE_WARD_TO_ADMISSIONS",
+                  role,
+                  now: at,
+                  unitId: unit.id,
+                  ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+                  reason,
+                  ...(reopenAfter !== "" ? { until: at + Number(reopenAfter) * 60 } : {}),
+                },
+                { success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}.` },
+              );
               setReason("");
               setReopenAfter("");
             },
@@ -160,10 +172,16 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         aria-describedby={refusal ? `${reasonId}-reopen` : undefined}
         onClick={() => {
           if (refusal) return;
-          raise("REOPEN_WARD_TO_ADMISSIONS", {
-            unitId: unit.id,
-            ...(actingUnitId !== undefined ? { actingUnitId } : {}),
-          });
+          run(
+            {
+              type: "REOPEN_WARD_TO_ADMISSIONS",
+              role,
+              now: at,
+              unitId: unit.id,
+              ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+            },
+            { success: `${unit.name} reopened to admissions.` },
+          );
         }}
         data-testid="ward-closure-reopen"
       >

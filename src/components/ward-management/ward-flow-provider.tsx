@@ -75,7 +75,7 @@ import {
   useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
-import { OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
+import { BROUGHT_UP_TO_DATE_NOTICE, OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -866,6 +866,8 @@ function WardFlowWorld({
               );
               lastAdoptedBroadcastWorldRef.current = saved.state;
               localEditsSinceBroadcastRef.current = false;
+              // Read before the updater, which may run twice and clears the ref the first time.
+              const firstAdoption = freshSeedRef.current;
               dispatchContainer({
                 type: "ADOPT_SAVED_SESSION",
                 [ADOPT_SESSION]: (current) => {
@@ -881,6 +883,8 @@ function WardFlowWorld({
                   freshSeedRef.current = false; // only once accepted: a refused day leaves the seed (DA-01)
                   return {
                     ...current,
+                    // NB-08: the new tab's first day from another tab is said, never silent.
+                    ...(firstAdoption ? { recoveryNotice: BROUGHT_UP_TO_DATE_NOTICE, recoveryNoticeQuiet: false } : {}),
                     world: saved.state,
                     restoredElapsed,
                     sessionAdopted: true,

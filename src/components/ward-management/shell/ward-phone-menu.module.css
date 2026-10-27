@@ -535,6 +535,13 @@
 }
 
 @media (forced-colors: active) {
+  /* A1K-11: a link row has no border, so high contrast drew it as plain text. A system link edge
+     marks it as something to press. */
+  .row {
+    outline: 1px solid LinkText;
+    outline-offset: -1px;
+  }
+
   .foot::before,
   .foot::after {
     display: none;

@@ -294,17 +294,16 @@ export function WardBoard({
   const outcomeCheckRef = useRef<{
     prior: number;
     success: string;
-    spoken: string;
     outcome?: WardCommandOutcome;
   } | null>(null);
   const [outcomeToken, setOutcomeToken] = useState(0);
   // `record` makes the dispatch itself, with a literal event type at the call site, so every
   // dispatch stays readable to the override-surfaces guard; this only brackets it with the check.
-  // `spoken` is what the screen reader hears: privacy review, 27 Sept 2026, a spoken announcement
-  // never carries the patient's name, though the visible toast may.
+  // H-0371 (D-83, Josh 27 Oct 2026): the screen reader hears the toast's own words, the patient's
+  // name included, as Handover and ED already say it.
   const dispatchAndReport = useCallback(
-    (record: () => ReturnType<WardCommandDispatch>, success: string, spoken: string) => {
-      const check = { prior: rejections.length, success, spoken };
+    (record: () => ReturnType<WardCommandDispatch>, success: string) => {
+      const check = { prior: rejections.length, success };
       const result = record();
       if (result && "then" in result) {
         void result.then((outcome) => {
@@ -325,9 +324,7 @@ export function WardBoard({
     routeRole: "ward",
     onMessage: (message, tone) => {
       setToastMessage(tone === "warning" ? { warning: message } : message);
-      announceToWardShell(
-        message.startsWith("Recorded departure") ? "Recorded departure: this patient has left the ward." : message,
-      );
+      announceToWardShell(message);
     },
   });
   const recordDepartureAndReport = (
@@ -352,7 +349,6 @@ export function WardBoard({
           ...(reason && movement ? { exception: { gaps: arrivalGaps(movement), reason } } : {}),
         }),
       `Patient arrived: ${who} confirmed on the ward.`,
-      "Patient arrived: this patient confirmed on the ward.",
     );
   };
   useEffect(() => {
@@ -373,7 +369,7 @@ export function WardBoard({
         ? `Not recorded: ${refused.reason}. Nothing was changed.`
         : check.success;
     setToastMessage(refused || unaccepted ? { warning: msg } : msg);
-    announceToWardShell(refused || unaccepted ? msg : check.spoken);
+    announceToWardShell(refused || unaccepted ? msg : check.success);
   }, [outcomeToken, rejections]);
 
   useEffect(() => {
@@ -864,7 +860,6 @@ export function WardBoard({
             actingUnitId: unit.id,
           }),
         `Recorded: ${pendingConfirm.who} is currently away at an emergency department. Their bed is still held.`,
-        "Recorded: patient is currently away at an emergency department.",
       );
     }
     closeConfirmDialog();
@@ -977,7 +972,6 @@ export function WardBoard({
           return summarize(completed);
         },
         `Returned to ward: ${who} marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
-        `Returned to ward: this patient marked back${isAwayAtEd && !matchingLeave ? " from the emergency department" : " from leave"}.`,
       );
       return;
     }

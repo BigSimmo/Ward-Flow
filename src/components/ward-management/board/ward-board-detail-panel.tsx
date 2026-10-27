@@ -65,7 +65,7 @@ export function WardBoardDetailPanel({
   dateEdit: { admissionId: string; time: string; day: "recorded" | "today" | "tomorrow" } | null;
   dayZero: Date;
   dialogTriggerRef: RefObject<HTMLElement | null>;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, spoken: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
   emptyTileCount: number;
   leavingDestination: LeavingDestination | "";
   movements: Movement[];
@@ -267,7 +267,6 @@ export function WardBoardDetailPanel({
                                 expectedDischargeAt,
                               }),
                             "Expected departure updated.",
-                            "Expected departure updated.",
                           );
                           setDateEdit(null);
                         }}
@@ -336,7 +335,6 @@ export function WardBoardDetailPanel({
                                     actingUnitId: unit.id,
                                   }),
                                 `Recorded: ${nameFor(selectedTile.key)} is currently away at an emergency department. Their bed is still held.`,
-                                "Recorded: patient is currently away at an emergency department.",
                               );
                             };
 
@@ -369,7 +367,6 @@ export function WardBoardDetailPanel({
                                   actingUnitId: unit.id,
                                 }),
                               `Returned to ward: ${nameFor(selectedTile.key)} marked back from the emergency department.`,
-                              "Returned to ward: this patient marked back from the emergency department.",
                             )
                           }
                         >
@@ -403,9 +400,6 @@ export function WardBoardDetailPanel({
                             nextStepDown
                               ? `Marked ${nameFor(selectedOccupant.key)} as step-down candidate for subacute care.`
                               : `Removed step-down candidate flag for ${nameFor(selectedOccupant.key)}.`,
-                            nextStepDown
-                              ? "Marked this patient as step-down candidate for subacute care."
-                              : "Removed step-down candidate flag for this patient.",
                           );
                         }}
                       >
@@ -438,7 +432,6 @@ export function WardBoardDetailPanel({
                                     barrier: val === "None" ? null : (val as DischargeBarrier),
                                   }),
                                 `Discharge barrier for ${nameFor(selectedOccupant.key)}: ${val}`,
-                                `Discharge barrier for this patient: ${val}`,
                               );
                             }}
                           >

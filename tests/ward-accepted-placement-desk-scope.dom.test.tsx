@@ -91,6 +91,15 @@ describe("accepted referral placement respects the desk's ED scope", () => {
   });
 });
 
+describe("accepted referral placement names the patient twice (NB-04)", () => {
+  it("shows the name and UMRN line on the confirm form", () => {
+    renderPlacement(undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
+    expect(screen.getByTestId("placement-identity")).toHaveTextContent(/^For .+ · .+$/u);
+    expect(screen.getByTestId("placement-identity").textContent).toMatch(/UMRN|\d{6,}/u);
+  });
+});
+
 describe("accepted referral placement asks the Intermittent interval", () => {
   it("shows Check every only for Intermittent, offering 15 and 30 minutes", () => {
     renderPlacement(undefined);

@@ -761,6 +761,13 @@
 /* Forced colours drop the accent border and inset shadow, so a chosen filter chip or demo scenario
    would look like the rest. Fill it with the system highlight, as `.segBtn` does in the ward bar. */
 @media (forced-colors: active) {
+  /* A1K-11: a link row has no border, so high contrast drew it as plain text. A system link edge
+     marks it as something to press. */
+  .row {
+    outline: 1px solid LinkText;
+    outline-offset: -1px;
+  }
+
   .chip[aria-pressed="true"],
   .scenarioCard[aria-checked="true"] {
     background: Highlight;
