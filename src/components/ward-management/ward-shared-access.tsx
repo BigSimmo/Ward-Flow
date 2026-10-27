@@ -106,7 +106,7 @@ export type WardSharedConnection = SharedView & {
   /** The step-up sign-in with the account's own password. */
   reauthenticate?: (password: string) => Promise<void>;
   /** Tells the server this desk opened a patient's record. Best effort; nothing when not connected. */
-  logRecordView?: (patientId: string, surface: RecordViewSurface) => Promise<void> | void;
+  logRecordView?: (patientId: string, surface: RecordViewSurface) => Promise<boolean> | void;
 };
 
 /**

@@ -120,23 +120,25 @@ export function ReferralPatientStep({
   // H-0731: choosing a person to refer opens their record, which shows its recorded address. In the
   // signed-in shared workspace the server logs that opening and only then sends the address. Logged
   // as the patient record: a first referral has no referral or journey for the server to match yet.
-  // Until the reply is taken, a missing address is not yet known to be unrecorded.
+  // A missing address is "not recorded" only once the server has sent this record's detail.
   const session = useContext(SharedSessionContext);
   const chosenId = patientRecord?.id;
-  const [addressCheckedFor, setAddressCheckedFor] = useState<string>();
+  const [addressReply, setAddressReply] = useState<{ id: string; sent: boolean }>();
   useEffect(() => {
     if (!chosenId || !session) return;
     let current = true;
     void Promise.resolve(session.logRecordView(chosenId, "patient"))
-      .catch(() => undefined)
-      .then(() => {
-        if (current) setAddressCheckedFor(chosenId);
+      .then((sent) => sent === true)
+      .catch(() => false)
+      .then((sent) => {
+        if (current) setAddressReply({ id: chosenId, sent });
       });
     return () => {
       current = false;
     };
   }, [session, chosenId]);
-  const addressPending = !!session && !!chosenId && addressCheckedFor !== chosenId;
+  const addressReplied = addressReply?.id === chosenId ? addressReply : undefined;
+  const addressUnknown = !!session && !!chosenId && !addressReplied?.sent;
   // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
   // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
   const [highlight, setHighlight] = useState(-1);
@@ -730,9 +732,11 @@ export function ReferralPatientStep({
           <p className={styles.bodyMeta}>
             {patientRecord?.address
               ? `Recorded address ${patientRecord.address}`
-              : addressPending
-                ? "Checking the recorded address"
-                : "Address not recorded, search the suburb"}
+              : !addressUnknown
+                ? "Address not recorded, search the suburb"
+                : addressReplied
+                  ? "Address not available, search the suburb"
+                  : "Checking the recorded address"}
           </p>
           <div className={styles.suggestion}>
             <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />

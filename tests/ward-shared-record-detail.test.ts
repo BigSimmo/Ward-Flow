@@ -76,7 +76,7 @@ describe("record detail from a logged opening", () => {
     try {
       await client.refresh();
       expect(shown()?.address).toBeUndefined();
-      await client.logRecordView(withAddress.id, "patient");
+      expect(await client.logRecordView(withAddress.id, "patient")).toBe(true);
       expect(asked).toHaveLength(1);
       expect(shown()?.address).toBe("No. 7, Ashfield");
       // A later poll of the same board keeps it.
