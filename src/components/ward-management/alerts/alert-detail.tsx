@@ -38,6 +38,7 @@ import {
   type AlertSubject,
 } from "./alerts-model";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
+import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
 import { PullNowButton } from "./global-alert-panels";
 import styles from "./alerts.module.css";
 
@@ -418,19 +419,28 @@ export function AlertDetail({
               {action.label}
             </Link>
           ) : (
-            <Button
-              variant="pri"
-              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
-              reasonDisplay="tooltip"
-              onClick={() => {
-                if (releaseReason === "") return;
-                handlers.onRelease(item, releaseReason);
-                setReleaseReason("");
-              }}
-            >
-              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
-              Release pulled bed for {subject.displayName}
-            </Button>
+            <>
+              <Button
+                variant="pri"
+                disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
+                reasonDisplay="tooltip"
+                onClick={() => {
+                  if (releaseReason === "") return;
+                  handlers.onRelease(item, releaseReason);
+                  setReleaseReason("");
+                }}
+              >
+                {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+                Release pulled bed for {subject.displayName}
+              </Button>
+              {movement ? (
+                <AlertArrivedAtWard
+                  movement={movement}
+                  displayName={subject.displayName}
+                  disabledReason={actionDisabledReason}
+                />
+              ) : null}
+            </>
           )}
         </div>
       </div>
@@ -573,6 +583,13 @@ export function AlertDetail({
               {/* CT-19: the reason-gated release names its patient at the point of commit. */}
               Release pulled bed for {subject.displayName}
             </Button>
+            {movement ? (
+              <AlertArrivedAtWard
+                movement={movement}
+                displayName={subject.displayName}
+                disabledReason={actionDisabledReason}
+              />
+            ) : null}
           </div>
         )}
         <div className={styles.actionRow}>{takeButton}</div>
