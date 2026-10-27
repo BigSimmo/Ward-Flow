@@ -2333,6 +2333,8 @@ export function createWorkspaceStore(
       }
       const supplied = event;
       event = engine.storableCommand(event);
+      // H-0694, H-0179: a whole-network desk is recorded under its own role, never the screen's.
+      if (view?.access) event = engine.deskCommand(view.access, event);
       // Audit E-06: a guard refusal is a refusal with its reason, like any other, not a bad request.
       const privacyRefusal = engine.privacyRefusal(event);
       if (!privacyRefusal && !engine.validCommand(event)) throw new Error("invalid-command");

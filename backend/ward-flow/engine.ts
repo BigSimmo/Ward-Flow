@@ -573,6 +573,18 @@ export function archivePartialViewForWorld(
 }
 
 /**
+ * H-0694, H-0179: a whole-network desk skips the role check below, so the command is recorded under
+ * the desk's own role, never the role its screen sent. A statewide coordinator acting on a ward page
+ * is written down as the Bed coordinator, not the ward. The demonstration controls keep `demo`.
+ */
+export function deskCommand(access: WardAccess, supplied: unknown): unknown {
+  const fields = supplied as Record<string, unknown> | null;
+  if (!accessIsWholeNetwork(access) || typeof fields?.role !== "string") return supplied;
+  if (fields.role === "demo" || fields.role === access.role) return supplied;
+  return { ...fields, role: access.role };
+}
+
+/**
  * Why this desk may not send this command, or `null`. The sender's role comes from its membership,
  * never from the browser: a desk sends only commands its own role may take (`EVENT_ROLE`, or a pair
  * in `CROSS_ROLE_ALLOWED`), and only about records inside its own place. A statewide coordinator may
