@@ -41,6 +41,15 @@ hosted latency will be higher.
 Question for Josh: what memory limit does the Railway plan give `ward-flow-backend`? A limit under about
 1 GB could be hit when many desks reconnect at once after a restart.
 
+## Josh's decision
+
+Josh, in chat at about 9:12 PM AWST on 27 Oct 2026: "H-0646: set the Railway memory limit to at least 1 GB".
+
+No Railway setting has been changed yet. The change (service `ward-flow-backend`, production, resource limit
+memory per replica) is a separate live write that still needs Josh's exact approval of the value, and the
+plan may cap it. Railway facts at the time: live `ward-flow-backend` memory over the last hour was about
+0.15 GB (max 0.151 GB), no memory limit is visible in the service config, and the plan limit is unconfirmed.
+
 ## H-0965: TV and desk left open
 
 Script: `scripts/ward-flow/browser-soak.mjs`. It starts `next start` on `127.0.0.1:3917` from a local
