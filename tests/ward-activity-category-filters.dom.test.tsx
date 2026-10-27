@@ -79,7 +79,7 @@ describe("Activity category filter chips", () => {
 
   it("shows every row under All, including other and untagged rows", async () => {
     const { sheet } = await openActivityDrawer();
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(MIXED_ACTIVITY.changes.length);
     const allChip = within(sheet).getByTestId("ward-bar-activity-filter-all");
     expect(allChip).toHaveAttribute("aria-pressed", "true");
@@ -95,7 +95,7 @@ describe("Activity category filter chips", () => {
     await user.click(escalationsChip);
     expect(escalationsChip).toHaveAttribute("aria-pressed", "true");
 
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     const rows = within(feed).getAllByRole("listitem");
     expect(rows).toHaveLength(2);
     for (const row of rows) {
@@ -113,7 +113,7 @@ describe("Activity category filter chips", () => {
     expect(within(sheet).getByTestId("ward-bar-activity-filter-transfer").textContent).toMatch(/Transfers\s*1/u);
 
     await user.click(within(sheet).getByTestId("ward-bar-activity-filter-transfer"));
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(1);
     expect(within(feed).getByText(/moved to transport booked/u)).toBeTruthy();
     expect(within(feed).queryByText(/opened at ED/u)).toBeNull();
@@ -125,7 +125,7 @@ describe("Activity workspace search", () => {
   it("combines search with category filtering and resets both from an empty result", async () => {
     const { user, sheet } = await openActivityDrawer();
     await user.type(within(sheet).getByRole("textbox", { name: "Search activity" }), "WF-1");
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(1);
     expect(within(feed).getByText("WF-1 escalated to on-call.")).toBeVisible();
     await user.click(within(sheet).getByTestId("ward-bar-activity-filter-decline"));
@@ -133,7 +133,7 @@ describe("Activity workspace search", () => {
     await user.click(within(sheet).getByRole("button", { name: "Clear event filters" }));
     expect(within(sheet).getByRole("textbox", { name: "Search activity" })).toHaveValue("");
     expect(within(sheet).getByTestId("ward-bar-activity-filter-all")).toHaveAttribute("aria-pressed", "true");
-    expect(within(within(sheet).getByRole("list", { name: "Recent changes" })).getAllByRole("listitem")).toHaveLength(
+    expect(within(within(sheet).getByRole("list", { name: "Recent events" })).getAllByRole("listitem")).toHaveLength(
       MIXED_ACTIVITY.changes.length,
     );
   });
@@ -145,7 +145,7 @@ describe("Activity workspace search", () => {
     expect(within(sheet).getByText("Ward 2K now")).toBeVisible();
     await user.click(within(sheet).getByRole("button", { name: /^Activity/ }));
     expect(within(sheet).getByRole("textbox", { name: "Search activity" })).toHaveValue("manager");
-    expect(within(within(sheet).getByRole("list", { name: "Recent changes" })).getAllByRole("listitem")).toHaveLength(
+    expect(within(within(sheet).getByRole("list", { name: "Recent events" })).getAllByRole("listitem")).toHaveLength(
       1,
     );
   });
