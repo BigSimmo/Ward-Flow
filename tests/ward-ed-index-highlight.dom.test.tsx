@@ -54,7 +54,7 @@ describe("All EDs — filters highlight and dim, they never hide", () => {
     expect(cards()).toHaveLength(total);
     expect(solidCards().length).toBeLessThan(total);
     expect(screen.getByTestId("ed-index-match-count")).toHaveTextContent(
-      `${solidCards().length} of ${total} synthetic records match`,
+      `${solidCards().length} of ${total} EDs match`,
     );
   });
 
