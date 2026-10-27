@@ -13,6 +13,7 @@ import {
   type HealthService,
 } from "@/components/ward-management/ward-model";
 import { GENDERS, type Gender } from "@/components/ward-management/ward-patients";
+import { RECORDED_SEXES, type RecordedSex } from "@/components/ward-management/ward-model-vocabulary";
 import {
   NOT_ON_SENDING_WARD_REASONS,
   type NotOnSendingWardReason,
@@ -210,6 +211,25 @@ export function ReferralPatientStep({
                     enterKeyHint="done"
                     onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, umrn: value }))}
                   />
+                </Field>
+                {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
+                    and placement start from it instead of "Not recorded". */}
+                <Field label="Recorded sex" htmlFor={`${sectionId}-np-sex`} hint="optional">
+                  <SelectBox>
+                    <select
+                      id={`${sectionId}-np-sex`}
+                      className={styles.fieldSelect}
+                      value={newPatient.sex ?? ""}
+                      onChange={({ target: { value } }) =>
+                        setNewPatient((p) => ({ ...p, sex: value as RecordedSex | "" }))
+                      }
+                    >
+                      <option value="">Not recorded</option>
+                      {RECORDED_SEXES.filter((sex) => sex !== "Not recorded").map((sex) => (
+                        <option key={sex}>{sex}</option>
+                      ))}
+                    </select>
+                  </SelectBox>
                 </Field>
                 <Field label="Gender" htmlFor={`${sectionId}-np-gender`} hint="optional">
                   <SelectBox>

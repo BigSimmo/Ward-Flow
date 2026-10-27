@@ -1,6 +1,10 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { patientRegistrationScope } from "../ward-patient-registration";
-import { useReferralCommandCompletion, useReferralPatientRegistration } from "./use-referral-command-completion";
+import {
+  EMPTY_NEW_PATIENT,
+  useReferralCommandCompletion,
+  useReferralPatientRegistration,
+} from "./use-referral-command-completion";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -34,7 +38,6 @@ import {
   NOT_ON_SENDING_WARD_OTHER,
   type NotOnSendingWardReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { type Gender } from "@/components/ward-management/ward-patients";
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { suburbOptions } from "./referral-destination-options";
@@ -272,14 +275,7 @@ export function useWardReferralDrawerState({
   const [guardOpen, setGuardOpen] = useState(false);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [newPatientOpen, setNewPatientOpen] = useState(false);
-  const [newPatient, setNewPatient] = useState({
-    familyName: "",
-    givenName: "",
-    dateOfBirth: "",
-    umrn: "",
-    gender: "" as Gender | "",
-    suburb: "",
-  });
+  const [newPatient, setNewPatient] = useState(EMPTY_NEW_PATIENT);
   const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);

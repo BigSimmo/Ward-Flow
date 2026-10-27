@@ -11,6 +11,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { Movement } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edAnsweredReferralsFor, edArrivedFor, edExpectsFor } from "@/components/ward-management/ward-referrals";
+import { edById } from "@/components/ward-management/ward-sites";
 import {
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -245,6 +246,51 @@ export function deriveEdScreen({
   // belongs on the board (RB3's own reasoning at `patients` above) but never in "still to be
   // moved" — nothing is still moving it anywhere.
   const outbox = patients.filter((movement) => movement.acceptedUnitId !== undefined && !movement.closure);
+
+  // WT-04 (walk-through, 26 Oct 2026): a ward bed request this department sent shows from Send,
+  // not only once a bed is pulled. It has no journey yet, so it is listed apart from the board rows
+  // and the filter above stays as it is. It leaves this list when a journey starts from it, when
+  // the person is already on the board, or when no ward is still considering it.
+  const siteCode = edById(thisEdId)?.siteCode;
+  const sentForBed = referrals
+    .filter(
+      (referral) =>
+        siteCode !== undefined &&
+        referral.source === "ed_medical" &&
+        referral.originSiteCode === siteCode &&
+        referral.destinations.some(
+          (arm) =>
+            arm.destination.kind === "psychiatric_ward" &&
+            arm.withdrawnAt === undefined &&
+            (arm.state === "queued" || arm.state === "accepted"),
+        ) &&
+        !movements.some(
+          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+        ) &&
+        !(referral.patientId !== undefined && patients.some((movement) => movement.patientId === referral.patientId)),
+    )
+    .map((referral) => ({
+      id: referral.id,
+      person: resolveSubjectPatient(referral, { patients: registryPatients, referrals, movements }),
+      sentAt: referral.raisedAt,
+      waitedMinutes: Math.max(now - referral.raisedAt, 0),
+      wards: referral.destinations.flatMap(({ destination, state, withdrawnAt }) =>
+        destination.kind === "psychiatric_ward" && withdrawnAt === undefined
+          ? [
+              {
+                name: units.find((unit) => unit.id === destination.unitId)?.name ?? "A ward",
+                state:
+                  state === "accepted"
+                    ? "accepted, bed not pulled yet"
+                    : state === "queued"
+                      ? "waiting for an answer"
+                      : state,
+              },
+            ]
+          : [],
+      ),
+    }))
+    .sort((a, b) => a.sentAt - b.sentAt);
 
   // P3-1 (Ward Lead audit, 2026-09-17): `&& !m.edOutcome` on both chips below. A patient whose ED
   // outcome is already recorded has a settled answer — "for discharge" or "for community
@@ -670,6 +716,7 @@ export function deriveEdScreen({
     answeredAll,
     answered,
     outbox,
+    sentForBed,
     notReviewedCount,
     underFormCount,
     noDestCount,

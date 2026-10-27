@@ -4,6 +4,7 @@ import { isWaitingInEd } from "../ward-ed-presence";
 import type { LegalStatus, Movement, Referral, Unit } from "../ward-model";
 import type { Observation } from "../ward-observation";
 import { acceptedAddressing } from "../ward-referrals";
+import { SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { allEmergencyDepartments } from "../ward-sites";
 
 /**
@@ -125,7 +126,16 @@ export function recordedPullDetails(referral: Referral, movements: readonly Move
           )
           .sort((a, b) => b.openedAt - a.openedAt)[0];
   const referralStatus = LEGAL_STATUSES.find((status) => status === referral.intake?.legalStatus);
-  if (!edWait) return { ...(referralStatus ? { legalStatus: referralStatus } : {}), fromEdBoard: false };
+  // WT-06 (walk-through, 26 Oct 2026): the referral's one Legal status answer is either Voluntary or
+  // the form the referrer chose ("Form 1A"). A chosen form is carried as that form; no status is
+  // worked out from it, and no form from a status.
+  const referralForm = SELECTABLE_LEGAL_FORMS.find((form) => referral.intake?.legalStatus === `Form ${form.code}`);
+  if (!edWait)
+    return {
+      ...(referralStatus ? { legalStatus: referralStatus } : {}),
+      ...(referralForm ? { legalFormCode: referralForm.code } : {}),
+      fromEdBoard: false,
+    };
   return {
     legalStatus: edWait.legalStatus,
     legalFormCode: edWait.legalForm?.code ?? null,
