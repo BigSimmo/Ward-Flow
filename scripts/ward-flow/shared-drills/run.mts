@@ -189,6 +189,8 @@ class Person {
   private jwt = "";
   private jwtExpires = 0;
   private timer: NodeJS.Timeout | null = null;
+  // The board read a poll started, so stopping can wait for it (PS-09, H-0957).
+  private poll: Promise<unknown> = Promise.resolve();
   readonly client: SharedWorkspaceClient;
   constructor(
     readonly name: string,
@@ -247,17 +249,23 @@ class Person {
   }
   startPolling() {
     const tick = () => {
-      void this.client.refresh();
+      this.poll = this.client.refresh();
       this.timer = setTimeout(tick, POLL_MS + Math.random() * 400 - 200);
     };
     this.timer = setTimeout(tick, Math.random() * POLL_MS);
   }
-  stopPolling() {
+  /**
+   * Stops the timer and waits for a read already on its way. A refresh asked for while one is in
+   * flight does nothing, so without the wait a desk's last refresh could be a read sent before the
+   * shift's final changes landed.
+   */
+  async stopPolling() {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
+    await this.poll.catch(() => undefined);
   }
   dispose() {
-    this.stopPolling();
+    void this.stopPolling();
     this.client.dispose();
   }
 }
@@ -584,7 +592,7 @@ async function startLoad(
       running = false;
       await loop;
       await Promise.allSettled([...inflight]);
-      for (const person of people) person.stopPolling();
+      await Promise.all(people.map((person) => person.stopPolling()));
     },
   };
 }
@@ -621,7 +629,11 @@ async function busyShift(server: BackendProcess) {
     "load",
     "every coordinator desk shows the server's picture after refreshing",
     diverged.length === 0,
-    `${diverged.length} of ${coordinators.length} desks differ`,
+    `${diverged.length} of ${coordinators.length} desks differ${
+      diverged.length
+        ? ` (server on revision ${end.revision}; desks on ${diverged.map((person) => `${person.revision}${person.view?.status === "ready" ? "" : ` ${person.view?.status}`}`).join(", ")})`
+        : ""
+    }`,
   );
   const refusals: Record<string, number> = {};
   for (const outcome of load.outcomes)
