@@ -38,8 +38,8 @@ describe("capacity review corrections", () => {
     const before = table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]').length;
     expect(before).toBeGreaterThan(0);
     // v6: the summary shortcuts are the "Highlight" chips under the bed map. Device audit option A
-    // (11 Oct 2026): each chip names what it counts, "Any bed ready" with its wards.
-    const available = screen.getByRole("button", { name: /^Any bed ready/u });
+    // (11 Oct 2026): each chip names what it counts, "Wards with any bed ready".
+    const available = screen.getByRole("button", { name: /^Wards with any bed ready/u });
     expect(available.tagName).toBe("BUTTON");
     available.focus();
     await user.keyboard(" ");
@@ -70,8 +70,8 @@ describe("capacity review corrections", () => {
     expect(within(wards).getByRole("button", { name: /^Has a bed ready/u })).toHaveTextContent("3");
     expect(within(wards).getByRole("button", { name: /^Has a locked bed ready/u })).toHaveTextContent("1");
     expect(within(wards).getByRole("button", { name: /^Needs confirming/u })).toHaveTextContent("1");
-    expect(screen.getByRole("button", { name: /^Any bed ready/u })).toHaveTextContent("3");
-    expect(screen.getByRole("button", { name: /^Locked bed ready/u })).toHaveTextContent("1");
+    expect(screen.getByRole("button", { name: /^Wards with any bed ready/u })).toHaveTextContent("3");
+    expect(screen.getByRole("button", { name: /^Wards with a locked bed ready/u })).toHaveTextContent("1");
   });
 
   it("reports an empty service with zero matching wards and zero highlight counts", () => {
@@ -79,7 +79,7 @@ describe("capacity review corrections", () => {
     renderCapacity();
     const wards = screen.getByRole("region", { name: "Wards" });
     expect(wards).toHaveTextContent("0 wards in CAHS, 0 matching");
-    expect(screen.getByRole("button", { name: /^Any bed ready/u })).toHaveTextContent("0");
+    expect(screen.getByRole("button", { name: /^Wards with any bed ready/u })).toHaveTextContent("0");
     for (const button of within(wards).getAllByRole("button", {
       name: /^(All|Has a bed ready|Has a locked bed ready|Needs confirming)/u,
     })) {
