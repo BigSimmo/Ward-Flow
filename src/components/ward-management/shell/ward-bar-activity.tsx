@@ -88,7 +88,7 @@ export function WardBarActivityBody({
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardBar, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
-  ("use no memo");
+  "use no memo";
   // B3 P170: a row links to its record only where this desk may open it.
   const canOpenHref = useCanOpenHref();
   return (
