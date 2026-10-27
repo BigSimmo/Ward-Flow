@@ -766,7 +766,9 @@ function ServiceGroup({
   if (group.wards.length === 0) {
     return (
       <div className={styles.serviceGroup} data-testid={`ward-bed-map-service-${group.service}`}>
-        <p className={styles.serviceAbsent}>{group.service} has no inpatient unit reporting to this board.</p>
+        <p className={styles.serviceAbsent}>
+          <SpelledCodes text={group.service} /> has no inpatient unit reporting to this board.
+        </p>
       </div>
     );
   }
@@ -1085,7 +1087,7 @@ export function BedMap({
                     ?.scrollIntoView({ block: "start" });
                 }}
               >
-                {group.service}
+                <SpelledCodes text={group.service} />
                 <span>{group.wards.length}</span>
               </button>
             ))}

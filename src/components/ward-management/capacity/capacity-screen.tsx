@@ -1,6 +1,7 @@
 "use client";
 
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Printer } from "lucide-react";
@@ -644,7 +645,9 @@ export function CapacityScreen() {
                                     the button so `textContent` of the opener matches the sidebar
                                     `h2` focus target (ward name), not "Ward · N freeing today".
                                   */}
-                          <span className={styles.freeingWardName}>{row.unit.name}</span>
+                          <span className={styles.freeingWardName}>
+                            <SpelledCodes text={row.unit.name} />
+                          </span>
                         </button>
                         <span className={styles.freeingBadge} aria-hidden="true">
                           {row.freeing} freeing today

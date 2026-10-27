@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
@@ -135,11 +136,15 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                 onClick={() => onSelectEd(selected ? undefined : row.ed.id)}
               >
                 <span className={styles.edTop} aria-hidden="true">
-                  <strong className={styles.edCode}>{row.ed.siteCode}</strong>
+                  <strong className={styles.edCode}>
+                    <SpelledCodes text={row.ed.siteCode} />
+                  </strong>
                   {serviceAcronym ? (
                     <>
                       {" "}
-                      <span className={styles.edService}>{serviceAcronym}</span>
+                      <span className={styles.edService}>
+                        <SpelledCodes text={serviceAcronym} />
+                      </span>
                     </>
                   ) : null}
                 </span>

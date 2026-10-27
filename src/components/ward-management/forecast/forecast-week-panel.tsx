@@ -6,6 +6,7 @@
 // The grid counts recorded discharge dates (out) and planned admissions (in) per ward per day.
 // A scenario is arithmetic on tomorrow's forecast only: never saved, never sent, never a record.
 import { useId, useMemo, useState } from "react";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 
 import { Button } from "@/components/wf";
 import { calendarDateOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
@@ -69,7 +70,9 @@ export function ForecastWeekPanel({ now }: { now: Instant }) {
             <tbody>
               {rows.map((row) => (
                 <tr key={row.unitId}>
-                  <th scope="row">{row.name}</th>
+                  <th scope="row">
+                    <SpelledCodes text={row.name} />
+                  </th>
                   {days.map((day, index) => (
                     <WeekCell
                       key={day.offset}

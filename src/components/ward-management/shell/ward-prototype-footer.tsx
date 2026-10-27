@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import styles from "./ward-prototype-footer.module.css";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 
 export interface WardPrototypeFooterProps {
   testId?: string;
@@ -65,7 +66,7 @@ export function WardPrototypeFooter({
             kept for screen readers. Hidden above phone. */}
         {PHONE_TAIL}
         <span className={styles.footerNote} data-ward-type-floor="banner">
-          {note}
+          {typeof note === "string" ? <SpelledCodes text={note} /> : note}
         </span>
       </div>
       <div className={styles.rightGroup}>

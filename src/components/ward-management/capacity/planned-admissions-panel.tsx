@@ -7,6 +7,7 @@
 // change, cancel and record the arrival of one. Every write is a reducer event; this component
 // holds only the open form's draft, never in browser storage.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { CalendarPlus } from "lucide-react";
 
 import { Button, Field, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
@@ -495,9 +496,16 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   </span>
                   <span className={styles.who}>{whoText(planned)}</span>
                   <span className={styles.facts}>
-                    {PLANNED_ADMISSION_REASON_LABELS[planned.reason]} · {unitName(planned.unitId)}
-                    {service ? ` (${healthServiceAcronym(service)})` : ""} · {planned.expectedStayDays}d ·{" "}
-                    {planned.legalStatus}
+                    <SpelledCodes text={PLANNED_ADMISSION_REASON_LABELS[planned.reason]} /> ·{" "}
+                    <SpelledCodes text={unitName(planned.unitId)} />
+                    {service ? (
+                      <>
+                        {" ("}
+                        <SpelledCodes text={healthServiceAcronym(service)} />
+                        {")"}
+                      </>
+                    ) : null}{" "}
+                    · {planned.expectedStayDays}d · {planned.legalStatus}
                     {overdue ? (
                       <span className={styles.overdue}>
                         {" "}
