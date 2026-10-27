@@ -19,7 +19,9 @@ const authOrigin = process.env.WARD_E2E_AUTH_ORIGIN ?? "";
 const accounts: { email: string; password: string }[] = JSON.parse(process.env.WARD_E2E_ACCOUNTS ?? "[]");
 
 /** The shared status line both desks show while connected and idle. */
-const READY = "Coordinator · shared synthetic workspace";
+// P162: a statewide coordinator reads "Bed coordinator, Statewide"; an older workspace with no access still reads "Coordinator".
+const READY = /(?:Bed coordinator, Statewide|Coordinator) · shared synthetic workspace/u;
+const READY_AT_START = new RegExp(`^${READY.source}`, "u");
 /** The client polls every SHARED_REFRESH_MS (3 s); allow a few polls before calling it missed. */
 const POLL = { timeout: 15_000 };
 /**
@@ -202,15 +204,15 @@ test("two signed-in desks share one workspace: a save on one reaches the other o
   const tier = await openUrgencyForm(one.page);
   const chosen = await chooseOtherTier(one.page, tier);
   await placement(one.page).getByRole("button", { name: "Record urgency change" }).click();
-  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(sharedStatus(one.page)).toHaveText(READY_AT_START);
   await expect(queueRow(one.page)).toContainText(chosen);
 
   // Desk two did nothing: only its own poll can bring desk one's change.
   await expect(queueRow(two.page)).toContainText(chosen, POLL);
-  await expect(sharedStatus(two.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(sharedStatus(two.page)).toHaveText(READY_AT_START);
   // A new page load must read the saved record from the backend, rather than reducer state.
   await one.page.reload({ waitUntil: "domcontentloaded" });
-  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(sharedStatus(one.page)).toHaveText(READY_AT_START);
   await expect(await revealRow(one.page)).toContainText(chosen);
 });
 
@@ -226,7 +228,7 @@ test("a clash: two desks change the same record from the same revision, and the 
 
   const first = await chooseOtherTier(one.page, tierOne);
   await placement(one.page).getByRole("button", { name: "Record urgency change" }).click();
-  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(sharedStatus(one.page)).toHaveText(READY_AT_START);
   await expect(queueRow(two.page)).not.toContainText(first);
 
   await chooseOtherTier(two.page, tierTwo, first);
@@ -286,7 +288,7 @@ test("keyboard focus: after a shared save the activated control still has focus"
   await page.keyboard.press("Enter");
 
   await expect(detail.getByText(/^Update requested /u)).toBeVisible();
-  await expect(sharedStatus(page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(sharedStatus(page)).toHaveText(READY_AT_START);
   expect(
     await page.evaluate(() => (window as unknown as { wardControlWentInert?: boolean }).wardControlWentInert),
   ).toBe(true);
@@ -326,20 +328,20 @@ test("different records at once: two desks change different records from the sam
 
   // Neither desk was told its record changed under it, and both show both changes.
   for (const desk of [one, two]) {
-    await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
+    await expect(sharedStatus(desk.page)).toHaveText(READY_AT_START, POLL);
     await expect(queueRow(desk.page)).toContainText(first, POLL);
     await expect(queueRow(desk.page, other)).toContainText(second, POLL);
   }
   // And a new page load reads both from the backend.
   await one.page.reload({ waitUntil: "domcontentloaded" });
-  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"), { timeout: 30_000 });
+  await expect(sharedStatus(one.page)).toHaveText(READY_AT_START, { timeout: 30_000 });
   await expect(await revealRow(one.page)).toContainText(first);
   await expect(await revealRow(one.page, other)).toContainText(second);
 });
 
 test("a desk that loses its network says it is not connected, then catches up without a reload when it returns", async () => {
   for (const desk of [one, two]) {
-    await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
+    await expect(sharedStatus(desk.page)).toHaveText(READY_AT_START, POLL);
     // Home v7 (Josh, 22 Oct 2026): Placement opens only once a patient is chosen, so each desk
     // chooses the movement before the network drops.
     await selectMovement(desk.page);
@@ -367,7 +369,7 @@ test("a desk that loses its network says it is not connected, then catches up wi
   const tier = await openUrgencyForm(two.page);
   const chosen = await chooseOtherTier(two.page, tier);
   await placement(two.page).getByRole("button", { name: "Record urgency change" }).click();
-  await expect(sharedStatus(two.page)).toHaveText(new RegExp(`^${READY}`, "u"));
+  await expect(sharedStatus(two.page)).toHaveText(READY_AT_START);
   await expect(queueRow(two.page)).toContainText(chosen);
   await expect(queueRow(one.page)).not.toContainText(chosen);
   await expect(sharedStatus(one.page)).toContainText("Connection unavailable");
@@ -376,7 +378,7 @@ test("a desk that loses its network says it is not connected, then catches up wi
 
   // The network returns. Without Retry or a reload, desk one's own poll reconnects and catches up.
   await one.context.setOffline(false);
-  await expect(sharedStatus(one.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
+  await expect(sharedStatus(one.page)).toHaveText(READY_AT_START, POLL);
   await expect(queueRow(one.page)).toContainText(chosen, POLL);
   expect(await placementInert(one.page)).toBe(false);
   await expectNoReloadSince(one.page, "the network dropping and returning");

@@ -25,7 +25,7 @@ import {
   FrontDoorStatusButton,
 } from "@/components/ward-management/front-door/front-door-lazy";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
-import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
+import type { WardAccess } from "./ward-role-access";
 import {
   markSignInLanding,
   parseStoredAccess,
@@ -674,7 +674,7 @@ function WardSharedWorkspaceContent({
       <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
       <WardSharedSaveStatus
         connection={connection}
-        deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
+        deskLabel={access ? sharedDeskLabel(access) : "Coordinator"}
       />
       {connection.recovery && <span role="alert"> {connection.recovery}</span>}
       <FocusKeepingInert
