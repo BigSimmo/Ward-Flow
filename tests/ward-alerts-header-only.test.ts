@@ -25,6 +25,23 @@ describe("P115: tour copy does not mention an alerts chip", () => {
   });
 });
 
+describe("P115 tour wording (Josh, 28 Oct 2026, 12:23 AM AWST)", () => {
+  const facts = { readyBeds: 26, openMovements: 70, referralsWaiting: 7 };
+  const chips = "The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.";
+
+  it("the desktop ring step names the four Home chips", () => {
+    const step = tourSteps("coordinator", "desk", facts).find((s) => s.id === "pressure");
+    expect(step?.body).toContain(chips);
+  });
+
+  it("the phone chips step names the four Home chips", () => {
+    const step = tourSteps("coordinator", "phone", facts).find((s) => s.id === "chips");
+    expect(step?.body).toContain(
+      "The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
+    );
+  });
+});
+
 describe("P116: Alerts lives in the header bell, not under More", () => {
   it("the coordinator's More has no Alerts entry", () => {
     expect(moreIds("coordinator")).not.toContain("alerts");
