@@ -117,15 +117,8 @@ function fixture(version = LATEST_MIGRATION) {
   for (const sql of sqlFiles.slice(0, version)) {
     for (const match of sql.matchAll(/CREATE TABLE ward_flow\.(\w+) \(([\s\S]*?)\n\);/g)) {
       const [, name, body] = match;
-      const table = {
-        name,
-        kind: "r",
-        owner,
-        persistence: "p",
-        rls: false,
-        force_rls: false,
-        columns: /** @type {any[]} */ ([]),
-      };
+      /** @type {{ name: string, kind: string, owner: string, persistence: string, rls: boolean, force_rls: boolean, columns: any[] }} */
+      const table = { name, kind: "r", owner, persistence: "p", rls: false, force_rls: false, columns: [] };
       catalog.objects.push(table);
       for (const line of body.split(/\r?\n/).map((line) => line.trim())) {
         const match = /^(\w+) ((?:uuid|bigint|integer|jsonb|text|timestamptz)\b.*)/.exec(line);
@@ -226,14 +219,12 @@ function fixture(version = LATEST_MIGRATION) {
   for (const object of catalog.objects) object.inherited = false;
   if (version >= 8) {
     const sql = sqlFiles[7];
-    const roleMatch = /ADD CONSTRAINT audit_actor_role_check\s+CHECK \(([^;]+)\);/.exec(sql);
-    assert.ok(roleMatch, "migration 8 adds the audit role check");
-    const [, role] = roleMatch;
+    const [, role] = /** @type {RegExpExecArray} */ (
+      /ADD CONSTRAINT audit_actor_role_check\s+CHECK \(([^;]+)\);/.exec(sql)
+    );
     catalog.constraints.find((c) => c.table_name === "audit" && c.definition.includes("actor_role")).definition =
       `CHECK (${checkExpressions("CHECK (" + role + ")")[0]})`;
-    const scopeMatch = /ADD COLUMN actor_scope ([^;]+);/.exec(sql);
-    assert.ok(scopeMatch, "migration 8 adds the audit actor scope");
-    const [, scope] = scopeMatch;
+    const [, scope] = /** @type {RegExpExecArray} */ (/ADD COLUMN actor_scope ([^;]+);/.exec(sql));
     catalog.objects.find((o) => o.name === "audit").columns.push(column("actor_scope", scope));
     checks("audit", scope);
   }
@@ -252,8 +243,8 @@ function fixture(version = LATEST_MIGRATION) {
     catalog.constraints.find((c) => c.table_name === "workspaces" && c.definition.includes("'live'")).definition =
       "CHECK (data_mode = 'prototype')";
   if (version >= 13) {
-    const [, surface] = /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(
-      sqlFiles[version >= 15 ? 14 : 12],
+    const [, surface] = /** @type {RegExpExecArray} */ (
+      /ADD CONSTRAINT record_access_surface_check (CHECK [^;]+);/.exec(sqlFiles[version >= 15 ? 14 : 12])
     );
     catalog.constraints.find((c) => c.table_name === "record_access" && c.definition.includes("surface")).definition =
       `CHECK (${checkExpressions(surface)[0]})`;

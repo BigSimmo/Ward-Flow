@@ -209,7 +209,11 @@ test("real PostgreSQL: an access admin reads only its own place's record opening
     const whole = await store.recordViews(viewOf("admin", { kind: "statewide" }));
     assert.equal(whole.length, 200);
     assert.equal(whole[0].minutes, -5);
-    const one = await store.recordViews(viewOf("coordinator", { kind: "statewide" }), "PT-SYN-NORTH-2");
+    // The patient id cast waits on recordViews' own parameter type (owned by another change).
+    const one = await store.recordViews(
+      viewOf("coordinator", { kind: "statewide" }),
+      /** @type {any} */ ("PT-SYN-NORTH-2"),
+    );
     assert.deepEqual(
       one.map((row) => row.patient_id),
       ["PT-SYN-NORTH-2"],
@@ -770,8 +774,8 @@ test(
         ]);
       });
       await t.test("a slow push service does not hold the save response", async () => {
-        /** @type {(value: unknown) => void} */
-        let release = () => assert.fail("the held send was never created");
+        // Assigned by the promise executor below, which runs at once.
+        let release = /** @type {(value: unknown) => void} */ (/** @type {unknown} */ (undefined));
         const held = new Promise((resolve) => {
           release = resolve;
         });
@@ -1547,7 +1551,8 @@ test(
       });
       const choose = await store.viewer(nurse);
       assert.equal(choose.status, "choose");
-      assert.equal(choose.choices?.length, 2);
+      assert.ok(choose.choices);
+      assert.equal(choose.choices.length, 2);
       assert.equal((await store.viewer(nurse, { workingAs: nurseView.membershipId })).access.role, "ward");
       assert.deepEqual(await store.viewer(nurse, { workingAs: "bootstrap" }), { status: "none" });
 
@@ -1887,8 +1892,9 @@ test(
       const extra = await grant(second, "ward", wardB);
       const picking = await store.viewer(second, { bootstrap: true });
       assert.equal(picking.status, "choose");
+      assert.ok(picking.choices);
       assert.deepEqual(
-        picking.choices?.map((choice) => choice.workingAs),
+        picking.choices.map((choice) => choice.workingAs),
         ["bootstrap", extra.id],
       );
       assert.deepEqual(
@@ -2590,8 +2596,7 @@ test("no undoable referral step copies the referrer's or clearance contact's det
     applied = engine.applyCommand(world, event, new Date(at.getTime() + (index + 1) * 60_000));
     assert.equal(applied.outcome, "accepted", `${event.type}: ${applied.reason}`);
     const facts = JSON.stringify(applied.changes.facts);
-    assert.ok(applied.changes.facts, event.type);
-    assert.ok(!Object.hasOwn(applied.changes.facts, "undoRecords"), event.type);
+    assert.ok(!Object.hasOwn(/** @type {object} */ (applied.changes.facts), "undoRecords"), event.type);
     for (const secret of CONTACT_STRINGS) assert.ok(!facts.includes(secret), `${event.type} audits ${secret}`);
     assert.ok(
       applied.world.state.undoRecords.some((record) => JSON.stringify(record).includes("demo@example.test")),
