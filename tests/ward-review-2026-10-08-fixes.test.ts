@@ -388,7 +388,8 @@ describe("A2-1: a scenario holding a drawer referral can be saved and loaded", (
       ...stored,
       referrals: stored.referrals.map((r, i, all) =>
         i === all.length - 1
-          ? { ...r, intake: { ...r.intake!, referrer: { ...r.intake!.referrer, email: "bad" } } }
+          ? // Finding 44: the email no longer blocks, so a phone with no digits is the malformed field.
+            { ...r, intake: { ...r.intake!, referrer: { ...r.intake!.referrer, phone: "bad" } } }
           : r,
       ),
     };

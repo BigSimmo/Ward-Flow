@@ -5,6 +5,7 @@
 import { useRef, useState } from "react";
 import { DisabledReason } from "@/components/wf";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { legalFormStatusWarning } from "@/components/ward-management/ward-legal-form-fit";
 import {
   TENTATIVE_DIAGNOSIS_BLOCKS,
   tentativeDiagnosisPhrase,
@@ -374,6 +375,15 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
                 </option>
               ))}
             </select>
+            {(() => {
+              // Finding 6 (Josh, 27 Oct 2026): a form that contradicts the status warns, never blocks.
+              const formMismatch = legalFormStatusWarning(draft.legalStatus, draft.legalFormCode);
+              return formMismatch ? (
+                <span role="status" className={styles.accessWarning} data-testid="ward-ed-referral-legal-form-mismatch">
+                  {formMismatch} You can still ask for a bed.
+                </span>
+              ) : null;
+            })()}
           </label>
           {draft.legalFormCode !== null ? (
             <fieldset className={styles.declineFieldset}>

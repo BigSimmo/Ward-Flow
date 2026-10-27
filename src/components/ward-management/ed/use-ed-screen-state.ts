@@ -51,27 +51,12 @@ export function useEdBoardDrafts() {
   // not-yet-raised referral. One draft value per movement, the same shape `urgencyDraft` below
   // holds for its own per-movement correction.
   const [genderRecordDraft, setGenderRecordDraft] = useState<Record<string, ReferralGender | "">>({});
-  const [formOverrides, setFormOverrides] = useState<Record<string, string | null>>({});
-  const [reviewStatusOverrides, setReviewStatusOverrides] = useState<Record<string, string>>({});
-  const [clearanceOverrides, setClearanceOverrides] = useState<Record<string, "yes" | "no" | null>>({});
   const [presentationDrafts, setPresentationDrafts] = useState<Record<string, string>>({});
   const [planDrafts, setPlanDrafts] = useState<Record<string, string[]>>({});
-  const hasBoardDrafts =
-    Object.keys(formOverrides).length +
-      Object.keys(clearanceOverrides).length +
-      Object.keys(reviewStatusOverrides).length +
-      Object.keys(presentationDrafts).length +
-      Object.keys(planDrafts).length >
-    0;
+  const hasBoardDrafts = Object.keys(presentationDrafts).length + Object.keys(planDrafts).length > 0;
   return {
     genderRecordDraft,
     setGenderRecordDraft,
-    formOverrides,
-    setFormOverrides,
-    reviewStatusOverrides,
-    setReviewStatusOverrides,
-    clearanceOverrides,
-    setClearanceOverrides,
     presentationDrafts,
     setPresentationDrafts,
     planDrafts,

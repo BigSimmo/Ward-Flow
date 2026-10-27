@@ -68,8 +68,10 @@ function enabledBoxes(region: HTMLElement) {
     .filter((box) => !box.hasAttribute("disabled"));
 }
 
-describe("Ask wards (D-77): the list holds at the cap of wards still waiting (D-76)", () => {
-  it("refuses a fourth tick, counts wards already asked, and frees a slot when a ward declines", () => {
+// Finding 188 (Josh, 27 Oct 2026): the cap of wards still waiting (D-76) is a warning everywhere.
+// Past it the patient page says so and still asks; nothing is greyed for the cap alone.
+describe("Ask wards: the cap of wards still waiting warns and never blocks", () => {
+  it("lets a fourth tick through with a warning, counts wards already asked, and a decline frees a slot", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientNowScreen movementId="WF-012" />
@@ -85,31 +87,33 @@ describe("Ask wards (D-77): the list holds at the cap of wards still waiting (D-
     expect(fits.length).toBeGreaterThan(3);
     fits.slice(0, 3).forEach((box) => fireEvent.click(box));
     expect(screen.getByTestId("ward-ask-count")).toHaveTextContent("3 of 3 chosen");
-    expect(fits[3]).toBeDisabled();
+    expect(screen.queryByTestId("ward-ask-over-cap")).toBeNull();
+    expect(fits[3]).not.toBeDisabled();
+    fireEvent.click(fits[3]!);
+    expect(screen.getByTestId("ward-ask-count")).toHaveTextContent("4 of 3 chosen");
+    expect(screen.getByTestId("ward-ask-over-cap")).toHaveTextContent(
+      "This asks more wards than the usual limit of 3. You can still ask.",
+    );
 
     fireEvent.change(screen.getByLabelText("Ward placement reason"), {
       target: { value: GENDER_PLACEMENT_REASONS[0] },
     });
     fireEvent.click(screen.getByLabelText("Placement checked with the ward"));
-    fireEvent.click(screen.getByRole("button", { name: "Ask 3 wards" }));
+    const ask = screen.getByRole("button", { name: "Ask 4 wards" });
+    expect(ask).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(ask);
 
-    // Three wards are waiting, so nothing more can be ticked.
     const asked = screen.getByRole("region", { name: "Ask wards" });
-    expect(within(asked).getByRole("list", { name: "Wards asked" }).children).toHaveLength(3);
-    expect(enabledBoxes(asked)).toHaveLength(0);
-    expect(screen.getByRole("button", { name: "3 wards already asked" })).toHaveAttribute("aria-disabled", "true");
+    expect(within(asked).getByRole("list", { name: "Wards asked" }).children).toHaveLength(4);
 
-    // A declined ward is no longer waiting, so its slot comes back.
+    // A declined ward is no longer waiting.
     fireEvent.click(screen.getByRole("button", { name: "First ward declines" }));
     expect(
       within(screen.getByRole("region", { name: "Ask wards" })).getByRole("list", { name: "Wards asked" }).children,
-    ).toHaveLength(2);
-    expect(screen.getByTestId("ward-ask-count")).toHaveTextContent("0 of 1 chosen");
-    expect(screen.getByRole("button", { name: "Pick up to 1 ward" })).toBeInTheDocument();
-    expect(enabledBoxes(screen.getByRole("region", { name: "Ask wards" })).length).toBeGreaterThan(0);
+    ).toHaveLength(3);
   });
 
-  it("holds the Ask button when someone else asks a ward and leaves fewer slots than ticks", () => {
+  it("keeps the Ask button open when someone else asks a ward and the ticks pass the cap", () => {
     let otherUnitId = "";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -132,6 +136,7 @@ describe("Ask wards (D-77): the list holds at the cap of wards still waiting (D-
 
     fireEvent.click(screen.getByRole("button", { name: "Someone else asks a ward" }));
     expect(screen.getByTestId("ward-ask-count")).toHaveTextContent("3 of 2 chosen");
-    expect(screen.getByRole("button", { name: "Pick up to 2 wards" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByTestId("ward-ask-over-cap")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ask 3 wards" })).not.toHaveAttribute("aria-disabled");
   });
 });

@@ -73,9 +73,7 @@ describe("the one transport booking form", () => {
     expect(screen.getByTestId(id("provider"))).toHaveValue("");
     expect(screen.getByTestId(id("cad"))).toHaveValue("");
     expect(screen.getByTestId(id("time"))).toHaveValue("");
-    expect(screen.getByTestId(id("left"))).toHaveTextContent(
-      "4 answers left: provider, CAD number, estimated time, escort answer",
-    );
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("3 answers left: provider, estimated time, escort answer");
   });
 
   it("leaves legal status blank when the record holds none", () => {
@@ -184,6 +182,20 @@ describe("the one transport booking form", () => {
     expect(screen.queryByTestId(id("left"))).toBeNull();
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ward escort", cadNumber: "" }));
+  });
+
+  it("books St John with a blank CAD as CAD to follow, with the warning in view", () => {
+    // CAD to follow (Josh, 27 Oct 2026): the CAD box stays, warns, and never blocks Save.
+    const onSubmit = vi.fn();
+    render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);
+    fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ambulance (St John)" } });
+    fireEvent.click(screen.getByTestId(id("escort", "yes")));
+    fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+    expect(screen.getByTestId(id("cad"))).toHaveValue("");
+    expect(screen.getByTestId(id("cad-to-follow"))).toHaveTextContent("CAD to follow");
+    expect(screen.queryByTestId(id("left"))).toBeNull();
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ambulance (St John)", cadNumber: "" }));
   });
 
   it("keeps a CAD number typed for a family member, and still refuses a placeholder", () => {

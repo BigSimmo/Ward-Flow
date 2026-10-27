@@ -103,6 +103,33 @@ describe("Pull the bed in one step", () => {
   });
 });
 
+describe("Pull the bed: form and status that do not fit (finding 78)", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    current = undefined;
+  });
+
+  it("warns when the form does not fit the legal status, and never blocks the pull", () => {
+    renderWithAcceptedReferral();
+    const status = screen.getByTestId("ward-pull-accepted-legal-status");
+    const legalForm = screen.getByTestId("ward-pull-accepted-legal-form");
+    fireEvent.change(screen.getByTestId("ward-pull-accepted-observation"), { target: { value: "general" } });
+    fireEvent.change(status, { target: { value: "Voluntary" } });
+    fireEvent.change(legalForm, { target: { value: "1A" } });
+    expect(screen.getByTestId("ward-pull-accepted-form-mismatch")).toHaveTextContent(
+      "Check the legal form: Form 1A is chosen, but the legal status is Voluntary. You can still pull the bed.",
+    );
+    expect(screen.getByTestId("ward-pull-accepted-confirm")).not.toHaveAttribute("aria-disabled", "true");
+    fireEvent.change(status, { target: { value: "Involuntary inpatient" } });
+    fireEvent.change(legalForm, { target: { value: "none" } });
+    expect(screen.getByTestId("ward-pull-accepted-form-mismatch")).toHaveTextContent(
+      "no form is chosen, but the legal status is Involuntary inpatient.",
+    );
+    fireEvent.change(legalForm, { target: { value: "6A" } });
+    expect(screen.queryByTestId("ward-pull-accepted-form-mismatch")).toBeNull();
+  });
+});
+
 describe("Home: Act now and Referrals to decide (WS-02, WS-04)", () => {
   beforeEach(() => window.sessionStorage.clear());
 

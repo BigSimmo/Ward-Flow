@@ -13,7 +13,7 @@ import { communityTeamOptions } from "@/components/ward-management/referrals/ref
  * One ACCEPTED dispatch of every Ward Flow event that can carry human-typed text, with a distinctive
  * marker string in every typed field.
  *
- * The list is the 13 types on `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`, plus the payload-level cases
+ * The list is the 14 types on `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`, plus the payload-level cases
  * `eventCarriesTypedTextPayload` catches on otherwise text-safe types: `overrideSignOff` on the three
  * placement events, a non-blank `reassessmentNote` on `ACCEPT_REFERRAL`, and a patient specific
  * (off-list) criterion on `SET_DISCHARGE_CRITERIA` (all in `ward-flow-persistence-classification.ts`).
@@ -127,6 +127,7 @@ const M = {
   escalationContact: "Escalation-contact-marker-b7d2",
   referralCorrection: "Correction-note-marker-e81f",
   transportCadNumber: "CAD-marker-3c5a",
+  lateCadNumber: "CAD-late-marker-6d1f",
   repatriationCadNumber: "REPAT-CAD-MARK-9e04",
   arrivalTrackingNumber: "Tracking-marker-2b6d",
   uploadFormName: "Form-name-marker-71c8",
@@ -380,6 +381,40 @@ export const TYPED_TEXT_FIXTURES: readonly TypedTextFixture[] = [
       ),
     ),
     markers: [M.transportCadNumber],
+  },
+  {
+    label: "RECORD_TRANSPORT_CAD",
+    type: "RECORD_TRANSPORT_CAD",
+    // CAD to follow (27 Oct 2026): a job booked with no number, then the number typed later.
+    build: (seed) => {
+      const now = typedTextFixtureClock(seed);
+      const movement = openMovements(seed).find((candidate) => candidate.stage === "pulled" && !candidate.transport);
+      if (!movement) throw new Error("RECORD_TRANSPORT_CAD: the seed has no pulled journey to book");
+      const before = wardFlowReducer(seed, {
+        type: "BOOK_TRANSPORT",
+        role: "coordinator",
+        now,
+        movementId: movement.id,
+        provider: TRANSPORT_PROVIDERS[0],
+        escortRequired: true,
+        cadNumber: "",
+        transportLegalStatus: "voluntary",
+        estimatedAt: now + 30,
+      });
+      if (before.rejections.length !== seed.rejections.length)
+        throw new Error("RECORD_TRANSPORT_CAD: the CAD to follow booking was refused");
+      return {
+        before,
+        event: {
+          type: "RECORD_TRANSPORT_CAD",
+          role: "coordinator",
+          now,
+          movementId: movement.id,
+          cadNumber: M.lateCadNumber,
+        },
+      };
+    },
+    markers: [M.lateCadNumber],
   },
   {
     label: "RECORD_REPATRIATION",
