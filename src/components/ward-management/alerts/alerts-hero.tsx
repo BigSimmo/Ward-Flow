@@ -116,8 +116,8 @@ export function AlertsHero({
               {
                 id: "mine",
                 value: yoursCount,
-                // F-09: says what it counts, so it reads beside the title's smaller number.
-                label: "Assigned to you",
+                // P018 (Josh, 27 Oct 2026): "Yours" on every screen, as the desktop hero says.
+                label: "Yours",
                 pressed: pill === "mine",
                 onPress: () => togglePill("mine"),
               },
