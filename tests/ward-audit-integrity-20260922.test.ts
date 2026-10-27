@@ -86,7 +86,7 @@ function collected() {
 }
 
 describe("WFA-001: cancellation describes the retained bed after a stage correction", () => {
-  it("preserves the hold and tells both recipients it remains held", () => {
+  it("preserves the pull and tells both recipients the bed is still pulled", () => {
     const initial = booked();
     const corrected = apply(initial, {
       type: "STEP_BACK_STAGE",
@@ -110,7 +110,7 @@ describe("WFA-001: cancellation describes the retained bed after a stage correct
     expect(movement(next).blocker).toBe(STAGE_TRANSITION_BLOCKERS.transportCancelled);
     const notices = next.notices.slice(corrected.notices.length);
     expect(notices).toHaveLength(2);
-    for (const notice of notices) expect(notice.sentence).toContain("the bed is still held");
+    for (const notice of notices) expect(notice.sentence).toContain("the bed is still pulled");
   });
 });
 

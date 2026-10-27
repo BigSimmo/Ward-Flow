@@ -77,7 +77,14 @@ export function PhoneDotKey({ children, testId }: { children: ReactNode; testId?
   );
 }
 
-export type PhoneFact = { id: string; value: ReactNode; label: ReactNode; testId?: string };
+export type PhoneFact = {
+  id: string;
+  value: ReactNode;
+  label: ReactNode;
+  /** A short qualifier (why a figure is a dash, a count behind it), shown as its own muted line. */
+  note?: ReactNode;
+  testId?: string;
+};
 
 /** Figures as a two-column grid of tiles in one card, value over label (v10 phone). */
 export function PhoneFacts({ facts, label, flush = false }: { facts: PhoneFact[]; label?: string; flush?: boolean }) {
@@ -87,6 +94,7 @@ export function PhoneFacts({ facts, label, flush = false }: { facts: PhoneFact[]
         <div key={fact.id} className={styles.fact}>
           <dt>{fact.label}</dt>
           <dd data-testid={fact.testId}>{fact.value}</dd>
+          {fact.note ? <dd className={styles.factNote}>{fact.note}</dd> : null}
         </div>
       ))}
     </dl>

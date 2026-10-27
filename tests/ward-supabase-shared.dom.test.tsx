@@ -111,6 +111,26 @@ describe("Supabase shared sign-in", () => {
       expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
     },
   );
+  it("still offers sign-in when the browser blocks session storage (H-0305)", async () => {
+    const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
+    vi.stubGlobal("fetch", fetcher);
+    const refuse = () => {
+      throw new DOMException("Storage blocked", "SecurityError");
+    };
+    // A blocking browser throws on reaching window.sessionStorage itself, not only on its methods.
+    const real = Object.getOwnPropertyDescriptor(window, "sessionStorage")!;
+    Object.defineProperty(window, "sessionStorage", { configurable: true, get: refuse });
+    try {
+      render(<Probe />);
+      fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
+      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
+      fireEvent.change(screen.getByLabelText("Password"), { target: { value: "private-password" } });
+      fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
+      await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
+    } finally {
+      Object.defineProperty(window, "sessionStorage", real);
+    }
+  });
   it("uses the same trimmed provider selector as the CSP and defaults blank to Supabase", async () => {
     for (const selector of [" supabase ", ""]) {
       vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", selector);
@@ -149,13 +169,17 @@ describe("Supabase shared sign-in", () => {
           return new Promise<Response>((r) => {
             complete = r;
           });
-        if (String(url).endsWith("/user")) return Response.json(user);
+        if (String(url).endsWith("/user")) return Response.json({ ...user, email: "coordinator@example.test" });
         return Response.json({}, { status: 503 });
       }),
     );
     render(<Probe />);
     await screen.findByRole("heading", { name: "Set a new password" });
     expect(window.location.hash).toBe("");
+    // Fresh audit X-1: the recovery screen names the account the link signs in to.
+    expect(screen.getByTestId("ward-recovery-account")).toHaveTextContent(
+      "This link is for coordinator@example.test. If that is not your account, choose Cancel.",
+    );
     expect(calls.some((url) => url.includes("/v1/workspace"))).toBe(false);
     expect(screen.queryByText("Workspace contents")).toBeNull();
     fireEvent.change(screen.getByLabelText("New password"), { target: { value: "new-password" } });

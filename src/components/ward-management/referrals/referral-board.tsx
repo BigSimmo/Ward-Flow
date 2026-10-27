@@ -162,6 +162,17 @@ const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed
 type InspectorTab = "place" | "patient" | "timeline";
 type BoardSheet = "meeting" | "summary" | "keys" | null;
 
+/**
+ * WS-18: the decision's own controls (`referral-match.tsx`) that the A and D keys use. A presses
+ * Accept at the chosen ward, or an ED's Accept presentation, which still asks to confirm. The
+ * community team's Accept referral decides in one press with no choice before it, so it stays a tap.
+ * D opens the ward's decline reasons, or moves to an ED's or a community team's reason list.
+ */
+const REFERRAL_ACCEPT_CONTROL =
+  '[data-testid="ward-referral-match-phone-accept"], [data-testid="ward-referral-match-accept-emergency_department"]';
+const REFERRAL_DECLINE_CONTROL =
+  '[data-testid="ward-referral-match-decline-open"], [data-testid="ward-referral-match-decline-reason-emergency_department"], [data-testid="ward-referral-match-decline-reason-community_team"]';
+
 /** The hero's five highlight chips (v10: five at most). Refused once sits in the queue toolbar. */
 const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, string])[] = [
   ["overdue", "Overdue"],
@@ -256,7 +267,6 @@ export function ReferralBoard({
     patients = [],
     admissions = [],
     bedReleases = [],
-    leaveBeds = [],
   } = useWardFlowSelect(
     "referrals",
     "units",
@@ -266,7 +276,6 @@ export function ReferralBoard({
     "patients",
     "admissions",
     "bedReleases",
-    "leaveBeds",
   );
   const now = useWardFlowClock();
   const sender = useSenderPresentation();
@@ -478,8 +487,8 @@ export function ReferralBoard({
     value: decidedToday.filter((r) => Math.floor(minuteOfDay(decidedAtFor(r)!) / 60) === hour).length,
   }));
   const bedsSummary = useMemo(
-    () => bedsReadySummary(units, bedReleases, leaveBeds, now),
-    [units, bedReleases, leaveBeds, now],
+    () => bedsReadySummary(units, admissions, bedReleases, now),
+    [units, admissions, bedReleases, now],
   );
   const meetingRows: MeetingRow[] = queued.map((referral) => {
     const person = resolveSubjectPatient(referral, resolverState);
@@ -521,16 +530,20 @@ export function ReferralBoard({
       detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
   }, [openedFromLink, selectedReferralId, linkedReferralId]);
 
+  // H-0369: the detail panel returns to its top only when another referral is chosen; opening or
+  // closing a sheet must not move it.
   useEffect(() => {
-    if (!selectedReferralId) return;
-    if (detailRef.current) {
-      detailRef.current.scrollTop = 0;
-      if (typeof window !== "undefined" && window.innerWidth <= 768) {
-        if (typeof detailRef.current.scrollIntoView === "function") {
-          detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
-        }
+    if (!selectedReferralId || !detailRef.current) return;
+    detailRef.current.scrollTop = 0;
+    if (typeof window !== "undefined" && window.innerWidth <= 768) {
+      if (typeof detailRef.current.scrollIntoView === "function") {
+        detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
     }
+  }, [selectedReferralId]);
+
+  useEffect(() => {
+    if (!selectedReferralId) return;
     const onKeyDown = (e: KeyboardEvent) => {
       // A sheet over the page closes first; the referral stays open behind it.
       const target = e.target as HTMLElement | null;
@@ -575,6 +588,16 @@ export function ReferralBoard({
     } else if (key === "o") {
       e.preventDefault();
       selectNextOverdue();
+    } else if (selectedReferralId && !e.shiftKey && (key === "a" || key === "d")) {
+      // WS-18: A and D use the decision's own on-screen controls, so every gate stays: a read-only
+      // desk draws none and nothing happens; Accept waits for a ward; Decline asks for a reason.
+      const control = detailRef.current?.querySelector<HTMLButtonElement | HTMLSelectElement>(
+        key === "a" ? REFERRAL_ACCEPT_CONTROL : REFERRAL_DECLINE_CONTROL,
+      );
+      if (!control || control.disabled || control.getAttribute("aria-disabled") === "true") return;
+      e.preventDefault();
+      if (control instanceof HTMLSelectElement) control.focus();
+      else control.click();
     } else if (key === "s" && selectedReferralId) {
       e.preventDefault();
       setSheet("summary");

@@ -11,8 +11,11 @@ on:
     - cron: 0 18 * * *
 permissions:
   contents: read
+# A newer PR push cancels its older run. Main pushes share one queue: the running main check
+# finishes, and a newer merge replaces any main run still waiting, so a burst of merges checks
+# the newest main once instead of every commit (daily-release takes the newest CI-passed main).
 concurrency:
-  group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || format('{0}-{1}', github.event_name, github.run_id) }}
+  group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && 'main' || format('{0}-{1}', github.event_name, github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   plan:
@@ -161,7 +164,7 @@ jobs:
         run: node scripts/ward-flow/related-tests.mjs --base "$WARD_BASE_SHA" --head HEAD --root .
       - name: Lint the whole tree
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
-        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern
+        run: node --max-old-space-size=8192 node_modules/eslint/bin/eslint.js src tests scripts backend playwright eslint.config.mjs next.config.ts playwright.config.ts vitest.config.mts --max-warnings 0 --no-error-on-unmatched-pattern
       - name: Check for new unused code
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         env:
@@ -296,6 +299,8 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           WARD_GATE_SHARD: ${{ matrix.shard }}/8
+          # Hosted runners have 4 vCPUs to themselves; the local default of 2 left half idle.
+          VITEST_MAX_WORKERS: "4"
           WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs
           WARD_FULL_GATE_STATE_DIR: ${{ runner.temp }}/ward-unit-state
           WARD_TEST_PROFILE_DIR: ${{ runner.temp }}/ward-profile
@@ -469,9 +474,15 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   release-gate:
-    name: Ward Flow release gate
+    name: Ward Flow release gate ${{ matrix.project }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    # Desktop Chromium and phone WebKit run as two parallel jobs; each must pass every required
+    # journey on its own project, and Ward Flow required needs both.
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [release-gate-desktop, release-gate-phone]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -536,13 +547,14 @@ jobs:
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
         env:
           WARD_GATE_BUILD: "1"
+          WARD_RELEASE_GATE_PROJECT: ${{ matrix.project }}
           WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
         run: npm run test:e2e:release-gate
       - name: Upload failed release-gate evidence
         if: ${{ !cancelled() && steps.gate.outcome == 'failure' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
-          name: ward-release-gate-failures-${{ github.run_id }}
+          name: ward-release-gate-failures-${{ github.run_id }}-${{ matrix.project }}
           path: test-results/
           if-no-files-found: warn
           retention-days: 3
@@ -615,6 +627,10 @@ jobs:
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node scripts/check-script-budget.mjs
+      # H-0295: the scan reads .next/static only when a build has left it, so it runs after the build.
+      - name: Scan the built client bundle for secrets
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:client-bundle-secrets -- --require-bundle
       - name: Save production Next cache on main
         if: ${{ !cancelled() && github.ref == 'refs/heads/main' && steps.production-cache.outcome == 'success' && steps.production-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9

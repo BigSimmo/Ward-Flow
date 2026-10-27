@@ -9,15 +9,15 @@ import { useCopyDiagnostics } from "@/lib/use-copy-diagnostics";
 export type RouteErrorBoundaryProps = {
   /** The error thrown by the segment, forwarded by Next.js. */
   error: Error & { digest?: string };
-  /** Re-renders the segment from scratch, forwarded by Next.js. */
-  reset: () => void;
+  /** Re-fetches and re-renders the segment, forwarded by Next.js (H-0349: `retry`, not `reset`). */
+  retry: () => void;
   /** Heading shown above the recovery actions. */
   title?: string;
   /** Explanatory copy under the heading. */
   description?: string;
   /** Prefix used when logging the error to the console. */
   logLabel?: string;
-  /** Whether to offer a full page reload in addition to `reset()`. */
+  /** Whether to offer a full page reload in addition to `retry()`. */
   showReload?: boolean;
   /** Minimum-height utility so route segments and the app shell can size differently. */
   minHeightClass?: string;
@@ -32,7 +32,7 @@ export type RouteErrorBoundaryProps = {
  */
 export function RouteErrorBoundary({
   error,
-  reset,
+  retry,
   title = "Something went wrong",
   description = "An unexpected error occurred. You can try to reset the current view or refresh the browser.",
   logLabel = "Unhandled runtime error captured by boundary:",
@@ -73,14 +73,14 @@ export function RouteErrorBoundary({
 
         {error.digest && (
           <div className="mt-4 rounded-lg bg-[color:var(--surface-subtle)] p-2 font-mono text-xs text-[color:var(--text-muted)]">
-            Digest: {error.digest}
+            Error reference: {error.digest}
           </div>
         )}
 
         <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => reset()}
+            onClick={() => retry()}
             className={cn(primaryControl, "flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium")}
           >
             <RefreshCw aria-hidden="true" className="h-4 w-4" />

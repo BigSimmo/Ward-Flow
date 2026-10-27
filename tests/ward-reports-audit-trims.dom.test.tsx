@@ -46,7 +46,7 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
   it("words the All wards chips as counts of wards, not beds", () => {
     renderInProvider(<StatisticsWardsIndexScreen />);
     expect(screen.getAllByText("With a pulled bed").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("With a blocked discharge").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("With a discharge held up").length).toBeGreaterThan(0);
   });
 
   it("folds teams with nobody in a bed until asked for", () => {

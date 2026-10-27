@@ -9,7 +9,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { Dot } from "@/components/wf";
-import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import type { SearchResultItem } from "@/components/ward-management/ward-global-search";
@@ -21,11 +21,11 @@ import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuAction } from "./ward-rail-entries";
 import { requestToolsTool } from "../tools/ward-tools-open";
-import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { useCanOpenHref } from "./ward-access";
+import { usePhoneCreateOptions, type PhoneCreateId } from "./ward-phone-create-options";
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import { WardMyWards } from "./ward-my-wards";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
+import { useDeskRoleLabel } from "./ward-access-store";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "./ward-phone-menu";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
@@ -43,7 +43,7 @@ import actNowStyles from "./ward-phone-menu-act-now.module.css";
  * not something to start, and the menu already lists Transport.
  */
 const CREATE_LINKS: readonly {
-  id: string;
+  id: PhoneCreateId;
   label: string;
   meta: string;
   icon: LucideIcon;
@@ -88,7 +88,7 @@ function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; o
   return (
     <li>
       {row.href ? (
-        <Link href={row.href} {...common} onClick={onGo}>
+        <Link href={row.href} prefetch={true} {...common} onClick={onGo}>
           {face}
         </Link>
       ) : (
@@ -161,6 +161,7 @@ function PageRow({
     <li>
       <Link
         href={entry.href}
+        prefetch={true}
         className={styles.row}
         aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
         aria-label={wardNavCountLabel(entry.label, count)}
@@ -284,26 +285,27 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
  * go to Settings, where a second button opened the same drawer.
  */
 function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
+  const roleLabel = useDeskRoleLabel(role);
   return (
     <button
       type="button"
       className={styles.who}
       onClick={onSwitch}
       aria-haspopup="dialog"
-      aria-label={`${CHROME_ROLE_LABELS[role]}. Go to a desk`}
+      aria-label={`${roleLabel}. Go to a desk`}
       data-testid="ward-phone-menu-switch-workstation"
     >
       {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
           initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
       <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">
-        {CHROME_ROLE_LABELS[role]
+        {roleLabel
           .split(/\s+/u)
           .slice(0, 2)
           .map((word) => word[0]?.toUpperCase() ?? "")
           .join("")}
       </span>
       <span className={styles.whoText}>
-        <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
+        <span className={styles.whoName}>{roleLabel}</span>
         {/* shell-2 (Josh, 13 Oct 2026): "Go to a desk", not "Switch workstation". Opening a desk
             goes to that desk's page; the Menu, Needs you and Tasks stay this workstation's own. */}
         <span className={styles.whoMeta}>Go to a desk</span>
@@ -325,18 +327,11 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
-  // Role access plan: New referral only for a desk whose role may raise one (review on PR #330).
-  // The route's own gate too, so with the flag off an officer is not offered a sheet it cannot send.
-  const gate = useRoleGate();
-  const canRefer = byId.has("referral-intake") && gate("RECEIVE_REFERRAL").allowed;
-  // Add patient is not a Menu entry, so it asks the same access table and the route's own gate
-  // itself: a desk that cannot add a patient is not offered a page that refuses it (D-80).
-  const canOpen = useCanOpenHref();
-  const canAddPatient = canOpen(WARD_ADD_PERSON_HREF) && gate("ADD_PATIENT").allowed;
+  const { canRefer, ids } = usePhoneCreateOptions(byId);
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
-    if (item.id === "add-patient" && !canAddPatient) return [];
+    if (!ids.includes(item.id)) return [];
     const entry = item.href !== undefined ? { href: item.href } : byId.get(item.id);
     return entry
       ? [

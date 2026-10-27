@@ -75,6 +75,7 @@ import { isSnoozeReason } from "./ward-inbox-snooze";
 import { scenarioWardNetwork, WARD_SCENARIOS } from "./ward-scenarios";
 import { communityTeamById } from "./community/community-derivations";
 import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { dischargeLogisticsFields } from "./discharges/discharge-dependency-validation";
@@ -329,6 +330,10 @@ const acceptanceConditionRule = z
   })
   .check(z.refine((condition) => (condition.kind === "bed_after_time") === (condition.readyAt !== undefined)));
 
+/** H-0978: the beds a restored ward still has closed by number. Each bed is closed at most once. */
+const openClosedBeds = (unit: { closedBeds?: readonly { bedNumber: number; reopenedAt?: number }[] }) =>
+  (unit.closedBeds ?? []).filter((mark) => mark.reopenedAt === undefined);
+
 const unit = z
   .looseObject({
     id,
@@ -374,6 +379,22 @@ const unit = z
       ),
     ),
     isClosed: z.optional(bool),
+    // H-0978: one exact bed closed (`SET_BED_CLOSED`). A chosen reason, never typed text. Optional,
+    // so a state saved before closed marks existed still loads.
+    closedBeds: z.optional(
+      z.array(
+        z.looseObject({
+          bedNumber: counter.check(z.gte(1)),
+          at: finite,
+          by: text,
+          reason: z.optional(
+            z.enum(WARD_CLOSURE_REASONS.map((entry) => entry.id) as [WardClosureReason, ...WardClosureReason[]]),
+          ),
+          // A reopened mark stays as seat history; it reopened no earlier than it closed.
+          reopenedAt: z.optional(finite),
+        }),
+      ),
+    ),
     // Smart features idea 7: a chosen reason, never typed text.
     admissionsClosure: z.optional(
       z.looseObject({
@@ -439,6 +460,9 @@ const unit = z
     z.refine(
       (unit) =>
         unit.empty.value <= unit.beds &&
+        (unit.closedBeds ?? []).every((mark) => mark.bedNumber <= unit.beds) &&
+        (unit.closedBeds ?? []).every((mark) => mark.reopenedAt === undefined || mark.reopenedAt >= mark.at) &&
+        new Set(openClosedBeds(unit).map((mark) => mark.bedNumber)).size === openClosedBeds(unit).length &&
         unit.allocatable.value <= unit.beds &&
         unit.lockedBeds <= unit.beds &&
         unit.allocatableLocked <= unit.lockedBeds &&
@@ -1310,8 +1334,14 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   const seededAuditIds = new Set(
     (isGovernanceSeedReadableState(value) ? syntheticGovernanceAuditEvents(value) : []).map((e) => e.id),
   );
+  // D-80 item 14: a review of a break glass opening names the opening, which is kept outside the workspace.
   for (const row of state.auditReviews)
-    if (!auditIds.has(row.eventId) && !seededAuditIds.has(row.eventId) && !row.eventId.startsWith("audit-seed-"))
+    if (
+      !auditIds.has(row.eventId) &&
+      !seededAuditIds.has(row.eventId) &&
+      !row.eventId.startsWith("audit-seed-") &&
+      !isBreakGlassReviewId(row.eventId)
+    )
       return false;
 
   for (const row of state.undoRecords ?? []) {

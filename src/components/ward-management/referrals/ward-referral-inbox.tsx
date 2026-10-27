@@ -108,7 +108,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
         return (
           <article className={styles.refCard} key={entry.id}>
             <h3 className={styles.refCardTitle}>
-              {referralInboxName(entry, patient.displayName)} · {patient.umrn}
+              {referralInboxName(entry, patient.displayName)} · {patient.umrn} · {entry.id}
             </h3>
             <p
               className={styles.refCardSubtitle}
@@ -117,7 +117,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
               {entry.withdrawnAt !== undefined
                 ? "Withdrawn by referrer"
                 : entry.waitlistedAt !== undefined && live
-                  ? "Waitlisted"
+                  ? "On waiting list"
                   : entry.state === "cancelled"
                     ? "Cancelled — accepted elsewhere"
                     : entry.state === "queued"
@@ -126,7 +126,13 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         ? "Accepted"
                         : `Declined · ${entry.declineReason ? DECLINE_REASON_LABELS[entry.declineReason as ReferralDeclineReason] : "Reason not recorded"}`}
             </p>
-            <p className={styles.patientStory}>{entry.history || "Patient story not recorded"}</p>
+            {/* #836: a blank Patient story is named as that field, and points to the reason when there is one. */}
+            <p className={styles.patientStory} data-testid="ward-referral-inbox-story">
+              {entry.history.trim() ||
+                (entry.intake?.reasonForReferral?.trim()
+                  ? "Patient story not recorded. The reason for referral is below."
+                  : "Patient story not recorded")}
+            </p>
             <ReferralIntakeSummary intake={entry.intake} />
             {live && (
               <div className={styles.answerOptions}>
@@ -230,7 +236,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                       reason: "no_suitable_bed",
                       waitlist: true,
                     });
-                    watchDecision(entry.id, "Referral waitlisted", completion);
+                    watchDecision(entry.id, "Referral put on the waiting list", completion);
                   }}
                 >
                   Waitlist

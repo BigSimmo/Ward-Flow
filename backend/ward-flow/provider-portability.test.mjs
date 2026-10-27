@@ -183,7 +183,7 @@ function summaryPool(row = safeSummary()) {
   };
 }
 
-test("runtime role verification requires every safeguard and a complete ledger at migration 5 to 14", async () => {
+test("runtime role verification requires every safeguard and a complete ledger at migration 5 to 15", async () => {
   const config = { connectionString: databaseUrl(), pushEnabled: false };
   await verifyPortableRuntimeRole(summaryPool(), config);
   await verifySupabaseRuntimeRole(summaryPool(), { pushEnabled: false });
@@ -212,7 +212,7 @@ test("runtime role verification requires every safeguard and a complete ledger a
     [1, 2, 3, 5],
     [1, 2, 3, 4, "5"],
     [1, 2, 3, 4, 6],
-    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
   ])
     await assert.rejects(
       verifySupabaseRuntimeRole(summaryPool({ ...safeSummary(), versions })),
@@ -265,7 +265,7 @@ test("enabled push requires its grants while optional push remains off by config
   );
 });
 
-test("shared readiness needs migration 5 to 14 and applies no SQL", async () => {
+test("shared readiness needs migration 5 to 15 and applies no SQL", async () => {
   const calls = [];
   let version = null;
   const pool = {
@@ -275,9 +275,9 @@ test("shared readiness needs migration 5 to 14 and applies no SQL", async () => 
     },
   };
   const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine: {} });
-  for (version of [null, 4, 15, "5"]) await assert.rejects(store.ready(), /Shared schema unavailable/);
-  for (version of [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]) await store.ready();
-  assert.equal(calls.length, 14);
+  for (version of [null, 4, 16, "5"]) await assert.rejects(store.ready(), /Shared schema unavailable/);
+  for (version of [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]) await store.ready();
+  assert.equal(calls.length, 15);
   assert.ok(calls.every(([sql]) => sql === "SELECT max(version) AS version FROM ward_flow.migrations"));
 });
 
@@ -717,7 +717,7 @@ test("workspace store lock() reads existing row with FOR UPDATE before seeding a
   };
   const unsubStore = createWorkspaceStore(
     { connect: async () => unsubClient, query: async () => ({ rows: [] }) },
-    { workspaceId: randomUUID(), engine: {}, push: { coordinatorIds: [] } },
+    { workspaceId: randomUUID(), engine: {}, push: /** @type {any} */ ({ coordinatorIds: [] }) },
   );
   assert.equal(await unsubStore.unsubscribe("coordinator-1", "https://fcm.googleapis.com/fcm/send/e1"), "unsubscribed");
   assert.deepEqual(

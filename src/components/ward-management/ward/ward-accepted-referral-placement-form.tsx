@@ -111,7 +111,7 @@ export function WardAcceptedReferralPlacementForm({
         }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
-        const started = "Placement started. Open Ward flow, Admissions, then choose Pull a bed.";
+        const started = "Placement started. Open Ward flow, Admissions, then choose Pull the bed.";
         onMessage(failure ?? (mismatch ? `${started} ${mismatch}` : started));
         if (!failure) {
           setPlacementDraft(null);
@@ -218,7 +218,7 @@ export function WardAcceptedReferralPlacementForm({
             </form>
           ) : ed && deskInScope && !deskInScope(ed.id) ? (
             <p className={styles.cardMeta} data-testid="ward-accepted-placement-coordinator">
-              This desk cannot start a placement from {ed.name}. Ask the flow coordinator to start it.
+              This desk cannot start a placement from {ed.name}. Ask the bed coordinator to start it.
             </p>
           ) : (
             <button

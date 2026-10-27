@@ -113,6 +113,8 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
   RECORD_ARRIVED_IN_DEPARTMENT: z.looseObject({ referralId: id }),
   RECORD_MEDICAL_CLEARANCE: z.looseObject({ referralId: id, cleared: z.boolean() }),
   REQUEST_CAPACITY_REFRESH: z.looseObject({ unitId: id }),
+  // H-0978: one exact bed closed or reopened. The reducer checks the bed and the reason list.
+  SET_BED_CLOSED: z.looseObject({ unitId: id, actingUnitId: id, bedNumber: count, closed: z.boolean() }),
   CONFIRM_CAPACITY: z.looseObject({
     unitId: id,
     actingUnitId: id,

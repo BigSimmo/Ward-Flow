@@ -130,11 +130,9 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
 /** The slide-out's head: the phone hero, the title and view tabs, Refer to, the step list and the inbox ward picker. */
 export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
   const {
-    initialUnitIds,
     view,
     onViewChange,
-    fromEntryPoint,
-    noPatientChosen,
+    patientAddedInForm,
     sectionId,
     previewOpen,
     confirmationOpen,
@@ -143,8 +141,6 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
     attempted,
     setInboxUnitId,
     isPhone,
-    liveMovement,
-    patientRecord,
     activeSection,
     destType,
     handleTouchStart,
@@ -294,39 +290,13 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
               );
             })}
           </div>
-          {!sentReferralId &&
-          !noPatientChosen &&
-          Boolean(patientRecord || liveMovement || fromEntryPoint || (initialUnitIds && initialUnitIds.length > 0)) ? (
+          {/* WT-28: nothing is pre-filled for a patient just added in this form, so no banner says so. */}
+          {offersJump(s) && !patientAddedInForm ? (
             <div className={styles.fastTrackBar} data-testid="ward-referral-fast-track">
               <span className={styles.fastTrackText}>
                 ✓ Patient &amp; referral details pre-filled from record — Jump to Clearance / Wards →
               </span>
-              <div className={styles.fastTrackActions}>
-                <button
-                  type="button"
-                  className={styles.fastTrackBtn}
-                  data-testid="ward-referral-jump-clearance"
-                  onClick={() => {
-                    // D-77: the community short form asks clearance on its Referral step.
-                    const clearanceStep = destType === "community" ? "referral" : "documentation";
-                    if (isPhone) phOpenStep(clearanceStep);
-                    else selectSection(clearanceStep);
-                  }}
-                >
-                  Jump to Clearance →
-                </button>
-                <button
-                  type="button"
-                  className={styles.fastTrackBtn}
-                  data-testid="ward-referral-jump-placement"
-                  onClick={() => {
-                    if (isPhone) phOpenStep("placement");
-                    else selectSection("placement");
-                  }}
-                >
-                  {`Jump to ${sectionLabel("placement", destType)} →`}
-                </button>
-              </div>
+              <ReferralJumpButtons s={s} />
             </div>
           ) : null}
         </>
@@ -368,6 +338,51 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
 }
 
 /** v10 phone: the tall sheet's own head, naming the open step, the letter or the check before Send. */
+/** Whether the form was opened on a known person, so the "Jump to" shortcuts are offered. */
+function offersJump(s: WardReferralDrawerState): boolean {
+  const { sentReferralId, noPatientChosen, patientRecord, liveMovement, fromEntryPoint, initialUnitIds } = s;
+  return (
+    !sentReferralId &&
+    !noPatientChosen &&
+    Boolean(patientRecord || liveMovement || fromEntryPoint || (initialUnitIds && initialUnitIds.length > 0))
+  );
+}
+
+/**
+ * Jump to Clearance and Jump to the placement step. WS-19 (H-0983): on a phone the open step sheet
+ * covers the head, so the sheet's own head carries them too, leaving out the step already open.
+ */
+function ReferralJumpButtons({ s, inSheet = false }: { s: WardReferralDrawerState; inSheet?: boolean }) {
+  const { destType, isPhone, phOpenStep, selectSection, activeSection } = s;
+  // D-77: the community short form asks clearance on its Referral step.
+  const clearanceStep = destType === "community" ? "referral" : "documentation";
+  const go = (step: typeof clearanceStep | "placement") => (isPhone ? phOpenStep(step) : selectSection(step));
+  return (
+    <div className={styles.fastTrackActions}>
+      {inSheet && activeSection === clearanceStep ? null : (
+        <button
+          type="button"
+          className={styles.fastTrackBtn}
+          data-testid={inSheet ? "ward-referral-sheet-jump-clearance" : "ward-referral-jump-clearance"}
+          onClick={() => go(clearanceStep)}
+        >
+          Jump to Clearance →
+        </button>
+      )}
+      {inSheet && activeSection === "placement" ? null : (
+        <button
+          type="button"
+          className={styles.fastTrackBtn}
+          data-testid={inSheet ? "ward-referral-sheet-jump-placement" : "ward-referral-jump-placement"}
+          onClick={() => go("placement")}
+        >
+          {`Jump to ${sectionLabel("placement", destType)} →`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function ReferralDrawerPhoneSheetHead({ s }: { s: WardReferralDrawerState }) {
   const { previewOpen, confirmationOpen, activeSection, destType, needed, phCloseSheet, phStepIndex, sectionIds } = s;
   return (
@@ -405,6 +420,7 @@ export function ReferralDrawerPhoneSheetHead({ s }: { s: WardReferralDrawerState
           <X aria-hidden="true" />
         </button>
       </div>
+      {!previewOpen && !confirmationOpen && offersJump(s) ? <ReferralJumpButtons s={s} inSheet /> : null}
     </div>
   );
 }

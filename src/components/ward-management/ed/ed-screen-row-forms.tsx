@@ -412,10 +412,10 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               disabled={urgencySave.disabled}
               id={`ward-change-urgency-tier-${movement.id}`}
               value={urgencyDraft.urgency}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setUrgencyDraft((current) => ({
                   ...current,
-                  urgency: Number(event.target.value) as 1 | 2 | 3,
+                  urgency: Number(value) as 1 | 2 | 3,
                 }))
               }
             >
@@ -436,13 +436,10 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               id={`ward-change-urgency-reason-${movement.id}`}
               required
               value={urgencyDraft.reason ?? NO_CHANGE_REASON_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setUrgencyDraft((current) => ({
                   ...current,
-                  reason:
-                    event.target.value === NO_CHANGE_REASON_VALUE
-                      ? undefined
-                      : (event.target.value as UrgencyChangeReason),
+                  reason: value === NO_CHANGE_REASON_VALUE ? undefined : (value as UrgencyChangeReason),
                 }))
               }
             >
@@ -503,10 +500,10 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               disabled={legalStatusSave.disabled}
               id={`ward-change-legal-status-value-${movement.id}`}
               value={legalStatusDraft.legalStatus ?? ""}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setLegalStatusDraft((current) => ({
                   ...current,
-                  legalStatus: event.target.value === "" ? undefined : (event.target.value as LegalStatus),
+                  legalStatus: value === "" ? undefined : (value as LegalStatus),
                 }))
               }
             >
@@ -525,13 +522,10 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
               id={`ward-change-legal-status-reason-${movement.id}`}
               required
               value={legalStatusDraft.reason ?? NO_CHANGE_REASON_VALUE}
-              onChange={(event) =>
+              onChange={({ target: { value } }) =>
                 setLegalStatusDraft((current) => ({
                   ...current,
-                  reason:
-                    event.target.value === NO_CHANGE_REASON_VALUE
-                      ? undefined
-                      : (event.target.value as LegalStatusChangeReason),
+                  reason: value === NO_CHANGE_REASON_VALUE ? undefined : (value as LegalStatusChangeReason),
                 }))
               }
             >
@@ -595,10 +589,10 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                 type="date"
                 data-testid={`ward-ed-legal-form-expiry-date-${movement.id}`}
                 value={legalFormExpiryDraft.date}
-                onChange={(event) =>
+                onChange={({ target: { value } }) =>
                   setLegalFormExpiryDraft((current) => ({
                     ...current,
-                    date: event.target.value,
+                    date: value,
                   }))
                 }
               />
@@ -609,10 +603,10 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                 type="time"
                 data-testid={`ward-ed-legal-form-expiry-time-${movement.id}`}
                 value={legalFormExpiryDraft.time}
-                onChange={(event) =>
+                onChange={({ target: { value } }) =>
                   setLegalFormExpiryDraft((current) => ({
                     ...current,
-                    time: event.target.value,
+                    time: value,
                   }))
                 }
               />

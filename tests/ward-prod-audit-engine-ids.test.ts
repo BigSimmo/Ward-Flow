@@ -2,10 +2,16 @@
 // live one. Synthetic seed data only.
 import { describe, expect, it } from "vitest";
 
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  appendNotices,
+  makeNotice,
+  seedWardFlowState,
+  wardFlowReducer,
+  type WardFlowState,
+} from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import type { Movement } from "@/components/ward-management/ward-model";
-import { nextRuntimeIdNumber } from "@/components/ward-management/ward-runtime-ids";
+import { nextBedReleaseId, nextRuntimeIdNumber } from "@/components/ward-management/ward-runtime-ids";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 describe("nextRuntimeIdNumber", () => {
@@ -56,5 +62,57 @@ describe("support notification ids after an Undo (ENG-01)", () => {
     expect(state.rejections).toHaveLength(0);
     const ids = state.supportNotifications?.map((record) => record.id) ?? [];
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("notice and bed release ids after an Undo (ENG-01, H-0334)", () => {
+  it("renumbers only a notice whose id a held notice already has", () => {
+    const state = seedWardFlowState();
+    const about = { movementId: "WF-300" } as const;
+    const held = makeNotice(NOW_ANCHOR, 1, "referral_revoked_ward", { role: "ward", placeId: "U1" }, about, "Held.");
+    const other = makeNotice(
+      NOW_ANCHOR,
+      1,
+      "referral_revoked_ward",
+      { role: "ward", placeId: "U1" },
+      { movementId: "WF-321" } as const,
+      "Other.",
+    );
+    const withHeld = { ...state, notices: [held] };
+    // An Undo left one notice, so the next count is 1 again and the same subject and kind clash.
+    const clash = makeNotice(
+      NOW_ANCHOR + 1,
+      1,
+      "referral_revoked_ward",
+      { role: "ward", placeId: "U1" },
+      about,
+      "New.",
+    );
+    const next = appendNotices(withHeld, [clash, other]);
+    const ids = next.notices.map((notice) => notice.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual([held.id, "notice-WF-300-referral_revoked_ward-2", other.id]);
+  });
+
+  it("gives two clashing notices in one event their own ids", () => {
+    const state = seedWardFlowState();
+    const make = () =>
+      makeNotice(
+        NOW_ANCHOR,
+        0,
+        "referral_revoked_ward",
+        { role: "ward", placeId: "U1" },
+        { movementId: "WF-300" } as const,
+        "x",
+      );
+    const ids = appendNotices({ ...state, notices: [] }, [make(), make()]).notices.map((notice) => notice.id);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it("keeps the length-based bed release id until a release has been removed", () => {
+    expect(nextBedReleaseId([])).toBe("WR-900");
+    expect(nextBedReleaseId([{ id: "WR-001" }, { id: "WR-900" }])).toBe("WR-902");
+    // WR-900 was undone: one release left, so the length alone would reuse WR-901.
+    expect(nextBedReleaseId([{ id: "WR-901" }])).toBe("WR-902");
   });
 });

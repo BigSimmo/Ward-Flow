@@ -979,13 +979,12 @@
   display: none;
 }
 
-/* Audit settings-21: the phone page lists Theme, Row density, Discreet names and Buzz above the
+/* Audit settings-21: the phone page lists Theme, Row density and Buzz above the
  * areas, so their sheets do not repeat them. A phone has no sidebar and no keyboard shortcuts. */
 .phoneSheetBody
   :is(
     [data-setting="theme"],
     [data-setting="density"],
-    [data-setting="discreet-names"],
     [data-setting="buzz"],
     [data-setting="sidebar"],
     [data-setting="shortcuts"]

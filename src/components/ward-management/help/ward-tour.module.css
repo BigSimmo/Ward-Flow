@@ -22,15 +22,21 @@
     0 0 0 200vmax var(--wf-scrim-strong),
     0 0 0 200vmax var(--wf-scrim-strong);
   pointer-events: none;
+  /* H-0376/H-0890: placed by transform from the corner, not top and left, so the spotlight finding
+     its control on a first visit is not counted as the page jumping (layout shift). */
+  top: 0;
+  left: 0;
   transition:
-    top 200ms ease,
-    left 200ms ease,
+    transform 200ms ease,
     width 200ms ease,
     height 200ms ease;
 }
 
 .card {
+  /* Placed by transform from the top left (ward-tour.tsx, placeCard), so it never shifts layout. */
   position: fixed;
+  top: 0;
+  left: 0;
   display: grid;
   gap: 0.5rem;
   width: min(22.5rem, calc(100vw - 1rem));
@@ -51,9 +57,6 @@
 }
 
 .card[data-place="centre"] {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   width: min(30rem, calc(100vw - 1rem));
 }
 
@@ -70,9 +73,7 @@
 }
 
 .layer[data-device="phone"] .card[data-place="centre"] {
-  right: auto;
-  left: 50%;
-  width: calc(100vw - 1rem);
+  width: auto;
   max-height: calc(100vh - 1rem);
   max-height: calc(100dvh - 1rem);
 }

@@ -86,10 +86,10 @@ describe("RECORD_REFERRAL_COMMITMENT", () => {
     );
     expect(after.rejections).toHaveLength(f.state.rejections.length);
     expect(entriesIn(after, f.referralId, f.unitId)).toEqual([
-      { unitId: f.unitId, step: "response_requested", at: NOW, by: "Flow coordinator" },
+      { unitId: f.unitId, step: "response_requested", at: NOW, by: "Bed coordinator" },
       { unitId: f.unitId, step: "acknowledged", at: NOW + 1, by: "Ward manager" },
       { unitId: f.unitId, step: "promised", promisedFor: NOW + 60, at: NOW + 2, by: "Ward manager" },
-      { unitId: f.unitId, nextCallbackAt: NOW + 30, at: NOW + 3, by: "Flow coordinator" },
+      { unitId: f.unitId, nextCallbackAt: NOW + 30, at: NOW + 3, by: "Bed coordinator" },
     ]);
     const arm = referralIn(after, f.referralId).destinations[0]!;
     expect(arm.state).toBe("queued");
@@ -105,7 +105,7 @@ describe("RECORD_REFERRAL_COMMITMENT", () => {
       copy.referrals.find((referral) => referral.id === f.referralId)!.destinations[0]!.commitments = [entry];
       return copy;
     };
-    const base = { unitId: f.unitId, at: NOW, by: "Flow coordinator" };
+    const base = { unitId: f.unitId, at: NOW, by: "Bed coordinator" };
     expect(isValidStoredWardFlowState(withEntry({ ...base, step: "acknowledged" }))).toBe(true);
     expect(isValidStoredWardFlowState(withEntry({ ...base, step: "maybe" }))).toBe(false);
     expect(isValidStoredWardFlowState(withEntry({ ...base, step: "acknowledged", note: "typed" }))).toBe(false);

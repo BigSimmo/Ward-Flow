@@ -10,6 +10,7 @@ import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
+import { uploadedFileLabel } from "@/components/ward-management/ward-uploaded-file";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   referenceDistance,
@@ -52,16 +53,7 @@ import {
 } from "./officer-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
-import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
-
-/** The referral drawer's own risk wording (`RISK_FLAG_LABELS`), kept here so the phone bundle stays small. */
-const RISK_FLAG_WORDS: Record<ReferralIntakeDetails["riskFlags"][number], string> = {
-  aggression: "Aggression",
-  absconding: "Absent without leave",
-  medical: "Acute medical",
-  vulnerable: "Vulnerable adult",
-  suicide: "Suicide or self-harm",
-};
+import { RISK_FLAG_LABELS } from "@/components/ward-management/referrals/referral-risk-flags";
 
 /** The `OfficerScreen` state and handlers the job panel's helpers read, passed in on every render. */
 export type OfficerJobDetailContext = {
@@ -117,7 +109,7 @@ export function renderPhoneNextStep(movement: Movement, ctx: OfficerJobDetailCon
       blocked: () => collectedBlockedReason(movement, patientName),
     },
     {
-      label: "Delivered",
+      label: "Arrived at ward",
       testId: "ward-officer-arrive",
       run: () => runDelivered(movement),
       blocked: () => arrivedBlockedReason(movement, unitFor(movement), patientName),
@@ -242,7 +234,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
       id: form.id,
       at: formatInstantWithDay(form.uploadedAt, now),
       tone: "success",
-      text: `${form.formName} recorded (${form.fileName})`,
+      text: `${form.formName} recorded (${uploadedFileLabel(form)})`,
     });
   }
 
@@ -272,7 +264,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     edById(movement.originEdId)?.referenceEdId,
     destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
   );
-  const stepLabels = ["Accepted", "En route", "Collected", "Delivered"] as const;
+  const stepLabels = ["Accepted", "En route", "Collected", "Arrived at ward"] as const;
   const phoneTop = (
     <>
       <dl className={styles.phGrid}>
@@ -351,7 +343,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
           {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
           {step(2, "Collected", "ward-officer-collect", collectedBlocked, () => runCollected(movement))}
-          {step(3, "Delivered", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
+          {step(3, "Arrived at ward", "ward-officer-arrive", arrivedBlocked, () => runDelivered(movement))}
         </div>
       )}
       {nextBlocked && !isPhone ? (
@@ -443,7 +435,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           {movement.collectionRiskFlags?.length ? (
             <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
               <dt>Risk flags</dt>
-              <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_WORDS[flag]).join(", ")}</dd>
+              <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
             </div>
           ) : null}
           <div>

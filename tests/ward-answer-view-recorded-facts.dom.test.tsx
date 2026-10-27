@@ -111,7 +111,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
       }),
     );
     expect(shownId()).toBe(id);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm Acceptance in Principle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm acceptance" }));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);
     expect(accepts[0]).toMatchObject({ movementId: id });
@@ -125,7 +125,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const hold = within(dialog).getByLabelText("Pull time limit");
     expect(hold).toHaveValue("standard");
     fireEvent.change(hold, { target: { value: "extended" } });
-    fireEvent.click(screen.getByRole("button", { name: "Confirm Acceptance in Principle" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm acceptance" }));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts.at(-1)).toMatchObject({ extendedHold: true });
 

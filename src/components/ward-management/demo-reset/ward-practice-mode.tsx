@@ -49,7 +49,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
     >
       <h3 id={titleId} className={headingClassName}>
         <GraduationCap aria-hidden="true" strokeWidth={1.75} />
-        Practice a placement
+        Practise a placement
         <span>Synthetic data, for learning the screens</span>
       </h3>
       {inShared ? (

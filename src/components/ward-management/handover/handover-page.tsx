@@ -26,6 +26,8 @@ import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-man
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -318,6 +320,7 @@ export function HandoverPage() {
     () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals)),
     [allRows, scope, units, referrals],
   );
+  const deskPlaces = useMemo(() => wardPlaceLookup(units), [units]);
   const allWards = useMemo(
     () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases)),
     [units, admissions, now, bedReleases],
@@ -325,11 +328,13 @@ export function HandoverPage() {
   const wards = useMemo(
     () =>
       allWards.filter((ward) => {
+        // #815: a scoped desk's sign-off and stale count cover its own wards only.
+        if (!accessIsWholeNetwork(access) && !unitInScope(access.scope, ward.id, deskPlaces)) return false;
         if (scope.kind === "ward") return ward.id === scope.id;
         if (scope.kind === "service") return ward.service === scope.id;
         return true;
       }),
-    [allWards, scope],
+    [allWards, scope, access, deskPlaces],
   );
   const held = useMemo(
     () => heldDischarges(admissions, wards, patients, referrals, now),
@@ -838,7 +843,6 @@ export function HandoverPage() {
   if (isPhoneWidth) {
     return (
       <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
-        <HandoverOpenPromises referrals={referrals} units={units} now={now} />
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -867,6 +871,7 @@ export function HandoverPage() {
           patientHrefOf={(row) => (row.patientId ? patientHref(row.patientId) : undefined)}
           since={formatInstantWithDay(newSince, now)}
           sinceItems={sinceItems}
+          carryOver={<HandoverOpenPromises referrals={referrals} units={units} now={now} layout="phone" />}
           onCopySince={copySince}
           chips={HANDOVER_CHIPS.map((chip) => ({
             id: chip.id,

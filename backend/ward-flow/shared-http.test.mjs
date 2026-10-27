@@ -184,6 +184,7 @@ test("every shared request is logged with its request ID and closed fields only"
   const response = await handler(request("/commands", body));
   assert.equal(response.status, 409);
   const requestId = response.headers.get("x-request-id");
+  assert.ok(requestId);
   assert.match(requestId, /^[0-9a-f-]{36}$/);
   assert.equal(logs.length, 1);
   const { durationMs, ...entry } = logs[0];
@@ -312,9 +313,9 @@ test("the poll names its revision; an unchanged workspace answers with the clock
   // A member desk names its access context (audit F-04); anything but a 64-hex hash is ignored.
   const context = "a".repeat(64);
   await handler(request(`?since=7&context=${context}`));
-  assert.equal(calls.at(-1).at(-1), context);
+  assert.equal(calls.at(-1)?.at(-1), context);
   await handler(request("?since=7&context=not-a-hash"));
-  assert.equal(calls.at(-1).at(-1), null);
+  assert.equal(calls.at(-1)?.at(-1), null);
   for (const since of ["0", "x", "1.5"]) {
     const { calls: plain, handler: other } = setup();
     assert.equal((await other(request(`?since=${since}`))).status, 200);
@@ -402,7 +403,7 @@ test("cross-origin calls may name the role they work as", async () => {
   });
   const response = await handler(preflight);
   assert.equal(response.status, 204);
-  assert.match(response.headers.get("access-control-allow-headers"), /X-Ward-Working-As/);
+  assert.match(response.headers.get("access-control-allow-headers") ?? "", /X-Ward-Working-As/);
 });
 
 test("access and break glass routes check their fields and pass the store's answer through", async () => {
@@ -674,7 +675,7 @@ test("a database outage while checking a sign-out is a 503, never a pass", async
   assert.equal(calls.length, 0);
 });
 
-test("every desk logs the records it opens; only the statewide coordinator and the access admin read the log", async () => {
+test("every desk logs the records it opens; the access admin reads the log, a coordinator the log and the openings", async () => {
   const logged = [];
   const store = {
     logView: async (view, patientId, surface) => {
@@ -682,6 +683,7 @@ test("every desk logs the records it opens; only the statewide coordinator and t
       return { status: 200, body: { logged: true } };
     },
     recordViews: async (_view, patient) => [{ patient_id: patient ?? "PT-1001" }],
+    breakGlassOpenings: async (view) => [{ id: "7", scope: view.access.scope.kind }],
   };
   const ward = setup(other, "prototype", { ...store, viewer: async () => wardView });
   const opened = await ward.handler(request("/record-access", { patientId: "PT-1001", surface: "movement" }));
@@ -705,10 +707,15 @@ test("every desk logs the records it opens; only the statewide coordinator and t
   assert.equal(logged.length, 1);
   const lead = setup(coordinator, "prototype", store);
   const views = await lead.handler(request("/record-access?patient=PT-2002"));
-  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }] });
+  assert.deepEqual(await views.json(), { views: [{ patient_id: "PT-2002" }], openings: [] });
   assert.equal((await lead.handler(request("/record-access?patient=not%20an%20id"))).status, 400);
-  // The access admin reads the log for its Access log in Settings (D-80 item 14); a coordinator
-  // below statewide still does not.
+  // The review list reads the openings too (D-80 item 14).
+  assert.deepEqual(await (await lead.handler(request("/record-access"))).json(), {
+    views: [{ patient_id: "PT-1001" }],
+    openings: [{ id: "7", scope: "statewide" }],
+  });
+  // The access admin reads the log for its Access log in Settings (D-80 item 14), without the
+  // openings.
   const admin = setup(other, "prototype", {
     ...store,
     viewer: async () => ({
@@ -726,7 +733,12 @@ test("every desk logs the records it opens; only the statewide coordinator and t
       access: { role: "coordinator", scope: { kind: "service", service: "North Metro" } },
     }),
   });
-  assert.equal((await service.handler(request("/record-access"))).status, 403);
+  // A service coordinator reads the log and the openings for its review list; the store keeps it
+  // to its own service's records (D-80 item 14).
+  assert.deepEqual(await (await service.handler(request("/record-access"))).json(), {
+    views: [{ patient_id: "PT-1001" }],
+    openings: [{ id: "7", scope: "service" }],
+  });
 });
 
 test("History's archive is read with the desk's own view, and a store without one sends an empty list", async () => {
@@ -822,4 +834,113 @@ test("an unsupported receipt lookup returns not found rather than an internal er
   const { handler } = setup(coordinator, "prototype", { sessionLimitMinutes: null });
   const receipt = await handler(request(`/receipt?commandId=${commandId}`));
   assert.equal(receipt.status, 404);
+});
+
+test("the server logs each full read of a desk's list or TV board, and the TV's unchanged polls (H-0731)", async () => {
+  const logged = [];
+  let changed = false;
+  const { calls, handler } = setup(coordinator, "prototype", {
+    logList: async (view, surface) => {
+      logged.push([view.actorId, surface]);
+      return true;
+    },
+    poll: async () =>
+      changed
+        ? { snapshot: { revision: 8, dataMode: "prototype" } }
+        : { notModified: true, dataMode: "prototype", revision: 7, now: 900 },
+  });
+  assert.equal((await handler(request())).status, 200);
+  assert.equal((await handler(request("?since=7"))).status, 200);
+  changed = true;
+  assert.equal((await handler(request("?since=7"))).status, 200);
+  const tv = request();
+  tv.headers.set("x-ward-screen", "tv");
+  assert.equal((await handler(tv)).status, 200);
+  // Any other screen name reads as the list.
+  const odd = request();
+  odd.headers.set("x-ward-screen", "patient");
+  assert.equal((await handler(odd)).status, 200);
+  // A desk that moves to the TV board polls unchanged records, and the TV still logs them.
+  changed = false;
+  const tvPoll = request("?since=7");
+  tvPoll.headers.set("x-ward-screen", "tv");
+  assert.equal((await handler(tvPoll)).status, 200);
+  assert.deepEqual(logged, [
+    [coordinator, "list"],
+    [coordinator, "list"],
+    [coordinator, "tv"],
+    [coordinator, "list"],
+    [coordinator, "tv"],
+  ]);
+  assert.equal(calls.length, 3);
+  // A log that cannot be written fails the read, so nothing goes out unlogged.
+  const { handler: failing } = setup(coordinator, "prototype", {
+    logList: async () => {
+      throw new Error("Connection terminated unexpectedly");
+    },
+  });
+  assert.equal((await failing(request())).status, 503);
+});
+
+test("a bootstrap coordinator past its end date has no role (H-0057)", async () => {
+  const handler = createHandler({
+    config: {
+      coordinatorIds: [coordinator],
+      coordinatorUntil: Date.now() - 1,
+      origin: "https://ward-flow-production.up.railway.app",
+    },
+    sharedStore: {
+      viewer: async (actorId, { bootstrap }) =>
+        bootstrap ? bootstrapViewer(actorId, { bootstrap }) : { status: "none" },
+      read: async () => ({ revision: 1, dataMode: "prototype" }),
+      sessionLimitMinutes: 720,
+    },
+    authenticate: async (_token, /** @type {{ session?: any }} */ { session } = {}) => {
+      if (session) session.signedInAt = session.startedAt = Date.now();
+      return coordinator;
+    },
+    log: () => {},
+  });
+  assert.equal((await handler(request())).status, 403);
+});
+
+test("a save past the workspace size limit is refused as full, never as a server fault (H-0291)", async () => {
+  const { handler, logs } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw new Error("Workspace too large");
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).code, "workspace-full");
+  assert.equal(logs.at(-1).outcome, "workspace_full");
+});
+
+test("turning phone alerts off never counts as working the role (fresh audit X-2)", async () => {
+  const seen = [];
+  const { handler } = setup(coordinator, "prototype", {
+    viewer: async (actorId, options) => {
+      seen.push(options.touch);
+      return bootstrapViewer(actorId, options);
+    },
+  });
+  await handler(request("/push-unsubscribe", { endpoint: "https://push.example/1" }));
+  await handler(request());
+  assert.deepEqual(seen, [false, undefined]);
+});
+
+test("archived records sent to a desk are logged as a list read, and an empty archive is not (GV-27)", async () => {
+  const logged = [];
+  let records = [{ collection: "movements", body: { id: "MV-SYN-1" } }];
+  const { handler } = setup(coordinator, "prototype", {
+    archive: async () => ({ archived: records.length, records }),
+    logList: async (view, surface) => {
+      logged.push(surface);
+      return true;
+    },
+  });
+  assert.equal((await handler(request("/archive"))).status, 200);
+  records = [];
+  assert.equal((await handler(request("/archive?since=7"))).status, 200);
+  assert.deepEqual(logged, ["list"]);
 });

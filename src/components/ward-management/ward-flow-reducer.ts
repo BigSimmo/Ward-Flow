@@ -40,6 +40,7 @@ import {
   type LeavingDestination,
 } from "./ward-admissions";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
+import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { type BroadcastAlert } from "./alerts/ward-broadcast-model";
 import { reducePlannedAdmissionEvent } from "./capacity/planned-admissions-reducer";
@@ -160,6 +161,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { subjectId } from "./ward-flow-subject-id";
+import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
 /**
@@ -1193,8 +1195,10 @@ export function makeNotice(
  * directly, since no public dispatch can construct such a notice.
  */
 export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
-  const notifiable = notices.filter((notice) => notice.to.role !== "demo");
-  if (notifiable.length === 0) return state;
+  const wanted = notices.filter((notice) => notice.to.role !== "demo");
+  if (wanted.length === 0) return state;
+  // ENG-01 (H-0334): an id an earlier Undo left clashing is renumbered; see `withFreshIds`.
+  const notifiable = withFreshIds(state.notices, wanted);
   return { ...state, notices: [...state.notices, ...notifiable] };
 }
 
@@ -1300,7 +1304,7 @@ export function departAdmission(
     // A departure nobody flagged still vacates a bed: record its release, already discharged, to
     // carry "Being made ready". Same id scheme as FLAG_BED_RELEASE.
     const vacated: BedRelease = {
-      id: `WR-9${String(withPerson.bedReleases.length).padStart(2, "0")}`,
+      id: nextBedReleaseId(withPerson.bedReleases),
       unitId: unit.id,
       admissionId: admission.id,
       state: "discharged",
@@ -1423,7 +1427,11 @@ export function bedNumberRefusal(
       candidate.bedNumber === bedNumber &&
       bedIsOccupied(candidate),
   );
-  return holder ? `Bed ${bedNumber} on ${unit.name} is already taken` : null;
+  if (holder) return `Bed ${bedNumber} on ${unit.name} is already taken`;
+  // H-0978: a bed the ward closed (`SET_BED_CLOSED`) takes nobody until it is reopened.
+  return activeClosedBeds(unit).some((mark) => mark.bedNumber === bedNumber)
+    ? `Bed ${bedNumber} on ${unit.name} is closed. Reopen it first`
+    : null;
 }
 
 /**
@@ -1527,6 +1535,8 @@ function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, eve
       before,
       after,
       noticeIds: next.notices.slice(state.notices.length).map((notice) => notice.id),
+      // H-0246: names this decision, so an older toast's Undo cannot take back a newer one.
+      seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
     }),
   };
 }
@@ -1543,6 +1553,7 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
+  UNDO_BED_MEETING_ACTION: "There is no bed meeting action marked done here to undo",
 };
 
 /**
@@ -1575,6 +1586,7 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
 
 /** Capture is one reducer-boundary append; clinical branches supply their actual verdict. */
 export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): WardFlowState {
+  if (event.type === "RAISE_REFERRAL" && event.pullBed === true) return raiseAndPullBed(state, event);
   const protectedEvent =
     event.type === "OPEN_DISCHARGE_RECORD" ||
     event.type === "REVIEW_AUDIT_EVENT" ||
@@ -1626,6 +1638,34 @@ export function wardFlowReducer(state: WardFlowState, event: WardFlowEvent): War
   )
     return { ...next, worldGeneration: state.worldGeneration + 1 };
   return appendAudit(state, next, event, decision);
+}
+
+/**
+ * WT-08 (Josh, 26 Oct 2026): Pull the bed is one tap. The accepted journey starts and its bed is
+ * pulled in one event, each half through its own ordinary checks. A refused pull keeps the state as
+ * it was and records that refusal, so nothing is left half started.
+ */
+function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { type: "RAISE_REFERRAL" }>) {
+  const raise: typeof event = { ...event };
+  delete raise.pullBed;
+  const refuse = (reason: string) =>
+    appendAudit(state, reject(state, event, reason), event, { outcome: "denied", reasonCode: "transition" });
+  if (event.acceptedUnitId === undefined) return refuse("Pulling the bed needs the ward that accepted");
+  const started = wardFlowReducer(state, raise);
+  const journey = started.movements.find(
+    (movement) => movement.referralId === event.referralId && !state.movements.some(({ id }) => id === movement.id),
+  );
+  if (!journey) return started;
+  const pulled = wardFlowReducer(started, {
+    type: "PULL_PATIENT",
+    role: event.role,
+    now: event.now,
+    movementId: journey.id,
+    unitId: event.acceptedUnitId,
+    ...(event.actingUnitId === undefined ? {} : { actingUnitId: event.actingUnitId }),
+  });
+  const refusal = pulled.rejections.at(-1);
+  return refusal === started.rejections.at(-1) || refusal === undefined ? pulled : refuse(refusal.reason);
 }
 
 /**
@@ -1754,6 +1794,7 @@ export function reduceClinicalEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION":
       return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":
@@ -1921,6 +1962,14 @@ export function reduceClinicalEvent(
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
       return reducerSlices().reduceWardClosureEvent(state, event, decision, { findUnit, reject, replaceUnit });
+    // H-0978 / WS-15: one exact bed closed or reopened (`Unit.closedBeds`).
+    case "SET_BED_CLOSED":
+      return reducerSlices().reduceBedClosureEvent(state, event, decision, {
+        findUnit,
+        heldBedRefusal,
+        reject,
+        replaceUnit,
+      });
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
     case "RECORD_WARD_INCIDENT":

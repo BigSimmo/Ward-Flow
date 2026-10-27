@@ -91,9 +91,8 @@ describe("conservative demo recovery", () => {
       expect(saved().state.units.find((candidate: { id: string }) => candidate.id === unit.id)).toEqual(accepted);
       view.unmount();
       mount();
-      expect(screen.getByRole("status")).toHaveTextContent(
-        /^Restored the last successful save from \d{2}:\d{2} on the board clock\. Later changes may not have been saved\.$/,
-      );
+      // WS-13: nothing failed, so the reload restores quietly.
+      expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
       expect(current.units.find((candidate) => candidate.id === unit.id)).toEqual(accepted);
     },
   );
@@ -213,9 +212,8 @@ describe("conservative demo recovery", () => {
     expect(current.now).toBe(NOW_ANCHOR + 15);
     expect(boardNow).toBe(current.now);
     expect(saved().state.handoverSignOffs.at(-1).at).toBe(NOW_ANCHOR + 10);
-    expect(screen.getByRole("status")).toHaveTextContent(
-      /^Restored the last successful save from \d{2}:\d{2} on the board clock\. Later changes may not have been saved\.$/,
-    );
+    // WS-13: nothing failed, so the reload restores quietly.
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
   });
   it.each(["now", "savedAtAbsolute"])("rejects missing clock metadata %s", (key) => {
     const view = mount();
@@ -465,9 +463,8 @@ describe("reviewed event privacy", () => {
     const signOffs = saved().state.handoverSignOffs.length;
     view.unmount();
     mount();
-    expect(screen.getByRole("status")).toHaveTextContent(
-      /^Restored the last successful save from \d{2}:\d{2} on the board clock\. Later changes may not have been saved\.$/,
-    );
+    // WS-13: nothing failed, so the reload restores quietly.
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
     expect(saved().state.handoverSignOffs).toHaveLength(signOffs);
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain("Synthetic-private-team-text");
   });

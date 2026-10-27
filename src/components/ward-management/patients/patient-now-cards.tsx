@@ -15,7 +15,7 @@ import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-for
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /**
@@ -58,6 +58,12 @@ export function PatientWhyCard({
   movement?: Movement;
   patient?: Patient;
 }) {
+  // WT-06 (walk-through, 26 Oct 2026): the catchment the referral confirmed shows when the record
+  // holds none, named as coming from the referral.
+  const referrals = useOptionalWardFlowSelect("referrals")?.referrals;
+  const referralCatchment = referrals
+    ?.find((referral) => movement?.referralId !== undefined && referral.id === movement.referralId)
+    ?.intake?.catchment?.teamName?.trim();
   return (
     <Card data-testid="ward-patient-why-card">
       <CardHead
@@ -76,7 +82,10 @@ export function PatientWhyCard({
         ) : null}
         {/* Interpreter language and Aboriginal status stay in Details, apart from each other and
             from this history, per the placement rule in person-screen.tsx. */}
-        <Row label="Catchment">{patient?.catchmentCommunityTeam ?? notRecorded}</Row>
+        <Row label="Catchment">
+          {patient?.catchmentCommunityTeam ??
+            (referralCatchment ? `${referralCatchment}, from the referral` : notRecorded)}
+        </Row>
       </div>
     </Card>
   );
@@ -320,7 +329,7 @@ export function PatientLeaveCard({
             <span className={styles.phStep}>1</span>
             <span className={styles.phItemText}>
               <strong>Contact them and their carer</strong>
-              <span>Contact details are not held in this prototype</span>
+              <span>Contact details are not recorded in this prototype</span>
             </span>
           </li>
           <li className={styles.phItem}>
@@ -349,7 +358,7 @@ export function PatientLeaveCard({
         <li className={styles.item}>
           <span className={styles.itemText}>
             <strong>1. Contact them and their carer</strong>
-            <span>Contact details are not held in this prototype</span>
+            <span>Contact details are not recorded in this prototype</span>
           </span>
         </li>
         <li className={styles.item}>
@@ -390,8 +399,8 @@ export function PatientLastSeenCard({
       <div className={styles.rows}>
         <Row label="Bed held on">{wardName ?? notRecorded}</Row>
         <Row label="Recorded">{since}, when the ward recorded the absence</Row>
-        <Row label="Last seen">Where and when are not held in this prototype</Row>
-        <Row label="Description">Recorded by the ward, not held in this prototype</Row>
+        <Row label="Last seen">Where and when are not recorded in this prototype</Row>
+        <Row label="Description">Recorded by the ward, not recorded in this prototype</Row>
         {/* S-5: a prompt only. Whether an apprehension and return order is needed is the treating
             psychiatrist's call; the order itself is not recorded in this prototype. */}
         {voluntary ? null : (

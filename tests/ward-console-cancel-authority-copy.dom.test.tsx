@@ -49,11 +49,10 @@ function WorkspaceTestControls({ movementId }: { movementId: MovementId }) {
       >
         pull
       </button>
-      {/* Booked by a DIFFERENT ward from the one receiving the patient — "fre-adult-open" is
-          never WF-003's accepted unit ("rph-adult-secure"). Booker and receiver being the same
-          ward would make the sentence under test self-contradictory to read, and the reducer
-          does not require them to differ, so this keeps the fixture honest about which ward is
-          which. */}
+      {/* Booked by the SENDING ward, a different ward from the one receiving the patient. Only the
+          ward a journey leaves may book its transport (audit 26 Oct issue 9), so this button is
+          used only on the journey `WardOriginJourney` below starts on "fre-adult-open", never on
+          WF-003, which starts in an ED. */}
       <button
         type="button"
         data-testid="test-book-transport-as-ward"
@@ -116,6 +115,86 @@ function WorkspaceTestControls({ movementId }: { movementId: MovementId }) {
   );
 }
 
+/**
+ * A journey that leaves a ward: an agreed repatriation from a patient admitted to Maali
+ * ("fre-adult-open"), accepted at Ward 2K ("rph-adult-secure"). Driven through the real reducer,
+ * since a seeded journey never starts on a ward.
+ */
+function WardOriginJourney() {
+  const { dispatch, now, admissions, movements } = useWardFlow();
+  const stay = admissions.find((admission) => admission.unitId === "fre-adult-open" && admission.state === "occupied");
+  const journey = movements.find((movement) => stay !== undefined && movement.sourceAdmissionId === stay.id);
+  return journey ? (
+    <>
+      <WorkspaceTestControls movementId={journey.id} />
+      <WardPatientWorkspace movementId={journey.id} />
+    </>
+  ) : (
+    <button
+      type="button"
+      data-testid="test-start-ward-journey"
+      onClick={() => {
+        dispatch({
+          type: "RECORD_REPATRIATION",
+          role: "coordinator",
+          now,
+          admissionId: stay!.id,
+          homeHospital: "RPH",
+          receivingWardAgreed: true,
+          mode: "road",
+          provider: "Ambulance service",
+          cadNumber: "CAD-STUB-0003",
+          transportLegalStatus: "voluntary",
+          estimatedAt: now + 120,
+        });
+      }}
+    >
+      start ward journey
+    </button>
+  );
+}
+
+function AcceptWardJourney() {
+  const { dispatch, now, movements } = useWardFlow();
+  const journey = movements.find((movement) => movement.sourceAdmissionId !== undefined && !movement.acceptedUnitId);
+  return (
+    <button
+      type="button"
+      data-testid="test-accept-ward-journey"
+      onClick={() => {
+        if (!journey) return;
+        dispatch({
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now,
+          movementId: journey.id,
+          unitIds: ["rph-adult-secure"],
+        });
+        dispatch({
+          type: "ACCEPT_IN_PRINCIPLE",
+          role: "coordinator",
+          now,
+          movementId: journey.id,
+          unitId: "rph-adult-secure",
+        });
+      }}
+    >
+      accept ward journey
+    </button>
+  );
+}
+
+function renderWardOriginJourney() {
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <AcceptWardJourney />
+      <WardOriginJourney />
+    </WardFlowProvider>,
+  );
+  fireEvent.click(screen.getByTestId("test-start-ward-journey"));
+  fireEvent.click(screen.getByTestId("test-accept-ward-journey"));
+}
+
 function renderWorkspaceWithControls(movementId: MovementId) {
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -141,7 +220,7 @@ describe("the orphaned-transport panel's cancel-authority copy", () => {
   });
 
   it("names the booking ward and says the receiving ward may not cancel, when the record proves a ward booked it", () => {
-    renderWorkspaceWithControls("WF-003");
+    renderWardOriginJourney();
     fireEvent.click(screen.getByTestId("test-pull-patient"));
     fireEvent.click(screen.getByTestId("test-book-transport-as-ward"));
     fireEvent.click(screen.getByTestId("test-step-back"));
@@ -169,7 +248,7 @@ describe("the orphaned-transport panel's cancel-authority copy", () => {
 
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
     expect(
-      within(panel).getByText(/cancelled by the flow coordinator or by the referring emergency department/i),
+      within(panel).getByText(/cancelled by the bed coordinator or by the referring emergency department/i),
     ).toBeInTheDocument();
     // No ward is named as able to cancel — the "which booked it" clause only ever appears when
     // `transport.bookedBy` names a ward, which this coordinator booking does not carry.

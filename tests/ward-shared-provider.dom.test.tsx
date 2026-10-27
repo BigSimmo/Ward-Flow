@@ -409,9 +409,7 @@ describe("shared provider boundary", () => {
     );
     const { rerender } = render(tree());
     expect(
-      screen.getByText(
-        `ED mental health clinician, ${allEmergencyDepartments()[0]!.name} · shared synthetic workspace`,
-      ),
+      screen.getByText(`ED clinician, ${allEmergencyDepartments()[0]!.name} · shared synthetic workspace`),
     ).toBeInTheDocument();
     expect(readWardAccessSnapshot().desk).toEqual(access);
     expect(screen.queryByRole("button", { name: "Switch role" })).toBeNull();
@@ -519,10 +517,16 @@ describe("shared provider boundary", () => {
     const panel = <DocumentationPanel draft={EMPTY_DOCUMENTATION} onChange={() => {}} />;
     const { unmount } = render(panel);
     expect(screen.getByText("Synthetic documents only, kept for this session")).toBeInTheDocument();
+    // #823: a blank image is accepted, so the panel says the check is type and size only.
+    expect(screen.getByTestId("ward-referral-chart-check-note")).toHaveTextContent(
+      "Ward Flow checks only the file type and size, not what the file shows.",
+    );
     unmount();
     render(<WardFlowProvider>{panel}</WardFlowProvider>);
     expect(
-      screen.getByText("Synthetic documents only. The shared board keeps the file name and size, not the file"),
+      screen.getByText(
+        "Synthetic documents only. The shared board keeps the file type and size, not the file or its name",
+      ),
     ).toBeInTheDocument();
     const chart = { name: "chart.pdf", mimeType: "application/pdf", sizeBytes: 4 } as const;
     render(
@@ -533,9 +537,14 @@ describe("shared provider boundary", () => {
         ]}
       />,
     );
-    expect(screen.getByRole("link", { name: "Medication chart · chart.pdf" })).toBeInTheDocument();
+    // H-0049: a chart shows its kind and file type, never a saved file name.
+    expect(screen.getByRole("link", { name: "Medication chart · PDF" })).toHaveAttribute(
+      "download",
+      "Medication chart.pdf",
+    );
     expect(screen.queryByRole("link", { name: /Observation chart/ })).toBeNull();
-    expect(screen.getByText("Observation chart · chart.pdf (file not shared)")).toBeInTheDocument();
+    expect(screen.getByText("Observation chart · PDF (file not shared)")).toBeInTheDocument();
+    expect(screen.queryByText(/chart\.pdf/)).toBeNull();
   });
   it("removes the board when coordinator access is revoked", () => {
     const { rerender } = render(

@@ -347,10 +347,10 @@ export const UNIT_CAPACITY_COUNTS =
  * field is authored and read by nothing, so it can change freely without the derived figure moving.
  */
 // Owner ruling 13 Oct 2026 (R-B-09 unified): the arithmetic now lives once, in
-// `boundedBedAvailability`; it still reads only the unit's aggregate counts (empty, allocatable,
-// beds, closed), never a per-bed or per-request field.
+// `boundedBedAvailability`. H-0978 / WS-15 (26 Oct 2026): it also takes off how many beds the ward
+// closed by number (`closedBeds`). It counts those marks and reads no bed or request id.
 export const HELD_IS_DERIVED_FROM_TWO_AGGREGATES =
-  "const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty)); " +
+  "const available = isClosed ? 0 : Math.max(0, Math.min(unit.allocatable.value, effectiveEmpty) - closedBeds); " +
   "const held = Math.max(effectiveEmpty - available, 0);";
 
 /**

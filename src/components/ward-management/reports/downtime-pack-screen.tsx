@@ -277,16 +277,16 @@ export function DowntimePackScreen() {
     );
   }
 
-  // Owner, 22 Oct 2026: a pack taken offline reads "taken offline" with the last sync time, and its
+  // Owner, 22 Oct 2026: a pack taken offline reads "taken offline" with the last updated time, and its
   // age runs from that sync, so it is never presented as freshly generated.
   const syncedAt = pack.offline ? pack.offline.lastSyncAt : pack.generatedAt;
   const provenance = pack.offline
-    ? `Taken offline ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatSheetMoment(syncedAt, dayZero, { includeYearAndZone: true })}`
+    ? `Taken offline ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · last updated ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatSheetMoment(syncedAt, dayZero, { includeYearAndZone: true })}`
     : `Frozen ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })}`;
   const ageMinutes = syncedAt === null ? Infinity : Math.max(0, now - syncedAt);
   const stale = ageMinutes >= STALE_AFTER_MINUTES;
   const frozenAt = pack.offline
-    ? `${OFFLINE_LABEL} · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatInstantWithDay(syncedAt, now)}`
+    ? `${OFFLINE_LABEL} · last updated ${syncedAt === null ? NOT_RECORDED.toLowerCase() : formatInstantWithDay(syncedAt, now)}`
     : formatInstantWithDay(pack.generatedAt, now);
   const groups = serviceGroups(pack.wards);
 
@@ -368,7 +368,7 @@ export function DowntimePackScreen() {
   const takenLine = (
     <span data-testid="ward-downtime-generated">
       {pack.offline
-        ? `Taken offline · last sync ${syncedAt === null ? NOT_RECORDED.toLowerCase() : at(syncedAt)} · next pack when the connection returns`
+        ? `Taken offline · last updated ${syncedAt === null ? NOT_RECORDED.toLowerCase() : at(syncedAt)} · next pack when the connection returns`
         : `Taken ${formatSheetMoment(pack.generatedAt, dayZero, { includeYearAndZone: true })} · next pack ${nextPackAt}`}
     </span>
   );
@@ -405,7 +405,7 @@ export function DowntimePackScreen() {
             </span>
           }
         />
-        <div className={styles.tableWrap}>
+        <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Beds by ward table">
           <table
             className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
             data-testid="ward-downtime-beds"
@@ -508,7 +508,7 @@ export function DowntimePackScreen() {
         {pack.edQueue.length === 0 ? (
           <p className={styles.cardNote}>0 waiting. Nobody was in an ED queue when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="ED queue table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-ed"
@@ -570,7 +570,7 @@ export function DowntimePackScreen() {
         {pack.pendingMoves.length === 0 ? (
           <p className={styles.cardNote}>0 pending. No accepted move was under way when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Pending moves table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-moves"
@@ -620,7 +620,7 @@ export function DowntimePackScreen() {
         {pack.legalForms.length === 0 ? (
           <p className={styles.cardNote}>0 forms. No legal form was on an open movement when the pack was taken.</p>
         ) : (
-          <div className={styles.tableWrap}>
+          <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Legal forms table">
             <table
               className={`${tableClasses.table} ${styles.table} ${styles.packTable}`}
               data-testid="ward-downtime-legal"
@@ -857,9 +857,9 @@ export function DowntimePackScreen() {
           titleMeta={
             <span className={styles.frozen} data-testid="ward-downtime-frozen">
               <span className={styles.frozenDot} aria-hidden="true" />
-              {/* Visual desk, 22 Oct 2026: the full "taken offline · last sync" line pushed the title to
+              {/* Visual desk, 22 Oct 2026: the full "taken offline · last updated" line pushed the title to
                   "Dow…" at 1280, so the chip stays short and the taken line beside it says it in full. */}
-              {pack.offline ? "Offline · last sync " : "Frozen "}
+              {pack.offline ? "Offline · last updated " : "Frozen "}
               <b>
                 {pack.offline && syncedAt !== null
                   ? formatInstantWithDay(syncedAt, now)

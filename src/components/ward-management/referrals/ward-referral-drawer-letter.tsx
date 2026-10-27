@@ -7,10 +7,12 @@ import { formatInstant, formatInstantWithDay } from "@/components/ward-managemen
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-referral-drawer.module.css";
 import { ContactFields, UseMyDetailsButton, ReferralDocumentLinks } from "./referral-flow-panels";
+import { chartsCountText } from "./referral-document-links";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 import { referralIsbarText, referralLetterText } from "./referral-letter";
 import { StatusGlyph } from "@/components/wf";
-import { transportLabel, countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
+import { countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
+import { transportLabel } from "./referral-submission";
 import { CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -212,10 +214,10 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                     </div>
                   ) : null}
                 </dl>
-                {sentDetails.charts.length ? (
+                {sentDetails.charts.length || sentDetails.chartsToFollow?.length ? (
                   <div className={styles.documentsBlock}>
                     <p className={styles.eyebrow}>Documents</p>
-                    <ReferralDocumentLinks charts={sentDetails.charts} />
+                    <ReferralDocumentLinks charts={sentDetails.charts} toFollow={sentDetails.chartsToFollow} />
                   </div>
                 ) : null}
               </div>
@@ -249,7 +251,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 </div>
                 <div>
                   <dt>Charts</dt>
-                  <dd>{documentation.charts.length} attached</dd>
+                  <dd>{chartsCountText(documentation.charts.length, documentation.toFollow?.length ?? 0)}</dd>
                 </div>
                 <div>
                   <dt>Urgency</dt>

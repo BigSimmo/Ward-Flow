@@ -31,11 +31,17 @@ account are in [DATABASE.md](DATABASE.md). Settings names (never values) are in 
 [frontend template](../../backend/ward-flow/infra/frontend.env.example). Secrets live only in
 Railway and Supabase. Never copy them into the repo, a log, a ticket or a chat.
 
+**One backend replica.** The shared backend runs as one Railway replica. Its board, archive-count
+and reply caches are held per process. A second replica stays correct, but it reads the whole
+board until its caches warm up, and database traffic roughly doubles. From PR #870 the backend
+logs `ward_backend_process_cache_notice` once at startup when `RAILWAY_REPLICA_ID` is set. Adding
+replicas is a hosted change and needs Josh's yes.
+
 There is no `supabase/` folder and no Railway config file in the repo. Build commands, start
 commands, watch paths and the health-check path are Railway dashboard settings. The repo copy of
 the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.mjs). The schema is
 in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently up to
-<!-- fact:latest-migration -->014-archived-records<!-- /fact -->.
+<!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->.
 
 ## Who may do what
 
@@ -141,6 +147,7 @@ change anything. Do not paste tokens, passwords or record contents anywhere.
 | **Sign-in failing**             | Check Supabase Auth status and the backend's `/healthz`. Then check the site's build settings point at the right backend and Supabase project, and the backend's allowed origin names the site. A user with no membership row is refused by design (backend README, roles and places).                                                                          |
 | **Saves failing, Retry banner** | The banner reads "Connection unavailable — changes are disabled." with a Retry button. Ask the user to stay on the page and press Retry, not reload, or the unconfirmed action is lost. Then check backend `/healthz`: `database: unavailable` points at Supabase. HTTP 409 is a normal conflict, not an outage.                                                |
 | **Database at limit**           | In Supabase, check database size and usage against the plan. Prune old command receipts (routine check 5, needs approval). Moving to a bigger plan or compute is billable and needs spending approval. The plan's exact limits are **not recorded in the repo**.                                                                                                |
+| **Board size alert**            | From PR #870 the backend logs `ward_backend_workspace_size_alert` at most once an hour once the live board passes 6 MiB. Past that point, closed records archive after 7 days instead of 30. Check the board size and that archiving is working (the History archive count rises). Then follow **Database at limit**. Saves fail at the 8 MiB limit.            |
 | **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants. |
 
 The backend logs carry only request IDs, route categories, status and timings. They never carry

@@ -95,9 +95,9 @@ describe("referral owner and call log", () => {
     expect(assign).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByRole("combobox", { name: "Assign to" }), { target: { value: "coordinator" } });
     fireEvent.click(assign);
-    expect(owner()).toHaveTextContent("Owner Bed coordinator · assigned 10:42 by Flow coordinator");
+    expect(owner()).toHaveTextContent("Owner Bed coordinator · assigned 10:42 by Bed coordinator");
     expect(screen.getByTestId("record")).toHaveTextContent("queued|Owner Bed coordinator");
-    expect(screen.getByTestId("timeline")).toHaveTextContent("Assigned to Bed coordinator by Flow coordinator");
+    expect(screen.getByTestId("timeline")).toHaveTextContent("Assigned to Bed coordinator by Bed coordinator");
   });
 
   it("logs a call with who was rung and what they said, without answering the referral", () => {
@@ -110,10 +110,10 @@ describe("referral owner and call log", () => {
     fireEvent.click(log);
     const calls = within(screen.getByRole("list", { name: "Calls logged" }));
     expect(calls.getByText(new RegExp(`${WARD.name}: Said yes`))).toBeInTheDocument();
-    expect(calls.getByText(/Flow coordinator, 40 min ago/)).toBeInTheDocument();
+    expect(calls.getByText(/Bed coordinator, 40 min ago/)).toBeInTheDocument();
     // "Said yes" on the phone is not an acceptance.
     expect(screen.getByTestId("record")).toHaveTextContent("queued|Last call 40 min ago");
-    expect(screen.getByTestId("timeline")).toHaveTextContent(`Flow coordinator rang ${WARD.name}: Said yes`);
+    expect(screen.getByTestId("timeline")).toHaveTextContent(`Bed coordinator rang ${WARD.name}: Said yes`);
   });
 
   it("offers wards in name order with no suggestion, and the referrer", () => {

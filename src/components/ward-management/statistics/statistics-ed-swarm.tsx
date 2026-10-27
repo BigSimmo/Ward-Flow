@@ -31,28 +31,30 @@ export type EdSwarmRow = {
   entries: readonly EdWaitingEntry[];
 };
 
-type Mark = { x: number; lane: number; entry: EdWaitingEntry };
+type Mark = { x: number; y: number; isolated: boolean; entry: EdWaitingEntry };
 
 /**
- * Packs each person into the lane nearest the row's centre line where no other mark sits within
- * SPACING: 0, then 1 above, 1 below, 2 above and so on. Longest wait first, so the marks that matter
- * most hold the centre line.
+ * A beeswarm: each person keeps their exact place on the time line and takes the offset nearest the
+ * row's centre line where no other mark sits within SPACING, measured centre to centre in both
+ * directions, so a crowd of near-equal waits packs into a tight honeycomb rather than one tall
+ * column (H-0462). Longest wait first, so the marks that matter most hold the centre line.
  */
 function pack(entries: readonly EdWaitingEntry[], toX: (minutes: number) => number): Mark[] {
-  const lanes = new Map<number, number[]>();
   const marks: Mark[] = [];
   for (const entry of [...entries].sort((a, b) => b.waitMinutes - a.waitMinutes)) {
     const x = toX(entry.waitMinutes);
-    for (let step = 0; ; step += 1) {
-      const lane = step === 0 ? 0 : step % 2 === 1 ? -Math.ceil(step / 2) : Math.ceil(step / 2);
-      const taken = lanes.get(lane) ?? [];
-      if (taken.every((other) => Math.abs(other - x) >= SPACING)) {
-        taken.push(x);
-        lanes.set(lane, taken);
-        marks.push({ x, lane, entry });
-        break;
-      }
+    const near = marks.filter((other) => Math.abs(other.x - x) < SPACING);
+    // Touching each near mark from above or below, or on the centre line itself.
+    const candidates = [0];
+    for (const other of near) {
+      const rise = Math.sqrt(SPACING * SPACING - (other.x - x) ** 2);
+      candidates.push(other.y + rise, other.y - rise);
     }
+    candidates.sort((a, b) => Math.abs(a) - Math.abs(b) || a - b);
+    const y =
+      candidates.find((cy) => near.every((other) => Math.hypot(other.x - x, other.y - cy) >= SPACING - 0.01)) ?? 0;
+    for (const other of near) other.isolated = false;
+    marks.push({ x, y, isolated: near.length === 0, entry });
   }
   return marks;
 }
@@ -122,12 +124,13 @@ export function StatisticsEdSwarm({
     const toX = (minutes: number) => plotLeft + (Math.min(minutes, AXIS_MAX_MINUTES) / AXIS_MAX_MINUTES) * plotW;
     const sized = rows.map((row) => {
       const marks = pack(row.entries, toX);
-      const reach = marks.reduce((most, mark) => Math.max(most, Math.abs(mark.lane)), 0);
-      const lanes = reach * 2 + 1;
-      const step = lanes > MAX_LANES ? (MAX_LANES * LANE) / lanes : LANE;
-      // A packed row shrinks its marks with its lanes, so they still never touch.
-      const radius = step < LANE ? Math.max(2, step / 2 - 0.5) : RADIUS;
-      return { row, marks, step, radius, height: Math.max(MIN_ROW, Math.min(lanes, MAX_LANES) * LANE + ROW_PAD * 2) };
+      const reach = marks.reduce((most, mark) => Math.max(most, Math.abs(mark.y)), 0);
+      // A crowded row squeezes its offsets (and the crowded marks with them) to fit seven lanes.
+      const most = ((MAX_LANES - 1) * LANE) / 2;
+      const scale = reach > most ? most / reach : 1;
+      const radius = scale < 1 ? Math.max(2, RADIUS * scale) : RADIUS;
+      const span = Math.ceil(Math.min(reach, most) * 2 + LANE);
+      return { row, marks, scale, radius, height: Math.max(MIN_ROW, span + ROW_PAD * 2) };
     });
     return sized.map((item, index) => {
       const top = sized.slice(0, index).reduce((sum, above) => sum + above.height, 0);
@@ -159,7 +162,7 @@ export function StatisticsEdSwarm({
               </g>
             );
           })}
-          {laid.map(({ row, marks, step, radius, top, mid, median: middle }, index) => (
+          {laid.map(({ row, marks, scale, radius: crowded, top, mid, median: middle }, index) => (
             <g key={row.id}>
               {index > 0 ? <line x1={0} x2={width} y1={top} y2={top} className={styles.rowLine} /> : null}
               <text x={0} y={mid + 4} className={styles.name}>
@@ -169,8 +172,10 @@ export function StatisticsEdSwarm({
               {middle !== undefined ? (
                 <line x1={toX(middle)} x2={toX(middle)} y1={mid - 12} y2={mid + 12} className={styles.median} />
               ) : null}
-              {marks.map(({ x, lane, entry }) => {
-                const cy = mid + lane * step;
+              {marks.map(({ x, y, isolated, entry }) => {
+                const cy = mid + y * scale;
+                // A mark with no neighbour keeps its full size, so a lone long wait stays easy to see.
+                const radius = isolated ? RADIUS : crowded;
                 const over48 = entry.waitMinutes >= VERY_LONG_WAIT_MINUTES;
                 const over24 = entry.waitMinutes >= LONG_WAIT_MINUTES;
                 const placed = entry.movement.acceptedUnitId !== undefined;

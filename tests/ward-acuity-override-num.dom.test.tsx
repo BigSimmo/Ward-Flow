@@ -192,7 +192,7 @@ describe("the ward screen's high-acuity override: the tick", () => {
     // Assertion 1: the acuity refusal shows the reason select AND the tick, and submit is
     // disabled until both are set.
     const alert = within(secondAcceptedRow).getByRole("alert");
-    expect(alert).toHaveTextContent(/Pull a bed not recorded/i);
+    expect(alert).toHaveTextContent(/Pull the bed not recorded/i);
     expect(alert).toHaveTextContent(/high-acuity nursing capacity left/i);
     expect(alert).toHaveTextContent(/nurse unit manager consulted/i);
 

@@ -747,7 +747,7 @@ export function RecordPreview({
               type="button"
               className={styles.closeDossierBtn}
               onClick={onClose}
-              aria-label="Close dossier preview"
+              aria-label="Close record preview"
               title="Close (Esc)"
             >
               Close

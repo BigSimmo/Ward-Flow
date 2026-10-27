@@ -1,4 +1,4 @@
-import type { MovementStage } from "@/components/ward-management/ward-model";
+import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
 
 /**
  * WHAT A COORDINATOR READS FOR EACH MOVEMENT STAGE.
@@ -31,3 +31,19 @@ export const stageCopy: Record<MovementStage, { label: string; shortLabel: strin
   moving: { label: "Moving", shortLabel: "Moving" },
   arrived: { label: "Arrived", shortLabel: "Arrived" },
 };
+
+/**
+ * WT-07 (walk-through, 26 Oct 2026): the officer's Delivered records `transport.arrivedAt` and
+ * leaves the journey at `moving` until the ward confirms arrival (A4-16). Every screen reads this
+ * one test, so none says Moving or runs the pull clock after Delivered.
+ */
+export function deliveredAwaitingWard(movement: Pick<Movement, "stage" | "transport" | "closure">): boolean {
+  return movement.stage === "moving" && movement.transport?.arrivedAt !== undefined && movement.closure === undefined;
+}
+
+/** The journey's status in words: the stage label, or the one delivered state. */
+export function movementStatusLabel(movement: Pick<Movement, "stage" | "transport" | "closure">): string {
+  return deliveredAwaitingWard(movement)
+    ? "Arrived at ward, awaiting ward confirmation"
+    : stageCopy[movement.stage].label;
+}

@@ -12,7 +12,6 @@ import { GovernanceWorkbench } from "@/components/ward-management/governance-reg
 
 import styles from "./ward-management-modes.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { WardBreakGlassReview } from "@/components/ward-management/shell/ward-access";
 import governance from "./governance-third-edition.module.css";
 
 /**
@@ -190,8 +189,6 @@ export function GovernanceView() {
   return (
     <div className={governance.governanceRoute} data-testid="ward-governance-view">
       <GovernanceWorkbench movements={movements} units={units} now={now} api={api} />
-      {/* Role access plan: records opened outside care, for the coordinator to review. */}
-      <WardBreakGlassReview />
       <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
         {/* Read by assistive tech, kept out of the Tab order: the notice is visually hidden. */}
         <summary tabIndex={-1}>Synthetic prototype · not approved for clinical use</summary>
@@ -289,17 +286,6 @@ export const WARD_WORKSPACE_MODES = ["governance"] as const satisfies readonly W
  * hand each time, because there was nothing to derive the route from. It reads this array now.
  */
 export type WardWorkspaceMode = (typeof WARD_WORKSPACE_MODES)[number];
-
-/**
- * The `<h1>` a workspace mode actually renders. Exported because a browser test needs to find the
- * mode header by its heading, and ⚠️ **`WARD_VIEWS`' label is not guaranteed to be that string**
- * (the retired `network` mode was labelled *"Network"* in the rail and titled *"Network diagram"*
- * on the page). A test deriving the heading from the rail label could look for text the screen
- * never renders.
- */
-export function wardWorkspaceModeTitle(mode: WardWorkspaceMode): string {
-  return modeCopy[mode].title;
-}
 
 export function WardModeWorkspace({ mode }: { mode: WardWorkspaceMode }) {
   const [role, setRole] = useState<WardRole>("flow");

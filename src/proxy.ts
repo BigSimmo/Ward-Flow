@@ -21,13 +21,14 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
 //   2. CSRF guard for API mutations. Fetch Metadata plus an Origin/Referer host
 //      check on state-changing API requests (see `@/lib/api-csrf` for why
 //      `Sec-Fetch-Site: cross-site` alone is not enough).
-//   3. Developer-area and Ward Flow trust markers. Strips any client-supplied
-//      copy of the developer-area and Ward Flow offline headers and restores
-//      them only for the matching request path, so a client cannot spoof the
-//      production mockup exemption or Ward Flow's database-free runtime. There
-//      is no sign-in gate behind these markers: the developer key was removed on
-//      28 September 2026 at the owner's request, and the Ward Flow subtrees are
-//      public synthetic-data prototypes (see src/app/ward-flow/layout.tsx).
+//   3. Developer-area trust marker. Strips any client-supplied copy of the two
+//      developer-area headers and sets them again only for a path in
+//      DEVELOPER_GATED_PATH_PREFIXES, so a client cannot spoof the production
+//      mockup exemption. That list is empty since Ward Flow left /mockups on
+//      19 October 2026, so today the headers are only ever stripped. There is
+//      no sign-in gate behind the marker: the developer key was removed on
+//      28 September 2026 at the owner's request, and Ward Flow is a public
+//      synthetic-data prototype (see src/app/ward-flow/layout.tsx).
 
 /**
  * Retired paths that forward, query string intact, to the surface that

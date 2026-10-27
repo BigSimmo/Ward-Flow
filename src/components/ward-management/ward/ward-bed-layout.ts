@@ -22,6 +22,8 @@ export type BedLayoutItem = {
   stayAdmissionId?: string;
   /** A free (Ready) tile, the only kind a held bed may carry. */
   free: boolean;
+  /** H-0978: a Closed tile, the only kind a bed closed by number (`Unit.closedBeds`) may carry. */
+  closed?: boolean;
 };
 
 export function layoutBedNumbers(
@@ -29,6 +31,7 @@ export function layoutBedNumbers(
   recordedBedOf: (admissionId: string) => number | undefined,
   heldBedNumbers: readonly number[] = [],
   seatOf: (admissionId: string) => number | undefined = () => undefined,
+  closedBedNumbers: readonly number[] = [],
 ): number[] {
   const beds = items.length;
   const holder: number[] = new Array<number>(beds + 1).fill(-1);
@@ -51,6 +54,15 @@ export function layoutBedNumbers(
       bedOf[index] = seat;
     }
   });
+  // H-0978 / WS-15: a bed closed by number sits on a Closed tile before any tile takes its baseline,
+  // so its own number shows as Closed and no other tile is left carrying it.
+  for (const bed of closedBedNumbers) {
+    if (!valid(bed) || holder[bed] !== -1) continue;
+    const index = items.findIndex((item, at) => item.closed === true && bedOf[at] === 0);
+    if (index === -1) continue;
+    holder[bed] = index;
+    bedOf[index] = bed;
+  }
   items.forEach((_, index) => {
     const baseline = index + 1;
     if (bedOf[index] === 0 && holder[baseline] === -1) {
@@ -84,6 +96,9 @@ export function layoutBedNumbers(
   return bedOf;
 }
 
+/** H-0978: a bed closed by number from `from` until it reopened (`to`), or still closed (`Infinity`). */
+export type BedClosureSpan = { bedNumber: number; from: number; to: number };
+
 /** The parts of an admission `seatStays` reads. */
 export type SeatedStay = {
   id: string;
@@ -113,7 +128,12 @@ export type SeatedStay = {
  * leftover bed, and the other jumps back to its seat when the recorded one leaves. The recorded
  * stay itself keeps its replay seat, so a Bed board move reflows nobody else's seat.
  */
-export function seatStays(beds: number, stays: readonly SeatedStay[], lockedBeds = 0): Map<string, number> {
+export function seatStays(
+  beds: number,
+  stays: readonly SeatedStay[],
+  lockedBeds = 0,
+  closures: readonly BedClosureSpan[] = [],
+): Map<string, number> {
   type Span = { id: string; start: number; end: number; kind?: "locked" | "open"; recorded?: number };
   const spans: Span[] = stays.flatMap((stay) => {
     if (stay.state === "waitlisted") return [];
@@ -144,8 +164,13 @@ export function seatStays(beds: number, stays: readonly SeatedStay[], lockedBeds
   const seats = new Map<string, number>();
   const taken: (Span | undefined)[] = new Array<Span | undefined>(beds + 1).fill(undefined);
   const mixed = lockedBeds > 0 && lockedBeds < beds;
+  // H-0978 / WS-15: a stay is never seated in a bed that was closed by number while it held one.
+  // The reducer refuses closing a bed a stay sits in, so this never moves a stay seated earlier.
+  const closedFor = (bed: number, span: Span) =>
+    closures.some((closure) => closure.bedNumber === bed && closure.from < span.end && span.start < closure.to);
   const firstFree = (from: number, to: number, span: Span) => {
-    for (let bed = from; bed <= to; bed += 1) if (taken[bed] === undefined && !reservedAgainst(bed, span)) return bed;
+    for (let bed = from; bed <= to; bed += 1)
+      if (taken[bed] === undefined && !reservedAgainst(bed, span) && !closedFor(bed, span)) return bed;
     return 0;
   };
   for (const span of spans) {
@@ -162,4 +187,38 @@ export function seatStays(beds: number, stays: readonly SeatedStay[], lockedBeds
     if (span.end === Number.POSITIVE_INFINITY) seats.set(span.id, bed);
   }
   return seats;
+}
+
+/**
+ * Every stay's fixed seat on one ward, from exactly the inputs the Bed board uses: the ward's stays,
+ * its released pull spans (audit 24-1 CS2-03) and its beds closed by number (H-0978). The roster and
+ * the reducer's `SET_BED_CLOSED` both read this, so they never disagree about which bed is taken.
+ */
+export function wardStaySeats(
+  unit: {
+    id: string;
+    beds: number;
+    lockedBeds: number;
+    releasedPullSpans?: readonly (Omit<SeatedStay, "id" | "state" | "arrivedAt"> & { admissionId: string })[];
+    closedBeds?: readonly { bedNumber: number; at: number; reopenedAt?: number }[];
+  },
+  admissions: readonly (SeatedStay & { unitId: string })[],
+): Map<string, number> {
+  const releasedSpans = (unit.releasedPullSpans ?? []).map((span) => ({
+    ...span,
+    id: `released:${span.admissionId}`,
+    state: "released",
+    arrivedAt: null,
+  }));
+  const mixed = unit.lockedBeds > 0 && unit.lockedBeds < unit.beds;
+  return seatStays(
+    unit.beds,
+    [...admissions.filter((admission) => admission.unitId === unit.id), ...releasedSpans],
+    mixed ? unit.lockedBeds : 0,
+    (unit.closedBeds ?? []).map((mark) => ({
+      bedNumber: mark.bedNumber,
+      from: mark.at,
+      to: mark.reopenedAt ?? Number.POSITIVE_INFINITY,
+    })),
+  );
 }

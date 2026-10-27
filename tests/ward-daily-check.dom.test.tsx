@@ -33,7 +33,7 @@ describe("Daily check: Checked, all accounted for", () => {
 
     expect(screen.queryByTestId("ward-missed-check-done")).toBeNull();
     expect(confirmation).toHaveTextContent(
-      `Checked, all accounted for · Flow coordinator at ${formatInstant(NOW_ANCHOR)}`,
+      `Checked, all accounted for · Bed coordinator at ${formatInstant(NOW_ANCHOR)}`,
     );
     expect(screen.getByTestId("ward-missed-check")).toHaveTextContent("Daily check");
   });

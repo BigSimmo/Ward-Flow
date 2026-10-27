@@ -36,6 +36,8 @@ export type ReferralDecisionUndo = {
   after: Referral;
   /** The notices the decision raised, withdrawn again by the undo. */
   noticeIds: string[];
+  /** Unique and rising, as on a step record, so an older toast's Undo cannot take back a newer decision. */
+  seq?: number;
 };
 
 export type BedPlacementUndo = {
@@ -51,6 +53,8 @@ export type BedPlacementUndo = {
   /** Exact destination slot changed by the move; absent on older saves. */
   beforeReferralArmIndex?: number;
   afterBed: number;
+  /** Unique and rising, as on a step record, so an older toast's Undo cannot take back a newer move. */
+  seq?: number;
   /** Absent on older saves. Null preserves a seed's unrecorded historical bed kind on Undo. */
   bedKindChange?: {
     before: "locked" | "open" | null;
@@ -86,6 +90,8 @@ export const UNDO_STEP_ACTIONS = {
   UNDO_DEPARTURE: ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"],
   // Audit A3-10 (13 Oct 2026): Mark absent starts the police steps on one tap, so it offers Undo.
   UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
+  // H-0150 (26 Oct 2026): a bed meeting action marked done by mistake comes back from its toast.
+  UNDO_BED_MEETING_ACTION: ["COMPLETE_BED_MEETING_ACTION"],
 } as const;
 export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
 export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];
@@ -98,7 +104,17 @@ export function undoStepTypeFor(action: string): UndoStepType | undefined {
 
 /** One subject id from an event's own fields: movement, then referral, then stay; else the network. */
 export function undoStepSubjectId(event: object): string {
-  const fields = event as { movementId?: unknown; referralId?: unknown; admissionId?: unknown };
+  const fields = event as {
+    movementId?: unknown;
+    referralId?: unknown;
+    admissionId?: unknown;
+    subject?: { id?: unknown };
+    action?: unknown;
+  };
+  // A bed meeting action is filed per record and kind, so marking two actions done on one person
+  // keeps an Undo for each (H-0150).
+  if (typeof fields.subject?.id === "string" && typeof fields.action === "string")
+    return `${fields.subject.id}:${fields.action}`;
   for (const value of [fields.movementId, fields.referralId, fields.admissionId])
     if (typeof value === "string" && value.length > 0) return value;
   return "network";
@@ -144,6 +160,26 @@ export function stepUndoFor(
 }
 
 /**
+ * The record number an Undo of `undoType` on `subjectId` would be checked against (H-0246): a step
+ * record, or the referral decision or bed move record those two older undos keep. A toast sends it
+ * as `recordSeq`, so its Undo is refused once a later decision or move has replaced the record.
+ */
+export function undoRecordSeqFor(
+  records: readonly UndoRecord[] | undefined,
+  undoType: string,
+  subjectId: string,
+): number | undefined {
+  if (undoType === "UNDO_REFERRAL_DECISION")
+    return (records ?? []).find((record) => record.kind === "referral-decision" && record.referralId === subjectId)
+      ?.seq;
+  if (undoType === "UNDO_PLACE_IN_BED")
+    return (records ?? []).find((record) => record.kind === "bed-placement" && record.admissionId === subjectId)?.seq;
+  return (UNDO_STEP_TYPES as readonly string[]).includes(undoType)
+    ? stepUndoFor(records, undoType as UndoStepType, subjectId)?.seq
+    : undefined;
+}
+
+/**
  * State keys a step undo never snapshots: the audit trail, refusals, counters, the clock, the
  * configuration and the undo records themselves. Ids are never reused, so counters stay where
  * they are; `dischargeRevisions` only moves forward (a removed stay's entry is dropped on undo).
@@ -163,11 +199,10 @@ const STEP_UNDO_IGNORED_KEYS: ReadonlySet<string> = new Set([
   "undoRecords",
 ]);
 
-/** The next step record number: above every record kept and above `floor` (the audit sequence). */
+/** The next undo record number: above every record kept and above `floor` (the audit sequence). */
 export function nextStepUndoSeq(records: readonly UndoRecord[] | undefined, floor: number): number {
   let highest = Number.isFinite(floor) ? floor : 0;
-  for (const record of records ?? [])
-    if (record.kind === "step" && (record.seq ?? 0) > highest) highest = record.seq ?? 0;
+  for (const record of records ?? []) if ((record.seq ?? 0) > highest) highest = record.seq ?? 0;
   return highest + 1;
 }
 

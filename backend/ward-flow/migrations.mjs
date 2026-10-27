@@ -82,6 +82,11 @@ export const MIGRATIONS = Object.freeze([
     file: "014-archived-records.sql",
     sha256: "2e399d2bc7bbb5efc45cd92b9e631f7da4ab153b59804f1a99ef2ba12a7353d1",
   },
+  {
+    version: 15,
+    file: "015-list-and-tv-views.sql",
+    sha256: "6705ed94c5ee6d242c9756849ad05865e12fa5093152bb8c70751b5247ef402e",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -89,7 +94,7 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
  * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
- * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 14:
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 15:
  * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
  * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
  * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
@@ -118,6 +123,9 @@ export const REFERRAL_VIEW_MIGRATION = 13;
 
 /** The first schema that moves closed records older than 30 days into the archive (migration 14). */
 export const ARCHIVE_MIGRATION = 14;
+
+/** The first schema whose record access log takes a whole-list or TV read (migration 15, H-0731). */
+export const LIST_VIEW_MIGRATION = 15;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

@@ -28,6 +28,13 @@
   gap: 0.25rem;
 }
 
+.fullNote {
+  margin: 0;
+  padding: 0.5rem 0.625rem;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
 .link,
 .pinButton {
   display: flex;

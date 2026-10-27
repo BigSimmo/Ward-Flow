@@ -1,6 +1,8 @@
 // @ts-check
 import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
+import { bootstrapCoordinators } from "./auth.mjs";
+import { jsonResponse } from "./reply-cache.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -43,6 +45,8 @@ const STEP_UP_PATHS = new Set([
 ]);
 /** Names one of the account's roles when it holds more than one: a membership ID or "bootstrap". */
 const WORKING_AS = "x-ward-working-as";
+/** "tv" when the desk is showing the bed meeting TV board, so the access log can say so (H-0731). */
+const SCREEN = "x-ward-screen";
 /** Messages the pg pool and the workspace store use when the database, not the code, failed. */
 const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
@@ -98,13 +102,18 @@ export function storageFailure(error) {
   );
 }
 
+/** The message of a thrown value, when it has one (H-0294: catch values are unknown). */
+function messageOf(error) {
+  return typeof error === "object" && error !== null && "message" in error ? error.message : undefined;
+}
+
 export function createSharedHandler({
   config,
   store,
   authenticate,
   readBody,
   verifierUnavailable,
-  verifierRateLimited = null,
+  verifierRateLimited = /** @type {(new (...args: any[]) => Error) | null} */ (null),
   // Part B item 49 groundwork: off until the health service's sign-in or Supabase factors are set up.
   requireSecondStep = false,
   log = (event) => console.info(JSON.stringify(event)),
@@ -142,7 +151,8 @@ export function createSharedHandler({
     };
     const reply = (status, body, outcome) => {
       if (outcome) note.outcome = outcome;
-      return Response.json(body, { status, headers });
+      // Audit PS-05: a scoped board the store already serialised is reused, not stringified again.
+      return jsonResponse(body, { status, headers });
     };
     const origin = request.headers.get("origin");
     if (origin && origin !== config.origin) return reply(403, { error: "Origin not allowed" }, "origin_denied");
@@ -159,7 +169,7 @@ export function createSharedHandler({
         headers: {
           ...headers,
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As",
+          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As, X-Ward-Screen",
           "access-control-max-age": "600",
         },
       });
@@ -179,7 +189,7 @@ export function createSharedHandler({
       }
       return error instanceof verifierUnavailable
         ? reply(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable")
-        : reply(401, { error: "Sign in with the authorised account" }, "auth_denied");
+        : reply(401, { code: "auth-denied", error: "Sign in with the authorised account" }, "auth_denied");
     }
     // A sign-in lasts at most the session limit, however busy the desk (ISM-0428). It counts from
     // the token's first sign-in factor, which a refresh or a later factor never moves, so the person
@@ -189,7 +199,7 @@ export function createSharedHandler({
     const started = session.startedAt;
     if (
       Number.isFinite(limitMinutes) &&
-      !(Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
+      !(typeof started === "number" && Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
       path !== "/v1/workspace/push-unsubscribe"
     )
       return reply(
@@ -249,7 +259,7 @@ export function createSharedHandler({
       try {
         return { body: await readBody(request) };
       } catch (error) {
-        return { refusal: reply(error.message === "too_large" ? 413 : 400, { error: "Invalid request" }) };
+        return { refusal: reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid request" }) };
       }
     };
     try {
@@ -258,7 +268,13 @@ export function createSharedHandler({
       // The role and place come from the server's own record on every request, never from the
       // browser or the sign-in token. Accounts in WARD_COORDINATOR_USER_IDS are the bootstrap
       // statewide coordinators; everyone else needs an active membership.
-      const view = await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId), workingAs });
+      const view = await store.viewer(actorId, {
+        bootstrap: bootstrapCoordinators(config).includes(actorId),
+        workingAs,
+        // Fresh audit X-2: the push opt-out skips the sign-in checks above, so it must not count
+        // as working the role, or a signed-out phone could keep an unused role on for good.
+        ...(path === "/v1/workspace/push-unsubscribe" ? { touch: false } : {}),
+      });
       // Asking for access is for a signed-in account with no role (feature 7), so it is answered
       // before the role checks below. An account that already holds a role is given another by an
       // access admin, never by a request it files itself.
@@ -270,7 +286,7 @@ export function createSharedHandler({
         // Decided from the account's roles, not the desk named in the header: a stale or made-up
         // working-as id reads as no desk, but the account still holds its roles.
         const holder = workingAs
-          ? await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId) })
+          ? await store.viewer(actorId, { bootstrap: bootstrapCoordinators(config).includes(actorId) })
           : view;
         if (holder.status !== "none")
           return reply(403, { error: "This account already has a role. Ask your access admin for another." });
@@ -312,7 +328,8 @@ export function createSharedHandler({
       // through the store; a store that names none asks every time.
       if (STEP_UP_PATHS.has(path) && request.method === "POST") {
         const windowMs = (Number.isFinite(store.stepUpMinutes) ? store.stepUpMinutes : 0) * 60_000;
-        if (!(Number.isFinite(session.signedInAt) && session.signedInAt >= Date.now() - windowMs))
+        const signedInAt = session.signedInAt;
+        if (!(typeof signedInAt === "number" && Number.isFinite(signedInAt) && signedInAt >= Date.now() - windowMs))
           return reply(
             401,
             {
@@ -341,7 +358,9 @@ export function createSharedHandler({
           // No session limit configured means no sign-in deadline (a set limit with no start time was
           // already refused above), so only a role or grant expiry can bound access here.
           accessUntil: Math.min(
-            Number.isFinite(started) && Number.isFinite(limitMinutes) ? started + limitMinutes * 60_000 : Infinity,
+            typeof started === "number" && Number.isFinite(started) && Number.isFinite(limitMinutes)
+              ? started + limitMinutes * 60_000
+              : Infinity,
             view.accessUntil ?? Infinity,
             ...(view.grants ?? []).map((grant) => new Date(grant.until).getTime()),
           ),
@@ -354,6 +373,14 @@ export function createSharedHandler({
               }),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
+        // H-0731: the server logs, before sending them, that this desk read its records. An
+        // unchanged poll sends none, so it is not logged, except on the TV board: a desk that moves
+        // to the TV keeps showing the records it already holds, so the TV logs its own polls too
+        // (the store logs at most once a window). A failed log write fails the read.
+        const tvScreen = request.headers.get(SCREEN) === "tv";
+        const logListRead = async () => {
+          if (store.logList) await store.logList(view, tvScreen ? "tv" : "list");
+        };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const params = new URL(request.url).searchParams;
         const since = Number(params.get("since"));
@@ -368,20 +395,23 @@ export function createSharedHandler({
           );
           if (polled.notModified) {
             if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+            if (tvScreen) await logListRead();
             return reply(200, { ...workspace(), data, notModified: true, revision: polled.revision, now: polled.now });
           }
           if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+          await logListRead();
           return reply(200, { ...workspace(), data, snapshot: polled.snapshot });
         }
         const snapshot = await store.read(actorId, view);
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+        await logListRead();
         return reply(200, { ...workspace(), data, snapshot });
       }
       if (path === "/v1/workspace/receipt" && request.method === "GET") {
         const commandId = new URL(request.url).searchParams.get("commandId");
         if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
         if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
-        return reply(200, { receipt: await store.receipt(actorId, commandId.toLowerCase()) });
+        return reply(200, { receipt: await store.receipt(actorId, (commandId ?? "").toLowerCase()) });
       }
       if (path === "/v1/workspace/archive" && request.method === "GET") {
         // History's closed records older than 30 days (migration 14), each desk's own part only,
@@ -390,7 +420,11 @@ export function createSharedHandler({
         // Audit PS-01: a desk that holds the archive names the revision it holds, and is sent only
         // what was archived after it. Anything else reads the whole archive.
         const since = new URL(request.url).searchParams.get("since");
-        return reply(200, await store.archive(view, since && /^\d{1,15}$/.test(since) ? Number(since) : undefined));
+        const archive = await store.archive(view, since && /^\d{1,15}$/.test(since) ? Number(since) : undefined);
+        // GV-27: archived records sent to a desk are logged as a list read, as the live list is
+        // (H-0731), before they go. A failed log write fails the read.
+        if (archive?.records?.length && store.logList) await store.logList(view, "list");
+        return reply(200, archive);
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
@@ -407,13 +441,21 @@ export function createSharedHandler({
       }
       if (path === "/v1/workspace/record-access") {
         // Every desk logs the records it opens. The statewide coordinator reads the whole log; the
-        // access admin reads it for the desks inside its own place (D-80 item 14, Access log).
+        // access admin reads it for the desks inside its own place (D-80 item 14, Access log). A
+        // coordinator also reads the break glass openings for its review list: statewide every
+        // record, a service coordinator the records in its own service (D-80 item 14).
         if (request.method === "GET") {
-          if (!whole && view.access.role !== "admin")
+          const coordinator = view.access.role === "coordinator";
+          if (!whole && !coordinator && view.access.role !== "admin")
             return reply(403, { error: "The record access log is not part of your role" }, "role_denied");
           const patient = new URL(request.url).searchParams.get("patient");
           if (patient !== null && !RECORD_ID.test(patient)) return reply(400, { error: "A patient is required" });
-          return reply(200, { views: store.recordViews ? await store.recordViews(view, patient) : [] });
+          const views = store.recordViews ? await store.recordViews(view, patient) : [];
+          if (!coordinator) return reply(200, { views });
+          return reply(200, {
+            views,
+            openings: store.breakGlassOpenings && patient === null ? await store.breakGlassOpenings(view) : [],
+          });
         }
         const { body, refusal } = await json();
         if (refusal) return refusal;
@@ -518,7 +560,7 @@ export function createSharedHandler({
         try {
           body = await readBody(request);
         } catch (error) {
-          return reply(error.message === "too_large" ? 413 : 400, { error: "Invalid subscription" });
+          return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid subscription" });
         }
         if (path === "/v1/workspace/push-subscribe") {
           const subscription = parseSubscription(body?.subscription);
@@ -559,7 +601,7 @@ export function createSharedHandler({
       try {
         body = await readBody(request);
       } catch (error) {
-        return reply(error.message === "too_large" ? 413 : 400, { error: "Invalid command" });
+        return reply(messageOf(error) === "too_large" ? 413 : 400, { error: "Invalid command" });
       }
       if (
         !body ||
@@ -586,10 +628,21 @@ export function createSharedHandler({
       });
       return reply(result.status, result.body);
     } catch (error) {
-      if (error?.message === "role-ended")
+      if (messageOf(error) === "role-ended")
         return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
-      if (error?.message === "invalid-command")
+      if (messageOf(error) === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
+      // H-0291: the save would take the workspace past its size limit. It rolled back, so this
+      // change is definitely not saved, and retrying the same change cannot succeed.
+      if (
+        (typeof error === "object" && error !== null && "name" in error && error.name === "WorkspaceTooLargeError") ||
+        messageOf(error) === "Workspace too large"
+      )
+        return reply(
+          413,
+          { code: "workspace-full", error: "The shared workspace is full, so this change was not saved." },
+          "workspace_full",
+        );
       const storage = storageFailure(error);
       note.failure = errorFields(error);
       return storage

@@ -1,4 +1,5 @@
 // Audit 24-6 (time and clocks), fixes C: TC-03 and TC-06, read at the model level.
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseWrittenInstant } from "@/components/ward-management/legal-forms/legal-forms-sheets";
 import { HANDOVER_SHIFTS } from "@/components/ward-management/handover/handover-model";
@@ -39,5 +40,10 @@ describe("TC-06: handover times come from the one shift pattern", () => {
   it("starts each handover at a SHIFT_PATTERN shift start, in order", () => {
     expect(HANDOVER_SHIFTS.map((shift) => shift.minute)).toEqual(SHIFT_PATTERN.map((shift) => shift.startMinute));
     expect(HANDOVER_SHIFTS.map((shift) => shift.minute)).toEqual([7 * 60, 15 * 60, 23 * 60]);
+  });
+
+  it("keeps no second copy of the shift times in the handover model (H-0775)", () => {
+    const source = readFileSync("src/components/ward-management/handover/handover-model.ts", "utf8");
+    expect(source).not.toMatch(/minute:\s*\d/);
   });
 });

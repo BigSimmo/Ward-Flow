@@ -101,7 +101,12 @@ export type EligibilityWarning = { level: "ineligible"; text: string; failedGate
  * is not.
  */
 export function eligibilityWarning(movement: Movement, unit: Unit, now: Instant): EligibilityWarning | undefined {
-  const failedGates = eligibility(movement, unit, now).gates.filter((gate) => !gate.pass);
+  // WT-07 (walk-through, 26 Oct 2026): once this journey holds its bed, the ward's free-bed count
+  // and its age are no longer a question about this patient ("0 allocatable" on the arrivals card).
+  const holdsBed = movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving";
+  const failedGates = eligibility(movement, unit, now).gates.filter(
+    (gate) => !gate.pass && !(holdsBed && (gate.gate === "allocatable_bed" || gate.gate === "capacity_freshness")),
+  );
   if (failedGates.length === 0) return undefined;
   return {
     level: "ineligible",

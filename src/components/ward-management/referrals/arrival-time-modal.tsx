@@ -71,10 +71,14 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const pullHoldMinutes = configuration.pullHoldMinutes;
   const pullHoldLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}-hour` : `${pullHoldMinutes}-minute`;
 
-  const [arrivalMode, setArrivalMode] = useState<ArrivalMode>(
-    movement.arrivalDetails?.mode ?? "mental_health_transport",
-  );
-  const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? "");
+  // WT-13: opens blank until someone chooses; never a travel mode standing in for a choice not made.
+  const [arrivalMode, setArrivalMode] = useState<ArrivalMode | "">(movement.arrivalDetails?.mode ?? "");
+  // WT-06 (walk-through, 26 Oct 2026): the CAD number logged with the transport booking is offered
+  // here rather than asked again. Live jobs only; a cancelled booking's number is not carried.
+  const bookedCad =
+    movement.transport?.cancelledAt === undefined ? movement.transport?.cadNumber?.trim() || undefined : undefined;
+  const cadFromBooking = movement.arrivalDetails?.trackingNumber === undefined && bookedCad !== undefined;
+  const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? bookedCad ?? "");
   const [etaMinutes, setEtaMinutes] = useState(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -100,6 +104,10 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!saveGate.allowed || pending.current) return;
+    if (arrivalMode === "") {
+      setSaveError("Choose how they are travelling.");
+      return;
+    }
     pending.current = true;
     setSaving(true);
     setSaveError(null);
@@ -205,6 +213,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
               className={styles.control}
             >
+              <option value="" disabled>
+                Not chosen
+              </option>
               {ARRIVAL_MODES.map((mode: ArrivalMode) => (
                 <option key={mode} value={mode}>
                   {ARRIVAL_MODE_LABELS[mode]}
@@ -222,10 +233,12 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               disabled={saving}
               type="text"
               placeholder="e.g. CAD-2026-8912 or SJA-412"
+              aria-describedby={cadFromBooking ? `${baseId}-tracking-number-source` : undefined}
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               className={styles.control}
             />
+            {cadFromBooking ? <small id={`${baseId}-tracking-number-source`}>From the transport booking</small> : null}
           </div>
 
           <div className={styles.etaField}>

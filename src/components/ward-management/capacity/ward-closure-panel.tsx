@@ -86,8 +86,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           </Select>
         </Field>
         <p className={styles.note}>
-          The ward stops being offered for new patients. Beds already held or accepted here stay until someone moves
-          them.
+          The ward stops being offered for new patients. Beds already pulled here, and patients already accepted here,
+          stay until someone moves them.
         </p>
         <Button
           size="sm"
@@ -109,7 +109,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           onClose={() => setConfirming(false)}
           size="sm"
           title={`Close ${unit.name} to admissions?`}
-          description={`${unit.name} stops being offered for new patients until a person reopens it. Beds already pulled or accepted here stay where they are.`}
+          description={`${unit.name} stops being offered for new patients until a person reopens it. Beds already pulled here, and patients already accepted here, stay where they are.`}
           secondary={[{ label: "Cancel", onAction: () => setConfirming(false) }]}
           primary={{
             label: `Close ${unit.name}`,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { CheckCircle2, MapPin, Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -13,6 +14,7 @@ import {
   type HealthService,
 } from "@/components/ward-management/ward-model";
 import { GENDERS, type Gender } from "@/components/ward-management/ward-patients";
+import { RECORDED_SEXES, type RecordedSex } from "@/components/ward-management/ward-model-vocabulary";
 import {
   NOT_ON_SENDING_WARD_REASONS,
   type NotOnSendingWardReason,
@@ -21,10 +23,13 @@ import styles from "./ward-referral-drawer.module.css";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
 import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
+import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import { siteDirectory } from "@/components/ward-management/ward-sites";
 
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
 export function ReferralPatientStep({
@@ -102,8 +107,31 @@ export function ReferralPatientStep({
     notOnWardReason,
     setNotOnWardReason,
     heldBedWardName,
+    openJourney,
+    originSiteCode,
+    setOriginSiteCode,
+    setSourceKind,
   } = s;
+  // WS-08 (H-0973): this person already has an open ED journey that starts somewhere else.
+  const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
+  const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
   const someoneChosen = !!patientRecord || unidentified !== null;
+  // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
+  // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
+  const [highlight, setHighlight] = useState(-1);
+  const resultsKey = filteredPatients.map((p) => p.id).join("|");
+  const [seenResultsKey, setSeenResultsKey] = useState(resultsKey);
+  if (resultsKey !== seenResultsKey) {
+    setSeenResultsKey(resultsKey);
+    setHighlight(-1);
+  }
+  // Change patient opens the full list before anything is typed; "No patient matches" needs a search.
+  const searching = isSearchOpen && searchQuery.trim().length > 0;
+  const showResults = isSearchOpen && filteredPatients.length > 0;
+  const resultsId = `${searchId}-results`;
+  useEffect(() => {
+    if (showResults && highlight >= 0) revealWardOption(document.getElementById(`${searchId}-opt-${highlight}`));
+  }, [highlight, showResults, searchId]);
   // The step's faults in field order, worded as the fields word them, for the error summary.
   const problems: ErrorSummaryItem[] = patientShowErrors
     ? [
@@ -171,7 +199,7 @@ export function ReferralPatientStep({
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, familyName: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, familyName: value }))}
                   />
                 </Field>
                 <Field label="Given name" htmlFor={`${sectionId}-np-given`} required>
@@ -185,7 +213,7 @@ export function ReferralPatientStep({
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, givenName: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, givenName: value }))}
                   />
                 </Field>
                 <Field label="Date of birth" htmlFor={`${sectionId}-np-dob`} required>
@@ -194,7 +222,7 @@ export function ReferralPatientStep({
                     type="date"
                     className={styles.fieldInput}
                     value={newPatient.dateOfBirth}
-                    onChange={(e) => setNewPatient((p) => ({ ...p, dateOfBirth: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, dateOfBirth: value }))}
                   />
                 </Field>
                 <Field label="UMRN" htmlFor={`${sectionId}-np-umrn`} required>
@@ -208,8 +236,27 @@ export function ReferralPatientStep({
                     autoCapitalize="characters"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, umrn: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, umrn: value }))}
                   />
+                </Field>
+                {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
+                    and placement start from it instead of "Not recorded". */}
+                <Field label="Recorded sex" htmlFor={`${sectionId}-np-sex`} hint="optional">
+                  <SelectBox>
+                    <select
+                      id={`${sectionId}-np-sex`}
+                      className={styles.fieldSelect}
+                      value={newPatient.sex ?? ""}
+                      onChange={({ target: { value } }) =>
+                        setNewPatient((p) => ({ ...p, sex: value as RecordedSex | "" }))
+                      }
+                    >
+                      <option value="">Not recorded</option>
+                      {RECORDED_SEXES.filter((sex) => sex !== "Not recorded").map((sex) => (
+                        <option key={sex}>{sex}</option>
+                      ))}
+                    </select>
+                  </SelectBox>
                 </Field>
                 <Field label="Gender" htmlFor={`${sectionId}-np-gender`} hint="optional">
                   <SelectBox>
@@ -217,7 +264,9 @@ export function ReferralPatientStep({
                       id={`${sectionId}-np-gender`}
                       className={styles.fieldSelect}
                       value={newPatient.gender}
-                      onChange={(e) => setNewPatient((p) => ({ ...p, gender: e.target.value as Gender | "" }))}
+                      onChange={({ target: { value } }) =>
+                        setNewPatient((p) => ({ ...p, gender: value as Gender | "" }))
+                      }
                     >
                       <option value="">Not recorded</option>
                       {GENDERS.map((gender) => (
@@ -236,7 +285,7 @@ export function ReferralPatientStep({
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="words"
-                    onChange={(e) => setNewPatient((p) => ({ ...p, suburb: e.target.value }))}
+                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, suburb: value }))}
                   />
                 </Field>
               </div>
@@ -268,6 +317,10 @@ export function ReferralPatientStep({
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
                 aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
+                aria-haspopup="listbox"
+                aria-autocomplete="list"
+                aria-controls={showResults ? resultsId : undefined}
+                aria-activedescendant={showResults && highlight >= 0 ? `${searchId}-opt-${highlight}` : undefined}
                 placeholder="Find a patient by name or UMRN"
                 autoCorrect="off"
                 autoCapitalize="none"
@@ -279,6 +332,34 @@ export function ReferralPatientStep({
                 }}
                 onFocus={() => {
                   if (searchQuery.trim().length > 0) setIsSearchOpen(true);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    // Closes the list only; the drawer's own Escape stays for the next press.
+                    if (!showResults) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setIsSearchOpen(false);
+                    setHighlight(-1);
+                    return;
+                  }
+                  if (!showResults) {
+                    if (event.key === "ArrowDown" && searchQuery.trim().length > 0) {
+                      event.preventDefault();
+                      setIsSearchOpen(true);
+                    }
+                    return;
+                  }
+                  const last = filteredPatients.length - 1;
+                  if (event.key === "ArrowDown") setHighlight((i) => (i >= last ? 0 : i + 1));
+                  else if (event.key === "ArrowUp") setHighlight((i) => (i <= 0 ? last : i - 1));
+                  else if (event.key === "Home") setHighlight(0);
+                  else if (event.key === "End") setHighlight(last);
+                  else if (event.key === "Enter" && highlight >= 0) {
+                    setHighlight(-1);
+                    handleSelectPatient(filteredPatients[highlight]!.id);
+                  } else return;
+                  event.preventDefault();
                 }}
                 autoComplete="off"
                 spellCheck="false"
@@ -300,16 +381,35 @@ export function ReferralPatientStep({
               ) : null}
               {isPhone ? null : <kbd className={styles.kbd}>/</kbd>}
 
-              {isSearchOpen && filteredPatients.length > 0 ? (
-                <div className={styles.patientSearchResults} role="listbox" aria-label="Matching patients">
-                  {filteredPatients.map((p) => (
+              <p className="sr-only" role="status" aria-live="polite">
+                {showResults || searching
+                  ? filteredPatients.length > 0
+                    ? `${filteredPatients.length} ${filteredPatients.length === 1 ? "synthetic patient matches" : "synthetic patients match"}.`
+                    : "No patient matches."
+                  : ""}
+              </p>
+              {searching && filteredPatients.length === 0 ? (
+                <p className={styles.patientSearchResults} data-testid="referral-patient-no-match">
+                  No patient matches. Check the name or UMRN, or add a new patient.
+                </p>
+              ) : null}
+              {showResults ? (
+                <div
+                  id={resultsId}
+                  className={styles.patientSearchResults}
+                  role="listbox"
+                  aria-label="Matching patients"
+                >
+                  {filteredPatients.map((p, index) => (
                     <button
                       key={p.id}
+                      id={`${searchId}-opt-${index}`}
                       type="button"
                       role="option"
-                      aria-selected={activePatientKey === p.id}
+                      tabIndex={-1}
+                      aria-selected={highlight === index}
                       className={styles.patientSearchResultItem}
-                      data-active={activePatientKey === p.id}
+                      data-active={highlight === index || activePatientKey === p.id}
                       onClick={() => handleSelectPatient(p.id)}
                     >
                       <span className={styles.resultAvatar} aria-hidden="true">
@@ -425,6 +525,30 @@ export function ReferralPatientStep({
               </Link>
             </div>
           ) : null}
+          {journeyElsewhere ? (
+            <div className={styles.suggestion} data-testid="ward-referral-open-journey">
+              <StatusGlyph tone="warning" size={9} />
+              <span className={styles.suggestionText}>
+                <strong>Already on an open ED journey at {journeyElsewhere.edName}</strong>
+                <small>
+                  {originName
+                    ? `Sending from ${originName} starts a second journey.`
+                    : "Sending starts a second journey."}
+                </small>
+              </span>
+              <button
+                type="button"
+                className={styles.btn}
+                onClick={() => {
+                  setSourceKind("ed");
+                  setOriginSiteCode(journeyElsewhere.siteCode);
+                  announceToWardShell(`Referring from ${journeyElsewhere.edName}.`);
+                }}
+              >
+                Refer from {journeyElsewhere.edName}
+              </button>
+            </div>
+          ) : null}
           {sendingWard && notOnSendingWard && (patientRecord || unidentified !== null) ? (
             <div data-testid="ward-referral-not-on-sending-ward">
               <div className={styles.suggestion}>
@@ -494,7 +618,7 @@ export function ReferralPatientStep({
           <div
             className={styles.priorityGrid}
             role="region"
-            aria-label="Clinical Priority Grid"
+            aria-label="Clinical priority grid"
             hidden={noPatientChosen}
           >
             <div className={styles.priorityCell}>

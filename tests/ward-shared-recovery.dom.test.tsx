@@ -176,14 +176,58 @@ describe("shared recovery within an open sheet", () => {
     expect(screen.getByRole("status").textContent).toBe(
       "Signed in. Connecting to the shared workspace. This can take up to 15 seconds.",
     );
-    expect(screen.getByRole("main", { name: "Ward Flow sign-in" }).getAttribute("aria-busy")).toBe("true");
-    expect(screen.getByRole("button", { name: "Reconnect" })).toBeVisible();
+    expect(screen.getByRole("main", { name: "Opening Ward Flow" }).getAttribute("aria-busy")).toBe("true");
+    // #805: nothing has failed yet, so no Reconnect and no sign-in screen; Sign out stays.
+    expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign in with email" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
     view.rerender(
       <WardSharedAccess connection={{ ...shared, status: "unavailable", error: "Shared access is unavailable." }}>
         <p>Synthetic screen</p>
       </WardSharedAccess>,
     );
     expect(screen.queryByTestId("ward-shared-connecting")).toBeNull();
+    expect(screen.getByRole("button", { name: "Reconnect" })).toBeVisible();
+  });
+
+  it("checks a saved sign-in neutrally, and offers Reconnect only once the wait passes the request limit", () => {
+    vi.useFakeTimers();
+    try {
+      const shared = { ...connection("loading", false), signedIn: false, snapshot: null, error: null };
+      const view = render(
+        <WardSharedAccess connection={shared}>
+          <p>Synthetic screen</p>
+        </WardSharedAccess>,
+      );
+      expect(screen.getByRole("status").textContent).toBe("Checking your sign-in.");
+      expect(screen.queryByRole("button", { name: "Sign in with email" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
+      view.rerender(
+        <WardSharedAccess connection={{ ...shared, signedIn: true }}>
+          <p>Synthetic screen</p>
+        </WardSharedAccess>,
+      );
+      act(() => vi.advanceTimersByTime(14_999));
+      expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
+      act(() => vi.advanceTimersByTime(1));
+      fireEvent.click(screen.getByRole("button", { name: "Reconnect" }));
+      expect(shared.retry).toHaveBeenCalledTimes(1);
+      // A settled answer ends the wait; the next connection starts without Reconnect again.
+      view.rerender(
+        <WardSharedAccess connection={{ ...shared, status: "ready" }}>
+          <p>Synthetic screen</p>
+        </WardSharedAccess>,
+      );
+      expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+      view.rerender(
+        <WardSharedAccess connection={{ ...shared, signedIn: true }}>
+          <p>Synthetic screen</p>
+        </WardSharedAccess>,
+      );
+      expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not hide the global fallback when an inline overlay inherits workspace inert", async () => {

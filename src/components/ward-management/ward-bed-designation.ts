@@ -10,6 +10,7 @@
 // than free beds — and the honest response to that is "none of the other kind", never a negative
 // count rendered to a coordinator as though it meant something.
 import type { Unit } from "@/components/ward-management/ward-model";
+import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 
 /** Numbered bed sections use the same locked-first ordering as the ward board. */
 export function numberedBedKind(unit: Unit, bedNumber: number): "locked" | "open" | undefined {
@@ -35,14 +36,27 @@ export function openBeds(unit: Unit): number {
   return Math.max(0, unit.beds - unit.lockedBeds);
 }
 
+/**
+ * H-0978 / WS-15: a bed closed by number (`SET_BED_CLOSED`) is not offered, so it comes off the free
+ * figure of its own kind (locked beds are numbered first, `numberedBedKind`) and off the total.
+ */
+function closedByKind(unit: Unit): { locked: number; all: number } {
+  const marks = activeClosedBeds(unit);
+  return {
+    locked: marks.filter((mark) => numberedBedKind(unit, mark.bedNumber) === "locked").length,
+    all: marks.length,
+  };
+}
+
 /** Allocatable locked beds, clamped to the allocatable total it is a part of. */
 export function lockedBedsFree(unit: Unit): number {
-  return Math.max(0, Math.min(unit.allocatableLocked, unit.allocatable.value));
+  const closed = closedByKind(unit);
+  return Math.max(0, Math.min(unit.allocatableLocked - closed.locked, unit.allocatable.value - closed.all));
 }
 
 /** Allocatable open beds. Derived from the total and the locked part. */
 export function openBedsFree(unit: Unit): number {
-  return Math.max(0, unit.allocatable.value - lockedBedsFree(unit));
+  return Math.max(0, unit.allocatable.value - closedByKind(unit).all - lockedBedsFree(unit));
 }
 
 export function unitHasLockedBeds(unit: Unit): boolean {

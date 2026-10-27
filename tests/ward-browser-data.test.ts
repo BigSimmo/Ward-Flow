@@ -58,7 +58,6 @@ describe("sign-out clears Ward Flow browser data (overall review 2.8)", () => {
       "clinical-kb-preferences",
       "clinical-kb-theme",
       "sb-other-app",
-      "ward-flow-discreet-names",
       "ward-flow-rail",
       "ward_flow_choice_ed_index_order",
     ]);

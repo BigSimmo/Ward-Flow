@@ -457,7 +457,7 @@ test(
     const engine = await import("./dist/engine.mjs");
     const admin = new Pool({ connectionString: url, max: 1 });
     const database = `wardflow_records_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     await admin.query(`CREATE DATABASE ${database}`);
     const pool = new Pool({ connectionString: target.href, max: 2 });
@@ -506,6 +506,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
         );

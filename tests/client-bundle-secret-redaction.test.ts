@@ -58,6 +58,34 @@ describe("client secret diagnostics", () => {
     }
   });
 
+  it("fails with --require-bundle when no build has left client chunks (H-0295)", () => {
+    const root = mkdtempSync(join(tmpdir(), "ward-secret-require-bundle-"));
+    try {
+      mkdirSync(join(root, "scripts"));
+      mkdirSync(join(root, "src"));
+      cpSync("scripts/check-client-bundle-secrets.mjs", join(root, "scripts/check-client-bundle-secrets.mjs"));
+      writeFileSync(join(root, "src/safe.ts"), "export const safe = true;\n");
+      execFileSync("git", ["init", "--quiet"], { cwd: root });
+      execFileSync("git", ["add", "src"], { cwd: root });
+      const run = () =>
+        spawnSync(process.execPath, ["scripts/check-client-bundle-secrets.mjs", "--require-bundle"], {
+          cwd: root,
+          encoding: "utf8",
+          timeout: 10_000,
+        });
+      const missing = run();
+      expect(missing.status).toBe(1);
+      expect(missing.stderr).toContain("no built client chunks were found");
+      mkdirSync(join(root, ".next/static/chunks"), { recursive: true });
+      writeFileSync(join(root, ".next/static/chunks/app.js"), "console.log(1);\n");
+      const built = run();
+      expect(built.status).toBe(0);
+      expect(built.stdout).toContain("1 built client chunks");
+    } finally {
+      rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    }
+  });
+
   it("rejects an invented credential without repeating its value in either output stream", () => {
     const root = mkdtempSync(join(tmpdir(), "ward-secret-redaction-"));
     const invented = "sk-" + "inventedRedactionFixture1234567890";

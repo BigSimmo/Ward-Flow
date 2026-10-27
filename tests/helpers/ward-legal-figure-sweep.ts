@@ -265,6 +265,35 @@ export function candidateEvents(
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, reason: "staffing" }));
     case "REOPEN_WARD_TO_ADMISSIONS":
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
+    // H-0978 / WS-15: reopen a bed already closed, else close one of a ward's top beds (stays fill
+    // the lowest beds first), last ward first, so one close takes a single Ready bed from one ward.
+    case "SET_BED_CLOSED":
+      return [
+        ...state.units.flatMap((unit) =>
+          (unit.closedBeds ?? [])
+            .filter((mark) => mark.reopenedAt === undefined)
+            .map((mark) => ({
+              type,
+              role,
+              now,
+              unitId: unit.id,
+              actingUnitId: unit.id,
+              bedNumber: mark.bedNumber,
+              closed: false,
+            })),
+        ),
+        ...[...state.units].reverse().flatMap((unit) =>
+          [unit.beds, unit.beds - 1].map((bedNumber) => ({
+            type,
+            role,
+            now,
+            unitId: unit.id,
+            actingUnitId: unit.id,
+            bedNumber,
+            closed: true,
+          })),
+        ),
+      ];
     // Smart features idea 5: one action on every bed request, then marked done by the chair.
     case "RECORD_BED_MEETING_ACTION":
       return movementIds.map((id) => ({
@@ -519,7 +548,7 @@ export function candidateEvents(
         now,
         movementId,
         formName: "MHA Form",
-        fileName: "form.pdf",
+        fileType: "PDF",
         sizeBytes: 512,
       }));
     case "SET_STEP_DOWN_CANDIDATE":
@@ -1239,10 +1268,11 @@ export function candidateEvents(
     case "RECORD_OBSERVATION_LEVEL":
       // One candidate per admission, crossed with every level. A level is a closed list and its
       // review time is left unrecorded, so nothing here can carry a duration or statutory figure.
+      // Raised as the ward: the ED may not change a level on an admitted stay (audit 26 Oct).
       return state.admissions.flatMap((admission) =>
         OBSERVATION_LEVELS.map((level) => ({
           type,
-          role,
+          role: "ward" as const,
           now,
           target: { kind: "admission" as const, admissionId: admission.id, actingUnitId: admission.unitId },
           observation: observationAt(level),
@@ -2042,6 +2072,7 @@ export function undoOf(
     ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
   } as WardFlowEvent;
   const state = wardFlowReducer(applied, undo);
   return state.rejections.length === applied.rejections.length ? { type: undoType, state } : undefined;

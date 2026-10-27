@@ -291,6 +291,8 @@ describe("who may raise which event", () => {
     ASK_MORE_WARDS: ["coordinator"],
     CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
     REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+    // H-0978: one exact bed closed or reopened, the same desks as CONFIRM_CAPACITY.
+    SET_BED_CLOSED: ["ward", "bed_manager", "coordinator"],
     RECORD_BED_MEETING_ACTION: ["coordinator"],
     COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
     RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
@@ -465,8 +467,9 @@ describe("who may raise which event", () => {
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
     UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-    // A1-5 (13 Oct 2026): restricted to ED and coordinator, matching RECORD_LEGAL_FORM_EXPIRY.
-    RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
+    // A1-5 (13 Oct 2026): ED and coordinator. WT-03 (Josh, 26 Oct 2026): also the ward, only for a
+    // person admitted to its own bed (engine and scope checks).
+    RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
     RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
     RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
     EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
@@ -523,6 +526,7 @@ describe("who may raise which event", () => {
     UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
     UNDO_DEPARTURE: ["ward", "coordinator"],
     UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
+    UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

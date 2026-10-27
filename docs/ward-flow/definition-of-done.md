@@ -12,7 +12,7 @@ checklist on top of this one: [`SCREEN-DEFINITION-OF-DONE.md`](SCREEN-DEFINITION
       changed, `npm run build` passes too. For documentation-only changes, the ward doc-link check
       passes instead (`npm run docs:check-links`).
 - [ ] **The tests for the areas you touched pass.** Run the test files for what you changed
-      (`npm run test:focused -- --files <paths>`). Changes to the engine need the full offline ward
+      (`npm run test:focused -- --files <a>,<b>`, one comma-separated value). Changes to the engine need the full offline ward
       suite (`npm run check:ward-expected-reds`) before integration. Never skip, disable or loosen a
       test to make it pass. Report any failure honestly, with the one line that shows it.
 - [ ] **It is committed locally.** Small commits on your own branch in your own worktree. Nothing

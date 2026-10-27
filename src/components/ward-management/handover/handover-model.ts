@@ -7,6 +7,7 @@
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
+import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
@@ -35,16 +36,21 @@ import { declineReasonLabels } from "@/components/ward-management/movements/move
 import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 
 /* ------------------------------------------------------------------ shifts */
 
 export type HandoverShiftId = "am" | "pm" | "ev";
 
-/** The three handovers, at the starts of the app's shift pattern (07:00, 15:00, 23:00). */
+/**
+ * The three handovers, at the starts of the app's one shift pattern (`SHIFT_PATTERN`: 07:00, 15:00,
+ * 23:00). TC-06 (audit 24 Oct 2026, H-0775): the minutes are read from `SHIFT_PATTERN`, not kept as a
+ * second copy here, so a change to the shift times moves every handover with it.
+ */
 export const HANDOVER_SHIFTS: readonly { id: HandoverShiftId; minute: number; label: string }[] = [
-  { id: "am", minute: 7 * 60, label: "Night to day" },
-  { id: "pm", minute: 15 * 60, label: "Day to evening" },
-  { id: "ev", minute: 23 * 60, label: "Evening to night" },
+  { id: "am", minute: SHIFT_PATTERN[0].startMinute, label: "Night to day" },
+  { id: "pm", minute: SHIFT_PATTERN[1].startMinute, label: "Day to evening" },
+  { id: "ev", minute: SHIFT_PATTERN[2].startMinute, label: "Evening to night" },
 ];
 
 export function handoverShift(id: HandoverShiftId) {
@@ -132,24 +138,25 @@ export function handoverSignedBefore(signOffs: readonly { at: Instant }[], to: I
 
 /* ------------------------------------------------------------------ rows */
 
+/** H-0807: the stage words every other screen uses (`stageCopy`), never a set of handover's own. */
 export const STAGE_LABEL: Record<MovementStage, string> = {
-  placement_requested: "Placement requested",
-  destination_review: "Ward reviewing",
-  accepted_awaiting_bed: "Accepted, awaiting bed",
-  pulled: "Bed pulled",
-  moving: "Moving",
-  handover_ready: "Ready to hand over",
-  arrived: "Arrived",
+  placement_requested: stageCopy.placement_requested.label,
+  destination_review: stageCopy.destination_review.label,
+  accepted_awaiting_bed: stageCopy.accepted_awaiting_bed.label,
+  pulled: stageCopy.pulled.label,
+  moving: stageCopy.moving.label,
+  handover_ready: stageCopy.handover_ready.label,
+  arrived: stageCopy.arrived.label,
 };
 
 const OWNER_SHORT: Record<string, string> = {
   "ED mental health team": "ED team",
-  "Flow coordinator": "Coordinator",
+  "Bed coordinator": "Coordinator",
   "Ward nurse in charge": "Ward NIC",
 };
 
 /** The coordinator using this page. Owner names are role labels in this model. */
-export const HANDOVER_ME = "Flow coordinator";
+export const HANDOVER_ME = "Bed coordinator";
 
 /** Urgent first; otherwise "Constant" for a level that takes observation staff (fix plan item 10). */
 export type HandoverObs = "Standard" | "Urgent" | "Constant";
@@ -483,7 +490,7 @@ export function nextStep(
     const ready = row.to ? readyBeds(row.to.unitId) : 0;
     text =
       ready > 0
-        ? `Pull a bed, ${row.to!.name} shows ${ready} ready`
+        ? `Pull the bed, ${row.to!.name} shows ${ready} ready`
         : `Wait for a bed at ${row.to?.name ?? "the ward"}`;
   } else if (row.asked.length) {
     text =

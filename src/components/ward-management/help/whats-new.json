@@ -1,102 +1,102 @@
 [
   {
-    "id": "2026-10-24-help-guide",
-    "date": "2026-10-24",
-    "line": "Help now has a guide for your desk: your main jobs, step by step, each with a link to its screen."
+    "id": "2026-10-27-charts-to-follow",
+    "date": "2026-10-27",
+    "line": "Referrals can mark the medication or observation chart To follow when it is not to hand."
   },
   {
-    "id": "2026-10-24-help-tour",
-    "date": "2026-10-24",
-    "line": "The tour starts by itself only once on each device. Open it again any time from Help."
+    "id": "2026-10-27-one-transport-form",
+    "date": "2026-10-27",
+    "line": "Transport bookings use one form on every screen, with legal status filled in from Legal now."
   },
   {
-    "id": "2026-10-24-help",
-    "date": "2026-10-24",
-    "line": "On a computer, the ? beside each screen's name opens help for that screen."
+    "id": "2026-10-27-plain-words",
+    "date": "2026-10-27",
+    "line": "Screens now say Bed coordinator, pulled for incoming beds, and plain words in place of codes."
   },
   {
-    "id": "2026-10-25-whats-new",
-    "date": "2026-10-25",
-    "line": "Help now lists recent changes under What's new, and this note shows them after each update."
+    "id": "2026-10-27-ed-quick-answers",
+    "date": "2026-10-27",
+    "line": "The ED Ask for a bed form keeps every answer when you choose quickly on a phone."
   },
   {
-    "id": "2026-10-26-bed-flow-reliability",
-    "date": "2026-10-26",
-    "line": "Bed holds, ED counts, reports and archived history now stay consistent through access changes and interrupted saves."
+    "id": "2026-10-27-seven-travel-choices",
+    "date": "2026-10-27",
+    "line": "Every screen asking how a patient travels offers the same seven choices, with none picked for you."
   },
   {
-    "id": "2026-10-26-archived-referral-progress",
-    "date": "2026-10-26",
-    "line": "Older referrals and moves in History now show their progress too, with other wards still private."
+    "id": "2026-10-27-full-names-on-phones",
+    "date": "2026-10-27",
+    "line": "Phones now always show patients' full names. The Discreet names setting has gone."
   },
   {
-    "id": "2026-10-26-ward-referral-privacy",
-    "date": "2026-10-26",
-    "line": "Ward referrals show permitted progress while keeping other destinations private."
+    "id": "2026-10-27-tv-signed-out",
+    "date": "2026-10-27",
+    "line": "A TV that is signed out now says so in full screen, and keeps its figures still while it is offline."
   },
   {
-    "id": "2026-10-26-stopped-transport-wording",
-    "date": "2026-10-26",
-    "line": "The ward's Act now card for stopped transports says the beds are still pulled again."
+    "id": "2026-10-27-referral-patient-search-keys",
+    "date": "2026-10-27",
+    "line": "The new referral's patient search now works with arrow keys and Enter, and says when nobody matches."
   },
   {
-    "id": "2026-10-26-agreed-wording",
-    "date": "2026-10-26",
-    "line": "Clearer words: Accepted, no bed yet, Ask for a bed and Gender mix. ED rows turn red only at the access target."
+    "id": "2026-10-27-accept-dialog-words",
+    "date": "2026-10-27",
+    "line": "The accept dialog now says Accept referral in principle and Confirm acceptance. Ward checks say Ward cohort."
   },
   {
-    "id": "2026-10-26-wording-pulled-held-up",
-    "date": "2026-10-26",
-    "line": "Clearer wording: pulled beds say pulled, delayed discharges say held up, and form times say as written."
+    "id": "2026-10-27-accept-dialog-patient-field",
+    "date": "2026-10-27",
+    "line": "The accept dialog now labels its read-only field Patient, as it never allocates a bed."
   },
   {
-    "id": "2026-10-26-inline-forms-changed-meanwhile",
-    "date": "2026-10-26",
-    "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
+    "id": "2026-10-27-referral-prefill",
+    "date": "2026-10-27",
+    "line": "The referral form now fills medical clearance, your contact details, home region and catchment from the record."
   },
   {
-    "id": "2026-10-26-pull-the-bed-home",
-    "date": "2026-10-26",
-    "line": "Home lists accepted referrals with no bed pulled, and Pull the bed now takes two taps in one sheet."
+    "id": "2026-10-27-open-ed-journey-warning",
+    "date": "2026-10-27",
+    "line": "Referring someone already on an open ED journey elsewhere now warns you before Send."
   },
   {
-    "id": "2026-10-26-pilot-measures-pulled",
-    "date": "2026-10-26",
-    "line": "Weekly report shows the four agreed pilot measures. Forms 3B and 3C read differently. Incoming beds say pulled."
+    "id": "2026-10-27-ed-transport-booked",
+    "date": "2026-10-27",
+    "line": "Once a bed is pulled, the ED row's main button is Transport booked."
   },
   {
-    "id": "2026-10-26-tour-skip-closes",
-    "date": "2026-10-26",
-    "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."
+    "id": "2026-10-27-home-release-pulled-bed",
+    "date": "2026-10-27",
+    "line": "Home can release a pulled bed in place, with a reason and undo."
   },
   {
-    "id": "2026-10-26-bed-move-and-extension-checks",
-    "date": "2026-10-26",
-    "line": "Moving someone from a locked to an open bed asks for a reason when needed. Extending a form needs the new expiry date."
+    "id": "2026-10-27-referral-board-keys",
+    "date": "2026-10-27",
+    "line": "Referral board: A accepts and D declines the open referral."
   },
   {
-    "id": "2026-10-26-departures-and-pulls-named",
-    "date": "2026-10-26",
-    "line": "Recording a departure asks where they went, with nothing chosen for you. Pulling a bed names who it was pulled for."
+    "id": "2026-10-27-bed-meeting-undo",
+    "date": "2026-10-27",
+    "line": "A bed meeting action marked done by mistake can now be undone."
   },
   {
-    "id": "2026-10-26-not-recorded-wording",
-    "date": "2026-10-26",
-    "line": "Where nothing is recorded the screens say so, and the referral summary labels what came from the referral letter."
+    "id": "2026-10-27-handover-copy-result",
+    "date": "2026-10-27",
+    "line": "Home's Copy as handover text now tells you whether the copy worked."
   },
   {
-    "id": "2026-10-26-names-and-umrn",
-    "date": "2026-10-26",
-    "line": "Phone ED rows show the UMRN beside the name. The practice hospital feed names each person and a confirm can be undone."
+    "id": "2026-10-27-rules-file-unreadable",
+    "date": "2026-10-27",
+    "line": "Settings now says when a rules file can't be read."
   },
   {
-    "id": "2026-10-26-handover-forecast-double-tap",
-    "date": "2026-10-26",
-    "line": "Handover keeps your shift past midnight, the forecast covers long weekends, and an ED accept needs two separate taps."
+    "id": "2026-10-27-copy-removes-date-of-birth",
+    "date": "2026-10-27",
+    "line": "Copied text now removes a date of birth written mid-line."
   },
   {
-    "id": "2026-10-26-arrival-check-and-refusal-warnings",
-    "date": "2026-10-26",
-    "line": "Confirm arrival now asks you to check the name and UMRN first. A refusal shows as a warning, never a tick."
+    "id": "2026-10-27-buzz-across-tabs",
+    "date": "2026-10-27",
+    "line": "Buzz sound on or off now matches across open tabs."
   }
 ]

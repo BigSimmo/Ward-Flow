@@ -49,7 +49,9 @@ describe("Ward Flow Read-Only Plain History", () => {
       // MARK_CLOSURE_TRANSITION_ITEM. Package A adds RECORD_REFERRAL_COMMITMENT; package E adds two.
       // Package B adds RECORD_DISCHARGE_DEPENDENCY and RECORD_DISCHARGE_PLAN_CHANGE.
       // Audit 24-1 decision 4 (24 Oct 2026) removes RELEASE_BED; old records keep their wording.
-      expect(allEventTypes.length).toBe(161);
+      // H-0150 adds UNDO_BED_MEETING_ACTION.
+      // H-0978 / WS-15 (26 Oct 2026) adds SET_BED_CLOSED.
+      expect(allEventTypes.length).toBe(163);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
@@ -75,11 +77,11 @@ describe("Ward Flow Read-Only Plain History", () => {
     expect(EVENT_HISTORY_TABLE[event.type].category).toBe("both");
   });
 
-  it("words the officer's Delivered as a transport delivery and the ward's confirmation as arrival", () => {
+  it("words the officer's Arrived at ward as a transport step and the ward's confirmation as arrival", () => {
     const base = { type: "PATIENT_ARRIVED", movementId: "WF-001", now: 600 } as const;
     const delivered = buildHistoryEntry({ ...base, role: "officer" } as WardFlowEvent, NOW);
     const arrived = buildHistoryEntry({ ...base, role: "ward", actingUnitId: "U-1" } as WardFlowEvent, NOW);
-    expect(delivered.summary).toBe("Transport delivered to the receiving ward");
+    expect(delivered.summary).toBe("Officer recorded arrival at the receiving ward");
     expect(arrived.summary).toBe("Patient arrived at ward bed");
   });
 
@@ -144,7 +146,7 @@ describe("Ward Flow Read-Only Plain History", () => {
 
     it("follows role-not-person rule for who field", () => {
       const history = selectPatientHistory(mockEvents, "MOV-1", NOW);
-      expect(history[1].who).toBe("ED mental health");
+      expect(history[1].who).toBe("ED clinician");
       expect(history[1].role).toBe("ed");
       expect(history[2].who).toBe("Ward manager");
       expect(history[2].role).toBe("ward");

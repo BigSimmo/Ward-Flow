@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import {
   areCharacterShortcutsEnabled,
   useCharacterShortcutsPreference,
@@ -103,6 +104,11 @@ import {
 } from "@/components/wf";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+// Help usage counts carry the how-to list, so they load only when the Ask help preview is on.
+const WardHelpUsageCard = dynamic(() =>
+  import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
+);
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
@@ -118,11 +124,10 @@ import {
   type ReferenceTab,
   type ThemeChoice,
 } from "./settings-panes";
-import { useDiscreetNamesSetting } from "./discreet-names";
 import { useRowDensity, type RowDensity } from "./row-density";
 import { RuleRow, ScopeLine, SettingRow } from "./settings-rows";
 import { SETTINGS_TABS, findSettings, type SettingsSearchEntry, type SettingsTab } from "./settings-search-index";
-import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
+import { useSettingsDeskProfile } from "./settings-desk-profile";
 import { publishedThresholds } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
@@ -220,6 +225,7 @@ export function SettingsScreen() {
   // Access admin desk opens on it, because giving roles is all that desk does.
   const { desk } = useWardAccessSnapshot();
   const accessOn = useWardFeatureFlag("role-access") && showsAccessTab(desk);
+  const helpAskOn = useWardFeatureFlag("help-ask");
   const tabs = accessOn ? SETTINGS_TABS : SETTINGS_TABS.filter((item) => item.id !== "access");
   const tab: SettingsTab =
     chosenTab === null
@@ -237,7 +243,6 @@ export function SettingsScreen() {
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const [rowDensity, setRowDensity] = useRowDensity();
-  const [discreetNames, setDiscreetNames] = useDiscreetNamesSetting();
   const [characterShortcuts, setCharacterShortcuts] = useCharacterShortcutsPreference();
   const [audioBuzz, setAudioBuzz] = useAudioBuzzPreference();
   const [actNowNotifications] = useActNowNotificationPreference();
@@ -288,19 +293,21 @@ export function SettingsScreen() {
     },
     [setRowDensity, showToast],
   );
-  const chooseDiscreetNames = useCallback(
-    (next: boolean) => {
-      setDiscreetNames(next);
-      showToast(`Discreet names on phone ${next ? "on" : "off"}.`);
-    },
-    [setDiscreetNames, showToast],
-  );
 
   // Open the tab named in the address (#alerts), and keep the address in step.
   useEffect(() => {
     const fromHash = readTabFromHash();
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the hash is only readable after mount
     if (fromHash) setTab(fromHash);
+  }, []);
+  // A hash change while Settings is open (Help's Show me naming a tab) opens that tab too.
+  useEffect(() => {
+    const openFromHash = () => {
+      const fromHash = readTabFromHash();
+      if (fromHash) setTab(fromHash);
+    };
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
   }, []);
   const chooseTab = useCallback((next: SettingsTab) => {
     setTab(next);
@@ -502,17 +509,16 @@ export function SettingsScreen() {
   };
 
   const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+    // H-0351: clear the picker straight away, so choosing the same file again always fires a change.
+    const file = event.target.files?.[0];
+    event.target.value = "";
     if (!configurationGate.allowed) {
       showToast(configurationBlockReason!, "warning");
-      event.target.value = "";
       return;
     }
-    if (savingRef.current) return;
-    const file = event.target.files?.[0];
-    if (!file) return;
+    if (savingRef.current || !file) return;
     if (file.size > 10 * 1024 * 1024) {
       showToast("Configuration file exceeds 10 MB limit.");
-      event.target.value = "";
       return;
     }
     const reader = new FileReader();
@@ -535,8 +541,8 @@ export function SettingsScreen() {
       } catch {
         showToast("Invalid configuration file format.");
       }
-      event.target.value = "";
     };
+    reader.onerror = () => showToast("This rules file could not be read. Select it again.");
     reader.readAsText(file);
   };
 
@@ -842,7 +848,7 @@ export function SettingsScreen() {
               unavailableReason={configurationBlockReason}
               setting="pull-hold"
               title="Pull time limit"
-              sub="Before a pulled bed returns"
+              sub="How long a pulled bed is kept"
               value={rules.hold}
               saved={saved.hold}
               savedDisplay={shortDuration(saved.hold)}
@@ -862,7 +868,7 @@ export function SettingsScreen() {
               unavailableReason={configurationBlockReason}
               setting="morning-count"
               testId="setting-morning-rollup-row"
-              title="Morning count"
+              title="Morning bed numbers due"
               sub="Not a legal limit"
               subTestId="setting-morning-rollup-desc"
               value={rules.morning}
@@ -870,7 +876,7 @@ export function SettingsScreen() {
               savedDisplay={clock24(saved.morning)}
               display={clock24(rules.morning)}
               displayTestId="morning-rollup-display"
-              noun="morning rollup deadline"
+              noun="morning bed numbers due time"
               range={{
                 id: "setting-morning-rollup-slider",
                 ...MORNING_ROLLUP_TIME_RANGE_MINUTES,
@@ -1057,8 +1063,6 @@ export function SettingsScreen() {
         onRowDensityChange={chooseRowDensity}
         characterShortcuts={characterShortcuts}
         onCharacterShortcutsChange={setCharacterShortcuts}
-        discreetNames={discreetNames}
-        onDiscreetNamesChange={chooseDiscreetNames}
       />
     </>
   );
@@ -1090,6 +1094,7 @@ export function SettingsScreen() {
           setIsResetModalOpen(true);
         }}
       />
+      {helpAskOn ? <WardHelpUsageCard /> : null}
     </>
   );
 
@@ -1161,6 +1166,8 @@ export function SettingsScreen() {
       <strong>Rule change not saved.</strong> {configurationFailure}
     </p>
   ) : null;
+  // #788: the band names the desk in use, not the coordinator demo profile, on every role.
+  const deskProfile = useSettingsDeskProfile();
 
   /* Phone (v10): its own design, never a reflow of the desktop. A compact profile hero, Find a
      setting, the four settings people change on a phone, then the five areas as rows that open
@@ -1171,7 +1178,7 @@ export function SettingsScreen() {
       rules: "Timings, form warnings, decision targets",
       alerts: `Browser ${actNowNotifications ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
       display: `Motion ${reducedMotion ? "reduced" : "on"} · contrast ${highContrast ? "high" : "standard"}`,
-      profile: `${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`,
+      profile: `${deskProfile.role} · ${deskProfile.location}`,
       data: "Export, restore, about this prototype",
       access: desk.role === "admin" ? "Roles, approvals and requests" : "Cover for a second ward or ED",
     };
@@ -1197,18 +1204,18 @@ export function SettingsScreen() {
             title={
               <span className={styles.phoneWho}>
                 <Avatar
-                  name={SETTINGS_DEMO_PROFILE.name}
-                  initials={SETTINGS_DEMO_PROFILE.initials}
+                  name={deskProfile.name}
+                  initials={deskProfile.initials}
                   online
                   decorative
                   className={styles.avatar}
                 />
-                {SETTINGS_DEMO_PROFILE.name}
+                {deskProfile.name}
               </span>
             }
-            eyebrow={SETTINGS_DEMO_PROFILE.location}
+            eyebrow={deskProfile.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={SETTINGS_DEMO_PROFILE.role}
+            sub={deskProfile.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
@@ -1253,14 +1260,6 @@ export function SettingsScreen() {
                   ]}
                   value={rowDensity}
                   onChange={chooseRowDensity}
-                />
-              </SettingRow>
-              <SettingRow setting="discreet-names" title="Discreet names on phone" sub="Initials and UMRN in lists">
-                <Switch
-                  checked={discreetNames}
-                  onCheckedChange={chooseDiscreetNames}
-                  label={<SrOnly>Discreet names on phone</SrOnly>}
-                  className={styles.phoneSwitch}
                 />
               </SettingRow>
               <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
@@ -1374,17 +1373,17 @@ export function SettingsScreen() {
         <Hero
           className={styles.band}
           testId="ward-settings-profile"
-          eyebrow={`${SETTINGS_DEMO_PROFILE.role} · ${SETTINGS_DEMO_PROFILE.location}`}
+          eyebrow={`${deskProfile.role} · ${deskProfile.location}`}
           title={
             <span className={styles.who}>
               <Avatar
-                name={SETTINGS_DEMO_PROFILE.name}
-                initials={SETTINGS_DEMO_PROFILE.initials}
+                name={deskProfile.name}
+                initials={deskProfile.initials}
                 online
                 decorative
                 className={styles.avatar}
               />
-              {SETTINGS_DEMO_PROFILE.name}
+              {deskProfile.name}
             </span>
           }
           titleMeta={

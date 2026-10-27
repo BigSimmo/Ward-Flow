@@ -406,13 +406,18 @@ describe("working-role changes", () => {
 });
 
 describe("refresh and role recovery completion", () => {
-  it("settles a command queued behind a failed poll without sending it", async () => {
+  it("stops a poll in flight for a queued command, and the poll's failure does not cancel it (#817)", async () => {
     let rejectPoll!: (error: Error) => void;
     const poll = new Promise<Response>((_resolve, reject) => {
       rejectPoll = reject;
     });
     let calls = 0;
-    const fetcher = vi.fn<typeof fetch>(async () => (++calls === 1 ? Response.json({ snapshot: snapshot() }) : poll));
+    const fetcher = vi.fn<typeof fetch>(async (_url, options) => {
+      calls += 1;
+      if (calls === 1) return Response.json({ snapshot: snapshot() });
+      if (options?.body) return Response.json({ snapshot: snapshot(2) });
+      return poll;
+    });
     const client = new SharedWorkspaceClient({
       baseUrl: "https://example.test",
       token: async () => "test",
@@ -421,11 +426,14 @@ describe("refresh and role recovery completion", () => {
     });
     await client.refresh();
     const refreshing = client.refresh();
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2));
+    const pollSignal = fetcher.mock.calls[1][1]?.signal;
     const queued = client.dispatchConfirmed(event);
-    rejectPoll(new Error("offline"));
+    expect(pollSignal?.aborted).toBe(true);
+    rejectPoll(new Error("aborted"));
     await refreshing;
-    await expect(queued).resolves.toMatchObject({ status: "cancelled" });
-    expect(fetcher.mock.calls.every(([, options]) => !options?.body)).toBe(true);
+    await expect(queued).resolves.toMatchObject({ status: "accepted" });
+    expect(fetcher.mock.calls.filter(([, options]) => options?.body)).toHaveLength(1);
     client.dispose();
   });
   it("discovers remaining roles with a GET after a command's stored role ends, without replaying it", async () => {

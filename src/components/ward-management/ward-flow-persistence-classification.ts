@@ -167,6 +167,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "CLEAR_MOVEMENT_URGENT_FLAG",
   "CLOSE_WARD_TO_ADMISSIONS",
   "REOPEN_WARD_TO_ADMISSIONS",
+  // H-0978: ids, a whole bed number, a boolean and a choice from WARD_CLOSURE_REASONS. No typed text.
+  "SET_BED_CLOSED",
   "RECORD_BED_MEETING_ACTION",
   "COMPLETE_BED_MEETING_ACTION",
   // D-72: ids, a choice from a fixed list and a typed time already read to an `Instant`. No typed text.
@@ -350,6 +352,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_TRANSPORT_STEP",
   "UNDO_DEPARTURE",
   "UNDO_ABSENT_WITHOUT_LEAVE",
+  "UNDO_BED_MEETING_ACTION",
 ] as const satisfies readonly WardFlowEvent["type"][];
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the

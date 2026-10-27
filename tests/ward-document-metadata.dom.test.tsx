@@ -32,7 +32,8 @@ describe("document metadata and modal lifecycle", () => {
   it("cannot record an absent or empty file, and records actual metadata only", () => {
     setup();
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveTextContent("File contents are not stored or sent");
+    expect(dialog).toHaveTextContent("Only the file type, size and document type are recorded");
+    expect(dialog).toHaveTextContent("The file name and contents are not stored or sent");
     const submit = screen.getByTestId("confirm-upload-form-button");
     expect(submit).toHaveAttribute("aria-disabled", "true");
     const input = within(dialog).getByLabelText("Select a file to record its details");
@@ -41,18 +42,23 @@ describe("document metadata and modal lifecycle", () => {
     fireEvent.submit(submit.closest("form")!);
     expect(screen.getByTestId("metadata")).toHaveTextContent("[]");
     fireEvent.change(input, {
-      target: { files: [new File(["synthetic"], "example.pdf", { type: "application/pdf" })] },
+      target: { files: [new File(["synthetic"], "Synthetic-Name-Marker.pdf", { type: "application/pdf" })] },
     });
+    // The chosen name shows while the dialog is open, on this device only.
+    expect(dialog).toHaveTextContent("Synthetic-Name-Marker.pdf");
     fireEvent.click(submit);
     const records = JSON.parse(screen.getByTestId("metadata").textContent!);
     expect(records).toHaveLength(1);
     expect(records[0]).toMatchObject({
-      fileName: "example.pdf",
+      fileType: "PDF",
       sizeBytes: 9,
       formName: "Form 4A Transport Order",
       uploadedBy: "ward",
     });
     expect(records[0]).not.toHaveProperty("content");
+    // H-0049: a real file name can carry a patient's name, so it never reaches the shared state.
+    expect(records[0]).not.toHaveProperty("fileName");
+    expect(screen.getByTestId("metadata").textContent).not.toContain("Synthetic-Name-Marker");
   });
   it("contains keyboard focus, isolates the background and returns to its trigger", () => {
     // jsdom has no layout; the shared modal trap only cycles through controls that have client rects.

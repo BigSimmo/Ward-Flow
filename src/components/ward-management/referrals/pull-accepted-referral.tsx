@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 import Link from "next/link";
 
 import { Button, DisabledReason, Field, Select, useOptionalToast } from "@/components/wf";
@@ -36,9 +36,10 @@ const NO_FORM = "none";
  * PULL THE BED IN ONE STEP (WS-03, workflow speed audit, 26 Oct 2026). Pulling the bed after a ward
  * accepted took 11 taps over two or three screens and asked for the legal details again. This asks
  * once, filled in from what is already recorded (the person's wait on the ED board, else the
- * referral). Pull the bed starts the accepted journey, then Confirm pull keeps the bed at the ward
- * that accepted, both in this sheet. Each engine event follows a tap, never an effect (never-build
- * drift guard). Nothing is chosen for the person: the ward is the one that accepted, the details
+ * referral). WT-08 (Josh, 26 Oct 2026): one tap starts the accepted journey and keeps the bed at
+ * the ward that accepted, in one event, so a refused pull starts nothing. Only after a refusal is
+ * the journey offered on its own, where the reasons live. Each engine event follows a tap, never an
+ * effect (never-build drift guard). Nothing is chosen for the person: the ward is the one that accepted, the details
  * are the recorded ones, and anything not recorded is asked. A refusal (no Ready bed, observation
  * staffing, an override needed) is shown with a link to the journey, where the reasons live.
  */
@@ -65,22 +66,15 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
   const [intervalMinutes, setIntervalMinutes] = useState<number>(
     recorded.observation?.intervalMinutes ?? INTERMITTENT_INTERVAL_MINUTES[0],
   );
-  const [startedMovementId, setStartedMovementId] = useState<string | undefined>();
-  // True once the start is accepted. The journey can reach the record before or after that answer
-  // (local or shared), so Confirm pull waits for both: this flag and the journey on the record.
+  // The refusal of the one-tap pull, which offers the journey on its own.
+  const [pullRefused, setPullRefused] = useState(false);
+  // True once the journey alone was started after a refusal; its link then opens it.
   const [journeyStarted, setJourneyStarted] = useState(false);
-  // The journey whose bed this sheet has asked to pull, so a second tap never asks twice.
-  const pullAsked = useRef<string | undefined>(undefined);
   const [message, setMessage] = useState<string | undefined>();
 
-  // The journey starts first; Confirm pull then keeps its bed.
-  const journey = journeyStarted
-    ? movements.find(
-        (movement) =>
-          movement.referralId === referral.id && !movement.closure && movement.stage === "accepted_awaiting_bed",
-      )
+  const journeyId = journeyStarted
+    ? movements.find((movement) => movement.referralId === referral.id && !movement.closure)?.id
     : undefined;
-  const journeyId = journey?.id;
   const accepted = acceptedAddressing(referral);
   const destination = accepted?.destination.kind === "psychiatric_ward" ? accepted.destination : undefined;
   const ed =
@@ -93,11 +87,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       : null;
   // This raises as the coordinator, so only the coordinator's desk may use it.
   const refusal =
-    (journeyStarted && (message || !journeyId)
-      ? message
-        ? "The journey has started. Open it to pull the bed."
-        : "Starting the journey"
-      : undefined) ??
+    (journeyStarted ? "The journey has started. Open it to pull the bed." : undefined) ??
     (role === "coordinator" ? undefined : "Coordinator only") ??
     gate("RAISE_REFERRAL").reason ??
     gate("PULL_PATIENT").reason ??
@@ -112,32 +102,14 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
     (legalForm === "" ? "Choose a legal form or no form" : undefined) ??
     (level === "" ? "Choose an observation level" : undefined);
 
-  function confirmPull() {
-    if (journeyId === undefined || pullAsked.current === journeyId) return;
-    pullAsked.current = journeyId;
-    completeCommand(
-      `pull:${journeyId}`,
-      () => raise("PULL_PATIENT", { movementId: journeyId, unitId }),
-      (outcome) => {
-        const failure = wardCommandFailure(outcome);
-        if (failure) {
-          setStartedMovementId(journeyId);
-          setMessage(`The journey has started, but the bed is not pulled. ${failure}`);
-          return;
-        }
-        toast?.push({ tone: "success", title: `Bed pulled at ${unitName}` });
-        onDone();
-      },
-    );
-  }
-
   function pull(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (refusal) return;
-    if (journeyStarted) {
-      confirmPull();
-      return;
-    }
+    start(true);
+  }
+
+  /** Starts the accepted journey, with its bed pulled unless the pull was refused and declined. */
+  function start(pullBed: boolean) {
     if (!destination || !referral.ageBand || legalStatus === "" || legalForm === "" || level === "") return;
     setMessage(undefined);
     // The recorded level is carried whole, with any review time a person typed; a changed level is new.
@@ -156,6 +128,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
           ...(ed ? { edId: ed.id } : {}),
           referralId: referral.id,
           acceptedUnitId: unitId,
+          ...(pullBed ? { pullBed: true } : {}),
           draft: {
             cohort: referral.ageBand,
             security: destination.secureBedNeeded ? "Secure" : "Open",
@@ -172,13 +145,21 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
         }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
-        if (failure) setMessage(failure);
-        else setJourneyStarted(true);
+        if (failure) {
+          setMessage(pullBed ? `The bed is not pulled and nothing has started. ${failure}` : failure);
+          if (pullBed) setPullRefused(true);
+        } else if (pullBed) {
+          toast?.push({ tone: "success", title: `Bed pulled at ${unitName}` });
+          onDone();
+        } else {
+          setMessage("The journey has started without the bed. Open it to pull the bed.");
+          setJourneyStarted(true);
+        }
       },
     );
   }
 
-  const source = recorded.fromEdBoard ? "From the ED board" : undefined;
+  const source = recorded.fromEdBoard ? "From the ED board" : "From the referral";
   return (
     <form
       className={styles.form}
@@ -187,9 +168,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       aria-label={`Pull the bed for ${name}`}
     >
       <p className={styles.lead}>
-        {journeyId
-          ? `The journey has started. Confirm to keep the bed at ${unitName} for ${name}.`
-          : `${unitName} has accepted ${name}. Pulling the bed starts the journey and keeps the bed for this patient.`}
+        {`${unitName} has accepted ${name}. Pulling the bed starts the journey and keeps the bed for this patient.`}
       </p>
       <Field label="Legal status" hint={recorded.legalStatus ? (source ?? "From the referral") : undefined}>
         <Select
@@ -265,16 +244,21 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
           aria-describedby={refusal ? `${baseId}-why` : undefined}
           data-testid="ward-pull-accepted-confirm"
         >
-          {journeyId ? "Confirm pull" : "Pull the bed"}
+          Pull the bed
         </Button>
+        {pullRefused && !journeyStarted ? (
+          <Button type="button" variant="sec" onClick={() => start(false)} data-testid="ward-pull-accepted-start-only">
+            Start the journey without the bed
+          </Button>
+        ) : null}
         {refusal ? <DisabledReason id={`${baseId}-why`}>{refusal}</DisabledReason> : null}
       </div>
       <p role="status" className={styles.status} data-testid="ward-pull-accepted-status">
         {message}
-        {message && startedMovementId ? (
+        {message && journeyId ? (
           <>
             {" "}
-            <Link href={movementHref(startedMovementId)}>Open the journey</Link>
+            <Link href={movementHref(journeyId)}>Open the journey</Link>
           </>
         ) : null}
       </p>

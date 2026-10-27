@@ -40,7 +40,7 @@ export function shortDuration(minutes: number): string {
 }
 
 /** The settings a phone shows on its first screen (Find a setting lands there, not in a sheet). */
-export const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "density", "discreet-names", "buzz"]);
+export const PHONE_QUICK_SETTINGS: ReadonlySet<string> = new Set(["theme", "density", "buzz"]);
 
 export function wardsText(count: number): string {
   return `${count} ${count === 1 ? "ward" : "wards"}`;
@@ -85,7 +85,7 @@ export function ruleDiffs(before: WardConfiguration, after: WardConfiguration): 
   if (a.ed !== b.ed) parts.push(`ED target ${a.ed / 60}h to ${b.ed / 60}h`);
   if (a.cap !== b.cap) parts.push(`Wards asked ${a.cap} to ${b.cap}`);
   if (a.hold !== b.hold) parts.push(`Pull time limit ${shortDuration(a.hold)} to ${shortDuration(b.hold)}`);
-  if (a.morning !== b.morning) parts.push(`Morning count ${clock24(a.morning)} to ${clock24(b.morning)}`);
+  if (a.morning !== b.morning) parts.push(`Morning bed numbers due ${clock24(a.morning)} to ${clock24(b.morning)}`);
   if (a.soon !== b.soon) {
     parts.push(`Early warning ${shortDuration(a.soon)} to ${shortDuration(b.soon)}`);
   }
@@ -105,7 +105,7 @@ export function ruleDiffs(before: WardConfiguration, after: WardConfiguration): 
     parts.push(`Bed type short alert ${a.forecastShort} to ${b.forecastShort} beds`);
   }
   if (a.forecastEdLead !== b.forecastEdLead) {
-    parts.push(`ED access risk alert ${shortDuration(a.forecastEdLead)} to ${shortDuration(b.forecastEdLead)}`);
+    parts.push(`Access target forecast alert ${shortDuration(a.forecastEdLead)} to ${shortDuration(b.forecastEdLead)}`);
   }
   if (a.forecastWorse !== b.forecastWorse) {
     parts.push(`Forecast worse alert ${a.forecastWorse} to ${b.forecastWorse} beds`);

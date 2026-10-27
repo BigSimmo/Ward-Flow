@@ -4,8 +4,6 @@ import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/wa
 import { EVENING_SHIFT_END_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 
-export { boundedBedAvailability };
-
 /**
  * Every figure the capacity board shows, derived in one place so no screen computes its own
  * version. Phase 5, spec D5 and D6.

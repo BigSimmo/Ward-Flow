@@ -64,7 +64,7 @@ import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
-import { SHARED_REFRESH_MS } from "@/components/ward-management/ward-operational-defaults";
+import { SHARED_REFRESH_MS, SLOW_SAVE_NOTE_MS } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
@@ -217,6 +217,17 @@ export function AddPatientForm() {
   /** The UMRN of an existing record a save was refused for, so the UMRN field can say so. */
   const [duplicateUmrn, setDuplicateUmrn] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // #817: a shared save can wait on a slow server. Past a few seconds, say it is still saving, so
+  // the wait does not look stalled and the patient is not added a second time.
+  const [slowSave, setSlowSave] = useState(false);
+  useEffect(() => {
+    if (!isSubmitting) return;
+    const timer = window.setTimeout(() => setSlowSave(true), SLOW_SAVE_NOTE_MS);
+    return () => {
+      window.clearTimeout(timer);
+      setSlowSave(false);
+    };
+  }, [isSubmitting]);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const toast = useOptionalToast();
   /**
@@ -956,6 +967,11 @@ export function AddPatientForm() {
 
             <Card className={styles.submitBar}>
               <div className={styles.submitLead}>
+                {isSubmitting && slowSave ? (
+                  <p data-testid="ward-add-patient-slow-save" role="status">
+                    Still saving to the shared workspace. Keep this page open until the save is confirmed.
+                  </p>
+                ) : null}
                 {savedOutsideView ? (
                   <p data-testid="ward-add-patient-saved-outside-view" role="status">
                     {savedOutsideView}

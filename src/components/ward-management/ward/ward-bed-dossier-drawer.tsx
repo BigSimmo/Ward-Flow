@@ -22,6 +22,7 @@ import { stalePreparingReleases } from "@/components/ward-management/ward-bed-av
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave, type BlockerSave } from "./ward-bed-blocker-editor";
+import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
 import {
   openJourneyFromStay,
   SentJourneyChanges,
@@ -55,6 +56,8 @@ import {
   type Observation,
 } from "@/components/ward-management/ward-observation";
 import { WardObservationControl, observationWithReview } from "./ward-observation-control";
+import { WardLeavePaperAuthority, useLeaveNeedsPaperAuthority } from "./ward-leave-paper-authority";
+import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
 
 interface WardBedDossierDrawerProps {
@@ -88,6 +91,7 @@ interface WardBedDossierDrawerProps {
   onOpenBoard?: () => void;
   /** A4-24: one tap marks a vacated bed being made ready as Ready, so it is offered again. */
   onMarkReady?: () => void;
+  bedClosure?: BedClosureActions; // H-0978 / WS-15: close or reopen this exact bed (`SET_BED_CLOSED`).
   /** Item #6: raises a pre-filled ward referral from the selected patient's bed dossier. */
   onRaiseReferral?: () => void;
   /** Item #6: deep-link to the full referral drawer pre-filled with this patient and sending site. */
@@ -129,6 +133,8 @@ function bedTone(bedItem: BedItem | undefined, isReady: boolean): WfTone | null 
 /** Shortens "Form 6A Involuntary inpatient" to "Form 6A" for the fact tile; the full label stays in Overview. */
 function shortLegal(label: string | undefined): string {
   if (!label) return "Not recorded";
+  // WT-03: "Form 6A not recorded (Form 1A ended ...)" keeps its "not recorded" on the tile.
+  if (label.includes(" not recorded (")) return label.split(" (")[0]!;
   return label.startsWith("Form ") ? label.split(" ").slice(0, 2).join(" ") : label;
 }
 
@@ -176,6 +182,7 @@ export function WardBedDossierDrawer({
   onMove,
   onOpenBoard,
   onMarkReady,
+  bedClosure,
   onMarkBack,
   onPrevBed,
   onNextBed,
@@ -254,6 +261,16 @@ export function WardBedDossierDrawer({
   const isOccupied = Boolean(bedItem?.patientAlias);
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
+  const leavePaper =
+    useLeaveNeedsPaperAuthority(admission, drawerLeavingDestination) && admission ? (
+      <WardLeavePaperAuthority
+        key={admission.id}
+        admissionId={admission.id}
+        who={occupantAlias}
+        unitId={unit.id}
+        againstAdvice={drawerLeavingDestination === "left-against-advice"}
+      />
+    ) : null;
   // D-80: the open journey this ward sent for the person in this bed, with its own urgency and legal status controls.
   const sentJourney = admission ? openJourneyFromStay(movements, admission) : undefined;
   const sentJourneyControls = useStayJourneyIsMine(sentJourney) ? (
@@ -264,8 +281,16 @@ export function WardBedDossierDrawer({
   const stayDays = typeof bedItem?.stayDays === "number" ? bedItem.stayDays : null;
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
   const subline = isReady
-    ? "No patient is allocated by this drawer. Review current referrals with the flow coordinator."
-    : [...ageSex, bedItem?.stayBand ?? (bedItem?.status === "incoming" ? "Arriving" : null)]
+    ? "No patient is allocated by this drawer. Review current referrals with the bed coordinator."
+    : [
+        ...ageSex,
+        bedItem?.stayBand ??
+          (bedItem?.status === "incoming"
+            ? typeof bedItem?.deliveredAt === "number"
+              ? "Arrived at ward, confirm arrival"
+              : "Arriving"
+            : null),
+      ]
         .filter(Boolean)
         .join(" · ") || "On this ward";
 
@@ -304,6 +329,16 @@ export function WardBedDossierDrawer({
   ) : (
     expectedPlan
   );
+  // WT-16: the ward sets or changes the date here, not only the coordinator.
+  const dateEditor =
+    admission?.state === "occupied" ? (
+      <WardDrawerDischargeDate
+        key={admission.id}
+        admissionId={admission.id}
+        unitId={unit.id}
+        hasDate={admission.expectedDischargeAt != null}
+      />
+    ) : null;
 
   const dateMoves =
     typeof bedItem?.dischargeDateMoves === "number"
@@ -568,7 +603,12 @@ export function WardBedDossierDrawer({
           tone={tone}
           stayDays={stayDays}
           observation={observation}
-          expectedPlan={expectedValue}
+          expectedPlan={
+            <>
+              {expectedValue}
+              {dateEditor}
+            </>
+          }
           timeline={timeline}
           now={now}
           personHref={personHref}
@@ -582,6 +622,7 @@ export function WardBedDossierDrawer({
           setDrawerLeavingDestination={setDrawerLeavingDestination}
           onClose={onClose}
           onRecordLeft={() => setConfirmStep("leave")}
+          leavePaper={leavePaper}
           blockerSave={blockerSave}
           onSetObservation={onSetObservation}
           onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
@@ -591,7 +632,7 @@ export function WardBedDossierDrawer({
           onMarkReady={isPreparing ? onMarkReady : undefined}
           onRaiseReferral={onRaiseReferral}
           fullReferralHref={fullReferralHref}
-          roleLockNote={roleLockNote}
+          roleLockNote={<BedClosureControls {...bedClosure}>{roleLockNote}</BedClosureControls>}
           bedDrawerRef={bedDrawerRef}
           onKeyDown={onKeyDown}
           planRows={barrierRow}
@@ -661,6 +702,7 @@ export function WardBedDossierDrawer({
               onClick={onNextBed}
             />
           ) : null}
+          {/* H-0097: the drawer opens on Close, not on "Previous bed". */}
           <Button
             variant="ghost"
             iconOnly
@@ -668,6 +710,7 @@ export function WardBedDossierDrawer({
             aria-label="Close bed drawer"
             className={styles.pill}
             onClick={onClose}
+            data-sheet-autofocus="true"
           />
         </header>
 
@@ -781,7 +824,9 @@ export function WardBedDossierDrawer({
                         {isAwayAtEd
                           ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
                           : bedItem?.status === "incoming"
-                            ? "Arriving"
+                            ? typeof bedItem?.deliveredAt === "number"
+                              ? "Arrived at ward, confirm arrival"
+                              : "Arriving"
                             : "On the ward"}
                       </Row>
                       <Row label="Observation level">{observation}</Row>
@@ -819,7 +864,10 @@ export function WardBedDossierDrawer({
                 <>
                   <Section title="Plan to leave">
                     <dl className={styles.kv}>
-                      <Row label="Expected">{expectedValue}</Row>
+                      <Row label="Expected">
+                        {expectedValue}
+                        {dateEditor}
+                      </Row>
                       <Row label="Confirmed">{confirmation}</Row>
                       {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
                       <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
@@ -952,10 +1000,12 @@ export function WardBedDossierDrawer({
                       {criteriaDepartureNote}
                     </p>
                   ) : null}
+                  {leavePaper}
                   <Button
                     variant="pri"
                     size="lg"
                     className={styles.pill}
+                    disabledReason={leavePaper ? "Record the paper authority first." : undefined}
                     aria-describedby={
                       criteriaDepartureNote
                         ? "drawer-leaving-summary drawer-leaving-criteria"
@@ -1015,7 +1065,6 @@ export function WardBedDossierDrawer({
                 <Link
                   className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
                   href={fullReferralHref}
-                  onClick={onClose}
                   data-testid="ward-dossier-full-referral-link"
                 >
                   Open full referral form…
@@ -1024,13 +1073,11 @@ export function WardBedDossierDrawer({
               {roleLockNote}
             </>
           )}
+          <BedClosureControls {...bedClosure} size="lg" />
           <span className={styles.footSpacer} />
+          {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
           {personHref ? (
-            <Link
-              className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })}
-              href={personHref}
-              onClick={onClose}
-            >
+            <Link className={buttonClass({ variant: "ghost", size: "lg", className: styles.pill })} href={personHref}>
               Patient page
               <Icon icon={ChevronRight} size={14} />
             </Link>
@@ -1050,7 +1097,8 @@ function nowLabel(bedItem: BedItem | undefined, isReady: boolean): string {
   if (bedItem.blockReason) return "Held up";
   if (bedItem.awayAtEdHours != null) return "Away at an ED";
   if (bedItem.status === "leave") return "On leave";
-  if (bedItem.status === "incoming") return "Arriving";
+  // WT-07: Delivered is the one state after the officer hands over, until the ward confirms.
+  if (bedItem.status === "incoming") return typeof bedItem.deliveredAt === "number" ? "Arrived at ward" : "Arriving";
   if (bedItem.pastDate) return "Past date";
   if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
     return "Leaving";
@@ -1116,6 +1164,8 @@ interface PhoneBedSheetProps {
   leavingCriteriaNote?: string | null;
   /** Top 25: a short note on a bed being made ready (flagged). */
   readyNote?: ReactNode;
+  /** WT-02: the paper an involuntary stay needs first; while shown, "Record that they have left" waits. */
+  leavePaper?: ReactNode;
 }
 
 /**
@@ -1165,6 +1215,7 @@ function PhoneBedSheet({
   sentJourney,
   leavingCriteriaNote,
   readyNote,
+  leavePaper,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
   const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
@@ -1225,6 +1276,7 @@ function PhoneBedSheet({
             aria-label="Close bed drawer"
             className={styles.pill}
             onClick={onClose}
+            data-sheet-autofocus="true"
           />
         </header>
 
@@ -1347,9 +1399,11 @@ function PhoneBedSheet({
                     {leavingCriteriaNote}
                   </p>
                 ) : null}
+                {leavePaper}
                 <Button
                   variant={leavingNow ? "pri" : "sec"}
                   className={styles.pill}
+                  disabledReason={leavePaper ? "Record the paper authority first." : undefined}
                   aria-describedby={
                     leavingCriteriaNote
                       ? "drawer-leaving-summary-phone drawer-leaving-criteria-phone"
@@ -1394,7 +1448,6 @@ function PhoneBedSheet({
               <Link
                 className={buttonClass({ variant: "ghost", className: styles.pill })}
                 href={fullReferralHref}
-                onClick={onClose}
                 data-testid="ward-dossier-full-referral-link"
               >
                 Open full referral form…
@@ -1402,11 +1455,7 @@ function PhoneBedSheet({
             ) : null}
             {roleLockNote}
             {personHref ? (
-              <Link
-                className={buttonClass({ variant: "ghost", className: styles.pill })}
-                href={personHref}
-                onClick={onClose}
-              >
+              <Link className={buttonClass({ variant: "ghost", className: styles.pill })} href={personHref}>
                 Patient page
                 <Icon icon={ChevronRight} size={14} />
               </Link>

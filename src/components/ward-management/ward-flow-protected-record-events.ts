@@ -1,14 +1,12 @@
 import { withoutRecordNumbers } from "./ward-patient-resolver";
-import {
-  validCareChange,
-  careChangeRefusal,
-  applyCareChange,
-  emptyCareJourney,
-  recordedCommunityTransition,
-} from "./ward-care-journey";
+import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
+import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
+import { openReturnMovementRefusal } from "./ward-flow-record-stay-events";
 import {
+  INVOLUNTARY_DEPARTURE_REFUSAL,
+  departureNeedsPaperAuthority,
   stayLegalStatusIsInvoluntary,
   dischargeIdentity,
   dischargeMovement,
@@ -332,7 +330,11 @@ export function reduceProtectedRecordEvent(
             (a.state === "occupied" || a.state === "pulled"),
         )
       )
-        return deny("transition", "denied", "The patient already has another occupied or held bed.");
+        return deny("transition", "denied", "The patient already has another occupied or pulled bed.");
+      const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
+      if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
+      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+      if (returnRefusal) return deny("transition", "denied", returnRefusal);
       if (
         lacksObservationStaff(admission.observation, receiving, state.admissions) ||
         (admission.highAcuity && remainingHighAcuityCapacity(receiving, state.admissions) <= 0)
@@ -448,31 +450,18 @@ export function reduceProtectedRecordEvent(
   if (admission.state !== "occupied") return deny("transition");
   if (admission.arrivedAt !== null && event.now < admission.arrivedAt) return deny("invalid-payload");
 
-  // Involuntary patient discharge boundary (WA Mental Health Act 2014)
-  const fullPatient = uniqueRecord(state.patients, identity.patient.id);
-  const linkedMovement = dischargeMovement(state, admission);
-  if (
-    patientRecordIsInvoluntary(fullPatient?.legalStatus) ||
-    stayLegalStatusIsInvoluntary(state, admission, linkedMovement)
-  ) {
-    if (
-      event.leavingDestination === "discharged-to-the-community" ||
-      event.leavingDestination === "left-against-advice"
-    ) {
-      if (!recordedCommunityTransition(admission, linkedMovement?.statusChanges.at(-1)?.at, event.leavingDestination)) {
-        return deny(
-          "transition",
-          "denied",
-          "Cannot discharge an involuntary patient without an explicit revocation order or recorded community treatment order transition.",
-        );
-      }
-    }
-  }
+  // Involuntary patient discharge boundary (WA Mental Health Act 2014), one rule with the bed drawer.
+  if (departureNeedsPaperAuthority(state, admission, event.leavingDestination))
+    return deny("transition", "denied", INVOLUNTARY_DEPARTURE_REFUSAL);
 
   // Discharge blocked while in transit, inbound or outbound
   if (dischargeBlockingTransit(state, admission)) {
     return deny("transition", "denied", "Patient is currently in transit to another facility.");
   }
+  const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
+  if (restrictiveRefusal) return deny("transition", "denied", restrictiveRefusal);
+  const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+  if (returnRefusal) return deny("transition", "denied", returnRefusal);
   return appendAudit(
     state,
     departAdmission(state, admission, unit, event.now, event.leavingDestination, event.role),

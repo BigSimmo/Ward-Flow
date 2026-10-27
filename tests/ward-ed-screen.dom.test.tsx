@@ -1198,7 +1198,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
 
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-toggle-${revokedId}`));
     fireEvent.change(screen.getByTestId(`ward-ed-transport-provider-${revokedId}`), {
-      target: { value: "Ambulance service" },
+      target: { value: "Ambulance (St John)" },
     });
     fireEvent.click(screen.getByTestId(`ward-ed-transport-escort-no-${revokedId}`));
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.
@@ -1218,7 +1218,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
 
     const flag = screen.getByTestId(`ward-ed-examination-revoked-flag-${revokedId}`);
-    expect(flag).toHaveTextContent("The examination was revoked and this movement still holds a bed.");
+    expect(flag).toHaveTextContent("The examination was revoked and this movement still has a bed pulled.");
 
     // A second, freshly pulled movement with NO examination must not show the flag — the
     // anti-vacuity half: a flag that always renders would pass the assertion above for the

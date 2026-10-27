@@ -17,6 +17,7 @@ import {
   validCareChange,
   currentCareContact,
   separationHandoff,
+  careRecordedByLabel,
 } from "../ward-care-journey";
 import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -24,7 +25,38 @@ import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
 import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./discharges-third-edition.module.css";
 const words = (value: string) => value.replaceAll("_", " ");
-function Choice({ label, values }: { label: string; values: readonly string[] }) {
+/** Fresh audit W-4: stored values read as plain labels, never as raw codes. */
+const CHOICE_LABELS: Readonly<Record<string, string>> = {
+  none: "No transport order",
+  metro: "Metropolitan",
+  rfds: "RFDS",
+  accepted: "Accepted",
+  handover: "Handed over",
+  arrived: "Arrived",
+  revocation: "Revocation",
+  "4A": "Form 4A",
+  "5A": "Form 5A",
+  "5B": "Form 5B",
+};
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+const choiceLabel = (value: string) => sentence(CHOICE_LABELS[value] ?? words(value));
+/** A stored list value (status, outcome, mode, class) in sentence case, as the select offers it. */
+const plain = (value: string) => sentence(words(value));
+/** Fresh audit W-4: the appointment's internal version number reads as how often it was booked. */
+function bookingText(version: number): string {
+  if (version <= 1) return "first booking";
+  const times = version - 1;
+  return `rebooked ${times === 1 ? "once" : times === 2 ? "twice" : `${times} times`}`;
+}
+function Choice({
+  label,
+  values,
+  labelOf = choiceLabel,
+}: {
+  label: string;
+  values: readonly string[];
+  labelOf?: (value: string) => string;
+}) {
   return (
     <label className={styles.filterField}>
       {label}
@@ -32,7 +64,7 @@ function Choice({ label, values }: { label: string; values: readonly string[] })
         <option value="">Choose {label.toLowerCase()}</option>
         {values.map((v) => (
           <option key={v} value={v}>
-            {words(v)}
+            {labelOf(v)}
           </option>
         ))}
       </select>
@@ -101,7 +133,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       </form>
     </details>
   );
-  const fact = (at: number, by: string) => `${by} · ${formatInstantWithDay(at, now)}`;
+  const fact = (at: number, by: string) => `${careRecordedByLabel(by)} · ${formatInstantWithDay(at, now)}`;
   return (
     <section className={`${styles.drawerSection} ${styles.careJourney}`} aria-label="Care journey">
       <h4>Care journey</h4>
@@ -122,7 +154,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         <dt>Responsible clinician and appointment</dt>
         <dd>
           {care?.followUp
-            ? `${CARE_CONTACTS.find((c) => c.id === care.followUp?.contactId)?.label} · ${communityTeamById(care.followUp.serviceId)?.name} · ${words(care.followUp.mode)} · ${formatInstantWithDay(care.followUp.appointmentAt, now)} · ${fact(care.followUp.recordedAt, care.followUp.recordedBy)}`
+            ? `${CARE_CONTACTS.find((c) => c.id === care.followUp?.contactId)?.label ?? "Clinician not recorded"} · ${communityTeamById(care.followUp.serviceId)?.name ?? "Team not recorded"} · ${plain(care.followUp.mode)} · ${formatInstantWithDay(care.followUp.appointmentAt, now)} · ${fact(care.followUp.recordedAt, care.followUp.recordedBy)}`
             : "Not recorded"}
         </dd>
         <dt>Current appointment contact</dt>
@@ -131,7 +163,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
             ? record.followUp?.state !== "arranged"
               ? "Appointment is not marked arranged; earlier details remain in history"
               : currentCareContact(care)
-                ? `${words(currentCareContact(care)!.outcome)} · appointment ${care.followUp.appointmentVersion}`
+                ? `${plain(currentCareContact(care)!.outcome)} · ${bookingText(care.followUp.appointmentVersion)}`
                 : "No contact recorded for the current appointment"
             : "No appointment recorded"}
         </dd>
@@ -140,7 +172,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
           {care?.contacts.length
             ? care.contacts.map((c, i) => (
                 <p key={i}>
-                  {words(c.outcome)} · appointment {c.appointmentVersion}
+                  {plain(c.outcome)} · {bookingText(c.appointmentVersion)}
                   {c.appointmentVersion === care.followUp?.appointmentVersion ? " (current)" : " (previous)"} · contact{" "}
                   {formatInstantWithDay(c.contactedAt, now)} · recorded {fact(c.recordedAt, c.recordedBy)}
                 </p>
@@ -172,7 +204,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         <dt>Receiving establishment and coding review</dt>
         <dd>
           {care?.coding
-            ? `${words(care.coding.receivingClass)} · code ${care.coding.separationCode} · ${fact(care.coding.recordedAt, care.coding.recordedBy)}`
+            ? `${plain(care.coding.receivingClass)} · code ${care.coding.separationCode} · ${fact(care.coding.recordedAt, care.coding.recordedBy)}`
             : "Not recorded; legacy residential care needs an explicit classification."}
         </dd>
         <dt>Statistical episode changes</dt>
@@ -180,7 +212,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
           {care?.episodes.length
             ? care.episodes.map((e, i) => (
                 <p key={i}>
-                  {words(e.episodeType)} · code 50 · {fact(e.recordedAt, e.recordedBy)}
+                  {plain(e.episodeType)} · code 50 · {fact(e.recordedAt, e.recordedBy)}
                 </p>
               ))
             : "Not recorded"}
@@ -188,19 +220,19 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         <dt>Transport arrangement</dt>
         <dd>
           {care?.transport
-            ? `${words(care.transport.mode)} · ${care.transport.region} · risk document ${care.transport.riskDocument ? "recorded" : "not recorded"} · authority ${care.transport.authority} · ${fact(care.transport.recordedAt, care.transport.recordedBy)}`
+            ? `${choiceLabel(care.transport.mode)} · ${choiceLabel(care.transport.region)} · risk document ${care.transport.riskDocument ? "recorded" : "not recorded"} · ${care.transport.authority === "none" ? "no transport order" : `authority ${choiceLabel(care.transport.authority)}`} · ${fact(care.transport.recordedAt, care.transport.recordedBy)}`
             : "Not recorded"}
         </dd>
         <dt>Receiving ward transfer</dt>
         <dd>
           {care?.transfer
-            ? `${units.find((u) => u.id === care.transfer?.receivingUnitId)?.name} · ${care.transfer.step} · ${fact(care.transfer.recordedAt, care.transfer.recordedBy)}`
+            ? `${units.find((u) => u.id === care.transfer?.receivingUnitId)?.name ?? "Ward not recorded"} · ${choiceLabel(care.transfer.step)} · ${fact(care.transfer.recordedAt, care.transfer.recordedBy)}`
             : "Not recorded"}
         </dd>
         <dt>Paper authority for community transition</dt>
         <dd>
           {care?.legal
-            ? `${care.legal.authority} · written ${formatInstantWithDay(care.legal.writtenAt, now)} · checked ${fact(care.legal.recordedAt, care.legal.recordedBy)}`
+            ? `${choiceLabel(care.legal.authority)} · written ${formatInstantWithDay(care.legal.writtenAt, now)} · checked ${fact(care.legal.recordedAt, care.legal.recordedBy)}`
             : "Not recorded"}
         </dd>
       </dl>
@@ -280,7 +312,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
             section(
               "Planning item",
               <>
-                <Choice label="Planning item" values={CARE_PLAN_ITEMS} />
+                <Choice label="Planning item" values={CARE_PLAN_ITEMS} labelOf={plain} />
                 <Choice label="Planning status" values={CARE_STATUSES} />
               </>,
               (d) => save({ kind: "plan", item: d.get("Planning item"), status: d.get("Planning status") }),
@@ -456,7 +488,9 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
               return;
             }
             const blob = new Blob([JSON.stringify(handoff, null, 2)], { type: "application/json" });
-            downloadBlob(blob, "separation-review.json");
+            // H-0356: the file name says synthetic, like every other Ward Flow download; the file's
+            // own `synthetic: true` and notice come from separationHandoff.
+            downloadBlob(blob, "ward-flow-synthetic-separation-review.json");
           }}
         >
           Download coding review handoff

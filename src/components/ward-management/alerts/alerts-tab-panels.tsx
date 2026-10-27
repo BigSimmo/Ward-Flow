@@ -69,7 +69,7 @@ export function AlertsBroadcastPanel({
           role="group"
           aria-live="assertive"
           aria-atomic="true"
-          aria-label="Active Statewide Directive"
+          aria-label="Current broadcast"
         >
           {/* The acknowledged-units count below is announced; this sentence travels with it
                           (tests/ward-announced-figures-carry-their-marker, tier b). Screen readers only. */}

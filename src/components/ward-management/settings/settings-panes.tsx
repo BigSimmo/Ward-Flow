@@ -25,6 +25,7 @@ import { phonePushRow, type PhonePushState } from "@/components/ward-management/
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
+import { saveTourStep, useTourRole } from "@/components/ward-management/help/ward-help-store";
 import type { WardAppearance } from "@/components/ward-management/shell/ward-shell-types";
 import { clinicalValueStatusText, formatClinicalFigure } from "@/components/ward-management/ward-clinical-values";
 import {
@@ -51,7 +52,7 @@ import type { RowDensity } from "./row-density";
 import { FeatureFlagsCard } from "./feature-flags-card";
 import { SettingsInstallHint } from "./settings-install-hint";
 import { ScopeLine, SettingRow } from "./settings-rows";
-import { SETTINGS_DEMO_PROFILE } from "./settings-profile";
+import { useSettingsDeskProfile } from "./settings-desk-profile";
 import type { PublishedThreshold, ThresholdState } from "./settings-thresholds";
 
 import styles from "./settings.module.css";
@@ -187,8 +188,6 @@ export function DisplayPane({
   onHighContrastChange,
   rowDensity,
   onRowDensityChange,
-  discreetNames,
-  onDiscreetNamesChange,
   characterShortcuts,
   onCharacterShortcutsChange,
 }: {
@@ -204,9 +203,8 @@ export function DisplayPane({
   onRowDensityChange: (next: RowDensity) => void;
   characterShortcuts: boolean;
   onCharacterShortcutsChange: (next: boolean) => void;
-  discreetNames: boolean;
-  onDiscreetNamesChange: (next: boolean) => void;
 }) {
+  const tourRole = useTourRole();
   return (
     <>
       <ScopeLine kind="live" />
@@ -270,17 +268,6 @@ export function DisplayPane({
             <SettingRow setting="high-contrast" title="High contrast" sub="Stronger edges and ink">
               <RowSwitch name="High contrast" checked={highContrast} onCheckedChange={onHighContrastChange} />
             </SettingRow>
-            <SettingRow
-              setting="discreet-names"
-              title="Discreet names on phone"
-              sub="Initials and UMRN in lists on a phone"
-            >
-              <RowSwitch
-                name="Discreet names on phone"
-                checked={discreetNames}
-                onCheckedChange={onDiscreetNamesChange}
-              />
-            </SettingRow>
           </Card>
         </div>
 
@@ -318,7 +305,16 @@ export function DisplayPane({
               title="First-run tour"
               sub="Starts by itself once for this desk on this device. Replay it here or from Help."
             >
-              <Button variant="ghost" size="sm" onClick={() => openWardHelp("tour")} data-testid="settings-replay-tour">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // Replay starts from the first step, not the step the tour was left at.
+                  saveTourStep(tourRole, 0);
+                  openWardHelp("tour");
+                }}
+                data-testid="settings-replay-tour"
+              >
                 Replay the tour
               </Button>
             </SettingRow>
@@ -333,6 +329,7 @@ export function DisplayPane({
 
 export function ProfilePane({ onGoToDesk }: { onGoToDesk: () => void }) {
   const service = useServiceScope();
+  const deskProfile = useSettingsDeskProfile();
   return (
     <>
       <ScopeLine kind="live" />
@@ -341,7 +338,7 @@ export function ProfilePane({ onGoToDesk }: { onGoToDesk: () => void }) {
           <Card aria-labelledby="profile-title">
             <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
             <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
-              <span className={styles.readout}>{SETTINGS_DEMO_PROFILE.role}</span>
+              <span className={styles.readout}>{deskProfile.role}</span>
               {/* Audit settings-27: the role row leads to the desk drawer, not a dead end. */}
               <button
                 type="button"

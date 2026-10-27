@@ -26,7 +26,14 @@ import { WardFlowErrorPanel } from "@/app/ward-flow/ward-flow-error-panel";
  * quietly stopped finding its marker reads exactly like a passing one.
  */
 
-const BOUNDARY_FILES = ["src/app/ward-flow/error.tsx", "src/app/ward-flow/statistics/error.tsx"] as const;
+const BOUNDARY_FILES = [
+  "src/app/ward-flow/error.tsx",
+  "src/app/ward-flow/statistics/error.tsx",
+  // H-0349: the app shell, root layout and shared panel also wire "Try again" to `retry`.
+  "src/app/error.tsx",
+  "src/app/global-error.tsx",
+  "src/components/route-error-boundary.tsx",
+] as const;
 
 /** A file known to carry the directive, and one known not to — so the reader is provably able to
  *  return both answers. Without these a broken read would report "use client" absent everywhere,

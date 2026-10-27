@@ -811,7 +811,7 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  z-index: 1000;
+  z-index: var(--z-toast);
   background: var(--ink);
   color: var(--text-inverse, var(--ward-canvas));
   padding: 10px 16px;

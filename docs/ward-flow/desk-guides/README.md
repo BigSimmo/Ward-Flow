@@ -1,17 +1,18 @@
 # Ward Flow desk guides
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-10-26 -->
 
 One printable page for each desk. Each guide says what the desk sees first, the jobs it does most,
 what it cannot do, and how to tell that a change was saved.
 
-_Written 2026-10-24 from source on `main`; Documentation owns. Button and screen names were read
-from the app's code, not checked in a browser. Re-check every guide after clinician testing, and
-whenever a step on screen changes._
+_Written 2026-10-24 from source on `main`; Documentation owns. On 2026-10-26 each desk's first
+screen, main menu and phone bar were checked in a browser (1440 wide and a 390 wide phone) against
+these guides, and the guides were corrected. Names inside dialogs were checked against the source.
+Re-check every guide after clinician testing, and whenever a step on screen changes._
 
 | Desk                                | Guide                                              | Lands on    |
 | ----------------------------------- | -------------------------------------------------- | ----------- |
-| Flow coordinator                    | [flow-coordinator.md](flow-coordinator.md)         | My list     |
+| Bed coordinator                     | [flow-coordinator.md](flow-coordinator.md)         | My list     |
 | Site bed manager                    | [site-bed-manager.md](site-bed-manager.md)         | Capacity    |
 | Ward (nurse in charge)              | [ward.md](ward.md)                                 | My ward     |
 | ED mental health clinician          | [emergency-department.md](emergency-department.md) | My ED board |

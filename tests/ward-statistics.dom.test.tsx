@@ -25,6 +25,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { DECLINE_REASONS, PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import type { BedRelease, Movement, Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
@@ -860,6 +861,15 @@ describe("declines by reason — generated from the model's vocabulary", () => {
     expect(screen.getByTestId("ward-statistics-declines-by-reason-vocabulary-size").textContent).toBe(
       String(DECLINE_REASONS.length),
     );
+  });
+
+  // PC report reconciliation (26 Oct 2026): a row names its reason in the shared wording, so
+  // another_reason keeps its "needs follow-up" rather than a sentence-cased member name.
+  it("names each reason with its shared label", () => {
+    renderScreen({ admissions: [], referrals: [], bedReleases: [], movements: [] });
+    for (const reason of DECLINE_REASONS) {
+      expect(screen.getByTestId(`ward-statistics-decline-${reason}`).textContent).toBe(DECLINE_REASON_LABELS[reason]);
+    }
   });
 
   /**

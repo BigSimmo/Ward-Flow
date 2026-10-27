@@ -5,20 +5,20 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, DisabledReason, StatusGlyph, buttonClass, cx, useIsPhone, durMinutes } from "@/components/wf";
 
-import {
-  patientInitials,
-  useDiscreetNamesOnPhone,
-  usePatientNameDisplay,
-} from "@/components/ward-management/settings/discreet-names";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import { boardBedFits, bedNumberLabel, BOARD_RESTING_SAY, type BoardPick } from "./ward-bed-board-logic";
 import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import styles from "./ward-bed-board.module.css";
+
+/** Shown in place of the pick control when a bed manager looks at the board. */
+const BED_MANAGER_CANNOT_PLACE = "The ward or the coordinator places a patient";
 
 /** One referral waiting for this ward's answer that the board can place in a bed. */
 export type WaitingReferral = {
@@ -124,25 +124,12 @@ export function lookAlikeKeys(beds: readonly BedItem[]): Set<string> {
   return set;
 }
 
-function CellWord({
-  bed,
-  discreet,
-  collidingPairs,
-}: {
-  bed: BedItem;
-  discreet: boolean;
-  collidingPairs?: ReadonlySet<string>;
-}) {
+function CellWord({ bed, collidingPairs }: { bed: BedItem; collidingPairs?: ReadonlySet<string> }) {
   const occupant =
     bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
       ? null
       : occupantParts(bed.patientAlias, bed.umrn, collidingPairs);
   if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
-  // A2-20: Discreet names on phone. A bed cell is too narrow for a UMRN, so it shows initials; the
-  // bed number beside it and the bed panel still identify the person.
-  if (discreet) {
-    return <span className={styles.cellWord}>{patientInitials(bed.patientAlias ?? "")}</span>;
-  }
   return <CellName surname={occupant.surname} initial={occupant.initial} />;
 }
 
@@ -278,7 +265,6 @@ export function WardBedBoard({
 }: WardBedBoardProps) {
   const isPhone = useIsPhone();
   const nameFor = usePatientNameDisplay();
-  const discreet = useDiscreetNamesOnPhone();
   const pods = podsOf(beds, unit, isMixed);
   const collidingPairs = lookAlikeKeys(beds);
   // Audit 24-4 NA2-09 (Josh, 24 Oct 2026): the ward's own ready figure (beds being made ready
@@ -293,9 +279,12 @@ export function WardBedBoard({
       (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0)),
   );
 
+  // #820: placing stays with the ward and the coordinator, so a bed manager sees who waits but cannot pick.
+  const bedManagerReason = useEffectiveWardAccess().role === "bed_manager" ? BED_MANAGER_CANNOT_PLACE : undefined;
   const waitChips = (
     <>
-      {waiting.map((referral) => {
+      {waiting.map((waitingReferral) => {
+        const referral = bedManagerReason ? { ...waitingReferral, blockedReason: bedManagerReason } : waitingReferral;
         const isMovement = referral.kind === "movement";
         const on =
           (picked?.kind === "referral" && !isMovement && picked.referralId === referral.id) ||
@@ -443,7 +432,7 @@ export function WardBedBoard({
                         ) : (
                           <span className={styles.swatch} aria-hidden="true" />
                         )}
-                        <CellWord bed={bed} discreet={discreet} collidingPairs={collidingPairs} />
+                        <CellWord bed={bed} collidingPairs={collidingPairs} />
                       </span>
                     </button>
                   );

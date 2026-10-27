@@ -321,7 +321,7 @@ export function HandoverSignOffPanel({
   // desk that happens to be viewing it; only an unsigned handover names the viewer, who would sign.
   const signer = signedAt !== null && signedBy !== null ? signedBy : viewerRole;
   const signerLabel =
-    signer === "coordinator" ? "Flow coordinator" : signer === "demo" ? "Demo" : CHROME_ROLE_LABELS[signer];
+    signer === "coordinator" ? "Bed coordinator" : signer === "demo" ? "Demo" : CHROME_ROLE_LABELS[signer];
   const signerIsYou = signedAt === null || signedBy === null || signedBy === viewerRole;
   return (
     <Card

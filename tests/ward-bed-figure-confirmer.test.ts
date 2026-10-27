@@ -26,7 +26,7 @@ describe("who confirmed a ward's bed figure", () => {
   it.each([
     ["ward", `NUM ${unit.name}`],
     ["bed_manager", "Bed manager"],
-    ["coordinator", "Flow coordinator"],
+    ["coordinator", "Bed coordinator"],
   ] as const)("a figure confirmed as %s reads as %s", (role, label) => {
     const next = confirmAs(role);
     expect(next.rejections).toHaveLength(seed.rejections.length);

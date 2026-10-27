@@ -40,6 +40,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
+    case "SET_BED_CLOSED":
     case "FLAG_BED_RELEASE":
     case "RECORD_LEAVE_BED":
     case "REQUEST_CAPACITY_REFRESH":
@@ -92,6 +93,11 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_BED_MEETING_ACTION":
     case "COMPLETE_BED_MEETING_ACTION":
       return event.subject.id;
+    // H-0150: an Undo comes from a toast or the wire, so a missing subject is refused, never thrown on.
+    case "UNDO_BED_MEETING_ACTION":
+      return typeof event.subject === "object" && event.subject !== null && typeof event.subject.id === "string"
+        ? event.subject.id
+        : "none";
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
     case "RECORD_WARD_INCIDENT":

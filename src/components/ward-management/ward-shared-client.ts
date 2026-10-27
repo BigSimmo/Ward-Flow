@@ -1,3 +1,4 @@
+import { anySignal, sentence, untilAborted, withoutChartContent } from "./ward-shared-client-helpers";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 import { commandSheetHandles, openSheetHandles, subscribeToSheetStack } from "@/components/wf/sheet-focus";
 import type { WardCommandMetadata } from "./ward-command-metadata";
@@ -15,6 +16,9 @@ import {
   type ArchivedCollection,
   type HeldArchive,
 } from "./ward-shared-archive-delta";
+import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
+import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -23,13 +27,16 @@ let bindSharedPartialView: typeof import("./ward-partial-view-contract").bindWar
 let mergeSharedPartialView: typeof import("./ward-partial-view-contract").mergeArchivedWardPartialView | undefined;
 function loadSharedStateCheck(): Promise<void> {
   if (isValidSharedState && bindSharedPartialView && mergeSharedPartialView) return Promise.resolve();
-  return Promise.all([import("./ward-shared-state-validation"), import("./ward-partial-view-contract")]).then(
-    ([state, partialView]) => {
-      isValidSharedState = state.isValidSharedWardFlowState;
-      bindSharedPartialView = partialView.bindWardPartialView;
-      mergeSharedPartialView = partialView.mergeArchivedWardPartialView;
-    },
-  );
+  // A shared world may be a demonstration scenario, whose wards its check and screens read.
+  return Promise.all([
+    import("./ward-shared-state-validation"),
+    import("./ward-partial-view-contract"),
+    import("./ward-scenario-networks"),
+  ]).then(([state, partialView]) => {
+    isValidSharedState = state.isValidSharedWardFlowState;
+    bindSharedPartialView = partialView.bindWardPartialView;
+    mergeSharedPartialView = partialView.mergeArchivedWardPartialView;
+  });
 }
 
 export type SharedSnapshot = {
@@ -73,8 +80,9 @@ export type SharedView = {
   workingAs?: string | null;
   /** With `choose-role`: the roles to choose from. */
   choices?: readonly SharedRoleChoice[];
-  /** With `no-role`: whether this server takes requests for access. */
+  /** With `no-role`: whether this server takes requests for access, and its refusal code (`role-needs-service`). */
   canRequest?: boolean;
+  noRoleReason?: string;
   /** The signed-in account's id, to say "You" in the access lists. */
   actorId?: string | null;
   /** This tab chose its role, so it can go back and choose another. */
@@ -105,16 +113,6 @@ export type SharedAccessRequest = {
   scope: unknown;
   decision: "approved" | "declined" | null;
   minutes: { requested: number | null };
-};
-/** One record opening from the server's access log. `minutes` is when, from the server's now. */
-export type SharedRecordView = {
-  id: number | string;
-  actor_id: string;
-  actor_role: string;
-  actor_scope: unknown;
-  patient_id: string;
-  surface: string;
-  minutes?: number | null;
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
@@ -158,11 +156,6 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
-/** The engine's refusal as a sentence: capitalised, ending in a full stop. */
-function sentence(reason: string): string {
-  const trimmed = reason.trim();
-  return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`.replace(/[.!?…]?$/u, (end) => end || ".");
-}
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
 type PendingCommand = {
@@ -176,26 +169,6 @@ type PendingCommand = {
   /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
   reply?: "revision";
 };
-
-/**
- * Audit F-01: a referral's chart files never leave this device in shared mode. The shared board
- * keeps each file's name, type and size; the server drops any file content an older client sends.
- */
-function withoutChartContent(event: WardFlowEvent): WardFlowEvent {
-  if (event.type !== "RECEIVE_REFERRAL" || !event.intake?.charts.some((chart) => chart.base64 !== undefined))
-    return event;
-  return {
-    ...event,
-    intake: {
-      ...event.intake,
-      charts: event.intake.charts.map((chart) => {
-        const kept = { ...chart };
-        delete kept.base64;
-        return kept;
-      }),
-    },
-  };
-}
 
 /** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
 const FRESH_TOKEN = new Error("Ask again with a fresh token");
@@ -407,6 +380,8 @@ export class SharedWorkspaceClient {
   }
   private disposed = false;
   private busy = false;
+  /** #817: the poll in flight, which a new save stops so the save is not held behind it. */
+  private pollAbort: AbortController | null = null;
   /** Requests stay with the desk that started them, even while waiting for a token. */
   private viewGeneration = 0;
   /** Polls started before a grant must not replace the newly opened view. */
@@ -697,6 +672,8 @@ export class SharedWorkspaceClient {
     this.options.changed(this.view);
   }
   private adopt(snapshot: SharedSnapshot) {
+    // Audit PS-06: content equal to the payload already held passed the shared-state check then.
+    const unchanged = payloadUnchanged(this.rawPayload, snapshot?.payload);
     if (
       !snapshot ||
       snapshot.dataMode !== "prototype" ||
@@ -706,7 +683,7 @@ export class SharedWorkspaceClient {
       (snapshot.accessContext !== undefined &&
         (typeof snapshot.accessContext !== "string" || !/^[a-f0-9]{64}$/.test(snapshot.accessContext))) ||
       snapshot.payload?.version !== 1 ||
-      !isValidSharedState?.(snapshot.payload.state) ||
+      !(unchanged || isValidSharedState?.(snapshot.payload.state)) ||
       !Number.isFinite(Date.parse(snapshot.payload.dayZero)) ||
       !Number.isFinite(Date.parse(snapshot.payload.startedAt))
     )
@@ -726,16 +703,13 @@ export class SharedWorkspaceClient {
         this.archiveAsked = null;
         this.archiveEpoch++;
       }
-      // Scoped polls also return full snapshots when only permissions may have changed. Keep
-      // identical data stable for the provider and its field selectors, including draft owners.
-      const same =
-        !!held &&
-        !!this.rawPayload &&
-        (snapshot.accessContext === held.accessContext || held.payload === this.rawPayload) &&
-        snapshot.revision === held.revision &&
-        JSON.stringify(snapshot.payload) === JSON.stringify(this.rawPayload);
-      if (!same) this.rawPayload = snapshot.payload;
-      const payload = same ? held.payload : this.withArchive(snapshot.payload, snapshot.accessContext);
+      // Scoped polls also return full snapshots when only permissions may have changed. Keep the held
+      // object for every record, list and map whose content is unchanged (audit PS-06), so identical
+      // data stays stable for the provider and its field selectors, draft owners included, and a
+      // change re-renders only what reads the records that changed (`ward-shared-client-reuse.ts`).
+      if (!unchanged) this.rawPayload = reuseUnchangedPayload(this.rawPayload, snapshot.payload);
+      const raw = this.rawPayload!;
+      const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
       if (this.options.manageDrafts !== false && snapshot.accessContext !== undefined)
         bindReferralDraftAccessContext(snapshot.accessContext);
       // A missing, malformed or stale sibling clears the previous display on this adoption.
@@ -785,17 +759,20 @@ export class SharedWorkspaceClient {
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
     const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
+    const tvRead = workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting");
     const current = () => {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
     await loadSharedStateCheck();
     let token: string;
+    // #817: a queued save stops the poll even while the poll still waits for its token.
+    const pollSignal = workspaceRead ? this.pollAbort?.signal : undefined;
     try {
       // Audit 24-3 SM-2: the retry after a 401 forces one refresh, so it never re-sends the same token.
-      token = await (retried ? this.options.token({ refresh: true }) : this.options.token());
+      token = await untilAborted(retried ? this.options.token({ refresh: true }) : this.options.token(), pollSignal);
     } catch (error) {
-      if (this.disposed || roleSignal.aborted) throw error;
+      if (this.disposed || roleSignal.aborted || pollSignal?.aborted) throw error;
       if (
         generation === this.viewGeneration &&
         (!workspaceRead || grantGeneration === this.grantGeneration) &&
@@ -829,7 +806,6 @@ export class SharedWorkspaceClient {
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
-
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -837,9 +813,16 @@ export class SharedWorkspaceClient {
           authorization: `Bearer ${token}`,
           ...(body ? { "content-type": "application/json" } : {}),
           ...(as ? { "x-ward-working-as": as } : {}),
+          // The server logs a whole read from the bed meeting TV board as "tv" (H-0731).
+          ...(tvRead ? { "x-ward-screen": "tv" } : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
-        signal: AbortSignal.any([AbortSignal.timeout(15000), this.lifetime.signal, roleSignal]),
+        signal: anySignal([
+          AbortSignal.timeout(15000),
+          this.lifetime.signal,
+          roleSignal,
+          ...(workspaceRead && this.pollAbort ? [this.pollAbort.signal] : []),
+        ]),
       });
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const value = await response.json().catch(() => null);
@@ -909,9 +892,11 @@ export class SharedWorkspaceClient {
     const { response, value, noRole } = answer;
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
     if (response.status === 401 && value?.code === "step-up") return { response, value };
-    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
-    // A role refusal on an access step comes back as its reason, not as a sign-out.
-    if (response.status === 403 && path.startsWith("/v1/workspace/access")) return { response, value };
+    const noRoleReason = typeof value?.code === "string" ? value.code : undefined;
+    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true, noRoleReason });
+    // A role refusal on an access step or the record access log comes back as its reason, not as a sign-out.
+    if (response.status === 403 && (path.startsWith("/v1/workspace/access") || path === "/v1/workspace/record-access"))
+      return { response, value };
     // The sign-in reached the session limit (ISM-0428): signed out, with the server's reason.
     // Or it was signed out, here or on another tab: the server refuses its tokens at once.
     if (response.status === 401 && (value?.code === "session-limit" || value?.code === "signed-out"))
@@ -953,6 +938,7 @@ export class SharedWorkspaceClient {
     // nothing, and the person sees what changed before deciding to send it again.
     if (this.busy || this.disposed || this.gated()) return;
     this.busy = true;
+    const poll = (this.pollAbort = new AbortController());
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
@@ -1015,6 +1001,7 @@ export class SharedWorkspaceClient {
         generation === this.viewGeneration &&
         grantGeneration === this.grantGeneration &&
         !roleSignal.aborted &&
+        !poll.signal.aborted &&
         !this.gated()
       ) {
         this.cancelQueued(saveProblem("queuedNotRefreshed"));
@@ -1025,6 +1012,7 @@ export class SharedWorkspaceClient {
       }
     } finally {
       this.busy = false;
+      this.pollAbort = null;
       if (!this.disposed && this.needsRefresh) {
         this.needsRefresh = false;
         void this.refresh();
@@ -1079,7 +1067,8 @@ export class SharedWorkspaceClient {
       worldEpoch: this.worldEpoch,
       sheets: this.openSheetsNoted(),
     });
-    // A read may already be out, in which case drain waits. Protect this queued command at once.
+    // #817: a poll in flight is stopped (reads change nothing) so the save goes now, not after it.
+    this.pollAbort?.abort();
     this.publish({});
     void this.drain();
     return completion;
@@ -1323,6 +1312,15 @@ export class SharedWorkspaceClient {
     } catch {
       // Logged on the next opening; the page itself is unaffected.
     }
+  }
+  /** D-80 item 14: the record views of the last 7 days and the break glass openings, for a coordinator. */
+  async readRecordAccess(): Promise<{ views: SharedRecordView[]; openings: SharedBreakGlassOpening[] }> {
+    const { response, value } = await this.request("/v1/workspace/record-access");
+    if (!response.ok) throw new Error("Record access could not be read");
+    return {
+      views: Array.isArray(value?.views) ? value.views : [],
+      openings: Array.isArray(value?.openings) ? value.openings : [],
+    };
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

@@ -621,6 +621,8 @@ function sharedServer(hang: string | null = null) {
   const user = { id: "12345678-1234-1234-1234-123456789abc" };
   const answers: Record<string, unknown> = {
     "/auth/v1/user": user,
+    // A reload swaps the saved refresh token for an access token held in memory (H-0044).
+    "/auth/v1/token": { access_token: "synthetic-token", refresh_token: "synthetic-refresh", expires_in: 3600 },
     "/v1/workspace": { snapshot: SHARED_SNAPSHOT },
     "/v1/workspace/push-key": { enabled: true, publicKey: SERVER_KEY },
     "/v1/workspace/push-status": { owned: true },

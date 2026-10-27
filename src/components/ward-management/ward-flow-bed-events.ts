@@ -1,7 +1,7 @@
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
-import { withUndoRecord } from "./ward-undo";
+import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
 import { bedMoveNeedsOpenBedReason, openBedMoveRefusal } from "./ward-bed-move-reason";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
@@ -23,7 +23,9 @@ import {
   type Notice,
   type Unit,
 } from "@/components/ward-management/ward-model";
+import { isUploadedFileType, uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import type { BedEventHelpers, WardFlowState } from "./ward-flow-reducer";
+import { nextBedReleaseId } from "./ward-runtime-ids";
 
 /**
  * A ward's own beds and stays: bed moves, capacity, bed release and preparation, leave, discharge
@@ -193,6 +195,8 @@ export function reduceBedEvent(
           admissionId: admission.id,
           unitId: admission.unitId,
           at: event.now,
+          // H-0246: names this move, so an older toast's Undo cannot take back a newer one.
+          seq: nextStepUndoSeq(state.undoRecords, state.auditSequence),
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
           ...(linkedMovement ? { beforeMovementBed: linkedMovement.heldBedNumber ?? null } : {}),
@@ -441,9 +445,9 @@ export function reduceBedEvent(
       // `confirmedAt` separately records when the ward reported the release's stage.
       const flaggingRole = recordedByLabel(event.role, flaggedUnit.name);
       const release: BedRelease = {
-        // "WR-9NN": the "9" prefix marks a runtime id. Safe to derive from `bedReleases.length`:
-        // nothing ever removes a release.
-        id: `WR-9${String(state.bedReleases.length).padStart(2, "0")}`,
+        // "WR-9NN": the "9" prefix marks a runtime id. Not the length alone: an Undo of a departure
+        // removes the release it recorded, so the next id must pass every live one (ENG-01, H-0334).
+        id: nextBedReleaseId(state.bedReleases),
         unitId: flaggedUnit.id,
         admissionId: flaggedAdmission.id,
         state: "expected",
@@ -777,13 +781,19 @@ export function reduceBedEvent(
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
 
       // This prototype records document details only; empty details are not a document.
-      if (
-        typeof event.formName !== "string" ||
-        event.formName.trim().length === 0 ||
-        typeof event.fileName !== "string" ||
-        event.fileName.trim().length === 0
-      ) {
-        return reject(state, event, "Enter the document name and file name.");
+      if (typeof event.formName !== "string" || event.formName.trim().length === 0) {
+        return reject(state, event, "Choose the document type.");
+      }
+      // H-0049: only the kind of file is kept, never its name. An event recorded before 26 Oct 2026
+      // carries `fileName` instead; it replays as it did (an empty name is still refused), read for
+      // its type and then dropped.
+      const legacyName = event.fileType === undefined ? event.fileName : undefined;
+      if (event.fileType === undefined && (typeof legacyName !== "string" || legacyName.trim().length === 0)) {
+        return reject(state, event, "Document details need a recognised file type.");
+      }
+      const fileType: unknown = event.fileType === undefined ? uploadedFileTypeOf(legacyName) : event.fileType;
+      if (!isUploadedFileType(fileType)) {
+        return reject(state, event, "Document details need a recognised file type.");
       }
       const sizeBytes = event.sizeBytes;
       if (typeof sizeBytes !== "number" || !Number.isSafeInteger(sizeBytes) || sizeBytes <= 0) {
@@ -793,7 +803,7 @@ export function reduceBedEvent(
       const newForm = {
         id: `FORM-${event.now}-${(movement.uploadedForms?.length ?? 0) + 1}`,
         formName: event.formName,
-        fileName: event.fileName,
+        fileType,
         sizeBytes,
         uploadedAt: event.now,
         uploadedBy: event.role,

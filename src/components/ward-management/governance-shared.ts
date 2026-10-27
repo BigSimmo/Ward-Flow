@@ -69,7 +69,7 @@ export const reasonLabels: Record<AuditEvent["reasonCode"], string> = {
 };
 export const actionLabels: Record<AuditEvent["action"], string> = {
   REFER_TO_UNITS: "Refer to wards",
-  PULL_PATIENT: "Pull bed",
+  PULL_PATIENT: "Pull the bed",
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   ACCEPT_REFERRAL: "Accept referral",
   HOLD_REFERRAL_BED: "Hold referral bed",
@@ -95,6 +95,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   RECORD_ADMISSION_FOLLOW_UP: "Record follow-up arrangement",
   RECORD_PATIENT_DISCHARGE: "Record patient discharge",
   OPEN_DISCHARGE_RECORD: "Open discharge record",
+  BREAK_GLASS: "Break glass",
   REVIEW_AUDIT_EVENT: "Review event",
   SET_CONFIGURATION: "Change configuration",
   TAKE_INBOX_ITEM_OWNERSHIP: "Take action item",
@@ -114,6 +115,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   UNDO_TRANSPORT_STEP: "Undo transport step",
   UNDO_DEPARTURE: "Undo departure",
   UNDO_ABSENT_WITHOUT_LEAVE: "Undo mark absent",
+  UNDO_BED_MEETING_ACTION: "Undo bed meeting action done",
 };
 /** v10 pass 3: the step an undo took back, in words. */
 export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
@@ -123,6 +125,7 @@ export const UNDONE_STEP_LABELS: Partial<Record<string, string>> = {
   RECORD_LEGAL_FORM_RECEIVED: "Mark form received",
   RECORD_SUPPORT_NOTIFICATION: "Carer, PSP or MHAS record",
   RECORD_ABSENT_WITHOUT_LEAVE: "Mark absent",
+  COMPLETE_BED_MEETING_ACTION: "Mark bed meeting action done",
   RECORD_REPATRIATION: "Repatriation record",
   RECORD_HANDOVER_SIGN_OFF: "Handover sign-off",
   RECORD_ARRIVED_IN_DEPARTMENT: "Arrived in the department",
@@ -158,14 +161,19 @@ export function subjectPerson(
   patientOf: ReturnType<typeof usePatientOf>,
 ): { name: string; umrn: string } | null {
   const subject = event.subject;
+  // D-80 item 14: a break glass opening names its person directly.
   const info =
-    subject.kind === "movement"
-      ? patientOf({ movementId: subject.movementId })
-      : subject.kind === "referral"
-        ? patientOf({ referralId: subject.referralId })
-        : subject.kind === "admission"
-          ? patientOf({ id: subject.admissionId })
-          : null;
+    event.action === "BREAK_GLASS"
+      ? event.details.record === null
+        ? null
+        : patientOf({ patientId: event.details.record })
+      : subject.kind === "movement"
+        ? patientOf({ movementId: subject.movementId })
+        : subject.kind === "referral"
+          ? patientOf({ referralId: subject.referralId })
+          : subject.kind === "admission"
+            ? patientOf({ id: subject.admissionId })
+            : null;
   if (!info) return null;
   return info.patient ? { name: info.displayName, umrn: info.umrn } : null;
 }
@@ -189,7 +197,7 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
     case "configuration":
       return "Configuration";
     case "unresolved":
-      return "Unresolved record";
+      return event.action === "BREAK_GLASS" ? "Record not in this view" : "Unresolved record";
   }
 }
 
@@ -200,7 +208,7 @@ export function subjectLabel(event: AuditEvent, patientOf: ReturnType<typeof use
  * the live work is.
  */
 export type GovernanceTab = "review" | "gaps" | "audit" | "registers" | "reports";
-export type ReviewChip = "override" | "refused" | "access" | "follow-up";
+export type ReviewChip = "override" | "refused" | "access" | "follow-up" | "pattern";
 
 export const FORMS_HREF = "/ward-flow/legal-forms";
 

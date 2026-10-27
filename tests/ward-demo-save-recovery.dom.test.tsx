@@ -19,6 +19,68 @@ afterEach(() => {
   vi.restoreAllMocks();
   window.sessionStorage.clear();
 });
+/** A later write that fails for lack of room, leaving the earlier save in storage. */
+function failLaterWrite(dayZero: Date, savedAt: number) {
+  const quota = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+    throw new DOMException("Quota exceeded", "QuotaExceededError");
+  });
+  expect(
+    tryWriteDemoState({ ...seedWardFlowState(), clockOffsetMinutes: 5 }, dayZero, NOW_ANCHOR + 5, savedAt + 5),
+  ).toBe(false);
+  quota.mockRestore();
+}
+
+describe("WS-13: a restore says later changes may be lost only after a write really failed", () => {
+  it("restores the latest save quietly when no write has failed since", () => {
+    const dayZero = new Date("2026-10-16T00:00:00Z");
+    const savedAt = Date.parse("2026-10-16T10:00:00Z") / 60_000;
+    expect(tryWriteDemoState(seedWardFlowState(), dayZero, NOW_ANCHOR, savedAt)).toBe(true);
+    const read = tryReadDemoState(dayZero, savedAt + 30);
+    expect(read.saved?.now).toBe(NOW_ANCHOR);
+    expect(read.recoveryNotice).toBeUndefined();
+  });
+
+  it("goes back to quiet once a later write succeeds again", () => {
+    const dayZero = new Date("2026-10-16T00:00:00Z");
+    const savedAt = Date.parse("2026-10-16T10:00:00Z") / 60_000;
+    expect(tryWriteDemoState(seedWardFlowState(), dayZero, NOW_ANCHOR, savedAt)).toBe(true);
+    failLaterWrite(dayZero, savedAt);
+    expect(tryReadDemoState(dayZero, savedAt + 30).recoveryNotice).toMatch(/Later changes may not have been saved\.$/);
+    expect(tryWriteDemoState(seedWardFlowState(), dayZero, NOW_ANCHOR + 10, savedAt + 10)).toBe(true);
+    expect(tryReadDemoState(dayZero, savedAt + 30).recoveryNotice).toBeUndefined();
+  });
+
+  it("keeps the cautious notice for a save that carries no marker, such as one from an earlier build", () => {
+    const dayZero = new Date("2026-10-16T00:00:00Z");
+    const savedAt = Date.parse("2026-10-16T10:00:00Z") / 60_000;
+    expect(tryWriteDemoState(seedWardFlowState(), dayZero, NOW_ANCHOR, savedAt)).toBe(true);
+    window.sessionStorage.removeItem("ward-flow:demo-save-current");
+    expect(tryReadDemoState(dayZero, savedAt + 30).recoveryNotice).toMatch(/^Restored the last successful save from/);
+  });
+
+  it("shows no restore notice after a reload of a changed day that saved cleanly", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-10-16T10:00:00Z"));
+    expect(
+      tryWriteDemoState(
+        { ...seedWardFlowState(), clockOffsetMinutes: 5 },
+        demoDayZero(new Date()),
+        NOW_ANCHOR + 5,
+        absoluteWallClockMinutes() - 30,
+      ),
+    ).toBe(true);
+    render(
+      <WardFlowProvider>
+        <WardRecoveryNotice />
+      </WardFlowProvider>,
+    );
+    await act(async () => {
+      await import("@/components/ward-management/ward-flow-demo-restore");
+    });
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
+  });
+});
+
 describe("successful save identity after storage failure", () => {
   it("writes saves at the version the on-demand stored-state schema reads", () => {
     expect(WARD_FLOW_DEMO_STORAGE_VERSION).toBe(WARD_FLOW_STORED_STATE_VERSION);
@@ -48,6 +110,7 @@ describe("successful save identity after storage failure", () => {
     const dayZero = new Date("2026-10-16T00:00:00Z");
     const savedAt = Date.parse("2026-10-16T10:00:00Z") / 60_000;
     expect(tryWriteDemoState(seedWardFlowState(), dayZero, NOW_ANCHOR, savedAt)).toBe(true);
+    failLaterWrite(dayZero, savedAt);
     // Reopened 14 real hours later: the board resumes at 00:42 the next day.
     expect(tryReadDemoState(dayZero, savedAt + 14 * 60).recoveryNotice).toBe(
       "Restored the last successful save from 10:42 yesterday on the board clock. Later changes may not have been saved.",
@@ -73,6 +136,8 @@ it("shows the retained successful save label alongside the storage warning after
   expect(
     tryWriteDemoState(seedWardFlowState(), demoDayZero(new Date()), NOW_ANCHOR, absoluteWallClockMinutes() - 30),
   ).toBe(true);
+  // WS-13: the label belongs to a save that a later failed write left behind.
+  failLaterWrite(demoDayZero(new Date()), absoluteWallClockMinutes() - 30);
   vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
     throw new DOMException("Quota exceeded", "QuotaExceededError");
   });

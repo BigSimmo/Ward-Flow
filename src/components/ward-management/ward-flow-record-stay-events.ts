@@ -2,6 +2,7 @@
 // discharge blockers, leave, absence, handover, repatriation, clinical contact and support
 // notifications. Moved out of `ward-flow-record-events.ts` unchanged, which hands these events here.
 import { stayLegalStatusIsInvoluntary } from "./ward-discharge-records";
+import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
 import { isLeavingDestination } from "./ward-admissions";
 import { type AuditDecision, finiteInstant } from "./ward-audit";
 import { recordedCommunityTransition } from "./ward-care-journey";
@@ -54,6 +55,20 @@ type RecordedStayEvent = Extract<
       | "RECORD_SUPPORT_NOTIFICATION";
   }
 >;
+
+/**
+ * Audit S-5: a stay cannot leave while a return journey that it sends is still open. The home
+ * ward would keep a held bed for someone already discharged, and the arrival could never be
+ * recorded.
+ */
+export function openReturnMovementRefusal(
+  movements: readonly Pick<Movement, "sourceAdmissionId" | "closure">[],
+  admissionId: string,
+): string | undefined {
+  return movements.some((movement) => movement.sourceAdmissionId === admissionId && !movement.closure)
+    ? "A return to the home hospital is still open for this patient. Release or withdraw it before they leave the ward"
+    : undefined;
+}
 
 export function reduceRecordedStayEvent(
   state: WardFlowState,
@@ -161,6 +176,10 @@ export function reduceRecordedStayEvent(
 
       const unit = findUnit(state, admission.unitId);
       if (!unit) return reject(state, event, `no unit found for id ${admission.unitId}`);
+      const restrictiveRefusal = openRestrictivePracticeRefusal(unit.restrictivePractice, admission.id);
+      if (restrictiveRefusal) return reject(state, event, restrictiveRefusal);
+      const returnRefusal = openReturnMovementRefusal(state.movements, admission.id);
+      if (returnRefusal) return reject(state, event, returnRefusal);
 
       decision.outcome = "accepted";
       decision.reasonCode = "none";
@@ -462,6 +481,22 @@ export function reduceRecordedStayEvent(
       if (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt)) {
         return reject(state, event, `RECORD_REPATRIATION estimatedAt must be answered, and it has no default`);
       }
+      // Audit S-4: the return journey's legal status is read against the stay's own record. A
+      // "Voluntary" return for a patient recorded as involuntary would open unauthorised wards to
+      // the journey and let the home stay be discharged without a revocation.
+      const repatriationPatient = admission.patientId
+        ? state.patients.find((patient) => patient.id === admission.patientId)
+        : undefined;
+      const stayIsInvoluntary =
+        patientRecordIsInvoluntary(repatriationPatient?.legalStatus) || stayLegalStatusIsInvoluntary(state, admission);
+      if (event.transportLegalStatus === "voluntary" && stayIsInvoluntary) {
+        return reject(
+          state,
+          event,
+          "This patient is recorded as involuntary. Choose Involuntary for the return, or record the change of legal status first",
+        );
+      }
+      const currentLegalForm = stayIsInvoluntary ? dischargeMovement(state, admission)?.legalForm : undefined;
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       // One home hospital for the record and for the return movement: an agreement that arrives
@@ -517,6 +552,7 @@ export function reduceRecordedStayEvent(
           observation: admission.observation,
           highAcuity: admission.highAcuity,
           legalStatus: event.transportLegalStatus === "involuntary" ? "Involuntary inpatient" : "Voluntary",
+          ...(currentLegalForm ? { legalForm: currentLegalForm } : {}),
           statusChanges: [],
           urgencyChanges: [],
           overrides: [],

@@ -37,21 +37,21 @@ const referral: Referral = {
   id: "owner-calls-scope",
   source: "community",
   destinations: [wardLine(unitA!.id), wardLine(unitB!.id)],
-  ownerHistory: [{ owner: "coordinator", at: NOW - 30, by: "Flow coordinator" }],
+  ownerHistory: [{ owner: "coordinator", at: NOW - 30, by: "Bed coordinator" }],
   contactLog: [
     {
       contact: { kind: "psychiatric_ward", unitId: unitA!.id },
       outcome: "call_back",
       at: NOW - 20,
-      by: "Flow coordinator",
+      by: "Bed coordinator",
     },
     {
       contact: { kind: "psychiatric_ward", unitId: unitB!.id },
       outcome: "said_no",
       at: NOW - 10,
-      by: "Flow coordinator",
+      by: "Bed coordinator",
     },
-    { contact: { kind: "referrer" }, outcome: "no_answer", at: NOW - 5, by: "Flow coordinator" },
+    { contact: { kind: "referrer" }, outcome: "no_answer", at: NOW - 5, by: "Bed coordinator" },
   ],
 };
 const state: WardFlowState = { ...seeded, referrals: [...seeded.referrals, referral] };

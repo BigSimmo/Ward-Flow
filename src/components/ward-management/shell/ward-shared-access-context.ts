@@ -20,6 +20,8 @@ export type SharedAccessApi = Pick<
   | "giveCover"
   | "decideRequest"
   | "breakGlass"
->;
+> &
+  /** D-80 item 14: the coordinator's record views and break glass openings. */
+  Partial<Pick<SharedWorkspaceClient, "readRecordAccess">>;
 
 export const SharedAccessContext = createContext<{ api: SharedAccessApi; actorId: string | null } | null>(null);

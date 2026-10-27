@@ -12,25 +12,40 @@ export { WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryFragment };
 type User = WardAuthUser;
 type Session = WardAuthSession;
 type StoragePort = Pick<Storage, "getItem" | "setItem" | "removeItem">;
-function isValidSession(parsed: unknown): parsed is Session {
-  if (!parsed || typeof parsed !== "object") return false;
+/**
+ * H-0044: what this tab keeps in session storage so a reload stays signed in. The access token
+ * (the key that opens the workspace) lives in memory only; a reload swaps the refresh token for a
+ * fresh one. The refresh token stays readable here because the backend is on another site, so an
+ * HttpOnly cookie for it would not reach the backend (see the H-0044 design note).
+ */
+type SavedSession = Pick<Session, "refresh_token" | "recovery" | "user">;
+/** Reads a saved session. Rows written before H-0044 also carry an access token: it is ignored. */
+function readSavedSession(parsed: unknown): Session | null {
+  if (!parsed || typeof parsed !== "object") return null;
   const row = parsed as Record<string, unknown>;
   const user = row.user;
   const userId = user && typeof user === "object" ? (user as Record<string, unknown>).id : undefined;
-  return (
-    typeof row.access_token === "string" &&
-    row.access_token.length > 0 &&
-    typeof row.refresh_token === "string" &&
-    row.refresh_token.length > 0 &&
-    typeof row.expiresAt === "number" &&
-    Number.isFinite(row.expiresAt) &&
-    typeof row.recovery === "boolean" &&
-    (!row.recovery ? typeof userId === "string" && userId.length > 0 : true)
-  );
+  if (
+    typeof row.refresh_token !== "string" ||
+    row.refresh_token.length === 0 ||
+    typeof row.recovery !== "boolean" ||
+    (!row.recovery && (typeof userId !== "string" || userId.length === 0))
+  )
+    return null;
+  return {
+    // No access token yet: an expiry of 0 makes the next use refresh first.
+    access_token: "",
+    refresh_token: row.refresh_token,
+    expiresAt: 0,
+    recovery: row.recovery,
+    ...(typeof userId === "string" && userId ? { user: { id: userId } } : {}),
+  };
 }
 export type WardBrowserAuthAdapter = {
   readonly isRecovery: boolean;
   readonly userId: string | null;
+  /** The signed-in account's email, from the provider's own answer. Memory only. */
+  readonly accountEmail: string | null;
   reauthenticate(password: string): Promise<void>;
   restore(recovery?: ReturnType<typeof consumeRecoveryFragment>): Promise<void>;
   signUp(email: string, password: string, redirectTo?: string): Promise<void>;
@@ -78,6 +93,9 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   get userId() {
     return this.session?.user?.id ?? null;
   }
+  get accountEmail() {
+    return this.email;
+  }
   private assert(generation: number) {
     if (this.disposed || generation !== this.generation)
       throw new WardAuthError("cancelled", "Sign-in request cancelled.");
@@ -111,7 +129,12 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   private save(session: Session) {
     this.session = session;
     try {
-      this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(session));
+      const saved: SavedSession = {
+        refresh_token: session.refresh_token,
+        recovery: session.recovery,
+        user: session.user,
+      };
+      this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(saved));
     } catch {
       // Keep rotated credentials in memory. Remove an older saved session when possible.
       try {
@@ -149,7 +172,8 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
         const rejected = [400, 401, 403, 422].includes(response.status);
         if (
           (token && [401, 403].includes(response.status)) ||
-          (response.status === 400 && path.includes("grant_type=refresh_token"))
+          // A reload always refreshes now (H-0044), so any refused refresh token ends the session.
+          ([400, 401, 403].includes(response.status) && path.includes("grant_type=refresh_token"))
         ) {
           this.clear();
           throw new WardAuthError("session", "Your session has expired. Sign in again.");
@@ -244,15 +268,16 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     }
     if (!saved) return;
     try {
-      const parsed: unknown = JSON.parse(saved);
-      if (!isValidSession(parsed)) throw new Error();
+      const parsed = readSavedSession(JSON.parse(saved));
+      if (!parsed) throw new Error();
       this.session = parsed;
     } catch {
       this.clear();
       throw new WardAuthError("session", "Your session has expired. Sign in again.");
     }
+    // A saved session has no access token, so this always refreshes, and the refresh checks the
+    // account. A second account check here would only add a call to every reload.
     await this.refreshIfNeeded();
-    if (this.session) await this.verify(this.session);
   }
   async signUp(email: string, password: string, redirectTo?: string) {
     const nominated = this.options.coordinatorEmail?.trim().toLowerCase();

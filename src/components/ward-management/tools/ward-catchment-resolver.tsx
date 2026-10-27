@@ -623,7 +623,7 @@ export function WardCatchmentResolver({
       </header>
 
       {/* Search Input Section */}
-      <section className={styles.searchSection} aria-label="Catchment Search">
+      <section className={styles.searchSection} aria-label="Catchment search">
         <label htmlFor={searchInputId} className={styles.searchLabel}>
           Search by Suburb or Postcode
         </label>
@@ -707,15 +707,15 @@ export function WardCatchmentResolver({
           <span className={styles.multipleMatchesTitle}>
             {queryResult.results.length} suburbs in postcode {query}:
           </span>
-          <div className={styles.suburbTabList} role="tablist">
+          {/* Plain toggle buttons, not tabs: picking one swaps the result card, not a panel (fresh audit A-6). */}
+          <div className={styles.suburbTabList} role="group" aria-label={`Suburbs in postcode ${query}`}>
             {queryResult.results.map((item, index) => {
               const isSelected = index === selectedSuburbIndex;
               return (
                 <button
                   key={item.suburb}
                   type="button"
-                  role="tab"
-                  aria-selected={isSelected}
+                  aria-pressed={isSelected}
                   className={`${styles.suburbTab} ${isSelected ? styles.suburbTabSelected : ""}`}
                   onClick={() => {
                     setSelectedSuburbIndex(index);
@@ -731,7 +731,15 @@ export function WardCatchmentResolver({
       )}
 
       {/* Results or Empty/Not-Found States */}
-      <section className={styles.resultsSection} aria-live="polite">
+      {/* A short announcement only: the whole card as a live region was re-read on every keystroke (A-7). */}
+      <p className="sr-only" role="status" data-testid="catchment-result-status">
+        {hasResults && activeResult
+          ? `Result: ${activeResult.suburb}, ${activeResult.healthService.name}`
+          : queryResult.type === "not-found"
+            ? "No catchment records found"
+            : ""}
+      </p>
+      <section className={styles.resultsSection}>
         {hasResults && activeResult ? (
           <article className={styles.resultCard} data-testid="catchment-result-card">
             {/* Card Header */}

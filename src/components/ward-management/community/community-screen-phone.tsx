@@ -95,6 +95,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
     handleActionClick,
     handleConfirmDecline,
     handleConfirmAccept,
+    declineSave,
     openTransportBook,
     openTransportCancel,
     teamConfig,
@@ -418,10 +419,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
               ? {
                   label: "Decline referral",
                   disabledReason: communityDeclineBlockedReason(declineDraft),
-                  onAction: () => {
-                    handleConfirmDecline(phoneReferral.id);
-                    closePhoneReferral();
-                  },
+                  onAction: () => handleConfirmDecline(phoneReferral.id, closePhoneReferral),
                 }
               : { label: "Accept referral", onAction: () => handleConfirmAccept(phoneReferral.id) }
         }
@@ -432,6 +430,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                 onAction: () => {
                   setPhoneDeclining(false);
                   setDeclineDraft(undefined);
+                  declineSave.forget();
                 },
               }
             : { label: "Decline", onAction: () => setPhoneDeclining(true) }
@@ -472,6 +471,11 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   ))}
                 </fieldset>
                 <p className={phoneCss.sheetNote}>The referrer sees the reason.</p>
+                {declineSave.error ? (
+                  <p className={phoneCss.sheetNote} role="alert" data-testid="ward-community-phone-decline-failure">
+                    {declineSave.error}
+                  </p>
+                ) : null}
               </>
             ) : (
               <>

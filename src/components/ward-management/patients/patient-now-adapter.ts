@@ -61,7 +61,7 @@ function movementVerdict(
     };
   if (acceptedUnit) {
     return movementHasBedHold(movement, admissions)
-      ? { tone: "good", short: "Bed Pulled", title: `Bed pulled at ${acceptedUnit.name}.`, gates: [] }
+      ? { tone: "good", short: "Bed pulled", title: `Bed pulled at ${acceptedUnit.name}.`, gates: [] }
       : {
           tone: "warn",
           short: "Accepted, Awaiting Bed",
@@ -591,7 +591,7 @@ export function resolvePatientNowRecord(
                 {
                   who: patient.generalPractitioner,
                   role: "Recorded GP",
-                  note: "Contact details not held here",
+                  note: "Contact details not recorded here",
                   tone: null,
                 },
               ]
@@ -671,7 +671,14 @@ export function resolvePatientNowRecord(
       verdict: { tone: "warn", short: "Patient record", title: "No linked movement displayed", gates: [] },
       reason: `Legal status: ${patient.legalStatus ?? "Not recorded"}. Suburb: ${patient.suburb ?? "Not recorded"}. GP: ${patient.generalPractitioner ?? "Not recorded"}.`,
       ring: patient.generalPractitioner
-        ? [{ who: patient.generalPractitioner, role: "Recorded GP", note: "Contact details not held here", tone: null }]
+        ? [
+            {
+              who: patient.generalPractitioner,
+              role: "Recorded GP",
+              note: "Contact details not recorded here",
+              tone: null,
+            },
+          ]
         : [],
       ladder: "Current care and escalation arrangements are not recorded here.",
       next: [],

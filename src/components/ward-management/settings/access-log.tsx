@@ -5,7 +5,7 @@
  *
  * Part of the Access tab, for the access admin and the statewide coordinator: the two desks the
  * server answers. Each row is one opening of a patient record, a movement or a referral's full
- * detail, newest first. A record is shown by its id only: this desk sees no patient names, and the
+ * detail, or the server sending a desk its whole list or the TV board, newest first. A record is shown by its id only: this desk sees no patient names, and the
  * filter runs here in the page, so nothing typed leaves it.
  *
  * The shared workspace reads the server's log (`useSharedRecordViews`). The local demo has no
@@ -31,6 +31,14 @@ const OPENED_ON: Record<string, string> = {
   patient: "Patient record",
   movement: "Movement",
   referral: "Referral detail",
+};
+/**
+ * H-0731: reads the server logs itself when it sends a desk its whole list or the TV board. They
+ * name no single record (the server stores "*"), so the row says what was sent instead.
+ */
+const SENT_WHOLE: Record<string, string> = {
+  list: "Whole list sent to this desk",
+  tv: "TV board sent to this desk",
 };
 
 function plural(n: number, word: string): string {
@@ -134,7 +142,7 @@ export function AccessLog() {
               <li key={opening.id} className={styles.row} data-testid="ward-access-log-row">
                 <span className={styles.who}>
                   <span className={styles.name}>
-                    {opening.recordId}, {OPENED_ON[opening.surface] ?? "Record"}
+                    {SENT_WHOLE[opening.surface] ?? `${opening.recordId}, ${OPENED_ON[opening.surface] ?? "Record"}`}
                   </span>
                   <span className={styles.meta}>
                     {label(opening.actorId)}

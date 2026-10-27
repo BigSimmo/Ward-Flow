@@ -79,6 +79,8 @@ function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: strin
 export type WardCredentialForm = {
   open: boolean;
   recovery: boolean;
+  /** Fresh audit X-1: the account a recovery link is for, so a link from someone else is noticed. */
+  accountEmail?: string | null;
   signupAvailable: boolean;
   signUp: (email: string, password: string) => Promise<void>;
   busy: boolean;
@@ -112,6 +114,21 @@ const workingAs = {
     }
   },
 };
+// H-0305: a browser that blocks storage throws on reaching window.sessionStorage at all. Then
+// reads find nothing and writes are skipped, so sign-in still starts and the session lives in
+// memory. A failing call on storage that exists still throws, so its caller can say so.
+function sessionStore(): Storage | null {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+}
+const tabStorage = {
+  getItem: (key: string): string | null => sessionStore()?.getItem(key) ?? null,
+  setItem: (key: string, value: string) => sessionStore()?.setItem(key, value),
+  removeItem: (key: string) => sessionStore()?.removeItem(key),
+};
 // The next account at this tab picks its own role, even after an expiry rather than a sign-out.
 onWardSessionEnd(() => {
   workingAsInMemory = null;
@@ -121,7 +138,7 @@ const defaultCreateAuth = async (): Promise<WardBrowserAuthAdapter> =>
   new (await import("./ward-supabase-auth")).SupabaseWardAuth({
     url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
     publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
-    storage: window.sessionStorage,
+    storage: tabStorage,
     coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
     // Sign-out, expiry and a refused session all clear Ward Flow's browser storage.
     onSessionEnded: endWardFlowBrowserSession,
@@ -132,8 +149,17 @@ export function useWardSupabaseShared(
 ) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
+  // #791: the signed-in account's email, shown beside Sign out. Memory only, like the auth's own copy.
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<number | null>(null);
-  const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
+  const [form, setForm] = useState<{
+    open: boolean;
+    recovery: boolean;
+    busy: boolean;
+    message: string | null;
+    /** Fresh audit X-1: the account a recovery link signs in to, shown on "Set a new password". */
+    accountEmail?: string | null;
+  }>({ open: false, recovery: false, busy: false, message: null });
   // Latest factory, read when the session boots. Updated in an effect (not during render) and
   // declared before the boot effect so it is current when that effect runs; the boot effect keys
   // on `enabled` only, so an inline factory with a new identity each render does not reconnect.
@@ -147,6 +173,7 @@ export function useWardSupabaseShared(
     setPreviousEnabled(enabled);
     setView(emptyView);
     setSignedIn(false);
+    setAccountEmail(null);
     setForm({ open: false, recovery: false, busy: false, message: null });
   }
   const connection = useRef<SharedWorkspaceClient | null>(null);
@@ -203,6 +230,7 @@ export function useWardSupabaseShared(
       connection.current = null;
       if (!closed) {
         setSignedIn(false);
+        setAccountEmail(null);
         setEndsAt(null);
         setView({ ...emptyView, status: "ready" });
       }
@@ -227,6 +255,7 @@ export function useWardSupabaseShared(
       setDraftAccount(actorId);
       connectedActorId = actorId;
       setSignedIn(true);
+      setAccountEmail(auth.accountEmail);
       setForm({ open: false, recovery: false, busy: false, message: null });
       const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL!;
       const instance = auth;
@@ -234,11 +263,7 @@ export function useWardSupabaseShared(
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: (options) => instance.token(options),
         workingAs,
-        recoveryStorage: {
-          getItem: (key) => window.sessionStorage.getItem(key),
-          setItem: (key, value) => window.sessionStorage.setItem(key, value),
-          removeItem: (key) => window.sessionStorage.removeItem(key),
-        },
+        recoveryStorage: tabStorage,
         changed: (next) => {
           if (closed) return;
           if (next.status === "not-authorised") {
@@ -308,7 +333,7 @@ export function useWardSupabaseShared(
         } catch (error) {
           fragmentError = error;
         }
-        if (confirmation) window.sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
+        if (confirmation) tabStorage.removeItem(WARD_AUTH_STORAGE_KEY);
         const base = new URL(process.env.NEXT_PUBLIC_WARD_API_BASE_URL ?? "");
         const loopback =
           process.env.NODE_ENV === "development" &&
@@ -316,6 +341,21 @@ export function useWardSupabaseShared(
           ["localhost", "127.0.0.1", "[::1]"].includes(base.hostname);
         if (base.username || base.password || (base.protocol !== "https:" && !loopback))
           throw new Error("Missing shared configuration");
+        // #805: a tab holding a saved sign-in connects next, so fetch the shared client and its
+        // state checks while the sign-in is verified, not one after another once it is. A visitor
+        // with no saved sign-in loads nothing extra.
+        let savedSignIn = recovery !== null;
+        try {
+          savedSignIn ||= !!window.sessionStorage.getItem(WARD_AUTH_STORAGE_KEY);
+        } catch {
+          // Storage unavailable: the client loads at connect, as before.
+        }
+        if (savedSignIn)
+          void Promise.all([
+            import("./ward-shared-client"),
+            import("./ward-shared-state-validation"),
+            import("./ward-partial-view-contract"),
+          ]).catch(() => {});
         const created = await createAuthRef.current();
         if (closed) {
           created.dispose();
@@ -331,7 +371,7 @@ export function useWardSupabaseShared(
                 setForm((old) => ({
                   ...old,
                   message:
-                    "Check your email and confirm your Ward Flow account, then sign in. Coordinator access still needs to be set up.",
+                    "Check your email and confirm the account, then sign in. An access admin still needs to give you a role.",
                 }));
                 setView({ ...emptyView, status: "ready" });
               }
@@ -428,7 +468,7 @@ export function useWardSupabaseShared(
               }
               await auth!.restore();
               if (auth!.isRecovery) {
-                setForm((old) => ({ ...old, open: true, recovery: true }));
+                setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth!.accountEmail }));
                 setView({ ...emptyView, status: "ready" });
               } else if (auth!.userId) {
                 await connect();
@@ -461,7 +501,7 @@ export function useWardSupabaseShared(
         await auth.restore(recovery);
         if (closed) return;
         if (auth.isRecovery) {
-          setForm((old) => ({ ...old, open: true, recovery: true }));
+          setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth?.accountEmail ?? null }));
           setView({ ...emptyView, status: "ready" });
         } else if (auth.userId) await connect();
         else {
@@ -487,6 +527,7 @@ export function useWardSupabaseShared(
   return {
     ...view,
     signedIn,
+    accountEmail,
     client: connection,
     signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
     /** When this sign-in reaches the session limit, in wall-clock milliseconds; `null` when unknown. */

@@ -10,8 +10,9 @@ import { useCopyDiagnostics } from "@/lib/use-copy-diagnostics";
  * WebVitalsReporter). Because it renders in place of the root layout, `globals.css`
  * is NOT applied — it must supply its own <html>/<body> and inline styles so it
  * still renders correctly when the styling/theming system is exactly what failed.
+ * H-0349: "Try again" calls Next 16's `retry`, which re-fetches; `reset` would only re-render.
  */
-export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const { copied, copyFailed, copyDiagnostics } = useCopyDiagnostics(error);
 
@@ -83,13 +84,13 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 wordBreak: "break-all",
               }}
             >
-              Digest: {error.digest}
+              Error reference: {error.digest}
             </div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             <button
               type="button"
-              onClick={() => reset()}
+              onClick={() => retry()}
               style={{
                 cursor: "pointer",
                 borderRadius: "0.5rem",

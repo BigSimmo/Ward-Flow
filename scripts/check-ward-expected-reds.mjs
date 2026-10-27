@@ -67,8 +67,11 @@ const MIN_FILE_SECONDS = 0.1;
  * `tests/ward-expected-reds-manifest.test.ts` asserts the real population still clears them, so the
  * headroom cannot silently evaporate.
  */
-const FLOOR_FILES = 200;
-const FLOOR_TESTS = 2500;
+// H-0914 (26 Oct 2026): raised from 200 and 2500, which had fallen to an eighth of the suite (about
+// 1,530 files and 16,600 tests). The test floor stays lower than the file floor because a shard's
+// floors scale by its share of files, and shards differ in tests per file.
+const FLOOR_FILES = 1000;
+const FLOOR_TESTS = 6000;
 
 /**
  * The gate's population: every unit test file (see isUnitTestFile below). Until 26 September 2026
@@ -552,7 +555,8 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
     for (const file of tooling) console.log(`    ${file}`);
   }
   if (process.env.WARD_PUBLIC_STANDALONE === "1") {
-    const privateRootsPresent = [".claude", ".agents", ".cursor"].some((root) =>
+    // A bare `.claude/settings.json` holding only the cloud Supermemory save hook is public.
+    const privateRootsPresent = [".claude/hooks", ".claude/agents", ".agents", ".cursor"].some((root) =>
       existsSync(path.join(projectRoot, root)),
     );
     population = selectPublicPopulation(population, privateRootsPresent);

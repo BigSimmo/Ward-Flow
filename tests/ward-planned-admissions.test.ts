@@ -120,7 +120,7 @@ describe("BOOK_PLANNED_ADMISSION", () => {
       state: "booked",
       unitId: UNIT,
       bookedAt: NOW,
-      bookedBy: "Flow coordinator",
+      bookedBy: "Bed coordinator",
     });
     expect(state.plannedAdmissionSequence).toBe(1);
     expect(state.units).toBe(seed.units);
@@ -512,7 +512,7 @@ describe("overdue planned arrivals surface in the action inbox", () => {
 
     const owned = apply(state, { type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: NOW, inboxItemId: ROW });
     expect(owned.rejections).toEqual([]);
-    expect(currentInboxOwner(owned.inboxOwnership[ROW], row!.since)).toEqual({ at: NOW, by: "Flow coordinator" });
+    expect(currentInboxOwner(owned.inboxOwnership[ROW], row!.since)).toEqual({ at: NOW, by: "Bed coordinator" });
 
     const snoozed = apply(owned, {
       type: "SNOOZE_INBOX_ITEM",
@@ -641,7 +641,7 @@ describe("review follow-up: who may be booked and converted", () => {
       (admission) => admission.patientId !== null && admission.state === "occupied",
     )!.patientId!;
     const refused = book(seed, { initials: null, patientId: holder });
-    expect(lastRejection(refused)).toBe("This patient already holds a bed or occupies a ward.");
+    expect(lastRejection(refused)).toBe("This patient already has a bed pulled or occupies a ward.");
     expect(refused.plannedAdmissions).toBe(seed.plannedAdmissions);
   });
 

@@ -14,12 +14,19 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
-import { parseStoredAccess, readWardAccessSnapshot, sameDesk, setWardAccess } from "./shell/ward-access-store";
+import {
+  markSignInLanding,
+  parseStoredAccess,
+  readWardAccessSnapshot,
+  sameDesk,
+  setWardAccess,
+} from "./shell/ward-access-store";
 import { StepUpReauthContext } from "./shell/ward-step-up-context";
 import { SharedAccessContext, type SharedAccessApi } from "./shell/ward-shared-access-context";
 import { SharedSessionContext, type RecordViewSurface, type SharedSession } from "./shell/ward-shared-session-context";
@@ -30,11 +37,15 @@ import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
 import { publishLiveRefresh } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
+import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
+import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
 
+/** How long the first connection may wait before Reconnect is offered: one shared request's limit. */
+const CONNECTING_STALL_MS = 15_000;
 const UNAVAILABLE_ACCESS_MESSAGE =
   "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
 /** Explicit shared-unavailable source: never let an outage select the local demonstration store. */
@@ -76,6 +87,8 @@ export type WardSharedConnection = SharedView & {
   credentials?: WardCredentialForm;
   enabled: boolean;
   signedIn: boolean;
+  /** #791: the signed-in account's email, shown beside Sign out so the person knows which account this is. */
+  accountEmail?: string | null;
   signIn: () => void;
   /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
   signOut: (reason?: unknown) => void;
@@ -182,6 +195,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       ownRequest: async () => connected().ownRequest(),
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
+      readRecordAccess: async () => connected().readRecordAccess(),
     };
   }, [supabase.client, accountBinding]);
   if (!supabaseMode)
@@ -279,6 +293,15 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
       }}
     >
       <h2>{form.recovery ? "Set a new password" : signup ? "Create a Ward Flow account" : "Sign in to Ward Flow"}</h2>
+      {form.recovery && (
+        // Fresh audit X-1: a recovery link someone else sent signs this tab in to their account.
+        // Naming the account lets the person see that before setting a password for it.
+        <p data-testid="ward-recovery-account">
+          {form.accountEmail
+            ? `This link is for ${form.accountEmail}. If that is not your account, choose Cancel.`
+            : "This link's account could not be shown. If you did not ask for this link, choose Cancel."}
+        </p>
+      )}
       {!form.recovery && (
         <label>
           Email
@@ -391,8 +414,11 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   useEffect(() => {
     if (!serverAccess) return;
     const { desk, previewOf, covers } = readWardAccessSnapshot();
-    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0)
+    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0) {
       setWardAccess(serverAccess, { fromServer: true });
+      // #804, #797: a page closed to this desk opens its home, not "Not part of your role".
+      if (!sameDesk(previewOf ?? desk, serverAccess)) markSignInLanding(window.location.pathname);
+    }
   }, [serverAccess]);
   const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
   const pushKind = !connection.enabled
@@ -578,7 +604,13 @@ function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDem
     (from?: HTMLElement) => {
       returnFocus.current = from ?? button.current;
       setOpen(true);
-      void loadMenu?.().then((menu) => setMenu(() => menu));
+      // H-0309: a menu that fails to load closes again and says so, rather than sitting "expanded".
+      void loadMenu?.()
+        .then((menu) => setMenu(() => menu))
+        .catch(() => {
+          setOpen(false);
+          announceToWardShell("The demo menu could not load.");
+        });
     },
     [loadMenu],
   );
@@ -624,6 +656,8 @@ function WardSharedWorkspaceContent({
 }) {
   "use no memo";
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
+  // TV-13 (H-0787): a wall TV whose session ends says so at TV size, not as a small sign-in page.
+  const onTv = isTvPath(usePathname() ?? "");
   useEffect(() => {
     if (!Number.isFinite(connection.accessUntil) || connection.accessUntil! <= checkedAt) return;
     // A checkpoint updates checkedAt and re-arms this effect while the deadline is still ahead.
@@ -633,12 +667,31 @@ function WardSharedWorkspaceContent({
     );
     return () => clearTimeout(timer);
   }, [connection.accessUntil, checkedAt]);
+  // #805: while the saved sign-in is checked and the board first read, nothing has failed, so the
+  // screen says so instead of offering Reconnect or a sign-in button, which read as a sign-out.
+  // Reconnect comes back only if the wait runs past the request limit without an answer.
+  const connecting =
+    connection.enabled &&
+    connection.status === "loading" &&
+    !connection.error &&
+    !connection.credentials?.open &&
+    !connection.snapshot;
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    if (!connecting) return;
+    const timer = setTimeout(() => setStalled(true), CONNECTING_STALL_MS);
+    return () => {
+      clearTimeout(timer);
+      setStalled(false);
+    };
+  }, [connecting]);
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
       <WardRolePicker
         choices={connection.choices ?? []}
         onChoose={(id) => connection.chooseRole?.(id)}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -646,8 +699,10 @@ function WardSharedWorkspaceContent({
     return (
       <WardAskForAccess
         canRequest={connection.canRequest === true}
+        reason={connection.noRoleReason}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -660,28 +715,65 @@ function WardSharedWorkspaceContent({
         canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
+    );
+  // Audit 24-5 RA-09: the server named a role this build cannot parse. The tab must not carry on
+  // with the desk it held before, so it falls back to the no-role screen. A server that names no
+  // access at all (`connection.access` absent) is the older shared workspace and still opens.
+  if (connection.signedIn && connection.snapshot && connection.access != null && access === null)
+    return (
+      <WardAskForAccess
+        canRequest={connection.canRequest === true}
+        api={connection.accessApi ?? null}
+        onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
+        onSignOut={connection.signOut}
+      />
+    );
+  if (connecting)
+    return (
+      <main id="main-content" className={styles.notice} aria-label="Opening Ward Flow" aria-busy="true">
+        <h1>Opening Ward Flow</h1>
+        <p role="status" data-testid="ward-shared-connecting">
+          {connection.signedIn
+            ? "Signed in. Connecting to the shared workspace. This can take up to 15 seconds."
+            : "Checking your sign-in."}
+        </p>
+        {stalled && (
+          <button type="button" onClick={connection.retry}>
+            {connection.signedIn ? "Reconnect" : "Try again"}
+          </button>
+        )}
+        {connection.signedIn && (
+          <button type="button" onClick={connection.signOut}>
+            Sign out
+          </button>
+        )}
+      </main>
     );
   if (!connection.signedIn || !connection.snapshot)
     return (
       <main
         id="main-content"
-        className={styles.notice}
-        aria-label="Ward Flow sign-in"
+        className={onTv ? `${styles.notice} ${styles.tvSignedOut}` : styles.notice}
+        aria-label={onTv ? "TV signed out" : "Ward Flow sign-in"}
         aria-busy={connection.signedIn && connection.status === "loading"}
+        data-testid={onTv ? "ward-tv-signed-out" : undefined}
       >
-        <h1>Ward Flow sign-in</h1>
-        <p>
-          Shared synthetic workspace. Sign in to reach the Ward Flow workflows your access covers. Coordinator access
-          still needs to be set up.
-        </p>
-        {connection.error && <p role="alert">{connection.error}</p>}
-        {connection.signedIn && connection.status === "loading" && !connection.error && (
-          <p role="status" data-testid="ward-shared-connecting">
-            Signed in. Connecting to the shared workspace. This can take up to 15 seconds.
-          </p>
+        {onTv ? (
+          <>
+            <h1>This TV is signed out</h1>
+            <p>The bed meeting view is not showing. Sign in again to bring it back.</p>
+          </>
+        ) : (
+          <>
+            <h1>Ward Flow sign-in</h1>
+            <p>Shared synthetic workspace. You see the screens your role needs.</p>
+          </>
         )}
+        {connection.error && <p role="alert">{connection.error}</p>}
         {connection.credentials?.open ? (
           <WardCredentialFields form={connection.credentials} />
         ) : connection.signedIn && connection.status !== "not-authorised" ? (
@@ -742,9 +834,20 @@ function WardSharedWorkspaceContent({
 /** Audit 4 A4-05 (Josh, 21 Oct 2026): the session limit is announced before it ends (`sessionWarning`). */
 const SESSION_WARNING_MS = CLINICAL_VALUES.sessionWarning.value * 60_000;
 
+function subscribeFullscreen(onChange: () => void): () => void {
+  document.addEventListener("fullscreenchange", onChange);
+  return () => document.removeEventListener("fullscreenchange", onChange);
+}
+
 export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
   // Wall-clock time, not the demonstration clock: the server measures the limit in real time.
   const [now, setNow] = useState(() => Date.now());
+  // TV-13 (H-0787): a full screen TV shows only its own element, so the warning goes inside it.
+  const fullscreen = useSyncExternalStore(
+    subscribeFullscreen,
+    () => document.fullscreenElement,
+    () => null,
+  );
   useEffect(() => {
     if (endsAt === null) return;
     const timer = window.setInterval(() => setNow(Date.now()), 15_000);
@@ -756,12 +859,17 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
     minute: "2-digit",
     timeZone: "Australia/Perth",
   });
-  return (
-    <p role="alert" className={styles.sessionEnding} data-testid="ward-session-ending">
+  const notice = (
+    <p
+      role="alert"
+      className={fullscreen ? `${styles.sessionEnding} ${styles.sessionEndingOnTop}` : styles.sessionEnding}
+      data-testid="ward-session-ending"
+    >
       You will be signed out at {at}, the {CLINICAL_VALUES.sessionLimit.value}-hour sign-in limit. Finish what you are
       typing and save it now.
     </p>
   );
+  return fullscreen ? createPortal(notice, fullscreen) : notice;
 }
 
 /**

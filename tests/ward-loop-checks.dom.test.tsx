@@ -51,7 +51,7 @@ describe("closing the loop on screen", () => {
     expect(screen.getByTestId("ward-closure-reopen")).toHaveTextContent("Reopen Graylands Older Adult to admissions");
     fireEvent.click(screen.getByTestId("ward-closure-item-done-0"));
     expect(
-      within(screen.getByTestId("ward-closure-item-0")).getByText(/Dealt with · Flow coordinator/),
+      within(screen.getByTestId("ward-closure-item-0")).getByText(/Dealt with · Bed coordinator/),
     ).toBeInTheDocument();
     // The ward stays closed: nothing reopens or moves.
     expect(screen.getByTestId("ward-closure-reopen")).toBeInTheDocument();

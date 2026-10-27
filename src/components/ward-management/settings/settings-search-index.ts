@@ -32,7 +32,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     tab: "rules",
     keywords: "pulled bed pull hold reservation return expires time limit",
   },
-  { id: "morning-count", label: "Morning count", tab: "rules", keywords: "rollup ward count deadline" },
+  {
+    id: "morning-count",
+    label: "Morning bed numbers due",
+    tab: "rules",
+    keywords: "rollup morning count ward count deadline",
+  },
   { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge" },
   { id: "second-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
   { id: "first-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },
@@ -46,7 +51,7 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     id: "forecast-alerts",
     label: "Forecast alerts",
     tab: "rules",
-    keywords: "forecast tomorrow short bed type ed access risk worse since looked",
+    keywords: "forecast tomorrow short bed type ed access target risk worse since looked",
   },
   { id: "recent-changes", label: "Recent changes", tab: "rules", keywords: "audit history saves" },
   {
@@ -72,12 +77,6 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   { id: "density", label: "Row density", tab: "display", keywords: "compact comfortable" },
   { id: "reduce-motion", label: "Reduce motion", tab: "display", keywords: "animation accessibility" },
   { id: "high-contrast", label: "High contrast", tab: "display", keywords: "accessibility edges ink" },
-  {
-    id: "discreet-names",
-    label: "Discreet names on phone",
-    tab: "display",
-    keywords: "privacy initials umrn mobile hide name",
-  },
   { id: "shortcuts", label: "Shortcuts", tab: "display", keywords: "keyboard keys" },
   { id: "help", label: "Help and tour", tab: "display", keywords: "help glossary tour guide words codes" },
   {

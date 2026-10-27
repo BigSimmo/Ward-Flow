@@ -36,6 +36,56 @@ describe("scoped browser auth", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     auth.dispose();
   });
+  it("keeps the access token in memory only and stays signed in across a reload (H-0044)", async () => {
+    const store = storage();
+    let issued = 0;
+    const fetcher = vi.fn(async (u: RequestInfo | URL) => {
+      if (String(u).endsWith("/user")) return Response.json(user);
+      issued++;
+      return Response.json({ ...session(`access-${issued}`), refresh_token: `refresh-${issued}` });
+    });
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+    await auth.signIn("synthetic@example.invalid", "private-test-password");
+    expect(await auth.token()).toBe("access-1");
+    const saved = store.getItem(WARD_AUTH_STORAGE_KEY)!;
+    expect(saved).not.toContain("access-1");
+    expect(JSON.parse(saved)).toEqual({ refresh_token: "refresh-1", recovery: false, user });
+    auth.dispose();
+
+    // The reload: a new adapter on the same tab storage refreshes once and is signed in again.
+    const reloaded = new SupabaseWardAuth({
+      url,
+      publishableKey: "sb_publishable_test",
+      storage: store,
+      fetch: fetcher,
+    });
+    await reloaded.restore();
+    expect(reloaded.userId).toBe(user.id);
+    expect(await reloaded.token()).toBe("access-2");
+    expect(JSON.parse(store.getItem(WARD_AUTH_STORAGE_KEY)!)).toEqual({
+      refresh_token: "refresh-2",
+      recovery: false,
+      user,
+    });
+    const calls = fetcher.mock.calls.map(([u]) => new URL(String(u)).pathname + new URL(String(u)).search);
+    expect(calls.slice(2)).toEqual(["/auth/v1/token?grant_type=refresh_token", "/auth/v1/user"]);
+    reloaded.dispose();
+  });
+  it("restores a session saved before H-0044 and rewrites it without the access token", async () => {
+    const store = storage();
+    store.setItem(
+      WARD_AUTH_STORAGE_KEY,
+      JSON.stringify({ ...session("old-access"), expiresAt: Date.now() + 3600000, recovery: false }),
+    );
+    const fetcher = vi.fn(async (u: RequestInfo | URL) =>
+      Response.json(String(u).endsWith("/user") ? user : session("renewed")),
+    );
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+    await auth.restore();
+    expect(await auth.token()).toBe("renewed");
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toContain("access");
+    auth.dispose();
+  });
   it("coalesces refresh and preserves recovery through reload", async () => {
     const store = storage();
     store.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify({ ...session(), expiresAt: 0, recovery: true }));

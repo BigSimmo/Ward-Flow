@@ -28,11 +28,7 @@ import {
 import { edById } from "@/components/ward-management/ward-sites";
 import { type CallTarget } from "./patient-call-list";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import type {
-  TransportExceptionReason,
-  TransportProvider,
-  TransportLegalStatus,
-} from "@/components/ward-management/ward-model";
+import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { absenceStepsFor, ABSENCE_STEP_LABELS } from "@/components/ward-management/ward-model";
 import { heldUnitGenderRefusal } from "@/components/ward-management/ward-flow-reducer";
 import type { UploadFormsModalProps } from "@/components/ward-management/referrals/upload-forms-modal";
@@ -85,12 +81,11 @@ import { PATIENT_MODES, patientMode } from "./patient-mode";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
 import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
-  holdEndsBeforeEta,
-  instantFromEtaText,
-  legalNowTransportStatus,
-  transportStatusClashes,
-} from "@/components/ward-management/ward-transport-checks";
+  BLANK_TRANSPORT_BOOKING,
+  type TransportBookingSubmission,
+} from "@/components/ward-management/transport/transport-booking-form";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
@@ -118,7 +113,6 @@ import { PatientNowPanel } from "./patient-now-panel";
 import { PatientNowSummary } from "./patient-now-summary";
 import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 // Both local and shared dispatches report an outcome. Keep the current draft until accepted,
@@ -257,24 +251,10 @@ export function PatientNowScreen({
   const clearanceModalRef = useRef<HTMLDivElement | null>(null);
   const [clearanceDraft, setClearanceDraft] = useState<"" | "cleared" | "not-cleared">("");
   const [clearanceAttested, setClearanceAttested] = useState(false);
-  const [transportCadDraft, setTransportCadDraft] = useState("");
-  const [transportEtaDraft, setTransportEtaDraft] = useState("");
-  const [transportProviderDraft, setTransportProviderDraft] = useState<TransportProvider | "">("");
-  // Audit A4-7: the transport status starts from Legal now (the form in force), never a fixed
-  // default. Undefined means "as Legal now"; Change opens the choice, and a status that differs from
-  // Legal now asks for a recorded reason.
-  const [transportLegalDraft, setTransportLegalDraft] = useState<TransportLegalStatus | undefined>(undefined);
-  const [transportLegalChanging, setTransportLegalChanging] = useState(false);
+  // A34: the one transport booking form's answers. Legal status starts from Legal now (audit A4-7),
+  // and a status that differs from Legal now asks for a recorded reason.
+  const [transportAnswers, setTransportAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
   const [transportLegalReason, setTransportLegalReason] = useState<TransportExceptionReason | "">("");
-  // Audit A4-6: a Save that cannot go through says why beside the field, never silently.
-  const [transportFormErrors, setTransportFormErrors] = useState<{
-    cad?: string;
-    eta?: string;
-    legal?: string;
-    provider?: string;
-    escort?: string;
-  }>({});
-  const [transportEscortDraft, setTransportEscortDraft] = useState<boolean | undefined>();
   const transportSave = usePatientFormSave(selectedId);
   const clearanceSave = usePatientFormSave(selectedId);
   const [bookingRejectionStart, setBookingRejectionStart] = useState<number>();
@@ -474,57 +454,17 @@ export function PatientNowScreen({
           .find((rejection) => rejection.attempted === "BOOK_TRANSPORT" && rejection.movementId === selectedId)
       : undefined;
 
-  const legalNowStatus = liveMovement ? legalNowTransportStatus(liveMovement) : undefined;
-  const transportLegalChoice = transportLegalDraft ?? legalNowStatus;
-  const transportLegalClash = liveMovement !== undefined && transportStatusClashes(liveMovement, transportLegalChoice);
-  const etaFromDraft = (text: string) => instantFromEtaText(text, now);
-  const draftEtaAt = etaFromDraft(transportEtaDraft.trim());
-  // Audit A4-2: a quoted ETA after the bed hold ends is warned at once (never blocked).
-  const draftHoldEnd = liveMovement ? holdEndsBeforeEta(liveMovement, draftEtaAt) : undefined;
-
   function openTransportForm() {
     if (isTransportBooked || transportSave.pending) return;
     transportSave.clearError();
     setBookingRejectionStart(undefined);
-    setTransportProviderDraft("");
-    setTransportEscortDraft(undefined);
-    setTransportCadDraft("");
-    setTransportEtaDraft("");
-    setTransportLegalDraft(undefined);
-    setTransportLegalChanging(false);
+    setTransportAnswers(BLANK_TRANSPORT_BOOKING);
     setTransportLegalReason("");
-    setTransportFormErrors({});
     setShowTransportForm(true);
   }
 
-  function handleSaveTransportBooking(e: React.FormEvent) {
-    e.preventDefault();
-    if (transportSave.pending) return;
-    const cleanCad = transportCadDraft.trim();
-    const cleanEta = transportEtaDraft.trim();
-    const estimatedAt = etaFromDraft(cleanEta);
-    const errors: typeof transportFormErrors = {};
-    // HAZ-03 (#430): the engine's own CAD rule, so a placeholder is named here rather than refused silently.
-    const cadProblem = cleanCad ? cadNumberProblem(cleanCad) : undefined;
-    if (!cleanCad) errors.cad = "Enter the CAD number from the call";
-    else if (cadProblem) errors.cad = `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}`;
-    if (!cleanEta) errors.eta = "Enter the quoted ETA, for example 11:15";
-    else if (estimatedAt === undefined) errors.eta = "Enter the ETA as HH:MM or minutes, for example 11:15 or 45m";
-    if (transportLegalChoice === undefined) errors.legal = "Choose voluntary or involuntary";
-    else if (transportLegalClash && transportLegalReason === "") errors.legal = "Choose why it differs from Legal now";
-    if (!transportProviderDraft) errors.provider = "Choose the provider from the call";
-    if (transportEscortDraft === undefined) errors.escort = "Record whether a clinical escort is required";
-    setTransportFormErrors(errors);
-    if (
-      Object.values(errors).some(Boolean) ||
-      estimatedAt === undefined ||
-      transportLegalChoice === undefined ||
-      !transportProviderDraft ||
-      transportEscortDraft === undefined
-    )
-      return;
-
-    if (!liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
+  function saveTransportBooking(booking: TransportBookingSubmission) {
+    if (transportSave.pending || !liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
     setBookingRejectionStart(rejections.length);
     transportSave.submit(
       () =>
@@ -544,14 +484,7 @@ export function PatientNowScreen({
                 return sourceUnitId ? { actingUnitId: sourceUnitId } : {};
               })()
             : {}),
-          provider: transportProviderDraft,
-          escortRequired: transportEscortDraft,
-          cadNumber: cleanCad,
-          transportLegalStatus: transportLegalChoice,
-          estimatedAt,
-          ...(transportLegalClash && transportLegalReason !== ""
-            ? { exception: { gaps: ["legal_status_differs" as const], reason: transportLegalReason } }
-            : {}),
+          ...booking,
         }),
       () => setShowTransportForm(false),
     );
@@ -576,7 +509,9 @@ export function PatientNowScreen({
 
   const originName = liveMovement ? (movementOriginName(liveMovement) ?? "Origin not recorded") : undefined;
   const tierTone = urgencyTier === 1 ? "danger" : urgencyTier === 2 ? "warning" : "neutral";
-  const documentCount = record.documents.length + uploadedForms.length;
+  // WT-06 (walk-through, 26 Oct 2026): the charts attached to the referral count as documents.
+  const referralCharts = resolved.liveReferral?.intake?.charts ?? [];
+  const documentCount = record.documents.length + uploadedForms.length + referralCharts.length;
   const expandedStage = isLiveBedflow && expandedStageIndex !== null ? STAGES[expandedStageIndex] : undefined;
   const expandedStageDetail = expandedStage ? getStageBedflowDetail(expandedStage.id, liveMovement) : undefined;
   // Where they are right now, for the identity line under the name.
@@ -982,34 +917,20 @@ export function PatientNowScreen({
     displayEta,
     displayLegalStatus,
     displayProvider,
-    draftHoldEnd,
+    displayName,
     gate,
-    handleSaveTransportBooking,
     isTransportBooked,
-    legalNowStatus,
     liveMovement,
     mode,
     now,
     openTransportForm,
+    saveTransportBooking,
     setShowTransportForm,
-    setTransportCadDraft,
-    setTransportEscortDraft,
-    setTransportEtaDraft,
-    setTransportFormErrors,
-    setTransportLegalChanging,
-    setTransportLegalDraft,
+    setTransportAnswers,
     setTransportLegalReason,
-    setTransportProviderDraft,
     showTransportForm,
-    transportCadDraft,
-    transportEscortDraft,
-    transportEtaDraft,
-    transportFormErrors,
-    transportLegalChanging,
-    transportLegalChoice,
-    transportLegalClash,
+    transportAnswers,
     transportLegalReason,
-    transportProviderDraft,
   });
   const arrivalSection = renderArrivalSection({
     acceptingWardName,
@@ -1301,6 +1222,7 @@ export function PatientNowScreen({
                 movement={liveMovement}
                 movementInForce={movementInForce}
                 patient={livePatient}
+                referralCharts={referralCharts}
                 now={now}
                 onRecordDocument={() => setShowUploadFormsModal(true)}
               />

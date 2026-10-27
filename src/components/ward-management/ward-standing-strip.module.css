@@ -479,7 +479,7 @@
   bottom: var(--ward-space-16);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 900;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column-reverse;
   align-items: center;

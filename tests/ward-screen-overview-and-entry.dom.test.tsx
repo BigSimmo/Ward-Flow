@@ -205,7 +205,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
         <WardScreen unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-    const hero = screen.getByRole("region", { name: "Live Capacity Telemetry" });
+    const hero = screen.getByRole("region", { name: "Ward capacity" });
     const showBeds = screen.getByRole("radiogroup", { name: "Show beds" });
 
     fireEvent.click(within(hero).getByRole("button", { name: /Occupied/ }));
@@ -229,7 +229,7 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // Top Action Bar & Live Capacity Glance Strip
     expect(screen.queryByRole("button", { name: /Enter Ward \/ Open Bed Board/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Stays and discharges" })).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Live Capacity Telemetry" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Ward capacity" })).toBeInTheDocument();
 
     // Ward Hub (9 Oct 2026): the full bed list is no longer a tab; Every bed opens it from Home.
     expect(screen.queryByRole("tab", { name: /Bed Board & Roster/i })).not.toBeInTheDocument();

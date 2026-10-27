@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReferralChart } from "@/components/ward-management/referrals/referral-submission";
 import { activeCommunityTreatmentOrder, formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
+import { uploadedFileLabel } from "../ward-uploaded-file";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import { calendarDateOf } from "../ward-clock";
@@ -96,7 +98,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
     events.push({
       at: movement.escalation.at,
       tone: "info",
-      text: `Escalated after ${movement.escalation.triedUnitIds.length} wards tried`,
+      text: `Escalated after ${movement.escalation.triedUnitIds.length} ${movement.escalation.triedUnitIds.length === 1 ? "ward" : "wards"} tried`,
     });
   if (movement.acceptedAt !== undefined && movement.acceptedUnitId)
     events.push({
@@ -432,7 +434,7 @@ export function PatientHistoryTab({
 /** One label per admission state: a waitlisted person has no bed yet, a pulled bed is kept for them
  * ("Bed pulled", the one bed vocabulary; "hold" is for a leave bed only). */
 const STAY_CHIP: Record<Admission["state"], string> = {
-  waitlisted: "Waitlisted",
+  waitlisted: "On waiting list",
   pulled: "Bed pulled",
   occupied: "Current",
   departed: "Closed",
@@ -546,7 +548,7 @@ export function PatientCommunityTab({
                 {stayOpen ? (
                   <span className={styles.nr}>Paused while a placement or stay is open</span>
                 ) : (
-                  <span className={styles.nr}>Not held in this prototype</span>
+                  <span className={styles.nr}>Not recorded in this prototype</span>
                 )}
               </Row>
               <Row
@@ -778,6 +780,7 @@ export function PatientDocumentsTab({
   patient,
   now,
   onRecordDocument,
+  referralCharts = [],
 }: {
   record: PatientNowRecord;
   movement?: Movement;
@@ -786,6 +789,8 @@ export function PatientDocumentsTab({
   patient?: Patient;
   now: number;
   onRecordDocument: () => void;
+  /** WT-06: the charts the referrer attached, named and sized only. */
+  referralCharts?: readonly ReferralChart[];
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -815,7 +820,19 @@ export function PatientDocumentsTab({
       by: d.uploadedBy,
       when: `${clock(d.uploadedAt)} AWST`,
       status: "Metadata recorded",
-      file: d.fileName,
+      file: uploadedFileLabel(d),
+    })),
+    ...referralCharts.map((chart, index) => ({
+      id: `referral-chart-${index}`,
+      kind: "referral",
+      title:
+        chart.kind === "medication" ? "Medication chart" : chart.kind === "observation" ? "Observation chart" : "Chart",
+      code: "Chart",
+      from: "Attached to the referral",
+      by: "Referrer",
+      when: "At Send",
+      status: "Attached",
+      file: chart.name,
     })),
   ].filter(
     (d) =>

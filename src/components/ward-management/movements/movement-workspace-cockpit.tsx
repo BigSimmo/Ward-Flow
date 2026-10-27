@@ -10,6 +10,7 @@
 "use client";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
+import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 
 import { useId, useState } from "react";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
@@ -116,7 +117,7 @@ import { isConstantObservation, observationSummary } from "@/components/ward-man
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
 const CANCEL_TRANSPORT_NOT_YOURS =
-  "This ward did not book the job, so ask the flow coordinator or the referring emergency department to cancel it.";
+  "This ward did not book the job, so ask the bed coordinator or the referring emergency department to cancel it.";
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
 
@@ -408,7 +409,7 @@ export function MovementWorkspaceCockpit({
         ? "Closed — arrived"
         : "Closed — did not proceed"
       : "Arrived"
-    : stageCopy[patient.stage].label;
+    : movementStatusLabel(patient);
 
   const initials = mastheadName
     ? mastheadName
@@ -1240,7 +1241,7 @@ export function MovementWorkspaceCockpit({
           <p className={styles.panelBlurb}>
             {open
               ? orphanedJob
-                ? "Six controls, all of which record against this movement immediately, and the first is a transport job booked against a bed that is no longer held. Confirming a destination is not built yet."
+                ? "Six controls, all of which record against this movement immediately, and the first is a transport job booked against a bed that is no longer pulled. Confirming a destination is not built yet."
                 : "Five controls, all of which record against this movement immediately. Two of them correct something already recorded, and each asks why. Confirming a destination is not built yet."
               : "These controls are the same ones an open movement has. On a closed movement the reducer refuses them, and the reasons are stated rather than the buttons being hidden."}
           </p>
@@ -1429,10 +1430,10 @@ export function MovementWorkspaceCockpit({
                 </p>
                 <p className={styles.actionSay}>
                   {movement.transport?.bookedBy?.role === "ward" && movement.transport.bookedBy.unitId
-                    ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
+                    ? `A transport job can be cancelled by the bed coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
                     : movement.transport?.bookedBy?.role === "community" && movement.transport.bookedBy.placeId
-                      ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
-                      : "A transport job can be cancelled by the flow coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
+                      ? `A transport job can be cancelled by the bed coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
+                      : "A transport job can be cancelled by the bed coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
                 </p>
                 <div className={styles.controlRow}>
                   <label className="sr-only" htmlFor="ward-console-cancel-transport-reason">
@@ -1780,8 +1781,8 @@ export function MovementWorkspaceCockpit({
                 </p>
               ) : acceptedStageIndex > MOVEMENT_STAGES.indexOf("pulled") ? (
                 <p className={styles.actionSay}>
-                  This patient is past the point where a bed is only held. Handover is being prepared or the patient may
-                  already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
+                  This patient is past the point where a bed is only pulled. Handover is being prepared or the patient
+                  may already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
                 </p>
               ) : (
                 <>

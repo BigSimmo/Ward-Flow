@@ -306,7 +306,7 @@ export function StatisticsWardScreen({
       phone={{
         eyebrow: site?.name ?? "Hospital not recorded",
         // The % sits in the sub line so the hero label never clips (audit stats-15).
-        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay}d`}`,
+        sub: `${cohortLabel} · ${occupancyPct}% of ${unit.beds} beds in use${averageStay === null ? "" : ` · average stay ${averageStay} days`}`,
         stats: (
           <>
             <HeroStat
@@ -334,7 +334,7 @@ export function StatisticsWardScreen({
             }
           />
           <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
-          {averageStay === null ? null : <HeroStat value={`${averageStay}d`} label="Average stay" />}
+          {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
           <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
         </>
       }
@@ -724,7 +724,7 @@ function WardPhone({
           ) : (
             <PhoneList
               label={
-                tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Blocked discharges"
+                tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Discharges held up"
               }
             >
               {shown.map((admission) => {
@@ -1011,7 +1011,7 @@ function Barriers({
           ) : (
             <>
               <p className={styles.srOnly} data-testid="ward-stat-blocked-by-reason-population">
-                {said(small(ready.total), "blocked discharge", "blocked discharges")} on this ward, out of{" "}
+                {said(small(ready.total), "discharge held up", "discharges held up")} on this ward, out of{" "}
                 {said(small(ready.population), "admission", "admissions")} on this ward that have not departed.
               </p>
               {rows.length === 0 ? (
@@ -1055,7 +1055,7 @@ function Barriers({
 type RosterFilter = "all" | "no-date" | "long" | "blocked" | "pulled";
 
 const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
-  waitlisted: "Waitlisted",
+  waitlisted: "On waiting list",
   pulled: "Pulled",
   occupied: "In bed",
   departed: "Departed",

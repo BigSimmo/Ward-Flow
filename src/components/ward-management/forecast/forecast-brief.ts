@@ -4,7 +4,7 @@
 // screen 5). Four fixed sentence templates filled with counts already on screen. Nothing is
 // generated, ranked by a model or worded freely, so the brief can never say more than the records.
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import type { EdAccessRisk } from "./ed-access-risk";
+import { targetText, type EdAccessRisk } from "./ed-access-risk";
 import { BED_KIND_LABEL, kindRangeWord, type ForecastByKind } from "./forecast-by-kind";
 import { shortBlocker, type ForecastLever } from "./forecast-levers";
 
@@ -39,18 +39,19 @@ function biggestBlocker(levers: readonly ForecastLever[]): string {
 }
 
 function edRisk(risk: EdAccessRisk, edName: (edId: string) => string): string {
-  const hours = Math.round(risk.targetMinutes / 60);
+  // H-0361: the target as Settings states it, never rounded to whole hours.
+  const target = `the ${targetText(risk.targetMinutes)} access target`;
   const first = [...risk.byEd].sort(
     (a, b) => b.atRisk - a.atRisk || (a.firstMinutesLeft ?? 0) - (b.firstMinutesLeft ?? 0),
   )[0];
   if (!first || first.atRisk === 0) {
     return risk.alreadyOver > 0
-      ? `${risk.alreadyOver} ${risk.alreadyOver === 1 ? "person has" : "people have"} already passed ${hours} hours in ED.`
-      : `No one in ED will pass ${hours} hours in the next day on what is recorded.`;
+      ? `${risk.alreadyOver} ${risk.alreadyOver === 1 ? "person has" : "people have"} already passed ${target} in ED.`
+      : `No one in ED will pass ${target} in the next day on what is recorded.`;
   }
   const people = first.atRisk === 1 ? "1 person" : `${first.atRisk} people`;
   const verb = first.atRisk === 1 ? "passes" : "pass";
-  return `${people} at ${edName(first.edId)} ${verb} ${hours} hours before a suitable bed is due.`;
+  return `${people} at ${edName(first.edId)} ${verb} ${target} before a suitable bed is due.`;
 }
 
 function bestAction(levers: readonly ForecastLever[]): string {

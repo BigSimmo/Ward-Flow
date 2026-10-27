@@ -9,7 +9,8 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { LegalFormExpiryCorrectionReason } from "./ward-model-vocabulary";
+import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
+import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -198,6 +199,8 @@ export type WardFlowEvent =
       /** Explicitly continue an accepted direct ED-to-ward referral. Acceptance itself still
        * creates no movement or bed. The accepting ward must name its own acting unit. */
       acceptedUnitId?: string;
+      /** WT-08: also pull the accepted ward's bed in the same tap. A refused pull starts nothing. */
+      pullBed?: boolean;
       actingUnitId?: string;
       /**
        * THE FRONT-DOOR REFERRAL THIS JOURNEY IS BEING RAISED FROM, when there is one.
@@ -636,9 +639,8 @@ export type WardFlowEvent =
    * created by arrival is correct on every screen showing admitted people and absent at exactly the
    * moment the flow describes.
    *
-   * Carries identity because identity lives on `Patient` and nowhere else, by owner ruling PD-1
-   * (2026-08-30). It does not carry a referral, a movement or a unit: a patient exists before any of
-   * them and outlives all of them.
+   * Carries identity because identity lives on `Patient` alone (PD-1, 2026-08-30), never a referral,
+   * movement or unit. WT-05: optional recorded `sex` is asked here once, checked like `gender`.
    *
    * `gender` ADDED, owner ruling 2026-09-09/2026-09-10 — OPTIONAL, unlike the four identity fields
    * above. Most callers of this event do not know a new patient's gender yet, and omitting it is the
@@ -662,6 +664,7 @@ export type WardFlowEvent =
       familyName: string;
       dateOfBirth: string;
       gender?: Gender;
+      sex?: string;
       suburb?: string;
     }
   | {
@@ -804,6 +807,17 @@ export type WardFlowEvent =
       now: Instant;
       unitId: string;
       actingUnitId?: string;
+    }
+  | {
+      /** H-0978 / WS-15: close or reopen one empty bed (`Unit.closedBeds`), see ward-flow-bed-closure-events.ts. */
+      type: "SET_BED_CLOSED";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      actingUnitId: string; // Claim-not-proof pair, as for CONFIRM_CAPACITY. `reason` is from WARD_CLOSURE_REASONS.
+      bedNumber: number;
+      closed: boolean;
+      reason?: WardClosureReason;
     }
   | {
       /**
@@ -2221,7 +2235,10 @@ export type WardFlowEvent =
       now: Instant;
       movementId: string;
       formName: string;
-      fileName: string;
+      /** The kind of file (H-0049). The file's name is never sent. */
+      fileType?: UploadedFileType;
+      /** Legacy events recorded before 26 Oct 2026 carry the file's name. It is read for its type and dropped. */
+      fileName?: string;
       sizeBytes?: number;
     }
   | {
@@ -2347,10 +2364,7 @@ export type WardFlowEvent =
       now: Instant;
     }
   | {
-      /**
-       * Record that a team was contacted. This is the contact itself, not a sent message.
-       * Stores the team, the time, and the caller's role.
-       */
+      /** Record that a team was contacted: the contact itself, not a sent message. Stores team, time and role. */
       type: "RECORD_CLINICAL_CONTACT";
       role: WardFlowRole;
       now: Instant;
@@ -2376,9 +2390,7 @@ export type WardFlowEvent =
       kind?: "directive" | "bed_call";
     }
   | {
-      /**
-       * Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit.
-       */
+      /** Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit. */
       type: "ACKNOWLEDGE_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;
@@ -2386,9 +2398,7 @@ export type WardFlowEvent =
       unitId: string;
     }
   | {
-      /**
-       * Stand down an active broadcast directive once network pressure resolves.
-       */
+      /** Stand down an active broadcast directive once network pressure resolves. */
       type: "STAND_DOWN_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;
@@ -2565,6 +2575,8 @@ export type WardFlowEvent =
       type: "UNDO_REFERRAL_DECISION";
       role: WardFlowRole;
       now: Instant;
+      /** The record number of the step this Undo is for; a newer one on the same subject refuses it. */
+      recordSeq?: number;
       referralId: string;
       /** A ward undoing its own decision names itself; refused when it is not the unit that answered. */
       actingUnitId?: string;
@@ -2595,6 +2607,8 @@ export type WardFlowEvent =
       type: "UNDO_PLACE_IN_BED";
       role: WardFlowRole;
       now: Instant;
+      /** The record number of the step this Undo is for; a newer one on the same subject refuses it. */
+      recordSeq?: number;
       admissionId: string;
       actingUnitId?: string;
     }
@@ -2704,7 +2718,8 @@ export type WardFlowEvent =
       admissionId: string;
       /** A ward undoing its own record names itself. */
       actingUnitId?: string;
-    };
+    }
+  | UndoBedMeetingActionEvent;
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;

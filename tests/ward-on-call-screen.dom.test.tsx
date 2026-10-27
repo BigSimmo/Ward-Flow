@@ -75,8 +75,8 @@ describe("the on-call screen", () => {
   it("names the page and opens on a contact card", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    expect(within(hud).getByRole("heading", { level: 1, name: /^\d+ lines? answering$/u })).toBeVisible();
-    expect(panel().getByRole("heading", { level: 2, name: "Bed flow coordinator" })).toBeVisible();
+    expect(within(hud).getByRole("heading", { level: 1, name: /^On-call: \d+ lines? answering$/u })).toBeVisible();
+    expect(panel().getByRole("heading", { level: 2, name: "Bed coordinator" })).toBeVisible();
     expect(panel().getByText("Not verified")).toBeVisible();
   });
 
@@ -185,7 +185,7 @@ describe("the on-call screen", () => {
     expect(panel().getByRole("heading", { name: "Matches" })).toBeVisible();
     expect(row("scgh-epic")).toHaveAttribute("data-highlighted", "true");
     fireEvent.click(panel().getByRole("button", { name: "Clear" }));
-    expect(panel().getByRole("heading", { name: "Bed flow coordinator" })).toBeVisible();
+    expect(panel().getByRole("heading", { name: "Bed coordinator" })).toBeVisible();
   });
 
   it("finds a site by its code, and one click on a match opens its card with a link to that ED", () => {

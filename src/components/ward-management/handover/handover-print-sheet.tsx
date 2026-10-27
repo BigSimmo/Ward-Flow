@@ -17,6 +17,7 @@ import {
   formatSheetMoment,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { rowTone, type ColumnContext, type HandoverColumn } from "./handover-columns";
 import {
   groupOf,
@@ -240,7 +241,9 @@ export function HandoverPrintSheet({
   }, [groups]);
   const dueTitle = handoverGroups(ctx.cutoff, ctx.now).find((group) => group.id === "due")!.title;
   const summary: [string, number][] = [
-    ["Open", rows.length],
+    // NA3-07 (audit 26 Oct 2026): a stopped transport still waiting on its bed is listed, but it is
+    // not an open journey, so "Open" leaves it out as the menu's Movements count and the screen do.
+    ["Open", rows.filter((row) => isOpen(row.movement)).length],
     ["Act now", rows.filter((row) => isActNow(row, ctx.now)).length],
     ["Flagged urgent", rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "urg").length],
     [dueTitle, rows.filter((row) => groupOf(row, ctx.now, ctx.cutoff) === "due").length],
@@ -573,11 +576,17 @@ export function HandoverPrintSheet({
     };
   };
 
+  // H-0350: one ResizeObserver for the sheet's life. Each render only re-observes when the measured
+  // nodes change, instead of tearing the observer down and building a new one every render.
+  const readMeasurementsRef = useRef(readMeasurements);
+  const measureRef = useRef<{ observer: ResizeObserver | null; schedule: () => void; observed: Element[] } | null>(
+    null,
+  );
   useEffect(() => {
     let active = true;
-    let frame: number;
+    let frame = 0;
     const update = () => {
-      const next = readMeasurements();
+      const next = readMeasurementsRef.current();
       if (active && next) setMeasurements((old) => (JSON.stringify(old) === JSON.stringify(next) ? old : next));
     };
     const schedule = () => {
@@ -585,10 +594,7 @@ export function HandoverPrintSheet({
       frame = requestAnimationFrame(update);
     };
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
-    stackRef.current
-      ?.querySelectorAll("article > *, [data-paper-item], [data-extra-entry]")
-      .forEach((node) => observer?.observe(node));
-    schedule();
+    measureRef.current = { observer, schedule, observed: [] };
     void document.fonts?.ready.then(() => {
       if (active) schedule();
     });
@@ -596,7 +602,30 @@ export function HandoverPrintSheet({
       active = false;
       cancelAnimationFrame(frame);
       observer?.disconnect();
+      measureRef.current = null;
     };
+  }, []);
+  useEffect(() => {
+    readMeasurementsRef.current = readMeasurements;
+    const measure = measureRef.current;
+    if (!measure) return;
+    const nodes = Array.from(
+      stackRef.current?.querySelectorAll("article > *, [data-paper-item], [data-extra-entry]") ?? [],
+    );
+    // Without a ResizeObserver nothing reports a reflow, so measure after every render instead.
+    if (
+      measure.observer &&
+      nodes.length === measure.observed.length &&
+      nodes.every((node, index) => node === measure.observed[index])
+    ) {
+      return;
+    }
+    const kept = new Set(nodes);
+    const had = new Set(measure.observed);
+    for (const node of measure.observed) if (!kept.has(node)) measure.observer?.unobserve(node);
+    for (const node of nodes) if (!had.has(node)) measure.observer?.observe(node);
+    measure.observed = nodes;
+    measure.schedule();
   });
 
   /* Audit 24-7 (CT-11): a browser print (Ctrl+P) must stamp the rows it prints, not an older Print-button time. */

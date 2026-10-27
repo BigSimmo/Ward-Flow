@@ -73,7 +73,8 @@ export const shortSite = (name: string) =>
   name.replace(/ (Public |Memorial |General )?(Hospital|Health Campus|Health Service)$/, "");
 
 /** Whole days to one decimal, as "47.3d". */
-const daysText = (days: number) => `${days.toFixed(1)}d`;
+// W-3 (fresh audit 26 Oct 2026): one unit word for a stay, "days", never "d".
+const daysText = (days: number) => `${days.toFixed(1)} days`;
 
 type WardFigures = {
   unit: Unit;
@@ -258,7 +259,7 @@ const lensAria = (site: SiteFigures, lens: MapLens): string => {
     return `${site.name} ED: ${site.edWaiting} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
     return `${site.name}: ${site.dischargedToday} discharged today, ${site.dueToday} due later today${site.blocked ? `, ${site.blocked} blocked` : ""}`;
-  return `${site.name}: mean stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
+  return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
 };
 
 const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key: string }> = [
@@ -283,8 +284,8 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
   {
     id: "stay",
     label: "Stay",
-    rankTitle: "Longest mean stay",
-    key: "Ring: share over 3 months. Centre: mean stay, days.",
+    rankTitle: "Longest average stay",
+    key: "Ring: share over 3 months. Centre: average stay in days, everyone who arrived, people who have left included.",
   },
 ];
 
@@ -392,7 +393,7 @@ export function StatisticsMapView({
               { value: String(network.blocked), label: "Blocked", tone: network.blocked ? "warning" : undefined },
             ]
           : [
-              { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Mean stay" },
+              { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Average stay" },
               { value: String(network.longStays), label: "Over 3 months" },
               { value: String(network.occupied), label: "Beds in use" },
             ];
@@ -677,10 +678,10 @@ function BelowMap({
             <ColumnChart columns={columns} gridlines label="Expected discharges across the network, next 7 days" />
           </CardBody>
         </StatCard>
-        <StatCard icon={Lock} title="Blocked discharges" aside={`${blocked.totalCount} not departed`}>
+        <StatCard icon={Lock} title="Discharges held up" aside={`${blocked.totalCount} not departed`}>
           <CardBody>
             <BarList
-              label="Blocked discharges by blocker"
+              label="Discharges held up, by reason"
               labelWidth="min(15rem, 42%)"
               rows={blocked.tallies.map((tally) => ({ id: tally.reason, label: tally.reason, value: tally.count }))}
             />
@@ -700,13 +701,13 @@ function BelowMap({
       <StatCard
         id="map-below"
         icon={Clock}
-        title="Mean stay by ward"
+        title="Average stay by ward"
         aside="Top 10, days"
         data-testid="ward-statistics-map-below"
       >
         <CardBody>
           <BarList
-            label="Mean length of stay by ward, top 10"
+            label="Average stay by ward, top 10"
             labelWidth="min(14rem, 42%)"
             axis
             rows={wards.map(({ ward, site }) => ({

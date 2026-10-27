@@ -90,7 +90,7 @@ const ARRIVAL_PART_DAY_MINUTES = 90;
  * Who set the expected discharge date, as a ROLE and never a personal name.
  *
  * Owner ruling 5, 2026-09-01: reconciled to the single spelling `DISCHARGE_ROLE_LABELS` now
- * carries. This used to be a locally-authored two-value array (`"Flow coordinator"` and `"Nurse
+ * carries. This used to be a locally-authored two-value array (`"Bed coordinator"` and `"Nurse
  * unit manager"`, both quoted from `Admission.dischargeDateSetBy`'s own doc comment) because the
  * field had no fixed runtime vocabulary of its own to import instead. It now imports the field's
  * real vocabulary rather than restating it, so this alias exists only so the two seed call sites
@@ -1051,7 +1051,7 @@ export const wardPlannedAdmissions: PlannedAdmission[] = [
     ageBand: "Adult",
     state: "booked",
     bookedAt: WARD_ADMISSIONS_ANCHOR - 2 * MINUTES_PER_DAY,
-    bookedBy: "Flow coordinator",
+    bookedBy: "Bed coordinator",
     changedAt: null,
     changeCount: 0,
     cancelledAt: null,
@@ -1094,7 +1094,7 @@ export const wardPlannedAdmissions: PlannedAdmission[] = [
     ageBand: "Adult",
     state: "booked",
     bookedAt: WARD_ADMISSIONS_ANCHOR - MINUTES_PER_DAY,
-    bookedBy: "Flow coordinator",
+    bookedBy: "Bed coordinator",
     changedAt: null,
     changeCount: 0,
     cancelledAt: null,

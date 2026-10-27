@@ -81,33 +81,43 @@ function spotBox(element: HTMLElement): Box {
  * Where the card goes. On a desktop it sits beside the control (right, left, below, then above),
  * kept inside the window. On a phone it spans the width, docked to whichever end has more room.
  * With no control it sits in the middle.
+ *
+ * H-0376 / H-0890 (L1 re-measure, 26 Oct 2026): the card stays at the window's top left and moves
+ * by transform only, so settling from the middle to beside its control, or a phone card changing
+ * height at the foot, never counts as a layout shift.
  */
 function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void {
   const style = card.style;
-  style.left = style.top = style.right = style.bottom = style.maxHeight = "";
+  style.maxHeight = "";
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const moveTo = (left: number, top: number) => {
+    style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
+  };
+  // A phone card spans the width from its CSS insets, so it only ever moves down.
+  const dock = (end: "top" | "bottom") => {
+    card.dataset.place = end;
+    moveTo(0, end === "top" ? EDGE : Math.max(EDGE, vh - EDGE - card.offsetHeight));
+  };
   if (!box) {
     // B6-20 (device sweep, 24 Oct 2026): on a phone a step with no control still docks to the foot
     // like every other phone step, rather than floating mid-screen over the page.
     if (device === "phone") {
-      card.dataset.place = "bottom";
-      style.bottom = `${EDGE}px`;
+      dock("bottom");
       return;
     }
     card.dataset.place = "centre";
+    moveTo((vw - card.offsetWidth) / 2, (vh - card.offsetHeight) / 2);
     return;
   }
   if (device === "phone") {
     const above = box.top;
     const below = vh - (box.top + box.height);
     const room = Math.max(above, below) - GAP - EDGE;
-    card.dataset.place = above > below ? "top" : "bottom";
-    if (above > below) style.top = `${EDGE}px`;
-    else style.bottom = `${EDGE}px`;
     // Never cover the control when there is room for a readable card, else take just over half,
     // and on a short screen (a phone on its side) at least 260px, so a step reads with Next in view.
     style.maxHeight = `${room >= 200 ? room : Math.round(Math.max(vh * 0.56, Math.min(vh - EDGE * 2, 260)))}px`;
+    dock(above > below ? "top" : "bottom");
     return;
   }
   card.dataset.place = "beside";
@@ -131,8 +141,7 @@ function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void
     Math.max(0, Math.min(left + cw, right) - Math.max(left, box.left)) *
     Math.max(0, Math.min(top + ch, bottom) - Math.max(top, box.top));
   const best = candidates.reduce((chosen, candidate) => (covered(candidate) < covered(chosen) ? candidate : chosen));
-  style.left = `${best.left}px`;
-  style.top = `${best.top}px`;
+  moveTo(best.left, best.top);
 }
 
 /**
@@ -211,6 +220,16 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   }, [target, pathname]);
 
   useLayoutEffect(() => {
+    // The card is placed by transform, so a step with no control is placed again when the window
+    // changes size (one with a control follows it through the spotlight's own re-measure).
+    const card = cardRef.current;
+    if (!card || box) return;
+    const place = () => placeCard(card, null, device);
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [box, device]);
+
+  useLayoutEffect(() => {
     if (cardRef.current) placeCard(cardRef.current, box, device);
     // A tall control with no room beside it: the light stops short of the card below it.
     const spotElement = spotRef.current;
@@ -283,7 +302,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           <div
             ref={spotRef}
             className={styles.spot}
-            style={{ top: box.top, left: box.left, width: box.width, height: box.height }}
+            style={{ transform: `translate(${box.left}px, ${box.top}px)`, width: box.width, height: box.height }}
             data-testid="ward-tour-spot"
             aria-hidden="true"
           />

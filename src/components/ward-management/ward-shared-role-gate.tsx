@@ -17,13 +17,20 @@ import { parseStoredAccess } from "./shell/ward-access-store";
 import { SEED_UNITS, placeOptions, sharedDeskLabel } from "./shell/ward-access-labels";
 import styles from "./ward-shared-access.module.css";
 
+/** #791: which account this is, so a person with several accounts can tell them apart. */
+function SignedInAs({ email }: { email?: string | null }) {
+  return email ? <p data-testid="ward-signed-in-as">Signed in as {email}.</p> : null;
+}
+
 export function WardRolePicker({
   choices,
   onChoose,
+  accountEmail,
   onSignOut,
 }: {
   choices: readonly SharedRoleChoice[];
   onChoose: (workingAs: string) => void;
+  accountEmail?: string | null;
   onSignOut: () => void;
 }) {
   const named = choices
@@ -46,6 +53,7 @@ export function WardRolePicker({
           ))}
         </ul>
       )}
+      <SignedInAs email={accountEmail} />
       <button type="button" onClick={onSignOut}>
         Sign out
       </button>
@@ -71,6 +79,7 @@ export function WardAskForAccess({
   api,
   reason,
   onRetry,
+  accountEmail,
   onSignOut,
 }: {
   canRequest: boolean;
@@ -78,6 +87,7 @@ export function WardAskForAccess({
   /** The server's refusal code. `role-needs-service` says what to ask the access admin for. */
   reason?: string | null;
   onRetry: () => void;
+  accountEmail?: string | null;
   onSignOut: () => void;
 }) {
   const live = canRequest && api !== null;
@@ -147,6 +157,10 @@ export function WardAskForAccess({
           }}
         >
           <h2>Ask for access</h2>
+          <p>
+            Bed coordinator and Access admin roles are given by an access admin, so they are not listed. Ask your access
+            admin directly if you need one.
+          </p>
           <label>
             Role
             <select
@@ -185,6 +199,7 @@ export function WardAskForAccess({
       <button type="button" onClick={onRetry}>
         Check again
       </button>
+      <SignedInAs email={accountEmail} />
       <button type="button" onClick={onSignOut}>
         Sign out
       </button>

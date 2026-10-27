@@ -48,7 +48,7 @@ const BASE_MOVEMENT: Movement = {
   urgencyChanges: [],
   overrides: [],
   stage: "placement_requested",
-  owner: "Flow coordinator",
+  owner: "Bed coordinator",
   referredUnitIds: [],
   declines: [],
   blocker: "No blocker",

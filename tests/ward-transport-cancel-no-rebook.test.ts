@@ -150,7 +150,7 @@ describe("CANCEL_TRANSPORT with a bed held no longer rebooks automatically (owne
     );
     for (const notice of raised) {
       expect(notice.sentence.toLowerCase()).not.toContain("replacement");
-      expect(notice.sentence.toLowerCase()).toContain("the bed is still held and nothing has been rebooked");
+      expect(notice.sentence.toLowerCase()).toContain("the bed is still pulled and nothing has been rebooked");
     }
   });
 

@@ -15,8 +15,8 @@ import type { REFERRAL_RISK_FLAGS } from "./referrals/referral-submission";
 import type { Movement } from "./ward-model";
 // The @/ paths let a live shared build swap the demo modules for empty stand-ins (next.config.ts).
 import { wardMovements } from "@/components/ward-management/ward-movements";
-import { demoNetwork, type DemoNetworkVariant } from "./ward-demo-network";
-import { waSyntheticNetwork } from "./ward-wa-synthetic-network";
+import type { DemoNetworkVariant } from "./ward-demo-network";
+import { loadedScenarioNetworks } from "./ward-scenario-network-registry";
 import { rulingsDemoOverlay } from "@/components/ward-management/ward-rulings-demo";
 import { NOW_ANCHOR } from "./ward-sites";
 import { syntheticMovementReferralDossier } from "./ward-referral-intake-seed";
@@ -535,8 +535,11 @@ export function seededReferralDossier(movementId: string, movement?: Movement): 
 
 /** Never manufacture demonstration letters for a new or relinked user-entered record. */
 function knownSeedMovement(id: string): Movement | undefined {
-  if (id.startsWith("WF-WS-")) return waSyntheticNetwork().movements.find((entry) => entry.id === id);
+  // A demonstration journey exists only once its scenario, and so its network, has loaded.
+  const networks = loadedScenarioNetworks();
+  if (id.startsWith("WF-WS-")) return networks?.waSyntheticNetwork().movements.find((entry) => entry.id === id);
   if (id.startsWith("WF-DN-")) {
+    if (!networks) return undefined;
     for (const variant of [
       "demo",
       "surge",
@@ -544,7 +547,7 @@ function knownSeedMovement(id: string): Movement | undefined {
       "winter",
       "ed-crisis",
     ] as const satisfies readonly DemoNetworkVariant[]) {
-      const movement = demoNetwork(variant).movements.find((entry) => entry.id === id);
+      const movement = networks.demoNetwork(variant).movements.find((entry) => entry.id === id);
       if (movement) return movement;
     }
     return undefined;

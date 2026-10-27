@@ -320,7 +320,7 @@ export function reducePlannedAdmissionEvent(
         if (!patient) return reject(state, event, `no patient found for id ${event.patientId}`);
         // The same rule the booking picker applies: a person in a bed is not booked a second one.
         if (holdsABed(state, event.patientId as string))
-          return reject(state, event, "This patient already holds a bed or occupies a ward.");
+          return reject(state, event, "This patient already has a bed pulled or occupies a ward.");
         if (
           plannedAdmissions(state).some(
             (planned) => planned.state === "booked" && planned.patientId === event.patientId,
@@ -494,7 +494,7 @@ export function reducePlannedAdmissionEvent(
       // A linked patient already in a bed, or still on an open movement, arrives through that
       // record, never through a second, parallel one.
       if (planned.patientId !== null && holdsABed(state, planned.patientId))
-        return reject(state, event, "This patient already holds another bed or occupies another ward.");
+        return reject(state, event, "This patient already has another bed pulled or occupies another ward.");
       if (planned.patientId !== null && onAnOpenJourney(state, planned.patientId))
         return reject(
           state,

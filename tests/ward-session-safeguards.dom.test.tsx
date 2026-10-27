@@ -42,7 +42,9 @@ it("covers the screen after the idle time even with role access switched off (re
   act(() => vi.advanceTimersByTime(IDLE_MS - 1_000));
   expect(screen.queryByRole("dialog")).toBeNull();
   act(() => vi.advanceTimersByTime(2_000));
-  expect(screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` })).toBeVisible();
+  expect(
+    screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes without use` }),
+  ).toBeVisible();
   fireEvent.click(screen.getByTestId("ward-idle-unlock"));
   expect(screen.queryByRole("dialog")).toBeNull();
 });
@@ -72,7 +74,7 @@ it("locks on the TV page when TV views are switched off, since it shows only a n
     render(<WardIdleLock />);
     act(() => vi.advanceTimersByTime(IDLE_MS + 1_000));
     expect(
-      screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` }),
+      screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes without use` }),
     ).toBeVisible();
   } finally {
     setWardFeatureFlagOnDevice("bed-meeting-tv", null);
@@ -89,7 +91,7 @@ it("signs out of the shared workspace when it locks, so the next person needs th
   act(() => vi.advanceTimersByTime(IDLE_MS));
   expect(signOut).toHaveBeenCalledTimes(1);
   expect(
-    screen.getByRole("dialog", { name: `Signed out after ${CLINICAL_VALUES.idleLock.value} minutes` }),
+    screen.getByRole("dialog", { name: `Signed out after ${CLINICAL_VALUES.idleLock.value} minutes without use` }),
   ).toBeVisible();
   expect(screen.getByTestId("ward-idle-unlock")).toHaveTextContent("Sign in again");
 });
@@ -171,5 +173,7 @@ it("stays unlocked after 'Carry on' and the next tap, then locks again after a n
   fireEvent.pointerDown(window);
   expect(screen.queryByRole("dialog")).toBeNull();
   act(() => vi.advanceTimersByTime(IDLE_MS + 1_000));
-  expect(screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes` })).toBeVisible();
+  expect(
+    screen.getByRole("dialog", { name: `Locked after ${CLINICAL_VALUES.idleLock.value} minutes without use` }),
+  ).toBeVisible();
 });

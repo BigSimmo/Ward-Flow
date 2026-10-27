@@ -11,7 +11,10 @@ import type { AuditEvent, BedReleaseAuditFacts, BedReleaseAuditRequest } from ".
 import { changeReasonLabels, legalFormReceiptCorrectionReasonLabels } from "./ward-change-reasons";
 import { snoozeReasonLabel } from "./ward-inbox-snooze";
 import { deskRoleLabel } from "./settings/workstation-desks";
+import { Badge } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
+import { ACCESS_ROLE_LABELS } from "./ward-role-access";
+import { PATTERN_HOURS, PATTERN_LIMIT, reasonLabel } from "./governance-access-review";
 import {
   UNDONE_STEP_LABELS,
   actionLabels,
@@ -33,6 +36,30 @@ export function FactList({ facts }: { facts: readonly (readonly [string, ReactNo
         </div>
       ))}
     </dl>
+  );
+}
+/**
+ * D-80 item 14: a break glass opening's desk, reason, read only window and how many openings its
+ * desk made in 12 hours. More than 3 reads as a pattern.
+ */
+function BreakGlassFacts({ event, now }: { event: AuditEvent & { action: "BREAK_GLASS" }; now: Instant }) {
+  const details = event.details;
+  const count = details.deskCount;
+  const pattern = `${count} by this desk in ${PATTERN_HOURS} hours`;
+  return (
+    <FactList
+      facts={[
+        ["Desk", details.desk ? `${ACCESS_ROLE_LABELS[details.desk]}, ${details.place}` : "Not recorded"],
+        ["Reason", `${reasonLabel(details.reason)}${details.otherText ? `: ${details.otherText}` : ""}`],
+        [
+          "Open",
+          event.at === null || details.until === null
+            ? "Not recorded"
+            : `${formatInstantWithDay(event.at, now)} to ${formatInstantWithDay(details.until, now)}, read only`,
+        ],
+        ["Pattern", count > PATTERN_LIMIT ? <Badge tone="warning">{pattern}</Badge> : pattern],
+      ]}
+    />
   );
 }
 function BedFacts({ facts, now }: { facts: BedReleaseAuditFacts | null; now: Instant }) {
@@ -187,6 +214,7 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
         />
       );
     case "record-access":
+      if (event.action === "BREAK_GLASS") return <BreakGlassFacts event={event} now={now} />;
       return (
         <>
           <FactList facts={[["Open request", display(event.details.requestId)]]} />

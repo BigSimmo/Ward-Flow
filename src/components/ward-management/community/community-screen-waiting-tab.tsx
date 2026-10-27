@@ -44,6 +44,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
     handleToggleDecline,
     handleConfirmDecline,
     handleConfirmAccept,
+    declineSave,
     waitingReferrals,
     p1ReferralsCount,
     p2ReferralsCount,
@@ -481,6 +482,11 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                                     {declineBlocked}
                                   </span>
                                 )}
+                                {declineSave.error ? (
+                                  <p role="alert" data-testid={`ward-community-decline-failure-${referral.id}`}>
+                                    {declineSave.error}
+                                  </p>
+                                ) : null}
                               </div>
                             ) : null}
                           </div>

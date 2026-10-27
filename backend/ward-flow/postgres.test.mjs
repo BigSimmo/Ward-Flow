@@ -209,7 +209,11 @@ test("real PostgreSQL: an access admin reads only its own place's record opening
     const whole = await store.recordViews(viewOf("admin", { kind: "statewide" }));
     assert.equal(whole.length, 200);
     assert.equal(whole[0].minutes, -5);
-    const one = await store.recordViews(viewOf("coordinator", { kind: "statewide" }), "PT-SYN-NORTH-2");
+    // The patient id cast waits on recordViews' own parameter type (owned by another change).
+    const one = await store.recordViews(
+      viewOf("coordinator", { kind: "statewide" }),
+      /** @type {any} */ ("PT-SYN-NORTH-2"),
+    );
     assert.deepEqual(
       one.map((row) => row.patient_id),
       ["PT-SYN-NORTH-2"],
@@ -770,8 +774,8 @@ test(
         ]);
       });
       await t.test("a slow push service does not hold the save response", async () => {
-        /** @type {(value: unknown) => void} */
-        let release;
+        // Assigned by the promise executor below, which runs at once.
+        let release = /** @type {(value: unknown) => void} */ (/** @type {unknown} */ (undefined));
         const held = new Promise((resolve) => {
           release = resolve;
         });
@@ -924,7 +928,7 @@ test(
     const engine = await import("./dist/engine.mjs");
     const admin = new Pool({ connectionString: url, max: 2 });
     const database = `wardflow_rls_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     // Each pool acts as one role from the start of every connection, as the real logins do. The
     // forced drop at the end can reach a connection that is still closing; that notice is expected
@@ -1075,10 +1079,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-011-record-access-and-sign-out.sql"), /not at migration 11/);
       await assert.rejects(rollBack("./infra/rollback-012-foreign-key-indexes.sql"), /not at migration 12/);
       await assert.rejects(rollBack("./infra/rollback-013-referral-record-views.sql"), /not at migration 13/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 14);
+      await assert.rejects(rollBack("./infra/rollback-014-archived-records.sql"), /not at migration 14/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 15);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-015-list-and-tv-views.sql", 14],
         ["./infra/rollback-014-archived-records.sql", 13],
         ["./infra/rollback-013-referral-record-views.sql", 12],
         ["./infra/rollback-012-foreign-key-indexes.sql", 11],
@@ -1155,7 +1161,7 @@ test(
 test("real PostgreSQL: the Supabase runtime grants pass the runtime role check", { skip: !url }, async () => {
   const admin = new Pool({ connectionString: url, max: 1 });
   const database = `wardflow_supa_${randomUUID().replaceAll("-", "")}`;
-  const target = new URL(url);
+  const target = new URL(/** @type {string} */ (url));
   target.pathname = `/${database}`;
   // Supabase's browser roles, which the script revokes from by name.
   for (const role of ["anon", "authenticated"])
@@ -1314,7 +1320,13 @@ test(
   { skip: !url },
   async () => {
     const engine = await import("./dist/engine.mjs");
-    const pool = new Pool({ connectionString: url, max: 4 });
+    // Its own database: the rollbacks below refuse once any test has logged a list read (015).
+    const owner = new Pool({ connectionString: url, max: 1 });
+    const database = `wardflow_roles_${randomUUID().replaceAll("-", "")}`;
+    const target = new URL(url);
+    target.pathname = `/${database}`;
+    await owner.query(`CREATE DATABASE ${database}`);
+    const pool = new Pool({ connectionString: target.href, max: 4 });
     let at = new Date("2026-10-07T10:00:00Z");
     const store = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine, clock: () => at });
     const [lead, second, nurse, admin, coordinator] = Array.from({ length: 5 }, () => randomUUID());
@@ -1430,6 +1442,56 @@ test(
       for (const id of others.slice(0, engine.BREAK_GLASS_PER_SHIFT))
         pattern = (await store.breakGlass(nurseView, id, "other")).body.pattern;
       assert.equal(pattern, true);
+      // D-80 item 14: the coordinator's review list reads each opening with the desk that made it
+      // and why, newest first. A service coordinator reads only openings of records in its service.
+      const openings = await store.breakGlassOpenings(leadView);
+      assert.equal(openings.length, engine.BREAK_GLASS_PER_SHIFT + 1);
+      const { id: firstId, ...first } = openings.at(-1);
+      assert.match(String(firstId), /^\d+$/);
+      assert.deepEqual(first, {
+        actor_role: "ward",
+        actor_scope: ward,
+        patient_id: elsewhere.patientId,
+        reason: "bed-search",
+        minutes: { opened: 0, until: engine.BREAK_GLASS_MINUTES },
+      });
+      const checkedReviews = { outside: false, inside: false };
+      for (const service of ["North Metro", "South Metro", "East Metro"]) {
+        const serviceView = { ...leadView, access: { role: "coordinator", scope: { kind: "service", service } } };
+        const part = engine.scopeWorld(world, serviceView.access, at).state;
+        const own = new Set([
+          ...part.patients.map((row) => row.id),
+          ...part.movements.flatMap((row) => [row.id, row.patientId]),
+          ...part.referrals.map((row) => row.patientId),
+        ]);
+        const read = await store.breakGlassOpenings(serviceView);
+        assert.ok(read.every((row) => own.has(row.patient_id)));
+        assert.equal(read.length, openings.filter((row) => own.has(row.patient_id)).length);
+        assert.ok((await store.recordViews(serviceView)).every((row) => own.has(row.patient_id)));
+        // A review mark on an opening is checked on the server too: a service coordinator may
+        // mark only openings of records in its own service, and never an opening that is not held.
+        const review = (row) => ({
+          type: "REVIEW_AUDIT_EVENT",
+          role: "coordinator",
+          eventId: `audit-break-glass-${row ? row.id : "999999"}`,
+          expectedGeneration: 0,
+          expectedReviewCount: 0,
+          decision: "reviewed",
+        });
+        const sent = (row) => store.command(lead, randomUUID(), 999, review(row), { view: serviceView });
+        const outside = openings.find((row) => !own.has(row.patient_id));
+        if (outside) {
+          const refusedReview = await sent(outside);
+          assert.equal(refusedReview.status, 422, service);
+          assert.equal(refusedReview.body.code, "scope");
+        }
+        const inside = openings.find((row) => own.has(row.patient_id));
+        if (inside) assert.notEqual((await sent(inside)).body.code, "scope", service);
+        assert.equal((await sent(null)).body.code, "scope");
+        checkedReviews.outside ||= !!outside;
+        checkedReviews.inside ||= !!inside;
+      }
+      assert.deepEqual(checkedReviews, { outside: true, inside: true });
       at = new Date(at.getTime() + (engine.BREAK_GLASS_MINUTES + 2) * 60_000);
       const closed = await store.viewer(nurse);
       assert.deepEqual(closed.grants, []);
@@ -1489,6 +1551,7 @@ test(
       });
       const choose = await store.viewer(nurse);
       assert.equal(choose.status, "choose");
+      assert.ok(choose.choices);
       assert.equal(choose.choices.length, 2);
       assert.equal((await store.viewer(nurse, { workingAs: nurseView.membershipId })).access.role, "ward");
       assert.deepEqual(await store.viewer(nurse, { workingAs: "bootstrap" }), { status: "none" });
@@ -1513,6 +1576,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
         );
@@ -1541,6 +1607,8 @@ test(
       }
     } finally {
       await pool.end();
+      await dropTestDatabase(owner, database);
+      await owner.end();
     }
   },
 );
@@ -1824,6 +1892,7 @@ test(
       const extra = await grant(second, "ward", wardB);
       const picking = await store.viewer(second, { bootstrap: true });
       assert.equal(picking.status, "choose");
+      assert.ok(picking.choices);
       assert.deepEqual(
         picking.choices.map((choice) => choice.workingAs),
         ["bootstrap", extra.id],
@@ -2102,7 +2171,10 @@ test(
     } finally {
       await Promise.all(
         servers.map(
-          (server) => new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
+          (server) =>
+            /** @type {Promise<void>} */ (
+              new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
+            ),
         ),
       );
       await Promise.all(pools.map((pool) => pool.end()));
@@ -2524,7 +2596,7 @@ test("no undoable referral step copies the referrer's or clearance contact's det
     applied = engine.applyCommand(world, event, new Date(at.getTime() + (index + 1) * 60_000));
     assert.equal(applied.outcome, "accepted", `${event.type}: ${applied.reason}`);
     const facts = JSON.stringify(applied.changes.facts);
-    assert.ok(!Object.hasOwn(applied.changes.facts, "undoRecords"), event.type);
+    assert.ok(!Object.hasOwn(/** @type {object} */ (applied.changes.facts), "undoRecords"), event.type);
     for (const secret of CONTACT_STRINGS) assert.ok(!facts.includes(secret), `${event.type} audits ${secret}`);
     assert.ok(
       applied.world.state.undoRecords.some((record) => JSON.stringify(record).includes("demo@example.test")),
@@ -2597,8 +2669,8 @@ test(
       assert.deepEqual(
         created.intake.charts.map((row) => [row.kind, row.name, row.sizeBytes, "base64" in row]),
         [
-          ["medication", "medication.pdf", 21, false],
-          ["observation", "observation.pdf", 21, false],
+          ["medication", "PDF", 21, false],
+          ["observation", "PDF", 21, false],
         ],
       );
       // The workspace keeps the contact details the workflow needs; the audit does not.
@@ -2618,7 +2690,9 @@ test(
       assert.equal(rows.length, 1);
       for (const secret of [file, contact.name, contact.phone, contact.email, "Demo Doctor", "5550 0102"])
         assert.ok(!rows[0].text.includes(secret), `the audit copy must not hold ${secret}`);
-      assert.ok(rows[0].text.includes("medication.pdf"), "the audit still records which files were named");
+      // H-0049: the audit records each file's type, never its own name.
+      assert.ok(rows[0].text.includes('"PDF"'), "the audit still records which kind of file was attached");
+      assert.ok(!rows[0].text.includes("medication.pdf"), "the audit must not hold a file name");
 
       // Audit E-01: nor do the later steps on the same referral, through their Undo snapshots.
       let revision = result.body.snapshot.revision;
@@ -2668,6 +2742,7 @@ test("the synthetic-data guard's refusal names the kind of identifier, never the
   const engine = await import("./dist/engine.mjs");
   const refresh = { type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId: "rph-adult-secure" };
   const reason = engine.privacyRefusal({ ...refresh, note: "Ring 0412 345 678" });
+  assert.ok(reason);
   assert.match(reason, /telephone number/);
   assert.ok(!reason.includes("0412"));
   assert.equal(engine.privacyRefusal({ ...refresh, note: "Ring 08 5550 0142" }), null);
@@ -2881,6 +2956,59 @@ test(
       assert.deepEqual(await store.viewer(officer), { status: "none" });
     } finally {
       await pool.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: whole-list and TV reads are logged once per window per desk (H-0731)",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    // Its own database: a logged list read makes rollback 015 refuse, which other tests run.
+    const admin = new Pool({ connectionString: url, max: 1 });
+    const database = `wardflow_list_${randomUUID().replaceAll("-", "")}`;
+    const target = new URL(url);
+    target.pathname = `/${database}`;
+    await admin.query(`CREATE DATABASE ${database}`);
+    const pool = new Pool({ connectionString: target.href, max: 4 });
+    const workspaceId = randomUUID();
+    let at = new Date("2026-10-20T10:00:00Z");
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+    const view = {
+      version: LATEST_MIGRATION,
+      actorId: randomUUID(),
+      membershipId: null,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      grants: [],
+    };
+    try {
+      await migrate(pool);
+      await store.ready();
+      // As in the shared API, the workspace is read before its sending is logged.
+      await store.read(view.actorId);
+      assert.equal(await store.logList(view, "list"), true);
+      assert.equal(await store.logList(view, "list"), false, "a repeat inside 15 minutes adds nothing");
+      assert.equal(await store.logList(view, "tv"), true, "the TV board is its own screen");
+      assert.equal(await store.logList(view, "patient"), false, "only list and tv are list reads");
+      assert.equal(await store.logList({ ...view, version: 14 }, "list"), false, "before 15 nothing is kept");
+      at = new Date("2026-10-20T10:15:01Z");
+      assert.equal(await store.logList(view, "list"), true);
+      const { rows } = await pool.query(
+        "SELECT patient_id, surface FROM ward_flow.record_access WHERE workspace_id=$1 ORDER BY id",
+        [workspaceId],
+      );
+      assert.deepEqual(rows, [
+        { patient_id: "*", surface: "list" },
+        { patient_id: "*", surface: "tv" },
+        { patient_id: "*", surface: "list" },
+      ]);
+      // The access log reads them back like any other opening.
+      assert.equal((await store.recordViews(view)).filter((row) => row.patient_id === "*").length, 3);
+    } finally {
+      await pool.end();
+      await dropTestDatabase(admin, database);
+      await admin.end();
     }
   },
 );

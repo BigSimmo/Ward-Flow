@@ -1,6 +1,7 @@
 /*
  * The community team screen's two transport dialogs: log a booking made by phone, and cancel this
- * team's own booking.
+ * team's own booking. Since A34 (26 Oct 2026) the booking questions are the one transport booking
+ * form every screen uses.
  *
  * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor:
  * the markup, text, class names and behaviour are unchanged. Comments moved with the code, so
@@ -12,30 +13,14 @@ import {
   changeReasonLabels,
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
-import {
-  TRANSPORT_LEGAL_STATUSES,
-  TRANSPORT_PROVIDERS,
-  type TransportLegalStatus,
-  type TransportProvider,
-} from "@/components/ward-management/ward-model";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
-import { cadNumberSentence, transportAnswersBlockedReason } from "@/components/ward-management/ward-transport-checks";
+import { useState } from "react";
+import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
+import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import styles from "./community.module.css";
 import type { CommunityScreenView } from "./community-screen";
-
-const ESCORT_ANSWERS = [
-  { value: true, label: "Escort required" },
-  { value: false, label: "No escort required" },
-] as const;
-
-const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
-  voluntary: "Voluntary",
-  involuntary: "Involuntary",
-};
-
-const NO_TRANSPORT_PROVIDER_VALUE = "";
 
 /** Audit 24-3 SV-2: a save still out, or why it was not recorded. The dialog and its answers stay. */
 function TransportSaveAnswer({ save, testId }: { save: WardFormSave; testId: string }) {
@@ -53,7 +38,7 @@ function TransportSaveAnswer({ save, testId }: { save: WardFormSave; testId: str
   ) : null;
 }
 
-/** Logs a transport booking made by phone. Renders nothing until one is opened. */
+/** Logs a transport booking made by phone, with the one transport booking form (A34). Renders nothing until one is opened. */
 export function CommunityScreenTransportBookDialog({ view }: { view: CommunityScreenView }) {
   const {
     now,
@@ -63,11 +48,21 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     closeTransportBook,
     transportBookDialogRef,
     submitBookTransport,
+    movements,
+    umrnLookup,
   } = view;
   const save = useWardFormSave(transportBookFor ?? "");
+  const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
+  // A new opening starts with no reason, as it starts with a blank draft.
+  const [reasonFor, setReasonFor] = useState(transportBookFor);
+  if (reasonFor !== transportBookFor) {
+    setReasonFor(transportBookFor);
+    setLegalReason("");
+  }
   if (transportBookFor === undefined) return null;
-  // A typed CAD number the rule refuses is named beside the field, not only at the confirm control.
-  const cadFieldProblem = transportDraft.cadNumber.trim() ? cadNumberProblem(transportDraft.cadNumber) : undefined;
+  const movement = movements.find((candidate) => candidate.id === transportBookFor);
+  // The patient's name, as every other screen shows it. The movement id is never a person's name.
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
@@ -82,195 +77,27 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
       >
         <div className={styles.modalHeader}>
           <h3 id={`ward-community-book-transport-title-${transportBookFor}`} className={styles.modalTitle}>
-            Log the transport booking made by phone for {transportBookFor}
+            Log the transport booking made by phone for {patientName}
           </h3>
           <button type="button" className={styles.modalCloseBtn} onClick={closeTransportBook} aria-label="Close dialog">
             &times;
           </button>
         </div>
         <div className={styles.modalBody}>
-          <div className={styles.declineForm}>
-            <label className={styles.declineLabel} htmlFor={`ward-community-transport-provider-${transportBookFor}`}>
-              Who is collecting the patient
-              <select
-                id={`ward-community-transport-provider-${transportBookFor}`}
-                className={styles.declineSelect}
-                data-testid={`ward-community-transport-provider-${transportBookFor}`}
-                value={transportDraft.provider ?? NO_TRANSPORT_PROVIDER_VALUE}
-                onChange={(event) =>
-                  setTransportDraft((current) => ({
-                    ...current,
-                    provider:
-                      event.target.value === NO_TRANSPORT_PROVIDER_VALUE
-                        ? undefined
-                        : (event.target.value as TransportProvider),
-                  }))
-                }
-              >
-                <option value={NO_TRANSPORT_PROVIDER_VALUE}>Not chosen</option>
-                {TRANSPORT_PROVIDERS.map((provider) => (
-                  <option key={provider} value={provider}>
-                    {provider}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <fieldset
-              className={styles.transportFieldset}
-              data-testid={`ward-community-transport-escort-${transportBookFor}`}
-            >
-              <legend className={styles.declineLabel}>Does the patient need an escort?</legend>
-              {transportDraft.escortRequired === undefined ? (
-                <p className={styles.transportHint}>
-                  Neither answer is selected. This is recorded as this team&apos;s answer.
-                </p>
-              ) : null}
-              {ESCORT_ANSWERS.map((answer) => (
-                <label key={answer.label} className={styles.transportOption}>
-                  <input
-                    type="radio"
-                    name={`community-transport-escort-${transportBookFor}`}
-                    data-testid={`ward-community-transport-escort-${answer.value ? "yes" : "no"}-${transportBookFor}`}
-                    value={answer.value ? "yes" : "no"}
-                    checked={transportDraft.escortRequired === answer.value}
-                    onChange={() =>
-                      setTransportDraft((current) => ({
-                        ...current,
-                        escortRequired: answer.value,
-                      }))
-                    }
-                  />
-                  {answer.label}
-                </label>
-              ))}
-            </fieldset>
-            <label className={styles.declineLabel} htmlFor={`ward-community-transport-cad-${transportBookFor}`}>
-              CAD transport number
-              <input
-                type="text"
-                id={`ward-community-transport-cad-${transportBookFor}`}
-                className={styles.declineSelect}
-                data-testid={`ward-community-transport-cad-${transportBookFor}`}
-                value={transportDraft.cadNumber}
-                aria-invalid={cadFieldProblem ? "true" : undefined}
-                aria-describedby={
-                  cadFieldProblem ? `ward-community-transport-cad-problem-${transportBookFor}` : undefined
-                }
-                onChange={(event) =>
-                  setTransportDraft((current) => ({
-                    ...current,
-                    cadNumber: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            {cadFieldProblem ? (
-              <span
-                id={`ward-community-transport-cad-problem-${transportBookFor}`}
-                className={styles.transportHint}
-                data-testid={`ward-community-transport-cad-problem-${transportBookFor}`}
-              >
-                {cadNumberSentence(cadFieldProblem)}
-              </span>
-            ) : null}
-            <fieldset
-              className={styles.transportFieldset}
-              data-testid={`ward-community-transport-legal-${transportBookFor}`}
-            >
-              <legend className={styles.declineLabel}>Is the transport voluntary or involuntary?</legend>
-              {TRANSPORT_LEGAL_STATUSES.map((status) => (
-                <label key={status} className={styles.transportOption}>
-                  <input
-                    type="radio"
-                    name={`community-transport-legal-${transportBookFor}`}
-                    data-testid={`ward-community-transport-legal-${status}-${transportBookFor}`}
-                    value={status}
-                    checked={transportDraft.transportLegalStatus === status}
-                    onChange={() =>
-                      setTransportDraft((current) => ({
-                        ...current,
-                        transportLegalStatus: status,
-                      }))
-                    }
-                  />
-                  {TRANSPORT_LEGAL_STATUS_LABELS[status]}
-                </label>
-              ))}
-            </fieldset>
-            <label
-              className={styles.declineLabel}
-              htmlFor={`ward-community-transport-estimated-time-${transportBookFor}`}
-            >
-              Estimated time (24-hour, HH:MM)
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="HH:MM"
-                id={`ward-community-transport-estimated-time-${transportBookFor}`}
-                className={styles.declineSelect}
-                data-testid={`ward-community-transport-estimated-time-${transportBookFor}`}
-                value={transportDraft.estimatedTime}
-                onChange={(event) =>
-                  setTransportDraft((current) => ({
-                    ...current,
-                    estimatedTime: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <fieldset
-              className={styles.transportFieldset}
-              data-testid={`ward-community-transport-estimated-day-${transportBookFor}`}
-            >
-              <legend className={styles.declineLabel}>Today or tomorrow?</legend>
-              {(["today", "tomorrow"] as const).map((day) => (
-                <label key={day} className={styles.transportOption}>
-                  <input
-                    type="radio"
-                    name={`community-transport-estimated-day-${transportBookFor}`}
-                    data-testid={`ward-community-transport-estimated-day-${day}-${transportBookFor}`}
-                    value={day}
-                    checked={transportDraft.estimatedDay === day}
-                    onChange={() => setTransportDraft((current) => ({ ...current, estimatedDay: day }))}
-                  />
-                  {day === "today" ? "Today" : "Tomorrow"}
-                </label>
-              ))}
-            </fieldset>
-            {(() => {
-              const blocked = transportAnswersBlockedReason(transportDraft, now);
-              return (
-                <>
-                  <button
-                    type="button"
-                    className={styles.transportConfirmButton}
-                    data-testid={`ward-community-book-transport-confirm-${transportBookFor}`}
-                    aria-disabled={blocked === undefined && !save.pending ? undefined : "true"}
-                    aria-describedby={
-                      blocked === undefined ? undefined : `ward-community-book-transport-blocked-${transportBookFor}`
-                    }
-                    title={blocked}
-                    onClick={
-                      blocked === undefined
-                        ? () => submitBookTransport(transportBookFor, save.submit)
-                        : ignoreUnavailableActivation
-                    }
-                  >
-                    Confirm booking
-                  </button>
-                  {blocked === undefined ? null : (
-                    <span id={`ward-community-book-transport-blocked-${transportBookFor}`} className="sr-only">
-                      {blocked}
-                    </span>
-                  )}
-                  <TransportSaveAnswer
-                    save={save}
-                    testId={`ward-community-book-transport-failure-${transportBookFor}`}
-                  />
-                </>
-              );
-            })()}
-          </div>
+          <TransportBookingForm
+            answers={transportDraft}
+            onAnswers={setTransportDraft}
+            legalReason={legalReason}
+            onLegalReason={setLegalReason}
+            record={movement}
+            patientName={patientName}
+            now={now}
+            testIds={{ prefix: "ward-community", suffix: transportBookFor }}
+            pending={save.pending}
+            error={save.error}
+            onSubmit={(booking) => submitBookTransport(transportBookFor, booking, save.submit)}
+            onCancel={closeTransportBook}
+          />
         </div>
       </div>
     </div>

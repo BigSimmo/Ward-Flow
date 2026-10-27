@@ -3,6 +3,7 @@
 // History still reads (Josh, 25 Oct 2026). Synthetic data only.
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { Pool } from "pg";
 import { migrate } from "./migrate.mjs";
@@ -146,6 +147,47 @@ test(
         [workspaceId],
       );
       assert.equal(rows[0].n, rows[0].ids);
+
+      // GV-27: the move has its own audit row, naming each record it moved.
+      const { rows: moves } = await pool.query(
+        "SELECT actor_id, changes FROM ward_flow.audit WHERE workspace_id=$1 AND action='ARCHIVE_CLOSED_RECORDS' ORDER BY sequence",
+        [workspaceId],
+      );
+      assert.ok(moves.length >= 1);
+      for (const move of moves) assert.equal(move.actor_id, actor);
+      const { rows: archivedRows } = await pool.query(
+        "SELECT collection, record_id, body FROM ward_flow.archived_records WHERE workspace_id=$1",
+        [workspaceId],
+      );
+      assert.deepEqual(
+        moves.flatMap((move) => move.changes.archived.map((entry) => `${entry.collection}:${entry.recordId}`)).sort(),
+        archivedRows.map((row) => `${row.collection}:${row.record_id}`).sort(),
+        "every archived record is named once",
+      );
+
+      // GV-27: the rollback, run on this copy, puts every archived record back without loss.
+      const archivedBefore = new Map(archivedRows.map((row) => [`${row.collection}:${row.record_id}`, row.body]));
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        for (const file of ["./infra/rollback-015-list-and-tv-views.sql", "./infra/rollback-014-archived-records.sql"])
+          await client.query(await readFile(new URL(file, import.meta.url), "utf8"));
+        await client.query("COMMIT");
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
+      }
+      const { rows: restored } = await pool.query(
+        "SELECT collection, record_id, body FROM ward_flow.workspace_records WHERE workspace_id=$1",
+        [workspaceId],
+      );
+      const live = new Map(restored.map((row) => [`${row.collection}:${row.record_id}`, row.body]));
+      for (const [id, body] of archivedBefore) {
+        assert.ok(live.has(id), id);
+        assert.deepEqual(live.get(id), body, id);
+      }
     } finally {
       await pool.end();
       await dropTestDatabase(admin, database);

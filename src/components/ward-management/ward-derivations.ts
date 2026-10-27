@@ -188,8 +188,22 @@ export const BED_RELEASE_BLOCKED_LABEL = "Blocked";
  * ⚠️ **AND THE NEW WORDING RESOLVES THE COLLISION THE PARAGRAPH ABOVE WAS WRITTEN ABOUT.** Two chips
  * reading "Blocked" and meaning different things was the defect it guarded against; "Discharges held
  * up" beside "Blocked" for physically blocked beds can no longer be confused for one another.
+ *
+ * 🔴 **AND AGAIN 26 OCT 2026 (Josh, Part A decision 15; audits NA2-02 and NA3-02).** "Discharges held
+ * up" had come to mean two counts: these releases (5 on the seed, menu and TV) and patients in a bed
+ * with a recorded hold (13, Handover and Statistics). The release count is now "Releases held up,
+ * today and tomorrow", because `blockedToday` covers the same today-and-tomorrow window as its
+ * Confirmed and Expected neighbours. "Discharges held up" belongs only to the patient count.
  */
-export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Discharges held up";
+export const BED_RELEASE_BLOCKED_FIGURE_LABEL = "Releases held up, today and tomorrow";
+
+/**
+ * Releases with a blocker whatever their date (the ward's own list and the Discharges board, WT-17).
+ * Not "today and tomorrow", because it is not that window; not "Discharges held up", which is the
+ * patient count (decision 15, 26 Oct 2026): patients in a bed with a recorded hold
+ * (`admission.blockReason`) on Handover, Statistics and the ward's shift brief.
+ */
+export const BED_RELEASES_HELD_UP_ANY_DATE_LABEL = "Releases held up";
 
 /**
  * The one canonical order of the health services, and the list every screen that groups by service
@@ -212,8 +226,8 @@ export const wardServiceOrder: readonly HealthService[] = [
 ];
 
 export const roleLabels: Record<WardRole, string> = {
-  flow: "Flow coordinator",
-  ed: "ED mental health",
+  flow: "Bed coordinator",
+  ed: "ED clinician",
   ward: "Ward manager",
 };
 
@@ -320,7 +334,7 @@ export function isStoppedTransportAwaitingRelease(movement?: Movement | null): b
  * derivation's own doc comment explains it exists to survive.
  */
 export const EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE =
-  "The examination was revoked and this movement still holds a bed.";
+  "The examination was revoked and this movement still has a bed pulled.";
 
 /**
  * A movement whose CURRENT legal status requires an authorised destination, but whose already

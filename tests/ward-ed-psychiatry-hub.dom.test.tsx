@@ -829,7 +829,7 @@ describe("the hub's two lists", () => {
  * team is not one of the roles permitted to answer a referral". Every clause of that had since been
  * falsified: `EVENT_ROLE.DECLINE_REFERRAL` is `["ward", "coordinator", "ed"]`, and the reducer's
  * `DECLINE_REFERRAL` branch writes `decidedBy: WARD_FLOW_ROLE_LABELS[event.role]`, which for `"ed"`
- * is "ED mental health". A deleted test is indistinguishable from a test that never existed, so the
+ * is "ED clinician". A deleted test is indistinguishable from a test that never existed, so the
  * same three claims are asserted in their new form below.
  */
 describe("the inbox's decline control", () => {
@@ -958,11 +958,11 @@ describe("the inbox's decline control", () => {
    * WHO DECIDED.**
    *
    * `decidedBy` is asserted, not merely the state. Dispatching as `"ward"` or `"coordinator"` would
-   * also flip this addressing to `declined` and would write "Ward manager" or "Flow coordinator"
+   * also flip this addressing to `declined` and would write "Ward manager" or "Bed coordinator"
    * against a decision ED psychiatry made — the exact false entry that field exists to prevent, and
    * a state-only assertion goes green on it.
    */
-  it("⚠️ records an ED decline of its own destination, as ED mental health", () => {
+  it("⚠️ records an ED decline of its own destination, as ED clinician", () => {
     renderHubWithDeclineHarness("jhc-ed");
     fireEvent.click(screen.getByTestId("harness-raise-review"));
     const { id, count } = probeParts();
@@ -977,7 +977,7 @@ describe("the inbox's decline control", () => {
 
     const after = declineParts();
     expect(after.state, "the reducer did not accept the ED's decline").toBe("declined");
-    expect(after.decidedBy, "the record names the wrong team for this decision").toBe("ED mental health");
+    expect(after.decidedBy, "the record names the wrong team for this decision").toBe("ED clinician");
     expect(after.reason).toBe("belongs_to_another_service");
     expect(after.rejections, "the reducer refused a decline this screen is permitted to make").toBe(0);
 
@@ -1369,7 +1369,7 @@ describe("the recently answered section", () => {
   /**
    * ⚠️ **A REGRESSION GUARD FOR THE TRAP THIS TASK'S OWN BRIEF NAMED.** Two assertions elsewhere in
    * this file —
-   *   "⚠️ records an ED decline of its own destination, as ED mental health" (asserts
+   *   "⚠️ records an ED decline of its own destination, as ED clinician" (asserts
    *     `ward-ed-inbox-row-<id>` is gone, its own comment calling that "the only success signal on
    *     screen"), and
    *   "⚠️ shows a reducer refusal on the row it belongs to, and on no other row" (the same

@@ -239,17 +239,20 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // --- Step 2: the person leaves, recorded on the ward board. Leaving completes this person's
     // release and is the one step here that frees a real bed. ---
     await goBackToWard(page);
-    // The ward page no longer links to the bed board. A same-origin anchor click is intercepted
-    // by the app router, so the layout provider — and this journey's bed releases — stay mounted.
-    await page.evaluate((unitId) => {
-      const anchor = document.createElement("a");
-      anchor.href = `/ward-flow/board/${unitId}`;
-      document.body.appendChild(anchor);
-      anchor.click();
-    }, UNIT_ID);
-    // The click only starts the navigation; the staged-content count below means nothing until the
-    // board's own address is in place and the document has finished loading.
-    await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`, { waitUntil: "load" });
+    // The ward page no longer links to the bed board, so open it the way a coordinator does and the
+    // release gate does: the ward's profile on the Wards index, then its "Stays and discharges" link.
+    // Both are the app's own links, so the provider and this journey's bed releases stay mounted.
+    // This used to click a plain anchor planted in the page, which is a full page load: the board
+    // drew the seed, then restored step 1's save a moment later and redrew every screen (CS3-17),
+    // closing the bed record this step had just opened. It failed that way every time in a cloud
+    // rerun on 27 Oct 2026.
+    const unitName = seedWardFlowState().units.find((unit) => unit.id === UNIT_ID)?.name;
+    expect(unitName, `fixture assumption: ${UNIT_ID} is a seeded unit`).toBeDefined();
+    await clickRailLink(page, "/ward-flow/wards");
+    await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
+    await page.getByRole("link", { name: "Stays and discharges", exact: true }).click();
+    await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",
@@ -436,15 +439,13 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);
-      await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+      await detail.getByRole("tab", { name: "Record", exact: true }).click();
       if (destination.id === "died-on-the-ward") {
         await expect(detail.getByRole("button", { name: "Record follow-up status" })).toHaveCount(0);
       } else {
         await detail.getByRole("combobox", { name: "Arrangement status" }).selectOption("arranged");
         await detail.getByRole("button", { name: "Record follow-up status" }).click();
-        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText(
-          "Arranged · Flow coordinator",
-        );
+        await expect(detail.getByTestId("ward-discharge-follow-up-status")).toContainText("Arranged · Bed coordinator");
       }
     });
   }
@@ -471,7 +472,7 @@ test.describe("@mockup complete care dossier", () => {
     await expect(history).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
     const detail = page.getByRole("region", { name: "Selected discharge details" });
-    await detail.getByRole("tab", { name: "Dossier", exact: true }).click();
+    await detail.getByRole("tab", { name: "Record", exact: true }).click();
     const care = detail.getByRole("region", { name: "Care journey" });
     await care.locator("summary", { hasText: "Planning item" }).click();
     await care.getByRole("combobox", { name: "Planning item", exact: true }).selectOption("crisis_plan");

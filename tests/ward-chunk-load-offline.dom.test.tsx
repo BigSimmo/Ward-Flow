@@ -66,7 +66,7 @@ describe("recognising a failed page file", () => {
 describe("the application shell boundary", () => {
   it("shows the offline message for a failed file and reloads once when the connection returns", () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
-    render(<AppShellErrorBoundary error={chunkError()} reset={vi.fn()} />);
+    render(<AppShellErrorBoundary error={chunkError()} retry={vi.fn()} />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("You are offline");
     expect(screen.getByRole("alert").textContent).toContain("reload by itself when the connection returns");
@@ -83,7 +83,7 @@ describe("the application shell boundary", () => {
 
   it("asks for a reload, without reloading by itself, when the file failed while online", () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(true);
-    render(<AppShellErrorBoundary error={chunkError()} reset={vi.fn()} />);
+    render(<AppShellErrorBoundary error={chunkError()} retry={vi.fn()} />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Part of this page did not load");
     expect(reload).not.toHaveBeenCalled();
@@ -91,7 +91,7 @@ describe("the application shell boundary", () => {
 
   it("keeps the shell message for any other error and never reloads on reconnect", () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
-    render(<AppShellErrorBoundary error={new Error("boom")} reset={vi.fn()} />);
+    render(<AppShellErrorBoundary error={new Error("boom")} retry={vi.fn()} />);
 
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Something went wrong");
     expect(screen.getByText(/unexpected error occurred in the application shell/)).toBeTruthy();

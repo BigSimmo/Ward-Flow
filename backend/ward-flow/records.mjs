@@ -197,6 +197,9 @@ function keepOrdinals(list, current) {
  * A row whose content is unchanged keeps its revision, even when its position moved, and so does
  * each small field on the workspace row (`storedCore`, the row as saved now; none for a new one).
  * @param {StoredRow[]} stored
+ * @param {any} world
+ * @param {number} revision
+ * @param {any} [storedCore]
  */
 export function planSave(stored, world, revision, storedCore = null) {
   const split = splitWorld(world);
@@ -280,6 +283,7 @@ function commandRecords(before, after, event) {
  * effects can reach records outside the sender's place, and a desk must never learn that one of
  * those changed. Tokens are plain hashes of guessable record ids, so they name only what the
  * sender can already see.
+ * @param {{ core: any, before: any, after: any, event: unknown, visible?: any[] | null }} options
  */
 export function coveredRecords({ core, before, after, event, visible = null }) {
   const whole = wholeFields(core);
@@ -311,7 +315,9 @@ export function conflicts({ stored, core, before, after, event, expectedRevision
   const revisionOf = (key, part) => (whole.has(part.collection) ? priorRevision : (revisions.get(key) ?? 0));
   const checkedFrom = (key, part) => {
     const later = whole.has(part.collection) || !seen ? undefined : seen[recordToken(key)];
-    return Number.isSafeInteger(later) ? Math.max(expectedRevision, Math.min(later, priorRevision)) : expectedRevision;
+    return typeof later === "number" && Number.isSafeInteger(later)
+      ? Math.max(expectedRevision, Math.min(later, priorRevision))
+      : expectedRevision;
   };
   for (const [key, part] of commandRecords(before, after, event))
     if (revisionOf(key, part) > checkedFrom(key, part)) return true;

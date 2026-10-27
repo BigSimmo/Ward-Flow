@@ -31,7 +31,7 @@
 .drawerBackdrop {
   position: fixed;
   inset: 0;
-  z-index: 990;
+  z-index: var(--z-overlay);
   background: var(--wf-scrim);
 }
 
@@ -1509,6 +1509,18 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   overflow-wrap: anywhere;
+}
+
+/* A27: "To follow" sits under the chart's name, lined up with it, as a full-height tap target. */
+.toFollow {
+  display: inline-flex;
+  min-height: var(--wf-h-sm);
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: -6px 0 6px calc(16px + var(--wf-s-3));
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  cursor: pointer;
 }
 
 .fileInput {

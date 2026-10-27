@@ -209,7 +209,7 @@ export function FlowChip({ closed, onOpen }: { closed: readonly ClosedTodayRow[]
   const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
   const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
   return (
-    <button type="button" className={styles.flow} onClick={onOpen} title="Opens History">
+    <button type="button" className={styles.flow} onClick={onOpen} title="Opens history">
       <span className={styles.flowLead}>Today</span>
       <span className={styles.flowPart}>
         <StatusGlyph tone="success" size={9} />
@@ -784,17 +784,36 @@ export type CensusDetailProps = {
   copyNote: string | null;
 };
 
+// H-0345: a blocked sessionStorage throws; the bed-link focus marker is only a convenience, so a
+// failed read or write is skipped rather than sending Search detail to the error boundary.
+function readCensusMarker(key: string): string | null {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeCensusMarker(key: string, value: string | null): void {
+  try {
+    if (value === null) window.sessionStorage.removeItem(key);
+    else window.sessionStorage.setItem(key, value);
+  } catch {
+    // A blocked store: the ward bed simply closes without returning to Census.
+  }
+}
+
 /** The selected person. Every fact is the record's own; a missing one says so. */
 export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }: CensusDetailProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.sessionStorage.getItem("wardflow:census-bed-opener") !== row.key) return;
+    if (readCensusMarker("wardflow:census-bed-opener") !== row.key) return;
     const link = Array.from(document.querySelectorAll<HTMLElement>("[data-census-bed-link]")).find(
       (element) => element.dataset.censusBedLink === row.key,
     );
     if (link) {
       link.focus({ preventScroll: true });
-      window.sessionStorage.removeItem("wardflow:census-bed-opener");
+      writeCensusMarker("wardflow:census-bed-opener", null);
     }
   }, [row.key]);
   const quiet = row.group === "off";
@@ -840,9 +859,9 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         data-census-bed-link={row.key}
         href={`/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
         onClick={() => {
-          window.sessionStorage.setItem("wardflow:census-bed-opener", row.key);
+          writeCensusMarker("wardflow:census-bed-opener", row.key);
           // ward-screen.tsx returns to Census on close only for this exact unit and bed.
-          window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${row.unitId}:${row.bedNumber}`);
+          writeCensusMarker("wardflow:census-bed-opener-target", `${row.unitId}:${row.bedNumber}`);
           onNavigate?.();
         }}
       >

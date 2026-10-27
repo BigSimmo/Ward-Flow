@@ -379,7 +379,7 @@ Root-level screens: `ward-management-console.tsx` (3,287; movement workspace),
 ```bash
 npm run ensure                                 # start or verify local server and print the URL
 node scripts/ward-flow/serve-mockups.mjs       # serve the drawings (never double-click them)
-node scripts/run-vitest.mjs <affected-files>   # focused tests: changed files + up to 3 importers
+node scripts/run-vitest.mjs run <test-files>   # focused tests: changed files + up to 3 importers
 node node_modules/typescript/bin/tsc -p tsconfig.typecheck.json --noEmit
 ```
 

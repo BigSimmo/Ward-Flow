@@ -48,7 +48,8 @@ export type UndoEvent = Extract<
       | "UNDO_ED_STEP"
       | "UNDO_TRANSPORT_STEP"
       | "UNDO_DEPARTURE"
-      | "UNDO_ABSENT_WITHOUT_LEAVE";
+      | "UNDO_ABSENT_WITHOUT_LEAVE"
+      | "UNDO_BED_MEETING_ACTION";
   }
 >;
 
@@ -93,6 +94,9 @@ export function reduceUndoEvent(
       if (!referral) return reject(state, event, `no referral found for id ${event.referralId}`);
       const record = referralDecisionUndoFor(state.undoRecords, referral.id);
       if (!record) return reject(state, event, "There is no decision on this referral to undo");
+      // H-0246: an older toast's Undo must not take back a newer decision that replaced its record.
+      if (event.recordSeq !== undefined && record.seq !== event.recordSeq)
+        return reject(state, event, "A later decision replaced this one, so this Undo no longer applies");
       const refusal =
         undoRoleRefusal(record, event.role, event.actingUnitId) ??
         undoWindowRefusal(record.at, event.now) ??
@@ -116,6 +120,9 @@ export function reduceUndoEvent(
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       const record = bedPlacementUndoFor(state.undoRecords, admission.id);
       if (!record) return reject(state, event, "There is no bed move on this stay to undo");
+      // H-0246: an older toast's Undo must not take back a newer bed move that replaced its record.
+      if (event.recordSeq !== undefined && record.seq !== event.recordSeq)
+        return reject(state, event, "A later bed move replaced this one, so this Undo no longer applies");
       const refusal =
         undoRoleRefusal(record, event.role, event.actingUnitId) ??
         undoWindowRefusal(record.at, event.now) ??
@@ -244,7 +251,8 @@ export function reduceUndoEvent(
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
-    case "UNDO_ABSENT_WITHOUT_LEAVE": {
+    case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);

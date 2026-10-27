@@ -6,6 +6,7 @@
 // typed text (D-18). The server decides what is sent; the browser never supplies payload text.
 
 import { createECDH } from "node:crypto";
+import { bootstrapCoordinators } from "./auth.mjs";
 
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 // Known browser push services. A subscription endpoint is a URL the backend will POST to, so only
@@ -251,7 +252,10 @@ export async function createPush(config) {
   return {
     send: createPushSender(config.push, webpush),
     payload: pushPayload,
-    coordinatorIds: config.coordinatorIds,
+    // Read at each send, so a bootstrap coordinator past its end date hears nothing (H-0057).
+    get coordinatorIds() {
+      return bootstrapCoordinators(config);
+    },
     maxPerAccount: MAX_SUBSCRIPTIONS_PER_ACCOUNT,
   };
 }

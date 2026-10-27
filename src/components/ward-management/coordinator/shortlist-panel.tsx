@@ -240,9 +240,9 @@ const GATE_LABELS: Record<EligibilityGate, string> = {
   acuity: "Acuity mix",
   age: "Age band",
   allocatable_bed: "Allocatable bed",
-  authorisation: "Involuntary-capable",
+  authorisation: "Authorised hospital",
   capacity_freshness: "Capacity freshness",
-  cohort: "Cohort match",
+  cohort: "Ward cohort",
   forensic: "Forensic history",
   legal_status: "Legal status",
   prior_decline: "Prior decline",
@@ -1666,12 +1666,12 @@ export function ShortlistPanel({
           <h4 className={styles.shortlistSectionHeading}>Inbound Transit &amp; Arrival Telemetry</h4>
           <dl className={shortlistStyles.factGrid}>
             <Fact
-              label="Accepting Inpatient Ward"
+              label="Accepting inpatient ward"
               value={acceptedUnit ? acceptedUnit.name : (movement.acceptedUnitId ?? "No accepted ward recorded")}
               testId="ward-shortlist-transit-accepting-ward"
             />
             <Fact
-              label="Arrival Mode"
+              label="Arrival mode"
               value={
                 movement.arrivalDetails?.modeOfArrival ??
                 (movement.arrivalDetails?.mode
@@ -1684,13 +1684,13 @@ export function ShortlistPanel({
             />
             {movement.arrivalDetails?.trackingNumber ? (
               <Fact
-                label="Tracking Number"
+                label="Tracking number"
                 value={movement.arrivalDetails.trackingNumber}
                 testId="ward-shortlist-transit-tracking"
               />
             ) : null}
             <Fact
-              label="Real-time ETA"
+              label="Expected arrival (as recorded)"
               value={
                 movement.arrivalDetails?.estimatedArrivalAt !== undefined
                   ? now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES
@@ -2283,7 +2283,7 @@ export function ShortlistPanel({
                 data-level={activeNotice.level}
               >
                 {activeNotice.level === "voluntary_on_locked"
-                  ? `${activeNotice.text}. The security check below passes, but a voluntary patient held on a locked ward is a decision for a human, not a match.`
+                  ? `${activeNotice.text}. The security check below passes, but a voluntary patient on a locked ward is a decision for a human, not a match.`
                   : `${activeNotice.text}. The security check below passes, but placing an open-status patient on a locked ward is a decision for a human, not a match.`}
               </p>
             ) : null}
@@ -2410,7 +2410,11 @@ export function ShortlistPanel({
               data-testid="ward-change-urgency-toggle"
               aria-expanded={urgencyChangeOpen}
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-              onClick={() => setUrgencyChangeOpen((open) => !open)}
+              onClick={() => {
+                setUrgencyChangeOpen((open) => !open);
+                // H-0127: start from the tier on the board now, which another desk may have changed.
+                setUrgencyDraft({ urgency: movement?.urgency ?? 1, reason: undefined });
+              }}
             >
               Change urgency
             </button>

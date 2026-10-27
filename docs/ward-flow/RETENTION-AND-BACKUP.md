@@ -4,7 +4,7 @@ _Updated 2026-10-26 - added the passing `pg_dump` restore drill of the hosted da
 
 _Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
 
-_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->14<!-- /fact --> migrations, latest <!-- fact:latest-migration -->014-archived-records<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
+_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->15<!-- /fact --> migrations, latest <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
 
 **Status:** Ward Flow is a prototype. It holds synthetic data only. This plan must be agreed and
 in place before any real patient data is entered. It is not legal advice. A WA Health records
@@ -299,7 +299,7 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
    `npm --prefix backend/ward-flow run migrate:supabase` (see
    [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
-   migration through <!-- fact:latest-migration -->014-archived-records<!-- /fact --> in one
+   migration through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact --> in one
    transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
    Until then the backend keeps working, but opening a record is not logged and a sign-out takes
    effect only when its token expires. The undo runs one step at a time, newest first:

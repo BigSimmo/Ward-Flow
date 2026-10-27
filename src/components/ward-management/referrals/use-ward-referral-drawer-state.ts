@@ -1,6 +1,10 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { patientRegistrationScope } from "../ward-patient-registration";
-import { useReferralCommandCompletion, useReferralPatientRegistration } from "./use-referral-command-completion";
+import {
+  EMPTY_NEW_PATIENT,
+  useReferralCommandCompletion,
+  useReferralPatientRegistration,
+} from "./use-referral-command-completion";
 import { useState, useId, useEffect, useMemo, useRef, useCallback } from "react";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -34,7 +38,6 @@ import {
   NOT_ON_SENDING_WARD_OTHER,
   type NotOnSendingWardReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { type Gender } from "@/components/ward-management/ward-patients";
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { suburbOptions } from "./referral-destination-options";
@@ -46,10 +49,11 @@ import {
   communityUrgency,
 } from "./community-short-form";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
-import { documentationError, EMPTY_DOCUMENTATION, type DocumentationDraft } from "./referral-flow-panels";
+import { documentationError, intakeCharts, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
+  draftFingerprint,
   draftNeedsChartReattachment,
   keepReferralDraft,
   readKeptReferralDraftAt,
@@ -60,6 +64,7 @@ import {
 } from "./referral-draft-store";
 import { useReferralSectionNavigation } from "./use-referral-section-navigation";
 import { drawerFootStatus } from "./referral-drawer-foot-status";
+import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
@@ -173,7 +178,6 @@ export function useWardReferralDrawerState({
   const searchId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const touchStartY = useRef<number | null>(null);
-
   const capacityRecords = useWardCapacity();
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
   const pathname = usePathname() ?? "";
@@ -183,7 +187,6 @@ export function useWardReferralDrawerState({
   const gate = useRoleGate();
   const access = useEffectiveWardAccess();
   const addPatientGate = gate("ADD_PATIENT");
-
   const {
     movements,
     patients,
@@ -253,7 +256,6 @@ export function useWardReferralDrawerState({
   // A2-3 (audit 13 Oct 2026): opened plainly, with no named person, the sheet starts on nobody,
   // never a demo person from another site.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
-
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
     initialPatientKey in SAMPLE_PATIENTS ? [] : [initialPatientKey],
@@ -261,6 +263,7 @@ export function useWardReferralDrawerState({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
+  const [addedInFormKey, setAddedInFormKey] = useState<string | null>(null); // WT-28
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(
@@ -274,14 +277,7 @@ export function useWardReferralDrawerState({
   const [guardOpen, setGuardOpen] = useState(false);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const [newPatientOpen, setNewPatientOpen] = useState(false);
-  const [newPatient, setNewPatient] = useState({
-    familyName: "",
-    givenName: "",
-    dateOfBirth: "",
-    umrn: "",
-    gender: "" as Gender | "",
-    suburb: "",
-  });
+  const [newPatient, setNewPatient] = useState(EMPTY_NEW_PATIENT);
   const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);
@@ -316,23 +312,15 @@ export function useWardReferralDrawerState({
   const movementCohort = liveMovement?.cohort;
   const effectiveCohort: Cohort | "" = movementCohort ?? ageBand;
   const arrivalRole = initialCategory === "community" ? "community" : initialCategory === "ed" ? "ed" : "ward";
-  const [documentation, setDocumentation] = useState<DocumentationDraft>(kept?.documentation ?? EMPTY_DOCUMENTATION);
+  const recordState = { patients, referrals, movements }; // WS-06, WS-08, WS-11: referral-record-prefill.ts
+  const [documentation, setDocumentation] = useState<DocumentationDraft>(
+    () => kept?.documentation ?? fromRecord.documentationFromBoard(liveMovement),
+  );
   const isMedicalCleared = documentation.medical === "yes";
-  // A2-6: the details last sent in this tab fill in, so the referrer types them once. Failing that,
-  // opened from an entry point, the referrer's own details come from their profile when one is set.
-  const [contact, setContact] = useState<ReferralContact>(() => {
-    if (kept?.contact) return kept.contact;
-    const lastSent = readLastReferrerContact<ReferralContact>();
-    if (lastSent) return lastSent;
-    if (
-      (effectiveInitialPatientId || effectiveInitialOriginSiteCode || initialSendingTeam) &&
-      myProfile.status === "available"
-    ) {
-      const { name, role, phone, email, location } = myProfile.profile;
-      return { name, role, phone, email, location };
-    }
-    return { name: "", email: "", phone: "", role: "", location: "" };
-  });
+  // A2-6 and WS-07 (H-0972): the draft, the details last sent in this tab, then the desk's profile.
+  const [contact, setContact] = useState<ReferralContact>(() =>
+    fromRecord.initialReferrerContact(kept?.contact, readLastReferrerContact<ReferralContact>(), myProfile),
+  );
   const initialLookup = lookupCatchment(defaultPatient.suburb);
   const initialTeams = catchmentRoutingDestinations(initialLookup);
   const [catchmentSuburb, setCatchmentSuburb] = useState(kept?.catchmentSuburb ?? defaultPatient.suburb);
@@ -342,12 +330,14 @@ export function useWardReferralDrawerState({
   const [catchmentService, setCatchmentService] = useState<HealthService | "">(
     kept?.catchmentService ?? HEALTH_SERVICES.find((service) => service === urlPrefill?.service) ?? "",
   );
+  const [recordedRegion] = useState(() => fromRecord.recordedHomeRegion(patientRecord?.id, liveMovement, recordState));
   const [catchmentConfirmed, setCatchmentConfirmed] = useState(
     kept?.catchmentConfirmed ??
-      (fromEntryPoint && !!(initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment)?.trim()),
+      ((fromEntryPoint && !!(initialTeams?.length === 1 ? initialTeams[0] : defaultPatient.catchment)?.trim()) ||
+        fromRecord.catchmentFromRecord(patientRecord, catchmentTeam, recordedRegion)),
   );
   const [catchmentEditing, setCatchmentEditing] = useState(false);
-  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? liveMovement?.homeRegion ?? "");
+  const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? recordedRegion ?? "");
   const [activeSection, setActiveSection] = useState<DrawerSection>(
     (kept?.destType === "community" && kept.activeSection === "documentation" ? "referral" : kept?.activeSection) ??
       (catchmentConfirmed && !!homeRegion && !!liveMovement?.cohort ? "referral" : "patient"),
@@ -368,8 +358,9 @@ export function useWardReferralDrawerState({
       (liveOriginSite || initialCategory === "ed" || deskOriginSite ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
-    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? liveOriginSite ?? deskOriginSite ?? "",
+    effectiveInitialOriginSiteCode ?? kept?.originSiteCode ?? deskOriginSite ?? liveOriginSite ?? "",
   );
+  const openJourney = fromRecord.openEdJourneyFor(patientRecord?.id, recordState);
   const [sendingTeam, setSendingTeam] = useState(initialSendingTeam ?? kept?.sendingTeam ?? deskSendingTeam ?? "");
   // WS-01 (workflow speed audit, 26 Oct 2026): from the record, else the journey the ED board shows.
   const [known] = useState(() => recordedSexAndGender(patientRecord, liveMovement));
@@ -409,7 +400,7 @@ export function useWardReferralDrawerState({
     setNotOnWard(reason && sendingWard ? { unitId: sendingWard.id, reason } : undefined);
   }
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
-  const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
+  const [transport, setTransport] = useState(kept?.transport ?? "");
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
   const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
@@ -458,16 +449,14 @@ export function useWardReferralDrawerState({
     unidentified,
     notOnWard,
   };
-  const [openingDraft] = useState(() => (kept ? "" : JSON.stringify(draftNow)));
-  const draftJson = JSON.stringify(draftNow);
+  const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
+  const draftJson = draftFingerprint(draftNow);
 
   // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
   // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
-
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
-
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartY.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
@@ -477,11 +466,10 @@ export function useWardReferralDrawerState({
       requestClose();
     }
   };
-
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const dirty = !sentReferralId && draftJson !== openingDraft;
-  const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: JSON.stringify(kept) } : null));
+  const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: draftFingerprint(kept) } : null));
   const {
     sessionSaved: draftSessionSaved,
     keptAt: draftKeptAt,
@@ -491,7 +479,7 @@ export function useWardReferralDrawerState({
     draft: draftNow,
     storageKey: draftStorageKey,
     draftJson,
-    contentJson: JSON.stringify({ ...draftNow, activeSection: undefined }),
+    contentJson: draftFingerprint({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
     dirty,
     initialKeptAt: initialKept?.at ?? null,
@@ -621,10 +609,11 @@ export function useWardReferralDrawerState({
       ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
       : rawCurrentPatient;
 
-  function handleSelectPatient(key: string) {
+  function handleSelectPatient(key: string, addedInForm = false) {
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
+    setAddedInFormKey(addedInForm ? key : null);
     setNotOnWard(undefined);
     setAgeBand("");
     setUnidentified(null);
@@ -634,25 +623,27 @@ export function useWardReferralDrawerState({
     setSelectedUnitIds([]);
     setSelectedRecipient("");
     setCommunityPurpose("");
-    setDocumentation(EMPTY_DOCUMENTATION);
+    const matchedMovement = movements.find((movement) => movement.id === key);
+    setDocumentation(fromRecord.documentationFromBoard(matchedMovement));
     setCatchmentSuburb(p.suburb);
     const teams = catchmentRoutingDestinations(lookupCatchment(p.suburb));
-    setCatchmentTeam(teams?.length === 1 ? teams[0] : p.catchment);
+    const team = teams?.length === 1 ? teams[0]! : p.catchment;
+    setCatchmentTeam(team);
     setCatchmentService("");
-    setCatchmentConfirmed(false);
     setCatchmentEditing(false);
-    setHomeRegion(movements.find((movement) => movement.id === key)?.homeRegion ?? "");
-    const originSite = edById(movements.find((movement) => movement.id === key)?.originEdId ?? "")?.siteCode;
-    if (originSite) {
+    const originSite = edById(matchedMovement?.originEdId ?? "")?.siteCode;
+    if (originSite && !deskOriginSite) {
       setSourceKind("ed");
       setOriginSiteCode(originSite);
     }
-    const matchedMovement = movements.find((movement) => movement.id === key);
     const record = matchedMovement
       ? resolveSubjectPatient(matchedMovement, { patients, referrals, movements }).patient
       : key.startsWith(PATIENT_KEY_PREFIX)
         ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
         : undefined;
+    const region = fromRecord.recordedHomeRegion(record?.id, matchedMovement, recordState);
+    setHomeRegion(region ?? "");
+    setCatchmentConfirmed(fromRecord.catchmentFromRecord(record, team, region));
     const identity = recordedSexAndGender(record, matchedMovement);
     setReferralSex(identity.sex);
     setReferralGender(identity.gender);
@@ -672,7 +663,7 @@ export function useWardReferralDrawerState({
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
     setClinicalSummary(p.clinicalSummary);
-    setTransport(p.transportVal);
+    setTransport("");
     setTransitNote(p.transitNote);
     setRiskFlags(p.riskFlags);
     setClearanceChecks({});
@@ -728,7 +719,7 @@ export function useWardReferralDrawerState({
     allowed: addPatientGate.allowed,
     reason: addPatientGate.reason,
     patient: newPatient,
-    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`),
+    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
   });
 
   // Live capacity for the patient's cohort and the chosen bed security.
@@ -977,7 +968,7 @@ export function useWardReferralDrawerState({
             }),
       },
       triageAndRampCompleted: !community && documentation.triage === "yes",
-      charts: community ? [] : documentation.charts,
+      ...intakeCharts(documentation, community),
       additionalDocuments: !community && documentation.additional === "yes",
       referrer: contact,
       ...(destType === "ward"
@@ -1015,7 +1006,7 @@ export function useWardReferralDrawerState({
       sendingTeamName: needsSendingTeam ? sendingTeam : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
-      transportNeeded: destType === "ward" && transport !== "carer",
+      transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
       history: unidentifiedHistory,
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
@@ -1131,6 +1122,7 @@ export function useWardReferralDrawerState({
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
   const draftNeeds = needsFor(destType, communityNeeds, edNeeds);
+  const letterCharts = intakeCharts(documentation, community);
   const letterInput: ReferralTextInput = {
     destinationPhrase: destination.phrase,
     patientName: patientRecord ? currentPatient.name : unidentifiedName,
@@ -1147,6 +1139,8 @@ export function useWardReferralDrawerState({
     clearance: clearance.label,
     clearanceChecklist: destType === "ward" ? clearanceChecklistWords(clearanceChecks) : "",
     needs: draftNeeds ? referralNeedsWords(draftNeeds) : [],
+    chartKinds: letterCharts.charts.map(({ kind }) => kind),
+    chartsToFollow: letterCharts.chartsToFollow,
     referrer: { name: contact.name, role: contact.role, phone: contact.phone },
   };
   async function copyText(text: string, done: string) {
@@ -1277,6 +1271,7 @@ export function useWardReferralDrawerState({
     kept,
     keepsAnotherPersonsDraft,
     fromEntryPoint,
+    openJourney,
     initialPatientKey,
     activePatientKey,
     setActivePatientKey,
@@ -1287,6 +1282,7 @@ export function useWardReferralDrawerState({
     isSearchOpen,
     setIsSearchOpen,
     noPatientChosen,
+    patientAddedInForm: addedInFormKey !== null && addedInFormKey === activePatientKey,
     bodyRef,
     sectionId,
     selectedUnitIds: offeredUnitIds,

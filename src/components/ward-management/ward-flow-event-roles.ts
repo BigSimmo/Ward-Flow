@@ -317,6 +317,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // manager (D-80), or the coordinator.
   CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
   REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+  // H-0978 / WS-15: closing or reopening one exact bed, the same desks as CONFIRM_CAPACITY.
+  SET_BED_CLOSED: ["ward", "bed_manager", "coordinator"],
   // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair
   // completes. D-80: the site's bed manager may complete an action owned by one of its wards.
   RECORD_BED_MEETING_ACTION: ["coordinator"],
@@ -524,7 +526,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
   RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],
   UPLOAD_PATIENT_FORM: ["coordinator", "ed", "ward", "community", "officer"],
-  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator"],
+  // WT-03 (Josh, 26 Oct 2026): the ward records the next form for a person admitted to its bed.
+  RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
@@ -594,4 +597,6 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   UNDO_DEPARTURE: ["ward", "coordinator"],
   UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
+  // H-0150: whoever may mark a bed meeting action done may take that back.
+  UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
 };

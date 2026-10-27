@@ -4,7 +4,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { ArrowRight, BedDouble, Check, Search, Hospital, ShieldCheck, Truck } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, checkedGates, eligibility, gateMark } from "../ward-eligibility";
@@ -15,12 +15,10 @@ import {
   genderReviewNeeded,
   STEP_BACK_REASONS,
   stepBackReasonLabels,
-  TRANSPORT_PROVIDERS,
   type Movement,
   type MovementStage,
   type StepBackReason,
-  type TransportLegalStatus,
-  type TransportProvider,
+  type TransportExceptionReason,
 } from "../ward-model";
 import {
   GENDER_PLACEMENT_REASONS,
@@ -36,8 +34,16 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { StatusGlyph } from "@/components/wf";
 import { useUndoableStep } from "../use-undoable-step";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
-import { arrivalGaps, collectionGaps } from "@/components/ward-management/ward-transport-checks";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import {
+  arrivalGaps,
+  collectionGaps,
+  type TransportBookingAnswers,
+} from "@/components/ward-management/ward-transport-checks";
+import {
+  BLANK_TRANSPORT_BOOKING,
+  TransportBookingForm,
+} from "@/components/ward-management/transport/transport-booking-form";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 import { clock, dur } from "./patient-now-records";
@@ -74,6 +80,7 @@ export function PatientTransitOperations({
   // Audit 1 (CS-09, Josh 20 Oct): the gap dialogs name the person and UMRN, never "this patient".
   const subjectPatient = resolveSubjectPatient(movement, { patients, referrals, movements });
   const identity = patientIdentityLine(subjectPatient);
+  const patientName = subjectPatient.displayName;
   const now = useWardFlowClock();
   const baseId = useId();
   // Feature 11: each action asks the route's role; cross-role pairs are listed in `ward-role-permissions.ts`.
@@ -110,8 +117,12 @@ export function PatientTransitOperations({
   const enRouteGate = gate("TRANSPORT_EN_ROUTE");
   const collectedGate = gate("PATIENT_COLLECTED");
   const arrivedGate = gate("PATIENT_ARRIVED");
-  const auditRead = readAuditEvents({ role: "coordinator" });
-  const auditEvents = auditRead.status === "allowed" ? auditRead.value : [];
+  // PERF-03 (H-0341): the audit read copies the whole log, so it runs when the state changes, not
+  // on every keystroke in this panel (`readAuditEvents` changes identity only with the state).
+  const auditEvents = useMemo(() => {
+    const auditRead = readAuditEvents({ role: "coordinator" });
+    return auditRead.status === "allowed" ? auditRead.value : [];
+  }, [readAuditEvents]);
   const [rejectionBaseline] = useState(rejections.length);
   const [genderReason, setGenderReason] = useState<GenderPlacementReason | "">("");
   const [wardChecked, setWardChecked] = useState(false);
@@ -125,15 +136,16 @@ export function PatientTransitOperations({
   const [booking, setBooking] = useState(false);
   const [collectCheck, setCollectCheck] = useState(false);
   const [arriveCheck, setArriveCheck] = useState(false);
+  // A34: the one transport booking form's answers, kept until the save is accepted (audit 24-3 SV-5).
+  const [bookingAnswers, setBookingAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
+  const [bookingLegalReason, setBookingLegalReason] = useState<TransportExceptionReason | "">("");
+  const bookingSave = useWardFormSave(movement.id);
+  // H-0117 (audit SM2-03): Ask wards and the override reason keep their answers until the save is
+  // confirmed, the same as the booking form above.
+  const askSave = useWardFormSave(`${movement.id}:ask-wards`);
+  const overrideSave = useWardFormSave(`${movement.id}:override`);
   // Walk-through WT-11: an arrival with nothing open still checks the name and UMRN first.
   const [arriveConfirm, setArriveConfirm] = useState(false);
-  const [provider, setProvider] = useState<TransportProvider | "">("");
-  const [cad, setCad] = useState("");
-  // Blank is the form's own "required" prompt; a typed placeholder gets the reason (HAZ-03, #430).
-  const cadHint = cad.trim() ? cadNumberProblem(cad) : undefined;
-  const [eta, setEta] = useState("");
-  const [legal, setLegal] = useState<TransportLegalStatus | "">("");
-  const [escort, setEscort] = useState<"" | "yes" | "no">("");
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [backTo, setBackTo] = useState<MovementStage | "">("");
   const [backReason, setBackReason] = useState<StepBackReason | "">("");
@@ -259,52 +271,70 @@ export function PatientTransitOperations({
           <button
             type="button"
             className={styles.primary}
-            disabled={!overrideReason}
+            disabled={!overrideReason || overrideSave.pending}
             title={!overrideReason ? "Choose an override reason first" : undefined}
             onClick={() => {
-              if (!overrideReason || !lastActionRejection) return;
+              if (!overrideReason || !lastActionRejection || overrideSave.pending) return;
               const reason = overrideReason;
-              noteAttempt();
-              if (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE") {
-                if (!gate("ACCEPT_IN_PRINCIPLE").allowed) return;
-                const unitId = overrideUnitId || destination?.id;
-                if (!unitId) return;
-                dispatch({
-                  type: "ACCEPT_IN_PRINCIPLE",
-                  role: routeRole,
-                  now,
-                  movementId: movement.id,
-                  unitId,
-                  overrideReason: reason,
-                });
-              } else if (lastActionRejection.attempted === "PULL_PATIENT") {
-                const unitId = overrideUnitId || destination?.id;
-                if (!unitId) return;
-                dispatch({
-                  type: "PULL_PATIENT",
-                  role: routeRole,
-                  now,
-                  movementId: movement.id,
-                  unitId,
-                  overrideReason: reason,
-                });
-              } else if (lastActionRejection.attempted === "REFER_TO_UNITS") {
-                const unitIds = overrideUnitIds.length > 0 ? overrideUnitIds : selectedTargets;
-                if (unitIds.length === 0) return;
-                dispatch({
-                  type: "REFER_TO_UNITS",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                  unitIds,
-                  overrideReason: reason,
-                });
-              }
-              setOverrideReason("");
+              const attempted = lastActionRejection.attempted;
+              if (attempted === "ACCEPT_IN_PRINCIPLE" && !gate("ACCEPT_IN_PRINCIPLE").allowed) return;
+              const unitId = overrideUnitId || destination?.id;
+              const unitIds = overrideUnitIds.length > 0 ? overrideUnitIds : selectedTargets;
+              if (attempted === "REFER_TO_UNITS" ? unitIds.length === 0 : !unitId) return;
+              // The card stays on the refusal it answers until this save is accepted.
+              overrideSave.submit(
+                () => {
+                  if (attempted === "ACCEPT_IN_PRINCIPLE" && unitId) {
+                    return dispatch({
+                      type: "ACCEPT_IN_PRINCIPLE",
+                      role: routeRole,
+                      now,
+                      movementId: movement.id,
+                      unitId,
+                      overrideReason: reason,
+                    });
+                  }
+                  if (attempted === "PULL_PATIENT" && unitId) {
+                    return dispatch({
+                      type: "PULL_PATIENT",
+                      role: routeRole,
+                      now,
+                      movementId: movement.id,
+                      unitId,
+                      overrideReason: reason,
+                    });
+                  }
+                  return dispatch({
+                    type: "REFER_TO_UNITS",
+                    role: "coordinator",
+                    now,
+                    movementId: movement.id,
+                    unitIds,
+                    overrideReason: reason,
+                    ...(needsGenderPlacement && genderReason && wardChecked
+                      ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                      : {}),
+                  });
+                },
+                () => {
+                  setOverrideReason("");
+                  noteAttempt();
+                  // The wards are now asked: the Ask wards refusal and ticks it answered are done with.
+                  if (attempted === "REFER_TO_UNITS") {
+                    askSave.clearError();
+                    setSelected([]);
+                  }
+                },
+              );
             }}
           >
             Record reason and continue
           </button>
+          {overrideSave.error ? (
+            <p className={styles.deckHint} role="alert" data-testid="ward-transit-override-failure">
+              {overrideSave.error}
+            </p>
+          ) : null}
         </div>
       </section>
     ) : null;
@@ -314,7 +344,8 @@ export function PatientTransitOperations({
     selectedTargets.length === 0 ||
     // Another coordinator can ask a ward while ticks are held, leaving fewer slots than ticks.
     selectedTargets.length > askSlots ||
-    (needsGenderPlacement && (!genderReason || !wardChecked));
+    (needsGenderPlacement && (!genderReason || !wardChecked)) ||
+    askSave.pending;
   const askRow = ({ unit, verdict }: (typeof candidates)[number]) => {
     const checked = selectedTargets.includes(unit.id);
     const full = !checked && selectedTargets.length >= askSlots;
@@ -502,17 +533,20 @@ export function PatientTransitOperations({
               : () => {
                   setOverrideUnitIds(selectedTargets);
                   noteAttempt();
-                  dispatch({
-                    type: "REFER_TO_UNITS",
-                    role: "coordinator",
-                    now,
-                    movementId: movement.id,
-                    unitIds: selectedTargets,
-                    ...(needsGenderPlacement && genderReason && wardChecked
-                      ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                      : {}),
-                  });
-                  setSelected([]);
+                  askSave.submit(
+                    () =>
+                      dispatch({
+                        type: "REFER_TO_UNITS",
+                        role: "coordinator",
+                        now,
+                        movementId: movement.id,
+                        unitIds: selectedTargets,
+                        ...(needsGenderPlacement && genderReason && wardChecked
+                          ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                          : {}),
+                      }),
+                    () => setSelected([]),
+                  );
                 }
           }
         >
@@ -524,6 +558,11 @@ export function PatientTransitOperations({
           <ArrowRight size={16} aria-hidden="true" />
         </button>
       </div>
+      {askSave.error ? (
+        <p className={styles.deckHint} role="alert" data-testid="ward-transit-ask-failure">
+          {askSave.error}
+        </p>
+      ) : null}
     </section>
   );
   const dispatchPanel = (
@@ -607,8 +646,8 @@ export function PatientTransitOperations({
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Pull expired. Review the pull before progressing."
-                : `Bed pulled · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
+                ? "Pull time limit passed. The bed stays pulled until a person releases it or sets a new limit."
+                : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
           {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block
@@ -621,6 +660,9 @@ export function PatientTransitOperations({
               {...bookGate.buttonProps}
               onClick={() => {
                 if (!bookGate.allowed) return;
+                setBookingAnswers(BLANK_TRANSPORT_BOOKING);
+                setBookingLegalReason("");
+                bookingSave.forget();
                 setBooking(true);
                 requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("select")?.focus());
               }}
@@ -630,96 +672,40 @@ export function PatientTransitOperations({
           )}
           {open && movement.stage === "pulled" && !job && !booking && bookGate.note}
           {booking && !job && (
-            <form
-              ref={formRef}
-              className={styles.booking}
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (
-                  !provider ||
-                  !legal ||
-                  !escort ||
-                  cadNumberProblem(cad) !== undefined ||
-                  !eta ||
-                  !Number.isFinite(Number(eta)) ||
-                  Number(eta) < 0
-                )
-                  return;
-                if (!bookGate.allowed) return;
-                noteAttempt();
-                dispatch({
-                  type: "BOOK_TRANSPORT",
-                  role: routeRole,
-                  ...wardSendingActing,
-                  now,
-                  movementId: movement.id,
-                  provider,
-                  cadNumber: cad.trim(),
-                  estimatedAt: now + Number(eta),
-                  transportLegalStatus: legal,
-                  escortRequired: escort === "yes",
-                });
-              }}
-            >
+            // CS3-01: a page <form> is held against the board from its first touch. The shared booking
+            // form books only from its own button, so Enter in a field must never submit here.
+            <form ref={formRef} className={styles.booking} noValidate onSubmit={(e) => e.preventDefault()}>
               <h4>Sending team · record phone booking</h4>
-              <label>
-                Transport provider
-                <select required value={provider} onChange={(e) => setProvider(e.target.value as TransportProvider)}>
-                  <option value="">Choose provider</option>
-                  {TRANSPORT_PROVIDERS.map((p) => (
-                    <option key={p}>{p}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                CAD number
-                <input
-                  required
-                  value={cad}
-                  // A refused number fails the browser's own required check, so Save stops at this
-                  // field with the reason, the same way a blank required field does. Set from cadHint
-                  // on every render, so a form reopened with a refused number still stops.
-                  ref={(el) => el?.setCustomValidity(cadHint === undefined ? "" : `To save, ${cadHint}.`)}
-                  aria-invalid={cadHint !== undefined ? "true" : undefined}
-                  aria-describedby={cadHint !== undefined ? `${baseId}-cad-hint` : undefined}
-                  onChange={(e) => setCad(e.target.value)}
-                />
-              </label>
-              {/* Outside the label, so the hint describes the field without renaming it. */}
-              {cadHint !== undefined && (
-                <span id={`${baseId}-cad-hint`} className={styles.deckHint} role="status">
-                  {`To save, ${cadHint}.`}
-                </span>
-              )}
-              <label>
-                Quoted ETA (minutes from now)
-                <input required type="number" min="0" value={eta} onChange={(e) => setEta(e.target.value)} />
-              </label>
-              <label>
-                Transport legal status
-                <select required value={legal} onChange={(e) => setLegal(e.target.value as TransportLegalStatus)}>
-                  <option value="">Choose status</option>
-                  <option value="voluntary">Voluntary</option>
-                  <option value="involuntary">Involuntary</option>
-                </select>
-              </label>
-              <label>
-                Clinical escort required?
-                <select required value={escort} onChange={(e) => setEscort(e.target.value as typeof escort)}>
-                  <option value="">Choose answer</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </label>
-              <div className={styles.actionRow}>
-                <button type="button" className={styles.secondary} onClick={closeBooking}>
-                  Close booking form
-                </button>
-                <button type="submit" className={styles.primary} disabled={!!activeJob}>
-                  <Check size={16} aria-hidden="true" />
-                  Save booking
-                </button>
-              </div>
+              <TransportBookingForm
+                answers={bookingAnswers}
+                onAnswers={setBookingAnswers}
+                legalReason={bookingLegalReason}
+                onLegalReason={setBookingLegalReason}
+                record={movement}
+                patientName={patientName}
+                now={now}
+                testIds={{ prefix: "ward-transit", suffix: movement.id }}
+                blockedReason={bookGate.allowed ? undefined : (bookGate.reason ?? "You cannot book transport here.")}
+                pending={bookingSave.pending}
+                error={bookingSave.error}
+                onSubmit={(answers) => {
+                  if (!bookGate.allowed) return;
+                  noteAttempt();
+                  bookingSave.submit(
+                    () =>
+                      dispatch({
+                        type: "BOOK_TRANSPORT",
+                        role: routeRole,
+                        ...wardSendingActing,
+                        now,
+                        movementId: movement.id,
+                        ...answers,
+                      }),
+                    closeBooking,
+                  );
+                }}
+                onCancel={closeBooking}
+              />
             </form>
           )}
           {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverMine && (

@@ -3,13 +3,17 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { Readable } from "node:stream";
 import { pathToFileURL } from "node:url";
-import { gzipSync } from "node:zlib";
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
 import { readConfig } from "./config.mjs";
 import { VerifierRateLimitedError, VerifierUnavailableError } from "./auth.mjs";
 import { createBackend } from "./providers.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { errorFields } from "./push.mjs";
 import { logFailure, startErrorReporting } from "./error-report.mjs";
+import { REPLY_SEGMENTS, gzipSegments } from "./reply-cache.mjs";
+
+const gzipAsync = promisify(gzip);
 
 const BODY_LIMIT = 1_048_576;
 /** `/healthz` asks the database at most this often, so an unauthenticated caller cannot load it. */
@@ -85,7 +89,7 @@ export function createHandler({
         authenticate,
         readBody,
         verifierUnavailable: VerifierUnavailableError,
-        verifierRateLimited: VerifierRateLimitedError,
+        verifierRateLimited: /** @type {any} */ (VerifierRateLimitedError),
         log,
       })
     : null;
@@ -153,7 +157,7 @@ export function createHandler({
         });
       if (error instanceof VerifierUnavailableError)
         return respond(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable");
-      return respond(401, { error: "Sign in with the authorised account" }, "auth_denied");
+      return respond(401, { code: "auth-denied", error: "Sign in with the authorised account" }, "auth_denied");
     }
     if (request.method !== "GET") return respond(405, { error: "Method not allowed" });
     try {
@@ -275,7 +279,10 @@ export function listen(handler, config, { deadlineMs = HANDLER_DEADLINE_MS } = {
           acceptsGzip(incoming.headers["accept-encoding"]) &&
           String(headers["content-type"] ?? "").startsWith("application/json")
         ) {
-          body = gzipSync(body);
+          // Audit PS-05: compressed off the main thread, and a scoped board the store already holds
+          // keeps its compressed form, so only the small per-request fields are compressed here.
+          const segments = /** @type {any} */ (response)[REPLY_SEGMENTS];
+          body = segments ? await gzipSegments(segments) : await gzipAsync(body);
           headers["content-encoding"] = "gzip";
           headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : "Accept-Encoding";
         }
@@ -297,6 +304,19 @@ export function listen(handler, config, { deadlineMs = HANDLER_DEADLINE_MS } = {
   return server.listen(config.port, config.host);
 }
 
+/**
+ * Audit PS-15: the store keeps the board, the archive count and the scoped replies in this process
+ * only (postgres.mjs). A second replica stays correct, because every cache is checked against the
+ * workspace row's revision before use, but it reads the whole board until it warms up and doubles
+ * database traffic. Ward Flow is meant to run as one replica; on Railway, where each replica has
+ * its own RAILWAY_REPLICA_ID, this says so once at startup. Closed fields only.
+ */
+export function processCacheNotice(env = process.env, log = (event) => console.info(JSON.stringify(event))) {
+  if (!env.RAILWAY_REPLICA_ID) return false;
+  log({ event: "ward_backend_process_cache_notice", caches: "per_process", expectedReplicas: 1 });
+  return true;
+}
+
 /** One phone-push re-check. A failure is logged with closed diagnostic fields, never exception text. */
 export async function sweepPush(sharedStore, log = logFailure) {
   try {
@@ -316,12 +336,14 @@ export function registerShutdown(server, pool, signals = process) {
   const close = () => {
     shutdown ??= (async () => {
       try {
-        await new Promise((resolve, reject) => {
-          server.close((error) => {
-            if (error && error.code !== "ERR_SERVER_NOT_RUNNING") reject(error);
-            else resolve();
-          });
-        });
+        await /** @type {Promise<void>} */ (
+          new Promise((resolve, reject) => {
+            server.close((error) => {
+              if (error && error.code !== "ERR_SERVER_NOT_RUNNING") reject(error);
+              else resolve();
+            });
+          })
+        );
       } finally {
         await pool?.end();
       }
@@ -366,6 +388,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     const backend = await createBackend(config);
     pool = backend.pool;
     const { sharedStore } = backend;
+    if (sharedStore) processCacheNotice();
     const server = listen(createHandler(backend), config);
     registerShutdown(server, pool);
     // Phone push: time alone can turn a row red, so the act-now list is re-checked every five minutes.

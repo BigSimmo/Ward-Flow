@@ -562,6 +562,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // Smart features idea 7: closes a whole ward to everyone, never one named patient.
     CLOSE_WARD_TO_ADMISSIONS: false,
     REOPEN_WARD_TO_ADMISSIONS: false,
+    // H-0978: closes or reopens one empty bed, never refusing one named patient.
+    SET_BED_CLOSED: false,
     // Smart features idea 5: a task for a person about a record, never a refusal of it.
     RECORD_BED_MEETING_ACTION: false,
     COMPLETE_BED_MEETING_ACTION: false,
@@ -733,6 +735,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_TRANSPORT_STEP: false,
     UNDO_DEPARTURE: false,
     UNDO_ABSENT_WITHOUT_LEAVE: false,
+    // H-0150: takes back marking a bed meeting action done; refuses nobody.
+    UNDO_BED_MEETING_ACTION: false,
   };
 
   /**
@@ -1422,7 +1426,7 @@ describe("Referral privacy — structural", () => {
           acceptedUnitId: "rph-adult-secure",
           declineReason: "no_suitable_bed",
           decidedAt: NOW_ANCHOR + 5,
-          decidedBy: "Flow coordinator",
+          decidedBy: "Bed coordinator",
           // Closing-the-loop package A: a fully populated commitment entry, so its keys are pinned.
           commitments: [
             {
@@ -1431,7 +1435,7 @@ describe("Referral privacy — structural", () => {
               promisedFor: NOW_ANCHOR + 4,
               nextCallbackAt: NOW_ANCHOR + 4,
               at: NOW_ANCHOR + 2,
-              by: "Flow coordinator",
+              by: "Bed coordinator",
             },
           ],
         },
@@ -1486,13 +1490,13 @@ describe("Referral privacy — structural", () => {
       originUnitId: "rph-adult-secure",
       // Fix plan item 4: present because `Required<Referral>` demands every optional field. On a
       // real referral their absence means nobody has been assigned and no call has been logged.
-      ownerHistory: [{ owner: "coordinator", at: NOW_ANCHOR + 3, by: "Flow coordinator" }],
+      ownerHistory: [{ owner: "coordinator", at: NOW_ANCHOR + 3, by: "Bed coordinator" }],
       contactLog: [
         {
           contact: { kind: "psychiatric_ward", unitId: "rph-adult-secure" },
           outcome: "no_answer",
           at: NOW_ANCHOR + 4,
-          by: "Flow coordinator",
+          by: "Bed coordinator",
         },
       ],
     };
