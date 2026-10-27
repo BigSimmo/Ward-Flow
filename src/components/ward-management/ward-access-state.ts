@@ -28,7 +28,7 @@ import { movementSourceAdmission, type WardFlowState } from "@/components/ward-m
 import { syntheticGovernanceAuditEvents } from "@/components/ward-management/ward-governance-seed";
 import { adjustSexMix, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { plannedAdmissionLegalStatus } from "@/components/ward-management/ward-discharge-records";
-import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
+import { admittedStayForArrival, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-inbox-reducer";
 import type { Sex, Unit } from "@/components/ward-management/ward-model";
 import {
@@ -36,6 +36,7 @@ import {
   communityTeamKey,
   countsOnlyBedRelease,
   countsOnlyLeaveBed,
+  countsOnlyPlannedAdmission,
   scopeBroadcastAlerts,
   scopeWorkspace,
   seenThroughBreakGlass,
@@ -50,6 +51,7 @@ import {
   type PlaceLookup,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
+import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { siteByCode } from "./ward-sites";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
@@ -71,6 +73,30 @@ const keep =
   <K extends keyof WardFlowState>(key: K) =>
   (context: Context): WardFlowState[K] =>
     context.state[key];
+
+/** The desks that may book a planned admission (`BOOK_PLANNED_ADMISSION`), and so see whom they booked. */
+function bookingDesk(role: WardAccess["role"]): boolean {
+  return (EVENT_ROLE.BOOK_PLANNED_ADMISSION as readonly string[]).includes(role);
+}
+
+/**
+ * The planned bookings a desk is sent, read by the server copy and the browser's own projection
+ * alike (Josh, 27 Oct 2026). A desk that books gets those for its own wards, with whom they name, so
+ * its Capacity forecast counts the same arrivals the coordinator's does. The executive gets only the
+ * open ones, as counts: an arrived booking would name its admission's person, and the forecast reads
+ * only those still booked. Every other desk gets none.
+ */
+export function plannedAdmissionsForDesk(
+  bookings: readonly PlannedAdmission[],
+  role: WardAccess["role"],
+  unitIn: (unitId: string) => boolean,
+): PlannedAdmission[] {
+  if (bookingDesk(role)) return bookings.filter((booking) => unitIn(booking.unitId));
+  if (role !== "executive") return [];
+  return bookings
+    .filter((booking) => booking.state === "booked" && unitIn(booking.unitId))
+    .map(countsOnlyPlannedAdmission);
+}
 
 /** An inbox map keeps only the rows about the desk's own movements, stays and bookings. */
 const inboxRows =
@@ -214,7 +240,9 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     withBookedPatients(
       context.scoped.patients,
       context.state.patients,
-      context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
+      bookingDesk(context.access.role)
+        ? plannedAdmissionsForDesk(context.state.plannedAdmissions, context.access.role, context.unitIn)
+        : [],
     ),
   admissions: (context) => context.scoped.admissions,
   notices: (context) => context.scoped.notices,
@@ -267,7 +295,7 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
       : [],
   plannedAdmissions: (context) =>
-    context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
+    plannedAdmissionsForDesk(context.state.plannedAdmissions, context.access.role, context.unitIn),
   supportNotifications: (context) =>
     supportNotificationsForDesk(context.state.supportNotifications, {
       coordinator: context.coordinator,
@@ -316,7 +344,9 @@ export function scopeWardFlowState(
   const inboxSubjectIds = new Set<string>([
     ...scoped.movements.map((movement) => movement.id),
     ...admissionIds,
-    ...(coordinator ? state.plannedAdmissions.filter((booking) => unitIn(booking.unitId)).map((b) => b.id) : []),
+    ...(bookingDesk(access.role)
+      ? state.plannedAdmissions.filter((booking) => unitIn(booking.unitId)).map((b) => b.id)
+      : []),
   ]);
   const partial = {
     state,

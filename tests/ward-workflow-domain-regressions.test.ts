@@ -89,7 +89,8 @@ describe("planned arrival preserves checked authority and allocation gates", () 
         { role: "ward", scope: { kind: "ward", unitIds: [UNIT] } },
         { now: NOW + 31, places: wardPlaceLookup(reload.units) },
       );
-      expect(ward.plannedAdmissions).toEqual([]);
+      // Josh, 27 Oct 2026: a ward desk is sent the bookings for its own ward, this one included.
+      expect(ward.plannedAdmissions.map((b) => b.admissionId)).toEqual([stay.id]);
       const scopedStay = ward.admissions.find((a) => a.id === stay.id)!;
       expect(admissionLegalStatus(ward, scopedStay)).toBe("Involuntary inpatient");
       expect(admissionCriteriaEligibility(ward, scopedStay)).toBe("involuntary");
