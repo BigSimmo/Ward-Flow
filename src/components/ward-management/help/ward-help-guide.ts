@@ -162,7 +162,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       { job: "Open a job", how: "Choose a job to see the booking, the forms and the arrival plan.", go: "home" },
       {
         job: "Move it along",
-        how: "Press Mark accepted, then Mark en route, Mark collected and Mark delivered as each step happens.",
+        how: "Press Accepted, then En route, Collected and Arrived at ward as each step happens.",
         go: "home",
       },
       {
