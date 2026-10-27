@@ -6,7 +6,7 @@ import type {
   GenderPlacementReason,
   LegalStatusChangeReason,
   OverrideReason,
-  UrgencyChangeReason,
+  RecordedUrgencyChangeReason,
 } from "@/components/ward-management/ward-change-reasons";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -136,7 +136,8 @@ export type UrgencyChange = {
   from: 1 | 2 | 3;
   to: 1 | 2 | 3;
   by: string;
-  reason: UrgencyChangeReason;
+  /** `not_given` when the change was saved without a reason (finding 15). */
+  reason: RecordedUrgencyChangeReason;
 };
 
 /**
@@ -231,10 +232,9 @@ export type TransportJob = {
    * this event already holds to, and `ward-flow-persistence-classification.ts` for why this field
    * puts the whole event on the typed-text list.
    *
-   * ⚠️ OPTIONAL ON THE TYPE, NEVER OPTIONAL ON THE EVENT. `case "BOOK_TRANSPORT"` refuses a booking
-   * that omits it, so every job THIS REDUCER CREATES carries one. It is optional here only because
-   * every pre-existing (seeded) transport job predates this ruling and carries none — the same
-   * "not recorded" reading `bookedBy` above and `formRequired` below already hold to.
+   * Absent when seeded before this ruling, for a ward escort or family member (no dispatch), or
+   * when a dispatched job was booked with "CAD to follow" (form friction audit, Josh, 27 Oct 2026).
+   * `cadNumberToFollow` (`ward-cad-number.ts`) reads the last case; `RECORD_TRANSPORT_CAD` fills it.
    */
   cadNumber?: string;
   /**
@@ -346,6 +346,17 @@ export type TransportJob = {
     reason: string;
   };
   needed?: boolean;
+  /**
+   * Form friction audit (Josh, 27 Oct 2026): when and by whom a CAD number booked as "to follow"
+   * was added, by `RECORD_TRANSPORT_CAD`. Absent when the number came with the booking.
+   */
+  cadAdded?: { at: Instant; by: WardFlowRole };
+  /**
+   * Form friction audit #236 (Josh, 27 Oct 2026): the crew confirmed the name, UMRN and date of
+   * birth with the sending team at collection. Written only by `PATIENT_COLLECTED`. Absent when
+   * nobody tapped it, which never blocked the collection.
+   */
+  identityChecked?: { at: Instant; by: WardFlowRole };
 };
 
 /**

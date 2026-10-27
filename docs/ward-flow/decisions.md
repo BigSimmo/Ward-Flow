@@ -997,3 +997,10 @@ is inferred.
 - **Also:** the PRODUCTION-READINESS GOV-001 wording on "timer functions" and "countdown alerts" is replaced by the intended purpose statement.
 - **Boundary:** this records no institutional, legal or regulatory approval and authorises no real data, deployment, provider change or spending. D-36 and D-37 text is kept as history.
 - **Why:** untrue readiness claims make reviewers distrust the honest drafts (governance audit 26 October 2026, GV-18).
+
+## D-88. The public demo opens with a demo code once the front door is on (27 October 2026)
+
+- **Date:** 27 October 2026 (`2026-10-27`), 6:37 PM AWST (10:37 UTC). **Decided by:** Josh, in the Ward Flow project, answering the outstanding desk decisions list, where item 4 was "Add a demo code to the public demo". His words: "yes to all."
+- **Decision:** reverses the open public demo of 28 September 2026, when the developer key was removed. Once the front door is switched on for the public demo (`WARD_FRONT_DOOR=required`), `/sign-in` asks for the code in `WARD_DEMO_CODE` before any page opens. A code opens the demo in that browser for 8 hours. Ten wrong tries from one address pause it for 10 minutes. The signed-in site never opens with a code, only with an account.
+- **Not yet decided:** switching the front door on, on either hosted site. The switch stays off until Josh has seen the built screens and says yes. Setting `WARD_PASS_SECRET` and `WARD_DEMO_CODE` in Railway also needs his yes (AGENTS.md rule 3).
+- **Why:** the demo shows the whole synthetic network and should be shared on purpose, not found by chance.

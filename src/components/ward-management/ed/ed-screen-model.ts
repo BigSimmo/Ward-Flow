@@ -15,7 +15,7 @@ import {
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
   COHORTS,
@@ -40,8 +40,6 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import type { Patient } from "../ward-patients";
 import { INTERMITTENT_INTERVAL_MINUTES, type ObservationLevel } from "@/components/ward-management/ward-observation";
-
-export const RECORDED_ED_FORMS = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
 /**
  * THE TWO CLOCKS ON AN INBOX ROW, AND WHY THIS SCREEN NOW HAS THEM.
@@ -269,16 +267,6 @@ export const NO_LEGAL_STATUS_VALUE = "";
 export const NO_CHANGE_REASON_VALUE = "";
 
 /** One spelling, used by the control, its title and its screen-reader note. */
-/**
- * ⚠️ The worst of the six, and the reason the owner widened the fix. `URGENCY_CHANGE_REASONS[0]`
- * is `reassessed` — so a clinician correcting a mistyped urgency, who never touched this control,
- * recorded a CLINICAL REASSESSMENT THAT NEVER HAPPENED. That invents a clinical event rather than
- * mis-attributing a clerical one, which is why it is a stronger harm than the treating-team default
- * beside it.
- */
-export const URGENCY_REASON_UNCHOSEN =
-  "Choose why the urgency is changing before recording it. None is chosen for you: an unpicked reason would be filed as a clinical reassessment nobody made.";
-
 export const LEGAL_STATUS_UNCHOSEN =
   "Choose the new legal status before recording the change. None is chosen for you: a status nobody picked would be filed as the patient's legal status.";
 
@@ -779,14 +767,3 @@ export function edStepSaid(event: EdStepEvent): string {
       return "Marked handover ready";
   }
 }
-
-/** The psychiatric review states the board's review control offers, as a draft on this screen only. */
-export const CLINICAL_REVIEW_OPTIONS = [
-  "Awaiting review",
-  "Ongoing intoxication",
-  "Medically unstable",
-  "Awaiting collateral",
-  "Awaiting investigation results",
-  "Specialist review pending",
-  "Examination recorded",
-] as const;

@@ -26,7 +26,6 @@ import {
   LEGAL_STATUS_UNCHOSEN,
   NO_CHANGE_REASON_VALUE,
   URGENCY_OPTIONS,
-  URGENCY_REASON_UNCHOSEN,
 } from "./ed-screen-model";
 import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
@@ -431,7 +430,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             <select
               disabled={urgencySave.disabled}
               id={`ward-change-urgency-reason-${movement.id}`}
-              required
               value={urgencyDraft.reason ?? NO_CHANGE_REASON_VALUE}
               onChange={({ target: { value } }) =>
                 setUrgencyDraft((current) => ({
@@ -451,24 +449,11 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <button
             type="submit"
             className={styles.declineSubmit}
-            aria-disabled={urgencyDraft.reason === undefined || urgencySave.disabled ? "true" : undefined}
-            aria-describedby={
-              urgencySave.message
-                ? `ward-change-urgency-message-${movement.id}`
-                : urgencyDraft.reason === undefined
-                  ? `ward-change-urgency-blocked-${movement.id}`
-                  : undefined
-            }
-            title={
-              urgencySave.disabled
-                ? "Wait for confirmation or use Retry before submitting again."
-                : urgencyDraft.reason === undefined
-                  ? URGENCY_REASON_UNCHOSEN
-                  : undefined
-            }
-            onClick={
-              urgencyDraft.reason === undefined || urgencySave.disabled ? ignoreUnavailableActivation : undefined
-            }
+            // Finding 15 (Josh, 27 Oct 2026): the reason is recorded when chosen and never blocks.
+            aria-disabled={urgencySave.disabled ? "true" : undefined}
+            aria-describedby={urgencySave.message ? `ward-change-urgency-message-${movement.id}` : undefined}
+            title={urgencySave.disabled ? "Wait for confirmation or use Retry before submitting again." : undefined}
+            onClick={urgencySave.disabled ? ignoreUnavailableActivation : undefined}
           >
             Record urgency change
           </button>
@@ -476,9 +461,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
             <p role="status" id={`ward-change-urgency-message-${movement.id}`}>
               {urgencySave.message}
             </p>
-          ) : null}
-          {urgencyDraft.reason === undefined ? (
-            <DisabledReason id={`ward-change-urgency-blocked-${movement.id}`}>{URGENCY_REASON_UNCHOSEN}</DisabledReason>
           ) : null}
         </form>
       ) : null}

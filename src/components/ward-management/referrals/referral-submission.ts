@@ -134,7 +134,12 @@ export type FollowableChartKind = (typeof FOLLOWABLE_CHART_KINDS)[number];
 export type ReferralContact = { name: string; email: string; phone: string; role: string; location: string };
 
 export type ReferralIntakeDetails = {
-  catchment: { teamName: string; service?: HealthService; confirmed: true };
+  /**
+   * Finding 40 (Josh, 27 Oct 2026): `notKnown` records "Catchment not known" for a ward or ED
+   * referral, with the team left blank. The letter says so. A community team referral still needs
+   * the team (`RECEIVE_REFERRAL` refuses it).
+   */
+  catchment: { teamName: string; service?: HealthService; confirmed: true; notKnown?: true };
   reasonForReferral: string;
   legalStatus: string;
   riskFlags: (typeof REFERRAL_RISK_FLAGS)[number][];
@@ -206,16 +211,18 @@ export function isMissingContactMessage(message: string): boolean {
 
 /**
  * L6 (review 12 Oct 2026): the message names exactly what is still missing, in the form's order,
- * so the send footer and the field errors agree ("Enter your email", never "Enter your name, role
- * and location" once the name is in).
+ * so the send footer and the field errors agree ("Enter your phone number", never "Enter your name,
+ * role and location" once the name is in).
+ *
+ * Finding 44 (Josh, 27 Oct 2026): the email never blocks a send. Name and a callable phone number
+ * stay required, so the receiving desk can always ring back.
  */
 export function referralContactError(contact: ReferralContact): string | null {
-  if (!onlyFields(contact, ["name", "email", "phone", "role", "location"]))
-    return `${CONTACT_MISSING_PREFIX}name, email, phone number, role and location or service.`;
+  if (!onlyFields(contact, ["name", "email", "phone", "role", "location"]) || typeof contact.email !== "string")
+    return `${CONTACT_MISSING_PREFIX}name, phone number, role and location or service.`;
   const text = (value: unknown) => (typeof value === "string" ? value : "");
   const missing: string[] = [];
   if (!text(contact.name).trim()) missing.push("name");
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(contact.email))) missing.push("email");
   if (!/^[+\d\s().-]+$/.test(text(contact.phone)) || text(contact.phone).replace(/\D/g, "").length < 8)
     missing.push("phone number");
   if (!text(contact.role).trim()) missing.push("role");
@@ -226,6 +233,17 @@ export function referralContactError(contact: ReferralContact): string | null {
   if (contact.email.length > 254) return "Shorten your email to 254 characters.";
   if (contact.phone.length > 40) return "Shorten your phone number to 40 characters.";
   return null;
+}
+
+/** Finding 40: the words a letter shows for the catchment, flagging "Catchment not known". */
+export function referralCatchmentWords(catchment: ReferralIntakeDetails["catchment"]): string {
+  if (catchment.notKnown) return "Catchment not known";
+  return `${catchment.teamName} · confirmed${catchment.service ? ` · ${catchment.service}` : ""}`;
+}
+
+/** Finding 44: the referrer's phone, then their email only when one was given. */
+export function referrerContactWords(referrer: Pick<ReferralContact, "phone" | "email">): string {
+  return referrer.email.trim() ? `${referrer.phone} · ${referrer.email}` : referrer.phone;
 }
 
 /** How long the reason for referral may be, the sheet's note and any prefix it adds included. */
@@ -249,10 +267,11 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       "clearanceChecklist",
       "needs",
     ]) ||
-    !onlyFields(intake.catchment, ["teamName", "service", "confirmed"]) ||
+    !onlyFields(intake.catchment, ["teamName", "service", "confirmed", "notKnown"]) ||
     intake.catchment.confirmed !== true ||
+    (intake.catchment.notKnown !== undefined && intake.catchment.notKnown !== true) ||
     typeof intake.catchment.teamName !== "string" ||
-    !intake.catchment.teamName.trim() ||
+    (intake.catchment.notKnown ? intake.catchment.teamName !== "" : !intake.catchment.teamName.trim()) ||
     intake.catchment.teamName.length > 200
   )
     return "Confirm the patient's catchment.";

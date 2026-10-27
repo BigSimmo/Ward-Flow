@@ -35,6 +35,8 @@ export type ReferralTextInput = {
   readonly chartKinds?: readonly ReferralChart["kind"][];
   readonly chartsToFollow?: readonly FollowableChartKind[];
   readonly referrer: { readonly name: string; readonly role: string; readonly phone: string };
+  /** Finding 40: the catchment line, "Catchment not known" when the referrer said so. Left out when absent. */
+  readonly catchment?: string;
 };
 
 const NOT_RECORDED = "Not recorded";
@@ -70,6 +72,7 @@ export function referralLetterText(input: ReferralTextInput, draftedAt: string):
     `UMRN: ${value(input.umrn)}`,
     `Age and sex: ${value(input.ageSex)}`,
     `Suburb: ${value(input.suburb)}`,
+    ...(input.catchment?.trim() ? [`Catchment: ${input.catchment.trim()}`] : []),
     `From: ${value(input.from)}`,
     "",
     "REQUEST",

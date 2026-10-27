@@ -38,7 +38,11 @@ it("shows the reload warning when a save is unconfirmed", () => {
       <WardSharedSaveStatus deskLabel="Coordinator" connection={connection("ready")} />
     </WardSharedSaveContext.Provider>,
   );
-  expect(screen.getByTestId("ward-shared-status-bar")).toHaveTextContent(/Reloading now will lose/u);
+  // P061: the warning names the risk plainly and is styled apart from the status line.
+  const warning = screen.getByText(
+    "Not confirmed yet. Do not reload: reloading now would lose this action. Press Retry first.",
+  );
+  expect(warning.className).toMatch(/warning/u);
   expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
 });
 

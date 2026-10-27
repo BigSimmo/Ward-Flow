@@ -2,6 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { apiMutationCsrfVerdict, isCsrfGuardedApiRequest } from "@/lib/api-csrf";
 import { DEVELOPER_AREA_HEADER, DEVELOPER_AREA_PATH_HEADER, isDeveloperGatedPath } from "@/lib/developer-area/headers";
+import {
+  FRONT_DOOR_PASS_COOKIE,
+  FRONT_DOOR_SIGN_IN_PATH,
+  frontDoorRequired,
+  frontDoorSecret,
+  isFrontDoorOpenPath,
+  safeNextPath,
+  verifyPass,
+} from "@/lib/front-door-pass";
 import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspaceOrigins } from "@/lib/security-headers";
 
 // Next 16 renamed the `middleware` file convention to `proxy` (see
@@ -29,6 +38,11 @@ import { buildContentSecurityPolicy, resolveRuntimeFlags, resolveSharedWorkspace
 //      no sign-in gate behind the marker: the developer key was removed on
 //      28 September 2026 at the owner's request, and Ward Flow is a public
 //      synthetic-data prototype (see src/app/ward-flow/layout.tsx).
+//   4. The front door (Josh, 27 October 2026). Off unless the hosted switch
+//      `WARD_FRONT_DOOR=required` is set. Then every page and API answers only to
+//      a browser holding a signed pass (`@/lib/front-door-pass`): a page sends
+//      the visitor to /sign-in, an API call is refused. The pass opens the door
+//      only; the shared workspace still checks each account's own sign-in.
 
 /**
  * Retired paths that forward, query string intact, to the surface that
@@ -147,11 +161,37 @@ export async function proxy(request: NextRequest) {
     return withCsp(NextResponse.redirect(url));
   }
 
+  const door = await frontDoorVerdict(request);
+  if (door) return withCsp(door);
+
   if (shouldBlockProductionMockups(pathname)) {
     return withCsp(new NextResponse(null, { status: 404 }));
   }
 
   return withCsp(NextResponse.next({ request: { headers: requestHeadersWithNonce() } }));
+}
+
+/**
+ * The front door: null lets the request through, otherwise the response that stops it. Off unless
+ * `WARD_FRONT_DOOR=required`. Without a valid pass a page goes to /sign-in, carrying where the
+ * visitor was going, and an API call gets 401. A missing signing secret fails closed.
+ */
+export async function frontDoorVerdict(
+  request: NextRequest,
+  environment: Record<string, string | undefined> = process.env,
+): Promise<NextResponse | null> {
+  const { pathname, search } = request.nextUrl;
+  if (!frontDoorRequired(environment) || isFrontDoorOpenPath(pathname)) return null;
+  const pass = await verifyPass(frontDoorSecret(environment), request.cookies.get(FRONT_DOOR_PASS_COOKIE)?.value);
+  if (pass) return null;
+  if (pathname === "/api" || pathname.startsWith("/api/"))
+    return NextResponse.json({ error: "Sign in first.", code: "front_door" }, { status: 401 });
+  const url = request.nextUrl.clone();
+  url.pathname = FRONT_DOOR_SIGN_IN_PATH;
+  url.search = "";
+  if (pathname === "/ward-flow" || pathname.startsWith("/ward-flow/"))
+    url.searchParams.set("next", safeNextPath(pathname + search));
+  return NextResponse.redirect(url, 307);
 }
 
 export function shouldBlockProductionMockups(

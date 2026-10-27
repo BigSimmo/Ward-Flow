@@ -8,6 +8,7 @@ import {
   transportLeg,
 } from "@/components/ward-management/ward-derivations";
 import { type Instant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement, TransportJob, Unit } from "@/components/ward-management/ward-model";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
@@ -201,6 +202,8 @@ export function formRequiredLabel(transport: TransportJob): string {
  * booking.
  */
 export function cadNumberLabel(transport: TransportJob): string {
+  // CAD to follow (Josh, 27 Oct 2026): a dispatched job booked before the provider gave its number.
+  if (cadNumberToFollow(transport)) return CAD_TO_FOLLOW;
   return transport.cadNumber ?? "No CAD (dispatch) number recorded";
 }
 

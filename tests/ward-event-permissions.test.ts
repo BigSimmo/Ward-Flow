@@ -188,7 +188,8 @@ describe("who may raise which event", () => {
     // `RECORD_LEGAL_FORM_RECEIVED`'s own reasoning: the department holding the form reads the
     // expiry off it. `coordinator` joins it here for extensions specifically — item 5 names "the
     // clinician" generally rather than the department alone, unlike Ruling 1's `ed`-only receipt.
-    RECORD_LEGAL_FORM_EXPIRY: ["ed", "coordinator"],
+    // #219 (Josh, 27 Oct 2026): also the ward, for a person admitted to its own bed, as WT-03.
+    RECORD_LEGAL_FORM_EXPIRY: ["ed", "coordinator", "ward"],
     // Opus review round 2, 17 September 2026 (P2). `ed` and `coordinator` — the two roles that
     // actually see a `gender_designation` refusal on screen (the ED intake and the coordinator's
     // movement drawer), on the same reasoning `RECORD_LEGAL_FORM_EXPIRY` above already carries for
@@ -362,6 +363,8 @@ describe("who may raise which event", () => {
      * `TransportJob.stoppedBy` — a ROLE, never a person, the same discipline every other `by`/actor
      * field in this model already holds to. Asserted in `tests/ward-stop-transport.test.ts`. */
     STOP_TRANSPORT: ["coordinator", "ed"],
+    // CAD to follow (Josh, 27 Oct 2026): the booking roles and the transport officer.
+    RECORD_TRANSPORT_CAD: ["ed", "ward", "community", "coordinator", "officer"],
     // Build plan item 29 (T4a) / R2-7: the transport officer or the coordinator.
     RECORD_DIVERSION: ["officer", "coordinator"],
     /* ADDED 2026-09-04, Task 5 (ward-flow movement step-track plan), owner ruling F1: only the

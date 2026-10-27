@@ -229,7 +229,7 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   });
   expect((outcome as WardCommandOutcome | undefined)?.status).toBe("accepted");
   expect(within(drawerEl).queryByRole("button", { name: "Save blocker" })).toBeNull();
-  expect(drawerEl).toHaveTextContent(/Blocker\s*Awaiting clean/i);
+  expect(drawerEl).toHaveTextContent(/Today:\s*Awaiting clean/i);
   return sent;
 }
 

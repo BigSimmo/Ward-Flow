@@ -9,6 +9,7 @@ import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import type { LegalStatus } from "../ward-model";
 import { legalStatusMismatchWarning } from "../ward-eligibility";
+import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { patientIdentityLine } from "../ward-patient-resolver";
 import styles from "./ward.module.css";
 import {
@@ -175,6 +176,17 @@ export function WardAcceptedReferralPlacementForm({
                   ))}
                 </select>
               </label>
+              {(() => {
+                // Finding 78: a form that does not fit the status warns and never blocks.
+                const chosen = LEGAL_STATUS_OPTIONS.find((status) => status === placementDraft.legalStatus);
+                const code = placementDraft.legalFormCode;
+                const warning = legalFormStatusWarning(chosen, code === "" ? undefined : code === "none" ? null : code);
+                return warning ? (
+                  <p role="alert" className={styles.cardMeta} data-testid="ward-accepted-placement-form-mismatch">
+                    {warning} You can still start the placement.
+                  </p>
+                ) : null;
+              })()}
               <label>
                 Observation level
                 <select

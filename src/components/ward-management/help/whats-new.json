@@ -1,5 +1,10 @@
 [
   {
+    "id": "2026-10-27-night-entrance",
+    "date": "2026-10-27",
+    "line": "Sign-in has a new look on every screen, with a clearer password reset and a one-tap Still there? prompt."
+  },
+  {
     "id": "2026-10-27-home-back-on-rail",
     "date": "2026-10-27",
     "line": "Home is back at the top of the side menu on a computer, with a house icon."
@@ -93,10 +98,5 @@
     "id": "2026-10-27-form-friction-fixes",
     "date": "2026-10-27",
     "line": "Forms ask less: optional answers no longer block sending, and a disabled Save says why."
-  },
-  {
-    "id": "2026-10-27-plain-refusals-and-stage-words",
-    "date": "2026-10-27",
-    "line": "Board refusals use plain words, and journey stages read Referred and Handover ready."
   }
 ]

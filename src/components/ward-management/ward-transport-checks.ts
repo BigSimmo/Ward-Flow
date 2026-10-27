@@ -226,7 +226,6 @@ export type TransportBookingAnswers = {
 /** What each unanswered booking question asks, in the order the popups show them. */
 const TRANSPORT_ANSWER_ASKS = {
   provider: "choose who is collecting the patient",
-  cad: "enter the CAD transport number",
   time: "enter the estimated time",
   escort: "answer the escort question",
   legalStatus: "state whether the transport is voluntary or involuntary",
@@ -234,20 +233,23 @@ const TRANSPORT_ANSWER_ASKS = {
 
 export type TransportAnswer = keyof typeof TRANSPORT_ANSWER_ASKS;
 
-/** Whether this draft asks for a CAD number: not for a ward escort or a family member. */
-export function transportNeedsCad(draft: Pick<TransportBookingAnswers, "provider">): boolean {
-  return providerNeedsCadNumber(draft.provider);
+/**
+ * Whether a booking with this draft's chosen provider will show "CAD to follow" if saved now: a
+ * dispatched service with no number typed. A warning beside the box, never a missing answer.
+ */
+export function transportCadToFollow(draft: Pick<TransportBookingAnswers, "provider" | "cadNumber">): boolean {
+  return draft.provider !== undefined && providerNeedsCadNumber(draft.provider) && draft.cadNumber.trim().length === 0;
 }
 
 /**
  * The booking questions still unanswered, in the popup's order. Blocker mock-up (Josh approved 26
- * Oct 2026): the ED popup names them and moves to the first. A typed CAD number the rule refuses
- * is a wrong answer, not a missing one, so it is not listed here.
+ * Oct 2026): the ED popup names them and moves to the first. The CAD number is not one of them:
+ * a blank books as "CAD to follow" (Josh, 27 Oct 2026), and a typed number the rule refuses is a
+ * wrong answer, not a missing one.
  */
 export function transportAnswersMissing(draft: TransportBookingAnswers, now: Instant): TransportAnswer[] {
   const missing: TransportAnswer[] = [];
   if (draft.provider === undefined) missing.push("provider");
-  if (transportNeedsCad(draft) && draft.cadNumber.trim().length === 0) missing.push("cad");
   if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) missing.push("time");
   if (draft.escortRequired === undefined) missing.push("escort");
   if (draft.transportLegalStatus === undefined) missing.push("legalStatus");
@@ -261,10 +263,10 @@ export function transportAnswersMissing(draft: TransportBookingAnswers, now: Ins
  */
 export function transportAnswersBlockedReason(draft: TransportBookingAnswers, now: Instant): string | undefined {
   const missing = transportAnswersMissing(draft, now).map((answer) => TRANSPORT_ANSWER_ASKS[answer]);
-  const cadProblem = transportNeedsCad(draft) ? cadNumberProblem(draft.cadNumber) : undefined;
+  const cadProblem = draft.cadNumber.trim().length > 0 ? cadNumberProblem(draft.cadNumber) : undefined;
   // A typed CAD number the rule refuses is a wrong answer, not a missing one, so it gets its own
   // sentence rather than the list of answers still to give.
-  const refused = draft.cadNumber.trim().length > 0 && cadProblem !== undefined ? cadNumberSentence(cadProblem) : "";
+  const refused = cadProblem !== undefined ? cadNumberSentence(cadProblem) : "";
   if (missing.length === 0) return refused || undefined;
   const unanswered = `Before booking, ${missing.join(", ")}.`;
   return refused ? `${refused} ${unanswered}` : unanswered;

@@ -141,7 +141,8 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
   CHANGE_URGENCY: z.looseObject({
     movementId: id,
     urgency: z.union([z.literal(1), z.literal(2), z.literal(3)]),
-    reason: z.union([label, record]),
+    // Finding 15 (Josh, 27 Oct 2026): an urgency change may be saved without a reason.
+    reason: z.union([label, record]).optional(),
   }),
   ACCEPT_REFERRAL: z.looseObject({
     referralId: id,

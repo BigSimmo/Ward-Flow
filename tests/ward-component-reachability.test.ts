@@ -37,6 +37,8 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = process.cwd();
 const WARD_ROUTES = join(ROOT, "src", "app", "ward-flow");
+/** Ward Flow's front door page (D-88): a sibling of /ward-flow so it carries none of the shell. */
+const WARD_SIBLING_ROUTES = [join(ROOT, "src", "app", "sign-in")];
 const WARD_COMPONENTS = join(ROOT, "src", "components", "ward-management");
 
 function walk(dir: string, keep: (path: string) => boolean): string[] {
@@ -109,7 +111,9 @@ function importsOf(file: string): string[] {
  * by exactly such a type-only import, and both are still outside the closure.
  */
 function reachableFromRoutes(): Set<string> {
-  const seeds = walk(WARD_ROUTES, (path) => /(?:^|[\\/])(?:page|layout|template|default)\.tsx?$/u.test(path));
+  const seeds = [WARD_ROUTES, ...WARD_SIBLING_ROUTES].flatMap((root) =>
+    walk(root, (path) => /(?:^|[\\/])(?:page|layout|template|default)\.tsx?$/u.test(path)),
+  );
   const seen = new Set<string>(seeds);
   const queue = [...seeds];
   while (queue.length > 0) {

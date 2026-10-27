@@ -148,8 +148,7 @@ async function signInAsNextPerson() {
   // Check before B connects: its adoption must not hide an outgoing unmount re-save.
   expect(readKeptReferralDraft()).toBeNull();
   expect(readLastReferrerContact()).toBeNull();
-  fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
-  fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic-b@example.invalid" } });
+  fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic-b@example.invalid" } });
   fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
   fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
   await screen.findByRole("button", { name: "New referral probe" });

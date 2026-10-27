@@ -91,8 +91,8 @@ export type DowntimePack = {
 export type DowntimePackInput = {
   /** Every ward, so a destination outside the desk's own wards still reads by name. */
   units: readonly Unit[];
-  /** The wards whose beds the pack counts; every ward when absent (issue #628). */
-  bedUnits?: readonly Unit[];
+  /** The wards whose beds the pack counts (issue #628). Required: no silent fallback to every ward. */
+  bedUnits: readonly Unit[];
   admissions: readonly Admission[];
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
@@ -113,7 +113,8 @@ function finiteOrNull(value: Instant | undefined): Instant | null {
 }
 
 export function downtimePack(input: DowntimePackInput): DowntimePack {
-  const { units, bedUnits = units, admissions, bedReleases, leaveBeds, movements, now, identify } = input;
+  const { units, bedUnits, admissions, bedReleases, leaveBeds, movements, now, identify } = input;
+  if (!Array.isArray(bedUnits)) throw new Error("downtimePack needs an explicit bedUnits ward list");
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
 
   const wards = bedUnits

@@ -19,6 +19,7 @@ import { Dialog, Field, TextInput } from "@/components/wf";
 import { StepUpReauthContext } from "@/components/ward-management/shell/ward-step-up-context";
 
 import { lockTv, readLock, useTvLock, writeLock } from "./tv-lock-guard";
+import styles from "./tv-lock.module.css";
 
 export { TV_LOCK_STORAGE_KEY, TvLockGuard, lockTv, useTvLock } from "./tv-lock-guard";
 
@@ -102,6 +103,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         title="Unlock this TV"
         description="This screen is locked to TV views. Unlocking lets it leave the TV view again."
         size="sm"
+        className={styles.unlock}
         data-testid="tv-unlock-dialog"
         primary={{
           label: needsPassword ? "Sign in and unlock" : "Unlock",

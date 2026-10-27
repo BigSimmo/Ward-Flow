@@ -244,6 +244,9 @@ describe("ward-change-reasons", () => {
         // with both catch-alls last"` above pins the order this test cannot see.
         "cannot_protect_from_others_here",
         "setting_unsuitable_for_age_group",
+        // Finding 15 (Josh, 27 Oct 2026): an urgency change needs no reason, and none is recorded
+        // and shown as "No reason given". It is not on any pick list.
+        "not_given",
       ].sort(),
     );
   });

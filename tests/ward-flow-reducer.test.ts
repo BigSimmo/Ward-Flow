@@ -57,7 +57,9 @@ describe("seeding", () => {
 });
 
 describe("referral", () => {
-  it("never refers above the parallel cap", () => {
+  // Finding 188 (Josh, 27 Oct 2026): the parallel cap is a warning everywhere, so the engine no
+  // longer refuses a referral past it. The wards are still checked one by one.
+  it("does not refuse a referral above the parallel cap", () => {
     const state = seeded();
     const next = wardFlowReducer(state, {
       type: "REFER_TO_UNITS",
@@ -66,8 +68,8 @@ describe("referral", () => {
       movementId: "WF-009",
       unitIds: ["rph-adult-secure", "fsh-adult-secure", "rgh-adult-secure", "gry-adult-secure"],
     });
-    expect(next.rejections).toHaveLength(1);
-    expect(movement(next, "WF-009").referredUnitIds).toHaveLength(0);
+    expect(next.rejections.some((rejection) => rejection.reason.includes("parallel cap"))).toBe(false);
+    expect(movement(next, "WF-009").referredUnitIds.length).toBeGreaterThan(0);
   });
 
   it("moves a referred movement to destination review", () => {

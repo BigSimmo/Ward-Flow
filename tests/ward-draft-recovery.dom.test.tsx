@@ -398,3 +398,17 @@ it("does not clear a newer legal draft after Clear during a pending accepted sav
   clearReferralDraftSession();
   vi.useRealTimers();
 });
+it("asks a Form 1A's region, opening blank, and sends it only when chosen (finding 203)", async () => {
+  clearReferralDraftSession();
+  const save = vi.fn(() => true);
+  const view = render(<LegalDraft save={save} />);
+  const region = screen.getByTestId("ward-legal-forms-record-region");
+  expect(region).toHaveValue("");
+  fireEvent.change(region, { target: { value: "country" } });
+  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: wardMovements[0]!.id } });
+  fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "00:00" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save form" }));
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({ formCode: "1A", region: "country" }));
+  view.unmount();
+  clearReferralDraftSession();
+});

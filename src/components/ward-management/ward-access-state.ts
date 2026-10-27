@@ -648,8 +648,13 @@ export function commandScopeRefusal(
     const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
     if (referral && !referralSentByDesk(referral, access, places)) return outside;
   }
-  // Booking follows the same sender rule as recording the need (audit 26 Oct).
-  if (command.type === "RECORD_TRANSPORT_NEED" || command.type === "BOOK_TRANSPORT") {
+  // Booking, and adding a CAD number that was to follow, follow the same sender rule as recording
+  // the need (audit 26 Oct).
+  if (
+    command.type === "RECORD_TRANSPORT_NEED" ||
+    command.type === "BOOK_TRANSPORT" ||
+    command.type === "RECORD_TRANSPORT_CAD"
+  ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && access.role === "ward") {
       const referral = state.referrals.find((candidate) => candidate.id === movement.referralId);
@@ -691,8 +696,12 @@ export function commandScopeRefusal(
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
   }
-  // A ward records a written form only for a person admitted to one of its own beds (WT-03).
-  if (access.role === "ward" && command.type === "RECORD_LEGAL_FORM_WRITTEN") {
+  // A ward records a written form, and its expiry (#219), only for a person admitted to one of its
+  // own beds (WT-03).
+  if (
+    access.role === "ward" &&
+    (command.type === "RECORD_LEGAL_FORM_WRITTEN" || command.type === "RECORD_LEGAL_FORM_EXPIRY")
+  ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
     if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;

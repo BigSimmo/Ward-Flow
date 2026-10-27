@@ -55,18 +55,18 @@ describe("WardScreen & WardIndex audit remediation", () => {
 
     const drawer = await screen.findByTestId("bed-telemetry-drawer");
     fireEvent.click(within(drawer).getByRole("tab", { name: "Plan to leave" }));
-    expect(drawer).toHaveTextContent(/Blocker\s*None recorded/i);
+    expect(drawer).toHaveTextContent(/Today:\s*None recorded/i);
 
     fireEvent.click(within(drawer).getByRole("button", { name: "Record blocker" }));
     const select = within(drawer).getByRole("combobox", { name: "Discharge blocker" });
     fireEvent.change(select, { target: { value: "Awaiting accommodation" } });
     fireEvent.click(within(drawer).getByRole("button", { name: "Save blocker" }));
 
-    expect(drawer).toHaveTextContent(/Blocker\s*Awaiting accommodation/i);
+    expect(drawer).toHaveTextContent(/Today:\s*Awaiting accommodation/i);
 
     const clearBtn = within(drawer).getByRole("button", { name: "Clear blocker" });
     fireEvent.click(clearBtn);
-    expect(drawer).toHaveTextContent(/Blocker\s*None recorded/i);
+    expect(drawer).toHaveTextContent(/Today:\s*None recorded/i);
   });
 
   it("restores focus to the currently selected bed trigger after stepping from Bed 01 to Bed 02 and closing", async () => {

@@ -7,7 +7,6 @@ import {
   LEGAL_STATUS_REASON_UNCHOSEN,
   LEGAL_STATUS_UNCHOSEN,
   URGENCY_OPTIONS,
-  URGENCY_REASON_UNCHOSEN,
 } from "@/components/ward-management/ed/ed-screen-model";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
@@ -157,8 +156,14 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
 
   function submitUrgency(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (urgencyReason === undefined) return;
-    report(raise("CHANGE_URGENCY", { movementId: movement.id, urgency, reason: urgencyReason }));
+    // Finding 15 (Josh, 27 Oct 2026): the reason is sent when chosen and never required.
+    report(
+      raise("CHANGE_URGENCY", {
+        movementId: movement.id,
+        urgency,
+        ...(urgencyReason === undefined ? {} : { reason: urgencyReason }),
+      }),
+    );
     setOpen(null);
   }
 
@@ -219,7 +224,6 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
           </Field>
           <Field label="Reason" id={`${baseId}-urgency-reason`}>
             <Select
-              required
               value={urgencyReason ?? ""}
               onChange={(event) =>
                 setUrgencyReason(event.target.value === "" ? undefined : (event.target.value as UrgencyChangeReason))
@@ -233,7 +237,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
               ))}
             </Select>
           </Field>
-          <Submit id={`${baseId}-urgency-blocked`} blocked={urgencyReason ? undefined : URGENCY_REASON_UNCHOSEN}>
+          <Submit id={`${baseId}-urgency-blocked`} blocked={undefined}>
             Record urgency change
           </Submit>
         </form>

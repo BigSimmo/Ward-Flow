@@ -45,13 +45,14 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
 }
 
 // "not_recorded" until someone picks a band: a default of Adult would record an age band nobody chose.
+// Finding 210 (27 Oct 2026): region opens the same way, so a country Form 1A is never saved as metro.
 type WrittenDraft = {
   date: string;
   time: string;
-  region: LegalClockRegion;
+  region: LegalClockRegion | "not_recorded";
   ageBand: LegalClockAgeBand | "not_recorded";
 };
-const BLANK_WRITTEN: WrittenDraft = { date: "", time: "", region: "metro", ageBand: "not_recorded" };
+const BLANK_WRITTEN: WrittenDraft = { date: "", time: "", region: "not_recorded", ageBand: "not_recorded" };
 
 export type FocusTab = "now" | "form" | "history";
 
@@ -99,7 +100,7 @@ export function FocusPanel({
   refusal: string | undefined;
   /** Records the written time; `onAccepted` runs only once the engine accepts it. */
   onSaveWritten: (
-    draft: { writtenAt: number; region: LegalClockRegion; ageBand: LegalClockAgeBand | null },
+    draft: { writtenAt: number; region: LegalClockRegion | undefined; ageBand: LegalClockAgeBand | null },
     onAccepted: () => void,
   ) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
@@ -161,7 +162,8 @@ export function FocusPanel({
     onSaveWritten(
       {
         writtenAt: typedWrittenAt,
-        region: draft.region,
+        // Sent only when chosen. Omitted, a same-form time edit keeps the recorded region.
+        region: draft.region === "not_recorded" ? undefined : draft.region,
         ageBand: draft.ageBand === "not_recorded" ? null : draft.ageBand,
       },
       () => setChanging(false),
@@ -328,6 +330,7 @@ export function FocusPanel({
                   value={draft.region}
                   onChange={(region) => setDraft((current) => ({ ...current, region }))}
                   items={[
+                    { id: "not_recorded", label: "Not recorded" },
                     { id: "metro", label: "Metro" },
                     { id: "country", label: "Country" },
                   ]}

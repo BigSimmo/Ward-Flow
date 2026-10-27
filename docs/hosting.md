@@ -43,7 +43,7 @@ Railway service settings hold the build and start commands. Railpack installs th
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.
 
-The source healthcheck endpoint is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
+The site's source healthcheck endpoint (this `ward-flow` service, and the signed-in `ward-flow-shared` site below) is `/api/health`, returning `{ status: "ok" }` (HTTP 200). It proves liveness only; it does not check database/provider readiness. This source contract is not a fresh hosted observation. Check `/ward-flow` directly after an authorised deployment and distinguish build success from runtime verification.
 
 ## Separate drawer preview — 5 October 2026
 
@@ -143,6 +143,32 @@ team, transport officer, executive and access admin). The signed-in site answere
 content security policy naming only the backend and the Supabase project. Signing in through the
 signed-in site in a browser was not checked. Railway Singapore is offshore, so this hosting is
 for synthetic data only.
+
+## Open hosting checks from the 27 October 2026 audit
+
+These come from the audit register (P064, P181, P182, P183, P186). Nothing here is a fresh hosted
+observation; each item says what the source shows and what is still **to verify on the live site**.
+
+- **Region (P064).** This document records the `ward-flow` service in Railway Singapore (table
+  above) and both shared services in the Singapore region. The Supabase session pooler named in
+  [SETUP-SUPABASE.md](../backend/ward-flow/SETUP-SUPABASE.md) is in `ap-southeast-2` (Sydney). No
+  maintained document places any service in a US region. To verify on the live site: the region
+  each of the three Railway services runs in today, read in the Railway dashboard.
+- **Sign-in key type (P181).** The backend checks tokens against Supabase's published signing keys
+  and calls `/auth/v1/user` only for tokens without a usable published key, within rate limits
+  ([backend README](../backend/ward-flow/README.md)). To verify on the live site: that the Supabase
+  project issues asymmetric signing keys, so the fallback call is not made on every request.
+- **Privacy and terms pages (P182).** The app has no privacy or terms pages. Hosting is for
+  synthetic data only, so none is required while it stays within the team; add them before it is
+  shared more widely.
+- **Plain `http://` requests (P183).** Railway's edge, not the app, answers plain `http://`. The
+  app sends `Strict-Transport-Security` on its own responses. To verify on the live site: what
+  `http://` returns for the site and the backend, and whether Railway can redirect it.
+- **Cold `/healthz` (P186).** The backend does not sleep (table above). To verify on the live site:
+  first-request time after idle, before deciding on a keep-warm ping.
+- **Referrals from single-ward roles (P164).** A nurse in charge of one ward can start a New referral
+  to any ward statewide. Josh approved this as allowed behaviour on 27 October 2026; it is a product
+  decision recorded here, not a live-site check.
 
 ## Post-merge verification and recovery
 

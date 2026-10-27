@@ -15,6 +15,9 @@ import {
   type TransportBookingSubmission,
 } from "@/components/ward-management/transport/transport-booking-form";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
+import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
 import { StatusGlyph } from "@/components/wf";
@@ -48,6 +51,9 @@ export type PatientTransportSectionContext = {
   displayProvider: "Not recorded" | TransportProvider;
   displayName: string;
   gate: (eventType: WardFlowEventType, key?: string) => RoleGate;
+  /** The desk this page acts as, and a ward's sending unit, for adding a CAD number to follow. */
+  routeRole: WardFlowRole;
+  transportActingUnitId: string | undefined;
   isTransportBooked: boolean;
   liveMovement: Movement | undefined;
   mode: PatientMode;
@@ -74,6 +80,8 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
     displayProvider,
     displayName,
     gate,
+    routeRole,
+    transportActingUnitId,
     isTransportBooked,
     liveMovement,
     mode,
@@ -88,6 +96,8 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
     transportLegalReason,
   } = ctx;
   const bookGate = gate("BOOK_TRANSPORT");
+  const cadGate = gate("RECORD_TRANSPORT_CAD");
+  const cadToFollow = cadNumberToFollow(liveMovement?.transport);
   return (mode === "held" || mode === "transit") && liveMovement ? (
     <section
       className={`${styles.sec} ${styles.transportSec}`}
@@ -171,7 +181,13 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
           <div className={styles.transportFact}>
             <span className={styles.transportFactLabel}>CAD (dispatch) number</span>
             <span className={styles.transportFactValue} data-testid="ward-patient-cad-number">
-              {displayCadNumber || "Not recorded"}
+              {cadToFollow ? (
+                <>
+                  <StatusGlyph tone="warning" size={9} /> {CAD_TO_FOLLOW}
+                </>
+              ) : (
+                displayCadNumber || "Not recorded"
+              )}
             </span>
           </div>
           <div className={styles.transportFact}>
@@ -210,6 +226,18 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
                 <StatusGlyph tone="warning" size={9} />
                 Ends {clock(liveMovement.pullExpiresAt!)}, before the ETA. Extend the pull or rebook.
               </span>
+            </div>
+          ) : null}
+          {/* CAD to follow (Josh, 27 Oct 2026): the number is added here once the provider gives it. */}
+          {cadToFollow ? (
+            <div className={styles.transportFact}>
+              <TransportCadToFollow
+                movementId={liveMovement.id}
+                role={routeRole}
+                actingUnitId={transportActingUnitId}
+                unavailable={cadGate.allowed ? undefined : (cadGate.reason ?? "You cannot add the CAD number here.")}
+                testId="ward-patient-cad-to-follow"
+              />
             </div>
           ) : null}
           {(liveMovement.transport?.exceptions ?? []).map((exception) => (

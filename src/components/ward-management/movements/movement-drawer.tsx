@@ -35,6 +35,7 @@ import {
 import { BLOCKERS_MEANING_NOTHING_IS_BLOCKING } from "@/components/ward-management/ward-model";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { Badge, PhoneSheet, StatusGlyph, TierTile, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
+import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 
 import { movementNextStep, nextStepTarget } from "./movement-next-step";
 import { declineReasonLabels } from "./movement-workspace-derivations";
@@ -496,7 +497,16 @@ export function MovementDrawer({
           </div>
           <div>
             <dt>CAD</dt>
-            <dd className={d.mono}>{leg?.cadNumber ?? "Not recorded"}</dd>
+            <dd className={d.mono} data-testid="ward-movement-drawer-cad">
+              {/* CAD to follow (Josh, 27 Oct 2026): booked before the provider gave its number. */}
+              {cadNumberToFollow(leg) ? (
+                <>
+                  <StatusGlyph tone="warning" size={9} /> {CAD_TO_FOLLOW}
+                </>
+              ) : (
+                (leg?.cadNumber ?? "Not recorded")
+              )}
+            </dd>
           </div>
           <div>
             <dt>Wards asked</dt>
