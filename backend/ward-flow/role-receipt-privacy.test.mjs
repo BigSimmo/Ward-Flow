@@ -262,8 +262,9 @@ test(
       assert.equal(stillBroadResponse.status, broadResponse.status);
       const stillBroad = await stillBroadResponse.json();
       assert.deepEqual(
-        { ...stillBroad, replayed: undefined },
-        { ...broad, replayed: undefined },
+        // Each answer carries the server's time it was sent (H-0764), so that alone may differ.
+        { ...stillBroad, replayed: undefined, serverTime: undefined },
+        { ...broad, replayed: undefined, serverTime: undefined },
         "The unchanged authorised desk retains its original refusal details",
       );
 

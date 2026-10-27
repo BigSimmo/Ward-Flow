@@ -93,6 +93,22 @@ const NETWORK_CODES = new Set([
  * known pool or store message. Anything else is a code fault, which the API reports as 500 rather
  * than blaming the database.
  */
+
+/**
+ * The end of a role being granted or approved (TC2-04, audit 26 Oct 2026, H-0763). The app sends
+ * `expiresInMinutes`, as cover already sends `minutes`, and the end is set here on the server's own
+ * clock, so a device clock hours slow can still grant a one-hour role and a fast one cannot stretch
+ * it. An absolute `expiresAt` from an older client is still read, and checked against the server's
+ * time in the store as before. Null when neither is usable.
+ */
+function requestedAccessEnd(body) {
+  if (body?.expiresInMinutes !== undefined) {
+    return Number.isSafeInteger(body.expiresInMinutes) && body.expiresInMinutes > 0
+      ? new Date(Date.now() + body.expiresInMinutes * 60_000)
+      : null;
+  }
+  return typeof body?.expiresAt === "string" ? new Date(body.expiresAt) : null;
+}
 export function storageFailure(error) {
   const code = error?.code;
   return (
@@ -152,7 +168,13 @@ export function createSharedHandler({
     const reply = (status, body, outcome) => {
       if (outcome) note.outcome = outcome;
       // Audit PS-05: a scoped board the store already serialised is reused, not stringified again.
-      return jsonResponse(body, { status, headers });
+      // TC2-05 (H-0764): every answer carrying a board (a save's too) carries the server's time, so
+      // the app reads the board's `accessUntil` on this clock. Spread keeps the board's own object.
+      const withTime =
+        body && typeof body === "object" && "snapshot" in body && !("serverTime" in body)
+          ? { serverTime: Date.now(), ...body }
+          : body;
+      return jsonResponse(withTime, { status, headers });
     };
     const origin = request.headers.get("origin");
     if (origin && origin !== config.origin) return reply(403, { error: "Origin not allowed" }, "origin_denied");
@@ -350,6 +372,9 @@ export function createSharedHandler({
               : undefined;
         // A locked store read can refresh this request's role and joined cover.
         const workspace = () => ({
+          // TC2-05 (H-0764): the server's own time, so the app can read `accessUntil` against this
+          // clock rather than the device's (`onDeviceClock` in ward-shared-client.ts).
+          serverTime: Date.now(),
           role: view.access.role,
           access: view.access,
           workingAs: view.membershipId ?? "bootstrap",
@@ -482,7 +507,7 @@ export function createSharedHandler({
             return reply(400, { error: "A patient is required" });
           result = await store.breakGlass(view, body.patientId, body.reason);
         } else if (path === "/v1/workspace/access/grant") {
-          const expiresAt = typeof body?.expiresAt === "string" ? new Date(body.expiresAt) : null;
+          const expiresAt = requestedAccessEnd(body);
           if (
             !UUID.test(body?.actorId ?? "") ||
             !expiresAt ||
@@ -510,7 +535,7 @@ export function createSharedHandler({
             minutes: body.minutes,
           });
         } else if (path === "/v1/workspace/access/decide") {
-          const expiresAt = typeof body?.expiresAt === "string" ? new Date(body.expiresAt) : null;
+          const expiresAt = requestedAccessEnd(body);
           if (
             !store.decideRequest ||
             !UUID.test(body?.requestId ?? "") ||
