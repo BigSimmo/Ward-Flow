@@ -263,7 +263,7 @@ function rowDetail(
 ): string {
   if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
-    return `${unit?.name ?? "The pulled bed"} was pulled until ${formatInstantWithDay(movement.pullExpiresAt, now)} and has lapsed`;
+    return `${unit?.name ?? "The pulled bed"}: the pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}`;
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
     return `Form ${movement.legalForm.code} recorded due time ${formatInstantWithDay(movement.legalForm.dueAt, now)} has passed`;

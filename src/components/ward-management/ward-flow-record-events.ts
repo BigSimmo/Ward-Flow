@@ -767,7 +767,7 @@ export function reduceRecordedFactEvent(
         return reject(
           state,
           event,
-          `cannot change blocker on movement ${movement.id}: examination was revoked while holding a bed — requires explicit RELEASE_HELD_BED or doctor reassessment`,
+          `cannot change blocker on movement ${movement.id}: examination was revoked while a bed was pulled — requires explicit RELEASE_HELD_BED or doctor reassessment`,
         );
       }
       const divertedHoldingBed =
@@ -777,7 +777,7 @@ export function reduceRecordedFactEvent(
         return reject(
           state,
           event,
-          `cannot overwrite diversion hold on movement ${movement.id}: patient was diverted while holding a bed — requires bed release (RELEASE_DIVERTED_BED)`,
+          `cannot overwrite diversion hold on movement ${movement.id}: patient was diverted while a bed was pulled — requires bed release (RELEASE_DIVERTED_BED)`,
         );
       }
       const blocker = event.blocker.trim();

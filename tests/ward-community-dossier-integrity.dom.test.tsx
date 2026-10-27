@@ -218,9 +218,9 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
       target: { value: screen.getByTestId("appointment-at").textContent },
     });
     fireEvent.click(within(care).getByRole("button", { name: "Record contact outcome" }));
-    expect(care).toHaveTextContent("completed · appointment 1");
+    expect(care).toHaveTextContent("Completed · first booking");
     fireEvent.click(screen.getByRole("button", { name: "Close drawer" }));
     openPatient(admission.patientId!);
-    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("completed · appointment 1");
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("Completed · first booking");
   });
 });

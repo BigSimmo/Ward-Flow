@@ -248,7 +248,7 @@ describe("the orphaned-transport panel's cancel-authority copy", () => {
 
     const panel = screen.getByTestId("ward-patient-orphaned-transport");
     expect(
-      within(panel).getByText(/cancelled by the flow coordinator or by the referring emergency department/i),
+      within(panel).getByText(/cancelled by the bed coordinator or by the referring emergency department/i),
     ).toBeInTheDocument();
     // No ward is named as able to cancel — the "which booked it" clause only ever appears when
     // `transport.bookedBy` names a ward, which this coordinator booking does not carry.

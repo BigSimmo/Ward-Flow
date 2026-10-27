@@ -120,7 +120,7 @@ describe("Q25: a bed held by its stage alone cannot be stepped back before the p
     expect(movement(seed, MOVEMENT).admissionId).toBeUndefined();
     const after = apply(seed, { ...STEP_BACK, movementId: MOVEMENT });
     expect(added(seed, after)).toHaveLength(1);
-    expect(added(seed, after)[0]).toMatch(/held by its stage alone/);
+    expect(added(seed, after)[0]).toMatch(/pulled by its stage alone/);
     expect(movement(after, MOVEMENT).stage).toBe("handover_ready");
   });
 

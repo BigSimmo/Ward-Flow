@@ -149,7 +149,7 @@ describe("canonical placement actions", () => {
 
   it("keeps a blocked Pull focusable and explains actual bed availability", () => {
     const { onPullPatient, dispatch, unit } = renderPull(false);
-    const pull = screen.getByRole("button", { name: "Pull a bed" });
+    const pull = screen.getByRole("button", { name: "Pull the bed" });
     expectPlacement(pull, "pri");
     expect(pull).not.toBeDisabled();
     expect(pull).toHaveAttribute("aria-disabled", "true");
@@ -161,7 +161,7 @@ describe("canonical placement actions", () => {
 
   it("preserves the existing explicit Pull callback", () => {
     const { onPullPatient, movement, unit } = renderPull(true);
-    const pull = screen.getByRole("button", { name: "Pull a bed" });
+    const pull = screen.getByRole("button", { name: "Pull the bed" });
     expectPlacement(pull, "pri");
     expect(onPullPatient).not.toHaveBeenCalled();
     fireEvent.click(pull);

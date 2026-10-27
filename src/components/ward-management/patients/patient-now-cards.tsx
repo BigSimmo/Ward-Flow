@@ -329,7 +329,7 @@ export function PatientLeaveCard({
             <span className={styles.phStep}>1</span>
             <span className={styles.phItemText}>
               <strong>Contact them and their carer</strong>
-              <span>Contact details are not held in this prototype</span>
+              <span>Contact details are not recorded in this prototype</span>
             </span>
           </li>
           <li className={styles.phItem}>
@@ -358,7 +358,7 @@ export function PatientLeaveCard({
         <li className={styles.item}>
           <span className={styles.itemText}>
             <strong>1. Contact them and their carer</strong>
-            <span>Contact details are not held in this prototype</span>
+            <span>Contact details are not recorded in this prototype</span>
           </span>
         </li>
         <li className={styles.item}>
@@ -399,8 +399,8 @@ export function PatientLastSeenCard({
       <div className={styles.rows}>
         <Row label="Bed held on">{wardName ?? notRecorded}</Row>
         <Row label="Recorded">{since}, when the ward recorded the absence</Row>
-        <Row label="Last seen">Where and when are not held in this prototype</Row>
-        <Row label="Description">Recorded by the ward, not held in this prototype</Row>
+        <Row label="Last seen">Where and when are not recorded in this prototype</Row>
+        <Row label="Description">Recorded by the ward, not recorded in this prototype</Row>
         {/* S-5: a prompt only. Whether an apprehension and return order is needed is the treating
             psychiatrist's call; the order itself is not recorded in this prototype. */}
         {voluntary ? null : (

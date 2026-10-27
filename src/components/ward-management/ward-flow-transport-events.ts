@@ -241,7 +241,7 @@ export function reduceTransportEvent(
         return reject(
           state,
           event,
-          `cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still holds a bed — a person must release the bed first`,
+          `cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still has a bed pulled — a person must release the bed first`,
         );
       }
       /**
@@ -421,7 +421,7 @@ export function reduceTransportEvent(
             a.id !== source?.id,
         )
       ) {
-        return reject(state, event, "This patient already holds another bed or occupies another ward.");
+        return reject(state, event, "This patient already has another bed pulled or occupies another ward.");
       }
       const linkedAdmission =
         movement.admissionId === undefined ? undefined : findAdmission(state, movement.admissionId);
@@ -434,7 +434,7 @@ export function reduceTransportEvent(
             !(linkedAdmission.movementId === null && !linkedAdmission.id.startsWith("AD-ARR-"))) ||
           (patientId !== undefined && linkedAdmission.patientId !== patientId))
       ) {
-        return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
+        return reject(state, event, "Arrival needs this movement's matching pulled bed at its accepted ward.");
       }
       const { referralArm: heldReferral, bedNumber: reservedBed } = movementBedReservation(
         movement,

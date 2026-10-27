@@ -436,8 +436,7 @@ export function WardNotificationCenter({
     const [latest] = group;
     if (!latest) return null;
     const { buzz, buzzKey } = latest;
-    const roleLabel =
-      buzz.byRole === "coordinator" ? "State Bed Flow Coordinator" : buzz.byRole || "State Bed Flow Coordinator";
+    const roleLabel = buzz.byRole === "coordinator" || !buzz.byRole ? "Bed coordinator" : buzz.byRole;
     const messageText = buzz.message || "Capacity refresh requested";
     const meta = (
       <>

@@ -112,7 +112,7 @@ export function WardAcceptedReferralPlacementForm({
         }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
-        const started = "Placement started. Open Ward flow, Admissions, then choose Pull a bed.";
+        const started = "Placement started. Open Ward flow, Admissions, then choose Pull the bed.";
         onMessage(failure ?? (mismatch ? `${started} ${mismatch}` : started));
         if (!failure) {
           setPlacementDraft(null);

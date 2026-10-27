@@ -184,7 +184,9 @@ describe("S2-1: a seeded journey with no admission record can still release its 
     h.ok({ type: "RELEASE_DIVERTED_BED", role: "coordinator", movementId: SEEDED });
     expect(h.state.movements.find((m) => m.id === SEEDED)?.closure?.outcome).toBe("did_not_proceed");
     expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
-    expect(h.send({ type: "RELEASE_DIVERTED_BED", role: "coordinator", movementId: SEEDED })).toMatch(/holds no bed/);
+    expect(h.send({ type: "RELEASE_DIVERTED_BED", role: "coordinator", movementId: SEEDED })).toMatch(
+      /has no bed pulled/,
+    );
     expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
   });
 
@@ -201,7 +203,7 @@ describe("S2-1: a seeded journey with no admission record can still release its 
     });
     h.ok({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: SEEDED });
     expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
-    expect(h.send({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: SEEDED })).toMatch(/holds no bed/);
+    expect(h.send({ type: "RELEASE_HELD_BED", role: "coordinator", movementId: SEEDED })).toMatch(/has no bed pulled/);
     expect(h.state.units.find((u) => u.id === unitId)!.allocatable.value).toBe(before + 1);
   });
 });

@@ -75,7 +75,7 @@ export function MovementsPhoneNav({
         <span className={flow.phNavText}>
           <strong>Arrivals ahead</strong>
           <span>
-            <b>{phoneInbound.length}</b> inbound · {phoneInboundWards} {phoneInboundWards === 1 ? "ward" : "wards"}
+            <b>{phoneInbound.length}</b> incoming · {phoneInboundWards} {phoneInboundWards === 1 ? "ward" : "wards"}
           </span>
         </span>
         <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
@@ -113,7 +113,7 @@ export function MovementsPhoneNav({
         open={phoneSheet === "arrivals"}
         onClose={() => setPhoneSheet(null)}
         title="Arrivals ahead"
-        description="Inbound by receiving ward, soonest first"
+        description="Incoming by receiving ward, soonest first"
         height="tall"
       >
         <ArrivalsAheadList lanes={horizonLanes} now={now} />

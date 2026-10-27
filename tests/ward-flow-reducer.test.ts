@@ -2263,7 +2263,7 @@ describe("bed release privacy", () => {
         blocker: "Awaiting transport",
       });
       expect(blockerAttempt.rejections).toHaveLength(1);
-      expect(blockerAttempt.rejections[0].reason).toContain("examination was revoked while holding a bed");
+      expect(blockerAttempt.rejections[0].reason).toContain("examination was revoked while a bed was pulled");
 
       // RELEASE_HELD_BED should release bed, clear admissionId, and close movement as did_not_proceed
       const releaseSuccess = wardFlowReducer(withRevoked, {

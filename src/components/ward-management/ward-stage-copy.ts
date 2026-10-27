@@ -43,5 +43,7 @@ export function deliveredAwaitingWard(movement: Pick<Movement, "stage" | "transp
 
 /** The journey's status in words: the stage label, or the one delivered state. */
 export function movementStatusLabel(movement: Pick<Movement, "stage" | "transport" | "closure">): string {
-  return deliveredAwaitingWard(movement) ? "Delivered, awaiting ward confirmation" : stageCopy[movement.stage].label;
+  return deliveredAwaitingWard(movement)
+    ? "Arrived at ward, awaiting ward confirmation"
+    : stageCopy[movement.stage].label;
 }

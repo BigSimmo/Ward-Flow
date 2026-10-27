@@ -471,7 +471,7 @@ export function wardLiveFormAlerts({
           key: `late-${movement.id}`,
           tone: "warning",
           title: "Estimated arrival time has passed",
-          countdown: "Still inbound",
+          countdown: "Not arrived yet",
           text: `${patientName} was expected at ${formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} and has not arrived.`,
           actionLabel: "Open arrival",
           actionTarget: "arrival",

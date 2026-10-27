@@ -1218,7 +1218,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
 
     const flag = screen.getByTestId(`ward-ed-examination-revoked-flag-${revokedId}`);
-    expect(flag).toHaveTextContent("The examination was revoked and this movement still holds a bed.");
+    expect(flag).toHaveTextContent("The examination was revoked and this movement still has a bed pulled.");
 
     // A second, freshly pulled movement with NO examination must not show the flag — the
     // anti-vacuity half: a flag that always renders would pass the assertion above for the
