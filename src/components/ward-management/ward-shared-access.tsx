@@ -106,7 +106,7 @@ export type WardSharedConnection = SharedView & {
   farewell?: string | null;
   retry: () => void;
   /** P172: clears the outcome of an uncertain save once read. Not offered while the receipt is being checked. */
-  dismissRecovery?: () => void;
+  dismissRecovery?: (shown?: string) => void;
   dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
@@ -533,6 +533,7 @@ function WardSharedWorkspaceContent({
   children: ReactNode;
 }) {
   "use no memo";
+  const recoveryOutcomeRef = useRef<HTMLDivElement>(null);
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   // TV-13 (H-0787): a wall TV whose session ends says so at TV size, not as a small sign-in page.
   const onTv = isTvPath(usePathname() ?? "");
@@ -676,17 +677,22 @@ function WardSharedWorkspaceContent({
         connection={connection}
         deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
       />
-      {connection.recovery && (
-        <span role="alert">
-          {" "}
-          {connection.recovery}
-          {!connection.recovering && connection.dismissRecovery && (
-            <button type="button" className={styles.dismissRecovery} onClick={connection.dismissRecovery}>
-              Dismiss
-            </button>
-          )}
-        </span>
-      )}
+      {/* Always mounted, so focus has somewhere to land when Dismiss removes the outcome it sat beside. */}
+      <div ref={recoveryOutcomeRef} tabIndex={-1} data-testid="ward-shared-recovery-outcome">
+        {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+        {connection.recovery && !connection.recovering && connection.dismissRecovery && (
+          <button
+            type="button"
+            className={styles.dismissRecovery}
+            onClick={() => {
+              connection.dismissRecovery?.(connection.recovery);
+              recoveryOutcomeRef.current?.focus({ preventScroll: true });
+            }}
+          >
+            Dismiss
+          </button>
+        )}
+      </div>
       <FocusKeepingInert
         key={JSON.stringify([
           connection.actorId,

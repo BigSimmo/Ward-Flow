@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { WardSharedAccess, type WardSharedConnection } from "@/components/ward-management/ward-shared-access";
@@ -51,7 +52,25 @@ describe("Dismiss on the uncertain-save outcome (view)", () => {
     );
     expect(screen.getByRole("alert")).toHaveTextContent(ACCEPTED);
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
-    expect(dismissRecovery).toHaveBeenCalledTimes(1);
+    // It is told which message was read, so a newer one is not cleared by mistake.
+    expect(dismissRecovery).toHaveBeenCalledWith(ACCEPTED);
+  });
+
+  it("moves focus to a stable place when Dismiss removes its own alert", () => {
+    function Harness() {
+      const [recovery, setRecovery] = useState<string | undefined>(ACCEPTED);
+      return (
+        <WardSharedAccess connection={connection({ recovery, dismissRecovery: () => setRecovery(undefined) })}>
+          <p>Board</p>
+        </WardSharedAccess>
+      );
+    }
+    render(<Harness />);
+    const dismiss = screen.getByRole("button", { name: "Dismiss" });
+    dismiss.focus();
+    fireEvent.click(dismiss);
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.getByTestId("ward-shared-recovery-outcome")).toHaveFocus();
   });
 
   it("does not offer Dismiss while the receipt is still being checked", () => {
@@ -133,6 +152,21 @@ describe("dismissRecovery on the client", () => {
 
     await client.refresh();
     expect(view()?.recovery).toBeUndefined();
+  });
+
+  it("leaves a newer outcome alone when told an older message was the one read", async () => {
+    const { client, view } = await reloadedWithAcceptedReceipt();
+    await client.refresh();
+    client.dismissRecovery("An older message the person had read.");
+    expect(view()?.recovery).toBe(ACCEPTED);
+  });
+
+  it("does not change what the status bar knows about the board when it dismisses", async () => {
+    const { client, view } = await reloadedWithAcceptedReceipt();
+    await client.refresh();
+    const before = view()?.boardCurrent;
+    client.dismissRecovery(ACCEPTED);
+    expect(view()?.boardCurrent).toBe(before);
   });
 
   it("ignores Dismiss while the receipt is still being checked", async () => {
