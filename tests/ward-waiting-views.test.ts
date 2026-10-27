@@ -61,8 +61,8 @@ describe("Form due", () => {
   });
 
   it("is labelled with the configured hours", () => {
-    expect(waitingViewLabel("form", T)).toBe("Form due within 3 h");
-    expect(waitingViewLabel("form", { ...T, soonMinutes: 90 })).toBe("Form due within 90 min");
+    expect(waitingViewLabel("form", T)).toBe("Form due (as written) within 3 h");
+    expect(waitingViewLabel("form", { ...T, soonMinutes: 90 })).toBe("Form due (as written) within 90 min");
   });
 });
 

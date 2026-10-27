@@ -36,7 +36,7 @@ export function windowText(minutes: number): string {
 
 export function waitingViewLabel(view: WaitingViewId, thresholds: DueSoonThresholds): string {
   if (view === "needs-me") return "Due soon or on you";
-  if (view === "form") return `Form due within ${windowText(thresholds.soonMinutes)}`;
+  if (view === "form") return `Form due (as written) within ${windowText(thresholds.soonMinutes)}`;
   return "For handover";
 }
 

@@ -52,7 +52,7 @@ describe("one time-left rule for legal forms (A3-3, A3-4)", () => {
   it("gives the Patient page the same time left and expiry the Forms page shows", () => {
     const due = movement({ legalForm: { code: "4A", kind: "transport", dueAt: NOW + 60 } });
     const left = formTimeLeft(due, NOW, DEFAULT_DUE_SOON_THRESHOLDS)!;
-    expect(left).toMatchObject({ code: "Form 4A", text: "1h 00m left", at: "11:42", actNow: true });
+    expect(left).toMatchObject({ code: "Form 4A", text: "1h 00m left (as written)", at: "11:42", actNow: true });
     expect(
       formTimeLeft(movement({ legalForm: { code: "3B", kind: "detention" } }), NOW, DEFAULT_DUE_SOON_THRESHOLDS),
     ).toBeUndefined();

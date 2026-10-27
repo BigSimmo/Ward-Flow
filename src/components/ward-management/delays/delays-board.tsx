@@ -424,7 +424,7 @@ export function DelaysBoard({
   const silentCount = rows.filter((row) => row.silent).length;
   const urgentMinutes = thresholds.urgentMinutes;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
-  const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
+  const dueSoonLabel = `Form due (as written) within ${windowText(urgentMinutes)}`;
   // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
   const scope = useServiceScope();
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);

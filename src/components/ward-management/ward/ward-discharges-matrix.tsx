@@ -101,7 +101,7 @@ export function WardDischargesMatrix({
       {/* Scheduled Departures Stream */}
       {(subTab === "all" || subTab === "scheduled") && (
         <div className={styles.dischargeStream}>
-          <div className={styles.streamHeading}>Scheduled Today ({releasesCountedToday.length})</div>
+          <div className={styles.streamHeading}>Planned today ({releasesCountedToday.length})</div>
           <p data-testid="ward-waiting-on-longest">{WAITING_ON_LONGEST}</p>
           {releasesCountedToday.length === 0 ? (
             <p className={styles.placeholder}>No bed release is currently scheduled for today at {unit.name}.</p>

@@ -69,7 +69,7 @@ const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   },
   {
     cause: "legal_expiring",
-    title: "Form due time running out",
+    title: "Form due time (as written) running out",
     note: "",
   },
   { cause: "no_eligible_bed", title: "No suitable bed", note: "" },

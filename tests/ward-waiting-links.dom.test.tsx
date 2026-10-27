@@ -33,7 +33,7 @@ describe("the Delays board's saved views", () => {
     window.history.replaceState(null, "", "/ward-flow/waiting?view=form");
     withProvider(<DelaysScreen />);
     expect(screen.getByTestId("delays-view-form")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByTestId("delays-view-form")).toHaveTextContent("Form due within 3 h");
+    expect(screen.getByTestId("delays-view-form")).toHaveTextContent("Form due (as written) within 3 h");
     const [shown, total] = shownCount().split(" of ").map(Number);
     expect(shown).toBeLessThan(total!);
   });
@@ -53,7 +53,7 @@ describe("the Delays board's saved views", () => {
   it("names the 1 hour chip's noun", () => {
     window.history.replaceState(null, "", "/ward-flow/waiting");
     withProvider(<DelaysScreen />);
-    expect(screen.getByTestId("delays-stat-due")).toHaveTextContent("Form due within 1 h");
+    expect(screen.getByTestId("delays-stat-due")).toHaveTextContent("Form due (as written) within 1 h");
   });
 
   it("counts the referrals not yet on the list, with a link to Referrals", () => {
