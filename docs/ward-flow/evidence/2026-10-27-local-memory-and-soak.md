@@ -43,12 +43,14 @@ Question for Josh: what memory limit does the Railway plan give `ward-flow-backe
 
 ## Josh's decision
 
-Josh, in chat at about 9:12 PM AWST on 27 Oct 2026: "H-0646: set the Railway memory limit to at least 1 GB".
+Deferred. Josh, in chat at about 9:14 PM AWST on 27 Oct 2026: "H-0646: don't change the Railway memory limit
+yet". This replaces an earlier relayed instruction recorded here a few minutes before.
 
-No Railway setting has been changed yet. The change (service `ward-flow-backend`, production, resource limit
-memory per replica) is a separate live write that still needs Josh's exact approval of the value, and the
-plan may cap it. Railway facts at the time: live `ward-flow-backend` memory over the last hour was about
-0.15 GB (max 0.151 GB), no memory limit is visible in the service config, and the plan limit is unconfirmed.
+No Railway setting was changed, and none will be changed now. Recommendation noted for later: 2 GB per replica
+for `ward-flow-backend` (production), given the local cold-start peak of about 0.8 GB. Any change is a separate
+live write that needs Josh's exact approval of the value, and the plan may cap it. Railway facts at the time:
+live `ward-flow-backend` memory over the last hour was about 0.15 GB (max 0.151 GB), no memory limit is visible
+in the service config, and the plan limit is unconfirmed.
 
 ## H-0965: TV and desk left open
 
