@@ -1646,7 +1646,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             <div className={styles.modalBody}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel} htmlFor="ward-answer-allocating-movement">
-                  Allocating Movement
+                  Patient
                 </label>
                 <input
                   type="text"
