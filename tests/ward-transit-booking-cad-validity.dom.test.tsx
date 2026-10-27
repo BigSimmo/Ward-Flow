@@ -50,7 +50,7 @@ function openBookingForm() {
   fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: /^(Hold|Pull) the bed$/ }));
   fireEvent.click(screen.getByRole("button", { name: "Record transport booking" }));
   fireEvent.change(screen.getByTestId("ward-transit-transport-provider-WF-012"), {
-    target: { value: "Ambulance service" },
+    target: { value: "Ambulance (St John)" },
   });
   fireEvent.click(within(screen.getByRole("group", { name: "Quick times" })).getByRole("button", { name: "+30m" }));
   fireEvent.click(screen.getByTestId("ward-transit-transport-legal-involuntary-WF-012"));

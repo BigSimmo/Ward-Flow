@@ -8,7 +8,7 @@ import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }), usePathname: () => null }));
 
 function renderDrawer(movement: Movement, phone: boolean) {
   installMatchMediaStub(phone);

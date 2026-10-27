@@ -352,6 +352,15 @@ describe("the Access tab", () => {
           surface: "patient",
           minutes: -3,
         },
+        {
+          id: 5,
+          actor_id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+          actor_role: "ed",
+          actor_scope: { kind: "ed", edId: "fsh-ed" },
+          patient_id: "*",
+          surface: "tv",
+          minutes: -2,
+        },
       ]),
       grantAccess: vi.fn(async () => null),
       revokeAccess: vi.fn(async () => null),
@@ -365,12 +374,15 @@ describe("the Access tab", () => {
     );
     const log = screen.getByTestId("ward-access-log");
     const rows = await within(log).findAllByTestId("ward-access-log-row");
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent("PT-1001, Referral detail");
     expect(rows[0]).toHaveTextContent("Account 1a2b3c4d, ED clinician");
     expect(rows[0]).toHaveTextContent("2 hours ago.");
     expect(rows[1]).toHaveTextContent("PT-2002, Patient record");
     expect(rows[1]).toHaveTextContent("You, Bed coordinator, Statewide. 3 minutes ago.");
+    // H-0731: a read the server logged itself names no record.
+    expect(rows[2]).toHaveTextContent("TV board sent to this desk");
+    expect(rows[2]).not.toHaveTextContent("*");
     expect(log).not.toHaveTextContent("Demo only");
     expect(api.listRecordViews).toHaveBeenCalledTimes(1);
   });

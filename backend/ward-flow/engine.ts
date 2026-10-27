@@ -24,6 +24,7 @@ import {
 } from "../../src/components/ward-management/ward-access-admin";
 import { commandScopeRefusal, scopeWardFlowState } from "../../src/components/ward-management/ward-access-state";
 import { HEALTH_SERVICES, type HealthService } from "../../src/components/ward-management/ward-model";
+import { uploadedFileTypeOf } from "../../src/components/ward-management/ward-uploaded-file";
 import { CLINICAL_VALUES } from "../../src/components/ward-management/ward-clinical-values";
 import { demoDayZero } from "../../src/components/ward-management/ward-clock";
 import {
@@ -268,19 +269,31 @@ const SKIP_FACT_KEYS = new Set(["auditEvents", "auditReviews", "rejections", "un
 /**
  * Audit F-01: a referral's chart files are never stored on the shared board. Older clients may
  * still send the file content; it is dropped here, before the command is fingerprinted or applied,
- * and the name, type and size are kept.
+ * and the type and size are kept. H-0049: a file's own name is not kept either, because a real file
+ * name can carry a patient's name. An older client's chart name becomes its file type, and an older
+ * client's `UPLOAD_PATIENT_FORM` file name is read for its type and dropped.
  */
 export function storableCommand(supplied: unknown): unknown {
-  const fields = supplied as { type?: unknown; intake?: { charts?: unknown } } | null;
+  const fields = supplied as {
+    type?: unknown;
+    intake?: { charts?: unknown };
+    fileName?: unknown;
+    fileType?: unknown;
+  } | null;
+  if (fields?.type === "UPLOAD_PATIENT_FORM" && Object.hasOwn(fields, "fileName")) {
+    const { fileName, ...kept } = fields;
+    return kept.fileType === undefined ? { ...kept, fileType: uploadedFileTypeOf(fileName) } : kept;
+  }
   if (fields?.type !== "RECEIVE_REFERRAL" || !Array.isArray(fields.intake?.charts)) return supplied;
   return {
     ...fields,
     intake: {
       ...fields.intake,
       charts: fields.intake.charts.map((chart: unknown) => {
-        if (!chart || typeof chart !== "object" || !Object.hasOwn(chart, "base64")) return chart;
+        if (!chart || typeof chart !== "object") return chart;
         const kept = { ...(chart as Record<string, unknown>) };
         delete kept.base64;
+        if (typeof kept.name === "string") kept.name = uploadedFileTypeOf(kept.name, kept.mimeType);
         return kept;
       }),
     },

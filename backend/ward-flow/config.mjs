@@ -24,6 +24,9 @@ const PLACEHOLDER_IDS = new Set([
   "00000000-0000-4000-8000-000000000000",
   "00000000-0000-4000-8000-000000000001",
 ]);
+/** Perth keeps UTC+8 all year. */
+const PERTH_OFFSET_MS = 8 * 60 * 60_000;
+const COORDINATOR_UNTIL_MAX_MS = 366 * 24 * 60 * 60_000;
 
 export function readConfig(env = process.env, dependencies = {}) {
   const log = dependencies.log ?? ((event) => console.error(JSON.stringify(event)));
@@ -60,6 +63,22 @@ export function readConfig(env = process.env, dependencies = {}) {
   const coordinatorIds = (env.WARD_COORDINATOR_USER_IDS || "").split(",").map((id) => id.trim().toLowerCase());
   if (coordinatorIds.some((id) => !UUID.test(id) || PLACEHOLDER_IDS.has(id)))
     throw new Error("Invalid coordinator configuration");
+  // H-0057: the bootstrap coordinators stop working after this Perth date (YYYY-MM-DD, through the
+  // end of that day). At most a year ahead, as for a granted role (D-80 item 8). Unset keeps them
+  // working with no end, so startup warns until it is set.
+  let coordinatorUntil = null;
+  if (env.WARD_COORDINATOR_UNTIL) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(env.WARD_COORDINATOR_UNTIL.trim());
+    const end = match ? Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]) + 1) - PERTH_OFFSET_MS : NaN;
+    const day = match ? new Date(end + PERTH_OFFSET_MS - 1).toISOString().slice(0, 10) : "";
+    if (
+      day !== env.WARD_COORDINATOR_UNTIL.trim() ||
+      end > (dependencies.now?.() ?? Date.now()) + COORDINATOR_UNTIL_MAX_MS
+    )
+      throw new Error("Invalid coordinator end date configuration");
+    coordinatorUntil = end;
+  } else if (shared)
+    log({ event: "ward_backend_config_warning", setting: "WARD_COORDINATOR_UNTIL", outcome: "unset_no_end" });
   let postgres = null;
   if (shared) {
     // Custom stores can inject their own configuration reader alongside their runtime adapter.
@@ -81,6 +100,7 @@ export function readConfig(env = process.env, dependencies = {}) {
     sharedDemoEvents,
     dataMode,
     coordinatorIds,
+    coordinatorUntil,
     workspaceId: env.WARD_WORKSPACE_ID?.toLowerCase(),
     postgres,
     // Sign-in settings sit under the provider's own name, for example `config.supabase`.

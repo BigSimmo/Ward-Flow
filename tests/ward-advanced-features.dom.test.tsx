@@ -128,6 +128,9 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       // Modal is open
       expect(screen.getByRole("dialog", { name: /Update Arrival Time/i })).toBeDefined();
 
+      // WT-13: the travel mode opens blank, so it is chosen first.
+      fireEvent.change(screen.getByLabelText("Arrival Mode"), { target: { value: "rfds" } });
+
       // Enter tracking number
       const trackingInput = screen.getByLabelText(/Transport CAD \/ Tracking Number/i);
       fireEvent.change(trackingInput, { target: { value: "RFDS-9912" } });
@@ -158,7 +161,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
 
       // Modal is open
       const dialog = screen.getByRole("dialog", { name: /Record document details/i });
-      expect(dialog).toHaveTextContent("File contents are not stored or sent");
+      expect(dialog).toHaveTextContent("The file name and contents are not stored or sent");
 
       // Submit form
       const submitBtn = screen.getByTestId("confirm-upload-form-button");
@@ -171,7 +174,9 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
 
       // Verify attached forms section updated
       expect(screen.getByTestId("ward-patient-uploaded-forms")).toBeDefined();
-      expect(screen.getByTestId("ward-patient-uploaded-forms")).toHaveTextContent("synthetic-transfer.pdf");
+      // H-0049: the file's type is shown, never its own name.
+      expect(screen.getByTestId("ward-patient-uploaded-forms")).toHaveTextContent("PDF");
+      expect(screen.getByTestId("ward-patient-uploaded-forms")).not.toHaveTextContent("synthetic-transfer.pdf");
     });
   });
 

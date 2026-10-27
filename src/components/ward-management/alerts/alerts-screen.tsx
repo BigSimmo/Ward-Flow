@@ -433,7 +433,7 @@ function AlertsWorkspace() {
         subject,
         group: alertGroupOf(item),
         owner,
-        mine: owner === COORDINATOR,
+        mine: coordDesk && recorded === COORDINATOR,
         raised: raisedAt(item, movement),
         seen: inboxAcknowledgements[item.id]?.at(-1),
         ownedSince: currentInboxOwner(inboxOwnership[item.id], item.since)?.at,
@@ -1023,7 +1023,7 @@ function AlertsWorkspace() {
       owner,
       list,
       <GroupHead
-        label={ownerShort(owner) === "You" ? `You, ${owner}` : owner}
+        label={ownerShort(owner, coordDesk) === "You" ? `You, ${owner}` : owner}
         count={list.length}
         aside={`${actCount} act now`}
       />,
@@ -1281,7 +1281,7 @@ function AlertsWorkspace() {
                           onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
                           count={allEntries.filter((entry) => entry.owner === owner).length}
                         >
-                          {ownerShort(owner)}
+                          {ownerShort(owner, coordDesk)}
                         </FilterChip>
                       ))}
                     </div>
@@ -1309,7 +1309,7 @@ function AlertsWorkspace() {
                         <div className={styles.phoneChips} role="group" aria-label="Highlight by owner">
                           {/* Yours is a hero figure on phone, so the chips are the other owners. */}
                           {owners
-                            .filter((owner) => ownerShort(owner) !== "You")
+                            .filter((owner) => ownerShort(owner, coordDesk) !== "You")
                             .map((owner) => (
                               <FilterChip
                                 key={owner}
@@ -1322,7 +1322,7 @@ function AlertsWorkspace() {
                                 <b className={styles.mono}>
                                   {allEntries.filter((entry) => entry.owner === owner).length}
                                 </b>
-                                {ownerShort(owner)}
+                                {ownerShort(owner, coordDesk)}
                               </FilterChip>
                             ))}
                         </div>

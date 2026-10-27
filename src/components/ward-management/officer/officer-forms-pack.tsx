@@ -8,6 +8,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { Movement, MovementUploadedForm } from "@/components/ward-management/ward-model";
+import { uploadedFileLabel, uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import { formTitleForCode } from "@/lib/form-register";
 import {
   PACK_SLOT_PATTERN,
@@ -115,7 +116,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
                   {form ? (
                     <>
                       <span className={styles.mono}>{formatInstantWithDay(form.uploadedAt, now)}</span> ·{" "}
-                      {form.fileName}
+                      {uploadedFileLabel(form)}
                     </>
                   ) : slot.key === "legal" && booked ? (
                     `Booking names Form ${booked}, not uploaded`
@@ -171,7 +172,7 @@ function PackUploadDialog({
 }) {
   const raise = useWardRaise("officer");
   const [code, setCode] = useState<string | undefined>(slot.codes.length === 1 ? slot.codes[0] : initialCode);
-  const [file, setFile] = useState<{ name: string; size: number } | null>(null);
+  const [file, setFile] = useState<{ name: string; size: number; type: string } | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   useWardModalFocus(true, dialogRef, onClose);
   const needsCode = slot.codes.length > 1;
@@ -243,11 +244,13 @@ function PackUploadDialog({
               aria-label="Form file"
               onChange={(event) => {
                 const chosen = event.target.files?.[0];
-                setFile(chosen ? { name: chosen.name, size: chosen.size } : null);
+                setFile(chosen ? { name: chosen.name, size: chosen.size, type: chosen.type } : null);
               }}
             />
           </label>
-          <p className={styles.modalLead}>Records the file name and size on this job. File contents are not stored.</p>
+          <p className={styles.modalLead}>
+            Records the file type and size on this job. The file name and contents are not stored.
+          </p>
         </div>
         <footer className={styles.modalFoot}>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -263,7 +266,7 @@ function PackUploadDialog({
               raise("UPLOAD_PATIENT_FORM", {
                 movementId: movement.id,
                 formName: formNameFor(slot, code),
-                fileName: file.name,
+                fileType: uploadedFileTypeOf(file.name, file.type),
                 sizeBytes: file.size,
               });
               onClose();

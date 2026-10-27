@@ -20,7 +20,11 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { LEGAL_STATUS_CHANGE_REASONS, OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
-import { TRANSPORT_PROVIDERS, type Movement } from "@/components/ward-management/ward-model";
+import {
+  BOOKABLE_TRANSPORT_PROVIDERS,
+  TRANSPORT_PROVIDERS,
+  type Movement,
+} from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
@@ -157,7 +161,7 @@ describe("booking transport from the sending emergency department", () => {
     // Derived from the exported array, in its declared order — a hand-written options list is how
     // a cohort was silently omitted from this screen once before.
     const offered = [...picker.options].slice(1).map((option) => option.value);
-    expect(offered).toEqual([...TRANSPORT_PROVIDERS]);
+    expect(offered).toEqual([...BOOKABLE_TRANSPORT_PROVIDERS]);
     expect(offered.length, "non-vacuity: an emptied list could not pass the comparison above").toBeGreaterThan(2);
   });
 

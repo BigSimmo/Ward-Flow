@@ -1,6 +1,7 @@
 // @ts-check
 import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
+import { bootstrapCoordinators } from "./auth.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -43,6 +44,8 @@ const STEP_UP_PATHS = new Set([
 ]);
 /** Names one of the account's roles when it holds more than one: a membership ID or "bootstrap". */
 const WORKING_AS = "x-ward-working-as";
+/** "tv" when the desk is showing the bed meeting TV board, so the access log can say so (H-0731). */
+const SCREEN = "x-ward-screen";
 /** Messages the pg pool and the workspace store use when the database, not the code, failed. */
 const STORAGE_MESSAGES =
   /^(?:Connection terminated|timeout exceeded when trying to connect|Client has encountered a connection error|Cannot use a pool after calling end|Shared schema unavailable|Workspace data mode mismatch|Stored workspace is incompatible)/;
@@ -159,7 +162,7 @@ export function createSharedHandler({
         headers: {
           ...headers,
           "access-control-allow-methods": "GET, POST, OPTIONS",
-          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As",
+          "access-control-allow-headers": "Authorization, Content-Type, X-Ward-Working-As, X-Ward-Screen",
           "access-control-max-age": "600",
         },
       });
@@ -258,7 +261,10 @@ export function createSharedHandler({
       // The role and place come from the server's own record on every request, never from the
       // browser or the sign-in token. Accounts in WARD_COORDINATOR_USER_IDS are the bootstrap
       // statewide coordinators; everyone else needs an active membership.
-      const view = await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId), workingAs });
+      const view = await store.viewer(actorId, {
+        bootstrap: bootstrapCoordinators(config).includes(actorId),
+        workingAs,
+      });
       // Asking for access is for a signed-in account with no role (feature 7), so it is answered
       // before the role checks below. An account that already holds a role is given another by an
       // access admin, never by a request it files itself.
@@ -270,7 +276,7 @@ export function createSharedHandler({
         // Decided from the account's roles, not the desk named in the header: a stale or made-up
         // working-as id reads as no desk, but the account still holds its roles.
         const holder = workingAs
-          ? await store.viewer(actorId, { bootstrap: config.coordinatorIds.includes(actorId) })
+          ? await store.viewer(actorId, { bootstrap: bootstrapCoordinators(config).includes(actorId) })
           : view;
         if (holder.status !== "none")
           return reply(403, { error: "This account already has a role. Ask your access admin for another." });
@@ -354,6 +360,14 @@ export function createSharedHandler({
               }),
         });
         const data = { mode: "prototype", source: "synthetic", liveAvailable: false };
+        // H-0731: the server logs, before sending them, that this desk read its records. An
+        // unchanged poll sends none, so it is not logged, except on the TV board: a desk that moves
+        // to the TV keeps showing the records it already holds, so the TV logs its own polls too
+        // (the store logs at most once a window). A failed log write fails the read.
+        const tvScreen = request.headers.get(SCREEN) === "tv";
+        const logListRead = async () => {
+          if (store.logList) await store.logList(view, tvScreen ? "tv" : "list");
+        };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const params = new URL(request.url).searchParams;
         const since = Number(params.get("since"));
@@ -368,13 +382,16 @@ export function createSharedHandler({
           );
           if (polled.notModified) {
             if (polled.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+            if (tvScreen) await logListRead();
             return reply(200, { ...workspace(), data, notModified: true, revision: polled.revision, now: polled.now });
           }
           if (polled.snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+          await logListRead();
           return reply(200, { ...workspace(), data, snapshot: polled.snapshot });
         }
         const snapshot = await store.read(actorId, view);
         if (snapshot.dataMode !== "prototype") throw new Error("Workspace data mode mismatch");
+        await logListRead();
         return reply(200, { ...workspace(), data, snapshot });
       }
       if (path === "/v1/workspace/receipt" && request.method === "GET") {
@@ -598,6 +615,14 @@ export function createSharedHandler({
         return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
       if (error?.message === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
+      // H-0291: the save would take the workspace past its size limit. It rolled back, so this
+      // change is definitely not saved, and retrying the same change cannot succeed.
+      if (error?.message === "Workspace too large")
+        return reply(
+          413,
+          { code: "workspace-full", error: "The shared workspace is full, so this change was not saved." },
+          "workspace_full",
+        );
       const storage = storageFailure(error);
       note.failure = errorFields(error);
       return storage

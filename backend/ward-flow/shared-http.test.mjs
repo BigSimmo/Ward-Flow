@@ -834,3 +834,83 @@ test("an unsupported receipt lookup returns not found rather than an internal er
   const receipt = await handler(request(`/receipt?commandId=${commandId}`));
   assert.equal(receipt.status, 404);
 });
+
+test("the server logs each full read of a desk's list or TV board, and the TV's unchanged polls (H-0731)", async () => {
+  const logged = [];
+  let changed = false;
+  const { calls, handler } = setup(coordinator, "prototype", {
+    logList: async (view, surface) => {
+      logged.push([view.actorId, surface]);
+      return true;
+    },
+    poll: async () =>
+      changed
+        ? { snapshot: { revision: 8, dataMode: "prototype" } }
+        : { notModified: true, dataMode: "prototype", revision: 7, now: 900 },
+  });
+  assert.equal((await handler(request())).status, 200);
+  assert.equal((await handler(request("?since=7"))).status, 200);
+  changed = true;
+  assert.equal((await handler(request("?since=7"))).status, 200);
+  const tv = request();
+  tv.headers.set("x-ward-screen", "tv");
+  assert.equal((await handler(tv)).status, 200);
+  // Any other screen name reads as the list.
+  const odd = request();
+  odd.headers.set("x-ward-screen", "patient");
+  assert.equal((await handler(odd)).status, 200);
+  // A desk that moves to the TV board polls unchanged records, and the TV still logs them.
+  changed = false;
+  const tvPoll = request("?since=7");
+  tvPoll.headers.set("x-ward-screen", "tv");
+  assert.equal((await handler(tvPoll)).status, 200);
+  assert.deepEqual(logged, [
+    [coordinator, "list"],
+    [coordinator, "list"],
+    [coordinator, "tv"],
+    [coordinator, "list"],
+    [coordinator, "tv"],
+  ]);
+  assert.equal(calls.length, 3);
+  // A log that cannot be written fails the read, so nothing goes out unlogged.
+  const { handler: failing } = setup(coordinator, "prototype", {
+    logList: async () => {
+      throw new Error("Connection terminated unexpectedly");
+    },
+  });
+  assert.equal((await failing(request())).status, 503);
+});
+
+test("a bootstrap coordinator past its end date has no role (H-0057)", async () => {
+  const handler = createHandler({
+    config: {
+      coordinatorIds: [coordinator],
+      coordinatorUntil: Date.now() - 1,
+      origin: "https://ward-flow-production.up.railway.app",
+    },
+    sharedStore: {
+      viewer: async (actorId, { bootstrap }) =>
+        bootstrap ? bootstrapViewer(actorId, { bootstrap }) : { status: "none" },
+      read: async () => ({ revision: 1, dataMode: "prototype" }),
+      sessionLimitMinutes: 720,
+    },
+    authenticate: async (_token, /** @type {{ session?: any }} */ { session } = {}) => {
+      if (session) session.signedInAt = session.startedAt = Date.now();
+      return coordinator;
+    },
+    log: () => {},
+  });
+  assert.equal((await handler(request())).status, 403);
+});
+
+test("a save past the workspace size limit is refused as full, never as a server fault (H-0291)", async () => {
+  const { handler, logs } = setup(coordinator, "prototype", {
+    command: async () => {
+      throw new Error("Workspace too large");
+    },
+  });
+  const response = await handler(request("/commands", body));
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).code, "workspace-full");
+  assert.equal(logs.at(-1).outcome, "workspace_full");
+});

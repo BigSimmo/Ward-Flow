@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
+import { uploadedFileLabel } from "../ward-uploaded-file";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import { calendarDateOf } from "../ward-clock";
@@ -815,7 +816,7 @@ export function PatientDocumentsTab({
       by: d.uploadedBy,
       when: `${clock(d.uploadedAt)} AWST`,
       status: "Metadata recorded",
-      file: d.fileName,
+      file: uploadedFileLabel(d),
     })),
   ].filter(
     (d) =>

@@ -102,24 +102,22 @@ describe("charts to follow", () => {
     fireEvent.click(toFollow[0]!);
     expect(latest.toFollow).toEqual(["medication"]);
     expect(screen.getByText("To follow. The referral says it is not attached yet.")).toBeInTheDocument();
-    const upload = (name: string) => {
-      const contents = "%PDF-1.7\nSynthetic chart";
+    const upload = (name: string, contents: string) => {
       const file = new File([contents], name, { type: "application/pdf" });
       Object.defineProperty(file, "arrayBuffer", { value: async () => new TextEncoder().encode(contents).buffer });
       fireEvent.change(screen.getByLabelText("Medication chart", { selector: 'input[type="file"]' }), {
         target: { files: [file] },
       });
     };
-    upload("synthetic-medication.pdf");
-    await waitFor(() =>
-      expect(latest.charts.find((file) => file.kind === "medication")?.name).toBe("synthetic-medication.pdf"),
-    );
+    const medication = () => latest.charts.find((file) => file.kind === "medication");
+    upload("synthetic-medication.pdf", "%PDF-1.7\nSynthetic chart");
+    // H-0049: the file's own name is never kept, only its type.
+    await waitFor(() => expect(medication()?.name).toBe("PDF"));
+    const first = medication()?.base64;
     expect(latest.toFollow).toEqual([]);
     expect(screen.queryByRole("checkbox", { name: "Medication chart to follow" })).not.toBeInTheDocument();
-    upload("synthetic-replacement.pdf");
-    await waitFor(() =>
-      expect(latest.charts.find((file) => file.kind === "medication")?.name).toBe("synthetic-replacement.pdf"),
-    );
+    upload("synthetic-replacement.pdf", "%PDF-1.7\nSynthetic replacement chart");
+    await waitFor(() => expect(medication()?.base64).not.toBe(first));
     expect(latest.charts.filter((file) => file.kind === "medication")).toHaveLength(1);
     expect(latest.charts.find((file) => file.kind === "observation")).toEqual(chart("observation"));
     fireEvent.click(screen.getByRole("button", { name: "Remove medication chart" }));
@@ -152,7 +150,7 @@ describe("charts to follow on the receiving ward's referral detail", () => {
       </WardFlowProvider>,
     );
     const documents = screen.getByTestId("ward-referral-documents");
-    expect(documents).toHaveTextContent("observation.pdf");
+    expect(documents).toHaveTextContent("Observation chart · PDF");
     expect(documents).toHaveTextContent("Medication chart");
     expect(documents).toHaveTextContent("To follow, not attached yet.");
   });

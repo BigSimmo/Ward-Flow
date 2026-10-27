@@ -22,10 +22,10 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import {
+  BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_LEGAL_STATUSES,
-  TRANSPORT_PROVIDERS,
   type TransportLegalStatus,
-  type TransportProvider,
+  type TravelMode,
 } from "@/components/ward-management/ward-model";
 import type { OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
@@ -430,14 +430,14 @@ export function ReturnPlan({
                   onChange={(event) => {
                     const next = event.target.value;
                     onDraft({
-                      provider: TRANSPORT_PROVIDERS.includes(next as TransportProvider)
-                        ? (next as TransportProvider)
+                      provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode)
+                        ? (next as TravelMode)
                         : undefined,
                     });
                   }}
                 >
                   <option value="">Choose the provider</option>
-                  {TRANSPORT_PROVIDERS.map((provider) => (
+                  {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
                     <option key={provider} value={provider}>
                       {provider}
                     </option>
