@@ -63,3 +63,22 @@ export const changedFirstText = (value: unknown): string =>
 /** The settle message for queued actions on the same record that were not sent. */
 export const queuedNotSentText = (count: number, value: unknown): string =>
   `${count} queued action${count === 1 ? "" : "s"} on this ${conflictRecordType(value)} ${count === 1 ? "was" : "were"} not sent. Check the board, then try again.`;
+
+/**
+ * P058 review: queued actions that survive a conflict keep the revision they were prepared against,
+ * so the board adopted from the refusal never rebases them. Open popups start again from the new board.
+ */
+export function keepBasis<S extends { revision: number; records: Map<string, number> }>(
+  queue: { sheets?: readonly object[] }[] | false,
+  seen: WeakMap<object, S>,
+  sent: number,
+): WeakMap<object, S> {
+  const kept = new WeakMap<object, S>();
+  for (const queued of queue || []) {
+    const noted = (queued.sheets ?? []).filter((sheet) => seen.has(sheet));
+    if (!noted.length) queued.sheets = [{}];
+    for (const sheet of noted.length ? noted : queued.sheets!)
+      kept.set(sheet, seen.get(sheet) ?? ({ revision: sent, records: new Map() } as S));
+  }
+  return kept;
+}

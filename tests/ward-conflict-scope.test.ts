@@ -21,6 +21,7 @@ const patient = { name: "Jane Citizen", umrn: "U1234567", bed: "Bed 14", id: "PT
 
 function harness() {
   const sent: string[] = [];
+  const revisions: number[] = [];
   let release!: () => void;
   const gate = new Promise<void>((resolve) => (release = resolve));
   let view: SharedView | undefined;
@@ -34,6 +35,7 @@ function harness() {
       if (!options?.body) return Response.json({ snapshot: snapshot(1) });
       const body = JSON.parse(String(options.body)) as { event: { unitId: string } };
       sent.push(body.event.unitId);
+      revisions.push((JSON.parse(String(options.body)) as { expectedRevision: number }).expectedRevision);
       if (sent.length === 1) {
         await gate;
         return Response.json(
@@ -50,7 +52,7 @@ function harness() {
       return Response.json({ outcome: "accepted", snapshot: snapshot(sent.length + 1) });
     },
   });
-  return { client, sent, release, view: () => view };
+  return { client, sent, revisions, release, view: () => view };
 }
 
 describe("P058 conflict scope", () => {
@@ -72,6 +74,20 @@ describe("P058 conflict scope", () => {
     expect(refused.message).toBe(
       "Another desk changed this bed while you were looking. Your action was not applied. Check the latest details, then try again.",
     );
+    client.dispose();
+  });
+
+  it("a queued action that survives the conflict keeps the revision it was prepared against", async () => {
+    const { client, sent, revisions, release } = harness();
+    await client.refresh();
+    const first = client.dispatch(on("ward-1"));
+    const otherWard = client.dispatch(on("ward-2"));
+    await vi.waitFor(() => expect(sent).toHaveLength(1));
+    release();
+    await first;
+    await otherWard;
+    expect(sent).toEqual(["ward-1", "ward-2"]);
+    expect(revisions).toEqual([1, 1]);
     client.dispose();
   });
 
