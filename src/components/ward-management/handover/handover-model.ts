@@ -37,6 +37,7 @@ import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-s
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
+import { coordinatorOwnsAcceptedAwaitingBed } from "@/components/ward-management/ward-shared-figures";
 
 /* ------------------------------------------------------------------ shifts */
 
@@ -223,6 +224,8 @@ export function toHandoverRow(
   const ed = community ? { short: community, full: community } : edNames(movement.originEdId!);
   const accepted = movement.acceptedUnitId;
   const leg = transportLeg(movement.transport);
+  // P032: an accepted patient still waiting for the bed is the coordinator's, as on Waiting.
+  const recordedOwner = coordinatorOwnsAcceptedAwaitingBed(movement) ? HANDOVER_ME : movement.owner;
   const toUnit = accepted === undefined ? undefined : units.find((unit) => unit.id === accepted);
   return {
     movement,
@@ -236,8 +239,8 @@ export function toHandoverRow(
     service: toUnit === undefined ? undefined : unitHealthService(toUnit),
     openedAt: movement.openedAt,
     stage: movement.stage,
-    owner: movement.owner || "No owner recorded",
-    ownerShort: OWNER_SHORT[movement.owner] ?? (movement.owner || "No owner recorded"),
+    owner: recordedOwner || "No owner recorded",
+    ownerShort: OWNER_SHORT[recordedOwner] ?? (recordedOwner || "No owner recorded"),
     legalStatus: movement.legalStatus,
     formCode: movement.legalForm?.code,
     formDueAt: movement.legalForm?.dueAt,
