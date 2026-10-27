@@ -259,6 +259,7 @@ type TimerDirection = "waiting" | "in" | "left" | "overdue" | "ago" | "away" | "
 
 const COUNTDOWN: TimerDirection[] = ["in", "left"];
 const MINUTE = 60_000;
+const DEFAULT_FLAG_WORDS = { soon: "Due soon", over: "Overdue" };
 
 export type TimerProps = {
   /** Epoch ms. Counting up from it (`waiting`, `ago`) or down to it (`in`, `left`). */
@@ -279,6 +280,11 @@ export type TimerProps = {
   chip?: boolean;
   /** Hide the threshold word (when a column already shows it). The glyph stays. */
   hideFlagWord?: boolean;
+  /**
+   * Threshold words for a cue that is not a deadline (the Movements row's ED wait reads "Long wait" /
+   * "Over target", P099). Defaults to "Due soon" / "Overdue".
+   */
+  flagWords?: { soon: string; over: string };
   /**
    * Hide the direction word visually when the column header already says it ("WAITING"). It stays
    * for screen readers.
@@ -301,6 +307,7 @@ export function Timer({
   estimate = false,
   chip = false,
   hideFlagWord = false,
+  flagWords = DEFAULT_FLAG_WORDS,
   hideDirection = false,
   className,
 }: TimerProps) {
@@ -335,11 +342,11 @@ export function Timer({
         <span className={cx(styles.flag, level === "soon" ? styles.soon : styles.over)}>
           <StatusGlyph tone={level === "soon" ? "warning" : "danger"} size={9} />
           {hideFlagWord ? (
-            <SrOnly>{level === "soon" ? "Due soon" : "Overdue"}</SrOnly>
+            <SrOnly>{level === "soon" ? flagWords.soon : flagWords.over}</SrOnly>
           ) : level === "soon" ? (
-            "Due soon"
+            flagWords.soon
           ) : (
-            "Overdue"
+            flagWords.over
           )}
         </span>
       ) : null}
