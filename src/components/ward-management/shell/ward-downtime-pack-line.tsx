@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -20,6 +20,16 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import { useCanOpenHref } from "./ward-access";
 import styles from "./ward-offline-banner.module.css";
+
+/** Runs `work` once the browser is idle (at most 3 s on), and returns a cancel. */
+function whenIdle(work: () => void): () => void {
+  if (typeof window.requestIdleCallback === "function") {
+    const handle = window.requestIdleCallback(work, { timeout: 3000 });
+    return () => window.cancelIdleCallback(handle);
+  }
+  const timer = window.setTimeout(work, 1000);
+  return () => window.clearTimeout(timer);
+}
 
 /**
  * Fix plan item 9 (Josh, 21 Oct 2026, "yes to all"): the downtime pack is retaken every hour and at
@@ -45,6 +55,9 @@ export function WardDowntimePackLine() {
   const take = useTakeDowntimePack();
   const pathname = usePathname() ?? "";
   const online = useOnlineStatus();
+  // The time the opening pack was first due, kept across reruns while it waits for idle, so a shift
+  // change passed in that wait is still offered.
+  const openingDueAt = useRef<number | null>(null);
 
   const pack = useSyncExternalStore(
     subscribeDowntimePack,
@@ -60,24 +73,36 @@ export function WardDowntimePackLine() {
   useEffect(() => {
     // Offline, the records may be stale (a shared board stops syncing), so no pack is stamped with a
     // later time. The pack due meanwhile is taken as soon as the connection returns.
-    if (!canOpen || !ready || !online) return;
+    if (!canOpen || !ready || !online) return undefined;
     if (pack === null) {
-      take();
-      const opening = lastDowntimePack(owner, worldGeneration);
-      if (opening) markDowntimePackHandled(opening);
-      return;
+      // F-11: the opening pack is silent, so it waits until the page has finished starting rather
+      // than adding to a phone's first load. Hourly and shift change packs below are taken at once.
+      openingDueAt.current ??= now;
+      const dueAt = openingDueAt.current;
+      return whenIdle(() => {
+        openingDueAt.current = null;
+        const crossed = shiftChangeCrossed(dueAt, now);
+        if (crossed !== null) {
+          take({ shiftChangeAt: crossed });
+          return;
+        }
+        take();
+        const opening = lastDowntimePack(owner, worldGeneration);
+        if (opening) markDowntimePackHandled(opening);
+      });
     }
     // A pack taken offline is replaced as soon as the connection returns.
     if (pack.offline) {
       take();
-      return;
+      return undefined;
     }
-    if (!downtimePackDue(pack.generatedAt, now)) return;
+    if (!downtimePackDue(pack.generatedAt, now)) return undefined;
     // A shift change pack nobody has printed or put aside keeps asking: the hourly retake after it
     // carries the shift change on, so the line shows the fresher pack instead of going quiet. A
     // clock moved back before the pack is a fresh start, so nothing is carried.
     const unhandledShiftChange = handled || now < pack.generatedAt ? undefined : pack.shiftChangeAt;
     take({ shiftChangeAt: shiftChangeCrossed(pack.generatedAt, now) ?? unhandledShiftChange });
+    return undefined;
   }, [canOpen, ready, online, pack, handled, now, take, owner, worldGeneration]);
 
   if (!canOpen || !ready || pack === null || handled || !online || pathname === DOWNTIME_PACK_HREF) return null;

@@ -7,7 +7,7 @@ import { communityTeamById, communityTeamSlug } from "@/components/ward-manageme
 import {
   mapClinicToServiceAndHospital,
   type HealthServiceCode,
-} from "@/components/ward-management/tools/ward-catchment-resolver";
+} from "@/components/ward-management/tools/ward-catchment-mapping";
 import type { HealthService, Unit } from "@/components/ward-management/ward-model";
 import type { AccessPlaces } from "@/components/ward-management/ward-access-admin";
 import type { PlaceLookup } from "@/components/ward-management/ward-role-access";

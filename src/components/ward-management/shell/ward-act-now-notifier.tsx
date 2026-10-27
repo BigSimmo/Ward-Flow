@@ -39,6 +39,8 @@ export function WardActNowNotifier() {
     admissions,
     patients,
     referrals,
+    supportNotifications,
+    plannedAdmissions,
   } = useWardFlowSelect(
     "movements",
     "units",
@@ -50,6 +52,8 @@ export function WardActNowNotifier() {
     "admissions",
     "patients",
     "referrals",
+    "supportNotifications",
+    "plannedAdmissions",
   );
   const now = useWardFlowClock();
   const [enabled] = useActNowNotificationPreference();
@@ -59,12 +63,39 @@ export function WardActNowNotifier() {
 
   const actNow = useMemo(() => {
     if (!actionable) return [];
-    // Audit A3-1: with the stays and leave beds, so an absence on an order is pushed too.
+    // Audit A3-1: with the stays and leave beds, so an absence on an order is pushed too. The bar's
+    // task source exactly, so this reuses the bar's list rather than building another on every page
+    // load (F-11); the extra records add only warning rows, which the act-now filter drops.
     return activeActNowItems(
-      { movements, units, configuration, inboxSnoozes, leaveBeds, admissions, patients, referrals },
+      {
+        movements,
+        units,
+        configuration,
+        inboxSnoozes,
+        leaveBeds,
+        admissions,
+        patients,
+        referrals,
+        supportNotifications,
+        plannedAdmissions,
+        stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
+      },
       now,
     );
-  }, [actionable, movements, units, configuration, inboxSnoozes, leaveBeds, admissions, patients, referrals, now]);
+  }, [
+    actionable,
+    movements,
+    units,
+    configuration,
+    inboxSnoozes,
+    leaveBeds,
+    admissions,
+    patients,
+    referrals,
+    supportNotifications,
+    plannedAdmissions,
+    now,
+  ]);
 
   useEffect(() => {
     if (!sessionAdopted) {
