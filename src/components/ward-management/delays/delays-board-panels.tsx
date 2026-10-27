@@ -284,7 +284,7 @@ export function PersonPanel({
                   </span>
                   <small>
                     {candidate.text}
-                    {candidate.waitlist ? ". In catchment, waitlist for a locked bed" : ""}
+                    {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
                   </small>
                 </li>
               ))}

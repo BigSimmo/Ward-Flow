@@ -207,8 +207,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                 </div>
 
                 <p className={styles.footnote}>
-                  Catchment dossier view for clinical coordination. Full electronic health record integration is
-                  simulated.
+                  Catchment record view for clinical coordination. Not connected to any health record.
                 </p>
               </>
             ) : (
@@ -269,9 +268,9 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   </div>
                   <div id="pxTimeline" className={`${styles.panelBody} ${styles.timeline}`}>
                     <div className={styles.timelineEntry}>
-                      <span className={`${styles.mono} ${styles.microMuted}`}>3d ago</span> · <b>Ward bed telemetry:</b>{" "}
-                      Admitted in {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure bed 03"}.
-                      Joint MDT conference scheduled.
+                      <span className={`${styles.mono} ${styles.microMuted}`}>3d ago</span> · <b>Ward bed:</b> Admitted
+                      in {selectedPatientId === "PT-3712" ? "SCGH Adult Open" : "FSH Adult Secure bed 03"}. Joint MDT
+                      conference scheduled.
                     </div>
                     <div className={styles.timelineEntry}>
                       <span className={`${styles.mono} ${styles.microMuted}`}>5d ago</span> ·{" "}
@@ -388,7 +387,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   <p>
                     <b>Next recorded step:</b>{" "}
                     <span id="refDrawerAction">
-                      None recorded in this dossier. Review the referring team&apos;s information.
+                      None recorded in this record. Review the referring team&apos;s information.
                     </span>
                   </p>
                 </div>

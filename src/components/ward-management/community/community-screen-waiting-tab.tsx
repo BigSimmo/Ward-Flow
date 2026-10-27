@@ -398,7 +398,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                               }}
                               title="Open full referral triage assessment"
                             >
-                              Triage dossier
+                              Triage record
                             </button>
                           </div>
                           <div className={styles.declineActions}>

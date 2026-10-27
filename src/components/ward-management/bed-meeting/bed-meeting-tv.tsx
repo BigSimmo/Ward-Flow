@@ -617,7 +617,7 @@ function BedMeetingTvView({
           )}
         </Panel>
 
-        <Panel title="Delays by cause" testId="bed-meeting-tv-delays-panel" area="delays">
+        <Panel title="Waiting by cause" testId="bed-meeting-tv-delays-panel" area="delays">
           {delays.groups.length === 0 ? (
             <Empty>No delays.</Empty>
           ) : (

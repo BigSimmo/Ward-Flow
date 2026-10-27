@@ -112,7 +112,7 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     expect(inbox.getByRole("button", { name: "Accept referral" })).toHaveAccessibleDescription(
       `${ELSEWHERE.name} or coordinator only`,
     );
-    const waitlist = inbox.getByRole("button", { name: "Waitlist" });
+    const waitlist = inbox.getByRole("button", { name: "Waiting list" });
     expect(waitlist).not.toBeDisabled();
     expect(waitlist).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(waitlist);

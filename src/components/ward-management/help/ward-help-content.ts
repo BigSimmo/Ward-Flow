@@ -171,7 +171,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     title: "Waiting",
     purpose: "Why each waiting patient is still waiting, grouped by cause.",
     actions: [
-      "Use the saved views: Needs me now, Form due and For handover.",
+      "Use the saved views: Due soon or on you, Form due and For handover.",
       "Open a row to deal with what is holding it up.",
     ],
   },
