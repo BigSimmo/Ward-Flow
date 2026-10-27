@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { TOUR_ROLE_LABELS, tourSteps, type TourRole } from "@/components/ward-management/help/ward-tour-steps";
 import { railEntries, roleMenu } from "@/components/ward-management/shell/ward-rail-entries";
