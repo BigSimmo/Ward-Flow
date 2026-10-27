@@ -3,7 +3,7 @@ import type { WardFlowEvent } from "../ward-flow-events";
 import type { Patient, Gender } from "../ward-patients";
 import type { RecordedSex } from "../ward-model-vocabulary";
 import type { PatientRegistrationScope } from "../ward-patient-registration";
-import type { Instant } from "../ward-clock";
+import { calendarDateOf, perthIsoDay, type Instant } from "../ward-clock";
 import type { WardFlowRole } from "../ward-flow-events";
 import type { Referral } from "../ward-model";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
@@ -150,7 +150,7 @@ export function useReferralPatientRegistration({
   generation,
   dispatch,
   now,
-  demoToday,
+  dayZero,
   role,
   registrationScope,
   requiresRegistrationScope,
@@ -163,8 +163,8 @@ export function useReferralPatientRegistration({
   generation: number;
   dispatch: WardCommandDispatch;
   now: Instant;
-  /** The demo calendar day, YYYY-MM-DD, so the reducer bounds a birth date by it (H-0372). */
-  demoToday?: string;
+  /** The demo calendar's day zero, so the reducer bounds a birth date by the demo day (H-0372). */
+  dayZero?: Date;
   role: WardFlowRole;
   registrationScope?: PatientRegistrationScope;
   requiresRegistrationScope?: boolean;
@@ -257,7 +257,7 @@ export function useReferralPatientRegistration({
         familyName,
         umrn,
         dateOfBirth: patient.dateOfBirth,
-        ...(demoToday ? { demoToday } : {}),
+        ...(dayZero ? { demoToday: perthIsoDay(calendarDateOf(now, dayZero)) } : {}),
         ...(patient.gender ? { gender: patient.gender } : {}),
         ...(patient.sex ? { sex: patient.sex } : {}),
         ...(patient.suburb.trim() ? { suburb: patient.suburb.trim() } : {}),
