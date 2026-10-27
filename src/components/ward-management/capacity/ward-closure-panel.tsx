@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
 
@@ -93,9 +93,21 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
     if (unit.isClosed) {
       setReason("");
       setReopenAfter("");
-      clearDraft();
     }
   }
+  // The saved draft goes once the choices are empty, whether the close was recorded or both selects were put
+  // back. Clearing after the empty value is rendered makes the draft guard remember the empty value, so the
+  // same choices made again after a reopen are saved as a new draft.
+  const hasChoices = reason !== "" || reopenAfter !== "";
+  const hadChoices = useRef(false);
+  useEffect(() => {
+    if (hasChoices) {
+      hadChoices.current = true;
+    } else if (hadChoices.current) {
+      hadChoices.current = false;
+      clearDraft();
+    }
+  }, [hasChoices, clearDraft]);
 
   if (!unit.isClosed) {
     const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);

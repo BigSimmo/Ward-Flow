@@ -88,4 +88,30 @@ describe("ward closure panel B2a", () => {
     expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
     expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("12");
   });
+
+  it("forgets the saved draft when both choices are put back (P086)", async () => {
+    const first = renderPanel();
+    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "" } });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    first.unmount();
+    renderPanel();
+    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("");
+  });
+
+  it("saves the same choices again after a close and a reopen (P086)", async () => {
+    const first = renderPanel();
+    chooseAndConfirmClose();
+    fireEvent.click(screen.getByTestId("ward-closure-reopen"));
+    fireEvent.click(screen.getByRole("button", { name: `Reopen ${UNIT.name}` }));
+    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
+    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    first.unmount();
+    renderPanel();
+    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("8");
+  });
 });
