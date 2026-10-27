@@ -21,7 +21,11 @@ const get = (/** @type {Record<string, string>} */ headers = {}) =>
 test("P177: /healthz hides the database answer without the right uptime token", async () => {
   queries = 0;
   const handler = make("right-token");
-  for (const headers of [{}, { "x-ward-flow-uptime-token": "wrong-token" }, { "x-ward-flow-uptime-token": "" }]) {
+  for (const headers of /** @type {Record<string, string>[]} */ ([
+    {},
+    { "x-ward-flow-uptime-token": "wrong-token" },
+    { "x-ward-flow-uptime-token": "" },
+  ])) {
     const reply = await handler(get(headers));
     assert.equal(reply.status, 200);
     const body = await reply.json();
@@ -37,7 +41,11 @@ test("P177: /healthz shows the database answer to the right uptime token", async
 });
 
 test("P177: with no token set on the server the database answer is never shown", async () => {
-  for (const headers of [{}, { "x-ward-flow-uptime-token": "" }, { "x-ward-flow-uptime-token": "anything" }]) {
+  for (const headers of /** @type {Record<string, string>[]} */ ([
+    {},
+    { "x-ward-flow-uptime-token": "" },
+    { "x-ward-flow-uptime-token": "anything" },
+  ])) {
     const body = await (await make(undefined)(get(headers))).json();
     assert.equal("database" in body, false);
   }
