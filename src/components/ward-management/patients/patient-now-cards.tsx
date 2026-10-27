@@ -15,7 +15,7 @@ import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-for
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
 
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
 /**
@@ -58,6 +58,12 @@ export function PatientWhyCard({
   movement?: Movement;
   patient?: Patient;
 }) {
+  // WT-06 (walk-through, 26 Oct 2026): the catchment the referral confirmed shows when the record
+  // holds none, named as coming from the referral.
+  const referrals = useOptionalWardFlowSelect("referrals")?.referrals;
+  const referralCatchment = referrals
+    ?.find((referral) => movement?.referralId !== undefined && referral.id === movement.referralId)
+    ?.intake?.catchment?.teamName?.trim();
   return (
     <Card data-testid="ward-patient-why-card">
       <CardHead
@@ -76,7 +82,10 @@ export function PatientWhyCard({
         ) : null}
         {/* Interpreter language and Aboriginal status stay in Details, apart from each other and
             from this history, per the placement rule in person-screen.tsx. */}
-        <Row label="Catchment">{patient?.catchmentCommunityTeam ?? notRecorded}</Row>
+        <Row label="Catchment">
+          {patient?.catchmentCommunityTeam ??
+            (referralCatchment ? `${referralCatchment}, from the referral` : notRecorded)}
+        </Row>
       </div>
     </Card>
   );

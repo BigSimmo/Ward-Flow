@@ -74,7 +74,12 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const [arrivalMode, setArrivalMode] = useState<ArrivalMode>(
     movement.arrivalDetails?.mode ?? "mental_health_transport",
   );
-  const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? "");
+  // WT-06 (walk-through, 26 Oct 2026): the CAD number logged with the transport booking is offered
+  // here rather than asked again. Live jobs only; a cancelled booking's number is not carried.
+  const bookedCad =
+    movement.transport?.cancelledAt === undefined ? movement.transport?.cadNumber?.trim() || undefined : undefined;
+  const cadFromBooking = movement.arrivalDetails?.trackingNumber === undefined && bookedCad !== undefined;
+  const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? bookedCad ?? "");
   const [etaMinutes, setEtaMinutes] = useState(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -222,10 +227,12 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
               disabled={saving}
               type="text"
               placeholder="e.g. CAD-2026-8912 or SJA-412"
+              aria-describedby={cadFromBooking ? `${baseId}-tracking-number-source` : undefined}
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
               className={styles.control}
             />
+            {cadFromBooking ? <small id={`${baseId}-tracking-number-source`}>From the transport booking</small> : null}
           </div>
 
           <div className={styles.etaField}>

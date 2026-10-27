@@ -10,6 +10,7 @@
 "use client";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
+import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 
 import { useId, useState } from "react";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
@@ -408,7 +409,7 @@ export function MovementWorkspaceCockpit({
         ? "Closed — arrived"
         : "Closed — did not proceed"
       : "Arrived"
-    : stageCopy[patient.stage].label;
+    : movementStatusLabel(patient);
 
   const initials = mastheadName
     ? mastheadName
