@@ -221,9 +221,13 @@ describe("Hero: quiet and band", () => {
     expect(desktop, "no desktop server-band rule in hero.module.css").toBeDefined();
     expect(desktop).toMatch(/margin-top:\s*calc\(-1 \* var\(--wf-band-top\)\)/u);
     expect(desktop).toMatch(/border-radius:\s*0/u);
-    // Phone keeps its own measured band: no server-band rule under 48rem.
+    // Phone has its own server band since 27 Oct 2026 (header audit): the phone band's spacing on
+    // the 12px phone insets, so a phone hero no longer shrinks when the measure lands.
     const phoneBlocks = [...css.matchAll(/@media\s*\(max-width:\s*48rem\)\s*\{([\s\S]*?)\n\}/gu)].map((m) => m[1]);
-    expect(phoneBlocks.join("")).not.toMatch(/:not\(\[data-band\]\)/u);
+    const phone = /\.hero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/u.exec(phoneBlocks.join(""))?.[1];
+    expect(phone, "no phone server-band rule in hero.module.css").toBeDefined();
+    expect(phone).toMatch(/padding:\s*6px 16px calc\(18px \+ var\(--wf-band-lip\)\)/u);
+    expect(phone).toMatch(/border-radius:\s*0/u);
   });
 
   it("ends the server band once measured: on when the page opens on it, off when it does not", () => {

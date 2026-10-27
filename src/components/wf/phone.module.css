@@ -495,24 +495,15 @@
   color: var(--wf-ink-3);
 }
 
-/* Truncated words show in full on focus as well as hover (v9 section 8). F-28: hover only where a
-   pointer hovers, so a tap on iPhone does not leave the row expanded and the layout jumping. */
+/* Truncated words show in full on keyboard focus (v9 section 8). Scroll jumps (27 Oct 2026): no
+   longer on hover. A row that grew under a resting pointer made the list jump up and down while it
+   scrolled on a narrow desktop window or an iPad with a trackpad. */
 .rowInteractive:focus-visible .rowName,
 .rowInteractive:focus-visible .rowMeta {
   -webkit-line-clamp: unset;
   line-clamp: none;
   white-space: normal;
   overflow-wrap: anywhere;
-}
-
-@media (hover: hover) {
-  .rowInteractive:hover .rowName,
-  .rowInteractive:hover .rowMeta {
-    -webkit-line-clamp: unset;
-    line-clamp: none;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
 }
 
 .rowTrail {
