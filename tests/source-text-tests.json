@@ -182,6 +182,7 @@
     "tests/ward-shell-tablet.dom.test.tsx",
     "tests/ward-shell-third-edition.dom.test.tsx",
     "tests/ward-shell.dom.test.tsx",
+    "tests/ward-short-phone-scroll-room.test.ts",
     "tests/ward-shortlist-gate-hidden-css.test.ts",
     "tests/ward-site-review-shell.test.ts",
     "tests/ward-sites-reference-alignment.test.ts",
