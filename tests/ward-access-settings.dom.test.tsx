@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -251,9 +251,12 @@ describe("the Access tab", () => {
     });
     fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
     const dialog = await screen.findByTestId("ward-step-up");
-    fireEvent.change(within(dialog).getByLabelText("Password"), { target: { value: "synthetic-password" } });
+    // Form-friction 258: the password box takes focus, and Enter signs in.
+    const password = within(dialog).getByLabelText("Password");
+    await waitFor(() => expect(password).toHaveFocus());
+    fireEvent.change(password, { target: { value: "synthetic-password" } });
     await act(async () => {
-      fireEvent.click(within(dialog).getByRole("button", { name: "Sign in and carry on" }));
+      fireEvent.keyDown(password, { key: "Enter" });
     });
     expect(reauthenticate).toHaveBeenCalledWith("synthetic-password");
     expect(api.grantAccess).toHaveBeenCalledTimes(2);

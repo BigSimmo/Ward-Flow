@@ -105,7 +105,8 @@ export function SupportNotificationChecklist({
   const [editing, setEditing] = useState<SupportNotificationParty | null>(null);
   // Audit CS3-01: an open "who was told" form is checked against the board it opened on.
   useHoldOpenForm(editing !== null);
-  const [outcome, setOutcome] = useState<SupportNotificationOutcome>("told");
+  // Opens blank: Told or Not applicable is a positive choice, never assumed.
+  const [outcome, setOutcome] = useState<SupportNotificationOutcome | "">("");
   const [who, setWho] = useState("");
   const [time, setTime] = useState("");
   const [day, setDay] = useState<ToldDay>("0");
@@ -136,7 +137,7 @@ export function SupportNotificationChecklist({
   function startEditing(party: SupportNotificationParty) {
     editingRevisionRef.current += 1;
     setEditing(party);
-    setOutcome("told");
+    setOutcome("");
     setWho("");
     setTime(formatInstant(now));
     setDay("0");
@@ -145,8 +146,19 @@ export function SupportNotificationChecklist({
     setTimeError(null);
   }
 
+  const saveMissing =
+    outcome === ""
+      ? "Choose Told or Not applicable"
+      : outcome === "told"
+        ? who.trim() === ""
+          ? "Enter who was told"
+          : undefined
+        : reason.trim() === ""
+          ? "Enter a reason"
+          : undefined;
+
   function save(party: SupportNotificationParty) {
-    if (!subject) return;
+    if (!subject || outcome === "" || saveMissing) return;
     const contactedAt = clockTextOnDay(time, Number(day), now);
     if (outcome === "told" && contactedAt === null) {
       setTimeError("Enter the time as HH:MM, for example 14:05 or 1405");
@@ -240,7 +252,7 @@ export function SupportNotificationChecklist({
                     save(party);
                   }}
                 >
-                  <Segmented<SupportNotificationOutcome>
+                  <Segmented<SupportNotificationOutcome | "">
                     label="Outcome"
                     items={OUTCOME_ITEMS}
                     value={outcome}
@@ -303,7 +315,7 @@ export function SupportNotificationChecklist({
                         ))}
                       </div>
                     </div>
-                  ) : (
+                  ) : outcome === "not_applicable" ? (
                     <Field label="Reason">
                       <TextInput
                         value={reason}
@@ -315,7 +327,7 @@ export function SupportNotificationChecklist({
                         }}
                       />
                     </Field>
-                  )}
+                  ) : null}
                   <div className={styles.actions}>
                     <Button
                       variant="ghost"
@@ -327,12 +339,7 @@ export function SupportNotificationChecklist({
                     >
                       Cancel
                     </Button>
-                    <Button
-                      variant="pri"
-                      size="sm"
-                      type="submit"
-                      disabled={outcome === "told" ? who.trim() === "" : reason.trim() === ""}
-                    >
+                    <Button variant="pri" size="sm" type="submit" disabledReason={saveMissing}>
                       Save
                     </Button>
                   </div>

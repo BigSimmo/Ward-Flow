@@ -148,6 +148,7 @@ describe("final Tell command feedback survives its outstanding-queue removal (WF
     fireEvent.click(screen.getAllByRole("button", { name: "Tell next" })[0]!);
     fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
     const form = screen.getByRole("form", { name: "Record Carer" });
+    fireEvent.click(within(form).getByRole("radio", { name: "Told" }));
     fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic final contact" } });
     await act(async () => {
       fireEvent.submit(form);

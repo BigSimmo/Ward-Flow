@@ -240,6 +240,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                       type="button"
                       aria-pressed={sourceKind === kind}
                       onClick={() => {
+                        if (kind === sourceKind) return;
                         setSourceKind(kind);
                         setOriginSiteCode("");
                       }}

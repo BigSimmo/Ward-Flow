@@ -36,7 +36,9 @@ describe("planned admission chooser work", () => {
     const choices = () =>
       within(screen.getByTestId("ward-planned-patient"))
         .getAllByRole("option")
-        .map((option) => (option as HTMLOptionElement).value);
+        .map((option) => (option as HTMLOptionElement).value)
+        // The blank "Choose the patient" option leads; the choices are the patients after it.
+        .filter((value) => value !== "");
     const original = choices();
     const chosen = original[0];
     expect(original.length).toBeGreaterThan(1);
@@ -161,12 +163,13 @@ describe("planned admission chooser work", () => {
     fireEvent.click(screen.getByTestId("ward-planned-book"));
     const chooser = screen.getByTestId("ward-planned-patient");
     expect(screen.getByTestId("ward-planned-who")).toHaveValue("patient");
-    expect(chooser).toHaveValue(expected[0].id);
+    // WT-13: the patient list opens blank; nobody is chosen for the coordinator.
+    expect(chooser).toHaveValue("");
     expect(
       within(chooser)
         .getAllByRole("option")
         .map((option) => (option as HTMLOptionElement).value),
-    ).toEqual(expected.map((patient) => patient.id));
+    ).toEqual(["", ...expected.map((patient) => patient.id)]);
     counts.openBook = passes() - beforeBook;
     fireEvent.change(screen.getByTestId("ward-planned-stay"), { target: { value: "9" } });
     counts.draftEdit = passes() - beforeBook - counts.openBook;
@@ -185,7 +188,7 @@ describe("planned admission chooser work", () => {
       within(screen.getByTestId("ward-planned-patient"))
         .getAllByRole("option")
         .map((option) => (option as HTMLOptionElement).value),
-    ).toEqual(expected.slice(1).map((patient) => patient.id));
+    ).toEqual(["", ...expected.slice(1).map((patient) => patient.id)]);
     expect(screen.getByTestId("ward-planned-stay")).toHaveValue(9);
     expect(screen.getByTestId("ward-capacity-planned-admissions")).toBe(panel);
     // Numeric evidence only; this is uncompiled component work, not production timing or INP.

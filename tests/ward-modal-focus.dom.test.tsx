@@ -139,6 +139,24 @@ describe("useModalFocus", () => {
     await waitFor(() => expect(screen.getByRole("textbox", { name: "Find" })).toHaveFocus());
   });
 
+  it("focuses a bare data-sheet-autofocus child, and skips one set to false (form-friction 251)", async () => {
+    render(
+      <>
+        <Layer name="Bare">
+          <input aria-label="Password" data-sheet-autofocus="" />
+        </Layer>
+        <Layer name="Off">
+          <input aria-label="Skipped" data-sheet-autofocus="false" />
+        </Layer>
+      </>,
+    );
+    openLayer("Bare");
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Password" })).toHaveFocus());
+    fireEvent.keyDown(window, { key: "Escape" });
+    openLayer("Off");
+    await waitFor(() => expect(screen.getByRole("button", { name: "Off first" })).toHaveFocus());
+  });
+
   it("closes only the top layer on Escape and hands focus back down the stack", () => {
     render(
       <Layer name="Lower" focusOnOpen="immediate">

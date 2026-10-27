@@ -217,7 +217,10 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
     phOpenStep,
     phStepIndex,
     sectionIds,
+    needed,
   } = s;
+  // Every step already answered (for example a record prefilled from the ED): Send works from here.
+  const stepsAnswered = sectionIds.every((id) => needed[id] === 0);
   return (
     <div className={styles.sendReferralFoot}>
       <div className={styles.sendTargetSummary} role={footStatus.alert ? "alert" : undefined}>
@@ -370,7 +373,18 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
             )}
             {/* Audit 11 Oct 2026: Send is always visible; until every item is in it stays locked
                     and says what it waits on. */}
-            {!confirmationOpen && activeSection !== "placement" ? (
+            {!confirmationOpen && activeSection !== "placement" && stepsAnswered ? (
+              <button
+                type="button"
+                className={styles.btnCancelReferral}
+                data-testid="ward-referral-send-early"
+                disabled={sendPending}
+                onClick={handleDispatch}
+              >
+                Send
+              </button>
+            ) : null}
+            {!confirmationOpen && activeSection !== "placement" && !stepsAnswered ? (
               <>
                 <button
                   type="button"

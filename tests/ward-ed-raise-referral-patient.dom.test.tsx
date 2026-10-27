@@ -109,7 +109,7 @@ describe("ED Raise referral starts from a person", () => {
     renderEd();
     markNotYetIdentified();
     expect(document.getElementById("ward-ed-referral-blocked")).toHaveTextContent(
-      /^Choose a cohort before raising this referral\.$/u,
+      /^Choose a security level before raising this referral\.$/u,
     );
   });
 

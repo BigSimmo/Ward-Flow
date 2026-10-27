@@ -219,17 +219,19 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     setRefusal(null);
     setSubmittedInForm(false);
     setDraft({
+      // WT-13: the patient, reason, ward and legal status open blank and are chosen; the day, time
+      // and stay keep their usual defaults.
       who: bookablePatients.length > 0 ? "patient" : "initials",
-      patientId: bookablePatients[0]?.id ?? "",
+      patientId: "",
       initials: "",
       sex: "Not recorded",
       gender: undefined,
-      reason: PLANNED_ADMISSION_REASONS[0],
-      unitId: units[0]?.id ?? "",
+      reason: "",
+      unitId: "",
       dayOffset: 1,
       time: "10:00",
       stayDays: "7",
-      legalStatus: PLANNED_ADMISSION_LEGAL_STATUSES[0] ?? "Voluntary",
+      legalStatus: "",
       ageBand: "Adult",
       overrideReason: undefined,
     });
@@ -274,7 +276,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function submitDraft() {
     if (!draft || !form || form.mode === "cancel") return;
-    if (overrideReasonMissing) return;
+    if (draftMissing || overrideReasonMissing) return;
+    const { reason, legalStatus } = draft;
+    if (reason === "" || legalStatus === "") return;
     const timing = draftTiming(draft, now);
     if (!timing.ok) {
       setRefusal(timing.refusal);
@@ -323,11 +327,11 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
           ? { patientId: draft.patientId as PatientId }
           : { initials, ...(draft.gender === undefined ? {} : { gender: draft.gender }) }),
         sex,
-        reason: draft.reason,
+        reason,
         unitId: draft.unitId,
         expectedArrivalAt,
         expectedStayDays,
-        legalStatus: draft.legalStatus,
+        legalStatus,
         ageBand,
         ...(calendarDate !== undefined ? { calendarDate } : {}),
         overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
@@ -339,11 +343,11 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         now,
         plannedAdmissionId: form.id,
         ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
-        reason: draft.reason,
+        reason,
         unitId: draft.unitId,
         expectedArrivalAt,
         expectedStayDays,
-        legalStatus: draft.legalStatus,
+        legalStatus,
         ...(calendarDate !== undefined ? { calendarDate } : {}),
         overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
       });
@@ -387,6 +391,17 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     changing.unitId === draft.unitId &&
     authorisationReasonNeeded(changing.legalStatus, draftUnit);
   const overrideReasonMissing = overrideReasonShown && !alreadyStanding && draft?.overrideReason === undefined;
+  const draftMissing = !draft
+    ? undefined
+    : form?.mode === "book" && draft.who === "patient" && draft.patientId === ""
+      ? "Choose the patient first"
+      : draft.reason === ""
+        ? "Choose a reason first"
+        : draft.unitId === ""
+          ? "Choose a ward first"
+          : draft.legalStatus === ""
+            ? "Choose a legal status first"
+            : undefined;
 
   const booked = agenda.length;
   const update = (patch: Partial<Draft>) => {
@@ -520,7 +535,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             <Button
               variant="pri"
               onClick={submitDraft}
-              disabledReason={overrideReasonMissing ? "Choose an override reason first" : undefined}
+              disabledReason={draftMissing ?? (overrideReasonMissing ? "Choose an override reason first" : undefined)}
               data-testid="ward-planned-submit"
             >
               {form?.mode === "change" ? "Save" : "Book"}
@@ -555,6 +570,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                       }}
                       data-testid="ward-planned-patient"
                     >
+                      <option value="" disabled>
+                        Choose the patient
+                      </option>
                       {getBookablePatients().map((patient) => (
                         <option key={patient.id} value={patient.id}>
                           {patientDisplayName(patient)}
@@ -608,7 +626,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                     {genderField(false)}
                   </>
                 )}
-                {draft.who === "patient" ? (
+                {draft.who === "patient" && draft.patientId !== "" ? (
                   <p className={styles.formWho} data-testid="ward-planned-record-gender">
                     {recordGenderText(draft.patientId)}
                   </p>
@@ -633,6 +651,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 }}
                 data-testid="ward-planned-reason"
               >
+                <option value="" disabled>
+                  Choose a reason
+                </option>
                 {PLANNED_ADMISSION_REASONS.map((reason) => (
                   <option key={reason} value={reason}>
                     {PLANNED_ADMISSION_REASON_LABELS[reason]}
@@ -648,6 +669,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                 }}
                 data-testid="ward-planned-unit"
               >
+                <option value="" disabled>
+                  Choose a ward
+                </option>
                 {HEALTH_SERVICES.map((service) => {
                   const inService = units.filter((unit) => unitHealthService(unit) === service);
                   return inService.length === 0 ? null : (
@@ -711,6 +735,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                   }}
                   data-testid="ward-planned-legal"
                 >
+                  <option value="" disabled>
+                    Choose a legal status
+                  </option>
                   {PLANNED_ADMISSION_LEGAL_STATUSES.map((status) => (
                     <option key={status} value={status}>
                       {status}

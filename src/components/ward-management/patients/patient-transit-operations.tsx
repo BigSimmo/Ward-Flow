@@ -27,6 +27,7 @@ import {
   type OverrideReason,
   RELEASE_PULL_REASONS,
   type ReleasePullReason,
+  changeReasonLabels,
 } from "../ward-change-reasons";
 import { MovementWorkspaceCockpit } from "../movements/movement-workspace-cockpit";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
@@ -890,7 +891,7 @@ export function PatientTransitOperations({
                     <option value="">Choose reason</option>
                     {RELEASE_PULL_REASONS.map((r) => (
                       <option value={r} key={r}>
-                        {r.replace(/_/g, " ")}
+                        {changeReasonLabels[r]}
                       </option>
                     ))}
                   </select>

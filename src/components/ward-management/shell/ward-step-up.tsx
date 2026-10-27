@@ -14,7 +14,7 @@
  */
 import { useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
-import { Dialog, Field, TextInput } from "@/components/wf";
+import { Dialog, Field, SrOnly, TextInput } from "@/components/wf";
 import { STEP_UP_MINUTES } from "@/components/ward-management/ward-access-shell-rules";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useUnscopedWardFlow } from "./ward-access-context";
@@ -139,15 +139,26 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
       secondary={[{ label: "Cancel", onAction: () => close(CANCELLED) }]}
     >
       {pending?.mode === "password" ? (
-        <Field label="Password" error={error ?? undefined}>
-          <TextInput
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            data-sheet-autofocus=""
-          />
-        </Field>
+        <>
+          <Field label="Password" error={error ?? undefined}>
+            <TextInput
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              onKeyDown={(event) => {
+                // Enter signs in, as it would in any password box.
+                if (event.key === "Enter" && password.length > 0) {
+                  event.preventDefault();
+                  void carryOn();
+                }
+              }}
+              data-sheet-autofocus="true"
+            />
+          </Field>
+          {/* Field errors are not announced on their own, so a refused sign-in is said here. */}
+          <SrOnly role="status">{error ?? ""}</SrOnly>
+        </>
       ) : (
         <p>
           The shared workspace asks for your password again here. In this demonstration there is no password, so confirm

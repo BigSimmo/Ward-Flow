@@ -115,6 +115,19 @@ describe.each([
     expect(screen.queryByRole("button", { name: "Save blocker" })).toBeNull();
   });
 
+  it("opens the blocker list blank, and Save blocker says why until a choice is made", () => {
+    setup();
+    const onUpdateBlocker = vi.fn(() => Promise.resolve<WardCommandOutcome>({ commandId: "c-0", status: "accepted" }));
+    render(drawer(bed(), onUpdateBlocker));
+    openEditor();
+    expect(screen.getByRole("combobox", { name: "Discharge blocker" })).toHaveValue("");
+    const save = screen.getByRole("button", { name: "Save blocker" });
+    expect(save).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Choose what is holding them up first.")).toBeVisible();
+    fireEvent.click(save);
+    expect(onUpdateBlocker).not.toHaveBeenCalled();
+  });
+
   it("sends the chosen blocker and closes only once the save is accepted", async () => {
     setup();
     let finish: (outcome: WardCommandOutcome) => void = () => {};
@@ -141,6 +154,9 @@ describe.each([
     );
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
+    fireEvent.change(screen.getByRole("combobox", { name: "Discharge blocker" }), {
+      target: { value: "Awaiting clean" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Save blocker" }));
     await act(async () => {});
     expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting clean");
@@ -198,6 +214,9 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   const drawerEl = await screen.findByTestId("bed-telemetry-drawer");
   fireEvent.click(within(drawerEl).getByRole("tab", { name: "Plan to leave" }));
   fireEvent.click(within(drawerEl).getByRole("button", { name: "Record blocker" }));
+  fireEvent.change(within(drawerEl).getByRole("combobox", { name: "Discharge blocker" }), {
+    target: { value: "Awaiting clean" },
+  });
   fireEvent.click(within(drawerEl).getByRole("button", { name: "Save blocker" }));
   expect(control.record).toHaveBeenCalledTimes(1);
   const sent = control.record.mock.calls[0]![0];
