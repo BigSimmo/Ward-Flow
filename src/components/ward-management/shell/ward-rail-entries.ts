@@ -96,50 +96,122 @@ export const BED_FINDER_MENU_ID = "bed-finder";
 
 export type RoleMenuItem = readonly [id: string, label: string];
 
-export const ROLE_MENUS: Record<WardChromeRole, readonly RoleMenuItem[]> = {
-  coordinator: [
-    ["command", "My list"],
-    // Josh, 21 Oct 2026 (UX audit): the rail uses the page's own name, Capacity, now that D-74
-    // keeps the current screens and the B5 rename to Beds will not happen.
-    ["capacity", "Capacity"],
-    ["movements", "Movements"],
-    ["referrals", "Referrals"],
-    ["handover", "Handover"],
-  ],
-  ward: [
-    ["wards", "My ward"],
-    ["movements", "Coming and going"],
-    ["referrals", "Referrals to answer"],
-    ["handover", "Handover"],
-  ],
-  ed: [
-    ["ed", "My ED board"],
-    ["referrals", "My referrals"],
-    ["referral-intake", "New referral"],
-    [BED_FINDER_MENU_ID, "Find a bed"],
-  ],
-  officer: [
-    ["officer", "My jobs"],
-    ["alerts", "Alerts"],
-  ],
-  // Not in the B1 table: the same idea, the desk's own place first and its daily work after it.
-  community: [
-    ["community", "My team"],
-    ["referrals", "Referrals"],
-    ["referral-intake", "New referral"],
-  ],
-  bed_manager: [
-    ["capacity", "Capacity"],
-    ["wards", "Wards"],
-    ["movements", "Movements"],
-    ["delays", "Waiting"],
-    // #821 (multi-account test, 26 Oct 2026): its own wards' incoming referrals, read only (D-80),
-    // were reachable only from Waiting's "Open Referrals" link.
-    ["referrals", "Referrals"],
-    ["handover", "Handover"],
-  ],
-  executive: [["statistics", "Statistics"]],
+/**
+ * H-0281 (27 Oct 2026): the one menu definition. The desktop rail, its More panel and the phone
+ * menu all read it, so a role's menu order lives in one place.
+ */
+type RoleMenuDefinition = {
+  /** The role's own short menu, in order, with the role's labels. */
+  main: readonly RoleMenuItem[];
+  /**
+   * The ids that come first inside each More group, in this order. An id not named keeps its
+   * `RAIL_GROUPS` position after the named ones, so this only ever reorders: forgetting an id costs
+   * it a good position and nothing else (owner ruling 2026-09-06, "reorder real screens only").
+   */
+  moreFirst: readonly string[];
 };
+
+const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
+  coordinator: {
+    main: [
+      ["command", "My list"],
+      // Josh, 21 Oct 2026 (UX audit): the rail uses the page's own name, Capacity, now that D-74
+      // keeps the current screens and the B5 rename to Beds will not happen.
+      ["capacity", "Capacity"],
+      ["movements", "Movements"],
+      ["referrals", "Referrals"],
+      ["handover", "Handover"],
+    ],
+    // The rail's own curated order (owner-approved 2026-09-13).
+    moreFirst: [],
+  },
+  ward: {
+    main: [
+      ["wards", "My ward"],
+      ["movements", "Coming and going"],
+      ["referrals", "Referrals to answer"],
+      ["handover", "Handover"],
+    ],
+    // A nurse in charge wants their beds and who is coming to them first, then the other places,
+    // then the ward's own daily work: discharges are what frees their beds.
+    moreFirst: [
+      "capacity",
+      "delays",
+      "command",
+      "ed",
+      "hub",
+      "community",
+      "officer",
+      "discharges",
+      "search",
+      "referral-intake",
+      "governance",
+      "statistics",
+      "out-of-area",
+    ],
+  },
+  ed: {
+    main: [
+      ["ed", "My ED board"],
+      ["referrals", "My referrals"],
+      ["referral-intake", "New referral"],
+      [BED_FINDER_MENU_ID, "Find a bed"],
+    ],
+    // An ED is waiting on other people: where its patients have got to and what holds them up come
+    // before capacity, which it cannot act on.
+    moreFirst: [
+      "movements",
+      "delays",
+      "capacity",
+      "command",
+      "wards",
+      "hub",
+      "community",
+      "officer",
+      "search",
+      "handover",
+      "discharges",
+      "governance",
+      "statistics",
+      "out-of-area",
+    ],
+  },
+  officer: {
+    main: [
+      ["officer", "My jobs"],
+      ["alerts", "Alerts"],
+    ],
+    moreFirst: ["command", "delays", "capacity", "movements", "governance"],
+  },
+  // Not in the B1 table: the same idea, the desk's own place first and its daily work after it.
+  community: {
+    main: [
+      ["community", "My team"],
+      ["referrals", "Referrals"],
+      ["referral-intake", "New referral"],
+    ],
+    moreFirst: [],
+  },
+  bed_manager: {
+    main: [
+      ["capacity", "Capacity"],
+      ["wards", "Wards"],
+      ["movements", "Movements"],
+      ["delays", "Waiting"],
+      // #821 (multi-account test, 26 Oct 2026): its own wards' incoming referrals, read only (D-80),
+      // were reachable only from Waiting's "Open Referrals" link.
+      ["referrals", "Referrals"],
+      ["handover", "Handover"],
+    ],
+    moreFirst: [],
+  },
+  executive: { main: [["statistics", "Statistics"]], moreFirst: [] },
+};
+
+/** Each role's own short menu, read from `ROLE_MENU_DEFINITIONS`. */
+export const ROLE_MENUS = Object.fromEntries(
+  Object.entries(ROLE_MENU_DEFINITIONS).map(([role, definition]) => [role, definition.main]),
+) as Record<WardChromeRole, readonly RoleMenuItem[]>;
 
 /** A role menu item that opens a tool instead of a page (B1's ED "Find a bed"). */
 export type RoleMenuAction = { kind: "bed-finder"; id: typeof BED_FINDER_MENU_ID; label: string; icon: LucideIcon };
@@ -159,20 +231,22 @@ export type RoleMenu = {
 
 /**
  * Splits `entries` (already filtered for flags and the desk's access) into the role's own menu and
- * More. Nothing is dropped: an entry is in exactly one of the two. `rank` orders each More group.
+ * More. Nothing is dropped: an entry is in exactly one of the two. Each More group puts the role's
+ * `moreFirst` ids first, then the rest in their `RAIL_GROUPS` order.
  */
-export function roleMenu(
-  entries: readonly RailEntry[],
-  role: WardChromeRole,
-  rank: (id: string) => number = () => 0,
-): RoleMenu {
+export function roleMenu(entries: readonly RailEntry[], role: WardChromeRole): RoleMenu {
+  const { main: mainItems, moreFirst } = ROLE_MENU_DEFINITIONS[role];
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
-  const main: RoleMenuItemEntry[] = ROLE_MENUS[role].flatMap(([id, label]): RoleMenuItemEntry[] => {
+  const main: RoleMenuItemEntry[] = mainItems.flatMap(([id, label]): RoleMenuItemEntry[] => {
     if (id === BED_FINDER_MENU_ID) return [{ kind: "bed-finder", id: BED_FINDER_MENU_ID, label, icon: BedDouble }];
     const entry = byId.get(id);
     return entry ? [{ ...entry, label }] : [];
   });
   const inMain = new Set(main.map((item) => item.id));
+  const rank = (id: string) => {
+    const at = moreFirst.indexOf(id);
+    return at === -1 ? Number.MAX_SAFE_INTEGER : at;
+  };
   const more = RAIL_GROUPS.map((group) => ({
     label: group.label,
     entries: entries
