@@ -29,7 +29,7 @@ export type DocumentationDraft = {
 };
 
 /** A required chart is answered when it is attached or marked to follow (A27). */
-export function chartAnswered(draft: DocumentationDraft, kind: FollowableChartKind): boolean {
+function chartAnswered(draft: DocumentationDraft, kind: FollowableChartKind): boolean {
   return draft.charts.some((chart) => chart.kind === kind) || (draft.toFollow ?? []).includes(kind);
 }
 
