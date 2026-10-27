@@ -160,19 +160,29 @@ function textsIn(value: unknown, into: Set<string>): Set<string> {
  * it is archived on a later save once nothing names it. The result is checked as a whole: if the
  * smaller workspace would not pass the shared-state check, nothing is archived.
  */
-export function archiveClosed(world: SharedWorld, at: Date): { world: SharedWorld; archived: ArchivedRecord[] } {
+export function archiveClosed(
+  world: SharedWorld,
+  at: Date,
+  afterMinutes: number = ARCHIVE_AFTER_MINUTES,
+): { world: SharedWorld; archived: ArchivedRecord[] } {
   if (!validWorld(world)) return { world, archived: [] };
-  const { state, archived } = archiveClosedState(world.state, worldNow(world, at));
+  const { state, archived } = archiveClosedState(world.state, worldNow(world, at), afterMinutes);
   return { world: archived.length ? { ...world, state } : world, archived };
 }
 
-/** `archiveClosed` on the state alone, at the workspace's own minute `now`. */
+/**
+ * `archiveClosed` on the state alone, at the workspace's own minute `now`. `afterMinutes` is the
+ * age a closed record must reach; the server passes a shorter window once the live workspace is
+ * near its size limit (audit PS-02). It is never shorter than a day.
+ */
 export function archiveClosedState(
   state: WardFlowState,
   now: number,
+  afterMinutes: number = ARCHIVE_AFTER_MINUTES,
 ): { state: WardFlowState; archived: ArchivedRecord[] } {
   const none = { state, archived: [] };
-  const cutoff = now - ARCHIVE_AFTER_MINUTES;
+  const window = Number.isFinite(afterMinutes) ? Math.max(24 * 60, afterMinutes) : ARCHIVE_AFTER_MINUTES;
+  const cutoff = now - window;
   const movements = new Map<string, number>();
   for (const movement of state.movements)
     if (movement.closure && movement.closure.at < cutoff) movements.set(movement.id, movement.closure.at);

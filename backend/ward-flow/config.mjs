@@ -90,7 +90,7 @@ export function readConfig(env = process.env, dependencies = {}) {
         ? injected[databaseProvider]
         : DATABASE_PROVIDERS[databaseProvider];
     postgres = readDatabase(env);
-    if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has(env.WARD_WORKSPACE_ID.toLowerCase()))
+    if (!UUID.test(env.WARD_WORKSPACE_ID ?? "") || PLACEHOLDER_IDS.has((env.WARD_WORKSPACE_ID ?? "").toLowerCase()))
       throw new Error("Invalid workspace configuration");
   }
   return {
@@ -113,3 +113,19 @@ export function readConfig(env = process.env, dependencies = {}) {
     port,
   };
 }
+
+/**
+ * Live workspace size thresholds (audit PS-02, H-0950, approved by Josh 26 Oct 2026). The live
+ * workspace refuses every save at 8 MiB. Once it passes `WORKSPACE_PRESSURE_BYTES`, every save
+ * looks for closed records to archive with the shorter `ARCHIVE_PRESSURE_AFTER_MINUTES` window
+ * instead of the usual 30 days, and the operator is alerted (error report, at most once per
+ * `WORKSPACE_ALERT_EVERY_MS` per server). Synthetic prototype values, not clinical settings.
+ */
+export const WORKSPACE_PRESSURE_BYTES = 6_291_456;
+export const ARCHIVE_PRESSURE_AFTER_MINUTES = 7 * 24 * 60;
+export const WORKSPACE_ALERT_EVERY_MS = 3_600_000;
+/**
+ * Scoped full-read replies kept per server (audit PS-05), keyed by workspace revision, workspace
+ * minute and the desk's access. Each holds one scoped board, so keep this small.
+ */
+export const SCOPED_REPLY_CACHE_ENTRIES = 16;

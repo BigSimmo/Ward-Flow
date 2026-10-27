@@ -326,6 +326,7 @@ function PhoneDock({
     <Link
       key="alerts"
       href={WARD_ALERTS_HREF}
+      prefetch={true}
       className={styles.dockItem}
       aria-current={pathname.replace(/\/+$/u, "") === WARD_ALERTS_HREF ? "page" : undefined}
       data-testid="ward-phone-menu-alerts"
@@ -348,6 +349,7 @@ function PhoneDock({
           <Link
             key={entry.id}
             href={entry.href}
+            prefetch={true}
             className={styles.dockItem}
             aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
             data-testid="ward-phone-dock-link"

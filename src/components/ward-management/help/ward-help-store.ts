@@ -83,33 +83,50 @@ export function markTourSeen(role: WardTourRole): void {
 export const TOUR_STEP_STORAGE_KEY = "ward_flow_choice_tour_step";
 
 /**
- * Where each desk's tour was left, so it picks up there: "role:step" pairs, a desk role id and a
- * step number only. Read back through the known desks, so nothing else survives a read.
+ * Where each desk's tour was left, so it picks up there: "role:step" or "role:step:id" entries, a
+ * desk role id, a step number and the step's own id. The id matters because the phone and the
+ * desktop walk different lists, so a number saved on one can name another subject on the other.
+ * Read back through the known desks, so nothing else survives a read.
  */
-export function parseTourSteps(raw: string): ReadonlyMap<WardTourRole, number> {
+type SavedTourStep = { readonly at: number; readonly id?: string };
+
+const TOUR_STEP_ID = /^[a-z0-9-]{1,40}$/u;
+
+function parseSavedSteps(raw: string): ReadonlyMap<WardTourRole, SavedTourStep> {
   const known = new Set<string>([...Object.keys(CHROME_ROLE_LABELS), "admin"]);
-  const steps = new Map<WardTourRole, number>();
+  const steps = new Map<WardTourRole, SavedTourStep>();
   for (const pair of raw.split(",")) {
-    const [role, value] = pair.split(":");
+    const [role, value, id] = pair.split(":");
     const step = Number(value);
-    if (role && known.has(role) && Number.isInteger(step) && step >= 0) steps.set(role as WardTourRole, step);
+    if (!role || !known.has(role) || !Number.isInteger(step) || step < 0) continue;
+    steps.set(role as WardTourRole, id !== undefined && TOUR_STEP_ID.test(id) ? { at: step, id } : { at: step });
   }
   return steps;
 }
 
-function readSteps(): ReadonlyMap<WardTourRole, number> {
+/** The saved step numbers alone, by desk. */
+export function parseTourSteps(raw: string): ReadonlyMap<WardTourRole, number> {
+  return new Map([...parseSavedSteps(raw)].map(([role, saved]) => [role, saved.at]));
+}
+
+function readSteps(): ReadonlyMap<WardTourRole, SavedTourStep> {
   try {
-    return parseTourSteps(window.localStorage.getItem(TOUR_STEP_STORAGE_KEY) ?? "");
+    return parseSavedSteps(window.localStorage.getItem(TOUR_STEP_STORAGE_KEY) ?? "");
   } catch {
     return new Map();
   }
 }
 
-function writeSteps(steps: ReadonlyMap<WardTourRole, number>): void {
+function writeSteps(steps: ReadonlyMap<WardTourRole, SavedTourStep>): void {
   try {
     if (steps.size === 0) window.localStorage.removeItem(TOUR_STEP_STORAGE_KEY);
     else
-      window.localStorage.setItem(TOUR_STEP_STORAGE_KEY, [...steps].map(([role, step]) => `${role}:${step}`).join(","));
+      window.localStorage.setItem(
+        TOUR_STEP_STORAGE_KEY,
+        [...steps]
+          .map(([role, saved]) => (saved.id ? `${role}:${saved.at}:${saved.id}` : `${role}:${saved.at}`))
+          .join(","),
+      );
   } catch {
     // Without storage the tour starts from the beginning next time.
   }
@@ -117,13 +134,18 @@ function writeSteps(steps: ReadonlyMap<WardTourRole, number>): void {
 
 /** The step `role`'s tour was left at, or 0. */
 export function readTourStep(role: WardTourRole): number {
-  return readSteps().get(role) ?? 0;
+  return readSteps().get(role)?.at ?? 0;
 }
 
-/** Remembers the step `role`'s tour was left at; 0 forgets it. */
-export function saveTourStep(role: WardTourRole, step: number): void {
+/** The id of the step `role`'s tour was left at, when it was saved with one. */
+export function readTourStepId(role: WardTourRole): string | undefined {
+  return readSteps().get(role)?.id;
+}
+
+/** Remembers the step `role`'s tour was left at, and its id; 0 forgets it. */
+export function saveTourStep(role: WardTourRole, step: number, id?: string): void {
   const steps = new Map(readSteps());
-  if (step > 0) steps.set(role, step);
+  if (step > 0) steps.set(role, id !== undefined && TOUR_STEP_ID.test(id) ? { at: step, id } : { at: step });
   else steps.delete(role);
   writeSteps(steps);
 }

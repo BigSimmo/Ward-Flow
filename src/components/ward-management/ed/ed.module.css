@@ -5564,3 +5564,33 @@
   color: var(--wf-ink-3);
   white-space: nowrap;
 }
+
+/* WT-04 (walk-through, 26 Oct 2026): bed requests sent from this department with no journey yet. */
+.sentForBed {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.sentForBedHeading {
+  margin: 0 0 6px;
+  font-size: var(--t-1);
+  font-weight: 600;
+}
+.sentForBed ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.sentForBed li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: var(--t-1);
+}
+.sentForBedName {
+  font-weight: 600;
+}
+.sentForBedClock {
+  color: var(--muted);
+}

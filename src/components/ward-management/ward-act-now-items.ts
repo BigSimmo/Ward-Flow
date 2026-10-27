@@ -49,7 +49,7 @@ import { rememberLastCall } from "@/components/ward-management/ward-last-call";
 export type TaskSource = Pick<WardFlowState, "movements" | "units" | "configuration" | "inboxSnoozes"> &
   Omit<ActionInboxRecords, "movements"> & {
     /** Audit A3-1: leave beds, for the act-now row when a person on an order is absent. */
-    leaveBeds?: WardFlowState["leaveBeds"];
+    leaveBeds?: readonly WardFlowState["leaveBeds"][number][];
   };
 
 /**

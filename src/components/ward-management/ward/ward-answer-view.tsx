@@ -1629,7 +1629,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           <div className={styles.modalDialog}>
             <div className={styles.modalHead}>
               <h3 id="accept-modal-title" className={styles.modalTitle}>
-                Accept Referral in Principle
+                Accept referral in principle
               </h3>
               <button
                 type="button"
@@ -1716,7 +1716,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   }
                 }}
               >
-                Confirm Acceptance in Principle
+                Confirm acceptance
               </button>
             </div>
           </div>

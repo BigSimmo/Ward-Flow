@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { Patient, Gender } from "../ward-patients";
+import type { RecordedSex } from "../ward-model-vocabulary";
 import type { PatientRegistrationScope } from "../ward-patient-registration";
 import type { Instant } from "../ward-clock";
 import type { WardFlowRole } from "../ward-flow-events";
@@ -121,6 +122,28 @@ export function useReferralCommandCompletion({
   return { submissionRef, submitReferral, submissionAwaitingRecord };
 }
 
+/** The Add patient form. WT-05 (walk-through, 26 Oct 2026): recorded sex is asked here, once, beside
+ *  gender, so the referral and every later step start from it. Blank means not recorded. */
+export type NewPatientDraft = {
+  givenName: string;
+  familyName: string;
+  umrn: string;
+  dateOfBirth: string;
+  gender: Gender | "";
+  sex?: RecordedSex | "";
+  suburb: string;
+};
+
+export const EMPTY_NEW_PATIENT: NewPatientDraft = {
+  familyName: "",
+  givenName: "",
+  dateOfBirth: "",
+  umrn: "",
+  gender: "",
+  sex: "",
+  suburb: "",
+};
+
 /** Registers one identity and never mistakes a concurrent registration for that patient. */
 export function useReferralPatientRegistration({
   patients,
@@ -144,14 +167,7 @@ export function useReferralPatientRegistration({
   requiresRegistrationScope?: boolean;
   allowed: boolean;
   reason?: string;
-  patient: {
-    givenName: string;
-    familyName: string;
-    umrn: string;
-    dateOfBirth: string;
-    gender: Gender | "";
-    suburb: string;
-  };
+  patient: NewPatientDraft;
   onSelect: (id: string) => void;
 }) {
   const [newPatientError, setNewPatientError] = useState<string | null>(null);
@@ -239,6 +255,7 @@ export function useReferralPatientRegistration({
         umrn,
         dateOfBirth: patient.dateOfBirth,
         ...(patient.gender ? { gender: patient.gender } : {}),
+        ...(patient.sex ? { sex: patient.sex } : {}),
         ...(patient.suburb.trim() ? { suburb: patient.suburb.trim() } : {}),
       });
       if (result && "then" in result) void result.then(settle, () => settle());

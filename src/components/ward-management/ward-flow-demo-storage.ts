@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { broadcastDispatchEvent } from "./ward-flow-provider-helpers";
+import { loadScenarioNetworks } from "./ward-scenario-network-loader";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { ScenarioFileBuild, ScenarioFileRead } from "./ward-flow-scenario-file";
@@ -73,7 +74,12 @@ let demoRestore: typeof import("./ward-flow-demo-restore") | undefined;
 
 /** Loads the restore module once; afterwards a mount reads its save in the same render as before. */
 export function loadDemoRestore(): Promise<typeof import("./ward-flow-demo-restore")> {
-  return import("./ward-flow-demo-restore").then((module) => (demoRestore = module));
+  // A saved day may be a demonstration scenario, whose wards its check reads. A failed network load
+  // does not hold back a standard or scarce save: a demonstration save then fails its own check,
+  // which reads as unavailable storage, so it is neither restored nor overwritten.
+  return Promise.all([import("./ward-flow-demo-restore"), loadScenarioNetworks().catch(() => undefined)]).then(
+    ([module]) => (demoRestore = module),
+  );
 }
 
 /** `tryReadDemoState`, loaded on first use. A failed load counts as unavailable storage, so the save
@@ -93,7 +99,10 @@ let typedTextScrub: typeof import("./ward-flow-typed-text-scrub") | undefined;
  * (`ward-flow-typed-text-ledger.ts`), which the first screen does not need.
  */
 export function loadTypedTextScrub(): Promise<typeof import("./ward-flow-typed-text-scrub")> {
-  return import("./ward-flow-typed-text-scrub").then((module) => (typedTextScrub = module));
+  // The copy compares against every scenario's seed (`fixtureWorlds`), so it needs their networks.
+  return Promise.all([import("./ward-flow-typed-text-scrub"), loadScenarioNetworks()]).then(
+    ([module]) => (typedTextScrub = module),
+  );
 }
 
 type TypedTextHeld = {
@@ -116,6 +125,43 @@ export function deviceCopyOf(
   if (!held.typedTextSeen) return state;
   if (locked) return null;
   return typedTextScrub?.deviceCopyFromEvents(state, held.typedTextEvents ?? [], fixtureWorlds, held.typedTextFromFile);
+}
+
+/** What one device save was written from (fresh audit P-1, 26 Oct 2026). */
+export type DeviceSaveInputs = {
+  state: WardFlowState;
+  held: TypedTextHeld;
+  locked: boolean;
+  dayZero: Date;
+  mountedAtAbsolute: number;
+};
+
+/**
+ * True when a save from `next` would store the same world as the save already written from
+ * `previous`: the same typed-text inputs (so the same ledger), and a world that differs at most in
+ * its refusals, which are never stored (D-18). A refused or empty action then writes nothing and
+ * builds no typed-text copy. Only the save's clock pair would differ, and both halves of it move
+ * together, so the earlier save restores to the same moment.
+ */
+export function deviceSaveUnchanged(previous: DeviceSaveInputs | undefined, next: DeviceSaveInputs): boolean {
+  if (
+    !previous ||
+    previous.locked !== next.locked ||
+    previous.dayZero !== next.dayZero ||
+    previous.mountedAtAbsolute !== next.mountedAtAbsolute ||
+    previous.held.typedTextSeen !== next.held.typedTextSeen ||
+    previous.held.typedTextEvents !== next.held.typedTextEvents ||
+    previous.held.typedTextFromFile !== next.held.typedTextFromFile
+  )
+    return false;
+  const before = previous.state as unknown as Record<string, unknown>;
+  const after = next.state as unknown as Record<string, unknown>;
+  if (before === after) return true;
+  const keys = Object.keys(after);
+  return (
+    keys.length === Object.keys(before).length &&
+    keys.every((key) => key === "rejections" || (Object.hasOwn(before, key) && before[key] === after[key]))
+  );
 }
 
 const SCENARIO_TOOLS_UNAVAILABLE = "The scenario file tools could not load, so nothing was changed. Try again.";
@@ -158,8 +204,8 @@ export function buildScenarioFileLater(state: WardFlowState, now: Instant): Prom
 }
 
 export function readScenarioFileLater(text: string): Promise<ScenarioFileRead> {
-  return import("./ward-flow-scenario-file").then(
-    ({ readScenarioFile }) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
+  return Promise.all([import("./ward-flow-scenario-file"), loadScenarioNetworks()]).then(
+    ([{ readScenarioFile }]) => readScenarioFile(text, WARD_FLOW_DEMO_STORAGE_VERSION),
     () => ({ ok: false, reason: SCENARIO_TOOLS_UNAVAILABLE }),
   );
 }

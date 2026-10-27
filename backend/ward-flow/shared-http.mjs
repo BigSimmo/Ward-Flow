@@ -2,6 +2,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { errorFields, parseSubscription } from "./push.mjs";
 import { bootstrapCoordinators } from "./auth.mjs";
+import { jsonResponse } from "./reply-cache.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -150,7 +151,8 @@ export function createSharedHandler({
     };
     const reply = (status, body, outcome) => {
       if (outcome) note.outcome = outcome;
-      return Response.json(body, { status, headers });
+      // Audit PS-05: a scoped board the store already serialised is reused, not stringified again.
+      return jsonResponse(body, { status, headers });
     };
     const origin = request.headers.get("origin");
     if (origin && origin !== config.origin) return reply(403, { error: "Origin not allowed" }, "origin_denied");

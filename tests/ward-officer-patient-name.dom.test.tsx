@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
-import { discreetPatientName } from "@/components/ward-management/settings/discreet-names";
 // The pre-commit hook's staged-file typecheck compiles only this file (plus .d.ts roots), so it
 // never sees tests/setup/jsdom.setup.ts's global jest-dom matcher augmentation.
 import "@testing-library/jest-dom/vitest";
@@ -28,7 +27,8 @@ describe("transport officer job cards name the patient", () => {
     [true, true],
     [true, false],
     [false, true],
-  ])("matches the name setting in job rows and action labels (phone=%s, discreet=%s)", (phone, discreet) => {
+  ])("names the patient in full in job rows and action labels (phone=%s, old discreet key=%s)", (phone, discreet) => {
+    // D-83 (fresh audit W-9): the removed Discreet names setting's old key never hides a name.
     installMatchMediaStub(phone);
     if (discreet) localStorage.setItem("ward-flow-discreet-names", "on");
     render(
@@ -43,16 +43,14 @@ describe("transport officer job cards name the patient", () => {
     if (!job) throw new Error("no linked officer job");
     const info = resolveSubjectPatient(job, state);
     const full = phone ? info.formalName : info.displayName;
-    const shown = phone && discreet ? discreetPatientName(full, info.umrn) : full;
+    const shown = full;
     expect(screen.getByTestId(`ward-officer-patient-${job.id}`)).toHaveTextContent(shown);
     expect(screen.getByTestId(`ward-officer-select-${job.id}`)).toHaveAccessibleName(
       new RegExp(shown.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
     );
-    if (phone && discreet) {
-      expect(screen.getByTestId(`ward-officer-select-${job.id}`)).not.toHaveAccessibleName(
-        new RegExp(info.patient!.familyName),
-      );
-    }
+    expect(screen.getByTestId(`ward-officer-select-${job.id}`)).toHaveAccessibleName(
+      new RegExp(info.patient!.familyName),
+    );
   });
   it("shows the resolved name for linked jobs and Not recorded for unlinked ones", () => {
     render(

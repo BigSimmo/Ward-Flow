@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
+import { scopeWorkspace } from "../src/components/ward-management/ward-access-scope";
 import { scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement } from "../src/components/ward-management/ward-model";
@@ -49,5 +50,24 @@ describe("transport officer sees who to collect with role access on (WT-01)", ()
     expect(seen.displayName).toBe(full.displayName);
     // The officer's copy still carries no record number (role access plan, 15 Oct 2026).
     expect(seen.patient?.umrn).toBe("");
+  });
+
+  it("names a job whose journey carries both the person and the referral link (WT-01 rerun)", () => {
+    const job = state.movements.find(isJob);
+    const referral = state.referrals.find((candidate) => candidate.patientId);
+    if (!job || !referral) throw new Error("the seed needs an open job and a linked referral");
+    // A journey started from an accepted referral names its person and keeps the referral link.
+    const world = {
+      ...state,
+      movements: state.movements.map((movement) =>
+        movement.id === job.id ? { ...movement, patientId: referral.patientId, referralId: referral.id } : movement,
+      ),
+    };
+    // The screens read `scopeWorkspace` directly (shell/ward-access.tsx), with no later clean-up pass.
+    const scoped = scopeWorkspace(world, { role: "officer", scope: { kind: "jobs" } }, { now: NOW_ANCHOR, places });
+    expect(scoped.referrals).toEqual([]);
+    const copy = scoped.movements.find(({ id }) => id === job.id);
+    expect(copy?.referralId).toBeUndefined();
+    expect(resolveSubjectPatient(copy, scoped).patient?.id).toBe(referral.patientId);
   });
 });

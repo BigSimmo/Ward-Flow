@@ -30,8 +30,11 @@ import { describe, expect, it } from "vitest";
 
 const repoRoot = process.cwd();
 const settingsPath = join(repoRoot, ".claude/settings.json");
-const hasClaudeSettings = existsSync(settingsPath);
-const settings = hasClaudeSettings ? JSON.parse(readFileSync(settingsPath, "utf8")) : { permissions: {}, hooks: {} };
+const shippedSettings = existsSync(settingsPath) ? JSON.parse(readFileSync(settingsPath, "utf8")) : null;
+// The public repository ships either nothing or the cloud memory hook alone (no permissions).
+// Only a full permission and hook block turns on the configured suites below.
+const hasClaudeSettings = shippedSettings !== null && "permissions" in shippedSettings;
+const settings = hasClaudeSettings ? shippedSettings : { permissions: {}, hooks: {} };
 const packageScripts: Record<string, string> = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")).scripts;
 function describeConfiguredClaude(name: string, body: () => void) {
   if (hasClaudeSettings) describe(name, body);
@@ -39,6 +42,23 @@ function describeConfiguredClaude(name: string, body: () => void) {
 
 if (!hasClaudeSettings) {
   describe("public Claude configuration boundary", () => {
+    it("ships at most the cloud Supermemory hooks, with no permissions", () => {
+      if (shippedSettings === null) return;
+      const hook = (args: string) => [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "$CLAUDE_PROJECT_DIR/scripts/supermemory-autosave-stop.mjs"${args}`,
+              timeout: 10,
+            },
+          ],
+        },
+      ];
+      expect(Object.keys(shippedSettings).sort()).toEqual(["$schema", "hooks"]);
+      expect(shippedSettings.hooks).toEqual({ SessionStart: hook(" --session-start"), Stop: hook("") });
+    });
+
     it("does not ship a partial permission or hook configuration", () => {
       const workflow = readFileSync(join(repoRoot, ".github/workflows/ward-flow.yml"), "utf8");
       expect(workflow).toContain("contents: read");

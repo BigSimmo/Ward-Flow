@@ -41,6 +41,7 @@ import {
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { readTourStep, saveTourStep } from "@/components/ward-management/help/ward-help-store";
 
 let flow!: ReturnType<typeof useWardFlow>;
 function Probe() {
@@ -303,5 +304,11 @@ describe("settings audited journey recovery", () => {
     fireEvent.click(restore);
     expect(screen.queryByRole("dialog", { name: /Restore/i })).toBeNull();
     expect(raised).not.toHaveBeenCalled();
+  });
+  it("replays the tour from the first step, not the step it was left at", () => {
+    saveTourStep("coordinator", 3);
+    renderSettings();
+    fireEvent.click(screen.getByTestId("settings-replay-tour"));
+    expect(readTourStep("coordinator")).toBe(0);
   });
 });

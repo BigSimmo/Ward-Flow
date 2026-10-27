@@ -1,6 +1,8 @@
 import type { Unit, EmergencyDepartment } from "@/components/ward-management/ward-model";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabulary";
 import { scenarioWardNetwork, WARD_SCENARIOS } from "@/components/ward-management/ward-scenarios";
+// Server only (route pages): every scenario's wards are needed up front here.
+import "@/components/ward-management/ward-scenario-networks";
 
 /**
  * DA-32 (overall review, 20 Oct 2026): what a ward or health service address can name, so each

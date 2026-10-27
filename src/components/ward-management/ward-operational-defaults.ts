@@ -45,6 +45,9 @@ export const UNDO_TOAST_MS = 8000;
  *  clinical figure). Add patient waits this long for its new record before finishing without it. */
 export const SHARED_REFRESH_MS = 3000;
 
+/** How long a save may run before its form says it is still waiting (#817). A software setting. */
+export const SLOW_SAVE_NOTE_MS = 5000;
+
 /** How long after one Done a list of actions ignores another, longer than a double click, so the
  *  second click never lands on the row that moved up (Audit 7 NB-02). A software setting. */
 export const DONE_PAUSE_MS = 1000;

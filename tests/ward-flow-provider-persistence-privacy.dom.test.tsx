@@ -243,6 +243,52 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(current!.movements.find((candidate) => candidate.id === movement.id)?.blocker).toBe(TYPED_TEXT_NOT_KEPT);
     });
 
+    // Fresh audit P-1 (26 Oct 2026): a refused action changes nothing that is stored, so a typed-text
+    // session no longer rebuilds and rewrites its device copy for it. A real change still saves at once.
+    it("writes nothing for a refused action once typed text is held, and saves the next real change", () => {
+      render(
+        <WardFlowProvider>
+          <Capture />
+        </WardFlowProvider>,
+      );
+      const movement = current!.movements.find((candidate) => !candidate.closure);
+      if (!movement) throw new Error("Fixture must carry at least one open movement");
+      act(() => {
+        current!.dispatch({
+          type: "RECORD_MOVEMENT_BLOCKER",
+          role: "coordinator",
+          now: current!.now,
+          movementId: movement.id,
+          blocker: TYPED_BLOCKER,
+        });
+      });
+      const savedCopy = storedWithout(TYPED_BLOCKER);
+      const setItem = vi.spyOn(Storage.prototype, "setItem");
+      try {
+        const rejectionsBefore = current!.rejections.length;
+        act(() => {
+          current!.dispatch({
+            type: "ACCEPT_REFERRAL",
+            role: "coordinator",
+            now: current!.now,
+            referralId: "synthetic-missing-referral",
+          } as unknown as WardFlowEvent);
+        });
+        expect(current!.rejections.length).toBe(rejectionsBefore + 1);
+        expect(setItem.mock.calls.filter(([key]) => key === WARD_FLOW_DEMO_STORAGE_KEY)).toEqual([]);
+        expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(savedCopy);
+        expect(current!.savingOnDevice).toBe(true);
+
+        act(() => {
+          current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
+        });
+        expect(setItem.mock.calls.filter(([key]) => key === WARD_FLOW_DEMO_STORAGE_KEY)).toHaveLength(1);
+        expect(storedWithout(TYPED_BLOCKER)).not.toBe(savedCopy);
+      } finally {
+        setItem.mockRestore();
+      }
+    });
+
     /**
      * 🔴 P2 findings 4–6, and the whole reason for the redesign: a REJECTED typed-text dispatch now
      * locks too. `RECORD_MOVEMENT_BLOCKER` refuses a blank blocker (`ward-flow-reducer.ts`'s own

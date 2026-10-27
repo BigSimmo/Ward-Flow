@@ -11,6 +11,7 @@ import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-ro
 import type { Movement } from "@/components/ward-management/ward-model";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { edAnsweredReferralsFor, edArrivedFor, edExpectsFor } from "@/components/ward-management/ward-referrals";
+import { edById } from "@/components/ward-management/ward-sites";
 import {
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -24,7 +25,7 @@ import {
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdNeedsItem } from "./ed-needs-you";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { resolveSubjectPatient, UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
@@ -245,6 +246,59 @@ export function deriveEdScreen({
   // belongs on the board (RB3's own reasoning at `patients` above) but never in "still to be
   // moved" — nothing is still moving it anywhere.
   const outbox = patients.filter((movement) => movement.acceptedUnitId !== undefined && !movement.closure);
+
+  // WT-04 (walk-through, 26 Oct 2026): a ward bed request this department sent shows from Send,
+  // not only once a bed is pulled. It has no journey yet, so it is listed apart from the board rows
+  // and the filter above stays as it is. It leaves this list when a journey starts from it, when
+  // the person is already on the board, or when no ward is still considering it.
+  const siteCode = edById(thisEdId)?.siteCode;
+  // D-14: the board's people are matched by the resolver's UMRN, never by reading the patient link.
+  const resolveState = { patients: registryPatients, referrals, movements };
+  const boardUmrns = new Set(
+    patients
+      .map((movement) => resolveSubjectPatient(movement, resolveState).umrn)
+      .filter((umrn) => umrn !== UMRN_NOT_RECORDED),
+  );
+  const sentForBed = referrals
+    .filter(
+      (referral) =>
+        siteCode !== undefined &&
+        referral.source === "ed_medical" &&
+        referral.originSiteCode === siteCode &&
+        referral.destinations.some(
+          (arm) =>
+            arm.destination.kind === "psychiatric_ward" &&
+            arm.withdrawnAt === undefined &&
+            (arm.state === "queued" || arm.state === "accepted"),
+        ) &&
+        !movements.some(
+          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+        ),
+    )
+    .map((referral) => ({ referral, person: resolveSubjectPatient(referral, resolveState) }))
+    .filter(({ person }) => !boardUmrns.has(person.umrn))
+    .map(({ referral, person }) => ({
+      id: referral.id,
+      person,
+      sentAt: referral.raisedAt,
+      waitedMinutes: Math.max(now - referral.raisedAt, 0),
+      wards: referral.destinations.flatMap(({ destination, state, withdrawnAt }) =>
+        destination.kind === "psychiatric_ward" && withdrawnAt === undefined
+          ? [
+              {
+                name: units.find((unit) => unit.id === destination.unitId)?.name ?? "A ward",
+                state:
+                  state === "accepted"
+                    ? "accepted, bed not pulled yet"
+                    : state === "queued"
+                      ? "waiting for an answer"
+                      : state,
+              },
+            ]
+          : [],
+      ),
+    }))
+    .sort((a, b) => a.sentAt - b.sentAt);
 
   // P3-1 (Ward Lead audit, 2026-09-17): `&& !m.edOutcome` on both chips below. A patient whose ED
   // outcome is already recorded has a settled answer — "for discharge" or "for community
@@ -670,6 +724,7 @@ export function deriveEdScreen({
     answeredAll,
     answered,
     outbox,
+    sentForBed,
     notReviewedCount,
     underFormCount,
     noDestCount,
