@@ -60,11 +60,10 @@ async function gotoCapacity(page: Page) {
   await page.waitForLoadState("networkidle");
 }
 
-/** Waiting is one tap away under the rail's More (B1), not in the coordinator's own menu. */
-async function openWaitingFromMore(page: Page) {
-  await page.getByTestId("ward-rail-more").click();
+/** Waiting is in the coordinator's own rail menu again (Josh, 27 Oct 2026). */
+async function openWaitingFromRail(page: Page) {
   await page
-    .getByTestId("ward-rail-more-pages")
+    .getByTestId("ward-rail-role-menu")
     .getByRole("link", { name: /^Waiting\b/u })
     .click();
 }
@@ -90,7 +89,7 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     // match. `exact: true` here found nothing and hung the full 60s timeout on the click.
     // B1 (overall review, 20 Oct 2026): the coordinator's menu calls Capacity "Beds", and Waiting
     // sits under More.
-    await openWaitingFromMore(page);
+    await openWaitingFromRail(page);
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
@@ -102,7 +101,7 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     // and mounted fresh by the navigation back, so this exercises a newly-mounted rail after a
     // client-side return — a different condition from the first click, which was on the rail that
     // came with the server-rendered page. Same property the retired case proved, kept here.
-    await openWaitingFromMore(page);
+    await openWaitingFromRail(page);
     await expect(page.getByTestId("ward-delays-page")).toBeVisible({ timeout: 15_000 });
   });
 });
