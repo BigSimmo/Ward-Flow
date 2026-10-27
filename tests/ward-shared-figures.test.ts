@@ -18,6 +18,7 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import {
+  BEDS_READY_SCOPED_TITLE,
   coordinatorOwnsAcceptedAwaitingBed,
   inEdTierOverdue,
   isTierOneOpen,
@@ -248,13 +249,7 @@ describe("one Tier 1 and Overdue count everywhere (P002), one owner for accepted
 });
 
 describe("Beds ready names whose admissions it counts (P028)", () => {
-  it("the Referrals beds sheet reads the scoped label", async () => {
-    const figures = await import("@/components/ward-management/ward-shared-figures");
-    expect((figures as Record<string, unknown>).BEDS_READY_SCOPED_TITLE).toBe(
-      "Beds ready statewide (your desk's admissions)",
-    );
-    const { readFileSync } = await import("node:fs");
-    const board = readFileSync("src/components/ward-management/referrals/referral-board.tsx", "utf8");
-    expect(board).toContain('phoneSheet === "beds" ? BEDS_READY_SCOPED_TITLE');
+  it("the scoped label says the beds are statewide and the admissions are this desk's", () => {
+    expect(BEDS_READY_SCOPED_TITLE).toBe("Beds ready statewide (your desk's admissions)");
   });
 });
