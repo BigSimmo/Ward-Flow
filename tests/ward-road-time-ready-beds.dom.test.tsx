@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { networkWardRows, type NetworkWardRow } from "@/components/ward-management/capacity/capacity-derivations";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
+import { codeName } from "@/components/ward-management/ward-abbreviations";
 import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
@@ -17,6 +18,12 @@ import { NOW_ANCHOR, allEmergencyDepartments, allUnits, siteByCode } from "@/com
 
 const rows = networkWardRows(allUnits(), NOW_ANCHOR, bedReleases, wardAdmissions, leaveBeds);
 const departments = allEmergencyDepartments();
+
+/** The picker value text: visible "RPH ED", with the full name read out after the code (H-0187). */
+function edLabel(siteCode: string) {
+  const name = codeName(siteCode);
+  return name ? `${siteCode} (${name}) ED` : `${siteCode} ED`;
+}
 
 function routeFrom(edId: string, row: NetworkWardRow) {
   const ed = departments.find((d) => d.id === edId);
@@ -125,10 +132,10 @@ describe("Ready beds by road time", () => {
     // The phone shows a 13px copy of the chosen department over the invisible 16px select.
     const shown = () => select.parentElement?.nextElementSibling;
     expect(shown()?.getAttribute("aria-hidden")).toBe("true");
-    expect(shown()?.textContent).toBe(`${departments[0]!.siteCode} ED`);
+    expect(shown()?.textContent).toBe(edLabel(departments[0]!.siteCode));
     await user.selectOptions(select, other.id);
     expect(select.value).toBe(other.id);
-    expect(shown()?.textContent).toBe(`${other.siteCode} ED`);
+    expect(shown()?.textContent).toBe(edLabel(other.siteCode));
     expect(listedNames(card)).not.toEqual(before);
 
     await user.click(within(within(card).getByRole("list")).getAllByRole("button")[0]!);

@@ -1099,6 +1099,7 @@ const PHONE_GROUP_ROWS = 5;
 
 /** The quiet word under a row's time, by where the person is. */
 const TIME_WORD: Record<CensusGroup, string> = {
+  ask: "waiting",
   wait: "waiting",
   found: "since found",
   move: "on the road",

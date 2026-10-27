@@ -6,8 +6,9 @@ name: Ward Flow backend uptime
 # owner, so GitHub emails him; when both answer again, comments and closes that issue. An issue is
 # used because GitHub sends a failed scheduled run's own email only to whoever last edited the
 # schedule, which may not be the owner. Only the backend is checked: the signed-in site sleeps when
-# idle, and a check every 30 minutes would keep it awake. `/healthz` needs no sign-in and reports
-# `database` as "ok" or "unavailable" from a check it repeats at most every 30 seconds (`/readyz`
+# idle, and a check every 30 minutes would keep it awake. `/healthz` needs no sign-in; sent the
+# WARD_FLOW_UPTIME_TOKEN repo secret (audit P177), it reports `database` as "ok" or "unavailable"
+# from a check it repeats at most every 30 seconds (`/readyz`
 # needs a sign-in). Run it by hand with "Send one test alert" ticked to check the email arrives: it
 # opens and at once closes one clearly labelled test issue and skips the real check.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
@@ -52,13 +53,16 @@ jobs:
       - name: Ask the backend whether it is up and can reach its database
         if: ${{ !inputs.test_alert }}
         id: check
+        env:
+          # Audit P177: /healthz shows the database answer only to a caller holding this token.
+          UPTIME_TOKEN: ${{ secrets.WARD_FLOW_UPTIME_TOKEN }}
         run: |
           state=down
           for attempt in 1 2 3; do
-            body=$(curl --silent --show-error --max-time 20 --fail "$BACKEND_URL/healthz" || true)
+            body=$(curl --silent --show-error --max-time 20 --fail --header "x-ward-flow-uptime-token: $UPTIME_TOKEN" "$BACKEND_URL/healthz" || true)
             if printf '%s' "$body" | grep -q '"service":"ward-flow-backend"'; then
-              database=$(printf '%s' "$body" | jq -r '.database // "ok"' 2>/dev/null || echo unavailable)
-              # A server deployed before the database check reports no `database`; count it as up.
+              # A missing `database` means the token was missing or wrong; count it as down, not up.
+              database=$(printf '%s' "$body" | jq -r '.database // "unavailable"' 2>/dev/null || echo unavailable)
               if [ "$database" = "ok" ]; then state=up; break; fi
               state=database
             else

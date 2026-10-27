@@ -66,6 +66,7 @@ describe("seclusion, restraint and incidents view", () => {
     // Desk check (22 Oct): marking the room out of service while it is in use shows at once, and the
     // same button then reads as done.
     fireEvent.click(screen.getByTestId("seclusion-room-out-of-service"));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Mark out of service" }));
     expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(
       new RegExp(`^In use since ${clock(20)}\\. Last marked Out of service · recorded by`),
     );
@@ -92,6 +93,7 @@ describe("seclusion, restraint and incidents view", () => {
   it("records the room as out of service and an incident from the fixed list", () => {
     renderScreen();
     fireEvent.click(screen.getByTestId("seclusion-room-out-of-service"));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Mark out of service" }));
     expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(/^Out of service · recorded by/);
     fireEvent.change(screen.getByTestId("seclusion-incident-category"), { target: { value: "fall" } });
     fireEvent.change(screen.getByTestId("seclusion-incident-time"), { target: { value: clock(30) } });

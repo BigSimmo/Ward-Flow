@@ -203,7 +203,9 @@ describe("a folded group's summary row states its own totals, never the network'
     // ward-capacity-network-fold-empty-service.dom.test.tsx.
     const table = screen.getByTestId("ward-capacity-network-table");
     const emptyGroup = within(table).getByTestId(`ward-capacity-network-group-${slugOf(EMPTY_SERVICE)}`);
-    expect(emptyGroup).toHaveTextContent(`${EMPTY_SERVICE} has no inpatient unit reporting to this board.`);
+    expect(emptyGroup).toHaveTextContent(
+      new RegExp(`^${EMPTY_SERVICE} \\([^)]+\\) has no inpatient unit reporting to this board\\.$`, "u"),
+    );
     expect(within(emptyGroup).queryByRole("button")).not.toBeInTheDocument();
     for (const group of populatedGroups) {
       const button = foldButton(group.service);

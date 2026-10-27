@@ -114,6 +114,14 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     unitIds: z.array(id).min(1).max(PARALLEL_REFERRAL_CAP),
   }),
   RECORD_ARRIVED_IN_DEPARTMENT: z.looseObject({ referralId: id }),
+  // #101 (Josh, 27 Oct 2026): the psychiatrist's authority tick, a yes or no when it was asked.
+  RECORD_LEAVE_BED: z.looseObject({ admissionId: id, psychiatristAuthorised: z.boolean().optional() }),
+  // #177 (Josh, 27 Oct 2026): an involuntary return's Form 4C and escort answers, when given.
+  RECORD_REPATRIATION: z.looseObject({
+    admissionId: id,
+    form4CReceived: z.boolean().optional(),
+    escortRequired: z.boolean().optional(),
+  }),
   RECORD_MEDICAL_CLEARANCE: z.looseObject({ referralId: id, cleared: z.boolean() }),
   REQUEST_CAPACITY_REFRESH: z.looseObject({ unitId: id }),
   // H-0978: one exact bed closed or reopened. The reducer checks the bed and the reason list.
