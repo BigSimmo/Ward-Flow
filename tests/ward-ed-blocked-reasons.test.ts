@@ -354,10 +354,10 @@ describe("transportAnswersBlockedReason (shared by ED and community)", () => {
         NOW,
       ),
     ).toBe(
-      "Before booking, choose who is collecting the patient, answer the escort question, enter the CAD transport number, state whether the transport is voluntary or involuntary, enter the estimated time. None is filled in for you: the record has to say that this team decided.",
+      "Before booking, choose who is collecting the patient, enter the CAD transport number, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
     expect(transportAnswersBlockedReason({ ...answered, estimatedTime: "14:3" }, NOW)).toBe(
-      "Before booking, enter the estimated time. None is filled in for you: the record has to say that this team decided.",
+      "Before booking, enter the estimated time.",
     );
   });
   it("allows a fully answered booking", () => {
