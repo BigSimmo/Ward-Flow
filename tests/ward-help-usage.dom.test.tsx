@@ -52,7 +52,7 @@ describe("help usage counts", () => {
       recordHowToUsed("pull-bed", HOW_TO_IDS);
     });
     const rows = screen.getAllByRole("listitem").map((row) => row.textContent);
-    expect(rows[0]).toMatch(/^Pull a bed for a patient2$/);
+    expect(rows[0]).toMatch(/^Pull the bed for a patient2$/);
     expect(rows).toHaveLength(2);
     fireEvent.click(screen.getByTestId("ward-settings-help-usage-clear"));
     expect(screen.getByText(/No answers used yet/)).toBeTruthy();

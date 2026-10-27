@@ -506,7 +506,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "next",
           { sel: '[data-testid^="ward-officer-next-"]' },
           "Record the next step",
-          "Next is the one step to record now, such as En route or Delivered.",
+          "Next is the one step to record now, such as En route or Arrived at ward.",
         ),
         step(
           "Your daily work",

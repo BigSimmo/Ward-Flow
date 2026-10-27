@@ -43,7 +43,7 @@ export function HomeReleaseSheet({ entry, onClose }: { entry: QueueEntry | undef
         ? "Choose a reason first"
         : undefined;
   return (
-    <Sheet open onClose={close} title="Release bed" mobilePlacement="bottom" testId="home-release-sheet">
+    <Sheet open onClose={close} title="Release pulled bed" mobilePlacement="bottom" testId="home-release-sheet">
       <p>
         {item.title}. {item.detail}
       </p>
