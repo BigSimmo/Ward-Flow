@@ -46,7 +46,9 @@ function LiveAge({ paused }: { paused?: boolean }) {
   useEffect(() => {
     setHeldNow(paused ? lastUnpausedNowRef.current : null);
   }, [paused]);
-  return <>{formatInstant(heldNow ?? liveNow)}</>;
+  // The chip's own current instant (held at the pause), so a bare clock is today by definition.
+  const now = heldNow ?? liveNow;
+  return <>{formatInstant(now)}</>;
 }
 
 /** The page's Live chip and its pause button, on the hero band. */
