@@ -545,7 +545,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Beds ready",
-          "How many beds are ready, with locked and open beds counted apart. Beds pulled and beds due out today sit beside them.",
+          "How many beds are ready, with locked beds counted within the total. Beds pulled and beds due out today sit beside them.",
         ),
         step(
           "Your daily work",
