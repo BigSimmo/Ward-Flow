@@ -216,7 +216,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
                 )}
                 <p className={styles.footer}>
                   <span>↑ ↓ Move · Enter Open · Esc Close</span>
-                  <span>Searches stay on this device and are not kept after you close this</span>
+                  <span>Search stays on this device only · nothing typed is saved</span>
                 </p>
               </div>
             </div>,
