@@ -98,6 +98,8 @@ interface StatusRow {
 export interface PatientStatusContext {
   movement?: Movement;
   admission?: Admission;
+  /** This desk sees the stay with ward and dates only, so observation and acuity are withheld (H-0096). */
+  stayWithheld?: boolean;
   patient?: Patient;
   acceptedUnitName?: string;
   hasBedHold: boolean;
@@ -554,8 +556,12 @@ function statusFor(
           icon: Eye,
           label: "Observation",
           owner: "Nurse in charge",
-          value: admission ? observationSummary(admission.observation) : "Not recorded",
-          sub: admission?.highAcuity ? "High acuity recorded" : "No high acuity recorded",
+          value: ctx.stayWithheld ? "Withheld" : admission ? observationSummary(admission.observation) : "Not recorded",
+          sub: ctx.stayWithheld
+            ? "Your team sees the ward and dates only"
+            : admission?.highAcuity
+              ? "High acuity recorded"
+              : "No high acuity recorded",
         },
         {
           key: "discharge",
