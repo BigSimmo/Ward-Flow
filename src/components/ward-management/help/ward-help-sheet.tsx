@@ -24,6 +24,7 @@ import {
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
+import { ROLE_REFERENCE } from "./ward-help-roles";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
@@ -348,6 +349,15 @@ export function WardHelpSheet({
               ))}
             </dl>
             <p className={styles.note}>{COLOUR_LEGEND_NOTE}</p>
+            <h4 className={styles.groupHeading}>Roles</h4>
+            <dl className={styles.card} data-testid="ward-help-roles">
+              {ROLE_REFERENCE.map((item) => (
+                <div key={item.id} className={styles.entry}>
+                  <dt>{item.name}</dt>
+                  <dd>{item.summary}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
       ) : null}
