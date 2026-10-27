@@ -388,7 +388,7 @@ export const PATIENT_NOW_RECORDS: Record<string, PatientNowRecord> = {
         ],
         asked: [
           { ward: RGH_ADULT_SECURE, outcome: "Declined", why: "acuity mix" },
-          { ward: FSH_ADULT_SECURE, outcome: "Declined", why: "sex mix" },
+          { ward: FSH_ADULT_SECURE, outcome: "Declined", why: "gender mix" },
           { ward: BTY_ADULT_SECURE, outcome: "Accepted", why: "" },
         ],
         outcome:

@@ -22,7 +22,7 @@ const PATIENT_CHECK_NAMES: Partial<Record<EligibilityGate, string>> = {
   security: "security",
   gender_designation: "bed designation",
   forensic: "forensic",
-  sex_mix: "sex mix",
+  sex_mix: "gender mix",
   prior_decline: "not declined here before",
 };
 
