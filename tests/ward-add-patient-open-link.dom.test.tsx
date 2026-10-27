@@ -25,7 +25,7 @@ import { decodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 
 /*
  * Audit P143 (Josh, 27 Oct 2026, 8:57 PM: "add the Open patient link for the refer path only").
- * Register & start referral goes on to the referral form, so the "added" toast offers a way back
+ * Register & start referral goes on to the referral form, so the "added" toast offers a way
  * to the new person's page. A plain Add patient already opens that page, so its toast is unchanged.
  * Synthetic seed data only.
  */
@@ -55,8 +55,11 @@ describe("Add patient toast, Open patient link (audit P143)", () => {
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     expect(router.push.mock.calls[0][0]).toMatch(/new=1/);
     expect(await screen.findByTestId("toast")).toHaveTextContent("Testable Newcomer added, UM999999");
-    const link = screen.getByRole("link", { name: "Open patient" });
-    const href = link.getAttribute("href") ?? "";
+    // #1020 review: an in-app move, never a page load, so the record just added in demo mode is kept.
+    expect(screen.queryByRole("link", { name: "Open patient" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Open patient" }));
+    expect(router.push).toHaveBeenCalledTimes(2);
+    const href = router.push.mock.calls[1][0] as string;
     expect(href).toMatch(/^\/ward-flow\/people\/[0-9a-z]+$/);
     expect(decodeRecordAddress(href.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
@@ -66,6 +69,6 @@ describe("Add patient toast, Open patient link (audit P143)", () => {
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     expect(await screen.findByTestId("toast")).toHaveTextContent("Testable Newcomer added, UM999999");
-    expect(screen.queryByRole("link", { name: "Open patient" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open patient" })).toBeNull();
   });
 });

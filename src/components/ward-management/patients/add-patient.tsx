@@ -409,8 +409,10 @@ export function AddPatientForm() {
         : {
             tone: "success",
             title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
-            // P143 (Josh, 27 Oct 2026, 8:57 PM): refer path only. A plain add already opens the page.
-            ...(prior.intent === "refer" ? { nextStep: { label: "Open patient", href: patientHref(added.id) } } : {}),
+            // P143 (Josh, 8:57 PM): refer path only; in-app move, as a reload drops a demo-mode record.
+            ...(prior.intent === "refer"
+              ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
+              : {}),
           },
     );
     if (prior.intent === "refer") {
