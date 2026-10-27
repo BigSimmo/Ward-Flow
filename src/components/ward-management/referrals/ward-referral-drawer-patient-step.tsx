@@ -118,11 +118,12 @@ export function ReferralPatientStep({
   const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
   const someoneChosen = !!patientRecord || unidentified !== null;
   // H-0731: choosing a person to refer opens their record, which shows its recorded address. In the
-  // signed-in shared workspace the server logs that opening and only then sends the address.
+  // signed-in shared workspace the server logs that opening and only then sends the address. Logged
+  // as the patient record: a first referral has no referral or journey for the server to match yet.
   const session = useContext(SharedSessionContext);
   const chosenId = patientRecord?.id;
   useEffect(() => {
-    if (chosenId) session?.logRecordView(chosenId, "referral");
+    if (chosenId) session?.logRecordView(chosenId, "patient");
   }, [session, chosenId]);
   // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
   // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
