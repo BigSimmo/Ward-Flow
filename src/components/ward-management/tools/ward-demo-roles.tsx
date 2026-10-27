@@ -5,14 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { COMMUNITY_TEAM_PAGES, communityHubLists, communityTeamSlug } from "../community/community-derivations";
 import { useUnscopedWardFlow } from "../shell/ward-access-context";
-import { markDeskSwitch, useWardAccessSnapshot } from "../shell/ward-access-store";
+import { markDeskSwitch, setWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
 import { useWardFeatureFlags } from "../shell/ward-feature-flag-store";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
 import { SharedSessionContext } from "../shell/ward-shared-session-context";
-import { usePersonaDeskId, useShellPersonaRole } from "../settings/persona-sync";
+import { dispatchPersonaSyncForRole, usePersonaDeskId, useShellPersonaRole } from "../settings/persona-sync";
 import { useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
 import {
   ACCESS_ROLE_LABELS,
+  STATEWIDE_COORDINATOR,
   WARD_ACCESS_ROLES,
   homeHrefFor,
   type WardAccess,
@@ -98,6 +99,13 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
     if (!enabled) return;
     const original = exitDemoRole();
     if (original) go(original);
+    else {
+      // A reload keeps the existing local desk, but loses the memory-only return history.
+      // Give that desk an explicit way back without inventing its previous role.
+      setWardAccess(STATEWIDE_COORDINATOR);
+      dispatchPersonaSyncForRole("coordinator");
+      go(STATEWIDE_COORDINATOR);
+    }
   }
   return (
     <section className={styles.section} aria-label="Roles">
@@ -130,9 +138,9 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
         {current === "admin" ? " Access settings only; no patient data." : null}
         {current === "executive" ? " Aggregate reports and read-only controls." : null}
       </p>
-      {session ? (
+      {session || current !== "coordinator" ? (
         <button type="button" className={styles.exit} disabled={!enabled} onClick={exit}>
-          Exit role demo
+          {session ? "Exit role demo" : "Back to Bed coordinator"}
         </button>
       ) : null}
       <p>

@@ -9,6 +9,7 @@ import { WardAccessScope } from "@/components/ward-management/shell/ward-access"
 import {
   readWardAccessSnapshot,
   resetWardAccessStoreForTests,
+  setWardAccess,
   useEffectiveWardAccess,
 } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -219,5 +220,17 @@ describe("Roles within the existing Demo selector", () => {
     expect(screen.queryByRole("group", { name: "Demo role" })).toBeNull();
     expect(readWardAccessSnapshot().access.role).toBe("coordinator");
     expect(navigation.push).not.toHaveBeenCalled();
+  });
+
+  it("offers a coordinator fallback for a restored local desk without return history", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "officer", scope: { kind: "jobs" } });
+    });
+    renderPanel();
+    fireEvent.click(screen.getByRole("button", { name: "Back to Bed coordinator" }));
+    expect(proof()).toHaveAttribute("data-role", "coordinator");
+    expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
+    expect(screen.queryByRole("button", { name: "Back to Bed coordinator" })).toBeNull();
   });
 });
