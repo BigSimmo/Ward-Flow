@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   // client-side navigation that this static export cannot see. The route segment, the file and the
   // `PatientId` type stay named for the person — D-1 does not authorise renaming those.
   title: "Patient — Ward Flow",
-  description: "Unified synthetic patient dossier and transit operations for Ward Flow.",
+  description: "Synthetic patient record and transport for Ward Flow.",
 };
 
 export default async function WardPersonPage({

@@ -1661,9 +1661,9 @@ export function ShortlistPanel({
         <section
           className={`${styles.shortlistTransitCard} ${shortlistStyles.detailDisclosure}`}
           data-testid="ward-shortlist-transit-card"
-          aria-label={`Inbound Transit & Arrival Telemetry (${OPERATIONAL_DEFAULT_LABEL})`}
+          aria-label={`Transport and arrival (${OPERATIONAL_DEFAULT_LABEL})`}
         >
-          <h4 className={styles.shortlistSectionHeading}>Inbound Transit &amp; Arrival Telemetry</h4>
+          <h4 className={styles.shortlistSectionHeading}>Transport and arrival</h4>
           <dl className={shortlistStyles.factGrid}>
             <Fact
               label="Accepting inpatient ward"

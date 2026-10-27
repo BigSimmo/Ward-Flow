@@ -304,7 +304,7 @@ export function syntheticMovementReferralDossier(movement: Movement): ReferralDo
     supports: [{ label: "Plan", detail: "Synthetic support contact available through the referring clinician." }],
     referrer,
     arrival: [
-      { label: "Plan", detail: "See the recorded journey and transport plan. No arrival is implied by this dossier." },
+      { label: "Plan", detail: "See the recorded journey and transport plan. No arrival is implied by this record." },
     ],
     documents: [
       {
