@@ -85,6 +85,8 @@ export type WardSharedConnection = SharedView & {
   credentials?: WardCredentialForm;
   enabled: boolean;
   signedIn: boolean;
+  /** #791: the signed-in account's email, shown beside Sign out so the person knows which account this is. */
+  accountEmail?: string | null;
   signIn: () => void;
   /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
   signOut: (reason?: unknown) => void;
@@ -685,6 +687,7 @@ function WardSharedWorkspaceContent({
       <WardRolePicker
         choices={connection.choices ?? []}
         onChoose={(id) => connection.chooseRole?.(id)}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -695,6 +698,7 @@ function WardSharedWorkspaceContent({
         reason={connection.noRoleReason}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -707,6 +711,7 @@ function WardSharedWorkspaceContent({
         canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -719,6 +724,7 @@ function WardSharedWorkspaceContent({
         canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );

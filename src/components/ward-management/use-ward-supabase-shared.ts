@@ -134,6 +134,8 @@ export function useWardSupabaseShared(
 ) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
+  // #791: the signed-in account's email, shown beside Sign out. Memory only, like the auth's own copy.
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<number | null>(null);
   const [form, setForm] = useState<{
     open: boolean;
@@ -156,6 +158,7 @@ export function useWardSupabaseShared(
     setPreviousEnabled(enabled);
     setView(emptyView);
     setSignedIn(false);
+    setAccountEmail(null);
     setForm({ open: false, recovery: false, busy: false, message: null });
   }
   const connection = useRef<SharedWorkspaceClient | null>(null);
@@ -212,6 +215,7 @@ export function useWardSupabaseShared(
       connection.current = null;
       if (!closed) {
         setSignedIn(false);
+        setAccountEmail(null);
         setEndsAt(null);
         setView({ ...emptyView, status: "ready" });
       }
@@ -236,6 +240,7 @@ export function useWardSupabaseShared(
       setDraftAccount(actorId);
       connectedActorId = actorId;
       setSignedIn(true);
+      setAccountEmail(auth.accountEmail);
       setForm({ open: false, recovery: false, busy: false, message: null });
       const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL!;
       const instance = auth;
@@ -496,6 +501,7 @@ export function useWardSupabaseShared(
   return {
     ...view,
     signedIn,
+    accountEmail,
     client: connection,
     signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
     /** When this sign-in reaches the session limit, in wall-clock milliseconds; `null` when unknown. */
