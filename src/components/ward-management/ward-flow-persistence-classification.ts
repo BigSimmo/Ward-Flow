@@ -236,6 +236,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_ABSENCE_STEP",
   "RECORD_COMMUNITY_TREATMENT_ORDER",
   "END_COMMUNITY_TREATMENT_ORDER",
+  // #816: a patient id and a closed `PatientArchiveReason`, offered by radio buttons. No typed text.
+  "ARCHIVE_PATIENT",
   "RECORD_LEAVING",
   "RECORD_LEFT_DEPARTMENT",
   "RECORD_LEGAL_FORM_EXPIRY",

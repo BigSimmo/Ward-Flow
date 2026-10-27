@@ -131,6 +131,7 @@ type ScopedAuditEvent = {
 const PERSON_REFUSALS: ReadonlySet<string> = new Set([
   "RECORD_COMMUNITY_TREATMENT_ORDER",
   "END_COMMUNITY_TREATMENT_ORDER",
+  "ARCHIVE_PATIENT",
 ]);
 
 /**

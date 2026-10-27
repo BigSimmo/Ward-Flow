@@ -1818,12 +1818,13 @@ export function reduceClinicalEvent(
     case "EVALUATE_LEAVE_BED_WARNINGS":
       return reducerSlices().reduceBedEvent(state, event, decision, BED_EVENT_HELPERS);
 
+    case "ADD_PATIENT":
+      return reducerSlices().reducePatientRegistration(state, event, reject);
+    case "ARCHIVE_PATIENT":
+      return reducerSlices().reducePatientArchive(state, event, reject, decision);
     // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
     // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
     // which a reset clears; subtracting it keeps the visible clock from jumping.
-    case "ADD_PATIENT":
-      return reducerSlices().reducePatientRegistration(state, event, reject);
-
     case "RESET_SCENARIO":
       // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged
       // restore) falls back to the standard night rather than seeding something unknown.

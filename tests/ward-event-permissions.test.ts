@@ -57,6 +57,7 @@ describe("who may raise which event", () => {
     ACCEPT_REFERRAL: ["ward", "coordinator", "ed", "community"],
     HOLD_REFERRAL_BED: ["ward", "coordinator"],
     ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
+    ARCHIVE_PATIENT: ["coordinator"],
     // RB7, build plan item 27 (2026-09-17): the referrer's own team and the coordinator, never a
     // ward — see EVENT_ROLE's own comment on this entry.
     ADD_REFERRAL_CORRECTION: ["community", "ed", "ward", "coordinator"],

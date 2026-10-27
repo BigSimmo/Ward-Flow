@@ -70,6 +70,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
 
   // 2.2 Front-door referrals
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
+  ARCHIVE_PATIENT: { category: "patient", plainWording: "Patient record archived, added in error" },
   RECEIVE_REFERRAL: { category: "patient", plainWording: "New referral received" },
   ACCEPT_REFERRAL: { category: "patient", plainWording: "Referral accepted by destination service" },
   HOLD_REFERRAL_BED: { category: "both", plainWording: "Numbered bed pulled for accepted referral" },
