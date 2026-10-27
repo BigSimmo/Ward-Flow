@@ -94,6 +94,10 @@ export type FrontDoorProps = {
 export function FrontDoor({ form, notice, tv = false, demoUrl = publicDemoUrl() }: FrontDoorProps) {
   const [view, setView] = useState<View>("sign-in");
   const [email, setEmail] = useState("");
+  // P190: a tab signed out from a page must not keep that page's name in its title.
+  useEffect(() => {
+    document.title = "Sign in — Ward Flow";
+  }, []);
   if (form?.recovery) return <NewPasswordDoor form={form} />;
   if (tv && view === "sign-in") return <TvDoor form={form} notice={notice} email={email} setEmail={setEmail} />;
   if (form && view === "forgot")
