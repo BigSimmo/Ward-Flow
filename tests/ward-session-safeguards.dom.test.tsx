@@ -117,6 +117,19 @@ it("asks 'Still there?' for the last minute before an idle sign-out, and says wh
   );
 });
 
+it("lets the person at the desk sign out at once from the 'Still there?' prompt", () => {
+  const signOut = vi.fn();
+  render(
+    <SharedSessionContext.Provider value={{ signOut, logRecordView: vi.fn() }}>
+      <WardIdleLock />
+    </SharedSessionContext.Provider>,
+  );
+  act(() => vi.advanceTimersByTime(IDLE_MS - 60_000));
+  fireEvent.click(screen.getByRole("button", { name: "Sign out now" }));
+  // No reason: a deliberate sign-out, in every tab, as the menu's Sign out does.
+  expect(signOut).toHaveBeenCalledWith();
+});
+
 it("signs out, not rearms, when activity comes after the idle deadline (a woken laptop)", () => {
   const signOut = vi.fn();
   render(

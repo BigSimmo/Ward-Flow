@@ -1,5 +1,10 @@
 [
   {
+    "id": "2026-10-27-night-entrance",
+    "date": "2026-10-27",
+    "line": "Sign-in has a new look on every screen, with a clearer password reset and a one-tap Still there? prompt."
+  },
+  {
     "id": "2026-10-27-charts-to-follow",
     "date": "2026-10-27",
     "line": "Referrals can mark the medication or observation chart To follow when it is not to hand."
@@ -93,10 +98,5 @@
     "id": "2026-10-27-copy-removes-date-of-birth",
     "date": "2026-10-27",
     "line": "Copied text now removes a date of birth written mid-line."
-  },
-  {
-    "id": "2026-10-27-buzz-across-tabs",
-    "date": "2026-10-27",
-    "line": "Buzz sound on or off now matches across open tabs."
   }
 ]

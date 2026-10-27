@@ -124,37 +124,6 @@
   font-size: var(--wf-fs-13);
 }
 
-.lock {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  display: grid;
-  place-items: center;
-  padding: var(--wf-s-4);
-  background: var(--wf-surface-2);
-}
-
-.lockCard {
-  max-width: 28rem;
-  padding: var(--wf-s-6);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  text-align: center;
-}
-
-.lockCard h1 {
-  margin: 0 0 var(--wf-s-2);
-  font-size: var(--wf-fs-20);
-}
-
-.lockCard p {
-  margin: 0 0 var(--wf-s-4);
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-14);
-}
-
 .printFooter {
   display: none;
 }
