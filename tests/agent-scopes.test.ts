@@ -98,7 +98,8 @@ if (!hasAgentConfig) {
   describe("public review-agent configuration", () => {
     it("ships Ward instructions without partial Claude or Cursor agent configuration", () => {
       expect(readFileSync(join(repoRoot, "AGENTS.md"), "utf8")).toContain("Ward Flow");
-      expect(existsSync(join(repoRoot, ".claude"))).toBe(false);
+      // `.claude/settings.json` may carry the cloud Supermemory save hook alone; no agents ship.
+      expect(existsSync(join(repoRoot, ".claude/agents"))).toBe(false);
       expect(existsSync(join(repoRoot, ".cursor"))).toBe(false);
     });
   });

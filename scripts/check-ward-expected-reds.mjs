@@ -555,7 +555,8 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
     for (const file of tooling) console.log(`    ${file}`);
   }
   if (process.env.WARD_PUBLIC_STANDALONE === "1") {
-    const privateRootsPresent = [".claude", ".agents", ".cursor"].some((root) =>
+    // A bare `.claude/settings.json` holding only the cloud Supermemory save hook is public.
+    const privateRootsPresent = [".claude/hooks", ".claude/agents", ".agents", ".cursor"].some((root) =>
       existsSync(path.join(projectRoot, root)),
     );
     population = selectPublicPopulation(population, privateRootsPresent);

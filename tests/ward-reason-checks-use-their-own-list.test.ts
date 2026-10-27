@@ -51,6 +51,8 @@ const REDUCERS = [
   "src/components/ward-management/ward-flow-bed-events.ts",
   // Smart features idea 7 (19 Oct 2026): ward closure's reason check.
   "src/components/ward-management/ward-flow-ward-closure-events.ts",
+  // H-0978 / WS-15 (26 Oct 2026): one exact bed's closure reason check.
+  "src/components/ward-management/ward-flow-bed-closure-events.ts",
   // Smart features idea 5 (19 Oct 2026): the bed meeting action's list check.
   "src/components/ward-management/ward-flow-bed-meeting-events.ts",
 ] as const;

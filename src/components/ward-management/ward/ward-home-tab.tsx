@@ -20,6 +20,7 @@ import { withdrawalReasonLabels } from "@/components/ward-management/ward-change
 import { formatInstantWithDay, formatInstant, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
+import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import type { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import {
   BED_RELEASES_HELD_UP_ANY_DATE_LABEL,
@@ -456,6 +457,8 @@ export function WardHomeTab({
       bed.status === "ready" || (bed.admissionId !== undefined && freeingByShiftEnd.has(bed.admissionId));
     const leaving = !free && (bed.dischargeConfirmed === true || (bed.expectedDays != null && bed.expectedDays <= 0));
     const awayAtEd = bed.awayAtEdHours != null;
+    // WT-07: the officer recorded Delivered, so the pull clock has stopped and the ward confirms.
+    const delivered = bed.status === "incoming" && typeof bed.deliveredAt === "number";
     const look =
       !free && (bed.pastDate === true || awayAtEd || Boolean(bed.dischargeBarrier) || Boolean(bed.blockReason));
     const stateWord =
@@ -468,7 +471,9 @@ export function WardHomeTab({
             ? "Absent without leave"
             : "On leave"
           : bed.status === "incoming"
-            ? "Pulled"
+            ? delivered
+              ? "Delivered"
+              : "Pulled"
             : bed.status === "closed"
               ? "Closed"
               : "Occupied";
@@ -477,45 +482,49 @@ export function WardHomeTab({
     const hold = bed.status === "incoming" ? (bed.bedHold ?? null) : null;
     const note = hold
       ? hold.label
-      : awayAtEd
-        ? `Away at an ED ${bed.awayAtEdHours}h`
-        : bed.blockReason
-          ? `Held up, ${String(bed.blockReason)}`
-          : bed.pastDate
-            ? "Past expected date"
-            : bed.dischargeBarrier
-              ? String(bed.dischargeBarrier)
-              : leaving
-                ? bed.dischargeConfirmed
-                  ? "Discharge confirmed"
-                  : "Expected out today"
-                : bed.isSpecialling && bed.observation
-                  ? observationSummary(bed.observation)
-                  : bed.criteriaLedChip && bed.status === "occupied"
-                    ? bed.criteriaLedChip.label
-                    : free
-                      ? "Ready"
-                      : stateWord;
+      : delivered
+        ? `Delivered ${formatInstantWithDay(bed.deliveredAt as Instant, now)}, confirm arrival`
+        : awayAtEd
+          ? `Away at an ED ${bed.awayAtEdHours}h`
+          : bed.blockReason
+            ? `Held up, ${String(bed.blockReason)}`
+            : bed.pastDate
+              ? "Past expected date"
+              : bed.dischargeBarrier
+                ? String(bed.dischargeBarrier)
+                : leaving
+                  ? bed.dischargeConfirmed
+                    ? "Discharge confirmed"
+                    : "Expected out today"
+                  : bed.isSpecialling && bed.observation
+                    ? observationSummary(bed.observation)
+                    : bed.criteriaLedChip && bed.status === "occupied"
+                      ? bed.criteriaLedChip.label
+                      : free
+                        ? "Ready"
+                        : stateWord;
     // U1 (site review, 12 Oct 2026): the tile's status word is short so it never truncates
     // ("Discharge confir…", "Held up, Awaiti…"). The full note stays in the accessible name, the
     // list view and the bed panel.
     const tileNote = hold
       ? hold.short
-      : awayAtEd
-        ? `At ED ${bed.awayAtEdHours}h`
-        : bed.blockReason
-          ? "Held up"
-          : bed.pastDate
-            ? "Past date"
-            : bed.dischargeBarrier
-              ? "Barrier"
-              : leaving
-                ? bed.dischargeConfirmed
-                  ? "Confirmed out"
-                  : "Due out"
-                : bed.isSpecialling && bed.observation
-                  ? `Constant ${observationRatio(bed.observation.level)}`
-                  : note;
+      : delivered
+        ? "Confirm arrival"
+        : awayAtEd
+          ? `At ED ${bed.awayAtEdHours}h`
+          : bed.blockReason
+            ? "Held up"
+            : bed.pastDate
+              ? "Past date"
+              : bed.dischargeBarrier
+                ? "Barrier"
+                : leaving
+                  ? bed.dischargeConfirmed
+                    ? "Confirmed out"
+                    : "Due out"
+                  : bed.isSpecialling && bed.observation
+                    ? `Constant ${observationRatio(bed.observation.level)}`
+                    : note;
     const glyph = bedGlyphTone(bed);
     // C3 (phone simplification, 19 Oct 2026): one word for the phone bed strip, from the same state.
     const stripWord = bedStripWord(bed, { free, preparing, awayAtEd, leaving });
@@ -709,7 +718,8 @@ export function WardHomeTab({
   };
   const expectedRows: FlowRow[] = accepted.map((movement, index): FlowRow => {
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
-    const late = eta !== undefined && eta < now;
+    // WT-07: once Delivered, the patient is at the ward, so the ETA is no longer late.
+    const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement);
     const displayName = resolvePatientIdentity(movement).displayName;
     // A1-6 (audit round 2): an accepted patient waiting for a bed is pulled from this row, the
     // same action and the same check as All arrivals, so the sheet is no longer a detour.
@@ -726,7 +736,7 @@ export function WardHomeTab({
       // outranks a late ETA (the coral overdue); the ETA stays in `when` as "Due".
       detail:
         blocked ??
-        (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : stageCopy[movement.stage].label),
+        (hold?.state === "lapsed" ? hold.label : late ? "Late" : hold ? hold.label : movementStatusLabel(movement)),
       tone: hold?.state === "lapsed" ? "danger" : late ? "warning" : hold?.state === "at-risk" ? "warning" : "info",
       action: canPull ? "Pull a bed" : "Open",
       placement: canPull,

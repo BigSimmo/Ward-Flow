@@ -11,7 +11,7 @@ export const GATE_LABELS: Record<EligibilityGate, string> = {
   allocatable_bed: "Allocatable bed",
   authorisation: "Authorised hospital",
   capacity_freshness: "Capacity freshness",
-  cohort: "Cohort match",
+  cohort: "Ward cohort",
   forensic: "Forensic history",
   legal_status: "Legal status",
   prior_decline: "Prior decline",

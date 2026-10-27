@@ -39,7 +39,7 @@ type TypedTextEventType =
  * `WARD_FLOW_TYPED_TEXT_EVENT_TYPES`.
  */
 const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } = {
-  ADD_PATIENT: ["registrationScope", "gender"],
+  ADD_PATIENT: ["registrationScope", "gender", "sex"],
   RECEIVE_REFERRAL: [
     "submissionId",
     "patientId",

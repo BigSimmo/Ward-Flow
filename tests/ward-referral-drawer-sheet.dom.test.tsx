@@ -232,8 +232,9 @@ describe("referral slide-out, option B", () => {
 });
 
 describe("one ready count (audit A2-9)", () => {
-  it("counts the contact details asked at Send, so nothing reads ready while Send would refuse", () => {
-    // Opened plainly: from an entry point (option B) the referrer's profile fills the contact in.
+  it("fills the contact from the desk's profile, so Send does not ask for it again (WS-07)", () => {
+    // WS-07 (H-0972): opened plainly, the referrer's profile still fills the contact in. Before,
+    // only an entry point did, and an ED clinician typed five fields at the first Send.
     renderDrawer({ initialCategory: "ward" });
     // UX audit 21 Oct 2026: the footer carries the one count; the rail no longer repeats it.
     const match = /(\d+) of (\d+) items still needed/u.exec(document.body.textContent ?? "");
@@ -241,10 +242,9 @@ describe("one ready count (audit A2-9)", () => {
     const [left, total] = [Number(match![1]), Number(match![2])];
     const rail = screen.getByTestId("ward-referral-summary-rail");
     expect(rail).not.toHaveTextContent(/\d+ of \d+ ready/u);
-    // The five empty contact fields are among the items still needed, named on their row.
-    expect(rail).toHaveTextContent("5 to fill at Send");
-    expect(rail).toHaveTextContent("Your contact details are asked at Send.");
-    expect(left).toBeGreaterThanOrEqual(5);
+    expect(rail).toHaveTextContent(SETTINGS_DEMO_PROFILE.name);
+    expect(rail).not.toHaveTextContent("to fill at Send");
+    expect(left).toBeGreaterThanOrEqual(1);
     expect(total).toBeGreaterThanOrEqual(left);
   });
 

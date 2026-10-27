@@ -101,6 +101,27 @@ describe("patient registration command settlement", () => {
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     expect(dispatch.mock.calls.length).toBe(2);
   });
+  it("says a slow shared save is still running, blocks a second submit, and clears the note when it settles", async () => {
+    vi.useFakeTimers();
+    try {
+      const command = deferred<WardCommandOutcome>();
+      const dispatch = vi.fn(() => command.promise);
+      render(form(dispatch));
+      fill();
+      fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+      expect(screen.getByTestId("ward-add-patient-submit").textContent).toContain("Adding patient...");
+      act(() => vi.advanceTimersByTime(4999));
+      expect(screen.queryByTestId("ward-add-patient-slow-save")).toBeNull();
+      act(() => vi.advanceTimersByTime(1));
+      expect(screen.getByTestId("ward-add-patient-slow-save").getAttribute("role")).toBe("status");
+      fireEvent.submit(screen.getByTestId("ward-add-patient-form"));
+      expect(dispatch.mock.calls.length).toBe(1);
+      await act(async () => command.resolve({ commandId: "slow-add", status: "refused" }));
+      expect(screen.queryByTestId("ward-add-patient-slow-save")).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it.each(["refused", "failed", "cancelled"] as const)(
     "ignores unrelated new records while its own command is pending then %s",
     async (status) => {

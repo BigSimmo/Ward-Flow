@@ -400,7 +400,11 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
                 Confirm and send
               </button>
             ) : (
+              // The key swaps the element when the confirmation opens. Kept as one element, the
+              // click that opened it finished on a button that had just become a submit, so the
+              // form sent at once and the confirmation was skipped.
               <button
+                key={confirmationOpen ? "confirm" : "advance"}
                 className={styles.btnSendReferral}
                 onClick={
                   confirmationOpen

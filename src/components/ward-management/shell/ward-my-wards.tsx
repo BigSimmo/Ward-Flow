@@ -58,6 +58,8 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
   const currentId = wardIdFromPath(pathname);
   const current = currentId === undefined ? undefined : byId.get(currentId);
   const offerPin = current !== undefined && !pinned.includes(current.id);
+  // H-0125: a full list says so beside the pin, not only to a screen reader after a tap.
+  const full = pinned.length >= MY_WARDS_LIMIT;
   const pinnable =
     variant === "sheet" && pinned.length < MY_WARDS_LIMIT
       ? units
@@ -98,7 +100,13 @@ export function WardMyWards({ variant, onNavigate }: { variant: "rail" | "sheet"
             </li>
           );
         })}
-        {offerPin ? (
+        {offerPin && full ? (
+          <li className={styles.row}>
+            <p className={styles.fullNote} data-testid="ward-my-wards-full">
+              My wards holds {MY_WARDS_LIMIT}. Remove one to pin this ward.
+            </p>
+          </li>
+        ) : offerPin ? (
           <li className={styles.row}>
             <button
               type="button"

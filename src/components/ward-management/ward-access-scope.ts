@@ -387,6 +387,10 @@ function collectionMovement(
   const flags = referral?.intake?.riskFlags ?? movement.collectionRiskFlags;
   if (flags?.length) trimmed.collectionRiskFlags = [...flags];
   if (movement.patientId === undefined && referral?.patientId !== undefined) trimmed.patientId = referral.patientId;
+  // WT-01 follow-up (walk-through rerun, 27 Oct 2026): the officer is given no referrals, so a
+  // referral link here can never resolve, and the patient resolver rightly names nobody through a
+  // link it cannot follow. The person rides on `patientId` instead.
+  delete trimmed.referralId;
   const from = fromUnitId ?? movement.collectionFromUnitId;
   if (from !== undefined) trimmed.collectionFromUnitId = from;
   return trimmed as Movement;

@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErrorEvent } from "@sentry/core";
-import { scrubSentryEvent, serverSentrySettings } from "@/lib/sentry-server";
+import {
+  allowServerReport,
+  resetServerReportThrottle,
+  scrubSentryEvent,
+  SERVER_REPORT_INTERVAL_MS,
+  serverSentrySettings,
+} from "@/lib/sentry-server";
 
 const SECRET = "SYNTHETIC_PRIVATE_SENTINEL";
 const DSN = "https://publickey@o0.ingest.invalid/1";
@@ -85,5 +91,25 @@ describe("server Sentry scrubbing", () => {
     expect(body).toContain("TypeError");
     expect(body).toContain("11111111-1111-4111-8111-111111111111");
     await getClient()?.close(0);
+  });
+});
+
+describe("server Sentry rate limit (PS-13, H-0961)", () => {
+  it("sends one report per kind every five minutes", () => {
+    resetServerReportThrottle();
+    expect(allowServerReport("failure:TypeError", 1_000)).toBe(true);
+    expect(allowServerReport("failure:TypeError", 2_000)).toBe(false);
+    expect(allowServerReport("failure:RangeError", 2_000)).toBe(true);
+    expect(allowServerReport("failure:TypeError", 1_000 + SERVER_REPORT_INTERVAL_MS)).toBe(true);
+  });
+
+  it("keeps a bounded list of kinds without letting a full list reopen a throttled kind", () => {
+    resetServerReportThrottle();
+    for (let i = 0; i < 500; i += 1) expect(allowServerReport(`kind-${i}`, 1_000)).toBe(true);
+    // Full, and every kind is still inside its interval: a new kind waits, and old kinds stay throttled.
+    expect(allowServerReport("kind-500", 2_000)).toBe(false);
+    expect(allowServerReport("kind-0", 2_000)).toBe(false);
+    // Once the oldest kind's interval has run out, it makes room for a new one.
+    expect(allowServerReport("kind-500", 1_000 + SERVER_REPORT_INTERVAL_MS)).toBe(true);
   });
 });

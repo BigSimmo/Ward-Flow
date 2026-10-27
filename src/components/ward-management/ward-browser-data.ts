@@ -11,8 +11,8 @@ import { clearSessionDrafts } from "./ward-session-drafts";
  * (`clinical-kb-theme`), never match and are left alone.
  *
  * A short list of device display settings is kept, because they hold nothing about a patient or a
- * person and the next person at the device expects the screen to look the same. "Hide names"
- * (`ward-flow-discreet-names`) is kept on purpose: clearing it would show names to the next person.
+ * person and the next person at the device expects the screen to look the same. The old Discreet
+ * names key (`ward-flow-discreet-names`, removed for D-83) is no longer kept, so sign-out clears it.
  */
 const WARD_FLOW_STORAGE_PREFIXES = ["ward-", "ward_", "wardflow", "wf-"] as const;
 
@@ -20,7 +20,6 @@ const WARD_FLOW_STORAGE_PREFIXES = ["ward-", "ward_", "wardflow", "wf-"] as cons
 export const WARD_FLOW_DEVICE_SETTING_KEYS = [
   "ward-flow-rail",
   "ward-flow-row-density",
-  "ward-flow-discreet-names",
   "ward-flow-reduced-motion",
   "ward-flow-high-contrast",
   "ward-flow-character-shortcuts",

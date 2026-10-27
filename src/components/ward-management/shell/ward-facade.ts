@@ -53,6 +53,10 @@ import { defaultWardConfiguration } from "@/components/ward-management/ward-conf
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 
+// Stable fallbacks, so `taskItems` can reuse its answer by input identity (H-0340).
+const DEFAULT_CONFIGURATION = Object.freeze(defaultWardConfiguration());
+const NO_SNOOZES = Object.freeze({});
+
 /**
  * THE MOVEMENT VERDICT, RE-EXPORTED RATHER THAN WRAPPED.
  *
@@ -211,14 +215,16 @@ export function shellFigures(input: ShellFigureInput): Record<ShellFigureId, She
         {
           movements: input.movements,
           units: input.units,
-          configuration: input.configuration ?? defaultWardConfiguration(),
-          inboxSnoozes: input.inboxSnoozes ?? {},
+          configuration: input.configuration ?? DEFAULT_CONFIGURATION,
+          inboxSnoozes: input.inboxSnoozes ?? NO_SNOOZES,
           admissions: input.admissions,
           patients: input.patients,
           referrals: input.referrals,
           supportNotifications: input.supportNotifications,
           plannedAdmissions: input.plannedAdmissions,
-          leaveBeds: [...input.leaveBeds],
+          // The held list itself, not a copy: a fresh array missed the shared task-list memo on
+          // every call and evicted the other callers' answers (production audit PERF-02).
+          leaveBeds: input.leaveBeds,
         },
         input.now,
       ).length,

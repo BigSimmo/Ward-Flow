@@ -70,9 +70,8 @@ describe("a saved day that holds audit rows survives a reload", () => {
     view.unmount();
 
     mount();
-    expect(screen.getByRole("status"), "successful restoration is labelled without a failure notice").toHaveTextContent(
-      /^Restored the last successful save from \d{2}:\d{2} on the board clock\. Later changes may not have been saved\.$/,
-    );
+    // WS-13: a successful restoration with no failed save since is quiet.
+    expect(screen.queryByTestId("ward-recovery-notice")).toBeNull();
     expect(current.movements.find((movement) => movement.id === "WF-009")!.legalStatus).toBe("Voluntary");
     expect(saved().state.auditEvents).toHaveLength(1);
   });

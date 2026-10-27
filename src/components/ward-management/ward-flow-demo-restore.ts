@@ -6,6 +6,7 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
   WARD_FLOW_STORED_STATE_VERSION as WARD_FLOW_DEMO_STORAGE_VERSION,
 } from "./ward-flow-demo-storage-constants";
+import { demoSaveIsCurrent } from "./ward-flow-demo-save-marker";
 import type { DemoRead, WardFlowDemoPayload } from "./ward-flow-demo-storage";
 import {
   isValidStoredWardFlowState,
@@ -83,10 +84,13 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
     // day and hour next to a demo clock. The board resumes at the save plus the real minutes since,
     // so a save from the board's previous day says so.
     const resumedAt = parsed.now + (mountedAtAbsolute - parsed.savedAtAbsolute);
-    return {
-      saved: { ...parsed, state: withInboxStreamADefaults(parsed.state) },
-      recoveryNotice: `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock. Later changes may not have been saved.`,
-    };
+    const saved = { ...parsed, state: withInboxStreamADefaults(parsed.state) };
+    // WS-13 (workflow speed audit, 26 Oct 2026): an ordinary reload of a save that is still the
+    // session's latest restores quietly. The notice stays for a save that a later failed write left.
+    const restoredFrom = `${RESTORED_NOTICE_PREFIX} ${formatInstantWithDay(parsed.now, resumedAt)} on the board clock.`;
+    // CS3-17 still speaks when that quiet restore closed something opened before it loaded.
+    if (demoSaveIsCurrent()) return { saved, quietRecoveryNotice: restoredFrom };
+    return { saved, recoveryNotice: `${restoredFrom} Later changes may not have been saved.` };
   } catch {
     // Do not repeat stored content or an exception message in the recovery notice.
     return { recoveryNotice: STORAGE_UNAVAILABLE };

@@ -654,7 +654,11 @@ function auditRecord(event: AuditEvent): string | null {
 function auditBeforeAfter(event: AuditEvent): Pick<ChronologyRow, "before" | "after" | "reason"> {
   switch (event.category) {
     case "legal-status":
-      return { before: event.details.before ?? "", after: event.details.after ?? "", reason: "" };
+      return {
+        before: event.details.before ?? "",
+        after: event.details.after ?? "",
+        reason: reasonLabel(event.details.reason),
+      };
     case "override":
     case "referral":
       return {

@@ -509,7 +509,9 @@ export function PatientNowScreen({
 
   const originName = liveMovement ? (movementOriginName(liveMovement) ?? "Origin not recorded") : undefined;
   const tierTone = urgencyTier === 1 ? "danger" : urgencyTier === 2 ? "warning" : "neutral";
-  const documentCount = record.documents.length + uploadedForms.length;
+  // WT-06 (walk-through, 26 Oct 2026): the charts attached to the referral count as documents.
+  const referralCharts = resolved.liveReferral?.intake?.charts ?? [];
+  const documentCount = record.documents.length + uploadedForms.length + referralCharts.length;
   const expandedStage = isLiveBedflow && expandedStageIndex !== null ? STAGES[expandedStageIndex] : undefined;
   const expandedStageDetail = expandedStage ? getStageBedflowDetail(expandedStage.id, liveMovement) : undefined;
   // Where they are right now, for the identity line under the name.
@@ -1220,6 +1222,7 @@ export function PatientNowScreen({
                 movement={liveMovement}
                 movementInForce={movementInForce}
                 patient={livePatient}
+                referralCharts={referralCharts}
                 now={now}
                 onRecordDocument={() => setShowUploadFormsModal(true)}
               />

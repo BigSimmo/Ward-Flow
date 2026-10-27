@@ -11,6 +11,8 @@ import { renderEdBoardRow } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
 import styles from "./ed.module.css";
 import { TierKey } from "../tier-key";
+import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 
 export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
   const {
@@ -31,6 +33,8 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
     setPatientSort,
     hasBoardDrafts,
     boardMatchCount,
+    sentForBed,
+    now,
   } = ctx;
   return (
     <section
@@ -134,6 +138,25 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           {patients.length} match<span className="sr-only"> · Synthetic data</span>
         </span>
       </div>
+      {sentForBed.length > 0 ? (
+        // WT-04 (walk-through, 26 Oct 2026): a bed request shows from Send, before any journey.
+        <div className={styles.sentForBed} data-testid="ed-sent-for-bed">
+          <h3 className={styles.sentForBedHeading}>
+            Asked for a ward bed, no journey yet <b>{sentForBed.length}</b>
+          </h3>
+          <ul aria-label="Asked for a ward bed, no journey yet">
+            {sentForBed.map((sent) => (
+              <li key={sent.id}>
+                <span className={styles.sentForBedName}>{patientIdentityLine(sent.person)}</span>
+                <span>{sent.wards.map((ward) => `${ward.name}, ${ward.state}`).join(" · ")}</span>
+                <span className={styles.sentForBedClock}>
+                  Sent {formatInstantWithDay(sent.sentAt, now)} · {splitDuration(sent.waitedMinutes)} since sent
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {patients.length === 0 ? (
         <p className={styles.placeholder}>
           Nobody is on this department&apos;s psychiatry list. Absence here means none is recorded, not that the

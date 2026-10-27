@@ -173,7 +173,7 @@ describe("comparison across departments", () => {
         leftDepartmentAt: 100,
       }),
     ]);
-    expect(screen.getByTestId("ward-stat-ed-on-the-list")).toHaveTextContent("2");
+    expect(screen.getByTestId("ward-stat-ed-on-the-list").textContent).toBe("2");
     expect(screen.getByTestId("ward-statistics-ed-population")).toHaveTextContent("1 still in ED · 1 in transit");
     expect(screen.getByRole("heading", { name: "Open ED journeys" })).toBeInTheDocument();
     const bands = screen.getByTestId("ward-statistics-ed-bands");

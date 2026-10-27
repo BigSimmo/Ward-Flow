@@ -126,7 +126,13 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                         ? "Accepted"
                         : `Declined · ${entry.declineReason ? DECLINE_REASON_LABELS[entry.declineReason as ReferralDeclineReason] : "Reason not recorded"}`}
             </p>
-            <p className={styles.patientStory}>{entry.history || "Patient story not recorded"}</p>
+            {/* #836: a blank Patient story is named as that field, and points to the reason when there is one. */}
+            <p className={styles.patientStory} data-testid="ward-referral-inbox-story">
+              {entry.history.trim() ||
+                (entry.intake?.reasonForReferral?.trim()
+                  ? "Patient story not recorded. The reason for referral is below."
+                  : "Patient story not recorded")}
+            </p>
             <ReferralIntakeSummary intake={entry.intake} />
             {live && (
               <div className={styles.answerOptions}>

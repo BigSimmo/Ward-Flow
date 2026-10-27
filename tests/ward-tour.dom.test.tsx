@@ -128,11 +128,25 @@ describe("tour player", () => {
     render(<WardTour onClose={vi.fn()} />);
     await waitFor(() => expect(screen.getByTestId("ward-tour-spot")).toBeTruthy());
     expect(card().dataset.place).toBe("beside");
+    // H-0376 / H-0890: placed by transform only, so settling beside the control is no layout shift.
+    expect(card().style.transform).toMatch(/^translate\(/);
+    expect(card().style.top).toBe("");
+    expect(card().style.left).toBe("");
     persona.remove();
     act(() => fireEvent.click(screen.getByTestId("ward-tour-next")));
     // The shift block is not drawn in this test, so the card waits, then shows in the middle.
     await waitFor(() => expect(card().dataset.place).toBe("centre"), { timeout: 3000 });
     expect(screen.queryByTestId("ward-tour-spot")).toBeNull();
+    // With no control there is no spotlight re-measure, so the card is placed again on resize.
+    const centred = card().style.transform;
+    const width = window.innerWidth;
+    try {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width + 100 });
+      act(() => fireEvent(window, new Event("resize")));
+      expect(card().style.transform).not.toBe(centred);
+    } finally {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+    }
   });
 
   it("keeps the same step when the window crosses the phone width", () => {

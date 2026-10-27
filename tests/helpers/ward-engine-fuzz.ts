@@ -598,7 +598,25 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     })),
   ],
   [1, movementEvent("UNDO_REFER_TO_UNITS", ["destination_review"])],
-  [1, movementEvent("UNDO_ACCEPT_IN_PRINCIPLE", ["accepted_awaiting_bed", "pulled"])],
+  [
+    1,
+    (state, random) => {
+      // Aimed at the subject its gate needs (E-19): the newest acceptance still holding its undo
+      // record, from the role and ward that accepted. Otherwise any accepted movement, as before.
+      // Aimed on 26 Oct 2026, when adding the SET_BED_CLOSED builder shifted the random runs.
+      const record = [...(state.undoRecords ?? [])]
+        .reverse()
+        .find((entry) => entry.kind === "step" && entry.undoType === "UNDO_ACCEPT_IN_PRINCIPLE");
+      if (record?.kind !== "step" || chance(random, 0.3))
+        return movementEvent("UNDO_ACCEPT_IN_PRINCIPLE", ["accepted_awaiting_bed", "pulled"])(state, random);
+      return {
+        type: "UNDO_ACCEPT_IN_PRINCIPLE",
+        role: record.role,
+        movementId: record.subjectId,
+        ...(record.unitId ? { actingUnitId: record.unitId } : {}),
+      };
+    },
+  ],
   [1, movementEvent("UNDO_TRANSPORT_STEP", ["handover_ready", "moving"])],
   [1, movementEvent("UNDO_ED_STEP")],
   [
@@ -1048,6 +1066,35 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const unit = prefer(random, state.units, (candidate) => Boolean(candidate.isClosed));
       return { type: "REOPEN_WARD_TO_ADMISSIONS", unitId: id(unit), actingUnitId: id(unit) };
+    },
+  ],
+  // H-0978 / WS-15: one exact bed closed or reopened. Stays fill the lowest beds first (`seatStays`),
+  // so a close aims at the top beds of a ward with a Ready bed; a reopen at a bed already closed.
+  [
+    1.5,
+    (state, random) => {
+      const stillClosed = (unit: (typeof state.units)[number]) =>
+        (unit.closedBeds ?? []).filter((mark) => mark.reopenedAt === undefined);
+      const marked = state.units.filter((unit) => stillClosed(unit).length > 0);
+      if (marked.length > 0 && chance(random, 0.4)) {
+        const unit = pick(random, marked)!;
+        const bedNumber = pick(random, stillClosed(unit))!.bedNumber;
+        return { type: "SET_BED_CLOSED", unitId: unit.id, actingUnitId: unit.id, bedNumber, closed: false };
+      }
+      const unit = prefer(
+        random,
+        state.units,
+        (candidate) => !candidate.isClosed && Math.min(candidate.allocatable.value, candidate.empty.value) > 1,
+      );
+      const beds = unit?.beds ?? 1;
+      return {
+        type: "SET_BED_CLOSED",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        bedNumber: beds - int(random, 0, Math.min(2, beds - 1)),
+        closed: true,
+        ...(chance(random, 0.5) ? { reason: pick(random, WARD_CLOSURE_REASON_IDS) } : {}),
+      };
     },
   ],
   // Bed releases, preparation and the discharge facts a ward records on a stay.

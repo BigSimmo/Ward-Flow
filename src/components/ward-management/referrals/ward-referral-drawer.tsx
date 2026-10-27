@@ -157,7 +157,12 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
             )}
           </div>
           {isPhone && phMode === "list" ? <ReferralPhoneChecklistToggle s={s} /> : null}
-          {view === "new" ? <ReferralSummaryRail s={s} alreadyOpen={alreadyOpen} /> : null}
+          {view === "new" ? (
+            <ReferralSummaryRail
+              s={s}
+              alreadyOpen={alreadyOpen ?? (s.openJourney ? `Open ED journey at ${s.openJourney.edName}` : undefined)}
+            />
+          ) : null}
         </div>
         {copyNotice ? (
           <p className={styles.copyNotice} role="status">

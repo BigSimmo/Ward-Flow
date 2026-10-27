@@ -99,7 +99,11 @@ function referralFixture() {
   return { world, id, foreignUnitIds, origin };
 }
 
-/** The world with these records moved out of the live lists, as the archive leaves it. */
+/**
+ * The world with these records moved out of the live lists, as the archive leaves it.
+ * @param {any} world
+ * @param {{ movementIds?: string[], referralIds?: string[] }} ids
+ */
 function archived(world, { movementIds = [], referralIds = [] }) {
   const live = structuredClone(world);
   const records = [];
@@ -214,6 +218,7 @@ test("the summary comes from the full records: the masked copy a desk is sent hi
   const shown = reply.records.find((record) => record.body.id === referral.id);
   assert.ok(shown, "the desk is sent its own masked copy");
   assert.equal(shown.body.destinations.length, 0, "the masked copy no longer says who declined");
+  assert.ok(reply.partialView);
   const row = reply.partialView.view.referrals.find((entry) => entry.id === referral.id);
   assert.equal(row.state, "declined", "the outcome comes from the unmasked source");
   assert.equal(JSON.stringify(reply.partialView).includes(referral.foreignUnitIds[0]), false);
@@ -224,6 +229,7 @@ test("an archived movement gets destination progress for the bed manager who sen
   const access = bedManager(movement.siteCode);
   const { live, records } = archived(movement.world, { movementIds: [movement.id] });
   const reply = await store(live, records).archive(viewFor(access));
+  assert.ok(reply.partialView);
   assert.deepEqual(
     reply.partialView.view.movements.find((entry) => entry.id === movement.id),
     {
@@ -245,6 +251,7 @@ test("the archive summary is exactly the engine's, limited to the archived recor
   const access = bedManager(referral.origin.siteCode);
   const { live, records } = archived(referral.world, { referralIds: [referral.id] });
   const reply = await store(live, records).archive(viewFor(access));
+  assert.ok(reply.partialView);
   assert.deepEqual(
     reply.partialView.view,
     engine.archivePartialViewForWorld(structuredClone(live), records, access, at, []),
@@ -301,9 +308,11 @@ test("a ward desk past its sender window gets no sender summary for an old archi
   const access = engine.parseAccess("ward", { kind: "ward", unitIds: [referral.origin.id] });
   assert.ok(access);
   const soon = await store(live, records).archive(viewFor(access));
+  assert.ok(soon.partialView);
   assert.equal(soon.partialView.view.referrals.find((entry) => entry.id === referral.id)?.kind, "sender");
   const later = new Date(at.getTime() + 60 * 24 * 60 * 60_000);
   const old = await store(live, records, later).archive(viewFor(access));
+  assert.ok(old.partialView);
   assert.notEqual(old.partialView.view.referrals.find((entry) => entry.id === referral.id)?.kind, "sender");
   assert.equal(JSON.stringify(old.partialView).includes(referral.foreignUnitIds[0]), false);
 });
@@ -314,8 +323,10 @@ test("the archive summary is bound to the desk's access view and changes with it
   const read = (access, extra) => store(live, records).archive(viewFor(access, extra));
   const first = await read(bedManager(referral.origin.siteCode));
   const again = await read(bedManager(referral.origin.siteCode));
+  assert.ok(first.partialView && again.partialView);
   assert.equal(first.partialView.accessContext, again.partialView.accessContext);
   const ward = await read(engine.parseAccess("ward", { kind: "ward", unitIds: [referral.origin.id] }));
+  assert.ok(ward.partialView);
   assert.notEqual(first.partialView.accessContext, ward.partialView.accessContext);
 });
 
@@ -326,6 +337,7 @@ test("a ward the referral was sent to gets no sender progress for it, and nothin
   const receiver = engine.parseAccess("ward", { kind: "ward", unitIds: [first] });
   assert.ok(receiver);
   const reply = await store(live, records).archive(viewFor(receiver));
+  assert.ok(reply.partialView);
   const rows = reply.partialView.view.referrals.filter((entry) => entry.id === referral.id);
   assert.equal(
     rows.every((entry) => entry.kind === "restricted"),

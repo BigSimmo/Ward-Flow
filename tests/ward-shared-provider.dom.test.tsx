@@ -517,6 +517,10 @@ describe("shared provider boundary", () => {
     const panel = <DocumentationPanel draft={EMPTY_DOCUMENTATION} onChange={() => {}} />;
     const { unmount } = render(panel);
     expect(screen.getByText("Synthetic documents only, kept for this session")).toBeInTheDocument();
+    // #823: a blank image is accepted, so the panel says the check is type and size only.
+    expect(screen.getByTestId("ward-referral-chart-check-note")).toHaveTextContent(
+      "Ward Flow checks only the file type and size, not what the file shows.",
+    );
     unmount();
     render(<WardFlowProvider>{panel}</WardFlowProvider>);
     expect(

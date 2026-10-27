@@ -56,7 +56,8 @@ describe("runtime release gate", () => {
   }
   if (!existsSync(sessionStartHook)) {
     it("keeps the public checkout free of an incomplete Claude runtime hook", () => {
-      expect(existsSync(new URL("../.claude", import.meta.url))).toBe(false);
+      // `.claude/settings.json` may carry the cloud Supermemory save hook alone; no runtime hook ships.
+      expect(existsSync(new URL("../.claude/hooks", import.meta.url))).toBe(false);
     });
   }
   describeRuntimeHook("SessionStart hook runtime bounds", () => {

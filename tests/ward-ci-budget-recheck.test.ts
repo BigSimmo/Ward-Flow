@@ -41,6 +41,18 @@ describe("budget recheck: which pull requests re-measure when main moves", () =>
     ).toEqual({ action: "rerun", jobId: 7 });
   });
 
+  it("never re-runs a run for an older head, which would cancel the current head's run", () => {
+    const finished = [build({ status: "completed", conclusion: "success", started_at: "2026-10-21T05:00:00Z" })];
+    expect(decide({ ...armed, head: { sha: "new" } }, { ...done, head_sha: "old" }, finished, since)).toEqual({
+      action: "skip",
+      reason: "run is for an older head",
+    });
+    expect(decide({ ...armed, head: { sha: "new" } }, { ...done, head_sha: "new" }, finished, since)).toEqual({
+      action: "rerun",
+      jobId: 7,
+    });
+  });
+
   it("re-runs a failed build too, so the verdict is about the current main", () => {
     expect(
       decide(

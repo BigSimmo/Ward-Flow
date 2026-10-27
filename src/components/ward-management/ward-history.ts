@@ -167,6 +167,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   ASK_MORE_WARDS: { category: "patient", plainWording: "More wards asked about a referral" },
   CLOSE_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward closed to admissions" },
   REOPEN_WARD_TO_ADMISSIONS: { category: "bed", plainWording: "Ward reopened to admissions" },
+  SET_BED_CLOSED: { category: "bed", plainWording: "Bed closed or reopened" },
   RECORD_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action recorded" },
   COMPLETE_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action done" },
   RECORD_RESTRICTIVE_PRACTICE_START: { category: "both", plainWording: "Seclusion or restraint started" },

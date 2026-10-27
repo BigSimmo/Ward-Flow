@@ -20,6 +20,7 @@ import {
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
+import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -28,7 +29,8 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
-import { layoutBedNumbers, seatStays } from "./ward-bed-layout";
+import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
+import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { arrivalIsLate, originPlaceLabel } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
@@ -301,7 +303,15 @@ export function wardBedRoster({
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
       // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
-      bedHold: status === "incoming" ? bedHoldOf(linkedMovement?.pullExpiresAt, now) : undefined,
+      // WT-07: Delivered stops the pull clock; the bed then awaits the ward's arrival check.
+      bedHold:
+        status === "incoming" && !(linkedMovement && deliveredAwaitingWard(linkedMovement))
+          ? bedHoldOf(linkedMovement?.pullExpiresAt, now)
+          : undefined,
+      deliveredAt:
+        status === "incoming" && linkedMovement && deliveredAwaitingWard(linkedMovement)
+          ? linkedMovement.transport?.arrivedAt
+          : undefined,
     };
   });
 
@@ -339,25 +349,20 @@ export function wardBedRoster({
   );
   // Audit A1-1: every stay keeps a fixed bed, so a departure or absence never renumbers others.
   // Audit 24-1 CS2-03: a released pull's span still held its bed, so later stays keep theirs.
-  const releasedSpans = (unit.releasedPullSpans ?? []).map((span) => ({
-    ...span,
-    id: `released:${span.admissionId}`,
-    state: "released",
-    arrivedAt: null,
-  }));
-  const seatedBeds = seatStays(
-    unit.beds,
-    [...(admissions ?? []).filter((admission) => admission.unitId === unit.id), ...releasedSpans],
-    isMixed ? lockedBeds : 0,
-  );
+  // H-0978: no stay is seated in a bed closed by number. The reducer reads the same seats.
+  const seatedBeds = wardStaySeats(unit, admissions ?? []);
+  // H-0978 / WS-15 (Josh 26 Oct 2026, "close the exact bed"): a bed closed by number is counted in
+  // Closed by `bedStates`, and the layout puts its own number on a Closed tile.
   const bedNumbers = layoutBedNumbers(
     rawBeds.map((bed) => ({
       stayAdmissionId: bed.stayAdmissionId,
       free: bed.status === "ready",
+      closed: bed.status === "closed",
     })),
     (admissionId) => recordedBeds.get(admissionId),
     heldBeds.map((held) => held.bed),
     (admissionId) => seatedBeds.get(admissionId),
+    activeClosedBeds(unit).map((mark) => mark.bedNumber),
   );
   // A4-24: place each "Being made ready" marker on the bed its stay vacated when that bed is now a
   // ready tile, then any remaining markers on the lowest-numbered ready beds, oldest release first.

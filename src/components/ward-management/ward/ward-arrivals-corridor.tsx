@@ -24,7 +24,8 @@ import {
   minutesUntil,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { restrictionNotice, eligibilityWarning, stageCopy } from "@/components/ward-management/ward-derivations";
+import { restrictionNotice, eligibilityWarning } from "@/components/ward-management/ward-derivations";
+import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
   PULL_PATIENT: "Pull a bed",
@@ -225,7 +226,7 @@ export function WardArrivalsCorridor({
             let stepIndex = 0;
             if (movement.stage === "pulled" || movement.stage === "handover_ready") stepIndex = 1;
             if (movement.stage === "moving" || movement.transport?.collectedAt !== undefined) stepIndex = 2;
-            if (movement.stage === "arrived") stepIndex = 3;
+            if (movement.stage === "arrived" || deliveredAwaitingWard(movement)) stepIndex = 3;
 
             return (
               <article
@@ -307,7 +308,7 @@ export function WardArrivalsCorridor({
                 <div className={styles.stepperWrap}>
                   <div className={styles.stepperLabelRow}>
                     <span>
-                      Stage: <strong>{stageCopy[movement.stage].label}</strong>
+                      Stage: <strong>{movementStatusLabel(movement)}</strong>
                     </span>
                     <span className={styles.statusTag} data-type={canPull ? "acuity" : "mode"}>
                       {eta !== undefined
@@ -353,9 +354,11 @@ export function WardArrivalsCorridor({
                     <span>
                       {movement.stage === "pulled" && movement.pullExpiresAt !== undefined
                         ? `Bed pull ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}`
-                        : movement.transport?.collectedAt !== undefined
-                          ? `Collected from ED at ${formatInstantWithDay(movement.transport.collectedAt, now)}`
-                          : "Transport moving according to state protocol"}
+                        : deliveredAwaitingWard(movement) && movement.transport?.arrivedAt !== undefined
+                          ? `Delivered at ${formatInstantWithDay(movement.transport.arrivedAt, now)}, confirm arrival`
+                          : movement.transport?.collectedAt !== undefined
+                            ? `Collected from ED at ${formatInstantWithDay(movement.transport.collectedAt, now)}`
+                            : "Transport moving according to state protocol"}
                     </span>
                   </div>
                 </div>

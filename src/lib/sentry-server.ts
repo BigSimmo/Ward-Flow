@@ -108,6 +108,38 @@ function fetchTransport(options: BaseTransportOptions): Transport {
   });
 }
 
+// PS-13 (H-0961): at most one report per kind every 5 minutes, like the backend's
+// error-report.mjs, so an outage cannot use up the Sentry quota in hours.
+export const SERVER_REPORT_INTERVAL_MS = 5 * 60 * 1000;
+const REPORT_KINDS_KEPT = 500;
+const lastReported = new Map<string, number>();
+
+/** True when this kind of report has not been sent in the last five minutes. */
+export function allowServerReport(kind: string, at: number = Date.now()): boolean {
+  const last = lastReported.get(kind);
+  if (last !== undefined && at - last < SERVER_REPORT_INTERVAL_MS) return false;
+  if (lastReported.size >= REPORT_KINDS_KEPT && last === undefined) {
+    // Only a kind whose interval has run out may make room; otherwise the new kind waits, so cycling
+    // through many kinds cannot make a recently reported one eligible again.
+    const [oldest, oldestAt] = lastReported.entries().next().value!;
+    if (at - oldestAt < SERVER_REPORT_INTERVAL_MS) return false;
+    lastReported.delete(oldest);
+  }
+  lastReported.delete(kind);
+  lastReported.set(kind, at);
+  return true;
+}
+
+/** Test hook: forget every kind already reported. */
+export function resetServerReportThrottle() {
+  lastReported.clear();
+}
+
+function failureKind(error: unknown, tags: Record<string, string>): string {
+  const name = error instanceof Error ? error.name : typeof error;
+  return `failure:${name}:${tags.routeType ?? ""}:${tags.method ?? ""}`;
+}
+
 let client: ServerRuntimeClient | null = null;
 
 /** Start reporting when SENTRY_DSN is set. Safe to call more than once. */
@@ -134,7 +166,9 @@ export function startServerSentry(env: Env = process.env): boolean {
   client.init();
   // logger.ts warn/error lines go to Sentry Logs unless SENTRY_ENABLE_LOGS=false.
   if (settings.enableLogs) {
-    registerSentryLogForwarder((level, message, context) => sentryLogs[level](message, context));
+    registerSentryLogForwarder((level, message, context) => {
+      if (allowServerReport(`log:${level}:${message}`)) sentryLogs[level](message, context);
+    });
   }
   return true;
 }
@@ -142,6 +176,7 @@ export function startServerSentry(env: Env = process.env): boolean {
 /** Report a server failure with allow-listed tags only. No-op when reporting is off. */
 export function captureServerFailure(error: unknown, tags: Record<string, string>) {
   if (!client) return;
+  if (!allowServerReport(failureKind(error, tags))) return;
   const scope = getCurrentScope().clone();
   scope.setTags(tags);
   client.captureException(error, undefined, scope);

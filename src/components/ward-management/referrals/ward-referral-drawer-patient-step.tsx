@@ -14,6 +14,7 @@ import {
   type HealthService,
 } from "@/components/ward-management/ward-model";
 import { GENDERS, type Gender } from "@/components/ward-management/ward-patients";
+import { RECORDED_SEXES, type RecordedSex } from "@/components/ward-management/ward-model-vocabulary";
 import {
   NOT_ON_SENDING_WARD_REASONS,
   type NotOnSendingWardReason,
@@ -27,6 +28,8 @@ import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-f
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import { siteDirectory } from "@/components/ward-management/ward-sites";
 
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
 export function ReferralPatientStep({
@@ -104,7 +107,14 @@ export function ReferralPatientStep({
     notOnWardReason,
     setNotOnWardReason,
     heldBedWardName,
+    openJourney,
+    originSiteCode,
+    setOriginSiteCode,
+    setSourceKind,
   } = s;
+  // WS-08 (H-0973): this person already has an open ED journey that starts somewhere else.
+  const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
+  const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
   const someoneChosen = !!patientRecord || unidentified !== null;
   // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
   // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
@@ -228,6 +238,25 @@ export function ReferralPatientStep({
                     enterKeyHint="done"
                     onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, umrn: value }))}
                   />
+                </Field>
+                {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
+                    and placement start from it instead of "Not recorded". */}
+                <Field label="Recorded sex" htmlFor={`${sectionId}-np-sex`} hint="optional">
+                  <SelectBox>
+                    <select
+                      id={`${sectionId}-np-sex`}
+                      className={styles.fieldSelect}
+                      value={newPatient.sex ?? ""}
+                      onChange={({ target: { value } }) =>
+                        setNewPatient((p) => ({ ...p, sex: value as RecordedSex | "" }))
+                      }
+                    >
+                      <option value="">Not recorded</option>
+                      {RECORDED_SEXES.filter((sex) => sex !== "Not recorded").map((sex) => (
+                        <option key={sex}>{sex}</option>
+                      ))}
+                    </select>
+                  </SelectBox>
                 </Field>
                 <Field label="Gender" htmlFor={`${sectionId}-np-gender`} hint="optional">
                   <SelectBox>
@@ -494,6 +523,30 @@ export function ReferralPatientStep({
               >
                 Where this case is
               </Link>
+            </div>
+          ) : null}
+          {journeyElsewhere ? (
+            <div className={styles.suggestion} data-testid="ward-referral-open-journey">
+              <StatusGlyph tone="warning" size={9} />
+              <span className={styles.suggestionText}>
+                <strong>Already on an open ED journey at {journeyElsewhere.edName}</strong>
+                <small>
+                  {originName
+                    ? `Sending from ${originName} starts a second journey.`
+                    : "Sending starts a second journey."}
+                </small>
+              </span>
+              <button
+                type="button"
+                className={styles.btn}
+                onClick={() => {
+                  setSourceKind("ed");
+                  setOriginSiteCode(journeyElsewhere.siteCode);
+                  announceToWardShell(`Referring from ${journeyElsewhere.edName}.`);
+                }}
+              >
+                Refer from {journeyElsewhere.edName}
+              </button>
             </div>
           ) : null}
           {sendingWard && notOnSendingWard && (patientRecord || unidentified !== null) ? (

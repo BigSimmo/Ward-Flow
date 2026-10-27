@@ -1,7 +1,7 @@
 // @ts-check
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createWorkspaceStore, MAX_DELIVERY_ATTEMPTS } from "./postgres.mjs";
+import { createWorkspaceStore, MAX_DELIVERY_ATTEMPTS, singleFlight } from "./postgres.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 
 test("sweeps retire an interrupted final push claim only after its lease, without sending again (mock pool)", async () => {
@@ -38,13 +38,14 @@ test("sweeps retire an interrupted final push claim only after its lease, withou
     engine: {},
     clock: () => now,
     retryAfterMs: 60_000,
-    push: {
+    // This sweep never subscribes a device, so it has no per-account limit.
+    push: /** @type {any} */ ({
       coordinatorIds: [],
       send: async () => {
         sends++;
       },
       payload: () => ({}),
-    },
+    }),
     log: (entry) => assert.fail(JSON.stringify(entry)),
   });
   await store.sweepPush();
@@ -110,4 +111,23 @@ test("command receipts retain their opaque completion across revision-only repli
   const snapshotReplay = await store.command("actor", "command", 1, event, { view });
   assert.deepEqual(snapshotReplay.body.snapshot.payload.state.undoRecords, []);
   assert.equal(JSON.stringify(snapshotReplay.body).includes("secretUndoSnapshots"), false);
+});
+
+test("H-0289: one delivery pass at a time; calls during a pass share it and get one more pass", async () => {
+  let inFlight = 0;
+  let most = 0;
+  let passes = 0;
+  const deliver = singleFlight(async () => {
+    passes++;
+    inFlight++;
+    most = Math.max(most, inFlight);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    inFlight--;
+    return passes;
+  });
+  const results = await Promise.all([deliver(), deliver(), deliver()]);
+  assert.equal(most, 1, "never two passes at once on the small pool");
+  assert.equal(passes, 2, "the joined calls share one extra pass, not one each");
+  assert.deepEqual(results, [2, 2, 2]);
+  assert.equal(await deliver(), 3, "a later call starts a new pass");
 });

@@ -143,6 +143,14 @@ export function QueuedSection({
     () => ({ patients, referrals: allReferrals, movements }),
     [patients, allReferrals, movements],
   );
+  // Audit PS-07: each card's open bed request, looked up once rather than scanned per card.
+  const openMovementByReferral = useMemo(() => {
+    const byReferral = new Map<string, Movement>();
+    for (const movement of movements)
+      if (movement.referralId && !movement.closure && !byReferral.has(movement.referralId))
+        byReferral.set(movement.referralId, movement);
+    return byReferral;
+  }, [movements]);
   // A2-20: initials plus UMRN on a phone when Discreet names is on.
   const nameFor = usePatientNameDisplay();
   const sender = useSenderPresentation();
@@ -349,8 +357,7 @@ export function QueuedSection({
               const refusals = summary === undefined ? refusalLines(referral) : [];
               const accepted =
                 summary === undefined || summary?.state === "accepted" ? acceptedAddressing(referral) : undefined;
-              const linkedMovement =
-                summary === undefined ? movements.find((m) => m.referralId === referral.id && !m.closure) : undefined;
+              const linkedMovement = summary === undefined ? openMovementByReferral.get(referral.id) : undefined;
               const unitId = accepted?.acceptedUnitId ?? linkedMovement?.acceptedUnitId;
               const assignedUnit = unitId ? units.find((u) => u.id === unitId) : undefined;
               const selected = referral.id === selectedId;
@@ -508,6 +515,12 @@ export function DecidedSection({
   onSelect: (id: string) => void;
   onResetFilters?: () => void;
 }) {
+  // Audit PS-07: one state object, so the resolver's identity-keyed index is built once per render,
+  // not once per row (a fresh object per row rebuilt the whole patient index for every row).
+  const decidedResolverState = useMemo(
+    () => ({ patients, referrals: decided, movements }),
+    [patients, decided, movements],
+  );
   const nameFor = usePatientNameDisplay();
   const sender = useSenderPresentation();
   return (
@@ -558,7 +571,7 @@ export function DecidedSection({
             </thead>
             <tbody>
               {displayDecided.map((referral) => {
-                const patientInfo = resolveSubjectPatient(referral, { patients, referrals: decided, movements });
+                const patientInfo = resolveSubjectPatient(referral, decidedResolverState);
                 return (
                   <tr
                     key={referral.id}
@@ -604,7 +617,7 @@ export function DecidedSection({
 
           <ul className={cx(styles.cardList, styles.v6List)} data-testid="ward-referral-board-decided-cards">
             {displayDecided.map((referral) => {
-              const patientInfo = resolveSubjectPatient(referral, { patients, referrals: decided, movements });
+              const patientInfo = resolveSubjectPatient(referral, decidedResolverState);
               const presentation = referralPresentation(referral, sender.referralFor(referral));
               const accepted = presentation.kind !== "unavailable" && presentation.state === "accepted";
               const decidedAt = presentationDecidedAt(referral, sender.referralFor(referral));
