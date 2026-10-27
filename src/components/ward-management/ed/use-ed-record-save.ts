@@ -167,14 +167,15 @@ export function useEdRecordSave({
   }
   function submitUrgencyChange(event: FormEvent<HTMLFormElement>, movementId: string) {
     event.preventDefault();
-    if (panels.urgencyDraft.reason === undefined) return;
+    // Finding 15 (Josh, 27 Oct 2026): the reason is sent when chosen and never required.
+    const reason = panels.urgencyDraft.reason;
     save("urgency", {
       type: "CHANGE_URGENCY",
       role: "ed",
       now,
       movementId,
       urgency: panels.urgencyDraft.urgency,
-      reason: panels.urgencyDraft.reason,
+      ...(reason === undefined ? {} : { reason }),
     });
   }
   function submitLegalStatusChange(event: FormEvent<HTMLFormElement>, movementId: string) {

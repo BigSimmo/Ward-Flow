@@ -10,7 +10,6 @@ import {
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { movementReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
-import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   arrivalEtaLabel,
@@ -19,11 +18,11 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import { EdAdmissionChecklist } from "./ed-admission-checklist";
 import { referralBoardHref } from "./ed-bed-search-step";
-import { EdPlanPicker, EdPresentation, EdReviewStatus } from "./ed-board-controls";
+import { EdPlanPicker, EdPresentation } from "./ed-board-controls";
 import { EdMedicalPlacementControls } from "./ed-medical-placement-controls";
 import type { EdBoardRowModel } from "./ed-screen-board-row";
 import type { EdScreenContext } from "./ed-screen-context";
-import { CLINICAL_REVIEW_OPTIONS, formExpiryLine, RECORDED_ED_FORMS } from "./ed-screen-model";
+import { formExpiryLine } from "./ed-screen-model";
 import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
@@ -275,7 +274,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
 
 export type EdRowFacts = ReturnType<typeof renderEdRowFacts>;
 
-/** The row's on-the-board drafts and its destination, as the person sheet lays them out. */
+/** The row's on-the-board facts, presentation draft and destination, as the person sheet lays them out. */
 export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, facts: EdRowFacts) {
   const {
     movement,
@@ -287,17 +286,7 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
     referredTo,
     destinationLabel,
   } = row;
-  const {
-    boardTable,
-    presentationDrafts,
-    setPresentationDrafts,
-    formOverrides,
-    setFormOverrides,
-    clearanceOverrides,
-    setClearanceOverrides,
-    reviewStatusOverrides,
-    setReviewStatusOverrides,
-  } = ctx;
+  const { boardTable, presentationDrafts, setPresentationDrafts } = ctx;
   const { readmissionFact, patientFactsTail, formExpiryFacts, clearanceFact, reviewFacts, referredFact } = facts;
   const patientExtras = (
     <>
@@ -312,108 +301,34 @@ export function renderEdRowControls(row: EdBoardRowModel, ctx: EdScreenContext, 
       {boardTable ? null : patientFactsTail}
     </>
   );
+  /*
+   * Finding 9 (Josh, 27 Oct 2026): legal form, medical clearance and review status show only what
+   * the record holds. They were screen-only drafts that could read "Form 1A" or "Cleared: Yes" while
+   * the record said otherwise. Clearance is recorded in "Recorded medical clearance and placement"
+   * below (RECORD_MOVEMENT_MEDICAL_CLEARANCE), a form on the Forms page, an examination by Record
+   * examination.
+   */
   const formControl = (
     <>
-      <select
-        className={styles.thinSelect}
-        aria-label={`Legal form for ${patientInfo.displayName}`}
-        data-testid={`ward-ed-form-pill-${movement.id}`}
-        value={
-          formOverrides[movement.id] === undefined
-            ? (movement.legalForm?.code ?? "")
-            : (formOverrides[movement.id] ?? "")
-        }
-        onChange={({ target: { value } }) => {
-          setFormOverrides((current) => ({
-            ...current,
-            [movement.id]: value || null,
-          }));
-          announceToWardShell("Form draft changed on this screen only. The recorded legal form is unchanged.");
-        }}
-      >
-        <option value="">None</option>
-        {movement.legalForm?.code && !RECORDED_ED_FORMS.some((form) => form === movement.legalForm?.code) && (
-          <option value={movement.legalForm.code}>{movement.legalForm.code}</option>
-        )}
-        {RECORDED_ED_FORMS.map((form) => (
-          <option key={form}>{form}</option>
-        ))}
-      </select>
+      <span data-testid={`ward-ed-form-pill-${movement.id}`}>
+        {movement.legalForm ? `Form ${movement.legalForm.code}` : "No form recorded"}
+      </span>
       {boardTable ? null : formExpiryFacts}
     </>
   );
   const clearedControl = (
     <>
-      <select
-        className={styles.thinSelect}
-        aria-label={`Medical clearance for ${patientInfo.displayName}`}
-        data-cleared={
-          clearanceOverrides[movement.id] === undefined
-            ? medicalClearance === undefined
-              ? "none"
-              : medicalClearance.cleared
-                ? "yes"
-                : "no"
-            : (clearanceOverrides[movement.id] ?? "none")
-        }
-        value={
-          clearanceOverrides[movement.id] === undefined
-            ? medicalClearance === undefined
-              ? ""
-              : medicalClearance.cleared
-                ? "yes"
-                : "no"
-            : (clearanceOverrides[movement.id] ?? "")
-        }
-        onChange={({ target: { value } }) => {
-          setClearanceOverrides((current) => ({
-            ...current,
-            [movement.id]: value === "yes" ? "yes" : value === "no" ? "no" : null,
-          }));
-          announceToWardShell(
-            "Clearance draft changed on this screen only. The recorded medical clearance is unchanged.",
-          );
-        }}
-      >
-        <option value="">Pending</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
+      <span data-testid={`ward-ed-cleared-${movement.id}`}>
+        {medicalClearance === undefined ? "Not recorded" : medicalClearance.cleared ? "Yes" : "No"}
+      </span>
       {boardTable ? null : clearanceFact}
     </>
   );
   const reviewControl = (
     <>
-      {(() => {
-        const overriddenReview = reviewStatusOverrides[movement.id];
-        const currentReviewStatus =
-          overriddenReview !== undefined
-            ? overriddenReview
-            : movement.examination
-              ? "Examination recorded"
-              : "Awaiting review";
-        const isRecorded = currentReviewStatus === "Examination recorded";
-        const isPending = currentReviewStatus === "Awaiting review";
-        const reviewTone = isRecorded ? "good" : isPending ? "warn" : "info";
-
-        return (
-          <div className={styles.reviewDropdownWrap}>
-            <EdReviewStatus
-              patientName={patientInfo.displayName}
-              value={currentReviewStatus}
-              options={CLINICAL_REVIEW_OPTIONS}
-              className={styles.reviewPill}
-              tone={reviewTone}
-              onChange={(value) => {
-                setReviewStatusOverrides((current) => ({ ...current, [movement.id]: value }));
-                announceToWardShell(
-                  `Review draft set to ${value} on this screen only. The recorded examination is unchanged.`,
-                );
-              }}
-            />
-          </div>
-        );
-      })()}
+      <span data-testid={`ward-ed-review-status-${movement.id}`}>
+        {movement.examination ? "Examination recorded" : "Awaiting review"}
+      </span>
       {boardTable ? null : reviewFacts}
     </>
   );

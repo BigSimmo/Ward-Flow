@@ -19,6 +19,8 @@ import {
   LEGAL_STATUS_CHANGE_REASONS,
   RELEASE_PULL_REASONS,
   URGENCY_CHANGE_REASONS,
+  URGENT_MARK_REASONS,
+  type UrgentMarkReason,
   type CancelTransportReason,
   type EscalationContact,
   GENDER_PLACEMENT_REASONS,
@@ -38,13 +40,18 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
+  dayOf,
   formatElapsed,
   formatInstantWithDay,
   type Instant,
   isClockBreached,
+  MINUTES_PER_DAY,
+  minuteOfDayFromClockText,
   minutesUntil,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
+import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { isOwnedLegalFormCode } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { defaultWardConfiguration } from "@/components/ward-management/ward-configuration";
 import {
@@ -63,10 +70,8 @@ import {
   restrictionNotice,
 } from "@/components/ward-management/ward-derivations";
 import { checkedGates, eligibility, gateMark, type GateResult } from "@/components/ward-management/ward-eligibility";
-import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
   ARRIVAL_MODE_LABELS,
-  OVERRIDE_SIGN_OFF_NAME_MAX,
   genderReviewNeeded,
   type ArrivalMode,
   type BedRelease,
@@ -112,22 +117,6 @@ import {
   LEGAL_STATUS_OPTIONS,
   URGENCY_OPTIONS,
 } from "./shortlist-panel-parts";
-
-/**
- * One spelling, used by the control, its `title` and its screen-reader note.
- *
- * ⚠️ `ed-screen.tsx` carries its own wording for the same gate rather than importing this one.
- * That is deliberate and follows this codebase's existing convention — every blocked-control
- * sentence is written for the reader of ITS panel — but it means two sentences must be changed
- * together. If a third site ever needs it, move it to a shared module instead of adding a third.
- */
-/**
- * ⚠️ The worst of the six. `URGENCY_CHANGE_REASONS[0]` is `reassessed`, so a coordinator correcting
- * a mistyped urgency who never touched this control recorded a CLINICAL REASSESSMENT THAT NEVER
- * HAPPENED — inventing a clinical event rather than mis-attributing a clerical one.
- */
-const URGENCY_REASON_UNCHOSEN =
-  "Choose why the urgency is changing before recording it. None is chosen for you: an unpicked reason would be filed as a clinical reassessment nobody made.";
 
 /** Same defect, on the two unwind controls: option zero submitted as a stated reason nobody stated. */
 const UNWIND_REASON_UNCHOSEN =
@@ -466,10 +455,6 @@ export function ShortlistPanel({
   const [overrideRecord, setOverrideRecord] = useState<OverrideRecord | undefined>(undefined);
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
-  const [overrideSecondSignOff, setOverrideSecondSignOff] = useState(false);
-  // v10 pass 3: who gave the second sign-off, sent with the override (`overrideSignOff`).
-  const [overrideSignOffRole, setOverrideSignOffRole] = useState<WardFlowRole>("coordinator");
-  const [overrideSignOffName, setOverrideSignOffName] = useState("");
 
   const isOverrideDirty = overrideReason.trim().length > 0;
   const handleRestoreOverride = useCallback((cached: string) => {
@@ -517,19 +502,24 @@ export function ShortlistPanel({
   // render, the same discipline `overrideSucceeded` already holds to for the override record.
   const [escalationOpen, setEscalationOpen] = useState(false);
   // Task 6 (spec item 11): chosen, never typed — the free-text `escalationContact` string state
-  // this replaces is gone. Defaults to the list's first entry, the same pattern every other fixed
-  // picker in this panel already uses (`urgencyDraft.reason`, `releasePullReason`, and so on).
-  const [escalationContact, setEscalationContact] = useState<EscalationContact>(ESCALATION_CONTACTS[0]);
+  // this replaces is gone. Finding 110 (27 Oct 2026): opens blank, like every list that records a
+  // choice, so Record escalation cannot be pressed without choosing who is being contacted.
+  const [escalationContact, setEscalationContact] = useState<EscalationContact | "">("");
   // Task 2: urgency and legal status can change mid-flight. Both a coordinator and the referring
   // ED clinician may make either change (`EVENT_ROLE.CHANGE_URGENCY`/`CHANGE_LEGAL_STATUS`), so
   // this panel dispatches as role "coordinator" — the ED screen's own controls dispatch as "ed".
   const [urgencyChangeOpen, setUrgencyChangeOpen] = useState(false);
+  // Finding 156 (Josh, 27 Oct 2026): one urgency control, with Urgent above tier 1. The engine still
+  // keeps the flag and the tier apart, so Urgent raises `FLAG_MOVEMENT_URGENT` (its reason is still
+  // asked) and a tier clears the flag before `CHANGE_URGENCY`.
   const [urgencyDraft, setUrgencyDraft] = useState<{
-    urgency: 1 | 2 | 3;
+    urgency: 1 | 2 | 3 | "urgent";
     reason: UrgencyChangeReason | undefined;
+    urgentReason: UrgentMarkReason | undefined;
   }>({
-    urgency: movement?.urgency ?? 1,
+    urgency: movement?.flaggedUrgent ? "urgent" : (movement?.urgency ?? 1),
     reason: undefined,
+    urgentReason: undefined,
   });
   const [legalStatusChangeOpen, setLegalStatusChangeOpen] = useState(false);
   const [legalStatusDraft, setLegalStatusDraft] = useState<{
@@ -542,6 +532,14 @@ export function ShortlistPanel({
     // fresh report FROM the treating team — a team that never made one. The two options say where
     // the entry came from, not why a status changed: an audit-trail defect, not a clinical one.
   }>({ legalStatus: movement?.legalStatus ?? "Voluntary", reason: undefined });
+  // Finding 120 (Josh, 27 Oct 2026): a status that rests on paper asks for the form and the time it
+  // was made in the same step. Both open blank and never block the status change; the form is
+  // recorded (`RECORD_LEGAL_FORM_WRITTEN`) only when its code and time are both given.
+  const [legalFormDraft, setLegalFormDraft] = useState<{ code: string; time: string; day: 0 | -1 }>({
+    code: "",
+    time: "",
+    day: 0,
+  });
   // Audit 4 A4-01: while either form is open, a save from it is checked against the board it
   // opened on, as a popup's is, so another desk's change meanwhile is reported, not overwritten.
   const recordFormOpen = urgencyChangeOpen || legalStatusChangeOpen;
@@ -565,8 +563,6 @@ export function ShortlistPanel({
     setOverrideRecord(undefined);
     setOverrideOpen(false);
     setOverrideReason("");
-    setOverrideSecondSignOff(false);
-    setOverrideSignOffName("");
     // ⚠️ DO NOT CLEAR THE PERSISTED DRAFT HERE. `useDirtyStateGuard` has already been called with the
     // NEWLY selected movement's key by the time this render-time reset runs, so clearing here would
     // delete the draft of the movement being ARRIVED AT (and leave the one being left). Drafts are
@@ -574,11 +570,16 @@ export function ShortlistPanel({
     // own draft. A draft is removed only on submit (below), where the key is still the right one.
     setReferTargets([]);
     setEscalationOpen(false);
-    setEscalationContact(ESCALATION_CONTACTS[0]);
+    setEscalationContact("");
     setUrgencyChangeOpen(false);
-    setUrgencyDraft({ urgency: movement?.urgency ?? 1, reason: undefined });
+    setUrgencyDraft({
+      urgency: movement?.flaggedUrgent ? "urgent" : (movement?.urgency ?? 1),
+      reason: undefined,
+      urgentReason: undefined,
+    });
     setLegalStatusChangeOpen(false);
     setLegalStatusDraft({ legalStatus: undefined, reason: undefined });
+    setLegalFormDraft({ code: "", time: "", day: 0 });
     setReleasePullOpen(false);
     setReleasePullReason(undefined);
     setCancelTransportOpen(false);
@@ -767,15 +768,17 @@ export function ShortlistPanel({
    * ward, so this early return is a second, structural guard rather than the only one. The cap
    * check counts live plus new, per the owner's ruling that re-referring adds rather than replaces:
    * three already live leaves no room for a fourth NEW pick even though `referTargets` itself is
-   * still empty. */
+   * still empty.
+   *
+   * Finding 188 (Josh, 27 Oct 2026): the cap is now a warning everywhere. A pick past it is kept
+   * and the footer says the usual limit is passed (`overParallelCap`). */
   function toggleReferTarget(unitId: string) {
     if (liveUnitIds.includes(unitId)) return;
-    setReferTargets((current) => {
-      if (current.includes(unitId)) return current.filter((id) => id !== unitId);
-      if (liveUnitIds.length + current.length >= parallelReferralCap) return current;
-      return [...current, unitId];
-    });
+    setReferTargets((current) =>
+      current.includes(unitId) ? current.filter((id) => id !== unitId) : [...current, unitId],
+    );
   }
+  const overParallelCap = referTargets.length > 0 && liveUnitIds.length + referTargets.length > parallelReferralCap;
 
   /**
    * Dispatches `REFER_TO_UNITS` and nothing else — deliberately no local "it worked" flag.
@@ -855,10 +858,8 @@ export function ShortlistPanel({
     if (!canOverride) return;
     const reason = overrideReason.trim();
     if (reason.length === 0) return;
-    // v10 Home: a second sign-off is required before an override is recorded, and pass 3 sends
-    // who gave it (the acting role and a typed name or initials) with the override.
-    const signOffName = overrideSignOffName.trim();
-    if (!overrideSecondSignOff || signOffName.length === 0) return;
+    // D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only
+    // thing an override needs, the same standard as the Referrals board and the patient page.
     // Membership-checked here as well as in the reducer. The reducer's check is the one that
     // matters; this one keeps a malformed value from being reported on screen as recorded.
     if (!OVERRIDE_REASONS.includes(reason as OverrideReason)) return;
@@ -873,13 +874,10 @@ export function ShortlistPanel({
       movementId,
       unitIds: [...referTargets],
       overrideReason: reason as OverrideReason,
-      overrideSignOff: { role: overrideSignOffRole, name: signOffName },
     });
     setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
     setOverrideOpen(false);
     setOverrideReason("");
-    setOverrideSecondSignOff(false);
-    setOverrideSignOffName("");
     clearOverrideDraft();
   }
 
@@ -901,9 +899,9 @@ export function ShortlistPanel({
    */
   function submitEscalation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // Task 6: `escalationContact` is now always one of `ESCALATION_CONTACTS` — a `<select>` can
-    // never submit an empty or arbitrary value, so the old trim-and-check-length guard this
-    // replaced is gone along with the free-text state it protected.
+    // Task 6: `escalationContact` is one of `ESCALATION_CONTACTS` once chosen. Finding 110: it
+    // opens blank, so an unchosen contact records nothing.
+    if (escalationContact === "") return;
     runStep(
       {
         type: "RECORD_ESCALATION",
@@ -916,7 +914,7 @@ export function ShortlistPanel({
       { success: "Escalation recorded." },
     );
     setEscalationOpen(false);
-    setEscalationContact(ESCALATION_CONTACTS[0]);
+    setEscalationContact("");
   }
 
   /**
@@ -925,18 +923,64 @@ export function ShortlistPanel({
    */
   function submitUrgencyChange(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    // A real <form>: Enter inside a field submits it whatever the button advertises.
-    if (urgencyDraft.reason === undefined) return;
-    dispatch({
-      type: "CHANGE_URGENCY",
-      role: "coordinator",
-      now,
-      movementId,
-      urgency: urgencyDraft.urgency,
-      reason: urgencyDraft.reason,
-    });
+    if (urgencyBlocked) return;
+    const chosen = urgencyDraft.urgency;
+    if (chosen === "urgent") {
+      if (urgencyDraft.urgentReason === undefined) return;
+      dispatch({
+        type: "FLAG_MOVEMENT_URGENT",
+        role: "coordinator",
+        now,
+        movementId,
+        reason: urgencyDraft.urgentReason,
+      });
+    } else {
+      const flagged = movement?.flaggedUrgent === true;
+      if (flagged) dispatch({ type: "CLEAR_MOVEMENT_URGENT_FLAG", role: "coordinator", now, movementId });
+      // Finding 15 (Josh, 27 Oct 2026): the reason is sent when chosen and never required.
+      const reason = urgencyDraft.reason;
+      if (!flagged || chosen !== movement?.urgency) {
+        dispatch({
+          type: "CHANGE_URGENCY",
+          role: "coordinator",
+          now,
+          movementId,
+          urgency: chosen,
+          ...(reason === undefined ? {} : { reason }),
+        });
+      }
+    }
     setUrgencyChangeOpen(false);
   }
+
+  // Finding 156: Urgent needs its own reason (the engine asks for one); a tier never does.
+  const urgencyBlocked =
+    urgencyDraft.urgency !== "urgent"
+      ? undefined
+      : movement.flaggedUrgent
+        ? "Already flagged urgent. Choose a tier to remove the flag."
+        : urgencyDraft.urgentReason === undefined
+          ? "Choose why this is urgent first"
+          : undefined;
+
+  // Finding 120: the form's fields show for any status other than Voluntary.
+  const legalFormAsked = legalStatusDraft.legalStatus !== undefined && legalStatusDraft.legalStatus !== "Voluntary";
+  const legalFormMinute = minuteOfDayFromClockText(legalFormDraft.time);
+  const legalFormWrittenAt =
+    legalFormMinute === undefined ? undefined : (dayOf(now) + legalFormDraft.day) * MINUTES_PER_DAY + legalFormMinute;
+  const legalFormLater = legalFormWrittenAt !== undefined && legalFormWrittenAt > now;
+  const legalFormWarning = !legalFormAsked
+    ? null
+    : legalFormDraft.code === ""
+      ? "No form chosen. The status is recorded without it. Record the form here or on the Forms page."
+      : legalFormDraft.time.trim() === ""
+        ? `Form ${legalFormDraft.code} is recorded only with the time it was made.`
+        : legalFormMinute === undefined
+          ? "Enter the time made as HH:MM, or the form is not recorded."
+          : legalFormLater
+            ? "The time made cannot be later than now, so the form is not recorded."
+            : null;
+  const legalFormOptions = SELECTABLE_LEGAL_FORMS.filter((form) => isOwnedLegalFormCode(form.code));
 
   // Why the legal status change cannot be recorded yet: the new status first, then the reason.
   const legalStatusBlocked =
@@ -964,7 +1008,18 @@ export function ShortlistPanel({
       legalStatus: legalStatusDraft.legalStatus,
       reason: legalStatusDraft.reason,
     });
+    if (legalFormAsked && isOwnedLegalFormCode(legalFormDraft.code) && legalFormWrittenAt !== undefined) {
+      dispatch({
+        type: "RECORD_LEGAL_FORM_WRITTEN",
+        role: "coordinator",
+        now,
+        movementId,
+        formCode: legalFormDraft.code,
+        writtenAt: legalFormWrittenAt,
+      });
+    }
     setLegalStatusChangeOpen(false);
+    setLegalFormDraft({ code: "", time: "", day: 0 });
   }
 
   /**
@@ -1384,7 +1439,8 @@ export function ShortlistPanel({
                     setWithdrawReason("");
                   }}
                 >
-                  Withdraw this request
+                  {/* Finding 117: the toggle asks, the submit below commits and names the ward. */}
+                  Withdraw this request?
                 </button>
                 {/* S-8 (audit 13 Oct 2026): the coordinator can do everything, so an offer the
                     coordinator made can also be accepted here for that ward, not only withdrawn. */}
@@ -1459,12 +1515,20 @@ export function ShortlistPanel({
                       className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                       data-testid={`ward-shortlist-withdraw-submit-${id}`}
                       aria-disabled={withdrawReason === "" ? "true" : undefined}
-                      aria-describedby={`ward-shortlist-withdraw-label-${id}`}
-                      title={withdrawReason === "" ? "Choose a reason to withdraw this request" : undefined}
+                      aria-describedby={
+                        withdrawReason === ""
+                          ? `ward-shortlist-withdraw-label-${id} ward-shortlist-withdraw-submit-words-${id}`
+                          : `ward-shortlist-withdraw-label-${id}`
+                      }
                       onClick={withdrawReason === "" ? ignoreUnavailableActivation : undefined}
                     >
-                      Withdraw this request
+                      {unit ? `Withdraw request to ${unit.name}` : "Withdraw request"}
                     </button>
+                    {withdrawReason === "" ? (
+                      <DisabledReason id={`ward-shortlist-withdraw-submit-words-${id}`}>
+                        Choose a reason to withdraw this request
+                      </DisabledReason>
+                    ) : null}
                   </form>
                 ) : null}
               </Fragment>
@@ -1734,6 +1798,11 @@ export function ShortlistPanel({
                   {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
                   referrals in use.
                 </span>
+                {overParallelCap ? (
+                  <span role="status" className={shortlistStyles.toMeta} data-testid="ward-shortlist-over-cap">
+                    This asks more wards than the usual limit of {parallelReferralCap}. You can still ask.
+                  </span>
+                ) : null}
               </p>
             )}
 
@@ -1925,77 +1994,18 @@ export function ShortlistPanel({
                     </option>
                   ))}
                 </select>
-                {/* v10 Home: Override asks for a reason and a second sign-off. The tick and who gave it
-                (their role and a typed name or initials) are required before the override is
-                recorded; pass 3 stores both on the override and its audit entry. */}
-                <label className={styles.shortlistOverrideCheckOption}>
-                  <input
-                    type="checkbox"
-                    required
-                    checked={overrideSecondSignOff}
-                    onChange={(event) => setOverrideSecondSignOff(event.target.checked)}
-                    data-testid="ward-shortlist-override-second-sign-off"
-                  />
-                  Second sign-off: another senior clinician has agreed to this override
-                </label>
-                <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-role">
-                  Signed off as
-                </label>
-                <select
-                  id="ward-shortlist-override-sign-off-role"
-                  className={styles.shortlistOverrideSelect}
-                  value={overrideSignOffRole}
-                  onChange={(event) => setOverrideSignOffRole(event.target.value as WardFlowRole)}
-                  data-testid="ward-shortlist-override-sign-off-role"
-                >
-                  {(["coordinator", "ward", "ed", "bed_manager", "executive"] as const).map((role) => (
-                    <option key={role} value={role}>
-                      {WARD_FLOW_ROLE_LABELS[role]}
-                    </option>
-                  ))}
-                </select>
-                <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-sign-off-name">
-                  Name or initials of who signed off
-                </label>
-                <input
-                  id="ward-shortlist-override-sign-off-name"
-                  type="text"
-                  required
-                  maxLength={OVERRIDE_SIGN_OFF_NAME_MAX}
-                  autoComplete="off"
-                  className={styles.shortlistOverrideSelect}
-                  value={overrideSignOffName}
-                  onChange={(event) => setOverrideSignOffName(event.target.value)}
-                  data-testid="ward-shortlist-override-sign-off-name"
-                />
-                <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-second-sign-off-note">
-                  Recorded with the override and its audit entry.
-                </p>
                 <button
                   type="submit"
                   className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                  aria-disabled={
-                    overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
-                      ? "true"
-                      : undefined
-                  }
-                  onClick={
-                    overrideReason === "" || !overrideSecondSignOff || overrideSignOffName.trim() === ""
-                      ? ignoreUnavailableActivation
-                      : undefined
-                  }
-                  title={
-                    overrideReason === ""
-                      ? "Choose a reason first"
-                      : !overrideSecondSignOff
-                        ? "Tick the second sign-off first"
-                        : overrideSignOffName.trim() === ""
-                          ? "Type who gave the second sign-off first"
-                          : undefined
-                  }
+                  aria-disabled={overrideReason === "" ? "true" : undefined}
+                  aria-describedby={overrideReason === "" ? "ward-shortlist-override-submit-words" : undefined}
+                  onClick={overrideReason === "" ? ignoreUnavailableActivation : undefined}
                 >
                   Record override
                 </button>
+                {overrideReason === "" ? (
+                  <DisabledReason id="ward-shortlist-override-submit-words">Choose a reason first</DisabledReason>
+                ) : null}
               </form>
             ) : null}
 
@@ -2052,14 +2062,36 @@ export function ShortlistPanel({
                     />
                     I have checked this placement with the ward
                   </label>
-                  <button
-                    type="submit"
-                    className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                    disabled={genderPlacementReason.trim().length === 0 || !genderPlacementChecked}
-                    data-testid="ward-shortlist-gender-placement-submit"
-                  >
-                    Record reason and place
-                  </button>
+                  {(() => {
+                    // Finding 114: aria-disabled with the reason shown, like every other form here.
+                    const genderPlacementBlocked =
+                      genderPlacementReason.trim().length === 0
+                        ? "Choose a reason"
+                        : !genderPlacementChecked
+                          ? "Tick that you checked with the ward"
+                          : null;
+                    return (
+                      <>
+                        <button
+                          type="submit"
+                          className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
+                          aria-disabled={genderPlacementBlocked ? "true" : undefined}
+                          aria-describedby={
+                            genderPlacementBlocked ? "ward-shortlist-gender-placement-words" : undefined
+                          }
+                          onClick={genderPlacementBlocked ? ignoreUnavailableActivation : undefined}
+                          data-testid="ward-shortlist-gender-placement-submit"
+                        >
+                          Record reason and place
+                        </button>
+                        {genderPlacementBlocked ? (
+                          <DisabledReason id="ward-shortlist-gender-placement-words">
+                            {genderPlacementBlocked}
+                          </DisabledReason>
+                        ) : null}
+                      </>
+                    );
+                  })()}
                 </fieldset>
               </form>
             ) : null}
@@ -2262,7 +2294,6 @@ export function ShortlistPanel({
         units={units}
         now={now}
         chosenUnitIds={referTargets}
-        slotsLeft={parallelReferralCap - liveUnitIds.length - referTargets.length}
         onChoose={(unitId) => {
           toggleReferTarget(unitId);
           onSelectUnit(unitId);
@@ -2296,7 +2327,11 @@ export function ShortlistPanel({
               onClick={() => {
                 setUrgencyChangeOpen((open) => !open);
                 // H-0127: start from the tier on the board now, which another desk may have changed.
-                setUrgencyDraft({ urgency: movement?.urgency ?? 1, reason: undefined });
+                setUrgencyDraft({
+                  urgency: movement?.flaggedUrgent ? "urgent" : (movement?.urgency ?? 1),
+                  reason: undefined,
+                  urgentReason: undefined,
+                });
               }}
             >
               Change urgency
@@ -2310,6 +2345,7 @@ export function ShortlistPanel({
                 setLegalStatusChangeOpen((open) => !open);
                 // Blank on every open or close, so an earlier choice never stands in for a new one.
                 setLegalStatusDraft({ legalStatus: undefined, reason: undefined });
+                setLegalFormDraft({ code: "", time: "", day: 0 });
               }}
             >
               Change legal status
@@ -2331,9 +2367,13 @@ export function ShortlistPanel({
                 className={styles.shortlistOverrideSelect}
                 value={urgencyDraft.urgency}
                 onChange={(event) =>
-                  setUrgencyDraft((current) => ({ ...current, urgency: Number(event.target.value) as 1 | 2 | 3 }))
+                  setUrgencyDraft((current) => ({
+                    ...current,
+                    urgency: event.target.value === "urgent" ? "urgent" : (Number(event.target.value) as 1 | 2 | 3),
+                  }))
                 }
               >
+                <option value="urgent">Urgent · ahead of tier 1</option>
                 {/* The option TEXT carries the tier's direction, the option VALUE stays the bare tier.
                   A bare "1"/"2"/"3" left the direction of the scale to the reader on the one control
                   that re-ranks a patient in a queue urgency now dominates. `urgencyTierLabel` is the
@@ -2345,41 +2385,60 @@ export function ShortlistPanel({
                 ))}
               </select>
               <label className={styles.shortlistOverrideLabel} htmlFor="ward-change-urgency-reason">
-                Reason
+                {urgencyDraft.urgency === "urgent" ? "Why is this urgent?" : "Reason"}
               </label>
-              <select
-                id="ward-change-urgency-reason"
-                required
-                className={styles.shortlistOverrideSelect}
-                value={urgencyDraft.reason ?? ""}
-                onChange={(event) =>
-                  setUrgencyDraft((current) => ({
-                    ...current,
-                    reason: event.target.value === "" ? undefined : (event.target.value as UrgencyChangeReason),
-                  }))
-                }
-              >
-                <option value="">Choose a reason</option>
-                {URGENCY_CHANGE_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {changeReasonLabels[reason]}
-                  </option>
-                ))}
-              </select>
+              {urgencyDraft.urgency === "urgent" ? (
+                <select
+                  id="ward-change-urgency-reason"
+                  className={styles.shortlistOverrideSelect}
+                  value={urgencyDraft.urgentReason ?? ""}
+                  onChange={(event) =>
+                    setUrgencyDraft((current) => ({
+                      ...current,
+                      urgentReason: URGENT_MARK_REASONS.includes(event.target.value as UrgentMarkReason)
+                        ? (event.target.value as UrgentMarkReason)
+                        : undefined,
+                    }))
+                  }
+                >
+                  <option value="">Choose why this is urgent</option>
+                  {URGENT_MARK_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {changeReasonLabels[reason]}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <select
+                  id="ward-change-urgency-reason"
+                  className={styles.shortlistOverrideSelect}
+                  value={urgencyDraft.reason ?? ""}
+                  onChange={(event) =>
+                    setUrgencyDraft((current) => ({
+                      ...current,
+                      reason: event.target.value === "" ? undefined : (event.target.value as UrgencyChangeReason),
+                    }))
+                  }
+                >
+                  <option value="">Choose a reason</option>
+                  {URGENCY_CHANGE_REASONS.map((reason) => (
+                    <option key={reason} value={reason}>
+                      {changeReasonLabels[reason]}
+                    </option>
+                  ))}
+                </select>
+              )}
               <button
                 type="submit"
                 className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                aria-disabled={urgencyDraft.reason === undefined ? "true" : undefined}
-                aria-describedby={urgencyDraft.reason === undefined ? "ward-change-urgency-reason-blocked" : undefined}
-                title={urgencyDraft.reason === undefined ? URGENCY_REASON_UNCHOSEN : undefined}
-                onClick={urgencyDraft.reason === undefined ? ignoreUnavailableActivation : undefined}
+                aria-disabled={urgencyBlocked ? "true" : undefined}
+                aria-describedby={urgencyBlocked ? "ward-change-urgency-blocked" : undefined}
+                onClick={urgencyBlocked ? ignoreUnavailableActivation : undefined}
               >
                 Record urgency change
               </button>
-              {urgencyDraft.reason === undefined ? (
-                <span id="ward-change-urgency-reason-blocked" className="sr-only">
-                  {URGENCY_REASON_UNCHOSEN}
-                </span>
+              {urgencyBlocked ? (
+                <DisabledReason id="ward-change-urgency-blocked">{urgencyBlocked}</DisabledReason>
               ) : null}
             </form>
           ) : null}
@@ -2436,20 +2495,75 @@ export function ShortlistPanel({
                   </option>
                 ))}
               </select>
+              {legalFormAsked ? (
+                <>
+                  <label className={styles.shortlistOverrideLabel} htmlFor="ward-change-legal-status-form">
+                    Form
+                  </label>
+                  <select
+                    id="ward-change-legal-status-form"
+                    className={styles.shortlistOverrideSelect}
+                    value={legalFormDraft.code}
+                    onChange={(event) => setLegalFormDraft((current) => ({ ...current, code: event.target.value }))}
+                    data-testid="ward-change-legal-status-form"
+                  >
+                    <option value="">Choose the form</option>
+                    {legalFormOptions.map((form) => (
+                      <option key={form.code} value={form.code}>
+                        {legalFormName(form)}
+                      </option>
+                    ))}
+                  </select>
+                  <label className={styles.shortlistOverrideLabel} htmlFor="ward-change-legal-status-form-day">
+                    Day it was made
+                  </label>
+                  <select
+                    id="ward-change-legal-status-form-day"
+                    className={styles.shortlistOverrideSelect}
+                    value={legalFormDraft.day}
+                    onChange={(event) =>
+                      setLegalFormDraft((current) => ({ ...current, day: Number(event.target.value) === -1 ? -1 : 0 }))
+                    }
+                  >
+                    <option value={0}>Today</option>
+                    <option value={-1}>Yesterday</option>
+                  </select>
+                  <label className={styles.shortlistOverrideLabel} htmlFor="ward-change-legal-status-form-time">
+                    Time it was made
+                  </label>
+                  <input
+                    id="ward-change-legal-status-form-time"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="HH:MM"
+                    className={styles.shortlistOverrideSelect}
+                    value={legalFormDraft.time}
+                    onChange={(event) => setLegalFormDraft((current) => ({ ...current, time: event.target.value }))}
+                    data-testid="ward-change-legal-status-form-time"
+                  />
+                  {legalFormWarning ? (
+                    <p
+                      className={styles.shortlistOverrideLabel}
+                      role="status"
+                      data-testid="ward-change-legal-status-form-warning"
+                    >
+                      {legalFormWarning}
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
               <button
                 type="submit"
                 className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
                 aria-disabled={legalStatusBlocked ? "true" : undefined}
                 aria-describedby={legalStatusBlocked ? "ward-change-legal-status-reason-blocked" : undefined}
-                title={legalStatusBlocked}
                 onClick={legalStatusBlocked ? ignoreUnavailableActivation : undefined}
               >
                 Record legal status change
               </button>
               {legalStatusBlocked ? (
-                <span id="ward-change-legal-status-reason-blocked" className="sr-only">
-                  {legalStatusBlocked}
-                </span>
+                <DisabledReason id="ward-change-legal-status-reason-blocked">{legalStatusBlocked}</DisabledReason>
               ) : null}
             </form>
           ) : null}
@@ -2660,8 +2774,9 @@ export function ShortlistPanel({
                     data-testid="ward-shortlist-escalation-contact"
                     className={styles.shortlistOverrideSelect}
                     value={escalationContact}
-                    onChange={(event) => setEscalationContact(event.target.value as EscalationContact)}
+                    onChange={(event) => setEscalationContact(event.target.value as EscalationContact | "")}
                   >
+                    <option value="">Choose who is being contacted</option>
                     {ESCALATION_CONTACTS.map((contact) => (
                       <option key={contact} value={contact}>
                         {contact}
@@ -2672,9 +2787,17 @@ export function ShortlistPanel({
                     type="submit"
                     data-testid="ward-shortlist-escalation-submit"
                     className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
+                    aria-disabled={escalationContact === "" ? "true" : undefined}
+                    aria-describedby={escalationContact === "" ? "ward-shortlist-escalation-submit-words" : undefined}
+                    onClick={escalationContact === "" ? ignoreUnavailableActivation : undefined}
                   >
                     Record escalation
                   </button>
+                  {escalationContact === "" ? (
+                    <DisabledReason id="ward-shortlist-escalation-submit-words">
+                      Choose who is being contacted first
+                    </DisabledReason>
+                  ) : null}
                 </form>
               ) : null}
             </>

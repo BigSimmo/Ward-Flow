@@ -10,6 +10,7 @@ import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, checkedGates, eligibility, gateMark } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
 import { legalFormName } from "../ward-legal-forms";
+import { CAD_TO_FOLLOW, cadNumberToFollow } from "../ward-cad-number";
 import {
   MOVEMENT_STAGES,
   genderReviewNeeded,
@@ -209,10 +210,12 @@ export function PatientTransitOperations({
   const selectedTargets = selected.filter(
     (id) => candidates.some((c) => c.unit.id === id && c.verdict.eligible) && !movement.referredUnitIds.includes(id),
   );
-  // D-77 replaces the warn-and-record-a-reason path for a fourth ward (Top 25 item 2): the list
-  // holds at the cap, counting wards already asked.
+  // Finding 188 (Josh, 27 Oct 2026): the cap is a warning everywhere. More wards than the usual
+  // limit, counting wards already asked, may still be asked, and the screen says so.
   const referralCap = configuration.parallelReferralCap;
   const askSlots = Math.max(0, referralCap - movement.referredUnitIds.length);
+  const askedTotal = movement.referredUnitIds.length + selectedTargets.length;
+  const overCap = selectedTargets.length > 0 && askedTotal > referralCap;
   const needsGenderPlacement =
     genderReviewNeeded(movement.gender, movement.sex) &&
     selectedTargets.some((id) => !(movement.genderPlacements ?? []).some((record) => record.unitIds.includes(id)));
@@ -343,13 +346,10 @@ export function PatientTransitOperations({
   const askButtonUnavailable =
     !canRefer ||
     selectedTargets.length === 0 ||
-    // Another coordinator can ask a ward while ticks are held, leaving fewer slots than ticks.
-    selectedTargets.length > askSlots ||
     (needsGenderPlacement && (!genderReason || !wardChecked)) ||
     askSave.pending;
   const askRow = ({ unit, verdict }: (typeof candidates)[number]) => {
     const checked = selectedTargets.includes(unit.id);
-    const full = !checked && selectedTargets.length >= askSlots;
     const checks = checkedGates(verdict.gates);
     return (
       <label
@@ -364,7 +364,7 @@ export function PatientTransitOperations({
           aria-label={unit.name}
           aria-describedby={`${baseId}-ask-${unit.id}`}
           checked={checked}
-          disabled={!canRefer || !verdict.eligible || full}
+          disabled={!canRefer || !verdict.eligible}
           onChange={(e) =>
             setSelected(e.target.checked ? [...selected, unit.id] : selected.filter((id) => id !== unit.id))
           }
@@ -491,7 +491,7 @@ export function PatientTransitOperations({
           </>
         )}
         <p className={ph.note}>
-          Fixed network order. Up to {referralCap} wards at once
+          Fixed network order. Usually up to {referralCap} wards at once
           {movement.referredUnitIds.length > 0 ? `, counting the ${movement.referredUnitIds.length} already asked` : ""}
           .
         </p>
@@ -518,6 +518,11 @@ export function PatientTransitOperations({
         <span data-testid="ward-ask-count">
           {selectedTargets.length} of {askSlots} chosen
         </span>
+        {overCap ? (
+          <span role="status" className={styles.deckHint} data-testid="ward-ask-over-cap">
+            This asks more wards than the usual limit of {referralCap}. You can still ask.
+          </span>
+        ) : null}
         {selectedTargets.length === 0 ? (
           <span id={`${baseId}-refer-wards-disabled-guidance`} className="sr-only">
             Tick at least one ward that fits before asking.
@@ -551,11 +556,11 @@ export function PatientTransitOperations({
                 }
           }
         >
-          {askSlots === 0
-            ? `${referralCap} wards already asked`
-            : selectedTargets.length === 0 || selectedTargets.length > askSlots
-              ? `Pick up to ${askSlots} ward${askSlots === 1 ? "" : "s"}`
-              : `Ask ${selectedTargets.length} ward${selectedTargets.length === 1 ? "" : "s"}`}{" "}
+          {selectedTargets.length === 0
+            ? askSlots === 0
+              ? "Pick a ward"
+              : `Pick up to ${askSlots} ward${askSlots === 1 ? "" : "s"}`
+            : `Ask ${selectedTargets.length} ward${selectedTargets.length === 1 ? "" : "s"}`}{" "}
           <ArrowRight size={16} aria-hidden="true" />
         </button>
       </div>
@@ -1123,7 +1128,10 @@ export function PatientTransitOperations({
               {activeJob
                 ? /^CAD/i.test(job.cadNumber ?? "")
                   ? job.cadNumber
-                  : `CAD ${job.cadNumber ?? "not recorded"}`
+                  : cadNumberToFollow(job)
+                    ? // CAD to follow (Josh, 27 Oct 2026): a dispatched job booked before the number came.
+                      CAD_TO_FOLLOW
+                    : `CAD ${job.cadNumber ?? "not recorded"}`
                 : "Sending team records booking"}
             </small>
           </div>

@@ -9,6 +9,7 @@ import { movementHref } from "../shell/ward-facade";
 import { usePatientNameDisplay } from "../settings/discreet-names";
 import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-command-completion";
 import { legalStatusMismatchWarning } from "../ward-eligibility";
+import { legalFormStatusWarning } from "../ward-legal-form-fit";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
@@ -85,6 +86,11 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
     destination && legalStatus !== ""
       ? legalStatusMismatchWarning(destination.involuntaryBedNeeded, legalStatus)
       : null;
+  // Finding 78: a form that does not fit the status warns and never blocks.
+  const formMismatch = legalFormStatusWarning(
+    legalStatus,
+    legalForm === "" ? undefined : legalForm === NO_FORM ? null : legalForm,
+  );
   // This raises as the coordinator, so only the coordinator's desk may use it.
   const refusal =
     (journeyStarted ? "The journey has started. Open it to pull the bed." : undefined) ??
@@ -206,6 +212,11 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
           ))}
         </Select>
       </Field>
+      {formMismatch ? (
+        <p role="alert" className={styles.warning} data-testid="ward-pull-accepted-form-mismatch">
+          {formMismatch} You can still pull the bed.
+        </p>
+      ) : null}
       <Field label="Observation level" hint={recorded.observation ? source : undefined}>
         <Select
           value={level}

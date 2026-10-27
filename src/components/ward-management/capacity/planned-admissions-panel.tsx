@@ -50,6 +50,8 @@ import {
   type Movement,
 } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
+import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 import {
   patientCohort,
   patientDisplayName,
@@ -159,6 +161,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   // Audit 1 (WP-12, Josh 20 Oct): no reason is chosen for the coordinator; one must be picked.
   const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason | "">("");
   const [refusal, setRefusal] = useState<string | null>(null);
+  // Finding 185 (27 Oct 2026): Arrived checks who is in front of the ward first, as a movement's
+  // arrival does (WT-11). Cancel leaves the booking as it was.
+  const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
   const pending = useRef<{ rejections: number } | null>(null);
   // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
   // form that has not asked for anything yet.
@@ -219,6 +224,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     if (role === "executive") return "Name not shown to this desk";
     if (planned.patientId) return patientOf({ patientId: planned.patientId }).displayName;
     return planned.initials === null ? "Initials not recorded" : plannedInitialsLabel(planned.initials);
+  }
+
+  /** Name and UMRN for a linked record; an initials-only booking has only its initials to check. */
+  function identityText(planned: PlannedAdmission): string {
+    if (planned.patientId) return patientIdentityLine(patientOf({ patientId: planned.patientId }));
+    return whoText(planned);
   }
 
   const cancelling = form?.mode === "cancel" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
@@ -501,8 +512,9 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                           size="sm"
                           variant="sec"
                           onClick={() => {
-                            recordArrival(planned);
+                            setArrivalCheck(planned);
                           }}
+                          data-testid={`ward-planned-arrived-${planned.id}`}
                         >
                           Arrived
                         </Button>
@@ -852,6 +864,19 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
           </div>
         ) : null}
       </Sheet>
+      <ArrivalIdentityDialog
+        open={arrivalCheck !== null}
+        who={arrivalCheck ? whoText(arrivalCheck) : ""}
+        identity={arrivalCheck ? identityText(arrivalCheck) : ""}
+        wardName={arrivalCheck ? unitName(arrivalCheck.unitId) : ""}
+        onClose={() => setArrivalCheck(null)}
+        onConfirm={() => {
+          const planned = arrivalCheck;
+          setArrivalCheck(null);
+          if (planned) recordArrival(planned);
+        }}
+        testId="ward-planned-arrival-identity"
+      />
     </WardPanel>
   );
 }

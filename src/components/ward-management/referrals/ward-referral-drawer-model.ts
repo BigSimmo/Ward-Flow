@@ -478,14 +478,16 @@ export function documentationItems(draft: DocumentationDraft): number {
   return 3 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
 }
 
-/** The contact fields asked at Send (`contactFieldErrors` checks each one), counted as items. */
-export const CONTACT_FIELD_COUNT = 5;
+/**
+ * The contact fields asked at Send (`contactFieldErrors` checks each one), counted as items. Finding
+ * 44 (Josh, 27 Oct 2026): the email is asked but never blocks, so it is not counted.
+ */
+export const CONTACT_FIELD_COUNT = 4;
 
 /** Per-field contact messages for display; `referralContactError` stays the gate. */
 export function contactFieldErrors(contact: ReferralContact): Partial<Record<keyof ReferralContact, string>> {
   const errors: Partial<Record<keyof ReferralContact, string>> = {};
   if (!contact.name.trim()) errors.name = "Enter your name";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.email)) errors.email = "Enter your email";
   if (!/^[+\d\s().-]+$/.test(contact.phone) || contact.phone.replace(/\D/g, "").length < 8)
     errors.phone = "Enter a valid phone number";
   if (!contact.role.trim()) errors.role = "Enter your role";
@@ -539,6 +541,8 @@ export type KeptDraft = {
   catchmentTeam: string;
   catchmentService: HealthService | "";
   catchmentConfirmed: boolean;
+  /** Finding 40: "Catchment not known" was chosen for a ward or ED referral. Omitted when not. */
+  catchmentNotKnown?: boolean;
   homeRegion: HomeRegion | "";
   sourceKind: "community" | "ed";
   originSiteCode: string;

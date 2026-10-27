@@ -223,7 +223,9 @@ describe("engine read sites use configuration", () => {
     expect(movement(state, "WF-009").pullExpiresAt).toBe(earlierExpiry);
   });
 
-  it("REFER_TO_UNITS reads the configured parallel cap: refuses above it naming the cap, accepts up to it, and never retroactively touches an existing referral", () => {
+  // Finding 188 (Josh, 27 Oct 2026): the cap is a warning everywhere, so going past it is accepted
+  // rather than refused.
+  it("REFER_TO_UNITS reads the configured parallel cap: accepts a referral above it, accepts up to it, and never retroactively touches an existing referral", () => {
     // Setup copied from tests/ward-flow-reducer.test.ts's "referral" describe block.
     let state = seedWardFlowState();
     // T11 (item 8, owner answer 17 September 2026): WF-009 and WF-019 are both referred to
@@ -250,15 +252,15 @@ describe("engine read sites use configuration", () => {
     // The existing referral is untouched.
     expect(movement(state, "WF-009").referredUnitIds).toHaveLength(3);
 
-    const refused = wardFlowReducer(state, {
+    const overCap = wardFlowReducer(state, {
       type: "REFER_TO_UNITS",
       role: "coordinator",
       now: NOW_ANCHOR,
       movementId: "WF-019",
       unitIds: ["rph-adult-secure", "fsh-adult-secure", "rgh-adult-secure"],
     });
-    expect(refused.rejections.at(-1)?.reason).toContain("2");
-    expect(movement(refused, "WF-019").referredUnitIds).toHaveLength(0);
+    expect(overCap.rejections).toHaveLength(state.rejections.length);
+    expect(movement(overCap, "WF-019").referredUnitIds).toHaveLength(3);
 
     const accepted = wardFlowReducer(state, {
       type: "REFER_TO_UNITS",

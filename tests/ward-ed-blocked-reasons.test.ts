@@ -354,7 +354,8 @@ describe("transportAnswersBlockedReason (shared by ED and community)", () => {
         NOW,
       ),
     ).toBe(
-      "Before booking, choose who is collecting the patient, enter the CAD transport number, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
+      // CAD to follow (Josh, 27 Oct 2026): a blank CAD number is not a missing answer.
+      "Before booking, choose who is collecting the patient, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
     expect(transportAnswersBlockedReason({ ...answered, estimatedTime: "14:3" }, NOW)).toBe(
       "Before booking, enter the estimated time.",
