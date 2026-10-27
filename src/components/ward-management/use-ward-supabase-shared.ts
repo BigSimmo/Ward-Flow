@@ -187,6 +187,9 @@ export function useWardSupabaseShared(
   useEffect(() => {
     if (!enabled) return;
     let closed = false;
+    // P191: set once Try again is pressed, so the quiet startup retries stop and cannot restore (and
+    // reconnect) a second time over a connection the manual retry has already opened.
+    let manualRetryTook = false;
     let timer: ReturnType<typeof setInterval> | undefined;
     let onVisibilityChange: (() => void) | undefined;
     let auth: WardBrowserAuthAdapter | null = null;
@@ -482,6 +485,7 @@ export function useWardSupabaseShared(
           },
           retry: () =>
             run(async () => {
+              manualRetryTook = true;
               if (connection.current) {
                 await connection.current.retry();
                 return;
@@ -530,15 +534,16 @@ export function useWardSupabaseShared(
             await auth.restore(recovery);
             break;
           } catch (error) {
+            if (manualRetryTook) return;
             if (closed || attempt >= RESTORE_RETRY_MS.length || !restoreBlocked(error)) {
               if (!closed && restoreBlocked(error)) setRestoreFailed(true);
               throw error;
             }
             await new Promise((resolve) => setTimeout(resolve, RESTORE_RETRY_MS[attempt]));
-            if (closed) return;
+            if (closed || manualRetryTook) return;
           }
         }
-        if (closed) return;
+        if (closed || manualRetryTook) return;
         if (auth.isRecovery) {
           setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth?.accountEmail ?? null }));
           setView({ ...emptyView, status: "ready" });

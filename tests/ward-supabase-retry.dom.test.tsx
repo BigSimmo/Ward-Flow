@@ -60,9 +60,18 @@ afterEach(() => {
   vi.restoreAllMocks();
   sessionStorage.clear();
 });
+// Advance the fake clock, then give the real event loop a few turns so the promise chain that follows
+// (auth, then the workspace read) can finish. Microtask passes alone left this suite passing or failing
+// from run to run, because part of that chain waits on real (not faked) timers.
+const realSetTimeout = globalThis.setTimeout;
+const realTurn = () => new Promise<void>((resolve) => realSetTimeout(resolve, 5));
 const settle = async (ms = 0) => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(ms);
+    for (let pass = 0; pass < 6; pass += 1) {
+      await realTurn();
+      await vi.advanceTimersByTimeAsync(0);
+    }
   });
 };
 // The existing banner for a blocked sign-in; P191 adds no wording.
@@ -104,5 +113,23 @@ it("Try again retries at once, in place, without a reload", async () => {
   });
   await settle();
   expect(authCalls).toBeGreaterThan(calls);
+  expect(screen.getByText("Workspace contents")).toBeInTheDocument();
+});
+
+it("a Try again that works before the quiet retries finish stops them, so the open connection is kept", async () => {
+  render(<Probe />);
+  // The connecting screen offers Try again after 15 seconds, while the last quiet retry (17 s) is still waiting.
+  await settle(15_000);
+  const button = screen.getByRole("button", { name: /Try again/ });
+  authUp = true;
+  await act(async () => {
+    fireEvent.click(button);
+  });
+  await settle();
+  expect(screen.getByText("Workspace contents")).toBeInTheDocument();
+  const calls = authCalls;
+  await settle(10_000);
+  // No quiet retry restored again after the manual one connected.
+  expect(authCalls).toBe(calls);
   expect(screen.getByText("Workspace contents")).toBeInTheDocument();
 });
