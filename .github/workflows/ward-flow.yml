@@ -183,7 +183,7 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         run: |
           node node_modules/next/dist/bin/next typegen
-          node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
+          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false
       - name: Upload static check diagnostics
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
