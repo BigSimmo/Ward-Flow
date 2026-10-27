@@ -25,8 +25,7 @@ export type SharedSnapshot = {
  * `choose-role`: the account holds more than one role and must say which to work as.
  * `no-role`: signed in, but no role is assigned. Neither signs the person out.
  */
-type SharedStatus =
-  "loading" | "ready" | "saving" | "unavailable" | "not-authorised" | "choose-role" | "no-role";
+type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised" | "choose-role" | "no-role";
 /** One role this account may work as: the membership id (or "bootstrap") and its role and place. */
 export type SharedRoleChoice = { workingAs: string; role: string; scope: unknown };
 export type SharedView = {
