@@ -25,7 +25,10 @@ const DESKS: Record<string, Desk> = {
   admin: { role: "admin", scope: { kind: "statewide" } },
 };
 
-/** The steps that must light a control on the desk's home, by device. */
+/**
+ * The steps that must light a control on the desk's home, by device. A desk's welcome opens centred
+ * since the desk banner shows only in a preview (Josh, 27 Oct 2026), so only the coordinator's lights one.
+ */
 const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
   desk: {
     coordinator: [
@@ -40,23 +43,23 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       "tasks",
       "tools",
     ],
-    ward: ["welcome", "you", "hero", "checking", "confirm", "beds", "answer", "decisions", "raise", "brief", "pin"],
-    ed: ["welcome", "you", "card", "row", "form", "next", "raise", "find-bed"],
-    community: ["welcome", "you", "hero", "actions", "contact", "raise", "menu"],
-    officer: ["welcome", "you", "summary", "jobs", "next", "stepper", "alerts"],
-    bed_manager: ["welcome", "menu", "hero", "mismatch", "meeting", "map", "help"],
-    executive: ["welcome", "hero", "tabs", "export", "trends"],
-    admin: ["welcome", "review"],
+    ward: ["you", "hero", "checking", "confirm", "beds", "answer", "decisions", "raise", "brief", "pin"],
+    ed: ["you", "card", "row", "form", "next", "raise", "find-bed"],
+    community: ["you", "hero", "actions", "contact", "raise", "menu"],
+    officer: ["you", "summary", "jobs", "next", "stepper", "alerts"],
+    bed_manager: ["menu", "hero", "mismatch", "meeting", "map", "help"],
+    executive: ["hero", "tabs", "export", "trends"],
+    admin: ["review"],
   },
   phone: {
     coordinator: ["welcome", "chips", "eds", "queue", "create", "dock", "search", "menu", "help"],
-    ward: ["welcome", "hero", "confirm", "tabs", "answer", "create", "dock", "pin", "help"],
-    ed: ["welcome", "card", "raise", "row", "create", "dock", "find-bed", "help"],
-    community: ["welcome", "hero", "chips", "tabs", "create", "dock", "help"],
-    officer: ["welcome", "hero", "next", "jobs", "dock", "help"],
-    bed_manager: ["welcome", "hero", "tabs", "mismatch", "dock", "help"],
-    executive: ["welcome", "hero", "tabs", "trends", "dock", "help"],
-    admin: ["welcome", "review", "dock", "help"],
+    ward: ["hero", "confirm", "tabs", "answer", "create", "dock", "pin", "help"],
+    ed: ["card", "raise", "row", "create", "dock", "find-bed", "help"],
+    community: ["hero", "chips", "tabs", "create", "dock", "help"],
+    officer: ["hero", "next", "jobs", "dock", "help"],
+    bed_manager: ["hero", "tabs", "mismatch", "dock", "help"],
+    executive: ["hero", "tabs", "trends", "dock", "help"],
+    admin: ["review", "dock", "help"],
   },
 };
 
