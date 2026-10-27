@@ -552,7 +552,10 @@ export function useWardSupabaseShared(
     },
     credentials: {
       ...form,
-      signupAvailable: !!process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL?.trim(),
+      // H-0038: open sign-up is off in Supabase, so the Create account link stays hidden unless
+      // NEXT_PUBLIC_WARD_OPEN_SIGNUP is "true" as well as a coordinator email being set.
+      signupAvailable:
+        process.env.NEXT_PUBLIC_WARD_OPEN_SIGNUP === "true" && !!process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL?.trim(),
       signUp: async (email: string, password: string) => {
         await actions.current?.signUp(email, password);
       },
