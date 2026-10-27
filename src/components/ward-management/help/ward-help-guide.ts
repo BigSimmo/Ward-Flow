@@ -84,7 +84,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     jobs: [
       {
         job: "Confirm your beds",
-        how: "Each morning fill in Confirm your beds and press Confirm by your service's roll-up time.",
+        how: "Each morning fill in Confirm your beds and press Confirm by the morning bed numbers due time in Settings.",
         go: "home",
       },
       {

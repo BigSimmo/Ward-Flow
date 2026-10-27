@@ -81,6 +81,7 @@ import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
+import { plural } from "@/components/ward-management/ward-plural";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -538,7 +539,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   /* ---- tools ---- */
   const summaryText = () => {
     const lines = [
-      `Out of area: ${entries.length} away from home, ${bedDays} bed days, longest ${longest} days.`,
+      `Out of area: ${entries.length} away from home, ${plural(bedDays, "bed day", "bed days")}, longest ${plural(longest, "day", "days")}.`,
       `${countOf("due")} past their discharge date, ${countOf("noplan")} with no return plan.`,
       ...sorted.map((entry) => {
         const info = patientOf(entry);
@@ -682,7 +683,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             since={
               <>
                 <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} /> since the {meetingAt} bed
-                meeting · <b className={styles.mono}>{bedDays}</b> bed days
+                meeting · <b className={styles.mono}>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"}
               </>
             }
             onCopy={copySummary}
@@ -792,7 +793,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow={`Out of area · Statewide · ${bedDays} bed days · longest ${longest} days`}
+          eyebrow={`Out of area · Statewide · ${plural(bedDays, "bed day", "bed days")} · longest ${plural(longest, "day", "days")}`}
           // H-0887: the page heading names the page, not only the count.
           title={
             <>

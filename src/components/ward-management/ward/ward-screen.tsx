@@ -92,6 +92,7 @@ import { roleLimitReason } from "@/components/ward-management/ward-role-permissi
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { plural } from "@/components/ward-management/ward-plural";
 import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import { useWardPageToast, WardPageActionToast } from "./ward-page-action-toast";
 import styles from "./ward.module.css";
@@ -1111,7 +1112,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) =>
         setToastMessage(
           wardCommandFailure(outcome) ??
-            `Morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
+            `Morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
         ),
     );
   }
@@ -1650,7 +1651,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity and morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${releasesCountedToday.length} discharges planned today.`,
+            `Capacity and morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();

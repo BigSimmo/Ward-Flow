@@ -6,7 +6,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Copy, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
+import { Check, Clock, Copy, ListChecks, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
 import {
   Badge,
@@ -581,7 +581,7 @@ export function OfficerScreen() {
         <Button
           variant="sec"
           size="sm"
-          icon={ShieldCheck}
+          icon={ListChecks}
           data-testid={`ward-officer-inspect-form-${job.id}`}
           onClick={(e) => openFormModal(job, e)}
         >
@@ -1340,7 +1340,7 @@ export function OfficerScreen() {
           <div className={styles.modalDialog} onClick={(e) => e.stopPropagation()}>
             <header className={styles.modalHead}>
               <span className={styles.modalTile} aria-hidden="true">
-                <Icon icon={ShieldCheck} size={16} />
+                <Icon icon={ListChecks} size={16} />
               </span>
               <span className={styles.modalTitles}>
                 <h3 id="form-verify-title" className={styles.modalTitle}>

@@ -7,7 +7,9 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 
 import styles from "./home.module.css";
 import { hasAnyChange, type ChangesSinceLastLook } from "./since-last-look";
-import { plural, type SinceActivityLine } from "./since-last-look-panel";
+import { plural } from "@/components/ward-management/ward-plural";
+
+import { type SinceActivityLine } from "./since-last-look-panel";
 import {
   acceptanceWithdrawnLinks,
   dischargeMovedLinks,

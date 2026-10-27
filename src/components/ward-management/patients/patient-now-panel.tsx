@@ -26,6 +26,7 @@ import type { LeaveBed, Movement, TransportProvider, Unit } from "@/components/w
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
+import { plural } from "@/components/ward-management/ward-plural";
 
 /** The values and handlers `PatientNowScreen` passes to its Now tab. */
 export type PatientNowPanelProps = {
@@ -292,7 +293,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                 acceptingUnit
                   ? `${acceptingUnit.name} accepted · pull the bed and placement`
                   : liveMovement.referredUnitIds.length > 0
-                    ? `${liveMovement.referredUnitIds.length} wards asked`
+                    ? `${plural(liveMovement.referredUnitIds.length, "ward", "wards")} asked`
                     : "Ask wards that fit · none asked"
               }
               onOpen={() => setNowSheet("destination")}

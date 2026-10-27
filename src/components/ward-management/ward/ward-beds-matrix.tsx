@@ -10,6 +10,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { cx } from "@/components/wf";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
+import { plural } from "@/components/ward-management/ward-plural";
 
 export { bedGlyphTone, eddMovedBadge, type BedItem };
 
@@ -50,8 +51,7 @@ function expectedLeaveLine(bed: BedItem): string | null {
   }
   if (typeof bed.expectedDays !== "number") return null;
   if (bed.expectedDays === 0) return "Expected out today";
-  if (bed.expectedDays === 1) return "Expected out in 1 day";
-  return `Expected out in ${bed.expectedDays} days`;
+  return `Expected out in ${plural(bed.expectedDays, "day", "days")}`;
 }
 
 function cardMetaLine(bed: BedItem): string | null {

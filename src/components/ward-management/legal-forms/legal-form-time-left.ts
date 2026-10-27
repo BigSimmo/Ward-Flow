@@ -36,7 +36,9 @@ export function formTimeLeft(
   const passed = standing === "passed";
   return {
     code: `Form ${form.code}`,
-    text: passed ? `${leftText(movement, now).replace(/ ago$/, "")} past` : `${leftText(movement, now)} left`,
+    text: passed
+      ? `${leftText(movement, now).replace(/ ago$/, "")} past`
+      : `${leftText(movement, now)} left (as written)`,
     at: formatInstantWithDay(dueAt, now),
     standing,
     tone: STANDING_TONE[standing],
