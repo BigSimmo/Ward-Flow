@@ -37,6 +37,6 @@ describe("B-G1 wording", () => {
       </WardFlowProvider>,
     );
     const count = screen.getByTestId("ed-index-match-count");
-    expect(count.textContent).toMatch(/^\d+ of \d+ EDs match$/u);
+    expect(count.textContent).toMatch(/^\d+ of \d+ EDs match, sample data$/u);
   });
 });
