@@ -317,6 +317,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // manager (D-80), or the coordinator.
   CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
   REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+  // H-0978 / WS-15: closing or reopening one exact bed, the same desks as CONFIRM_CAPACITY.
+  SET_BED_CLOSED: ["ward", "bed_manager", "coordinator"],
   // Smart features idea 5: the chair records; the owner (a ward for its own action) or the chair
   // completes. D-80: the site's bed manager may complete an action owned by one of its wards.
   RECORD_BED_MEETING_ACTION: ["coordinator"],

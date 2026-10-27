@@ -22,6 +22,7 @@ import { stalePreparingReleases } from "@/components/ward-management/ward-bed-av
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { BlockerEditor, useBlockerSave, type BlockerSave } from "./ward-bed-blocker-editor";
+import { BedClosureControls, type BedClosureActions } from "./ward-bed-closure-controls";
 import {
   openJourneyFromStay,
   SentJourneyChanges,
@@ -90,6 +91,7 @@ interface WardBedDossierDrawerProps {
   onOpenBoard?: () => void;
   /** A4-24: one tap marks a vacated bed being made ready as Ready, so it is offered again. */
   onMarkReady?: () => void;
+  bedClosure?: BedClosureActions; // H-0978 / WS-15: close or reopen this exact bed (`SET_BED_CLOSED`).
   /** Item #6: raises a pre-filled ward referral from the selected patient's bed dossier. */
   onRaiseReferral?: () => void;
   /** Item #6: deep-link to the full referral drawer pre-filled with this patient and sending site. */
@@ -180,6 +182,7 @@ export function WardBedDossierDrawer({
   onMove,
   onOpenBoard,
   onMarkReady,
+  bedClosure,
   onMarkBack,
   onPrevBed,
   onNextBed,
@@ -629,7 +632,7 @@ export function WardBedDossierDrawer({
           onMarkReady={isPreparing ? onMarkReady : undefined}
           onRaiseReferral={onRaiseReferral}
           fullReferralHref={fullReferralHref}
-          roleLockNote={roleLockNote}
+          roleLockNote={<BedClosureControls {...bedClosure}>{roleLockNote}</BedClosureControls>}
           bedDrawerRef={bedDrawerRef}
           onKeyDown={onKeyDown}
           planRows={barrierRow}
@@ -1070,6 +1073,7 @@ export function WardBedDossierDrawer({
               {roleLockNote}
             </>
           )}
+          <BedClosureControls {...bedClosure} size="lg" />
           <span className={styles.footSpacer} />
           {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
           {personHref ? (

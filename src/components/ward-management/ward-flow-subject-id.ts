@@ -40,6 +40,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_WARD_INTAKE_CONSTRAINTS":
     case "CLOSE_WARD_TO_ADMISSIONS":
     case "REOPEN_WARD_TO_ADMISSIONS":
+    case "SET_BED_CLOSED":
     case "FLAG_BED_RELEASE":
     case "RECORD_LEAVE_BED":
     case "REQUEST_CAPACITY_REFRESH":

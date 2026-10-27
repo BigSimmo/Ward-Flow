@@ -265,6 +265,35 @@ export function candidateEvents(
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId, reason: "staffing" }));
     case "REOPEN_WARD_TO_ADMISSIONS":
       return unitIds.slice(-1).map((unitId) => ({ type, role, now, unitId, actingUnitId: unitId }));
+    // H-0978 / WS-15: reopen a bed already closed, else close one of a ward's top beds (stays fill
+    // the lowest beds first), last ward first, so one close takes a single Ready bed from one ward.
+    case "SET_BED_CLOSED":
+      return [
+        ...state.units.flatMap((unit) =>
+          (unit.closedBeds ?? [])
+            .filter((mark) => mark.reopenedAt === undefined)
+            .map((mark) => ({
+              type,
+              role,
+              now,
+              unitId: unit.id,
+              actingUnitId: unit.id,
+              bedNumber: mark.bedNumber,
+              closed: false,
+            })),
+        ),
+        ...[...state.units].reverse().flatMap((unit) =>
+          [unit.beds, unit.beds - 1].map((bedNumber) => ({
+            type,
+            role,
+            now,
+            unitId: unit.id,
+            actingUnitId: unit.id,
+            bedNumber,
+            closed: true,
+          })),
+        ),
+      ];
     // Smart features idea 5: one action on every bed request, then marked done by the chair.
     case "RECORD_BED_MEETING_ACTION":
       return movementIds.map((id) => ({

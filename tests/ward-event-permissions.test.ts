@@ -291,6 +291,8 @@ describe("who may raise which event", () => {
     ASK_MORE_WARDS: ["coordinator"],
     CLOSE_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
     REOPEN_WARD_TO_ADMISSIONS: ["ward", "bed_manager", "coordinator"],
+    // H-0978: one exact bed closed or reopened, the same desks as CONFIRM_CAPACITY.
+    SET_BED_CLOSED: ["ward", "bed_manager", "coordinator"],
     RECORD_BED_MEETING_ACTION: ["coordinator"],
     COMPLETE_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
     RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],

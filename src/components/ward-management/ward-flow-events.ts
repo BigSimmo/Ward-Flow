@@ -808,6 +808,17 @@ export type WardFlowEvent =
       actingUnitId?: string;
     }
   | {
+      /** H-0978 / WS-15: close or reopen one empty bed (`Unit.closedBeds`), see ward-flow-bed-closure-events.ts. */
+      type: "SET_BED_CLOSED";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      actingUnitId: string; // Claim-not-proof pair, as for CONFIRM_CAPACITY. `reason` is from WARD_CLOSURE_REASONS.
+      bedNumber: number;
+      closed: boolean;
+      reason?: WardClosureReason;
+    }
+  | {
       /**
        * Smart features idea 5 (19 Oct 2026): the bed meeting chair records an agreed action against
        * a bed request or a stay. `action` is chosen from `BED_MEETING_ACTION_KINDS`, `owner` from
