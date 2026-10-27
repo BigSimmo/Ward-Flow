@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { callSheetGroups, openCommitmentItems } from "@/components/ward-management/referrals/referral-commitments-model";
+import {
+  callSheetGroups,
+  openCommitmentItems,
+} from "@/components/ward-management/referrals/referral-commitments-model";
 import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
