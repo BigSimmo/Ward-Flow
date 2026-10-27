@@ -57,6 +57,7 @@ import { ForecastBriefPanel } from "@/components/ward-management/forecast/foreca
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { TvLockControl, useTvLock } from "./tv-lock";
+import { TvFooterText, TvLeaveLink } from "./tv-leave-link";
 import { bedCountText } from "./tv-bed-count-text";
 import styles from "./bed-meeting-tv.module.css";
 
@@ -247,8 +248,7 @@ function shiftName(now: number): string {
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
   return (
     <p className={styles.footer}>
-      {scope} · {shiftName(now)} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not
-      approved for clinical use.
+      {TvFooterText({ scope, shift: shiftName(now), scenario, dayNote: asAtStamp(now).dayNote })}
     </p>
   );
 }
@@ -1019,6 +1019,7 @@ function ScreenPicker({ current }: { current: string }) {
           {meetings.map((meeting) => (
             <Link
               key={meeting.key}
+              replace
               href={bedMeetingTvHref({ service: meeting.key })}
               onClick={close}
               aria-current={current === `service:${meeting.key}` ? "page" : undefined}
@@ -1032,6 +1033,7 @@ function ScreenPicker({ current }: { current: string }) {
           {eds.map((ed) => (
             <Link
               key={ed.id}
+              replace
               href={bedMeetingTvHref({ ed: ed.id })}
               onClick={close}
               aria-current={current === `ed:${ed.id}` ? "page" : undefined}
@@ -1045,6 +1047,7 @@ function ScreenPicker({ current }: { current: string }) {
           {wards.map((unit) => (
             <Link
               key={unit.id}
+              replace
               href={bedMeetingTvHref({ ward: unit.id })}
               onClick={close}
               aria-current={current === `ward:${unit.id}` ? "page" : undefined}
@@ -1281,11 +1284,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             </button>
           ) : null}
           <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
-          {tvLocked ? null : (
-            <Link href={WARD_CAPACITY_HREF} className={styles.action}>
-              Leave TV view
-            </Link>
-          )}
+          {tvLocked ? null : <TvLeaveLink className={styles.action} />}
         </div>
       </header>
       {view.kind === "network" ? (

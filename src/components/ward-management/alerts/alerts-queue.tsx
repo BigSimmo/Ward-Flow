@@ -269,12 +269,12 @@ export function GroupHead({
   aside?: ReactNode;
 }) {
   return (
-    <h3 className={styles.groupHead}>
+    <h2 className={styles.groupHead}>
       {icon ?? (tone ? <StatusGlyph tone={tone} size={9} /> : null)}
       <span>{label}</span>
       <Count n={count} />
       {aside ? <span className={styles.groupAside}>{aside}</span> : null}
-    </h3>
+    </h2>
   );
 }
 

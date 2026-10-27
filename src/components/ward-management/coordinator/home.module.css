@@ -2062,3 +2062,14 @@ button.registerRow:hover {
     min-height: 0;
   }
 }
+
+/* P109: the phone Checking summary sits in the hero foot, which does not wrap; let it wrap so both counts show. */
+.checkingPhone {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.checkingPhone > summary {
+  overflow-wrap: anywhere;
+}

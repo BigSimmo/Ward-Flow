@@ -137,6 +137,9 @@ export function useWardSupabaseShared(
   // #791: the signed-in account's email, shown beside Sign out. Memory only, like the auth's own copy.
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<number | null>(null);
+  // P013: true from connect() until its first workspace read settles, so the shell shows a bare
+  // spinner rather than the sign-in or Reconnect screen while nothing has failed yet.
+  const [firstRead, setFirstRead] = useState(false);
   /** What the sign-in screen says after a deliberate sign-out; cleared by the next sign-in step. */
   const [farewell, setFarewell] = useState<string | null>(null);
   const [form, setForm] = useState<{
@@ -220,6 +223,7 @@ export function useWardSupabaseShared(
         setSignedIn(false);
         setAccountEmail(null);
         setEndsAt(null);
+        setFirstRead(false);
         setView({ ...emptyView, status: "ready" });
       }
     };
@@ -249,6 +253,7 @@ export function useWardSupabaseShared(
       setDraftAccount(actorId);
       connectedActorId = actorId;
       setSignedIn(true);
+      setFirstRead(true);
       setAccountEmail(auth.accountEmail);
       setForm({ open: false, recovery: false, busy: false, message: null });
       const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL!;
@@ -275,7 +280,11 @@ export function useWardSupabaseShared(
         },
       });
       connection.current = client;
-      await client.refresh();
+      try {
+        await client.refresh();
+      } finally {
+        if (!closed && connection.current === client) setFirstRead(false);
+      }
       if (closed || connection.current !== client) return;
       void instance.token().then(
         (token) => !closed && connection.current === client && setEndsAt(sessionEndsAt(token)),
@@ -536,6 +545,8 @@ export function useWardSupabaseShared(
   return {
     ...view,
     signedIn,
+    /** P013: the first workspace read after connecting has not settled yet. */
+    connecting: signedIn && firstRead,
     accountEmail,
     client: connection,
     signIn: () => setForm((old) => ({ ...old, open: true, message: null, messageKind: null })),
