@@ -129,7 +129,10 @@ async function chooseOtherTier(page: Page, tier: Locator, avoid?: string, moveme
     .evaluateAll((list) =>
       list.map((option) => ({ value: (option as HTMLOptionElement).value, label: option.textContent ?? "" })),
     );
-  const next = options.find((option) => option.value !== current && option.label !== avoid)!;
+  // "Urgent" heads the picker (finding 156) but raises the urgent flag, not a tier, and asks its own reason.
+  const next = options.find(
+    (option) => option.value !== "urgent" && option.value !== current && option.label !== avoid,
+  )!;
   await tier.selectOption(next.value);
   await placement(page).getByRole("combobox", { name: "Reason" }).selectOption({ label: "Reassessed" });
   return next.label;
