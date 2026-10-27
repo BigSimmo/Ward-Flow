@@ -18,7 +18,7 @@ import type { BedKindGap, BedKindId } from "@/components/ward-management/capacit
 import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { splitDuration } from "@/components/ward-management/ward-clock";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -50,7 +50,6 @@ import {
   wardTvSheet,
   type EdTvSheet,
   type MeetingTvExtras,
-  type TvBedCountAge,
   type TvJourneyRow,
   type WardTvSheet,
 } from "./tv-derivations";
@@ -59,6 +58,7 @@ import type { KindForecast } from "@/components/ward-management/forecast/forecas
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { TvLockControl, useTvLock } from "./tv-lock";
 import { TvFooterText, TvLeaveLink } from "./tv-leave-link";
+import { bedCountText } from "./tv-bed-count-text";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -344,20 +344,6 @@ function gapText(gap: number): string {
  */
 function preparingSentence(pendingPreparation: number): string {
   return pendingPreparation > 0 ? `. ${pendingPreparation} still being made ready` : "";
-}
-
-/**
- * CS-10 (Audit 1, Josh 20 Oct 2026): the ready figure's age, by Capacity's own freshness rule
- * (`bedCountAge`). A meeting allocates against it, so a late count says so rather than looking current.
- */
-function bedCountText({ wards, notConfirmed, oldestAt }: TvBedCountAge, now: number): string {
-  if (oldestAt === undefined) return "";
-  const at = formatInstantWithDay(oldestAt, now);
-  if (notConfirmed > 0)
-    return wards === 1
-      ? `Not confirmed since ${at}`
-      : `${notConfirmed} ${notConfirmed === 1 ? "ward" : "wards"} not confirmed since ${at}`;
-  return wards === 1 ? `Confirmed ${at}` : `Oldest count confirmed ${at}`;
 }
 
 function BedsThatFit({ gaps, tomorrow }: { gaps: BedKindGap[]; tomorrow?: readonly KindForecast[] }) {

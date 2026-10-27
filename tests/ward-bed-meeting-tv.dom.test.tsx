@@ -193,6 +193,8 @@ describe("the bed meeting TV view", () => {
     expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(
       /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
     );
+    // P025: the network mixes 60 and 90 minute wards, so the TV names the range.
+    expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(/late after \d+( to \d+)? min/);
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
@@ -581,10 +583,19 @@ describe("the ward and ED TV views", () => {
     const thresholds = DEFAULT_DUE_SOON_THRESHOLDS;
     const unit = state.units[0];
     const fresh = wardTvSheet({ ...inputs, unit, thresholds });
-    expect(fresh.bedCount).toEqual({ wards: 1, notConfirmed: 0, oldestAt: unit.allocatable.confirmedAt });
+    expect(fresh.bedCount).toEqual({
+      wards: 1,
+      notConfirmed: 0,
+      oldestAt: unit.allocatable.confirmedAt,
+      staleAfter: { min: unit.allocatable.staleAfterMinutes, max: unit.allocatable.staleAfterMinutes },
+    });
     const first = render(<WardTvView sheet={fresh} now={NOW_ANCHOR} scenario="Synthetic" />);
     expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
       `Confirmed ${formatInstantWithDay(unit.allocatable.confirmedAt, NOW_ANCHOR)}`,
+    );
+    // P025 (Josh, 27 Oct 2026, option B): each ward keeps its own time, and the TV says it.
+    expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
+      `late after ${unit.allocatable.staleAfterMinutes} min`,
     );
     first.unmount();
 
