@@ -143,6 +143,10 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/help/ward-help-search.tsx",
+    why: "Help search (variant A, 27 Oct 2026) is built and tested but not yet mounted: by the agreed merge order (P2 colour legend, P1 Roles, then this) the field is added to ward-help-sheet.tsx in a follow-up commit on the same branch. That commit must delete this entry, and the stale-declaration case below will redden until it does",
+  },
+  {
     module: "src/components/ward-management/statistics/statistics-overview-screen.tsx",
     why: "its route became a redirect on 21 Oct 2026 (D-77, change 9): Summary and Overview are one Network page, and Overview's unique cards moved to statistics-network-cards.tsx. Deleting the screen and its tests needs Josh's yes on the dead-code check",
   },
