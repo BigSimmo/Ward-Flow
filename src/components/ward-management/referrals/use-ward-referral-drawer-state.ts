@@ -15,7 +15,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { referralAgeBand } from "./referral-age-band";
-import { cleanReferralFields, cleanReferralText } from "./referral-text-clean";
+import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -797,7 +797,7 @@ export function useWardReferralDrawerState({
     const shortForm = community ? communityReferralError(communityPurpose, documentation) : null;
     if (shortForm) return shortForm;
     if (reasonNoteRequired && !doctorNote.trim()) return "Give the reason for referral.";
-    if (doctorNote.length > reasonRoom) return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
+    if (cleanReferralText(doctorNote).length > reasonRoom) return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
     return null;
   }
   const originValid =
@@ -848,7 +848,7 @@ export function useWardReferralDrawerState({
     const label = unidentified?.trim();
     const prefix = !patientRecord && label ? UNIDENTIFIED_REFERRAL_PREFIX.length + label.length + 1 : 0;
     const room = REFERRAL_HISTORY_LIMITS.history - prefix;
-    return clinicalSummary.length > room ? `Shorten the patient story to ${room} characters or fewer.` : null;
+    return cleanReferralText(clinicalSummary).length > room ? `Shorten the patient story to ${room} characters or fewer.` : null;
   }
   function sectionFor(error: string | null): DrawerSection | null {
     if (!error) return null;
@@ -914,7 +914,7 @@ export function useWardReferralDrawerState({
     event.preventDefault();
     if (sendPending || submissionRef.current || sentReferralId || !sendGate.allowed) return;
     const validation =
-      patientError() ?? referralError() ?? storyError() ?? docsError() ?? referralContactError(contact);
+      patientError() ?? referralError() ?? storyError() ?? docsError() ?? referralContactError(cleanReferralContact(contact));
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));

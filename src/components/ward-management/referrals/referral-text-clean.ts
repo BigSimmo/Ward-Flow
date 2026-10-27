@@ -43,3 +43,8 @@ export function cleanReferralFields<T>(value: T): T {
   for (const key of ["catchment", "referrer", "medicalClearance"]) if (intake[key] === undefined) delete cleaned[key];
   return (intake === value ? { ...command, ...cleaned } : { ...command, intake: cleaned }) as T;
 }
+
+/** The referrer contact, cleaned, so the drawer's own checks judge what will actually be sent. */
+export function cleanReferralContact<T extends Record<string, string>>(contact: T): T {
+  return cleanKeys(contact, ["name", "email", "phone", "role", "location"]) as T;
+}
