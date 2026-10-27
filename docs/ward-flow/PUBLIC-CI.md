@@ -20,20 +20,20 @@ run in progress always finishes, and a newer merge replaces any main run still w
 of merges is checked once, on the newest main. The daily release takes the newest CI-passed main.
 Unit shards run four Vitest workers, one per hosted-runner vCPU.
 
-| Job                                             | Work                                                                                                                                                                                                       |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Ward Flow scope plan`                          | Computes and verifies install, policy, frontend static, backend, unit, browser and production-build flags.                                                                                                 |
-| `Ward Flow main reuse check`                    | On main pushes, proves the exact tree already passed the required heavy PR jobs.                                                                                                                           |
-| `Ward Flow static checks`                       | CI contracts, source safety, document links/commands/facts and reference-pack integrity; scoped installs, changed-file checks, related tests, lint, route/source typecheck and policy/reference contracts. |
-| `Ward Flow backend and shared production proof` | Discovered backend tests, backend typecheck and LCOV against disposable PostgreSQL; authenticated shared-mode production browser proof.                                                                    |
-| `Ward Flow unit shard 1` to `8`                 | Eight disjoint duration-balanced slices of the reconciled offline unit population, with coverage blobs.                                                                                                    |
-| `Ward Flow prepared browser build`              | One isolated offline production browser build, exported with input and payload verification. No browser tests run here.                                                                                    |
-| `Ward Flow browser journeys 1` to `3`           | Three groups on separate servers and runners, consuming the prepared build. Group 1 also runs the disjoint Chromium CSRF project on that server.                                                           |
-| `Ward Flow release gate <project>`              | Six required journeys with accessibility checks, as two parallel legs: desktop Chromium and phone WebKit, twelve required cases. Consumes the prepared build, or builds fresh on verified main reuse.      |
-| `Ward Flow secret scan`                         | Full-history gitleaks scan with a pinned, checksum-verified binary.                                                                                                                                        |
-| `Ward Flow production build`                    | Separate full Next webpack build with normal typechecking and the phone script budget.                                                                                                                     |
-| `Ward Flow coverage`                            | Merges all eight unit coverage populations, enforces unchanged thresholds and checks the executable-file inventory.                                                                                        |
-| `Ward Flow required`                            | Checks every selected result, every allowed scoped skip and the separate main-reuse path.                                                                                                                  |
+| Job                                             | Work                                                                                                                                                                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Ward Flow scope plan`                          | Computes and verifies install, policy, frontend static, backend, unit, browser and production-build flags.                                                                                            |
+| `Ward Flow main reuse check`                    | On main pushes, proves the exact tree already passed the required heavy PR jobs.                                                                                                                      |
+| `Ward Flow static checks`                       | CI contracts, source safety, document links/commands/facts and reference-pack integrity; scoped installs, changed-file checks, cached lint, route/source typecheck and policy/reference contracts.    |
+| `Ward Flow backend and shared production proof` | Discovered backend tests, backend typecheck and LCOV against disposable PostgreSQL; authenticated shared-mode production browser proof.                                                               |
+| `Ward Flow unit shard 1` to `8`                 | Eight disjoint duration-balanced slices of the reconciled offline unit population, with coverage blobs.                                                                                               |
+| `Ward Flow prepared browser build`              | One isolated offline production browser build, exported with input and payload verification. No browser tests run here.                                                                               |
+| `Ward Flow browser journeys 1` to `3`           | Three groups on separate servers and runners, consuming the prepared build. Group 1 also runs the disjoint Chromium CSRF project on that server.                                                      |
+| `Ward Flow release gate <project>`              | Six required journeys with accessibility checks, as two parallel legs: desktop Chromium and phone WebKit, twelve required cases. Consumes the prepared build, or builds fresh on verified main reuse. |
+| `Ward Flow secret scan`                         | Full-history gitleaks scan with a pinned, checksum-verified binary.                                                                                                                                   |
+| `Ward Flow production build`                    | Separate full Next webpack build with normal typechecking and the phone script budget.                                                                                                                |
+| `Ward Flow coverage`                            | Merges all eight unit coverage populations, enforces unchanged thresholds and checks the executable-file inventory.                                                                                   |
+| `Ward Flow required`                            | Checks every selected result, every allowed scoped skip and the separate main-reuse path.                                                                                                             |
 
 Every dependency install uses `scripts/install-locked-dependencies.mjs`, including the backend root.
 The wrapper performs the locked install and verifies the installed runtime dependency inventory;
@@ -77,7 +77,9 @@ milliseconds when `WARD_TEST_PROFILE_DIR` is set. No source text or event payloa
 Refresh committed duration records only from reviewed comparable measurements; synthetic test
 fixtures and local durations do not establish hosted savings.
 
-The static related-test check follows literal imports, re-exports and CommonJS requires through
+CI no longer runs a related-test pass in static checks: the unit shards run every file on every PR,
+so it only repeated work (about 3.7 minutes a push on 27 October 2026). `npm run test:related` keeps
+the same selection for local iteration. It follows literal imports, re-exports and CommonJS requires through
 `src`, `scripts`, `tests` and `backend/ward-flow`. Both focused entry points share this selector.
 Declared source-reading guards, including the appearance-key scan across all `src/`, are retained
 after fan-out capping. Capped or explicitly deferred selections are partial evidence; the full unit
@@ -117,7 +119,10 @@ final URL and screen identity are checked before scanning. A diagnostic rerun re
 failure. Playwright JSON establishes executed projects and cases; a configured project is not proof.
 
 Next working caches and browser downloads are restored where selected; explicit cache saves are
-restricted to main. Browser caches are keyed by Playwright version, include the required Chromium
+restricted to main. Whole-tree lint uses ESLint's content cache, keyed by the lockfile, `eslint.config.mjs`
+and `eslint-rules/`, so only changed files are linted again. Unit shards restore Vitest's compiled-module
+cache (`fsModuleCache`), whose entries are keyed by file content, Vite config and lockfile; a stale entry is
+missed, never used. Main runs start that cache empty and save one copy per shard each ISO week. Browser caches are keyed by Playwright version, include the required Chromium
 headless shell, and still install system libraries on a cache hit. Release browser downloads use a
 Chromium/WebKit-specific cache. A missing required executable fails preflight before a build.
 
