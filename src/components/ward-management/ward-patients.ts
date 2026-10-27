@@ -251,9 +251,17 @@ export function patientCohort(
 ): "Adult" | "Older adult" | "Youth" {
   const now = typeof today === "string" || typeof today === "number" ? new Date(today) : today;
   const age = patientAgeYears({ dateOfBirth }, now);
-  if (age < 25) return "Youth";
+  if (age < 18) return "Youth";
   if (age >= 65) return "Older adult";
   return "Adult";
+}
+
+/** True when a record's age group fits the date of birth on that day. A Youth band also fits an
+ *  18 to 24 year old, because youth services may accept people up to 24 (Josh, 27 Oct 2026). */
+export function cohortFitsAge(band: string, dateOfBirth: string, today: Date): boolean {
+  const recorded = patientCohort(dateOfBirth, today);
+  if (band === recorded) return true;
+  return band === "Youth" && recorded === "Adult" && patientAgeYears({ dateOfBirth }, today) <= 24;
 }
 
 /** A UMRN as people type or paste it into an address (shell-6): the synthetic two letters then

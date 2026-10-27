@@ -47,7 +47,7 @@ import { durMinutes } from "@/components/wf";
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
 import { isCommunityReferral } from "./community-referral";
 
-export type CensusGroup = "wait" | "found" | "move" | "ward" | "off";
+export type CensusGroup = "ask" | "wait" | "found" | "move" | "ward" | "off";
 
 /** The six glyph shapes (v6 rule 7), plus `off` for a record with nothing open. */
 export type CensusGlyph = "act" | "risk" | "done" | "move" | "wait" | "off";
@@ -56,7 +56,11 @@ export const CENSUS_GROUPS: readonly { id: CensusGroup; label: string; short: st
   // L1 (site review, 12 Oct 2026): "Waiting" here read as Home's "70 waiting" (people waiting in an
   // ED). This group is people with no bed yet: ED waits with no accepted ward, queued referrals and
   // ward waiting lists, so it carries its own noun.
-  { id: "wait", label: "No bed yet", short: "No bed yet", glyph: "wait" },
+  // P027 (Josh, 27 Oct 2026): "No bed yet" splits by whether a ward has been asked. A bed request
+  // with no ward asked is "ask"; one sent to a ward, a queued referral and a ward waiting list stay
+  // "wait".
+  { id: "ask", label: "No ward asked yet", short: "No ward asked", glyph: "wait" },
+  { id: "wait", label: "Ward asked, waiting for answer", short: "Waiting for answer", glyph: "wait" },
   { id: "found", label: "Accepted", short: "Accepted", glyph: "done" },
   { id: "move", label: "Moving", short: "Moving", glyph: "move" },
   { id: "ward", label: "On a ward", short: "On a ward", glyph: "done" },
@@ -274,6 +278,14 @@ export function buildCensus(state: {
     const form = movement.legalForm;
     const declines = movement.declines?.length ?? 0;
     const asked = movement.referredUnitIds.length;
+    // P027 (Josh, 27 Oct 2026, 11:03 PM): a decline or withdrawal takes the ward off
+    // `referredUnitIds`, so "ever asked" also reads what those answers leave behind.
+    const everAsked =
+      asked > 0 ||
+      movement.referredAt !== undefined ||
+      declines > 0 ||
+      (movement.withdrawnReferrals?.length ?? 0) > 0 ||
+      (movement.waitlistedUnitIds?.length ?? 0) > 0;
     const timeline: CensusTimelineEntry[] = [
       { at: movement.openedAt, glyph: "wait", text: `Movement opened at ${edText}` },
     ];
@@ -286,7 +298,7 @@ export function buildCensus(state: {
     rows.push({
       key: movement.id,
       kind: "movement",
-      group: moving ? "move" : accepted ? "found" : "wait",
+      group: moving ? "move" : accepted ? "found" : everAsked ? "wait" : "ask",
       tier: tierOf(movement.urgency),
       ...who,
       service: movementOriginService(movement),

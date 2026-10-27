@@ -27,7 +27,7 @@ import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
 import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
-import { chartAnswered, type DocumentationDraft } from "./referral-flow-panels";
+import type { DocumentationDraft } from "./referral-flow-panels";
 import {
   GENDER_UNANSWERED,
   REFERRAL_GENDER_NOT_RECORDED,
@@ -467,15 +467,13 @@ export function documentationNeeded(draft: DocumentationDraft): number {
     if (!draft.contactName.trim()) needed += 1;
     if (!draft.contactPhone.trim()) needed += 1;
   }
-  if (!chartAnswered(draft, "medication")) needed += 1;
-  if (!chartAnswered(draft, "observation")) needed += 1;
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other")) needed += 1;
   return needed;
 }
 
 /** Every answer the Documents step asks for, the denominator `documentationNeeded` counts against. */
 export function documentationItems(draft: DocumentationDraft): number {
-  return 3 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
+  return 1 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
 }
 
 /**

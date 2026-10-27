@@ -5,12 +5,14 @@ import { AlertCircle, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
   ARRIVAL_MODE_LABELS,
+  TRAVEL_MODES,
   type ArrivalMode,
   type Movement,
 } from "@/components/ward-management/ward-model";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
   OPERATIONAL_DEFAULT_LABEL,
@@ -51,6 +53,14 @@ export function canSetArrivalPlan(movement: Movement): boolean {
   return movement.stage === "pulled" || movement.stage === "handover_ready" || movement.stage === "moving";
 }
 
+/** The booked provider as an arrival mode, when it is one of the shared travel words; blank otherwise. */
+function bookedArrivalMode(movement: Movement): ArrivalMode | "" {
+  const job = movement.transport;
+  if (!job || job.cancelledAt !== undefined) return "";
+  const index = (TRAVEL_MODES as readonly string[]).indexOf(job.provider);
+  return index === -1 ? "" : ARRIVAL_MODES[index]!;
+}
+
 export interface ArrivalTimeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -72,14 +82,27 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const pullHoldLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}-hour` : `${pullHoldMinutes}-minute`;
 
   // WT-13: opens blank until someone chooses; never a travel mode standing in for a choice not made.
-  const [arrivalMode, setArrivalMode] = useState<ArrivalMode | "">(movement.arrivalDetails?.mode ?? "");
+  // A live transport booking already names how they travel, so its provider is offered when it is one
+  // of the shared travel words.
+  const bookedMode = movement.arrivalDetails ? "" : bookedArrivalMode(movement);
+  const [arrivalMode, setArrivalMode] = useState<ArrivalMode | "">(movement.arrivalDetails?.mode ?? bookedMode);
   // WT-06 (walk-through, 26 Oct 2026): the CAD number logged with the transport booking is offered
   // here rather than asked again. Live jobs only; a cancelled booking's number is not carried.
-  const bookedCad =
-    movement.transport?.cancelledAt === undefined ? movement.transport?.cadNumber?.trim() || undefined : undefined;
+  const liveJob = movement.transport?.cancelledAt === undefined ? movement.transport : undefined;
+  const bookedCad = liveJob?.cadNumber?.trim() || undefined;
   const cadFromBooking = movement.arrivalDetails?.trackingNumber === undefined && bookedCad !== undefined;
   const [trackingNumber, setTrackingNumber] = useState(movement.arrivalDetails?.trackingNumber ?? bookedCad ?? "");
-  const [etaMinutes, setEtaMinutes] = useState(movement.arrivalDetails?.estimatedArrivalAt ?? now + 120);
+  // The ETA is the recorded one, else the booking's estimate, else blank. Nothing is guessed.
+  const [presetEta, setPresetEta] = useState<number | undefined>(
+    movement.arrivalDetails?.estimatedArrivalAt ?? liveJob?.estimatedAt,
+  );
+  const etaFromBooking = movement.arrivalDetails === undefined && liveJob?.estimatedAt !== undefined;
+  const [activePreset, setActivePreset] = useState<string | null>(null);
+  const [etaText, setEtaText] = useState("");
+  const [etaDay, setEtaDay] = useState<"today" | "tomorrow">("today");
+  const typedEta = etaText.trim() ? instantFromEstimatedTimeInputs(etaText, etaDay, now) : undefined;
+  const etaTypedBadly = etaText.trim() !== "" && typedEta === undefined;
+  const etaMinutes = etaText.trim() ? typedEta : presetEta;
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const pending = useRef(false);
@@ -106,6 +129,14 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
     if (!saveGate.allowed || pending.current) return;
     if (arrivalMode === "") {
       setSaveError("Choose how they are travelling.");
+      return;
+    }
+    if (etaTypedBadly) {
+      setSaveError("Enter the arrival time as HH:MM, for example 14:40 or 1440.");
+      return;
+    }
+    if (etaMinutes === undefined) {
+      setSaveError("Enter the estimated time of arrival.");
       return;
     }
     pending.current = true;
@@ -204,17 +235,18 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
           <div className={styles.field}>
             <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
-              Arrival mode
+              How they are travelling
             </label>
             <select
               id={`${baseId}-arrival-mode-select`}
               disabled={saving}
               value={arrivalMode}
               onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
+              aria-describedby={bookedMode && arrivalMode === bookedMode ? `${baseId}-arrival-mode-source` : undefined}
               className={styles.control}
             >
               <option value="" disabled>
-                Not chosen
+                Choose how they are travelling
               </option>
               {ARRIVAL_MODES.map((mode: ArrivalMode) => (
                 <option key={mode} value={mode}>
@@ -222,11 +254,14 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
                 </option>
               ))}
             </select>
+            {bookedMode && arrivalMode === bookedMode ? (
+              <small id={`${baseId}-arrival-mode-source`}>From the transport booking</small>
+            ) : null}
           </div>
 
           <div className={styles.field}>
             <label htmlFor={`${baseId}-tracking-number-input`} className={styles.label}>
-              Transport CAD / Tracking Number (Optional)
+              CAD or tracking number
             </label>
             <input
               id={`${baseId}-tracking-number-input`}
@@ -243,7 +278,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
           <div className={styles.etaField}>
             <div id={`${baseId}-eta-presets-label`} className={styles.label}>
-              Estimated time of arrival (ETA): <strong>{formatInstantWithDay(etaMinutes, now)} AWST</strong>
+              Estimated time of arrival (ETA):{" "}
+              <strong>{etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} AWST`}</strong>
+              {etaFromBooking && !etaText.trim() && activePreset === null ? " (from the transport booking)" : null}
             </div>
 
             <div className={styles.presets} role="group" aria-labelledby={`${baseId}-eta-presets-label`}>
@@ -252,15 +289,55 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
                   key={preset.label}
                   type="button"
                   disabled={saving}
-                  onClick={() => setEtaMinutes(now + preset.offset)}
+                  onClick={() => {
+                    setPresetEta(now + preset.offset);
+                    setActivePreset(preset.label);
+                    setEtaText("");
+                  }}
                   className={styles.preset}
-                  data-active={etaMinutes === now + preset.offset ? "true" : undefined}
-                  aria-pressed={etaMinutes === now + preset.offset}
+                  data-active={activePreset === preset.label ? "true" : undefined}
+                  aria-pressed={activePreset === preset.label}
                 >
                   {preset.label}
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className={styles.field}>
+            <label htmlFor={`${baseId}-eta-time-input`} className={styles.label}>
+              Or type the ETA
+            </label>
+            <input
+              id={`${baseId}-eta-time-input`}
+              disabled={saving}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="HH:MM"
+              value={etaText}
+              aria-invalid={etaTypedBadly || undefined}
+              aria-describedby={etaTypedBadly ? `${baseId}-eta-time-problem` : undefined}
+              onChange={(e) => {
+                setEtaText(e.target.value);
+                setActivePreset(null);
+              }}
+              className={styles.control}
+            />
+            {etaTypedBadly ? <small id={`${baseId}-eta-time-problem`}>Type the time as 14:40 or 1440.</small> : null}
+            <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
+              Day of the typed ETA
+            </label>
+            <select
+              id={`${baseId}-eta-day-select`}
+              disabled={saving}
+              value={etaDay}
+              onChange={(e) => setEtaDay(e.target.value as "today" | "tomorrow")}
+              className={styles.control}
+            >
+              <option value="today">Today</option>
+              <option value="tomorrow">Tomorrow</option>
+            </select>
           </div>
 
           {saveError ? <p role="alert">{saveError}</p> : null}

@@ -226,7 +226,7 @@ describe("WardFlowProvider", () => {
 
       vi.mocked(absoluteWallClockMinutes).mockImplementation(() => mountAbsolute + elapsedMinutes);
       act(() => {
-        vi.advanceTimersByTime(30_000);
+        vi.advanceTimersByTime(60_000);
       });
 
       expect(

@@ -304,7 +304,7 @@ test.describe("@mockup Ward patient search", () => {
 
   /**
    * 5. THE 48PX TAP FLOOR AT 375PX. Every control a coordinator taps in the phone composer and the
-   * census header: the search input, DOB, Clear, the five group pills, the highlight chips and the
+   * census header: the search input, DOB, Clear, the six group pills (P027 split No bed yet in two), the highlight chips and the
    * History tab. The
    * old filter selects are gone from the screen (they sit in a visually hidden block), so the
    * census's own controls are what this now measures. Written against the 9 Oct census, it failed
@@ -334,8 +334,8 @@ test.describe("@mockup Ward patient search", () => {
     expect(chipCount, "the phone census shows its highlight chips").toBeGreaterThan(0);
     for (let i = 0; i < chipCount; i += 1) controls.push([chips.nth(i), `highlight chip ${i + 1}`]);
     const groups = console_.getByRole("radiogroup", { name: "Where patients are now" }).getByRole("radio");
-    await expect(groups, "the phone census shows five group pills").toHaveCount(5);
-    for (let i = 0; i < 5; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);
+    await expect(groups, "the phone census shows six group pills").toHaveCount(6);
+    for (let i = 0; i < 6; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);
 
     const failures: string[] = [];
     for (const [control, label] of controls) {

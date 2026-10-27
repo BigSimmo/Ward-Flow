@@ -59,6 +59,7 @@ import {
 } from "./ward-inbox-snooze";
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 import { useDirtyStateGuard } from "./use-dirty-state-guard";
+import { AcknowledgeVisibleButton } from "./tasks-acknowledge-visible";
 
 import styles from "./ward-tasks-drawer.module.css";
 import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
@@ -456,10 +457,8 @@ export function WardTasksDrawer({
     dispatch({ type: "UNSNOOZE_INBOX_ITEM", role, now, inboxItemId });
   }
 
-  function acknowledgeAllFacts() {
-    visibleUnacknowledged.forEach((item) => {
-      dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId: item.id });
-    });
+  function acknowledgeAllFacts(ids: readonly string[]) {
+    ids.forEach((inboxItemId) => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role, now, inboxItemId }));
   }
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
@@ -1334,13 +1333,11 @@ export function WardTasksDrawer({
           ) : (
             <span id={`${sectionId}-summary`}>Seen is not resolved</span>
           )}
-          {visibleUnacknowledged.length > 0 ? (
-            <button type="button" className={styles.btn} onClick={acknowledgeAllFacts}>
-              <UserCheck aria-hidden="true" />
-              Acknowledge visible
-              <span className={styles.count}>{visibleUnacknowledged.length}</span>
-            </button>
-          ) : null}
+          <AcknowledgeVisibleButton
+            ids={visibleUnacknowledged.map((item) => item.id)}
+            onAcknowledge={acknowledgeAllFacts}
+            classes={styles}
+          />
         </div>
       </aside>
     </>

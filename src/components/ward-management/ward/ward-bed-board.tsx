@@ -415,6 +415,9 @@ export function WardBedBoard({
                       data-dim={dim ? "true" : undefined}
                       data-placed={placedBed === Number(bed.bedNumber) ? "true" : undefined}
                       aria-pressed={source ? true : undefined}
+                      // P087: while a pick is held, a bed it cannot go to is unavailable, not only dimmed.
+                      // A press still says why it does not fit.
+                      aria-disabled={picked && dim ? true : undefined}
                       aria-label={label}
                       title={label}
                       data-testid={`ward-board-bed-${bed.bedNumber}`}
