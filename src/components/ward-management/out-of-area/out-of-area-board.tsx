@@ -296,8 +296,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return offset !== null && offset < 0;
     })
     .sort((a, b) => (offsetOf(a) ?? 0) - (offsetOf(b) ?? 0));
-  const nextUp =
-    readyEntries.find((entry) => statusOf(entry) === "none") ?? sorted.find((entry) => statusOf(entry) === "none");
+  // P192 (Josh, 27 Oct 2026, option A): the unplanned patient longest past discharge, as the tooltip says,
+  // whatever the table order; with nobody past discharge, the earliest date due (no date last).
+  const nextUp = entries
+    .filter((entry) => statusOf(entry) === "none")
+    .sort((a, b) => (offsetOf(a) ?? Infinity) - (offsetOf(b) ?? Infinity))[0];
 
   /* ---- selection ---- */
   const selectPlacement = (id: string, origin?: HTMLElement) => {
@@ -836,7 +839,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 }
                 onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
               >
-                Plan next return
+                {nextUp ? `Plan next return ${patientOf(nextUp).displayName}` : "Plan next return"}
               </Button>
               <Button
                 variant="onHero"
