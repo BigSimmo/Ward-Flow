@@ -152,6 +152,13 @@ describe("the rail shows the desk's own menu (B1)", () => {
     expect(screen.getByRole("link", { name: /^All EDs\b/u })).toHaveAttribute("href", "/ward-flow/ed");
   });
 
+  it("gives the executive Statistics and Capacity (Josh, 27 Oct 2026)", () => {
+    expect(roleMenu(railEntries(), "executive").main.map((item) => [item.id, item.label])).toEqual([
+      ["statistics", "Statistics"],
+      ["capacity", "Capacity"],
+    ]);
+  });
+
   it("gives the ED desk its board, its referrals, New referral and Find a bed", () => {
     atDesk(ED_DESK);
     render(wrap(<WardRail />));
