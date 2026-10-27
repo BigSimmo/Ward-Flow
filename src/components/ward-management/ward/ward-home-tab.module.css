@@ -70,6 +70,28 @@
   min-width: 0;
 }
 
+/* Every bed keeps its title on one line. When Place or move and the filters do not fit beside it,
+   they drop to a row of their own instead of squeezing the title onto two lines. */
+.areaBeds > .bedsHead {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-2);
+}
+
+.bedsHead h2 {
+  white-space: nowrap;
+}
+
+/* The waiting count on Place or move, as the tab badges draw a count. */
+.placeCount {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-11) / 16px var(--wf-mono);
+  text-align: center;
+}
+
 /* Board or List: two round icon buttons in one soft pill. */
 .viewSwitch {
   display: inline-flex;

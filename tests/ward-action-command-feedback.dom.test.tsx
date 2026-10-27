@@ -83,7 +83,7 @@ function mount(control: ReturnType<typeof commands>, children: ReactNode) {
 }
 
 function selectOccupiedBoardBed() {
-  fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+  fireEvent.click(screen.getByTestId("ward-open-bed-board"));
   const beds = screen.getAllByTestId(/^ward-board-bed-\d+$/);
   const occupied = beds.find((cell) => !/free|closed|pulled/i.test(cell.getAttribute("aria-label") ?? ""));
   if (!occupied) throw new Error("The synthetic ward has no occupied bed");

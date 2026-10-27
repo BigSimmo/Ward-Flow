@@ -123,6 +123,17 @@ type WardScreenHomeSectionProps = {
   pendingPreparation: number;
 };
 
+/** The control that opened or closed placing hides with it, so focus follows to its partner. */
+function focusWhenShown(selector: string, triesLeft = 10): void {
+  window.setTimeout(() => {
+    // The page may be gone by now (a route change or a test that ended).
+    if (typeof document === "undefined") return;
+    const target = document.querySelector<HTMLElement>(selector);
+    if (target && target.offsetParent !== null) target.focus({ preventScroll: true });
+    else if (triesLeft > 0) focusWhenShown(selector, triesLeft - 1);
+  }, 30);
+}
+
 export function WardScreenHomeSection({
   activeTab,
   absencesOnOrder,
@@ -209,7 +220,7 @@ export function WardScreenHomeSection({
       className={styles.tabPanel}
       id="tab-attn"
       role="tabpanel"
-      aria-labelledby={activeTab === "board" ? "tabBtn-board" : "tabBtn-attn"}
+      aria-labelledby="tabBtn-attn"
       data-active={activeTab === "attn" || activeTab === "board"}
     >
       <WardHomeTab
@@ -219,7 +230,9 @@ export function WardScreenHomeSection({
         onWalkingChange={isPhone ? setPhoneWalking : undefined}
         onOpenBoard={() => {
           selectActiveTab("board");
+          focusWhenShown('[aria-labelledby="ward-bed-board-title"] button');
         }}
+        boardWaitingCount={boardWaiting.length}
         phoneShiftLabel={shiftLine(now)}
         phoneHeroFoot={
           isPhone ? (
@@ -334,6 +347,7 @@ export function WardScreenHomeSection({
                 query={deferredBedQuery}
                 onOpenList={() => {
                   selectActiveTab("attn");
+                  focusWhenShown('[data-testid="ward-open-bed-board"]');
                 }}
               />
               {boardReasonForm}
