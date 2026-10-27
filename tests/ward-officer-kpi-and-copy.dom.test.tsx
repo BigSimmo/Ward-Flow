@@ -96,18 +96,18 @@ describe("officer screen KPI captions match their populations", () => {
     expect(heroCount("To accept")).toBe(0);
   });
 
-  it("keeps the on-board count exactly the collected-not-arrived jobs, unchanged", () => {
+  it("names the screen 'Transport' in the h1 (P195) and keeps the on-board count in its chip", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
       </WardFlowProvider>,
     );
 
-    // v6: the on-board count is the hero title ("8 on board").
+    // P195 (audit 27 Oct 2026): the h1 is the screen name, not a count.
     const title = screen.getByRole("heading", { level: 1 });
-    // 6 → 8: the 17 Sept sample-data addition, WF-026/WF-031 (collected-not-arrived).
-    // S-17 (audit 13 Oct 2026): named as a part of the 13 jobs, so it agrees with the Jobs count.
-    expect(title.textContent).toBe("8 of 13 jobs on board");
+    expect(title.textContent).toBe("Transport");
+    // The on-board figure (8: collected-not-arrived, WF-026/WF-031) still shows in the "On board" chip.
+    expect(heroCount("On board")).toBe(8);
   });
 });
 
