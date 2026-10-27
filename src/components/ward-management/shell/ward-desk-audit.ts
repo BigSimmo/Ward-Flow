@@ -16,7 +16,7 @@ import type { CommandActivity, WardActivityEventTone } from "./ward-command-acti
 import { SharedAccessContext } from "./ward-shared-access-context";
 
 /** How often an open shell asks again for new audit rows. */
-export const ACTIVITY_AUDIT_REFRESH_MS = 60_000;
+const ACTIVITY_AUDIT_REFRESH_MS = 60_000;
 const SHOWN = 20;
 /** The audit actions that fill the Activity filters, as the tab's own feed files them; any other is `other`. */
 const ACTION_CATEGORY: Readonly<Record<string, CommandActivity["content"]["changes"][number]["category"]>> = {
@@ -28,7 +28,7 @@ const ACTION_CATEGORY: Readonly<Record<string, CommandActivity["content"]["chang
 };
 
 type ReadActivityAudit = SharedWorkspaceClient["readActivityAudit"];
-export type DeskAuditState =
+type DeskAuditState =
   { status: "unavailable" | "loading" | "failed" } | { status: "ready"; events: readonly SharedActivityAuditEvent[] };
 
 /** The feed's lines from audit rows, newest first; a row with an unreadable time is left out. */
@@ -58,7 +58,7 @@ export function auditActivity(
 }
 
 /** Reads this desk's audit while the shell is open; `unavailable` in the local demo. */
-export function useWardDeskAudit(): DeskAuditState {
+function useWardDeskAudit(): DeskAuditState {
   const api = useContext(SharedAccessContext)?.api as { readActivityAudit?: ReadActivityAudit } | undefined;
   const read = api?.readActivityAudit;
   const [state, setState] = useState<DeskAuditState>({ status: "loading" });
