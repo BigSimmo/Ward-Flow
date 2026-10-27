@@ -52,7 +52,7 @@ import {
   referralBelongsToService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
+import { homeChipFigures, openEdJourneys } from "@/components/ward-management/ward-shared-figures";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import {
@@ -74,7 +74,7 @@ import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import { PlacementPrompt } from "./placement-prompt";
-import { PriorityQueue, type QueueHighlight, queueWaitThresholds } from "./priority-queue";
+import { PriorityQueue, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { SinceLastLookPanel } from "./since-last-look-band-lazy";
@@ -638,11 +638,8 @@ export function CoordinatorScreen() {
     </span>
   );
   const bedsReady = counts.capacity?.value ?? 0;
-  // The two highlight chips count the queue they highlight (after the ED and service filters).
-  const overdueInQueue = queue.filter(
-    (movement) => now - movement.openedAt >= queueWaitThresholds(movement.urgency).overdue,
-  ).length;
-  const tierOneInQueue = queue.filter((movement) => movement.urgency === 1).length;
+  // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
+  const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
@@ -812,9 +809,9 @@ export function CoordinatorScreen() {
                     onToggle={() => toggleFocus("decide")}
                   />
                   <HeroStat
-                    value={overdueInQueue}
-                    label="Overdue waits"
-                    tone={overdueInQueue > 0 ? "warning" : undefined}
+                    value={chips.overdueInQueue}
+                    label={chips.overdueLabel}
+                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
@@ -872,9 +869,9 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     inline
-                    value={overdueInQueue}
-                    label="Overdue waits"
-                    tone={overdueInQueue > 0 ? "warning" : undefined}
+                    value={chips.overdueInQueue}
+                    label={chips.overdueLabel}
+                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
                       showView("queue");
@@ -884,8 +881,8 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     inline
-                    value={tierOneInQueue}
-                    label="Tier 1"
+                    value={chips.tierOneInQueue}
+                    label={chips.tierOneLabel}
                     pressed={homeView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
@@ -1062,7 +1059,10 @@ export function CoordinatorScreen() {
                   pullHoldMinutes={configuration.pullHoldMinutes}
                   delaysHref={DELAYS_HREF}
                   highlight={highlight}
-                  onClearHighlight={() => setHighlight(undefined)}
+                  onClearHighlight={() => {
+                    setHighlight(undefined);
+                    setSelectedEdId(undefined);
+                  }}
                   rowCap={isPhone ? PHONE_QUEUE_ROWS : highlight === undefined ? DESKTOP_QUEUE_ROWS : undefined}
                   phone={isPhone}
                   pinnedIds={actNowMovementIds}
