@@ -223,6 +223,8 @@ describe("the real layout's authenticated executive branch", () => {
     await openLayout();
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
     const tools = screen.getByTestId("ward-bar-tools-sheet");
+    fireEvent.click(within(tools).getByRole("button", { name: /^Change view$/ }));
+    expect((guard.connection as WardSharedConnection).switchRole).toHaveBeenCalledOnce();
     fireEvent.click(within(tools).getByRole("button", { name: /Find a bed/ }));
     const finder = screen.getByTestId("ward-tools-bed-finder");
     fireEvent.click(within(finder).getByRole("button", { name: "Voluntary" }));

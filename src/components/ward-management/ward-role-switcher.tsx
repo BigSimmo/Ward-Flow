@@ -49,7 +49,14 @@ export type WardRoleNextStep = {
  * `tests/ward-role-switch-architecture.test.ts` pins the architectural facts above so that a
  * change attempting the shortcut fails a test instead of quietly reopening the leak.
  */
-export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } = {}) {
+export function WardRoleSwitcher({
+  nextStep,
+  withWords = false,
+}: {
+  nextStep?: WardRoleNextStep;
+  /** Finding 261 (Josh, 27 Oct 2026): show "Change view" beside the icon, inside the button. */
+  withWords?: boolean;
+} = {}) {
   const { movements, units, focusMovementId } = useWardFlowSelect("movements", "units", "focusMovementId");
   const [open, setOpen] = useState(false);
   // Owner answer 38 (17 Sept 2026): other wards in the switcher are coordinators-only. `?? ""` is
@@ -152,6 +159,7 @@ export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } =
       <button
         type="button"
         className={styles.trigger}
+        data-words={withWords || undefined}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={switcherLabel}
@@ -163,6 +171,11 @@ export function WardRoleSwitcher({ nextStep }: { nextStep?: WardRoleNextStep } =
         onClick={() => setOpen(true)}
       >
         <ArrowLeftRight aria-hidden="true" />
+        {withWords ? (
+          <span className={styles.triggerWords} aria-hidden="true">
+            Change view
+          </span>
+        ) : null}
         {referredWardCount > 0 ? (
           /* aria-hidden: the accessible name above already carries this count in words. Announcing
              the bare digit as well would read the same fact twice, in the worse of the two forms. */

@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 
 import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
-import { WardRoleSwitcher } from "../ward-role-switcher";
+import { WardRoleSwitcher } from "../ward-public-role-switcher";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
@@ -43,7 +43,6 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
-import { useWardShellPublic } from "../shell/ward-shell-public-context";
 import { releasedCountText } from "../statistics/statistics-small-numbers";
 import { WARD_REFERRAL_INTAKE_HREF } from "../ward-nav";
 
@@ -267,7 +266,6 @@ export function WardToolsSheet({
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
   const canOpen = useCanOpenHref();
   const executive = useExecutiveStatisticsControl().executive;
-  const shell = useWardShellPublic();
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
@@ -320,16 +318,7 @@ export function WardToolsSheet({
           <span>Viewing as</span>
           <strong>{roleLabel}</strong>
         </span>
-        <span className={styles.changeView}>
-          Change view
-          {executive ? (
-            <button type="button" onClick={() => shell?.switchRole?.()}>
-              Go to a desk
-            </button>
-          ) : (
-            <WardRoleSwitcher />
-          )}
-        </span>
+        <WardRoleSwitcher withWords />
       </div>
 
       {/* Change 8 (D-77, 21 Oct 2026): on a desktop Tools keeps working tools only. New referral,
