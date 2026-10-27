@@ -371,6 +371,23 @@ describe("planned bookings for every desk that reads the bed forecast (Josh, 27 
     expect(validOnTheWire(scoped)).toBe(true);
   });
 
+  it("sends the executive only open bookings, so an arrival never names its stay's person", () => {
+    const arrived = { ...booking, id: "PA-ARRIVED", state: "arrived" as const, admissionId: occupied.id };
+    const cancelled = {
+      ...booking,
+      id: "PA-CANCELLED",
+      state: "cancelled" as const,
+      cancelReason: "no_longer_needed" as const,
+    };
+    const scoped = scopeWardFlowState(
+      { ...world, plannedAdmissions: [...world.plannedAdmissions, arrived, cancelled] },
+      { role: "executive", scope: { kind: "statewide" } },
+      options,
+    ).state;
+    expect(scoped.plannedAdmissions.every((kept) => kept.state === "booked")).toBe(true);
+    expect(validOnTheWire(scoped)).toBe(true);
+  });
+
   it("sends no bookings to a desk that neither books nor reads Capacity", () => {
     const ed: WardAccess = { role: "ed", scope: { kind: "ed", edId: state.movements[0]!.originEdId ?? "none" } };
     expect(scopeWardFlowState(world, ed, options).state.plannedAdmissions).toEqual([]);

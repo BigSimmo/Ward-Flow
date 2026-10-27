@@ -13,6 +13,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 
 /** Converts the seeded initials-only booking, then names the stay it became through both screen resolvers. */
 function ConvertedStayNames() {
@@ -235,6 +236,17 @@ describe("planned admissions panel", () => {
   });
 });
 
+/** The panel as a signed-in desk sees it: inside the browser's access projection. */
+function renderScopedPanel() {
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardAccessScope>
+        <PlannedAdmissionsPanel now={NOW_ANCHOR} />
+      </WardAccessScope>
+    </WardFlowProvider>,
+  );
+}
+
 // Josh, 27 Oct 2026: every desk that reads Capacity sees the bookings, offered only the steps its role takes.
 describe("planned admissions panel for a desk that does not book", () => {
   afterEach(() => {
@@ -249,7 +261,7 @@ describe("planned admissions panel for a desk that does not book", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "executive", scope: { kind: "statewide" } });
     });
-    renderPanel();
+    renderScopedPanel();
     expect(screen.queryByTestId("ward-planned-book")).toBeNull();
     const list = screen.getByRole("list", { name: "Booked planned admissions" });
     const rows = within(list).getAllByRole("listitem");
@@ -265,7 +277,10 @@ describe("planned admissions panel for a desk that does not book", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
     });
-    renderPanel();
+    renderScopedPanel();
     expect(screen.getByTestId("ward-planned-book")).toBeInTheDocument();
+    // Through the browser's own access projection: the site's bookings, and only the site's.
+    expect(screen.getByTestId("ward-planned-PA-SEED-01")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-planned-PA-SEED-02")).toBeNull();
   });
 });
