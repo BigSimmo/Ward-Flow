@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-26-departures-and-pulls-named",
-    "date": "2026-10-26",
-    "line": "Recording a departure asks where they went, with nothing chosen for you. Pulling a bed names who it was pulled for."
-  },
-  {
     "id": "2026-10-26-not-recorded-wording",
     "date": "2026-10-26",
     "line": "Where nothing is recorded the screens say so, and the referral summary labels what came from the referral letter."
@@ -98,5 +93,10 @@
     "id": "2026-10-27-accept-dialog-words",
     "date": "2026-10-27",
     "line": "The accept dialog now says Accept referral in principle and Confirm acceptance. Ward checks say Ward cohort."
+  },
+  {
+    "id": "2026-10-27-accept-dialog-patient-field",
+    "date": "2026-10-27",
+    "line": "The accept dialog now labels its read-only field Patient, as it never allocates a bed."
   }
 ]
