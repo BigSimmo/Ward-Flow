@@ -22,6 +22,9 @@ test("the demonstration controls keep their demo role, and narrower desks are le
   const world = engine.seedWorld(at);
   const demo = { type: "ADVANCE_CLOCK", role: "demo", minutes: 15 };
   assert.equal(engine.deskCommand(engine.STATEWIDE, demo), demo);
+  // Marking a notice read answers as the notice's addressee, so its role is kept.
+  const read = { type: "MARK_NOTICE_READ", role: "ward", noticeId: "NT-SYN-1", actingPlaceId: "ward-a" };
+  assert.equal(engine.deskCommand(engine.STATEWIDE, read), read);
   const ward = engine.parseAccess("ward", { kind: "ward", unitIds: [world.state.units[0].id] });
   const sent = { type: "RECEIVE_REFERRAL", role: "ed" };
   assert.equal(engine.deskCommand(ward, sent), sent);
