@@ -24,6 +24,11 @@
   outline: none;
 }
 
+/* P061 (27 Oct 2026): the reload warning stands out from the status line. */
+.warning {
+  font-weight: 600;
+}
+
 .recovery p {
   margin: 0;
 }

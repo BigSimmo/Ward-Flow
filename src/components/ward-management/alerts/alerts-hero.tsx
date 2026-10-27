@@ -125,18 +125,10 @@ export function AlertsHero({
             actions={
               <div className={styles.phoneHeroActions}>
                 {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
-                      one primary; a statewide broadcast stays one tap away as a secondary. */}
+                      one primary; a statewide broadcast stays one tap away as a secondary, with Pause between
+                      the two so a thumb aiming for Next cannot start a broadcast (P017, 27 Oct 2026). */}
                 <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
                   Next alert
-                </Button>
-                <Button
-                  ref={broadcastTriggerRef}
-                  variant="onHero"
-                  icon={Radio}
-                  disabledReason={broadcastDisabledReason}
-                  onClick={(event) => openComposer(event.currentTarget)}
-                >
-                  Broadcast
                 </Button>
                 <Button
                   variant="onHero"
@@ -146,6 +138,15 @@ export function AlertsHero({
                   onClick={live.togglePause}
                 >
                   {live.paused ? "Resume" : "Pause"}
+                </Button>
+                <Button
+                  ref={broadcastTriggerRef}
+                  variant="onHero"
+                  icon={Radio}
+                  disabledReason={broadcastDisabledReason}
+                  onClick={(event) => openComposer(event.currentTarget)}
+                >
+                  Broadcast
                 </Button>
               </div>
             }
