@@ -752,6 +752,9 @@
   min-width: 0;
   height: 100%;
   min-height: 0;
+  /* P194: the ranked list must not set the split's row height; the timeline's rows do, and the
+     rail stretches to them and scrolls its own list. */
+  contain: size;
   overflow: hidden;
   border-left: 1px solid var(--wf-line);
   background: var(--wf-surface);
