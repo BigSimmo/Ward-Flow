@@ -143,6 +143,7 @@
     "tests/ward-panel.dom.test.tsx",
     "tests/ward-patient-identity-from-the-record.dom.test.tsx",
     "tests/ward-patient-link-default-deny.test.ts",
+    "tests/ward-phone-menu-scroll-fade.test.ts",
     "tests/ward-policy-scope.test.ts",
     "tests/ward-print-hides-overlays.test.ts",
     "tests/ward-prototype-disclosure.test.ts",
