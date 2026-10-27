@@ -91,4 +91,36 @@ describe("ARCHIVE_PATIENT", () => {
     expect(validSharedCommand({ ...bad, now, reason: "test" })).toBe(true);
     expect(validSharedCommand({ ...bad, now, reason: "test", role: "ed" })).toBe(false);
   });
+
+  it("refuses a record carrying a fact recorded on the person, such as a treatment order", () => {
+    const world = withNewPatient();
+    const marked = {
+      ...world.state,
+      patients: world.state.patients.map((patient) =>
+        patient.id === world.patient.id ? { ...patient, communityTreatmentOrder: {} as never } : patient,
+      ),
+    };
+    const after = wardFlowReducer(marked, {
+      type: "ARCHIVE_PATIENT",
+      role: "coordinator",
+      now,
+      patientId: world.patient.id,
+      reason: "test",
+    });
+    expect(after.patients.some((patient) => patient.id === world.patient.id)).toBe(true);
+    expect(after.rejections.at(-1)?.reason).toMatch(/care recorded against them/);
+  });
+
+  it("keeps an audit row naming the archived record and reason, and a refused try does not block it", () => {
+    const world = withNewPatient();
+    world.send({ type: "ARCHIVE_PATIENT", role: "ward", patientId: world.patient.id, reason: "test" } as never);
+    world.send({ type: "ARCHIVE_PATIENT", role: "coordinator", patientId: world.patient.id, reason: "duplicate" });
+    expect(world.state.patients.some((patient) => patient.id === world.patient.id)).toBe(false);
+    const row = world.state.auditEvents.filter((entry) => entry.action === "ARCHIVE_PATIENT").at(-1);
+    expect(row).toMatchObject({
+      category: "patient-record",
+      outcome: "accepted",
+      details: { patientId: world.patient.id, umrn: "SYN-ARCHIVE-001", reason: "duplicate" },
+    });
+  });
 });

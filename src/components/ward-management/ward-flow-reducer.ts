@@ -1822,7 +1822,7 @@ export function reduceClinicalEvent(
     case "ADD_PATIENT":
       return reducerSlices().reducePatientRegistration(state, event, reject);
     case "ARCHIVE_PATIENT":
-      return reducerSlices().reducePatientArchive(state, event, reject);
+      return reducerSlices().reducePatientArchive(state, event, reject, decision);
 
     case "RESET_SCENARIO":
       // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged
