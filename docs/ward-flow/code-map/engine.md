@@ -1,13 +1,49 @@
 # Engine: reducer, events, state and persistence
 
-_Updated 2026-10-23 - current saving and sign-in pointers checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-10-27 - event count, state version and the list of event modules checked against source at `3532c376`; Documentation owns._
 
-## Current-tree check — 24 October 2026
+## Current-tree check — 27 October 2026
 
-Checked against `main` at `899b232e`. `EVENT_ROLE` now lives in `ward-flow-event-roles.ts`
-(re-exported from `ward-flow-events.ts`) and has 151 entries; the "129 variants" count below is
-dated 14 October. The stored state version is 7. Line numbers (`:NNNN`) in the event catalogue
-are from the September census and will not match current source; search by event name instead.
+Checked against `main` at `3532c376`. `EVENT_ROLE` lives in `ward-flow-event-roles.ts`
+(re-exported from `ward-flow-events.ts`) and has **163** entries, one per `WardFlowEvent`
+variant. The 129 count further down is dated 14 October. The stored state version is 7. Line
+numbers (`:NNNN`) in the event catalogue are from the September census and will not match current
+source; search by event name instead.
+
+### Event modules
+
+The reducer reaches most of these files through `ward-flow-reducer-slices.ts` (see §1, "Lazily
+loaded slices"). `ward-flow-record-events.ts` hands on to the legal and stay files, and the reducer
+imports `ward-flow-observation-events.ts` directly. Each holds the guard and effect for the events
+named. `tests/ward-code-map-engine-events.test.ts`
+fails when a `ward-flow-*-events.ts` file is missing from this list.
+
+| File                                       | Entry point                                           | Events                                                                                                                                  |
+| ------------------------------------------ | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `ward-flow-bed-closure-events.ts`          | `reduceBedClosureEvent`                               | `SET_BED_CLOSED` (close or reopen one exact bed)                                                                                        |
+| `ward-flow-bed-events.ts`                  | `reduceBedEvent`                                      | bed releases, leave beds, capacity checks, discharge barriers and criteria, `PLACE_IN_BED`                                              |
+| `ward-flow-bed-meeting-events.ts`          | `reduceBedMeetingEvent`                               | `RECORD_BED_MEETING_ACTION`, `COMPLETE_BED_MEETING_ACTION`                                                                              |
+| `ward-flow-diagnosis-events.ts`            | `reduceWardDiagnosis`                                 | `RECORD_WARD_DIAGNOSIS`                                                                                                                 |
+| `ward-flow-loop-check-events.ts`           | `reduceLoopCheckEvent`                                | acceptance conditions, cancelled-move checks, closure transition items, restriction reviews                                             |
+| `ward-flow-observation-events.ts`          | `reduceObservationLevelEvent`                         | `RECORD_OBSERVATION_LEVEL`                                                                                                              |
+| `ward-flow-placement-events.ts`            | `reducePlacementEvent`                                | `PULL_PATIENT`, `RELEASE_PULL`, `RELEASE_HELD_BED`, `RELEASE_DIVERTED_BED`, `RELEASE_AND_REOPEN_SEARCH`, `STEP_BACK_STAGE`              |
+| `ward-flow-protected-record-events.ts`     | `reduceProtectedRecordEvent`                          | the protected record path: discharge records, audit reviews and their undo, discharge, follow-up and admission care                     |
+| `ward-flow-record-events.ts`               | `reduceRecordedFactEvent`                             | the other `RECORD_*` events; hands legal and stay events to the next two files                                                          |
+| `ward-flow-record-legal-events.ts`         | `reduceRecordedLegalEvent`                            | legal form expiries, forms written, continuations, country extensions, community treatment orders                                       |
+| `ward-flow-record-stay-events.ts`          | `reduceRecordedStayEvent`                             | leaving, leave, absence, emergency department trips, handover sign-off, repatriation, contacts, support notifications, stay blockers    |
+| `ward-flow-referral-answer-events.ts`      | `reduceReferralAnswerEvent`                           | `RECEIVE_REFERRAL`, `ACCEPT_REFERRAL`, `ACCEPT_IN_PRINCIPLE`, `HOLD_REFERRAL_BED`, `DECLINE`, `DECLINE_REFERRAL`, `WITHDRAW_ACCEPTANCE` |
+| `ward-flow-referral-ask-events.ts`         | `reduceReferralAskEvent`                              | `ASK_MORE_WARDS`                                                                                                                        |
+| `ward-flow-referral-commitment-events.ts`  | `reduceReferralCommitmentEvent`                       | `RECORD_REFERRAL_COMMITMENT`                                                                                                            |
+| `ward-flow-referral-followup-events.ts`    | `reduceReferralFollowUpEvent`                         | `MARK_REFERRAL_OPENED`, `REQUEST_REFERRAL_INFORMATION`, `MARK_REFERRAL_INFORMATION_MET`                                                 |
+| `ward-flow-referral-owner-events.ts`       | `reduceReferralOwnerEvent`                            | `ASSIGN_REFERRAL`, `LOG_REFERRAL_CONTACT`                                                                                               |
+| `ward-flow-referral-send-events.ts`        | `reduceReferralSendEvent`                             | raise, refer to units or a community team, corrections, urgency and legal status changes, withdrawals                                   |
+| `ward-flow-release-notice-events.ts`       | `reduceReleaseNoticeEvent`, `reduceArrivalCheckEvent` | `SEND_RELEASE_SUPPORT_NOTICE`, `RECORD_ARRIVAL_CHECK`                                                                                   |
+| `ward-flow-restrictive-practice-events.ts` | `reduceRestrictivePracticeEvent`                      | restrictive practice start and end, ward incidents, seclusion room status                                                               |
+| `ward-flow-transport-events.ts`            | `reduceTransportEvent`                                | booking, accepting, en route, collected, arrived, handover ready, arrival details, lateness, stop and cancel                            |
+| `ward-flow-undo-events.ts`                 | `reduceUndoEvent`                                     | the `UNDO_*` events other than `UNDO_AUDIT_REVIEW`                                                                                      |
+| `ward-flow-ward-closure-events.ts`         | `reduceWardClosureEvent`                              | `CLOSE_WARD_TO_ADMISSIONS`, `REOPEN_WARD_TO_ADMISSIONS`                                                                                 |
+
+`ward-flow-events.ts` itself declares the union and holds no reducer.
 
 ## Current persistence boundary — 23 October 2026
 
@@ -269,7 +305,7 @@ reads and `grep`/`wc`/`awk`. Back to [the code map index](README.md).
   page's phone first load. Page code must not import a slice file or `ward-flow-reducer-slices.ts`
   statically; `tests/ward-reducer-lazy-slices.test.ts` checks this. A new slice goes in that list.
 - **`ward-flow-events.ts`** (2,452 lines at baseline) — declares the `WardFlowEvent` discriminated union (**129**
-  variants on disk as of 14 October 2026; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
+  variants on disk as of 14 October 2026, **163** on 27 October; 97 in the 25 September baseline below, each carrying `type`, `role`, `now` plus its own fields) and `EVENT_ROLE`, the
   `Record<WardFlowEvent["type"], readonly WardFlowRole[]>` table the reducer's role check reads
   first. Also re-exports `ReferralDraft` (the intake form's shape, from `ward-referral-draft.ts` since 22 Oct 2026) and `WardFlowRole`/
   `WARD_FLOW_ROLE_LABELS` from `ward-flow-roles.ts`. Heavily commented — most of the file is
