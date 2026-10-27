@@ -55,9 +55,16 @@ export function legalCell(row: BoardRow, thresholds: DueSoonThresholds): ReactNo
 function legalTip(content: string, chip: ReactNode): ReactNode {
   return (
     <Tooltip content={content}>
-      <span className={styles.legalChip} tabIndex={0} data-legal-tip="" data-testid="delays-legal-chip">
+      <button
+        type="button"
+        className={styles.legalChip}
+        data-legal-tip=""
+        data-testid="delays-legal-chip"
+        // Safari does not focus a tapped button; focusing it here opens the tip on a tap.
+        onClick={(event) => event.currentTarget.focus()}
+      >
         {chip}
-      </span>
+      </button>
     </Tooltip>
   );
 }

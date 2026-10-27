@@ -2756,6 +2756,13 @@ button.gLaneL:hover {
   white-space: nowrap;
 }
 
+/* P197: the chip is a button so a keyboard or a tap can open its tip; it keeps the chip's look. */
+button.legalChip {
+  font-family: inherit;
+  line-height: inherit;
+  cursor: help;
+}
+
 .legalLeft {
   flex: 0 0 auto;
   white-space: nowrap;

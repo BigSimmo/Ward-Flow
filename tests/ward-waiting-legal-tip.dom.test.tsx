@@ -31,7 +31,7 @@ describe("P197 Waiting Legal column tip", () => {
     renderWaiting();
     const chip = formChips()[0];
     expect(chip).toBeDefined();
-    expect(chip).toHaveAttribute("tabindex", "0");
+    expect(chip!.tagName).toBe("BUTTON");
     const code = chip!.textContent!.replace(/^Form /, "");
     const title = formTitleForCode(code);
     act(() => chip!.focus());
@@ -45,7 +45,6 @@ describe("P197 Waiting Legal column tip", () => {
     renderWaiting();
     const chip = formChips()[0]!;
     const row = chip.closest("tr")!;
-    act(() => chip.focus());
     fireEvent.click(chip);
     expect(screen.getByTestId("tooltip")).toBeInTheDocument();
     expect(row).not.toHaveAttribute("aria-selected", "true");
