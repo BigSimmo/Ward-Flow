@@ -5,7 +5,7 @@
 // the arrival figures it has already derived.
 import { MapPin } from "lucide-react";
 import { Card, CardBody, CardHead, EmptyState, StatusGlyph, cx } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement } from "@/components/ward-management/ward-model";
 import styles from "./officer.module.css";
@@ -107,7 +107,9 @@ export function renderArrivalsCard(ctx: OfficerArrivalsContext) {
                           {isLate
                             ? "Late"
                             : booked
-                              ? `Booking estimate · ${transportEtaRemainingLabel(eta, now)}`
+                              ? eta < now
+                                ? `Booking estimate passed ${splitDuration(now - eta)} ago`
+                                : `Booking estimate · ${transportEtaRemainingLabel(eta, now)}`
                               : transportEtaRemainingLabel(eta, now)}
                         </span>
                       </span>
