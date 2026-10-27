@@ -145,8 +145,6 @@ describe("Activity workspace search", () => {
     expect(within(sheet).getByText("Ward 2K now")).toBeVisible();
     await user.click(within(sheet).getByRole("button", { name: /^Activity/ }));
     expect(within(sheet).getByRole("textbox", { name: "Search activity" })).toHaveValue("manager");
-    expect(within(within(sheet).getByRole("list", { name: "Recent events" })).getAllByRole("listitem")).toHaveLength(
-      1,
-    );
+    expect(within(within(sheet).getByRole("list", { name: "Recent events" })).getAllByRole("listitem")).toHaveLength(1);
   });
 });
