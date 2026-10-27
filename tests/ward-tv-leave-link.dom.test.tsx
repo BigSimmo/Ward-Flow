@@ -3,7 +3,16 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
-  default: ({ href, children, onClick, ...rest }: { href: string; children: ReactNode; onClick?: (e: unknown) => void }) => (
+  default: ({
+    href,
+    children,
+    onClick,
+    ...rest
+  }: {
+    href: string;
+    children: ReactNode;
+    onClick?: (e: unknown) => void;
+  }) => (
     <a href={href} onClick={onClick} {...rest}>
       {children}
     </a>
