@@ -36,9 +36,11 @@ describe("P115 tour wording (Josh, 28 Oct 2026, 12:23 AM AWST)", () => {
 
   it("the phone chips step names the four Home chips", () => {
     const step = tourSteps("coordinator", "phone", facts).find((s) => s.id === "chips");
+    // On the phone the second Home chip is labelled "To decide", so the tour says that.
     expect(step?.body).toContain(
-      "The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
+      "The chips beside it count Act now, To decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
     );
+    expect(step?.body).not.toContain("Referrals to decide");
   });
 });
 

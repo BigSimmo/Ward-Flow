@@ -682,7 +682,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "chips",
           { sel: `${HERO_SEL} button`, up: 2 },
           "What needs you",
-          "The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
+          "The chips beside it count Act now, To decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
         ),
         step(
           "Your daily work",
