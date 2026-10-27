@@ -163,7 +163,7 @@ describe("shared recovery within an open sheet", () => {
     );
     await waitFor(() => expect(document.querySelector("[data-ward-shared-recovery-host]")).toBeNull());
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
   it("says it is still connecting, not failing, while a signed-in desk loads", () => {
@@ -179,7 +179,7 @@ describe("shared recovery within an open sheet", () => {
     expect(screen.getByRole("main", { name: "Opening Ward Flow" }).getAttribute("aria-busy")).toBe("true");
     // #805: nothing has failed yet, so no Reconnect and no sign-in screen; Sign out stays.
     expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Sign in with email" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
     view.rerender(
       <WardSharedAccess connection={{ ...shared, status: "unavailable", error: "Shared access is unavailable." }}>
@@ -200,7 +200,7 @@ describe("shared recovery within an open sheet", () => {
         </WardSharedAccess>,
       );
       expect(screen.getByRole("status").textContent).toBe("Checking your sign-in.");
-      expect(screen.queryByRole("button", { name: "Sign in with email" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
       view.rerender(
         <WardSharedAccess connection={{ ...shared, signedIn: true }}>
@@ -218,7 +218,7 @@ describe("shared recovery within an open sheet", () => {
           <p>Synthetic screen</p>
         </WardSharedAccess>,
       );
-      expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+      expect(screen.getByRole("button", { name: "Sign in" })).toBeVisible();
       view.rerender(
         <WardSharedAccess connection={{ ...shared, signedIn: true }}>
           <p>Synthetic screen</p>

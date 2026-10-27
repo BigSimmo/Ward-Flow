@@ -43,6 +43,25 @@ the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.
 in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently up to
 <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
 
+### Front door switch
+
+Both sites can require sign-in before any page or API answers (Josh, 27 October 2026). It is
+**off** until Josh says yes to turning it on. The settings are server-only, read on each request,
+so changing them needs a restart, not a rebuild:
+
+- `WARD_FRONT_DOOR=required` turns it on. Anything else leaves the site open.
+- `WARD_PASS_SECRET` signs the pass cookie. Use 32 or more random characters. Without it the site
+  stays shut and `/sign-in` says sign-in is not set up. Changing it signs everyone out.
+- `WARD_DEMO_CODE` (public demo only) is the code `/sign-in` asks for. Josh chose a demo code over
+  the open demo of 28 September 2026 ([D-88](decisions.md)). Share it only with people meant to
+  see the demo.
+
+With it on, a page without a pass goes to `/sign-in` and an API call gets 401. On the signed-in
+site the pass lasts until the 12-hour sign-in limit and ends at sign-out. A demo code pass lasts 8
+hours. `/api/health`, the offline page and the alert worker stay open. To switch it off, remove
+`WARD_FRONT_DOOR` and restart. Code: `src/lib/front-door-pass.ts`, `src/proxy.ts`,
+`src/app/api/session/route.ts`.
+
 ## Who may do what
 
 - **Read-only looks** (dashboard status, deployment list, logs, a health URL) are fine for the

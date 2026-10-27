@@ -47,3 +47,7 @@ b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/azure-setup.mjs:gener
 # API client ID (not a credential); the same value is already allowed inline in azure-setup.mjs.
 0c441badbbf827df83fcf05a1703646dc9f2027e:backend/ward-flow/.env.example:generic-api-key:55
 61431f4f5b46b90a3772cbd4e0bcf1b0b6edf004:backend/ward-flow/.env.example:generic-api-key:55
+
+# tests/front-door-pass.test.ts signs its synthetic front door passes with a made-up HMAC key
+# that only exists in that test (27 Oct 2026). The line now carries inline gitleaks:allow.
+e28ff6baad4713590f736e5da5fec9413f50d726:tests/front-door-pass.test.ts:generic-api-key:18

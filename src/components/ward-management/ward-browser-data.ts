@@ -1,3 +1,4 @@
+import { endFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
 import { clearSessionDrafts } from "./ward-session-drafts";
 
 /**
@@ -162,6 +163,8 @@ export function endWardFlowBrowserSession(): void {
     }
   }
   clearWardFlowBrowserData();
+  // The front door's pass ends with the sign-in, so the next person at this browser starts outside.
+  endFrontDoorPass();
 }
 
 /**
