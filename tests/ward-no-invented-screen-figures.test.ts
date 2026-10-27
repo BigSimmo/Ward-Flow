@@ -174,6 +174,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^TAKING_MS$/,
   },
   {
+    id: "connecting-stall-pause",
+    why: 'How long "Opening Ward Flow" waits before it offers Reconnect (#805, 27 Oct 2026), matching the shared client\'s 15-second request timeout; a UI pause, not a limit.',
+    file: /^ward-shared-access\.tsx$/,
+    name: /^CONNECTING_STALL_MS$/,
+  },
+  {
     id: "early-header-tap",
     why: "Early header tap replay (11 Oct 2026): how old a pre-hydration tap may be and how long React gets to replay it first; never shown, not a limit.",
     file: /^shell\/ward-early-tap\.ts$/,
