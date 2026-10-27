@@ -58,6 +58,7 @@ describe("ward closure panel", () => {
     expect(screen.getByTestId("ward-closure-panel").textContent ?? "").not.toMatch(/\b(WF|RF|PT|AD|WR)-\d/);
 
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
+    fireEvent.click(screen.getByRole("button", { name: `Reopen ${UNIT.name}` }));
     expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
   });
 
@@ -78,6 +79,7 @@ describe("ward closure panel", () => {
     expect(await screen.findByText(`${UNIT.name} closed to admissions: Staffing.`)).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
+    fireEvent.click(screen.getByRole("button", { name: `Reopen ${UNIT.name}` }));
     expect(await screen.findByText(`${UNIT.name} reopened to admissions.`)).toBeInTheDocument();
   });
 
