@@ -118,13 +118,21 @@ function originLabel(movement: Movement): string {
  * (`isConfirmationFresh`: within the ward's own `staleAfterMinutes`). `oldestAt` is the oldest
  * confirmation among the wards not confirmed in time when there are any, otherwise among all.
  */
-export type TvBedCountAge = { wards: number; notConfirmed: number; oldestAt: Instant | undefined };
+export type TvBedCountAge = {
+  wards: number;
+  notConfirmed: number;
+  oldestAt: Instant | undefined;
+  /** P025: the wards' own `staleAfterMinutes`, lowest and highest, so the TV can say which it used. */
+  staleAfter: { min: number; max: number } | undefined;
+};
 
 function bedCountAge(units: Unit[], now: Instant): TvBedCountAge {
   const late = units.filter((unit) => !isConfirmationFresh(unit, now));
   const counted = late.length > 0 ? late : units;
   const oldestAt = counted.length === 0 ? undefined : Math.min(...counted.map((unit) => unit.allocatable.confirmedAt));
-  return { wards: units.length, notConfirmed: late.length, oldestAt };
+  const minutes = units.map((unit) => unit.allocatable.staleAfterMinutes);
+  const staleAfter = minutes.length === 0 ? undefined : { min: Math.min(...minutes), max: Math.max(...minutes) };
+  return { wards: units.length, notConfirmed: late.length, oldestAt, staleAfter };
 }
 
 /** A bed meeting discharge row, with the person it belongs to from the Shift brief's own rows. */

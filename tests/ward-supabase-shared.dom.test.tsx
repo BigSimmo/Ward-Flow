@@ -5,6 +5,7 @@ import {
   WardSessionEndingNotice,
   WardSharedAccess,
 } from "../src/components/ward-management/ward-shared-access";
+import { SIGNED_OUT_NOTICE } from "../src/components/ward-management/front-door/front-door-notice";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { SharedWorkspaceClient } from "../src/components/ward-management/ward-shared-client";
 import { useWardSupabaseShared } from "../src/components/ward-management/use-ward-supabase-shared";
@@ -230,8 +231,7 @@ describe("Supabase shared sign-in", () => {
     const fetcher = vi.fn(async () => Response.json({}, { status: 400 }));
     vi.stubGlobal("fetch", fetcher);
     render(<Probe />);
-    fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
+    fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "private-password" } });
     fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
     await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
@@ -248,8 +248,7 @@ describe("Supabase shared sign-in", () => {
       render(<Probe />);
       expect(await screen.findByText(/recovery link is invalid or expired/i)).toBeInTheDocument();
       expect(window.location.hash).toBe("");
-      fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
-      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
+      fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
       fireEvent.change(screen.getByLabelText("Password"), { target: { value: "private-password" } });
       fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
       await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
@@ -267,13 +266,16 @@ describe("Supabase shared sign-in", () => {
       expect(await screen.findByText(/recovery link is invalid or expired/i)).toBeInTheDocument();
       expect(window.location.hash).toBe("");
       expect(fetcher).not.toHaveBeenCalled();
-      fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
-      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "nominated@example.invalid" } });
-      fireEvent.click(screen.getByRole("button", { name: "Forgot password" }));
-      await screen.findByText(/a recovery link will be emailed/i);
+      fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "nominated@example.invalid" } });
+      fireEvent.click(screen.getByRole("button", { name: "Forgot password?" }));
+      expect(screen.getByLabelText("Email")).toHaveValue("nominated@example.invalid");
+      fireEvent.click(screen.getByRole("button", { name: "Send reset link" }));
+      await screen.findByRole("heading", { name: "Check your email" });
       expect(String(fetcher.mock.calls[0][0])).toContain("/recover?redirect_to=");
+      fireEvent.click(screen.getByRole("button", { name: "Back to sign in" }));
       fireEvent.click(screen.getByRole("button", { name: "Create a Ward Flow account" }));
-      fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
+      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "nominated@example.invalid" } });
+      fireEvent.change(screen.getByLabelText("New password"), { target: { value: "synthetic-password" } });
       fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "synthetic-password" } });
       fireEvent.click(screen.getByRole("button", { name: "Create account" }));
       await screen.findByText(/Check your email and confirm/i);
@@ -289,8 +291,7 @@ describe("Supabase shared sign-in", () => {
       vi.fn(async () => Response.json({}, { status: 400 })),
     );
     render(<Probe />);
-    fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
-    expect(screen.getByRole("button", { name: /^Sign in$/ })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /^Sign in$/ })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Create a Ward Flow account" })).toBeNull();
   });
   it("still offers sign-in when the browser blocks session storage (H-0305)", async () => {
@@ -304,8 +305,7 @@ describe("Supabase shared sign-in", () => {
     Object.defineProperty(window, "sessionStorage", { configurable: true, get: refuse });
     try {
       render(<Probe />);
-      fireEvent.click(await screen.findByRole("button", { name: "Sign in with email" }));
-      fireEvent.change(screen.getByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
+      fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.invalid" } });
       fireEvent.change(screen.getByLabelText("Password"), { target: { value: "private-password" } });
       fireEvent.click(screen.getByRole("button", { name: /^Sign in$/ }));
       await waitFor(() => expect(fetcher).toHaveBeenCalledOnce());
@@ -319,7 +319,7 @@ describe("Supabase shared sign-in", () => {
       const fetcher = vi.fn();
       vi.stubGlobal("fetch", fetcher);
       const { unmount } = render(<Probe />);
-      expect(await screen.findByRole("button", { name: "Sign in with email" })).toBeEnabled();
+      expect(await screen.findByRole("button", { name: /^Sign in$/ })).toBeEnabled();
       expect(fetcher).not.toHaveBeenCalled();
       unmount();
     }
@@ -366,7 +366,7 @@ describe("Supabase shared sign-in", () => {
     expect(screen.queryByText("Workspace contents")).toBeNull();
     fireEvent.change(screen.getByLabelText("New password"), { target: { value: "new-password" } });
     fireEvent.change(screen.getByLabelText("Confirm new password"), { target: { value: "new-password" } });
-    fireEvent.click(screen.getByRole("button", { name: "Update password" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save and sign in" }));
     await waitFor(() => expect(complete).toBeDefined());
     expect(calls.some((url) => url.includes("/v1/workspace"))).toBe(false);
     await act(async () => {
@@ -382,7 +382,7 @@ it("keeps signup confirmation tokens out of workspace and storage", async () => 
   const fetcher = vi.fn();
   vi.stubGlobal("fetch", fetcher);
   render(<Probe />);
-  await screen.findByRole("heading", { name: "Sign in to Ward Flow" });
+  await screen.findByRole("heading", { name: "Sign in" });
   expect(window.location.hash).toBe("");
   expect(fetcher).not.toHaveBeenCalled();
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
@@ -534,6 +534,8 @@ it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
   expect(result.current.signedIn).toBe(false);
   expect(result.current.status).not.toBe("unavailable");
   expect(result.current.error ?? null).toBeNull();
+  // The sign-in screen says so, with the shared computer reminder, without reading as a fault.
+  expect(result.current.farewell).toBe(SIGNED_OUT_NOTICE);
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
 });
 it("stops polling and signs out the view when the workspace refuses access", async () => {

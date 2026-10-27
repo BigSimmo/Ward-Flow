@@ -34,7 +34,13 @@ import { describe, expect, it } from "vitest";
  * "somebody updated the expected number" is how the next one would arrive.
  */
 
-const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow"];
+/*
+ * `src/app/sign-in` is Ward Flow's front door page (D-88, 27 October 2026). It is a sibling of
+ * `/ward-flow` for the same reason as `/ward-flow-sign-in`: the ward layout mounts the provider, rail
+ * and bar around every child, and the front door must load none of them. Unlike that screen it signs
+ * a person in with Ward Flow's own Supabase hooks, so it IS ward code and moves with Ward Flow.
+ */
+const WARD_DIRS = ["src/components/ward-management", "src/app/ward-flow", "src/app/sign-in"];
 
 /**
  * The shared modules Ward Flow may reach outward for, each with the reason it is not worth
@@ -69,7 +75,18 @@ const APPROVED_SHARED_MODULES = new Map([
     "the existing portal, viewport positioning and focus/Escape lifecycle for the drawn closed-rail card; avoids clipping inside the required scrolling rail without duplicating overlay infrastructure (visual wave Task 1)",
   ],
   ["@/components/contextual-back-link", "shared back navigation"],
+  [
+    "@/lib/brand-mark",
+    "the mark's one committed geometry (D-88, 27 October 2026), shared with the app icons. The front " +
+      "door draws it in the navy band's own ink, which the accent-painted BrandMark component cannot.",
+  ],
   ["@/lib/form-register", "shared form registration"],
+  [
+    "@/lib/front-door-pass",
+    "the front door pass (D-88, 27 October 2026). The app's proxy checks it on every request before " +
+      "any Ward Flow code loads, so it cannot live inside Ward Flow; the sign-in page reads the same " +
+      "switch and return-path check rather than keeping a second copy of a security rule.",
+  ],
   ["@/lib/client-store-factory", "shared client-side store helper"],
   [
     "@/lib/theme-client",
@@ -92,7 +109,15 @@ const APPROVED_SHARED_MODULES = new Map([
  */
 const APPROVED_ROUTE_REFERENCES = new Map([
   ["src/lib/developer-area/headers.ts", "route list for the developer-area header"],
-  ["src/proxy.ts", "the constellation-to-network redirect kept for historical deep links"],
+  [
+    "src/proxy.ts",
+    "the constellation-to-network redirect kept for historical deep links, and the front door gate (D-88)",
+  ],
+  [
+    "src/lib/front-door-pass.ts",
+    "the front door pass: after sign-in a person returns only to a Ward Flow page, and goes home to " +
+      "it when the requested page is unsafe (D-88, 27 October 2026)",
+  ],
   /*
    * ⚠️ THESE TWO ARE NOT OUTSIDE WARD FLOW — THEY ARE WARD FLOW, SITED ELSEWHERE ON PURPOSE, and
    * they are here because the route this guard matches (`/ward-flow`) is a PREFIX of
@@ -292,7 +317,10 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // was the defect, so the ward now calls the owner.
     // 11 -> 12 on 2026-10-16: @/lib/synthetic-data-guard, so a scenario file is scanned before it is
     // saved or loaded (audit remediation, PR 355).
-    expect(APPROVED_SHARED_MODULES.size).toBe(12);
+    // 12 -> 14 on 2026-10-27: @/lib/front-door-pass, the server-side front door shared with the proxy,
+    // and @/lib/brand-mark, the mark's geometry for the front door's band (D-88). The front door
+    // components themselves live inside Ward Flow.
+    expect(APPROVED_SHARED_MODULES.size).toBe(14);
     // ⚠️ AND THE MEMBERSHIP, NOT ONLY THE COUNT. A size pin cannot tell a widening from a SWAP:
     // remove one approved module, add another, and the count stays unchanged while Ward Flow's seam
     // has changed — which is the thing this list exists to control. The argument is already made
@@ -309,8 +337,10 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
       "@/components/wf/sheet",
       "@/components/wf/sheet-focus",
       "@/components/wf/tooltip",
+      "@/lib/brand-mark",
       "@/lib/client-store-factory",
       "@/lib/form-register",
+      "@/lib/front-door-pass",
       "@/lib/synthetic-data-guard",
       "@/lib/theme-client",
     ]);
@@ -334,7 +364,8 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     // 8 -> 7 on 2026-10-10: one theme key for the whole app, so the script no longer names the route.
     // 7 -> 8 on 2026-10-15: the web app manifest's start_url and shortcuts name Ward Flow pages, so the
     // installed app opens on Ward Flow rather than following the "/" redirect (phone PWA plan).
-    expect(APPROVED_ROUTE_REFERENCES.size).toBe(8);
+    // 8 -> 9 on 2026-10-27: the front door pass names the Ward Flow home it returns people to (D-88).
+    expect(APPROVED_ROUTE_REFERENCES.size).toBe(9);
     expect(wardFiles.length).toBeGreaterThan(50);
     expect(allSourceFiles.length).toBeGreaterThan(wardFiles.length);
   });

@@ -106,17 +106,15 @@ describe("re-referring adds wards and keeps the live ones (item 18)", () => {
     expect(movement(s2).referredAt).toBe(NOW + 10);
   });
 
-  it("with A, B and C live, adding D is refused, naming the cap", () => {
+  // Finding 188 (Josh, 27 Oct 2026): the parallel cap is a warning everywhere, so a fourth ward is
+  // added rather than refused, and the live three are kept.
+  it("with A, B and C live, adding D is not refused for the cap, and keeps A, B and C", () => {
     const s1 = referTo(seeded(), [UNIT_A, UNIT_B, UNIT_C], NOW + 10);
     expect(movement(s1).referredUnitIds).toEqual([UNIT_A, UNIT_B, UNIT_C]);
 
     const s2 = referTo(s1, [UNIT_D], NOW + 20);
-    expect(s2.rejections.length).toBeGreaterThan(s1.rejections.length);
-    const latest = s2.rejections[s2.rejections.length - 1];
-    expect(latest.attempted).toBe("REFER_TO_UNITS");
-    expect(latest.reason).toContain("parallel cap");
-    // Nothing was dropped by the refused attempt — the live three stay exactly as they were.
-    expect(movement(s2).referredUnitIds).toEqual([UNIT_A, UNIT_B, UNIT_C]);
+    expect(s2.rejections.slice(s1.rejections.length).some((r) => r.reason.includes("parallel cap"))).toBe(false);
+    expect(movement(s2).referredUnitIds.slice(0, 3)).toEqual([UNIT_A, UNIT_B, UNIT_C]);
     expect(movement(s2).referredAt).toBe(NOW + 10);
   });
 });

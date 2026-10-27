@@ -73,6 +73,17 @@ describe("referral slide-out, option B", () => {
     expect(referTo().queryByRole("button", { name: /police/i })).not.toBeInTheDocument();
   });
 
+  it("clears Catchment not known when the referral moves to Community, which hides it", () => {
+    renderDrawer();
+    const chip = () => within(screen.getByTestId("ward-referral-catchment-not-known")).getByRole("checkbox");
+    fireEvent.click(chip());
+    expect(chip()).toBeChecked();
+    fireEvent.click(referTo().getByRole("button", { name: "Community" }));
+    expect(screen.queryByTestId("ward-referral-catchment-not-known")).not.toBeInTheDocument();
+    fireEvent.click(referTo().getByRole("button", { name: "Ward" }));
+    expect(chip()).not.toBeChecked();
+  });
+
   it("opens on the destination a link asks for", () => {
     renderDrawer({ initialDestination: "community" });
     expect(referTo().getByRole("button", { name: "Community" })).toHaveAttribute("aria-pressed", "true");
@@ -227,7 +238,31 @@ describe("referral slide-out, option B", () => {
       fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
     });
     await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Demo/));
-    expect(screen.getByLabelText("Age band")).toBeInTheDocument();
+    // Finding 36: the band opens on the one the date of birth gives, still editable.
+    expect(screen.getByLabelText("Age band")).toHaveValue("Adult");
+    expect(screen.queryByTestId("ward-referral-age-band-note")).toBeNull();
+  });
+
+  it("prefills Adult for a 20 year old with the soft youth note, and the band stays editable", async () => {
+    renderDrawer();
+    fireEvent.click(screen.getByRole("button", { name: "New patient" }));
+    const form = screen.getByTestId("ward-referral-new-patient");
+    fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
+    fireEvent.change(within(form).getByLabelText("Given name"), { target: { value: "Young" } });
+    fireEvent.change(within(form).getByLabelText("Date of birth"), {
+      target: { value: `${new Date().getFullYear() - 21}-01-02` },
+    });
+    fireEvent.change(within(form).getByLabelText("UMRN"), { target: { value: "UM999902" } });
+    await act(async () => {
+      fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
+    });
+    await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Young/));
+    const band = screen.getByLabelText("Age band");
+    expect(band).toHaveValue("Adult");
+    expect(screen.getByTestId("ward-referral-age-band-note")).toHaveTextContent("Youth service may accept up to 24");
+    fireEvent.change(band, { target: { value: "Youth" } });
+    expect(band).toHaveValue("Youth");
+    expect(screen.queryByTestId("ward-referral-age-band-note")).toBeNull();
   });
 });
 
@@ -501,7 +536,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
     expect(readKeptReferralDraft()).not.toBeNull();
-    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept · just now");
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab · just now");
     expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
     expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     setItem.mockRestore();
@@ -544,7 +579,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
     expect(readKeptReferralDraft()).not.toBeNull();
-    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept");
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab");
   });
 
   it("drops the kept copy when the draft is edited back to how it opened", () => {

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import { formTitleForCode } from "@/lib/form-register";
 import type { Admission } from "../ward-admissions";
-import { perthDateTimeLocal } from "../ward-clock";
+import { MINUTES_PER_DAY, PERTH_UTC_OFFSET_MS, perthDateTimeLocal } from "../ward-clock";
 import {
   INVOLUNTARY_DEPARTURE_REFUSAL,
   departureNeedsPaperAuthority,
   type DischargeOpenHandle,
   type WardRecordActor,
 } from "../ward-discharge-records";
-import { useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { useWardFormSave } from "../use-ward-form-save";
 import { useRouteRole } from "../ward-role-gate";
@@ -19,6 +19,12 @@ import styles from "./ward-leave-paper-authority.module.css";
 
 /** Form titles come from the Chief Psychiatrist register, never hand-written (T5). */
 const registerLabel = (code: string) => `Form ${code} (${formTitleForCode(code) ?? code})`;
+
+/** #67: paper written longer ago than this is warned, never refused. */
+const OLD_PAPER_DAYS = 3;
+
+/** A moment as the `datetime-local` value Perth wall time reads, the inverse of `perthDateTimeLocal`. */
+const perthLocalValue = (moment: Date) => new Date(moment.getTime() + PERTH_UTC_OFFSET_MS).toISOString().slice(0, 16);
 
 const AUTHORITIES = [
   { id: "revocation", label: "Revocation of the order" },
@@ -70,6 +76,15 @@ export function WardLeavePaperAuthority({
   const save = useWardFormSave(`leave-paper-${admissionId}`);
   const [handle, setHandle] = useState<DischargeOpenHandle | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
+  // #67 (Josh, 27 Oct 2026): the written time cannot be later than now, and paper more than a few
+  // days old is warned, not refused.
+  const now = useWardFlowClock();
+  const nowMoment = new Date(dayZero.getTime() + now * 60_000);
+  const [written, setWritten] = useState("");
+  const writtenMoment = perthDateTimeLocal(written);
+  const writtenOld =
+    writtenMoment !== undefined &&
+    nowMoment.getTime() - writtenMoment.getTime() > OLD_PAPER_DAYS * MINUTES_PER_DAY * 60_000;
   const reason = againstAdvice
     ? `${who} is recorded as involuntary. Record the revocation of the order from the paper before recording that they left against advice.`
     : INVOLUNTARY_DEPARTURE_REFUSAL.replace("This patient", who);
@@ -90,6 +105,7 @@ export function WardLeavePaperAuthority({
           size="sm"
           onClick={() => {
             setLocalError(null);
+            setWritten("");
             save.forget();
             // Opening the stay's record is the audited read the Discharges detail makes too.
             setHandle(openDischargeRecord(actor, admissionId));
@@ -109,6 +125,10 @@ export function WardLeavePaperAuthority({
     const read = readDischargeRecord(actor, admissionId, handle);
     if (!authority || !date || !data.has("checked")) {
       setLocalError("Choose the authority, type the date and time written on it, and tick that you checked it.");
+      return;
+    }
+    if (date.getTime() > nowMoment.getTime()) {
+      setLocalError("The time written on the paper cannot be later than now.");
       return;
     }
     if (read.status !== "allowed" || read.value.identity.kind !== "linked") {
@@ -155,8 +175,21 @@ export function WardLeavePaperAuthority({
       )}
       <label>
         Date and time written on it
-        <input name="written" type="datetime-local" required />
+        <input
+          name="written"
+          type="datetime-local"
+          required
+          max={perthLocalValue(nowMoment)}
+          value={written}
+          onChange={(event) => setWritten(event.target.value)}
+        />
       </label>
+      {writtenOld ? (
+        <p className={styles.hint} data-testid="ward-drawer-leave-paper-old">
+          <StatusGlyph tone="warning" size={9} /> Written more than {OLD_PAPER_DAYS} days ago. Check this is the current
+          paper.
+        </p>
+      ) : null}
       <label>
         <input name="checked" type="checkbox" required /> I have checked the paper for this admission
       </label>

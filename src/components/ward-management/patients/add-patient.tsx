@@ -18,6 +18,10 @@ import { takeHandedOffPatientQuery } from "@/components/ward-management/search/p
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { calendarDateOf, perthIsoDay } from "@/components/ward-management/ward-clock";
 import { patientRegistrationScope } from "@/components/ward-management/ward-patient-registration";
+import {
+  ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES,
+  type AboriginalOrTorresStraitIslanderStatus,
+} from "@/components/ward-management/ward-patient-aboriginal-status";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -155,22 +159,10 @@ const GENDER_ITEMS: ChoiceItem<GenderChoice>[] = [
 const NEAR_MATCH_MINIMUM_TERM_LENGTH = 4;
 const RECENT_RECORDS_SHOWN = 7;
 
-const INDIGENOUS_STATUS_OPTIONS = [
-  { value: "not-stated", label: "Not stated" },
-  {
-    value: "neither",
-    label: "Neither Aboriginal nor Torres Strait Islander origin",
-  },
-  {
-    value: "aboriginal",
-    label: "Aboriginal but not Torres Strait Islander origin",
-  },
-  {
-    value: "torres-strait",
-    label: "Torres Strait Islander but not Aboriginal origin",
-  },
-  { value: "both", label: "Both Aboriginal and Torres Strait Islander origin" },
-] as const;
+/** Finding 51 (Josh, 27 Oct 2026): the answer is saved on the record. It opens blank and never blocks. */
+const INDIGENOUS_STATUS_OPTIONS = ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES;
+const INDIGENOUS_STATUS_UNANSWERED = "" as const;
+type IndigenousStatusChoice = AboriginalOrTorresStraitIslanderStatus | typeof INDIGENOUS_STATUS_UNANSWERED;
 
 type MatchKind = "record-number" | "same-name-same-dob" | "same-name" | "near";
 
@@ -210,7 +202,7 @@ export function AddPatientForm() {
   );
 
   const [genderChoice, setGenderChoice] = useState<GenderChoice>(GENDER_NOT_RECORDED);
-  const [indigenousStatus, setIndigenousStatus] = useState<string>("not-stated");
+  const [indigenousStatus, setIndigenousStatus] = useState<IndigenousStatusChoice>(INDIGENOUS_STATUS_UNANSWERED);
 
   const [lastRejection, setLastRejection] = useState<string | undefined>(undefined);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -287,7 +279,7 @@ export function AddPatientForm() {
     draft.familyName.trim().length > 0 ||
     draft.dateOfBirth.trim().length > 0 ||
     genderChoice !== GENDER_NOT_RECORDED ||
-    indigenousStatus !== "not-stated";
+    indigenousStatus !== INDIGENOUS_STATUS_UNANSWERED;
   const isDirty = identityChanged;
 
   useDirtyStateGuard({
@@ -347,7 +339,7 @@ export function AddPatientForm() {
     lateSubmissionRef.current = null;
     setDraft(initialDraft());
     setGenderChoice(GENDER_NOT_RECORDED);
-    setIndigenousStatus("not-stated");
+    setIndigenousStatus(INDIGENOUS_STATUS_UNANSWERED);
     setAssignedSearch(null);
     finishSubmission();
   }
@@ -414,7 +406,14 @@ export function AddPatientForm() {
     toast?.push(
       late
         ? { tone: "info", title: `${added.givenName} ${added.familyName}, ${added.umrn}: record now available` }
-        : { tone: "success", title: `${added.givenName} ${added.familyName} added, ${added.umrn}` },
+        : {
+            tone: "success",
+            title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
+            // P143 (Josh, 8:57 PM): refer path only; in-app move, as a reload drops a demo-mode record.
+            ...(prior.intent === "refer"
+              ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
+              : {}),
+          },
     );
     if (prior.intent === "refer") {
       submitIntentRef.current = "profile";
@@ -530,6 +529,9 @@ export function AddPatientForm() {
         dateOfBirth: answered.dateOfBirth,
         demoToday,
         ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
+        ...(indigenousStatus === INDIGENOUS_STATUS_UNANSWERED
+          ? {}
+          : { aboriginalOrTorresStraitIslanderStatus: indigenousStatus }),
       });
       const settle = (outcome: WardCommandOutcome | void) => {
         if (priorSubmissionRef.current !== submission) return;
@@ -947,14 +949,22 @@ export function AddPatientForm() {
                 </div>
                 <Field
                   label="Aboriginal or Torres Strait Islander"
-                  hint="not saved"
                   id="ward-add-patient-indigenous"
                   className={cx(styles.spanAll, styles.phHide)}
                 >
-                  <Select value={indigenousStatus} onChange={(e) => setIndigenousStatus(e.target.value)}>
-                    {INDIGENOUS_STATUS_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
+                  <Select
+                    value={indigenousStatus}
+                    onChange={(e) =>
+                      setIndigenousStatus(
+                        INDIGENOUS_STATUS_OPTIONS.find((status) => status === e.target.value) ??
+                          INDIGENOUS_STATUS_UNANSWERED,
+                      )
+                    }
+                  >
+                    <option value={INDIGENOUS_STATUS_UNANSWERED}>Choose an answer</option>
+                    {INDIGENOUS_STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
                       </option>
                     ))}
                   </Select>

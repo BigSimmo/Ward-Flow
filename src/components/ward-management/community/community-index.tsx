@@ -47,7 +47,7 @@ import {
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
+import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
 import {
   S2015_CATCHMENT_ROWS,
   lookupCatchment,

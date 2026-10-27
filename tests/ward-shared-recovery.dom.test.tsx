@@ -81,7 +81,7 @@ describe("shared recovery within an open sheet", () => {
     const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
     const recovery = await within(dialog).findByTestId("ward-shared-recovery");
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(within(recovery).getByText(/Reloading now will lose/)).toBeVisible();
+    expect(within(recovery).getByText(/Do not reload: reloading now would lose this action/)).toBeVisible();
     expect(within(dialog).getByRole("textbox", { name: "Synthetic choice" })).toHaveValue("retained choice");
     expect(within(dialog).getByRole("button", { name: "Confirm draft" })).toBeDisabled();
     fireEvent.click(within(recovery).getByRole("button", { name: "Retry" }));
@@ -99,7 +99,9 @@ describe("shared recovery within an open sheet", () => {
     retry.focus();
     expect(retry).toHaveFocus();
     view.rerender(<Harness shared={{ ...shared, status: "saving", error: null }} />);
-    expect(within(dialog).getByText("Saving shared changes…")).toBeVisible();
+    expect(
+      within(dialog).getByText("Saving shared changes… Keep this page open until the save is confirmed."),
+    ).toBeVisible();
     expect(within(dialog).queryByRole("button", { name: "Retry" })).toBeNull();
     view.rerender(<Harness shared={{ ...shared, status: "ready", error: null, unconfirmedSave: false }} />);
     await waitFor(() => expect(within(dialog).queryByTestId("ward-shared-recovery")).toBeNull());
@@ -141,7 +143,7 @@ describe("shared recovery within an open sheet", () => {
     const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
     const recovery = await within(dialog).findByTestId("ward-shared-recovery");
     expect(within(recovery).getByRole("button", { name: "Retry" })).toBeVisible();
-    expect(within(recovery).queryByText(/Reloading now will lose/)).toBeNull();
+    expect(within(recovery).queryByText(/Do not reload: reloading now would lose this action/)).toBeNull();
   });
 
   it("returns recovery to the page when a sheet closes and removes owned hosts on unmount", async () => {
@@ -166,7 +168,7 @@ describe("shared recovery within an open sheet", () => {
     );
     await waitFor(() => expect(document.querySelector("[data-ward-shared-recovery-host]")).toBeNull());
     expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeVisible();
   });
 
   it("says it is still connecting, not failing, while a signed-in desk loads", () => {
@@ -182,7 +184,7 @@ describe("shared recovery within an open sheet", () => {
     expect(screen.getByRole("main", { name: "Opening Ward Flow" }).getAttribute("aria-busy")).toBe("true");
     // #805: nothing has failed yet, so no Reconnect and no sign-in screen; Sign out stays.
     expect(screen.queryByRole("button", { name: "Reconnect" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Sign in with email" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
     view.rerender(
       <WardSharedAccess connection={{ ...shared, status: "unavailable", error: "Shared access is unavailable." }}>
@@ -203,7 +205,7 @@ describe("shared recovery within an open sheet", () => {
         </WardSharedAccess>,
       );
       expect(screen.getByRole("status").textContent).toBe("Checking your sign-in.");
-      expect(screen.queryByRole("button", { name: "Sign in with email" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
       view.rerender(
         <WardSharedAccess connection={{ ...shared, signedIn: true }}>
@@ -221,7 +223,7 @@ describe("shared recovery within an open sheet", () => {
           <p>Synthetic screen</p>
         </WardSharedAccess>,
       );
-      expect(screen.getByRole("button", { name: "Sign in with email" })).toBeVisible();
+      expect(screen.getByRole("button", { name: "Sign in" })).toBeVisible();
       view.rerender(
         <WardSharedAccess connection={{ ...shared, signedIn: true }}>
           <p>Synthetic screen</p>

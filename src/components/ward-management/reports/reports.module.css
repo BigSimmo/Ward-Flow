@@ -379,6 +379,12 @@
 }
 
 @media print {
+  /* Same paper as the bed-meeting sheet (P048). */
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   .jumpRow {
     display: none;
   }

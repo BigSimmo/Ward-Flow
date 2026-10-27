@@ -71,7 +71,7 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
     );
   }
 
-  it('shows "of 2 parallel" and refuses a third selection once the cap is configured to 2', () => {
+  it('shows "of 2 parallel" and warns, without refusing, on a third selection once the cap is 2', () => {
     render(
       <ToastProvider>
         <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -95,11 +95,15 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
     expect(candidates[0]).toHaveAttribute("aria-pressed", "true");
     expect(candidates[1]).toHaveAttribute("aria-pressed", "true");
 
-    // The third click is refused — a no-op, never silently swapping out an earlier choice.
+    expect(screen.queryByTestId("ward-shortlist-over-cap")).not.toBeInTheDocument();
+
+    // Finding 188 (27 Oct 2026): the cap is a warning. The third ward is added, never swapped
+    // for an earlier choice, and the over-limit warning shows.
     fireEvent.click(candidates[2]);
-    expect(candidates[2]).toHaveAttribute("aria-pressed", "false");
+    expect(candidates[2]).toHaveAttribute("aria-pressed", "true");
     expect(candidates[0]).toHaveAttribute("aria-pressed", "true");
     expect(candidates[1]).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("ward-shortlist-over-cap")).toHaveTextContent("more wards than the usual limit of 2");
   });
 });
 

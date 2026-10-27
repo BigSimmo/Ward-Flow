@@ -16,10 +16,10 @@ import {
   WardCatchmentResolver,
   resolveCatchmentQuery,
   resolveSuburb,
-  mapClinicToServiceAndHospital,
   formatCatchmentSummary,
   QUICK_PICK_SUBURBS,
 } from "@/components/ward-management/tools/ward-catchment-resolver";
+import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
 
 afterEach(() => {
   cleanup();

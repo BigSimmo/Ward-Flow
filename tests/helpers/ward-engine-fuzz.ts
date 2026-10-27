@@ -550,6 +550,13 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
       whereabouts: pick(random, TRANSPORT_WHEREABOUTS),
     })),
   ],
+  // CAD to follow (27 Oct 2026): a CAD number added to a live job, refused when it already has one.
+  [
+    1,
+    movementEvent("RECORD_TRANSPORT_CAD", ["handover_ready", "moving"], (_state, random) => ({
+      cadNumber: `CAD${int(random, 1000, 9999)}`,
+    })),
+  ],
   // Audit 24-1 E-19: STOP_TRANSPORT closes the journey but keeps its bed held, and `movementFor`
   // only looks at open journeys, so most draws aim at a stopped journey that still holds a bed.
   [
@@ -1381,6 +1388,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       reviewId: state.auditReviews.at(chance(random, 0.8) ? -1 : 0)?.id ?? MISSING_ID,
       expectedGeneration: state.worldGeneration,
     }),
+  ],
+  // H-0150: a bed meeting action's Undo, aimed at its own newest record so the coverage sweep
+  // always sends it, not only when the step undo below happens to draw one.
+  [
+    0.5,
+    (state) => {
+      const record = (state.undoRecords ?? []).findLast(
+        (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_BED_MEETING_ACTION",
+      );
+      if (!record || record.kind !== "step") return { type: "UNDO_BED_MEETING_ACTION" };
+      return {
+        type: "UNDO_BED_MEETING_ACTION",
+        role: record.role,
+        ...bedMeetingUndoFields(state, record.subjectId),
+        ...(record.unitId ? { actingUnitId: record.unitId } : {}),
+      };
+    },
   ],
   // Undo taken from a recorded step: the role and ward that acted. Mostly the newest record (the
   // list is oldest first), since only the step just taken is still inside the undo window.

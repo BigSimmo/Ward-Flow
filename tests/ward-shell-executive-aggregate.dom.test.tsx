@@ -19,7 +19,7 @@ const places: PlaceLookup = {
 };
 afterEach(cleanup);
 describe("public chrome mechanical reuse", () => {
-  it("retains header/nav DOM attributes, refs and controls", () => {
+  it("retains header/rail DOM attributes, refs and controls", () => {
     const header = createRef<HTMLElement>();
     const clicked = vi.fn();
     render(
@@ -46,7 +46,8 @@ describe("public chrome mechanical reuse", () => {
     );
     expect(header.current).toBe(screen.getByTestId("ward-bar"));
     expect(header.current?.tagName).toBe("HEADER");
-    expect(screen.getByRole("navigation")).toHaveAttribute("data-rail", "open");
+    // P084: the rail's outer landmark is an aside (complementary), never a nav around the views nav.
+    expect(screen.getByRole("complementary", { name: "Ward Flow sections" })).toHaveAttribute("data-rail", "open");
     fireEvent.click(screen.getByText("Tools"));
     expect(clicked).toHaveBeenCalledTimes(1);
   });

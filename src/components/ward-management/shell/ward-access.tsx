@@ -19,6 +19,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Button, buttonClass, useModalFocus } from "@/components/wf";
+import { IdleLockScreen, IdleWarningSheet } from "@/components/ward-management/front-door/lock-cards-lazy";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -1024,45 +1025,32 @@ export function WardIdleLock() {
   }, [access, minutes, onTv, session]);
   if (!locked && secondsLeft !== null)
     return (
-      <div
-        ref={lockRef}
-        className={styles.lock}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="ward-idle-warn-title"
-      >
-        <div className={styles.lockCard}>
-          <h1 id="ward-idle-warn-title">Still there?</h1>
-          <p data-testid="ward-idle-countdown">
-            This desk has not been used for {minutes - 1} minutes. You will be signed out in{" "}
-            {secondsLeft === 1 ? "1 second" : `${secondsLeft} seconds`}.
-          </p>
-          <Button variant="pri" data-testid="ward-idle-still-here" onClick={() => stillHere.current()}>
-            I&apos;m still here
-          </Button>
-        </div>
-      </div>
+      <IdleWarningSheet
+        panelRef={lockRef}
+        minutes={minutes}
+        secondsLeft={secondsLeft}
+        warningSeconds={IDLE_WARNING_SECONDS}
+        onStillHere={() => stillHere.current()}
+        onSignOutNow={session ? () => session.signOut() : undefined}
+      />
     );
   if (!locked) return null;
   return (
-    <div ref={lockRef} className={styles.lock} role="dialog" aria-modal="true" aria-labelledby="ward-idle-lock-title">
-      <div className={styles.lockCard}>
-        <h1 id="ward-idle-lock-title">
-          {/* #808: say what the minutes were, the same words as the sign-in page that follows. */}
-          {locked === "signed-out"
-            ? `Signed out after ${minutes} minutes without use`
-            : `Locked after ${minutes} minutes without use`}
-        </h1>
-        <p>
-          {locked === "signed-out"
-            ? "You were signed out so the next person cannot see this desk's patients or act as you. Sign in again to carry on."
-            : "The screen was covered so the next person cannot see this desk's patients, and any record opened outside your care is closed again."}
-        </p>
-        <Button variant="pri" data-testid="ward-idle-unlock" onClick={() => setLocked(false)}>
-          {locked === "signed-out" ? "Sign in again" : "Carry on"}
-        </Button>
-      </div>
-    </div>
+    <IdleLockScreen
+      panelRef={lockRef}
+      // #808: say what the minutes were, the same words as the sign-in page that follows.
+      title={
+        locked === "signed-out"
+          ? `Signed out after ${minutes} minutes without use`
+          : `Locked after ${minutes} minutes without use`
+      }
+      action={locked === "signed-out" ? "Sign in again" : "Carry on"}
+      onAction={() => setLocked(false)}
+    >
+      {locked === "signed-out"
+        ? "You were signed out so the next person cannot see this desk's patients or act as you. Sign in again to carry on."
+        : "The screen was covered so the next person cannot see this desk's patients, and any record opened outside your care is closed again."}
+    </IdleLockScreen>
   );
 }
 

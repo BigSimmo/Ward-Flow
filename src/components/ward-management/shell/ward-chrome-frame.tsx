@@ -14,8 +14,10 @@ import {
 export function WardBarFrame(props: ComponentProps<"header">) {
   return <header {...props} />;
 }
-export function WardRailFrame(props: ComponentProps<"nav">) {
-  return <nav {...props} />;
+// P084: the rail is a labelled complementary region holding the one "Ward Flow views" nav, so the
+// outer landmark is an aside and no navigation landmark sits inside another.
+export function WardRailFrame(props: ComponentProps<"aside">) {
+  return <aside {...props} />;
 }
 
 type PreviewSource = {

@@ -57,6 +57,7 @@ export function ReferralPatientStep({
     sectionId,
     ageBand,
     setAgeBand,
+    ageBandNote,
     previewOpen,
     setGuardOpen,
     newPatientOpen,
@@ -80,6 +81,8 @@ export function ReferralPatientStep({
     setCatchmentService,
     catchmentConfirmed,
     setCatchmentConfirmed,
+    catchmentNotKnown,
+    setCatchmentNotKnown,
     catchmentEditing,
     setCatchmentEditing,
     homeRegion,
@@ -170,9 +173,11 @@ export function ReferralPatientStep({
         ...(!liveMovement && someoneChosen && !ageBand
           ? [{ id: `${sectionId}-age-band`, text: "Choose the age band" }]
           : []),
-        ...(!catchmentTeam.trim() ? [{ id: `${sectionId}-team`, text: "Choose the catchment" }] : []),
+        ...(!catchmentNotKnown && !catchmentTeam.trim()
+          ? [{ id: `${sectionId}-team`, text: "Choose the catchment" }]
+          : []),
         ...(!homeRegion ? [{ id: `${sectionId}-region`, text: "Choose the home region" }] : []),
-        ...(!catchmentConfirmed
+        ...(!catchmentNotKnown && !catchmentConfirmed
           ? [{ id: `${sectionId}-confirm-catchment`, text: "Confirm the catchment before continuing" }]
           : []),
       ]
@@ -506,7 +511,7 @@ export function ReferralPatientStep({
                 label="Describe the person"
                 htmlFor={`${sectionId}-unidentified`}
                 required
-                hint="no name on file"
+                hint="name if known, or a description"
                 error={patientShowErrors && !unidentified.trim() ? "Describe the person" : null}
                 wide
               >
@@ -517,10 +522,23 @@ export function ReferralPatientStep({
                   value={unidentified}
                   maxLength={120}
                   autoComplete="off"
-                  placeholder="For example, man about 30, brought in by police"
+                  placeholder='For example, "J. Smith (unconfirmed)" or man about 30, brought in by police'
                   onChange={(e) => setUnidentified(e.target.value)}
                 />
               </Field>
+              <div className={styles.confirmRow}>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => {
+                    setUnidentified(null);
+                    setIsSearchOpen(true);
+                    requestAnimationFrame(() => searchInputRef.current?.focus());
+                  }}
+                >
+                  Find a patient instead
+                </button>
+              </div>
             </div>
           )}
 
@@ -634,6 +652,11 @@ export function ReferralPatientStep({
                     ))}
                   </select>
                 </SelectBox>
+                {ageBand === "Adult" && ageBandNote ? (
+                  <p className={styles.fieldHint} data-testid="ward-referral-age-band-note">
+                    {ageBandNote}
+                  </p>
+                ) : null}
               </Field>
             </div>
           ) : null}
@@ -719,7 +742,9 @@ export function ReferralPatientStep({
       <section className={styles.refCard}>
         <CardHead icon={MapPin} title="Catchment">
           <span className={styles.asideText}>
-            {catchmentConfirmed ? (
+            {catchmentNotKnown ? (
+              "Not known"
+            ) : catchmentConfirmed ? (
               <>
                 <StatusGlyph tone="success" size={9} /> Confirmed
               </>
@@ -856,8 +881,8 @@ export function ReferralPatientStep({
                   className={styles.fieldSelect}
                   value={catchmentService}
                   onChange={(e) => {
+                    // Finding 39: the optional service area never un-confirms the catchment.
                     setCatchmentService(e.target.value as HealthService | "");
-                    setCatchmentConfirmed(false);
                   }}
                 >
                   <option value="">Not known, confirm later</option>
@@ -868,8 +893,30 @@ export function ReferralPatientStep({
               </SelectBox>
             </Field>
           </div>
+          {destType !== "community" ? (
+            <label
+              className={styles.checkChip}
+              data-checked={catchmentNotKnown}
+              data-testid="ward-referral-catchment-not-known"
+            >
+              <input
+                type="checkbox"
+                checked={catchmentNotKnown}
+                onChange={(e) => {
+                  setCatchmentNotKnown(e.target.checked);
+                  setFlowError(null);
+                }}
+              />
+              Catchment not known
+            </label>
+          ) : null}
           <div className={styles.confirmRow}>
-            {catchmentConfirmed ? (
+            {catchmentNotKnown ? (
+              <span className={styles.confirmedNote} data-testid="ward-referral-catchment-not-known-note">
+                <StatusGlyph tone="warning" size={10} />
+                Catchment not known. The referral letter says so.
+              </span>
+            ) : catchmentConfirmed ? (
               <span className={styles.confirmedNote}>
                 <StatusGlyph tone="success" size={10} />
                 Catchment confirmed
@@ -908,7 +955,7 @@ export function ReferralPatientStep({
               </>
             )}
           </div>
-          {patientShowErrors && !catchmentConfirmed ? (
+          {patientShowErrors && !catchmentConfirmed && !catchmentNotKnown ? (
             <p className={styles.fieldError} id={`${sectionId}-catchment-error`}>
               <StatusGlyph tone="danger" size={9} />
               Confirm the catchment before continuing

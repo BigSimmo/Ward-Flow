@@ -32,8 +32,9 @@ function renderHome(movementId = MOVEMENT_ID) {
   fireEvent.click(screen.getByTestId(`ward-queue-row-${movementId}`));
 }
 
-describe("Placement override needs a second sign-off", () => {
-  it("keeps Record override inert until a reason is chosen and the second sign-off is ticked", () => {
+// D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only gate.
+describe("Placement override needs only a reason", () => {
+  it("keeps Record override inert until a reason is chosen, then asks for nothing more", () => {
     renderHome();
     const shortlist = screen.getByLabelText("Placement");
     // L3 (12 Oct 2026): an accepted patient's card leads with the next step; the bed list and the
@@ -48,18 +49,10 @@ describe("Placement override needs a second sign-off", () => {
 
     const reason = shortlist.querySelector<HTMLSelectElement>("#ward-shortlist-override-reason")!;
     const firstReason = Array.from(reason.options).find((option) => option.value !== "")!;
+    expect(within(shortlist).getByText("Choose a reason first")).toBeInTheDocument();
     fireEvent.change(reason, { target: { value: firstReason.value } });
-    expect(submit).toHaveAttribute("aria-disabled", "true");
-
-    fireEvent.click(within(shortlist).getByTestId("ward-shortlist-override-second-sign-off"));
-    // v10 pass 3: who signed off is now recorded, so a typed name is required too.
-    expect(submit).toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(within(shortlist).getByTestId("ward-shortlist-override-sign-off-name"), {
-      target: { value: "J. Synthetic" },
-    });
     expect(submit).not.toHaveAttribute("aria-disabled");
-    expect(within(shortlist).getByTestId("ward-shortlist-override-second-sign-off-note")).toHaveTextContent(
-      "Recorded with the override and its audit entry.",
-    );
+    expect(within(shortlist).queryByTestId("ward-shortlist-override-second-sign-off")).toBeNull();
+    expect(within(shortlist).queryByTestId("ward-shortlist-override-sign-off-name")).toBeNull();
   });
 });

@@ -17,6 +17,7 @@ function Harness() {
   return (
     <>
       <p data-testid="recorded-legal-status">{movement?.legalStatus}</p>
+      <p data-testid="recorded-legal-form">{movement?.legalForm?.code}</p>
       <ShortlistPanel
         movement={movement}
         now={now}
@@ -48,7 +49,11 @@ describe("the coordinator's legal status change", () => {
     const submit = screen.getByRole("button", { name: "Record legal status change" });
     expect(status.value, "the new legal status arrives pre-selected").toBe("");
     expect(submit).toHaveAttribute("aria-disabled", "true");
-    expect(submit.getAttribute("title") ?? "").toContain("Choose the new legal status");
+    // The reason shows as visible text tied to the button, never a hover-only title.
+    expect(submit).toHaveAttribute("aria-describedby", "ward-change-legal-status-reason-blocked");
+    expect(document.getElementById("ward-change-legal-status-reason-blocked")?.textContent ?? "").toContain(
+      "Choose the new legal status",
+    );
 
     const reasonValue = [...reason.options].map((option) => option.value).find((value) => value !== "")!;
     fireEvent.change(reason, { target: { value: reasonValue } });
@@ -69,5 +74,38 @@ describe("the coordinator's legal status change", () => {
       "aria-disabled",
       "true",
     );
+  });
+
+  // Finding 120 (27 Oct 2026): the form and the time it was made are asked in the same step.
+  it("records the legal form and the time it was made with the status change", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Harness />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-change-legal-status-toggle"));
+    const status = screen.getByLabelText(/^Legal status for/u) as HTMLSelectElement;
+    const next = [...status.options]
+      .map((option) => option.value)
+      .find((value) => value !== "" && value !== "Voluntary" && value !== MOVEMENT.legalStatus)!;
+    fireEvent.change(status, { target: { value: next } });
+    const reason = document.querySelector("#ward-change-legal-status-reason") as HTMLSelectElement;
+    fireEvent.change(reason, { target: { value: [...reason.options].find((option) => option.value !== "")!.value } });
+
+    // No form chosen yet: a warning, never a block.
+    expect(screen.getByTestId("ward-change-legal-status-form-warning")).toHaveTextContent("No form chosen");
+    const submit = screen.getByRole("button", { name: "Record legal status change" });
+    expect(submit).not.toHaveAttribute("aria-disabled");
+
+    const form = screen.getByTestId("ward-change-legal-status-form") as HTMLSelectElement;
+    const code = [...form.options].find((option) => option.value !== "")!.value;
+    fireEvent.change(form, { target: { value: code } });
+    fireEvent.change(document.querySelector("#ward-change-legal-status-form-day")!, { target: { value: "-1" } });
+    fireEvent.change(screen.getByTestId("ward-change-legal-status-form-time"), { target: { value: "10:00" } });
+    expect(screen.queryByTestId("ward-change-legal-status-form-warning")).not.toBeInTheDocument();
+
+    fireEvent.click(submit);
+    expect(screen.getByTestId("recorded-legal-status")).toHaveTextContent(next);
+    expect(screen.getByTestId("recorded-legal-form")).toHaveTextContent(code);
   });
 });

@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
-    <a href={href} {...rest}>
+  default: ({ children, href, replace, ...rest }: { children: ReactNode; href: string; replace?: boolean }) => (
+    <a href={href} data-replace={replace ? "true" : undefined} {...rest}>
       {children}
     </a>
   ),
@@ -193,6 +193,8 @@ describe("the bed meeting TV view", () => {
     expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(
       /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
     );
+    // P025: the network mixes 60 and 90 minute wards, so the TV names the range.
+    expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(/late after \d+( to \d+)? min/);
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
@@ -326,7 +328,7 @@ describe("the bed meeting TV view", () => {
     expect(tv).toHaveTextContent("Not approved for clinical use");
     // Overall review (20 Oct 2026): the footer names the shift the rest of the app shows, and the
     // standard scenario is a day, so it never reads "Standard night" beside "Day shift".
-    expect(tv).toHaveTextContent("Day shift · Scenario: Standard day");
+    expect(tv).toHaveTextContent("Day shift · Demo data: Standard day");
     expect(tv).not.toHaveTextContent("Standard night");
     const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
     expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
@@ -367,6 +369,14 @@ describe("the ward and ED TV views", () => {
     for (const service of tvHealthServices(state.units)) {
       expect(hrefs).toContain(bedMeetingTvHref({ service: tvServiceParam(service) }));
     }
+  });
+
+  // #1004 review: a screen change replaces the TV entry, so Leave TV view still goes back past it.
+  it("changes screen without adding to the back history", () => {
+    renderTv();
+    const links = within(screen.getByTestId("bed-meeting-tv-picker")).getAllByRole("link");
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link).toHaveAttribute("data-replace", "true");
   });
 
   it("closes the screen picker once a screen is chosen (WT-21)", () => {
@@ -573,10 +583,19 @@ describe("the ward and ED TV views", () => {
     const thresholds = DEFAULT_DUE_SOON_THRESHOLDS;
     const unit = state.units[0];
     const fresh = wardTvSheet({ ...inputs, unit, thresholds });
-    expect(fresh.bedCount).toEqual({ wards: 1, notConfirmed: 0, oldestAt: unit.allocatable.confirmedAt });
+    expect(fresh.bedCount).toEqual({
+      wards: 1,
+      notConfirmed: 0,
+      oldestAt: unit.allocatable.confirmedAt,
+      staleAfter: { min: unit.allocatable.staleAfterMinutes, max: unit.allocatable.staleAfterMinutes },
+    });
     const first = render(<WardTvView sheet={fresh} now={NOW_ANCHOR} scenario="Synthetic" />);
     expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
       `Confirmed ${formatInstantWithDay(unit.allocatable.confirmedAt, NOW_ANCHOR)}`,
+    );
+    // P025 (Josh, 27 Oct 2026, option B): each ward keeps its own time, and the TV says it.
+    expect(screen.getByTestId("ward-tv-ready-age")).toHaveTextContent(
+      `late after ${unit.allocatable.staleAfterMinutes} min`,
     );
     first.unmount();
 

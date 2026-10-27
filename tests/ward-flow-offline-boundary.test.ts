@@ -23,8 +23,13 @@ function importsAndCalls(file: string): { imports: string[]; networkCalls: strin
   const imports: string[] = [];
   const networkCalls: string[] = [];
   const visit = (node: ts.Node): void => {
+    // A type-only import is erased at build, so it can load no provider code and make no call.
+    const typeOnly =
+      (ts.isImportDeclaration(node) && node.importClause?.isTypeOnly === true) ||
+      (ts.isExportDeclaration(node) && node.isTypeOnly);
     if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      !typeOnly &&
       node.moduleSpecifier &&
       ts.isStringLiteral(node.moduleSpecifier)
     ) {
@@ -78,7 +83,11 @@ describe("Ward Flow's isolated demo and shared-adapter boundary", () => {
           violations.push(`${file} imports ${specifier}`);
         }
       }
-      if (!["ward-supabase-auth.ts", "ward-shared-client.ts"].includes(relative)) {
+      // front-door-pass-client.ts is the front door's one same-origin call to this app's own
+      // /api/session, for the pass the server gate checks (D-88). It reaches no provider.
+      if (
+        !["ward-supabase-auth.ts", "ward-shared-client.ts", "front-door/front-door-pass-client.ts"].includes(relative)
+      ) {
         for (const call of networkCalls) violations.push(`${file} calls ${call}`);
       }
     }

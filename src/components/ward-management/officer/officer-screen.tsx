@@ -39,6 +39,7 @@ import {
 } from "@/components/wf";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
@@ -162,6 +163,24 @@ export function OfficerScreen() {
   const raise = useWardRaise("officer");
 
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
+  // #236 (Josh, 27 Oct 2026): jobs whose crew tapped "Identity checked with the sending team". Sent
+  // with the Collected step; never a gate on it.
+  const [identityCheckedIds, setIdentityCheckedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const identityFor = (movement: Movement) => {
+    const info = resolveSubjectPatient(movement, { patients, referrals, movements });
+    return {
+      name: info.patient ? info.displayName : "Name not recorded",
+      umrn: info.umrn,
+      dob: info.patient?.dateOfBirth ? formatDateOfBirth(info.patient.dateOfBirth) : "not recorded",
+    };
+  };
+  const toggleIdentityChecked = (movement: Movement) =>
+    setIdentityCheckedIds((current) => {
+      const next = new Set(current);
+      if (next.has(movement.id)) next.delete(movement.id);
+      else next.add(movement.id);
+      return next;
+    });
   const jobs = movements.filter(isOfficerJob);
   const cancellations = officerCancellationNotices(notices ?? [], now);
   const collectCheck = collectCheckId ? movements.find((movement) => movement.id === collectCheckId) : undefined;
@@ -436,6 +455,7 @@ export function OfficerScreen() {
         raise("PATIENT_COLLECTED", {
           movementId: movement.id,
           ...(exception ? { exception } : {}),
+          ...(identityCheckedIds.has(movement.id) ? { identityChecked: true as const } : {}),
         }),
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
@@ -613,6 +633,8 @@ export function OfficerScreen() {
     diversionOpen,
     diversionPlace,
     diversionReason,
+    identityChecked: (movement: Movement) => identityCheckedIds.has(movement.id),
+    identityFor,
     isPhone,
     now,
     officerPatientName,
@@ -627,6 +649,7 @@ export function OfficerScreen() {
     setDiversionPlace,
     setDiversionReason,
     showToast,
+    toggleIdentityChecked,
     unitFor,
   };
 
@@ -732,8 +755,9 @@ export function OfficerScreen() {
           level={1}
           className={styles.dispatchHero}
           eyebrow="Transport dispatch"
-          // S-17 (audit 13 Oct 2026): the on-board figure is a part of the jobs count, so it says so.
-          title={`${inCustody} of ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} on board`}
+          // P195 (audit 27 Oct 2026, Josh 27 Oct): the h1 is the screen name. The on-board count
+          // stays in the "On board" chip below, so the figure is not lost.
+          title="Transport"
           aside={isPhone ? <LiveChip state="live" onHero /> : heroTools}
           barAside={isPhone ? heroTools : undefined}
           bar={

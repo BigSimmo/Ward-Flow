@@ -13,11 +13,17 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
+import { Clock } from "lucide-react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
+import {
+  FrontDoor,
+  FrontDoorStatus,
+  FrontDoorStatusButton,
+} from "@/components/ward-management/front-door/front-door-lazy";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import {
@@ -35,7 +41,7 @@ import styles from "./ward-shared-access.module.css";
 import { CLINICAL_VALUES } from "./ward-clinical-values";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
-import { publishLiveRefresh } from "@/components/wf";
+import { publishLiveRefresh, Spinner } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
@@ -87,6 +93,8 @@ export type WardSharedConnection = SharedView & {
   credentials?: WardCredentialForm;
   enabled: boolean;
   signedIn: boolean;
+  /** P013: signed in and the first workspace read has not settled yet. */
+  connecting?: boolean;
   /** #791: the signed-in account's email, shown beside Sign out so the person knows which account this is. */
   accountEmail?: string | null;
   signIn: () => void;
@@ -94,6 +102,8 @@ export type WardSharedConnection = SharedView & {
   signOut: (reason?: unknown) => void;
   /** When this sign-in reaches the session limit, in wall-clock milliseconds. */
   sessionEndsAt?: number | null;
+  /** What the sign-in screen says after a deliberate sign-out, such as the shared computer reminder. */
+  farewell?: string | null;
   retry: () => void;
   dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
@@ -234,14 +244,6 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
   };
 }
 
-/**
- * Readiness review item 12: a new or recovered password is a passphrase of at least this length,
- * following the Australian Government ISM's passphrase guidance for single-factor sign-in (check
- * the current ISM before changing it). The sign-in service's own minimum is set to match in its
- * settings (docs/ward-flow/RETENTION-AND-BACKUP.md, steps for Josh).
- */
-const NEW_PASSWORD_MIN_LENGTH = 15;
-
 /** Observe only the supplied session deadline. The external snapshot is a stable boolean;
  * no report data is retained and the component does not read the wall clock during render. */
 function useDisplaySessionLifetime(until: number | null | undefined): boolean {
@@ -262,130 +264,6 @@ function useDisplaySessionLifetime(until: number | null | undefined): boolean {
   );
   const server = useCallback(() => until == null, [until]);
   return useSyncExternalStore(subscribe, current, server);
-}
-
-function WardCredentialFields({ form }: { form: WardCredentialForm }) {
-  const [signup, setSignup] = useState(false);
-  const signInAutofillHint = "current-password";
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  return (
-    <form
-      className={styles.credentials}
-      onSubmit={(event) => {
-        event.preventDefault();
-        setError(null);
-        if ((form.recovery || signup) && password !== confirm) {
-          setError("The passwords do not match.");
-          return;
-        }
-        const entered = password;
-        setPassword("");
-        setConfirm("");
-        void (form.recovery
-          ? form.updatePassword(entered)
-          : signup
-            ? form.signUp(email.trim(), entered)
-            : form.signIn(email.trim(), entered));
-      }}
-    >
-      <h2>{form.recovery ? "Set a new password" : signup ? "Create a Ward Flow account" : "Sign in to Ward Flow"}</h2>
-      {form.recovery && (
-        // Fresh audit X-1: a recovery link someone else sent signs this tab in to their account.
-        // Naming the account lets the person see that before setting a password for it.
-        <p data-testid="ward-recovery-account">
-          {form.accountEmail
-            ? `This link is for ${form.accountEmail}. If that is not your account, choose Cancel.`
-            : "This link's account could not be shown. If you did not ask for this link, choose Cancel."}
-        </p>
-      )}
-      {!form.recovery && (
-        <label>
-          Email
-          <input
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-            disabled={form.busy}
-          />
-        </label>
-      )}
-      <label>
-        {form.recovery ? "New password" : "Password"}
-        <input
-          type="password"
-          autoComplete={form.recovery || signup ? "new-password" : signInAutofillHint}
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          minLength={form.recovery || signup ? NEW_PASSWORD_MIN_LENGTH : undefined}
-          aria-describedby={form.recovery || signup ? "ward-new-password-hint" : undefined}
-          disabled={form.busy}
-        />
-      </label>
-      {(form.recovery || signup) && (
-        <p id="ward-new-password-hint">
-          At least {NEW_PASSWORD_MIN_LENGTH} characters. A short phrase of unrelated words is easiest to remember. Use a
-          password of your own; never share one between accounts.
-        </p>
-      )}
-      {(form.recovery || signup) && (
-        <label>
-          Confirm new password
-          <input
-            type="password"
-            autoComplete="new-password"
-            value={confirm}
-            onChange={(event) => setConfirm(event.target.value)}
-            required
-            disabled={form.busy}
-          />
-        </label>
-      )}
-      {(error || form.message) && <p role="status">{error ?? form.message}</p>}
-      <button type="submit" disabled={form.busy}>
-        {form.busy ? "Please wait…" : form.recovery ? "Update password" : signup ? "Create account" : "Sign in"}
-      </button>
-      {!form.recovery && !signup && (
-        <button
-          type="button"
-          disabled={form.busy}
-          onClick={() => {
-            setPassword("");
-            if (!email.trim()) {
-              setError("Enter your email address first.");
-              return;
-            }
-            setError(null);
-            void form.recover(email.trim());
-          }}
-        >
-          Forgot password
-        </button>
-      )}
-      {!form.recovery && form.signupAvailable && (
-        <button
-          type="button"
-          disabled={form.busy}
-          onClick={() => {
-            setSignup((value) => !value);
-            setPassword("");
-            setConfirm("");
-            setError(null);
-          }}
-        >
-          {signup ? "Use an existing account" : "Create a Ward Flow account"}
-        </button>
-      )}
-      <button type="button" disabled={form.busy} onClick={form.cancel}>
-        Cancel
-      </button>
-    </form>
-  );
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
@@ -719,74 +597,57 @@ function WardSharedWorkspaceContent({
     );
   if (connecting)
     return (
-      <main id="main-content" className={styles.notice} aria-label="Opening Ward Flow" aria-busy="true">
-        <h1>Opening Ward Flow</h1>
-        <p role="status" data-testid="ward-shared-connecting">
-          {connection.signedIn
+      <FrontDoorStatus
+        title="Opening Ward Flow"
+        testId="ward-shared-connecting"
+        status={
+          connection.signedIn
             ? "Signed in. Connecting to the shared workspace. This can take up to 15 seconds."
-            : "Checking your sign-in."}
-        </p>
+            : "Checking your sign-in."
+        }
+      >
         {stalled && (
-          <button type="button" onClick={connection.retry}>
+          <FrontDoorStatusButton primary onClick={connection.retry}>
             {connection.signedIn ? "Reconnect" : "Try again"}
-          </button>
+          </FrontDoorStatusButton>
         )}
-        {connection.signedIn && (
-          <button type="button" onClick={connection.signOut}>
-            Sign out
-          </button>
-        )}
-      </main>
+        {connection.signedIn && <FrontDoorStatusButton onClick={connection.signOut}>Sign out</FrontDoorStatusButton>}
+      </FrontDoorStatus>
+    );
+  // P013 (Josh, 27 Oct 2026): while the first read after connecting is still out, a spinner with
+  // no text stands in for the sign-in or Reconnect screen, since nothing has failed yet.
+  if (connection.signedIn && connection.connecting && !hasSnapshot)
+    return (
+      <div
+        data-testid="ward-shared-reconnecting"
+        aria-busy="true"
+        style={{ display: "grid", placeItems: "center", minHeight: "100dvh" }}
+      >
+        <Spinner />
+      </div>
+    );
+  // Signed in, but the shared workspace did not open: say so, and offer the two ways on.
+  if (connection.signedIn && !hasSnapshot && connection.status !== "not-authorised")
+    return (
+      <FrontDoorStatus
+        title="Ward Flow did not open"
+        busy={connection.status === "loading"}
+        status={connection.error ?? "The shared workspace did not answer. Try again in a moment."}
+      >
+        <FrontDoorStatusButton primary onClick={connection.retry}>
+          Reconnect
+        </FrontDoorStatusButton>
+        <FrontDoorStatusButton onClick={connection.signOut}>Sign out</FrontDoorStatusButton>
+      </FrontDoorStatus>
     );
   if (!connection.signedIn || !hasSnapshot)
     return (
-      <main
-        id="main-content"
-        className={onTv ? `${styles.notice} ${styles.tvSignedOut}` : styles.notice}
-        aria-label={onTv ? "TV signed out" : "Ward Flow sign-in"}
-        aria-busy={connection.signedIn && connection.status === "loading"}
-        data-testid={onTv ? "ward-tv-signed-out" : undefined}
-      >
-        {onTv ? (
-          <>
-            <h1>This TV is signed out</h1>
-            <p>The bed meeting view is not showing. Sign in again to bring it back.</p>
-          </>
-        ) : (
-          <>
-            <h1>Ward Flow sign-in</h1>
-            <p>Shared synthetic workspace. You see the screens your role needs.</p>
-          </>
-        )}
-        {connection.error && <p role="alert">{connection.error}</p>}
-        {connection.credentials?.open ? (
-          <WardCredentialFields form={connection.credentials} />
-        ) : connection.signedIn && connection.status !== "not-authorised" ? (
-          <button type="button" onClick={connection.retry}>
-            Reconnect
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={
-              connection.status === "loading" || (!connection.credentials && connection.status === "unavailable")
-            }
-            onClick={connection.signIn}
-          >
-            Sign in with email
-          </button>
-        )}
-        {connection.credentials && connection.status === "unavailable" && !connection.credentials.open && (
-          <button type="button" onClick={connection.retry}>
-            Retry sign-in service
-          </button>
-        )}
-        {connection.signedIn && (
-          <button type="button" onClick={connection.signOut}>
-            Sign out
-          </button>
-        )}
-      </main>
+      <FrontDoor
+        form={connection.credentials}
+        notice={connection.error ?? connection.farewell ?? null}
+        tv={onTv}
+        demoUrl={onTv ? null : undefined}
+      />
     );
   const outage =
     connection.status === "unavailable" &&
@@ -833,12 +694,15 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
     () => document.fullscreenElement,
     () => null,
   );
+  const warning = endsAt !== null && now >= endsAt - SESSION_WARNING_MS;
   useEffect(() => {
     if (endsAt === null) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 15_000);
+    // Once the warning shows, its "left" chip counts down by the second.
+    const timer = window.setInterval(() => setNow(Date.now()), warning ? 1_000 : 15_000);
     return () => window.clearInterval(timer);
-  }, [endsAt]);
-  if (endsAt === null || now < endsAt - SESSION_WARNING_MS) return null;
+  }, [endsAt, warning]);
+  if (endsAt === null || !warning) return null;
+  const secondsLeft = Math.max(0, Math.ceil((endsAt - now) / 1000));
   const at = new Date(endsAt).toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
@@ -850,8 +714,14 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
       className={fullscreen ? `${styles.sessionEnding} ${styles.sessionEndingOnTop}` : styles.sessionEnding}
       data-testid="ward-session-ending"
     >
-      You will be signed out at {at}, the {CLINICAL_VALUES.sessionLimit.value}-hour sign-in limit. Finish what you are
-      typing and save it now.
+      <Clock aria-hidden="true" className={styles.sessionEndingIcon} />
+      <span className={styles.sessionEndingText}>
+        You will be signed out at {at}, the {CLINICAL_VALUES.sessionLimit.value}-hour sign-in limit. Finish what you are
+        typing and save it now.
+      </span>
+      <span className={styles.sessionEndingLeft} aria-hidden="true">
+        {Math.floor(secondsLeft / 60)}:{String(secondsLeft % 60).padStart(2, "0")} left
+      </span>
     </p>
   );
   return fullscreen ? createPortal(notice, fullscreen) : notice;

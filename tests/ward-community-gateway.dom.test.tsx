@@ -33,7 +33,7 @@ import { WardGlobalSearch } from "@/components/ward-management/ward-global-searc
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
-import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
+import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
 
 /**
  * v10 rule 5 (10 Oct 2026): the filters highlight and dim, they never hide a name. Every link stays

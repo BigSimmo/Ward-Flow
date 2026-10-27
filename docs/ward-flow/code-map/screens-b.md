@@ -691,6 +691,9 @@ demo clock). **Tests:** `ward-catchment-resolver.dom.test.tsx`, `ward-tools-shee
   catchment-area lookup tool (which service/site covers a given postcode/suburb). Imports
   `ward-catchment.ts` and `ward-service-colors.ts`. `WardCatchmentResolver` is the component
   mounted by `ward-bar.tsx`.
+- **`src/components/ward-management/tools/ward-catchment-mapping.ts`** — the unverified clinic to
+  service and hospital mapping (`mapClinicToServiceAndHospital`), kept apart from the resolver so the
+  access scope, Community and Statistics can read it without loading the whole tool (F-11, 27 Oct 2026).
 - **`src/components/ward-management/tools/ward-form-times.tsx`** and **`ward-form-time-input.ts`** —
   Form times, which replaced the MHA form calculator on 15 Oct 2026. It shows back a time a person
   typed and how far it is from the demo clock. Per rule D5 it must never compute or display a real

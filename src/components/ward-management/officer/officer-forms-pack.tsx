@@ -86,6 +86,15 @@ function bookedLegalCode(movement: Movement): string | undefined {
   return /\b(1A|1B|3D)\b/i.exec(movement.transport?.formRequired ?? "")?.[1]?.toUpperCase();
 }
 
+/**
+ * Finding 232 (27 Oct 2026): with no code in the booking, the legal slot opens on the movement's
+ * recorded form when it is a 1A, 1B or 3D. The officer still confirms it by choosing the file.
+ */
+function recordedLegalCode(movement: Movement): string | undefined {
+  const code = movement.legalForm?.code;
+  return code === "1A" || code === "1B" || code === "3D" ? code : undefined;
+}
+
 export function FormsPack({ movement, now, who }: { movement: Movement; now: Instant; who: string }) {
   const [uploading, setUploading] = useState<PackSlotKey | null>(null);
   const done = packCount(movement);
@@ -149,7 +158,7 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
         <PackUploadDialog
           movement={movement}
           slot={PACK_SLOTS.find((slot) => slot.key === uploading)!}
-          initialCode={uploading === "legal" ? booked : undefined}
+          initialCode={uploading === "legal" ? (booked ?? recordedLegalCode(movement)) : undefined}
           who={who}
           onClose={() => setUploading(null)}
         />

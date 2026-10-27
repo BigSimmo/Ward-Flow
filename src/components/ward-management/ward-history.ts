@@ -151,6 +151,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   BOOK_TRANSPORT: { category: "patient", plainWording: "Patient transport booking requested" },
   CANCEL_TRANSPORT: { category: "patient", plainWording: "Patient transport booking cancelled" },
   STOP_TRANSPORT: { category: "patient", plainWording: "Patient transport stopped in transit" },
+  RECORD_TRANSPORT_CAD: { category: "patient", plainWording: "Transport CAD number added" },
   RELEASE_HELD_BED: { category: "both", plainWording: "Pulled bed released after stopped transport" },
   RECORD_DIVERSION: { category: "patient", plainWording: "Transport diverted to alternative location" },
   RELEASE_DIVERTED_BED: { category: "both", plainWording: "Pulled bed released after transport diversion" },

@@ -39,6 +39,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 - `/ward-flow`: the Ward Flow prototype routes under `src/app/ward-flow/`.
 - `/ward-flow-sign-in`: synthetic role picker under `src/app/ward-flow-sign-in/`.
+- `/sign-in`: the front door's own sign-in page under `src/app/sign-in/`, live only while `WARD_FRONT_DOOR=required` (see `src/lib/front-door-pass.ts`).
 - `/mockups`: retained digest mockup under `src/app/mockups/`.
 - `/icons`: dynamic icon/OG support under `src/app/icons/`; exempt from product-route coverage.
 
@@ -46,6 +47,7 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 - `/api/health`: liveness only, returning `{status:"ok"}`; no backend readiness assertion.
 - `/api/local-project-id`: local checkout/runtime identity before attaching to a preview server.
+- `/api/session`: sets and ends the front door's pass under `src/app/api/session/`; does nothing while the switch is off.
 
 ## Ward library modules
 

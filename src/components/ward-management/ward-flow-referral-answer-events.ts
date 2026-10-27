@@ -459,6 +459,14 @@ export function reduceReferralAnswerEvent(
       if (event.intake !== undefined) {
         const error = referralIntakeError(event.intake);
         if (error) return reject(state, event, `RECEIVE_REFERRAL: ${error}`);
+        // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" is for a ward or ED referral only.
+        if (event.intake.catchment.notKnown && kinds.includes("community_team")) {
+          return reject(
+            state,
+            event,
+            "RECEIVE_REFERRAL: A community team referral needs the patient's catchment team.",
+          );
+        }
       }
       if (!REFERRAL_SOURCES.includes(event.source)) {
         return reject(state, event, `RECEIVE_REFERRAL source must be chosen from REFERRAL_SOURCES`);

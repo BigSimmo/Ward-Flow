@@ -237,14 +237,40 @@
 
 .sessionEnding {
   composes: wardShellTokens from "../../app/ward-flow-shell-tokens.module.css";
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--warn-border);
-  color: var(--ink);
-  background: var(--warn-soft);
+  padding: 10px 20px;
+  border-top: 1px solid color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink);
+  background: color-mix(in srgb, var(--wf-hero-warning) 15%, var(--wf-hero-1));
   font-family: var(--body);
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 19px;
+}
+
+.sessionEndingIcon {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  color: var(--wf-hero-warning);
+}
+
+.sessionEndingText {
+  flex: 1;
+  min-width: 0;
+}
+
+.sessionEndingLeft {
+  flex: none;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wf-hero-warning) 18%, transparent);
+  color: color-mix(in srgb, var(--wf-hero-warning) 55%, var(--wf-hero-ink));
+  font: 600 12.5px/1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 /* TV-13: inside a full screen TV, over its top edge and at a size read across the room. */
@@ -254,24 +280,4 @@
   top: 0;
   z-index: 10;
   font-size: clamp(1.25rem, 1.6vw, 2.5rem);
-}
-
-/* TV-13: a TV whose session ended, at a size read across the room. */
-.tvSignedOut {
-  display: grid;
-  min-block-size: 100dvh;
-  place-content: center;
-  gap: 1.5rem;
-  padding: 2rem;
-  font-size: clamp(1.25rem, 1.8vw, 2.75rem);
-  text-align: center;
-}
-
-.tvSignedOut h1 {
-  margin: 0;
-  font-size: clamp(2rem, 3.5vw, 5rem);
-}
-
-.tvSignedOut p {
-  margin: 0;
 }

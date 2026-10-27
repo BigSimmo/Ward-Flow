@@ -567,7 +567,7 @@ describe("shared provider boundary", () => {
         <Probe />
       </WardFlowProvider>,
     );
-    expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.getByRole("button", { name: "Sign in with email" })).toBeInTheDocument();
+    expect(screen.queryByRole("textbox", { name: "Local draft" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Sign in" })).toBeInTheDocument();
   });
 });

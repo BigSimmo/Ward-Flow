@@ -60,7 +60,7 @@ const WardFeedInbox = dynamic(() => import("./ward-feed-inbox").then((m) => m.Wa
 const root = "/ward-flow";
 
 export type ToolsSheetToolId =
-  "figures" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo" | "feed";
+  "figures" | "update-bed" | "bed-finder" | "catchment" | "contacts" | "form-times" | "bed-summary" | "demo" | "feed";
 
 export type WardToolsSheetProps = {
   isPhone: boolean;
@@ -121,6 +121,30 @@ function LinkRow({
       <RowText icon={icon} name={name} detail={detail} />
       <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
     </Link>
+  );
+}
+
+/** P023: the wards a desk may open, each to its own page, under "Choose a ward". */
+function UpdateBedWards({ onNavigate }: { onNavigate: () => void }) {
+  const { units } = useWardFlowSelect("units");
+  const canOpen = useCanOpenHref();
+  const wards = units.filter((unit) => canOpen(`${root}/ward/${unit.id}`));
+  return (
+    <>
+      <h3 id="ward-tools-update-bed-heading" className={styles.choiceLabel}>
+        Choose a ward
+      </h3>
+      <ul className={styles.contactList} aria-labelledby="ward-tools-update-bed-heading">
+        {wards.map((unit) => (
+          <li key={unit.id}>
+            <Link href={`${root}/ward/${unit.id}`} className={styles.matchRow} onClick={onNavigate}>
+              <span>{unit.name}</span>
+              <ChevronRight aria-hidden="true" strokeWidth={1.75} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -338,7 +362,16 @@ export function WardToolsSheet({
           detail="Choose the patient, then the reason"
           onNavigate={onNavigate}
         />
-        {updateBedHref ? (
+        {updateBedHref === `${root}/wards` ? (
+          // P023 (Josh, 9:57 PM 27 Oct 2026): a network desk chooses the ward here, not on the Wards list.
+          tool(
+            "update-bed",
+            BedSingle,
+            "Update a bed",
+            "Open, close or hold a bed",
+            <UpdateBedWards onNavigate={onNavigate} />,
+          )
+        ) : updateBedHref ? (
           <LinkRow
             href={updateBedHref}
             icon={BedSingle}
