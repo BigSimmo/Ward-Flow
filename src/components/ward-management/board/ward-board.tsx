@@ -70,6 +70,7 @@ import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-deta
 import { WardBoardWorkBand } from "./ward-board-work-band";
 import { WardBoardPrintSections } from "./ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 export { boardArrivalAllowed, movementForBoardArrival } from "./ward-board-model";
 
 /**
@@ -363,10 +364,10 @@ export function WardBoard({
     const unaccepted = check.outcome && check.outcome.status !== "accepted";
     const msg = unaccepted
       ? check.outcome!.status === "refused"
-        ? `Action refused: ${check.outcome!.message ?? "The action was refused."}`
+        ? `Action refused: ${check.outcome!.message ? refusalReasonText(check.outcome!.message) : "The action was refused."}`
         : (check.outcome!.message ?? SAVE_NOT_CONFIRMED)
       : refused
-        ? `Not recorded: ${refused.reason}. Nothing was changed.`
+        ? `Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`
         : check.success;
     setToastMessage(refused || unaccepted ? { warning: msg } : msg);
     announceToWardShell(refused || unaccepted ? msg : check.success);

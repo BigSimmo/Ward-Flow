@@ -190,7 +190,7 @@ export function PriorityQueue({
   const turnaroundLabel = (preference: TurnaroundPriority | undefined) => {
     const live = turnaroundState && liveTurnaroundPreference(turnaroundState, preference, now, cldEnabled);
     return live
-      ? `Turnaround Candidate: Bed clearing via ${live.source === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}`
+      ? `Turnaround candidate: bed clearing via ${live.source === "cld" ? "criteria-led discharge" : "confirmed departure"}`
       : null;
   };
   const [showAllRows, setShowAllRows] = useState(false);
