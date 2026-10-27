@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { appendFileSync, readFileSync } from "node:fs";
+import { legalSweepInputs, needsLegalSweep } from "./legal-sweep-scope.mjs";
 
 const ORGANISATION_REGISTRY = "docs/ward-flow/organisation/registry.json";
 const organisationRoots = (() => {
@@ -152,6 +153,8 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
   let plan;
   let dependencyReview = false;
   let documents = documentChecks([]);
+  // Only a pull request with a readable diff may leave the legal-figure sweep out; see legal-sweep-scope.mjs.
+  let legalSweep = { run: true, reason: "not a pull request diff" };
   if (!base) {
     plan = classifyChanges([]);
     plan.reason = "no PR base (merge group or manual run)";
@@ -169,19 +172,21 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/pla
       plan = classifyChanges(changes);
       documents = documentChecks(changes);
       dependencyReview = hasDependencyChanges(changes);
+      legalSweep = needsLegalSweep(changes, legalSweepInputs("."));
     } catch (error) {
       plan = classifyChanges([]);
       plan.reason = `history unavailable (${error.code ?? error.status ?? "error"})`;
       dependencyReview = true;
     }
   }
+  console.log(`Ward CI legal-figure sweep: ${legalSweep.run} — ${legalSweep.reason}`);
   console.log(
     `Ward CI scope: full=${plan.full} unit=${plan.unit} browser=${plan.browser} backend=${plan.backend} build=${plan.build} frontend_static=${plan.frontend_static} policy=${plan.policy} — ${plan.reason}; dependency review: ${dependencyReview}`,
   );
   if (process.env.GITHUB_OUTPUT)
     appendFileSync(
       process.env.GITHUB_OUTPUT,
-      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\npolicy=${plan.policy}\nbackend=${plan.backend}\nbuild=${plan.build}\nfrontend_static=${plan.frontend_static}\ndependency_review=${dependencyReview}\n${Object.entries(
+      `full=${plan.full}\nunit=${plan.unit}\nbrowser=${plan.browser}\npolicy=${plan.policy}\nbackend=${plan.backend}\nbuild=${plan.build}\nfrontend_static=${plan.frontend_static}\ndependency_review=${dependencyReview}\nlegal_sweep=${legalSweep.run}\n${Object.entries(
         documents,
       )
         .map(([key, value]) => `${key}=${value}\n`)
