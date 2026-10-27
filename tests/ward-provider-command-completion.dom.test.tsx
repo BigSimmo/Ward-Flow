@@ -281,7 +281,10 @@ describe("recordWardDeparture acting role and unreadable records", () => {
     expect(outcome).toMatchObject({ status: "accepted" });
     expect(held.ctx!.admissions.find((row) => row.id === admission.id)?.state).toBe("departed");
     // The Undo record names who recorded it, so the departure is attributed to the coordinator.
-    expect(held.ctx!.undoRecords?.at(-1)).toMatchObject({ action: expect.stringMatching(/^RECORD_/u), role: "coordinator" });
+    expect(held.ctx!.undoRecords?.at(-1)).toMatchObject({
+      action: expect.stringMatching(/^RECORD_/u),
+      role: "coordinator",
+    });
   });
 
   it("still records as the ward when no role is passed", () => {
