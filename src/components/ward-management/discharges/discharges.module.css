@@ -394,6 +394,12 @@
  * `color: var(--text)` directly needs the same reset `.screen` gets, not just its ancestor's.
  */
 @media print {
+  /* Same paper as the bed-meeting sheet (P048). */
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   .screen,
   .screen * {
     color-scheme: light;
