@@ -15,8 +15,8 @@ import {
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 
-/** Day shift ends at 15:00 on the board clock — same boundary as the sidebar handover countdown. */
-export const DAY_SHIFT_END_MINUTE = 15 * 60;
+/** Day shift end on the board clock, read from the one shift pattern (H-0759), as the sidebar countdown does. */
+export const DAY_SHIFT_END_MINUTE = SHIFT_PATTERN[0].endMinute;
 
 /** The shift `now` falls in, on the one shift pattern every screen uses (night wraps midnight). */
 export function currentShift(now: Instant): (typeof SHIFT_PATTERN)[number] {

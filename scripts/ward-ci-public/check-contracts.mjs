@@ -199,7 +199,7 @@ function requireWorkflow(source) {
   assert.equal(typecheck.fields.get("if"), frontend);
   assert.equal(
     typecheck.text.split("        run: |\n")[1]?.trim(),
-    "node node_modules/next/dist/bin/next typegen\n          node node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false",
+    "node node_modules/next/dist/bin/next typegen\n          node --max-old-space-size=8192 node_modules/typescript/bin/tsc -p tsconfig.json --noEmit --incremental false",
   );
   exact(
     "backend",

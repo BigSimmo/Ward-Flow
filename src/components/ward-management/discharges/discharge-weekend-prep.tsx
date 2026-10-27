@@ -4,8 +4,10 @@ import {
   calendarDateOf,
   formatInstant,
   formatSheetMoment,
+  MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
+import { holidaysListedFor, WA_PUBLIC_HOLIDAYS_LAST_YEAR } from "@/components/ward-management/wa-public-holidays";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { Card } from "@/components/wf";
 import {
@@ -15,7 +17,7 @@ import {
   outstandingDependencies,
   type DischargeDependency,
 } from "./discharge-dependencies";
-import { nextNonWorkingClosure, type ServiceClosure } from "./discharge-service-hours";
+import { CLOSURE_LOOKAHEAD_DAYS, nextNonWorkingClosure, type ServiceClosure } from "./discharge-service-hours";
 import styles from "./discharge-logistics.module.css";
 
 /**
@@ -80,6 +82,8 @@ export function DischargeWeekendPrep({
   onOpen: (releaseId: string, opener: HTMLElement) => void;
 }) {
   const groups = weekendPrepGroups(releases, now, dayZero);
+  // H-0766: the look-ahead runs past the WA holiday list, so a holiday there would read as a working day.
+  const pastHolidayList = !holidaysListedFor(calendarDateOf(now + CLOSURE_LOOKAHEAD_DAYS * MINUTES_PER_DAY, dayZero));
   return (
     <Card
       className={styles.prep}
@@ -93,6 +97,11 @@ export function DischargeWeekendPrep({
         Outstanding arrangements owned by a service that closes over the next weekend or public holiday. Opening hours
         are synthetic reference data to check. Grouped by service, in recorded order; nothing here acts by itself.
       </p>
+      {pastHolidayList ? (
+        <p className={styles.note}>
+          WA public holidays after {WA_PUBLIC_HOLIDAYS_LAST_YEAR} are not listed yet, so they are not marked.
+        </p>
+      ) : null}
       {groups.length === 0 ? (
         <p className={styles.note}>
           No outstanding arrangement belongs to a service closing over a weekend or holiday soon.

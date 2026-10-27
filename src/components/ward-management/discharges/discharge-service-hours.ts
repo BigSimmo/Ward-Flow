@@ -84,7 +84,7 @@ export type ServiceClosure = {
 };
 
 /** How far ahead the board looks for the next weekend or holiday closure. */
-const CLOSURE_LOOKAHEAD_DAYS = 7;
+export const CLOSURE_LOOKAHEAD_DAYS = 7;
 
 /**
  * The service's next closure that runs over at least one whole closed day (a weekend or a public
