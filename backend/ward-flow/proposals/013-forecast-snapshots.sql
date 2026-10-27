@@ -1,3 +1,5 @@
+-- SUPERSEDED (27 Oct 2026): built as migrations/016-forecast-history.sql, kept per desk and world
+-- generation with the miss reasons beside it. Kept here for reference only; nothing reads this file.
 -- PROPOSED, NOT APPLIED. Forecasting build (Josh, 23 Oct 2026, decision 4): a shared table for the
 -- daily forecast snapshots the Statistics track record compares against what happened. Until it is
 -- applied, the app keeps the same snapshots in the browser's demo store.
