@@ -15,7 +15,7 @@
  *   3. the previous main commit is an ancestor of the PR head (the head was up to date), so the PR
  *      run's merge ref was that same tree;
  *   4. a successful pull_request run of this workflow on the PR head ran (not skipped) every unit
- *      shard, every browser group, the coverage thresholds and the production build, and its
+ *      shard with the legal-figure sweep in it, every browser group, the coverage thresholds and the production build, and its
  *      "Ward Flow required" job succeeded.
  *   5. no newer completed run on that head contradicts the successful evidence; ambiguous
  *      ordering or incomplete bounded history requires a full run instead.
@@ -32,6 +32,12 @@ const WORKFLOW = "ward-flow.yml";
 /** Jobs whose real work must have run and passed on the PR head, keyed by the step that does it. */
 export const EVIDENCE = [
   { label: "unit shard", job: /^Ward Flow unit shard (\d+)$/u, steps: ["Run reconciled unit suite shard"] },
+  // A pull request run that left the legal-figure sweep out (legal-sweep-scope.mjs) proves less than main needs.
+  {
+    label: "legal-figure sweep",
+    job: /^Ward Flow unit shard (\d+)$/u,
+    steps: ["Confirm the legal-figure sweep ran"],
+  },
   { label: "browser group", job: /^Ward Flow browser journeys (\d+)$/u, steps: ["Run Ward browser journeys"] },
   {
     label: "coverage",
@@ -51,7 +57,13 @@ export function workflowCounts(source) {
   const shards = Number(/WARD_GATE_SHARD: \$\{\{ matrix\.shard \}\}\/(\d+)/u.exec(source)?.[1]);
   const groups = Number(/WARD_JOURNEY_GROUP: \$\{\{ matrix\.group \}\}\/(\d+)/u.exec(source)?.[1]);
   if (!(shards >= 1) || !(groups >= 1)) throw new Error("workflow shard or group count not found");
-  return { "unit shard": shards, "browser group": groups, coverage: 1, "production build": 1 };
+  return {
+    "unit shard": shards,
+    "legal-figure sweep": shards,
+    "browser group": groups,
+    coverage: 1,
+    "production build": 1,
+  };
 }
 
 /** Does one run's job list prove every required job really ran and passed? Returns a reason if not. */

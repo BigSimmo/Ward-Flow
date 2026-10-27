@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { legalSweepInputs, needsLegalSweep } from "./legal-sweep-scope.mjs";
 import { classifyChanges, documentChecks, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
 const sha = /^[0-9a-f]{40}$/iu;
@@ -29,7 +30,7 @@ function expectedScope() {
   const failClosed = (dependencyReview) => {
     const scope = { ...classifyChanges([]) };
     delete scope.reason;
-    return { ...scope, dependencyReview, ...documentChecks([]) };
+    return { ...scope, dependencyReview, ...documentChecks([]), legal_sweep: true };
   };
   if (!base) return failClosed(false);
   if (!sha.test(base)) return failClosed(true);
@@ -51,6 +52,7 @@ function expectedScope() {
       frontend_static: plan.frontend_static,
       dependencyReview: hasDependencyChanges(changes),
       ...documentChecks(changes),
+      legal_sweep: needsLegalSweep(changes, legalSweepInputs(".")).run,
     };
   } catch {
     return failClosed(true);
@@ -70,6 +72,7 @@ const written = {
   rules_index: process.env.WARD_PLAN_RULES_INDEX,
   organisation: process.env.WARD_PLAN_ORGANISATION,
   doc_contracts: process.env.WARD_PLAN_DOC_CONTRACTS,
+  legal_sweep: process.env.WARD_PLAN_LEGAL_SWEEP,
 };
 const expected = expectedScope();
 // `reason` is plan.mjs's own console message for a human, not a gate, so it is not compared.

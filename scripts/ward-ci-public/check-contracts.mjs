@@ -241,6 +241,17 @@ function requireWorkflow(source) {
     step("unit", "Restore the Vitest module cache").text,
     /lookup-only: \$\{\{ github\.ref == 'refs\/heads\/main'/u,
   );
+  // Only the plan's explicit "false" leaves the legal-figure sweep out, and the plan writes "false"
+  // only for a pull request diff that reaches none of it; main reuse needs the confirm step's evidence.
+  assert.match(
+    step("unit", "Run reconciled unit suite shard").text,
+    /WARD_GATE_SKIP_LEGAL_SWEEP: \$\{\{ needs\.plan\.outputs\.legal_sweep == 'false' && '1' \|\| '0' \}\}\n/u,
+  );
+  assert.equal(
+    step("unit", "Confirm the legal-figure sweep ran").fields.get("if"),
+    "${{ !cancelled() && steps.shard.outcome == 'success' && needs.plan.outputs.legal_sweep != 'false' }}",
+  );
+  assert.match(jobs.get("plan"), /WARD_PLAN_LEGAL_SWEEP: \$\{\{ steps\.plan\.outputs\.legal_sweep \}\}\n/u);
   exact("browser-build", "Prepare the isolated browser build", "npm run test:e2e:ward-journeys");
   assert.match(jobs.get("browser-build"), /WARD_BROWSER_PREPARE_DIR: \$\{\{ runner.temp \}\}\/ward-browser-build/u);
   const prepared = step("browser-build", "Upload the verified browser build");

@@ -14,15 +14,19 @@ const before = "b".repeat(40);
 const head = "c".repeat(40);
 const tree = "d".repeat(40);
 
-const passedJob = (name: string, step: string) => ({
+const passedJob = (name: string, ...steps: string[]) => ({
   name,
   conclusion: "success",
-  steps: [{ name: step, conclusion: "success" }],
+  steps: steps.map((step) => ({ name: step, conclusion: "success" })),
 });
 function greenJobs() {
   return [
     ...Array.from({ length: counts["unit shard"] }, (_, i) =>
-      passedJob(`Ward Flow unit shard ${i + 1}`, "Run reconciled unit suite shard"),
+      passedJob(
+        `Ward Flow unit shard ${i + 1}`,
+        "Run reconciled unit suite shard",
+        "Confirm the legal-figure sweep ran",
+      ),
     ),
     ...Array.from({ length: counts["browser group"] }, (_, i) =>
       passedJob(`Ward Flow browser journeys ${i + 1}`, "Run Ward browser journeys"),
@@ -66,7 +70,31 @@ function evidence(overrides: Record<string, unknown> = {}) {
 
 describe("main-push reuse decision", () => {
   it("reads the shard and group counts the workflow declares", () => {
-    expect(counts).toEqual({ "unit shard": 8, "browser group": 3, coverage: 1, "production build": 1 });
+    expect(counts).toEqual({
+      "unit shard": 8,
+      "legal-figure sweep": 8,
+      "browser group": 3,
+      coverage: 1,
+      "production build": 1,
+    });
+  });
+
+  it("refuses a pull request run that left the legal-figure sweep out", () => {
+    const withoutSweep = greenJobs().map((job) =>
+      job.name === "Ward Flow unit shard 3"
+        ? {
+            ...job,
+            steps: [
+              { name: "Run reconciled unit suite shard", conclusion: "success" },
+              { name: "Confirm the legal-figure sweep ran", conclusion: "skipped" },
+            ],
+          }
+        : job,
+    );
+    expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: withoutSweep }] }))).toMatchObject({
+      verified: false,
+    });
+    expect(runEvidenceGap(withoutSweep, counts)).toBe("Ward Flow unit shard 3 did not run its checks (scope-skipped)");
   });
 
   it("verifies only an identical, up-to-date tree whose PR run really ran every reusable job", () => {
