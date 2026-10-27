@@ -40,6 +40,11 @@ const pages = {
 };
 const log = (message) => appendFileSync(path.join(out, "soak.log"), `${new Date().toISOString()} ${message}\n`);
 
+const portBusy = await fetch(`${base}/ward-flow`).then(
+  () => true,
+  () => false,
+);
+if (portBusy) throw new Error(`Port ${values.port} already answers; pick a free --port so this build is measured`);
 const server = spawn(
   process.execPath,
   [path.join(root, "node_modules/next/dist/bin/next"), "start", "-p", values.port, "-H", "127.0.0.1"],
@@ -47,6 +52,7 @@ const server = spawn(
 );
 async function waitForServer() {
   for (let attempt = 0; attempt < 120; attempt++) {
+    if (server.exitCode !== null) throw new Error(`next start exited (${server.exitCode})`);
     try {
       if ((await fetch(`${base}/ward-flow`)).ok) return;
     } catch {
@@ -68,6 +74,14 @@ async function metrics(client) {
 async function main() {
   await waitForServer();
   const browser = await chromium.launch({ headless: true });
+  try {
+    await soak(browser);
+  } finally {
+    await browser.close();
+  }
+}
+
+async function soak(browser) {
   const opened = [];
   for (const [name, url] of Object.entries(pages)) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
@@ -118,7 +132,6 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, 30_000));
   }
   log(existsSync(stopFile) ? "stopped by STOP file" : "finished");
-  await browser.close();
 }
 
 try {
