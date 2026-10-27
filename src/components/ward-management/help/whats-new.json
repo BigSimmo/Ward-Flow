@@ -1,35 +1,5 @@
 [
   {
-    "id": "2026-10-27-ed-transport-booked",
-    "date": "2026-10-27",
-    "line": "Once a bed is pulled, the ED row's main button is Transport booked."
-  },
-  {
-    "id": "2026-10-27-home-release-pulled-bed",
-    "date": "2026-10-27",
-    "line": "Home can release a pulled bed in place, with a reason and undo."
-  },
-  {
-    "id": "2026-10-27-referral-board-keys",
-    "date": "2026-10-27",
-    "line": "Referral board: A accepts and D declines the open referral."
-  },
-  {
-    "id": "2026-10-27-bed-meeting-undo",
-    "date": "2026-10-27",
-    "line": "A bed meeting action marked done by mistake can now be undone."
-  },
-  {
-    "id": "2026-10-27-handover-copy-result",
-    "date": "2026-10-27",
-    "line": "Home's Copy as handover text now tells you whether the copy worked."
-  },
-  {
-    "id": "2026-10-27-rules-file-unreadable",
-    "date": "2026-10-27",
-    "line": "Settings now says when a rules file can't be read."
-  },
-  {
     "id": "2026-10-27-copy-removes-date-of-birth",
     "date": "2026-10-27",
     "line": "Copied text now removes a date of birth written mid-line."
@@ -98,5 +68,35 @@
     "id": "2026-10-27-transport-booking-polish",
     "date": "2026-10-27",
     "line": "Transport booking no longer needs a CAD number for a ward escort or family, and Save stays in view."
+  },
+  {
+    "id": "2026-10-27-ward-two-tabs",
+    "date": "2026-10-27",
+    "line": "The Ward page now has two tabs, Ward home and Decisions. Place or move opens the bed board."
+  },
+  {
+    "id": "2026-10-27-desktop-wheel-scroll",
+    "date": "2026-10-27",
+    "line": "On a computer, the mouse wheel now carries on scrolling the page past side panels and lists."
+  },
+  {
+    "id": "2026-10-27-forecast-on-ward-board",
+    "date": "2026-10-27",
+    "line": "Ward boards show your part in tomorrow's forecast, and Home links straight to it."
+  },
+  {
+    "id": "2026-10-27-header-band-holds",
+    "date": "2026-10-27",
+    "line": "The coloured page header now stays a full-width band under notes and banners, on every device."
+  },
+  {
+    "id": "2026-10-27-no-role-flash",
+    "date": "2026-10-27",
+    "line": "Opening the app on another desk no longer flashes the coordinator's page first."
+  },
+  {
+    "id": "2026-10-27-waiting-eds-on-rail",
+    "date": "2026-10-27",
+    "line": "Waiting and All EDs are back in the coordinator's side menu on a computer."
   }
 ]
