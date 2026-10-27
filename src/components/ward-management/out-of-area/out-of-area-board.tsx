@@ -62,6 +62,7 @@ import {
   inDaysAwayGroup,
   departureDayLabel,
   leavesToday,
+  involuntaryReturnAnswers,
   missingAnswers,
   returnStatus,
   shiftLabel,
@@ -403,6 +404,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
         estimatedAt,
+        ...involuntaryReturnAnswers(draft),
       },
       {
         success: `${recorded}${movementFeedback}`,
@@ -453,6 +455,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
         estimatedAt,
+        ...involuntaryReturnAnswers(draft),
       },
       {
         success: sentNotice,
@@ -489,6 +492,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         transportLegalStatus: existing.transportLegalStatus,
         // The recorded departure estimate stands; agreeing the return never moves it.
         estimatedAt: existing.estimatedAt,
+        // #177: the plan's Form 4C and escort answers stand too.
+        ...(existing.form4CReceived === undefined ? {} : { form4CReceived: existing.form4CReceived }),
+        ...(existing.escortRequired === undefined ? {} : { escortRequired: existing.escortRequired }),
       },
       {
         success: agreedNotice,
