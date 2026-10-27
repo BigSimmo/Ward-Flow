@@ -4,6 +4,7 @@
 // button and every edit in the person sheet. Split out of `ed-screen.tsx` unchanged (fix list 2.5
 // and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
+import { formTitleForCode } from "@/lib/form-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -93,6 +94,8 @@ export function renderEdBoardTableRow(
   const formTitle = movement.legalForm
     ? [`${legalStatusFull(movement)}.`, formExpiryText, formExpiryWarningText].filter(Boolean).join(" ")
     : undefined;
+  // H-0842: the register title shows under the short chip, so the code never stands alone.
+  const legalFormTitle = movement.legalForm ? formTitleForCode(movement.legalForm.code) : null;
   const formCell = (
     <>
       <span className={styles.a2Value} title={formTitle}>
@@ -103,6 +106,11 @@ export function renderEdBoardTableRow(
           {movement.legalForm ? legalStatusShort(movement) : noFormWords}
         </span>
       </span>
+      {legalFormTitle ? (
+        <span className={styles.a2Sub} data-testid={`ward-ed-form-title-${movement.id}`}>
+          {legalFormTitle}
+        </span>
+      ) : null}
       {formExpiryPassed ? (
         <span className={styles.a2Sub} aria-hidden="true" data-testid={`ward-ed-form-passed-${movement.id}`}>
           Past form expiry

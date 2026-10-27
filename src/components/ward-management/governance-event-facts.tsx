@@ -316,9 +316,11 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
               "Action",
               event.action === "TAKE_INBOX_ITEM_OWNERSHIP"
                 ? "Ownership taken"
-                : event.action === "SNOOZE_INBOX_ITEM"
-                  ? "Snoozed"
-                  : "Returned from snooze",
+                : event.action === "RELEASE_INBOX_ITEM_OWNERSHIP"
+                  ? "Ownership released"
+                  : event.action === "SNOOZE_INBOX_ITEM"
+                    ? "Snoozed"
+                    : "Returned from snooze",
             ],
             ["Reason", event.details.reason === null ? "Not recorded" : snoozeReasonLabel(event.details.reason)],
             ["Back at", event.details.until === null ? "Not recorded" : formatInstantWithDay(event.details.until, now)],

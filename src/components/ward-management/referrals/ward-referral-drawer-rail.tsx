@@ -8,6 +8,7 @@ import styles from "./ward-referral-drawer.module.css";
 import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
 import { DisabledReason, StatusGlyph } from "@/components/wf";
 import { sectionLabel } from "./ward-referral-drawer-model";
+import { drawerRailHeading } from "./referral-drawer-foot-status";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
@@ -90,7 +91,7 @@ export function ReferralSummaryRail({
         <>
           <section className={styles.railCard}>
             <div className={styles.railHead}>
-              <h3 className={styles.cardTitle}>Ready to send</h3>
+              <h3 className={styles.cardTitle}>{drawerRailHeading(itemsLeft)}</h3>
               {kept || draftKeptAt !== null ? (
                 <button
                   type="button"

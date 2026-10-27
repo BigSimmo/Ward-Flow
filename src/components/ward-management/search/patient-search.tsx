@@ -236,6 +236,7 @@ export function PatientSearchPage() {
   const [tab, setTab] = useState<"now" | "history">(returned?.tab ?? "now");
   const [openGroups, setOpenGroups] = useState<Record<CensusGroup, boolean>>(
     returned?.openGroups ?? {
+      ask: true,
       wait: true,
       found: true,
       move: true,

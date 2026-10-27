@@ -703,11 +703,17 @@ export function WardGlobalSearch({
     return !confirmNavigation || confirmNavigation();
   }
 
+  /** P141 (Josh, 27 Oct 2026, 10:12 PM AWST): the search box clears after a result opens. */
+  function clearAfterOpen() {
+    setQuery("");
+    close();
+  }
+
   /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
   function select(href: string, confirmed = false) {
     if (!confirmed && !confirmLeave()) return;
     remember(href);
-    close();
+    clearAfterOpen();
     if (onNavigate) onNavigate(href);
     else router.push(href);
   }
@@ -724,7 +730,7 @@ export function WardGlobalSearch({
     if (!onNavigate) {
       // A real link navigates itself; the palette only closes behind it and keeps the record.
       remember(href);
-      close();
+      clearAfterOpen();
       return;
     }
     event.preventDefault();
@@ -746,7 +752,7 @@ export function WardGlobalSearch({
     }
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    close();
+    clearAfterOpen();
     if (onNavigate) {
       event.preventDefault();
       onNavigate(href);

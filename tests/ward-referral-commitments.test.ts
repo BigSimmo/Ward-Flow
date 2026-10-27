@@ -193,7 +193,7 @@ describe("commitment selectors", () => {
     const seeded = seedWardFlowState();
     const groups = callSheetGroups(seeded.referrals, seeded.units);
     const youth = groups.find((group) => group.unitId === "bty-youth")!;
-    expect(youth.items.map((item) => item.referral.id)).toEqual(["RF-001"]);
+    expect(youth.items.map((item) => item.referral.id)).toEqual(["RF-001", "RF-005", "RF-011", "RF-RD06"]);
     expect(youth.lastCall?.outcome).toBe("call_back");
     expect(youth.nextCallbackAt).toBe(NOW + 20);
     expect(promiseOverdue(youth.items[0]!.status, NOW)).toBe(true);

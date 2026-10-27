@@ -744,6 +744,8 @@ const leaveBed = z.looseObject({
   confirmedAt: finite,
   confirmedBy: text,
   absentWithoutLeave: z.optional(absence),
+  // #101 (Josh, 27 Oct 2026): the ward's yes or no, when the psychiatrist's authority was asked.
+  psychiatristAuthorised: z.optional(bool),
 });
 
 const refreshRequest = z.looseObject({
@@ -955,6 +957,9 @@ const repatriation = z
     // A plan agreed after it was first logged also carries both of these.
     agreedAt: z.optional(finite),
     agreedBy: z.optional(role),
+    // #177 (Josh, 27 Oct 2026): an involuntary return's Form 4C and escort answers, when given.
+    form4CReceived: z.optional(bool),
+    escortRequired: z.optional(bool),
   })
   .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
 // Closing-the-loop (package E): return requested vs home service agreed. Closed lists, roles and

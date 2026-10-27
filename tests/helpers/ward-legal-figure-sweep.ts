@@ -1423,6 +1423,7 @@ export function candidateEvents(
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "RELEASE_INBOX_ITEM_OWNERSHIP":
       return buildActionInbox(state.movements, now, state.units).map((item) => ({
         type,
         role,

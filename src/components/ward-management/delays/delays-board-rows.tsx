@@ -15,6 +15,7 @@ import { type Movement, type Unit } from "@/components/ward-management/ward-mode
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { movementOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { type WfTone } from "@/components/wf";
+import { Tooltip } from "@/components/wf/tooltip";
 import { Glyph } from "./delays-board-parts";
 import { OVER_24H, OVER_8H, dueTone, rowEvents, type BoardRow } from "./delays-board-model";
 import styles from "./delays-board.module.css";
@@ -29,25 +30,42 @@ export function ago(minutes: number): string {
   return minutes < 1 ? "just now" : `${splitDuration(minutes)} ago`;
 }
 
-/** U1 (review 12 Oct 2026): legal status is never cut. A short form chip, the full name as its title. */
+/**
+ * U1 (review 12 Oct 2026): legal status is never cut. A short form chip, the full name in its tip.
+ * P197 (Josh, 27 Oct 2026, option A): the tip ("Form 1A (Referral for examination by a psychiatrist)",
+ * titles from the form register only) opens on keyboard focus and on a tap, not only on hover. A tap
+ * on the chip shows the tip and does not open the row.
+ */
 export function legalCell(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
   const form = row.movement.legalForm;
   const short = legalStatusShort(row.movement);
   const full = legalStatusFull(row.movement);
-  if (row.dueIn === undefined || form === undefined)
-    return (
-      <span className={styles.legalChip} title={full}>
-        {short}
-      </span>
-    );
+  if (row.dueIn === undefined || form === undefined) return legalTip(full, <>{short}</>);
   const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds);
   const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
   return (
-    <span className={styles.lg} title={`${full}, ${left}`}>
+    <span className={styles.lg}>
       <Glyph tone={tone} />
-      <span className={styles.legalChip}>{short}</span>
+      {legalTip(`${full}, ${left}`, <>{short}</>)}
       <span className={styles.legalLeft}>{left}</span>
     </span>
+  );
+}
+
+function legalTip(content: string, chip: ReactNode): ReactNode {
+  return (
+    <Tooltip content={content}>
+      <button
+        type="button"
+        className={styles.legalChip}
+        data-legal-tip=""
+        data-testid="delays-legal-chip"
+        // Safari does not focus a tapped button; focusing it here opens the tip on a tap.
+        onClick={(event) => event.currentTarget.focus()}
+      >
+        {chip}
+      </button>
+    </Tooltip>
   );
 }
 
