@@ -330,6 +330,17 @@
   background: var(--wf-glyph-dim);
 }
 
+/* P087: a bed the held pick cannot go to stops looking choosable (no lift, no press). */
+.plan[data-picking="true"] .cell[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+.plan[data-picking="true"] .cell[aria-disabled="true"]:is(:hover, :active) {
+  border-color: var(--wf-line);
+  box-shadow: none;
+  transform: none;
+}
+
 .plan[data-picking="true"] .cell[data-fits="true"] {
   border-color: var(--wf-fit-edge);
   box-shadow:
