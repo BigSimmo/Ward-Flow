@@ -1,30 +1,5 @@
 [
   {
-    "id": "2026-10-27-desk-actions",
-    "date": "2026-10-27",
-    "line": "Broadcast alert is greyed out for desks that cannot send one, and admins cannot remove their own admin role."
-  },
-  {
-    "id": "2026-10-27-officer-health-service",
-    "date": "2026-10-27",
-    "line": "A transport officer whose role names no health service is told to ask for it again with one."
-  },
-  {
-    "id": "2026-10-27-handover-own-places",
-    "date": "2026-10-27",
-    "line": "Handover offers only your own wards and places, and Beds totals count your wards only."
-  },
-  {
-    "id": "2026-10-27-ward-inbox-referral-number",
-    "date": "2026-10-27",
-    "line": "The ward Referral inbox now shows the referral number."
-  },
-  {
-    "id": "2026-10-27-restore-closed-open-items",
-    "date": "2026-10-27",
-    "line": "After a refresh, if loading your saved board closed something you had just opened, the notice now says so."
-  },
-  {
     "id": "2026-10-27-charts-to-follow",
     "date": "2026-10-27",
     "line": "Referrals can mark the medication or observation chart To follow when it is not to hand."
@@ -98,5 +73,30 @@
     "id": "2026-10-27-referral-board-keys",
     "date": "2026-10-27",
     "line": "Referral board: A accepts and D declines the open referral."
+  },
+  {
+    "id": "2026-10-27-bed-meeting-undo",
+    "date": "2026-10-27",
+    "line": "A bed meeting action marked done by mistake can now be undone."
+  },
+  {
+    "id": "2026-10-27-handover-copy-result",
+    "date": "2026-10-27",
+    "line": "Home's Copy as handover text now tells you whether the copy worked."
+  },
+  {
+    "id": "2026-10-27-rules-file-unreadable",
+    "date": "2026-10-27",
+    "line": "Settings now says when a rules file can't be read."
+  },
+  {
+    "id": "2026-10-27-copy-removes-date-of-birth",
+    "date": "2026-10-27",
+    "line": "Copied text now removes a date of birth written mid-line."
+  },
+  {
+    "id": "2026-10-27-buzz-across-tabs",
+    "date": "2026-10-27",
+    "line": "Buzz sound on or off now matches across open tabs."
   }
 ]
