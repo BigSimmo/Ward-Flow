@@ -290,8 +290,7 @@ test.describe("layout shift", () => {
   }
 
   async function phonePage(browser: Browser, baseURL: string | undefined) {
-    const { defaultBrowserType: _browserType, ...pixel } = devices["Pixel 7"];
-    const context = await browser.newContext({ ...pixel, baseURL, viewport: { width: 390, height: 844 } });
+    const context = await browser.newContext({ ...devices["Pixel 7"], baseURL, viewport: { width: 390, height: 844 } });
     return { context, page: await context.newPage() };
   }
 
