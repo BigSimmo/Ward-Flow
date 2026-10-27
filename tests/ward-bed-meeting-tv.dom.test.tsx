@@ -326,7 +326,7 @@ describe("the bed meeting TV view", () => {
     expect(tv).toHaveTextContent("Not approved for clinical use");
     // Overall review (20 Oct 2026): the footer names the shift the rest of the app shows, and the
     // standard scenario is a day, so it never reads "Standard night" beside "Day shift".
-    expect(tv).toHaveTextContent("Day shift · Scenario: Standard day");
+    expect(tv).toHaveTextContent("Day shift · Demo data: Standard day");
     expect(tv).not.toHaveTextContent("Standard night");
     const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
     expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
