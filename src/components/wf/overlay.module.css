@@ -411,3 +411,10 @@
 .toast.toastPointer {
   pointer-events: auto;
 }
+
+/* P006: notices are screen-only; keep them off printed outputs. */
+@media print {
+  .toastRegion {
+    display: none !important;
+  }
+}

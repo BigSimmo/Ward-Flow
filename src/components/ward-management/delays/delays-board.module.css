@@ -2057,7 +2057,8 @@ button.gLaneL:hover {
 
 /* ---------- phone hero (v10 Delays): three figures, no Checking foot ---------- */
 @media (max-width: 48rem) {
-  .stats > :nth-child(n + 4) {
+  /* The in-transit note (P098) sits between the figures, so counting children would hide Form due. */
+  .stats > .footNote {
     display: none;
   }
 
