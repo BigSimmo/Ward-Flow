@@ -22,7 +22,7 @@
   align-items: flex-start;
   justify-content: center;
   padding: 12vh 16px 16px;
-  background: rgb(0 0 0 / 40%);
+  background: var(--wf-scrim);
 }
 
 .box {
