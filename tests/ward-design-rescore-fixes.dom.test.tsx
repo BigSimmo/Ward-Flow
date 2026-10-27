@@ -79,7 +79,8 @@ describe("DR-06: Ward Flow's own address sends each desk to its own home", () =>
 
   it("still refuses another closed screen", () => {
     asDesk({ role: "executive", scope: { kind: "statewide" } });
-    nav.pathname = "/ward-flow/capacity";
+    // Capacity opened to the executive as counts on 27 Oct 2026, so Movements stands in.
+    nav.pathname = "/ward-flow/movements";
     renderGate();
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
     expect(nav.replace).not.toHaveBeenCalled();

@@ -210,7 +210,14 @@ const ROLE_MENU_DEFINITIONS: Record<WardChromeRole, RoleMenuDefinition> = {
     ],
     moreFirst: [],
   },
-  executive: { main: [["statistics", "Statistics"]], moreFirst: [] },
+  executive: {
+    main: [
+      ["statistics", "Statistics"],
+      // Josh, 27 Oct 2026: bed counts as well as statistics, no names.
+      ["capacity", "Capacity"],
+    ],
+    moreFirst: [],
+  },
 };
 
 /** Each role's own short menu, read from `ROLE_MENU_DEFINITIONS`. */
