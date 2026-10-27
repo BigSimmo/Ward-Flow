@@ -60,5 +60,9 @@ describe("searchHelp", () => {
   it("keeps app words that sound clinical searchable", () => {
     expect(isClinicalQuestion("at risk")).toBe(false);
     expect(isClinicalQuestion("legal status")).toBe(false);
+    expect(isClinicalQuestion("Tentative diagnosis")).toBe(false);
+    expect(isClinicalQuestion("How do I record a tentative diagnosis?")).toBe(false);
+    expect(isClinicalQuestion("Community treatment order")).toBe(false);
+    expect(searchHelp("Community treatment order", "ward").kind).toBe("results");
   });
 });

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
+import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
 import { howToHref } from "./ward-help-ask";
 import { showWardHowTo } from "./ward-help-events";
@@ -50,9 +51,16 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
           ? suggested(role)
           : [];
 
+  const layer = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (open) input.current?.focus();
-  }, [open]);
+    if (!open) return;
+    // Join the shared modal stack so the Help sheet behind stops handling Escape and Tab.
+    const layerId = `ward-help-search-${id}`;
+    pushSheet(layerId, layer.current);
+    input.current?.focus();
+    return () => popSheet(layerId);
+  }, [open, id]);
 
   function close() {
     setOpen(false);
@@ -152,7 +160,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
         <span>Search Help: guides, screens, words, shortcuts…</span>
       </button>
       {open ? (
-        <div className={styles.backdrop}>
+        <div ref={layer} className={styles.backdrop}>
           <button type="button" aria-label="Close" tabIndex={-1} className={styles.scrim} onClick={close} />
           <div
             role="dialog"

@@ -42,10 +42,11 @@ export const CLINICAL_REPLY =
 
 /**
  * Questions that ask for a clinical decision rather than how to use a screen. Kept narrow, so app
- * words such as "At risk" or "Legal status" still search Help.
+ * words such as "At risk", "Legal status", "Tentative diagnosis" or
+ * "Community treatment order" still search Help.
  */
 const CLINICAL =
-  /\b(dose|dosage|dosing|mg|medicat\w*|prescri\w*|diagnos\w*|treat(ment)?s?|side effects?|symptoms?|suicid\w*|self[- ]harm|overdose|sedat\w*|should (i|we) (admit|discharge|section|detain|restrain|seclude|give))\b/iu;
+  /\b(dose|dosage|dosing|mg|medicat\w*|prescri\w*|(what|which) (\w+ )?(diagnosis|treatment)|(diagnosis|treatment) (for|of)|side effects?|symptoms?|suicid\w*|self[- ]harm|overdose|sedat\w*|should (i|we) (admit|discharge|section|detain|restrain|seclude|give|treat|diagnose))\b/iu;
 
 export function isClinicalQuestion(query: string): boolean {
   return CLINICAL.test(query);

@@ -1,3 +1,4 @@
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -47,6 +48,13 @@ describe("WardHelpSearch", () => {
     fireEvent.keyDown(input, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.activeElement).toBe(screen.getByTestId("ward-help-search-field"));
+  });
+
+  it("joins the shared modal stack while open", () => {
+    openSearch();
+    expect(hasOpenSheet()).toBe(true);
+    fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+    expect(hasOpenSheet()).toBe(false);
   });
 
   it("never writes typed words to storage", () => {
