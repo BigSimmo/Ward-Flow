@@ -6,12 +6,12 @@ import { boardCardLine } from "@/components/ward-management/board/ward-board";
 const PERSON = { familyName: "Example", givenName: "Sam" };
 
 describe("the line that leads an occupied /board card", () => {
-  it("leads with a recorded bed number, then surname and initial", () => {
-    expect(boardCardLine(4, PERSON)).toBe("Bed 4 · Example, S");
+  it("leads with a recorded bed number, then surname and given name in full (D-83)", () => {
+    expect(boardCardLine(4, PERSON)).toBe("Bed 4 · Example, Sam");
   });
 
   it("shows the name alone when no bed number is recorded", () => {
-    expect(boardCardLine(undefined, PERSON)).toBe("Example, S");
+    expect(boardCardLine(undefined, PERSON)).toBe("Example, Sam");
   });
 
   it("shows the bed alone when no person is linked", () => {

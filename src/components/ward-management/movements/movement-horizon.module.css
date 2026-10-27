@@ -575,7 +575,7 @@
   height: 100%;
 }
 
-/* Event Bars: slim pills in the data ramp, named "Surname, I" in the body face. */
+/* Event Bars: slim pills in the data ramp, named "Surname, Given" in the body face. */
 .ganttBar {
   position: absolute;
   min-width: 96px;
