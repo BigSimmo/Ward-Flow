@@ -304,7 +304,8 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
    * and Expected rather than instead of either.
    *
    * The two words matter as much as the number. This chip row used to carry a "Blocked" chip
-   * meaning physically blocked BEDS, so the new figure reads "Discharges held up" — two chips
+   * meaning physically blocked BEDS, so the new figure reads "Releases held up" (decision 15, 26 Oct
+   * 2026; it was "Discharges held up", now the patient count's name) — two chips
    * reading the same word beside each other while meaning different things would be a defect, not
    * a tidy-up. The physical chip has since gone: out-of-service beds are not recorded (owner ruling
    * 2026-09-25) and fold into Closed, one of the ruled four (`ward-bed-states.ts`).
@@ -329,7 +330,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
       (release) => release.unitId === "rph-adult-secure" && release.state !== "discharged" && release.blocker !== null,
     ).length;
     expect(heldUp).toBeGreaterThanOrEqual(breakdown.blockedToday);
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Discharges held up ${heldUp}`);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldUp}`);
     // ...and no chip reads "Blocked" as a bed state beside it: the out-of-service box is gone and
     // the empty bed the ward is not offering is the separately worded Closed chip.
     expect(chipRow).not.toHaveTextContent(/\bBlocked\b/u);
@@ -348,7 +349,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
    * the unit's own chip figures before and after blocking it, rather than pinning a number, is
    * what proves this property without going stale the next time an admission changes.
    */
-  it("keeps Confirmed unchanged when the ward blocks its confirmed release, and raises Discharges held up by one", () => {
+  it("keeps Confirmed unchanged when the ward blocks its confirmed release, and raises Releases held up by one", () => {
     const unit = unitById(CONFIRMED_RELEASE!.unitId)!;
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -366,7 +367,7 @@ describe("ward screen bed capacity chip row uses the shared breakdown, not the r
     const heldBefore = bedReleases.filter(
       (release) => release.unitId === unit.id && release.state !== "discharged" && release.blocker !== null,
     ).length;
-    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Discharges held up ${heldBefore + 1}`);
+    expect(screen.getByTestId("ward-unit-blocked-releases")).toHaveTextContent(`Releases held up ${heldBefore + 1}`);
     const row = screen.getByTestId(`ward-barrier-${CONFIRMED_RELEASE!.id}`);
     expect(row).toHaveTextContent("Confirmed");
     expect(row).toHaveTextContent("Blocked");

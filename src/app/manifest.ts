@@ -64,7 +64,7 @@ export default function manifest(): MetadataRoute.Manifest {
       {
         name: "Referrals",
         short_name: "Referrals",
-        description: "Triage incoming referrals and match suitable beds",
+        description: "Triage incoming referrals and see which wards have room",
         url: `${WARD_FLOW}/referrals`,
         icons: SHORTCUT_ICONS,
       },

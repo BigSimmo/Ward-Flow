@@ -9,8 +9,10 @@ import { isAwaitingAnswer, referralDestinationLabel } from "@/components/ward-ma
  * A plain timer and nothing else. For each place a waiting referral was sent that has not
  * answered, it counts the minutes since that place was asked and says when the count passes the
  * time limit set in Settings ("Referral decision", `referralDecisionTargetMinutes`, default two
- * hours). That is the same figure the "Referral decision overdue" alert reads, so a person cannot
- * be told two different limits for one wait.
+ * hours). The "Referral decision overdue" alert reads the same time limit, so a person cannot be
+ * told two different limits for one wait. It is not the same figure (NA3-08, audit 26 Oct 2026):
+ * this counts each place that has not replied, and the alert counts journeys from their own target
+ * reading, so the two counts can differ. Keep them distinct; never add one to the other.
  *
  * Only wards and community teams are timed: an emergency department is answered by triage, and
  * the referral board already times that wait by tier.

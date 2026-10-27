@@ -97,7 +97,7 @@ import trendStyles from "./statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import { NetworkOverviewCards } from "./statistics-network-cards";
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
-import { isAwaitingAnswer } from "../ward-referrals";
+import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
 import { hoursText, occupiedBeds } from "./statistics-occupancy";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
@@ -126,12 +126,6 @@ function formatReportDay(instant: Instant, dayZero: Date): string {
   const month = date.toLocaleDateString("en-AU", { month: "long", timeZone: "Australia/Perth" });
   return `${weekday} ${day} ${month}`;
 }
-
-/** "no_specialling" reads "No specialling". */
-const sentenceCase = (text: string) => {
-  const spaced = text.replace(/_/g, " ");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-};
 
 /** Minutes as a duration, or "none" when nothing is waiting. */
 const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
@@ -504,7 +498,7 @@ export function StatisticsScreen({
                   total: declinesReadout.value.totalCount,
                   tallies: declinesReadout.value.tallies.map((tally) => ({
                     id: tally.reason,
-                    label: sentenceCase(tally.reason),
+                    label: DECLINE_REASON_LABELS[tally.reason],
                     count: tally.count,
                   })),
                 }
@@ -984,7 +978,7 @@ export function StatisticsScreen({
             <div className={styles.grid3}>
               <StatCard
                 icon={Lock}
-                title="Blocked discharges"
+                title="Discharges held up"
                 data-testid="ward-statistics-blocked-discharges-by-reason"
                 aside={
                   <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
@@ -999,7 +993,7 @@ export function StatisticsScreen({
               >
                 <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
                   <BarList
-                    label="Blocked discharges by blocker"
+                    label="Discharges held up, by reason"
                     labelWidth="10.5rem"
                     axis
                     max={axisMax(blocked.tallies.map((tally) => tally.count))}
@@ -1069,10 +1063,10 @@ export function StatisticsScreen({
                           id: tally.reason,
                           label: (
                             <span data-testid={`ward-statistics-decline-${tally.reason}`}>
-                              {sentenceCase(tally.reason)}
+                              {DECLINE_REASON_LABELS[tally.reason]}
                             </span>
                           ),
-                          labelText: sentenceCase(tally.reason),
+                          labelText: DECLINE_REASON_LABELS[tally.reason],
                           value: tally.count,
                           display: (
                             <span data-testid={`ward-statistics-decline-${tally.reason}-count`}>

@@ -151,7 +151,7 @@ describe("tasks drawer: ownership and snooze", () => {
         [red.id]: [
           {
             at: NOW_ANCHOR,
-            by: "Flow coordinator",
+            by: "Bed coordinator",
             kind: "snoozed",
             until: NOW_ANCHOR + 30,
             reason: "awaiting_call_back",
@@ -162,7 +162,7 @@ describe("tasks drawer: ownership and snooze", () => {
     expect(within(drawer).queryByTestId(`ward-task-own-${red.id}`)).toBeNull();
     const snoozed = screen.getByTestId("ward-tasks-snoozed");
     expect(snoozed).toHaveTextContent(red.title);
-    expect(snoozed).toHaveTextContent(/Back .* · Awaiting call back · Flow coordinator/i);
+    expect(snoozed).toHaveTextContent(/Back .* · Awaiting call back · Bed coordinator/i);
     // Patient identity stays on the snoozed row so two patients with the same title are distinct.
     const snoozedRow = screen.getByTestId(`ward-task-snoozed-${red.id}`);
     const expected = resolveSubjectPatient(
@@ -193,7 +193,7 @@ describe("tasks drawer: ownership and snooze", () => {
         [red.id]: [
           {
             at: NOW_ANCHOR,
-            by: "Flow coordinator",
+            by: "Bed coordinator",
             kind: "snoozed",
             until: NOW_ANCHOR + 30,
             reason: "awaiting_call_back",
@@ -206,16 +206,16 @@ describe("tasks drawer: ownership and snooze", () => {
   });
 
   it("shows who owns a row and hides Take for the owner", () => {
-    const { drawer } = renderDrawer({ ownership: { [red.id]: [{ at: NOW_ANCHOR - 5, by: "Flow coordinator" }] } });
+    const { drawer } = renderDrawer({ ownership: { [red.id]: [{ at: NOW_ANCHOR - 5, by: "Bed coordinator" }] } });
     expect(within(drawer).queryByTestId(`ward-task-own-${red.id}`)).toBeNull();
-    expect(drawer).toHaveTextContent(/Owned by Flow coordinator since/);
+    expect(drawer).toHaveTextContent(/Owned by Bed coordinator since/);
   });
 
   it("says who acknowledged a row", () => {
     const { drawer } = renderDrawer({
-      acknowledgements: { [red.id]: [{ at: NOW_ANCHOR - 2, by: "Flow coordinator" }] },
+      acknowledgements: { [red.id]: [{ at: NOW_ANCHOR - 2, by: "Bed coordinator" }] },
     });
-    expect(drawer).toHaveTextContent(/Acknowledged by Flow coordinator at/);
+    expect(drawer).toHaveTextContent(/Acknowledged by Bed coordinator at/);
   });
 
   it("offers Due first, which puts rows with a due time ahead of rows without one", () => {
@@ -241,7 +241,7 @@ describe("tasks drawer: ownership and snooze", () => {
         [red.id]: [
           {
             at: NOW_ANCHOR,
-            by: "Flow coordinator",
+            by: "Bed coordinator",
             kind: "snoozed",
             until: NOW_ANCHOR + 30,
             reason: "awaiting_call_back",
@@ -279,7 +279,7 @@ describe("tasks drawer: ownership and snooze", () => {
         [discharge.id]: [
           {
             at: NOW_ANCHOR,
-            by: "Flow coordinator",
+            by: "Bed coordinator",
             kind: "snoozed",
             until: NOW_ANCHOR + 60,
             reason: "awaiting_call_back",
@@ -321,7 +321,7 @@ describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages 
       const oldest = review("oldest", NOW_ANCHOR - 72);
       renderDrawer({
         items: [recent, review("untimed"), oldest, red],
-        acknowledgements: { [recent.id]: [{ at: NOW_ANCHOR, by: "Flow coordinator" }] },
+        acknowledgements: { [recent.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }] },
       });
       const titles = screen
         .getAllByRole("button", { name: /^(Row (recent|oldest|untimed)|.*expired.*)$/iu })

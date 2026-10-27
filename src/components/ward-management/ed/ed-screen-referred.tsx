@@ -227,10 +227,10 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                         data-testid={`ward-ed-record-gender-${movement.id}`}
                         aria-label={`Record gender for ${patientInfo.displayName}`}
                         value={genderRecordDraft[movement.id] ?? ""}
-                        onChange={(event) =>
+                        onChange={({ target: { value } }) =>
                           setGenderRecordDraft((current) => ({
                             ...current,
-                            [movement.id]: event.target.value as ReferralGender | "",
+                            [movement.id]: value as ReferralGender | "",
                           }))
                         }
                       >

@@ -48,6 +48,7 @@ import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { edPressure } from "@/components/ward-management/ward-pressure";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { bedsForecast } from "./beds-forecast";
 import { BedsForecastPanel } from "./beds-forecast-panel";
 import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
@@ -113,6 +114,9 @@ export { rowSentence, totalsSentence } from "./capacity-gap-words";
  * labels that name their unit, one primary, and a smaller phone hero with figures and no ring.
  */
 /** Highlight chip words: each names what it counts (wards), so none repeats a hero bed figure. */
+const NETWORK_TABS = ["freeing", "attention"] as const;
+const PHONE_TABS = ["overview", "wards", "planned"] as const;
+
 const HIGHLIGHT_LABELS: Record<string, string> = {
   ready: "Any bed ready",
   "locked-ready": "Locked bed ready",
@@ -166,10 +170,11 @@ export function CapacityScreen() {
    */
   const service = useServiceScope();
   const [selection, setSelection] = useState<{ unitId: string; generation: number } | null>(null);
-  const [networkTab, setNetworkTab] = useState("freeing");
+  // H-0186: the chosen tabs stay in the address, so a reload opens the same view.
+  const [networkTab, setNetworkTab] = useAddressTab("details", NETWORK_TABS, "freeing");
   // Phone (v10): Overview, Wards and Planned are one segmented control; each shows its own part.
   const isPhone = useIsPhone();
-  const [phoneTab, setPhoneTab] = useState<"overview" | "wards" | "planned">("overview");
+  const [phoneTab, setPhoneTab] = useAddressTab("view", PHONE_TABS, "overview");
   // Option A: the ward table is the bed map's Table layout, so it mounts only when that is chosen.
   const [mapLayout, setMapLayout] = useState<BedMapLayout>("grid");
   const [wardSort, setWardSort] = useState("name");
@@ -535,7 +540,7 @@ export function CapacityScreen() {
                   <th scope="col">{BED_STATE_LABELS.occupied}</th>
                   <th scope="col">Gender mix</th>
                   <th scope="col">Specialling</th>
-                  <th scope="col">Involuntary-capable</th>
+                  <th scope="col">Authorised hospital</th>
                   <th scope="col">Confirmed</th>
                   <th scope="col">Ask for an update</th>
                 </tr>
@@ -588,7 +593,7 @@ export function CapacityScreen() {
             id="capacity-network"
             label="Network details"
             value={networkTab}
-            onChange={(tab) => startTransition(() => setNetworkTab(tab))}
+            onChange={(tab) => startTransition(() => setNetworkTab(tab === "attention" ? "attention" : "freeing"))}
             options={[
               { id: "freeing", label: "Beds freeing" },
               { id: "attention", label: "Attention" },

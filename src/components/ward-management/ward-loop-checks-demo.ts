@@ -18,7 +18,7 @@ const BED_AFTER_MOVEMENT_ID = "WF-023";
 const LIMITED_UNIT_ID = "gry-adult-secure";
 const CLOSED_UNIT_ID = "gry-older-adult";
 
-const COORDINATOR = "Flow coordinator";
+const COORDINATOR = "Bed coordinator";
 const WARD = "Ward manager";
 
 export function applyLoopChecksDemoOverlay<T extends { movements: Movement[]; units: Unit[] }>(

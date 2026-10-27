@@ -507,6 +507,9 @@ test(
       try {
         await client.query("BEGIN");
         await client.query(
+          await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8"),
+        );
+        await client.query(
           await readFile(new URL("./infra/rollback-014-archived-records.sql", import.meta.url), "utf8"),
         );
         await client.query(

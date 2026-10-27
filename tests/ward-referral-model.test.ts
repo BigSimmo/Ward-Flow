@@ -1422,7 +1422,7 @@ describe("Referral privacy — structural", () => {
           acceptedUnitId: "rph-adult-secure",
           declineReason: "no_suitable_bed",
           decidedAt: NOW_ANCHOR + 5,
-          decidedBy: "Flow coordinator",
+          decidedBy: "Bed coordinator",
           // Closing-the-loop package A: a fully populated commitment entry, so its keys are pinned.
           commitments: [
             {
@@ -1431,7 +1431,7 @@ describe("Referral privacy — structural", () => {
               promisedFor: NOW_ANCHOR + 4,
               nextCallbackAt: NOW_ANCHOR + 4,
               at: NOW_ANCHOR + 2,
-              by: "Flow coordinator",
+              by: "Bed coordinator",
             },
           ],
         },
@@ -1486,13 +1486,13 @@ describe("Referral privacy — structural", () => {
       originUnitId: "rph-adult-secure",
       // Fix plan item 4: present because `Required<Referral>` demands every optional field. On a
       // real referral their absence means nobody has been assigned and no call has been logged.
-      ownerHistory: [{ owner: "coordinator", at: NOW_ANCHOR + 3, by: "Flow coordinator" }],
+      ownerHistory: [{ owner: "coordinator", at: NOW_ANCHOR + 3, by: "Bed coordinator" }],
       contactLog: [
         {
           contact: { kind: "psychiatric_ward", unitId: "rph-adult-secure" },
           outcome: "no_answer",
           at: NOW_ANCHOR + 4,
-          by: "Flow coordinator",
+          by: "Bed coordinator",
         },
       ],
     };

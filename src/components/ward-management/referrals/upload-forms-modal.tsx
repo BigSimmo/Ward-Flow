@@ -5,6 +5,8 @@ import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Button } from "@/components/wf";
 import { type Movement } from "@/components/ward-management/ward-model";
+import { type UploadedFileType } from "@/components/ward-management/ward-model-vocabulary";
+import { uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 import { useWardModalFocus } from "../ward-modal-focus";
@@ -37,7 +39,9 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
   const baseId = useId();
 
   const [formName, setFormName] = useState<string>(FORM_TYPE_OPTIONS[0]);
+  // Shown only while this dialog is open. The name is never sent or saved (H-0049).
   const [fileName, setFileName] = useState<string>("");
+  const [fileType, setFileType] = useState<UploadedFileType>("Other");
   const [fileAttached, setFileAttached] = useState<boolean>(false);
   const [simulatedSize, setSimulatedSize] = useState<number>(0);
   const [isInputFocused, setIsInputFocused] = useState<boolean>(false);
@@ -63,6 +67,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       setFileName(file.name);
+      setFileType(uploadedFileTypeOf(file.name, file.type));
       setSimulatedSize(file.size);
       setFileAttached(file.size > 0);
     }
@@ -88,7 +93,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
         now,
         movementId: movement.id,
         formName,
-        fileName,
+        fileType,
         sizeBytes: simulatedSize,
       });
       if (result && "then" in result) void result.then(finish, () => finish());
@@ -180,8 +185,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               style={{ color: "var(--wf-success)", marginTop: "2px", flexShrink: 0 }}
             />
             <span>
-              Only the selected file name, size and document type are recorded for the <strong>Transport</strong>{" "}
-              screen. File contents are not stored or sent.
+              Only the file type, size and document type are recorded for the <strong>Transport</strong> screen. The
+              file name and contents are not stored or sent.
             </span>
           </div>
 

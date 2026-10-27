@@ -13,6 +13,7 @@ import { wardStatisticsHref } from "@/components/ward-management/shell/ward-faca
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
+import { occupancyPercent } from "./statistics-occupancy";
 import { StatCard } from "./statistics-hero";
 import styles from "./statistics-v6.module.css";
 
@@ -82,7 +83,8 @@ export function HospitalCapacityMatrix({
     return units.map((u) => {
       const site = siteByCode(u.siteCode);
       const states = bedStates(u, admissions, bedReleases, leaveBeds);
-      const occRate = u.beds > 0 ? Math.round((states.occupied / u.beds) * 100) : 0;
+      // W-12 (fresh audit 26 Oct 2026): the one occupancy rule, Occupied + Pulled, as every page prints it.
+      const occRate = occupancyPercent({ beds: u.beds, inUse: states.occupied + states.pulled });
       const status: StatusKey = states.ready <= 0 ? "none" : occRate >= BED_ALERT_THRESHOLD_PERCENT ? "near" : "has";
       return {
         id: u.id,

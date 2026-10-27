@@ -476,7 +476,7 @@ function armChips(referral: Referral) {
     if (!open && !refused) continue;
     const asked = open ? openInformationNeeds(arm.informationNeeds).length : 0;
     const words = `${shortKind(arm.destination.kind)}${
-      open && arm.waitlistedAt !== undefined ? ", waitlisted" : refused ? " refused" : ""
+      open && arm.waitlistedAt !== undefined ? ", on the waiting list" : refused ? " refused" : ""
     }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
     const title = refused
       ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`

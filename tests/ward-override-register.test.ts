@@ -28,7 +28,7 @@ const NOW = NOW_ANCHOR;
  * adds a column, a debug panel, or a styling change that reveals a hidden row.
  */
 function overrideOn(unitIds: string[], reason: Override["reason"] = OVERRIDE_REASONS[0]): Override {
-  return { at: NOW, by: "Flow coordinator", reason, unitIds };
+  return { at: NOW, by: "Bed coordinator", reason, unitIds };
 }
 
 function movementWithOverrides(id: MovementId, overrides: Override[]): Movement {
@@ -94,7 +94,7 @@ describe("the override register is scoped to the ward it was made against", () =
 
   it("carries who decided, when, and why — not merely that something happened", () => {
     const [entry] = overridesAgainstUnit(movements, "scgh-adult-open");
-    expect(entry.override.by, "a ROLE, never a person").toBe("Flow coordinator");
+    expect(entry.override.by, "a ROLE, never a person").toBe("Bed coordinator");
     expect(entry.override.at).toBe(NOW);
     expect(OVERRIDE_REASONS, "the reason must come from the fixed list").toContain(entry.override.reason);
   });
@@ -129,7 +129,7 @@ describe("an override reason survives the event that carried it", () => {
     expect(updated.overrides).toHaveLength(1);
     expect(updated.overrides[0]).toMatchObject({
       at: NOW,
-      by: "Flow coordinator",
+      by: "Bed coordinator",
       reason: "Closer to the person's home or family",
       unitIds: ["rph-adult-secure"],
     });

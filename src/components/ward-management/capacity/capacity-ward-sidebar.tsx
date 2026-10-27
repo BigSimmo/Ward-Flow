@@ -205,7 +205,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
                 </dd>
               </div>
               <div>
-                <dt>Involuntary-capable</dt>
+                <dt>Authorised hospital</dt>
                 <dd>{row.unit.authorised ? "Yes" : "No"}</dd>
               </div>
             </dl>

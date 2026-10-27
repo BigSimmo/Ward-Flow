@@ -8,6 +8,7 @@ import {
   RECORDS_MIGRATION,
   RECORD_ACCESS_MIGRATION,
   REFERRAL_VIEW_MIGRATION,
+  LIST_VIEW_MIGRATION,
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
@@ -121,6 +122,8 @@ const OUTSIDE_PLACE = "This change names a record outside your role's place.";
 const minutesBefore = (time, now) => Math.round((new Date(time).getTime() - now.getTime()) / 60_000);
 /** Most record openings one account may log in a minute, so no desk can flood the log. */
 const VIEW_RATE_LIMIT = 60;
+/** A desk's whole-list or TV reads are logged at most once in this window for each account (H-0731). */
+const LIST_VIEW_REPEAT_MS = 15 * 60_000;
 
 function canonical(value) {
   if (Array.isArray(value)) return value.map(canonical);
@@ -2140,6 +2143,42 @@ export function createWorkspaceStore(
         params,
       );
       return rows.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));
+    },
+    /**
+     * H-0731: the server's own record that this desk was sent its whole list (`list`) or the TV
+     * board (`tv`), written as it sends them, so a browser that never reports what it opens is
+     * still in the log. A list read names no single record, so its patient is "*". One row per
+     * account, desk and screen in LIST_VIEW_REPEAT_MS, so polling cannot flood the log. Before 15
+     * nothing is kept.
+     */
+    async logList(view, surface) {
+      if (!(view.version >= LIST_VIEW_MIGRATION) || (surface !== "list" && surface !== "tv")) return false;
+      return transaction(async (client, loggedAt) => {
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':record-access'))", [
+          workspaceId,
+          view.actorId,
+        ]);
+        loggedAt.setTime(clock().getTime());
+        const { rowCount } = await client
+          .query(
+            "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,'*',$6,$7 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND membership_id IS NOT DISTINCT FROM $3 AND patient_id='*' AND surface=$6 AND viewed_at > $8)",
+            [
+              workspaceId,
+              view.actorId,
+              view.membershipId ?? null,
+              view.access.role,
+              view.access.scope,
+              surface,
+              loggedAt,
+              new Date(loggedAt.getTime() - LIST_VIEW_REPEAT_MS),
+            ],
+          )
+          .catch((error) => {
+            forgetVersionOnMissing(error);
+            throw error;
+          });
+        return rowCount > 0;
+      });
     },
     /**
      * D-80 item 14: the newest break glass openings for the coordinator's review list, with the

@@ -1058,7 +1058,7 @@ export function PatientSearchPage() {
               id="ward-patient-search-wait"
               value={waitFilter}
               onChange={(e) => setWaitFilter(e.target.value)}
-              aria-label="Wait Band"
+              aria-label="Wait band"
             >
               <option value="all">Wait: Any ({unifiedCaseload.length})</option>
               <option value="under6">
@@ -1160,9 +1160,9 @@ export function PatientSearchPage() {
               id="ward-patient-search-legal"
               value={legalFilter}
               onChange={(e) => setLegalFilter(e.target.value)}
-              aria-label="Legal Status"
+              aria-label="Legal status"
             >
-              <option value="all">All Legal Statuses ({unifiedCaseload.length})</option>
+              <option value="all">All legal statuses ({unifiedCaseload.length})</option>
               {LEGAL_FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label} ({unifiedCaseload.filter((p) => p.legalStatus === opt.value).length})
@@ -1176,7 +1176,7 @@ export function PatientSearchPage() {
               id="ward-patient-search-tier"
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value)}
-              aria-label="Acuity Tier"
+              aria-label="Acuity tier"
             >
               <option value="all">Tier</option>
               <option value="Tier 1">Tier 1</option>

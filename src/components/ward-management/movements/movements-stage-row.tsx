@@ -298,7 +298,7 @@ export function StageRow({
     else
       step = {
         kind: presentation.nextStep,
-        label: { refer: "Ask wards", escalate: "Escalate", pull: "Pull bed" }[presentation.nextStep],
+        label: { refer: "Ask wards", escalate: "Escalate", pull: "Pull the bed" }[presentation.nextStep],
         owner: "Coordinator",
       };
   }

@@ -9,6 +9,8 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { HEALTH_SERVICES, type Unit } from "@/components/ward-management/ward-model";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { accessIsWholeNetwork, edInScope, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import { Card, Select, SrOnly, StatusGlyph } from "@/components/wf";
 import { HANDOVER_SHIFTS, handoverAt, handoverSignedAt } from "./handover-model";
@@ -42,7 +44,7 @@ export function HandoverHistory({
           <li key={`sign-${record.at}-${record.by}`}>
             <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
             <StatusGlyph tone="success" size={9} />
-            <span>Handover signed off as {record.by === "coordinator" ? "flow coordinator" : record.by}</span>
+            <span>Handover signed off as {record.by === "coordinator" ? "bed coordinator" : record.by}</span>
           </li>
         ))}
         {preparedAt !== null ? (
@@ -90,15 +92,38 @@ export function HandoverScopeControl({
 }) {
   const access = useEffectiveWardAccess();
   const { sites } = useWardNetwork();
-  const sortedUnits = useMemo(() => [...units].sort((a, b) => a.name.localeCompare(b.name)), [units]);
+  // Only the places this desk may read are offered: a ward desk never lists another ward's name.
+  const whole = accessIsWholeNetwork(access);
+  const places = useMemo(() => wardPlaceLookup(units), [units]);
+  const sortedUnits = useMemo(
+    () =>
+      units
+        .filter((unit) => whole || unitInScope(access.scope, unit.id, places))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    [units, whole, access.scope, places],
+  );
+  const services = useMemo(
+    () =>
+      whole
+        ? HEALTH_SERVICES
+        : HEALTH_SERVICES.filter((service) => sortedUnits.some((unit) => places.unitService(unit.id) === service)),
+    [whole, sortedUnits, places],
+  );
   const sortedEds = useMemo(
     () =>
       sites
         .flatMap((site) => (site.emergencyDepartment ? [site.emergencyDepartment] : []))
+        .filter((ed) => whole || edInScope(access.scope, ed.id, places))
         .sort((a, b) => a.name.localeCompare(b.name)),
-    [sites],
+    [sites, whole, access.scope, places],
   );
-  const sortedTeams = useMemo(() => [...COMMUNITY_TEAM_PAGES].sort((a, b) => a.name.localeCompare(b.name)), []);
+  const sortedTeams = useMemo(
+    () =>
+      COMMUNITY_TEAM_PAGES.filter(
+        (team) => whole || (access.scope.kind === "team" && access.scope.teamName === team.name),
+      ).sort((a, b) => a.name.localeCompare(b.name)),
+    [whole, access.scope],
+  );
   const scopeId = useId();
 
   return (
@@ -114,7 +139,7 @@ export function HandoverScopeControl({
       >
         <option value={NETWORK_SCOPE_VALUE}>{allRecordsScopeLabel(access)}</option>
         <optgroup label="Service">
-          {HEALTH_SERVICES.map((service) => (
+          {services.map((service) => (
             <option key={service} value={handoverScopeValue({ kind: "service", id: service })}>
               {service}
             </option>

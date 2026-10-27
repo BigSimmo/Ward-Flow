@@ -219,7 +219,7 @@ const ELSEWHERE_MARKERS: readonly (string | number)[] = [
   "emergency_department",
   "community_team",
   "accepted",
-  "Flow coordinator",
+  "Bed coordinator",
   ELSEWHERE_DECIDED_AT,
 ];
 
@@ -309,7 +309,7 @@ const CANCELLED_ELSEWHERE_MARKERS: readonly (string | number)[] = [
  * where else this patient has been referred — by name, by state, by decider, by time.
  *
  * ⚠️ **THIS IS A SEPARATE LIST FROM `ELSEWHERE_MARKERS`, AND IT HAS TO BE, BECAUSE "ELSEWHERE"
- * MEANS SOMETHING DIFFERENT FROM EACH SEAT.** `"accepted"`, `"community_team"`, `"Flow coordinator"`
+ * MEANS SOMETHING DIFFERENT FROM EACH SEAT.** `"accepted"`, `"community_team"`, `"Bed coordinator"`
  * and `ELSEWHERE_DECIDED_AT` are all leaks TO A WARD in this fixture and are all the COMMUNITY
  * TEAM'S OWN facts — it is the arm that accepted. Reusing the ward's list here would assert the
  * community projection must hide its own answer, which is the opposite of the rule. The markers
@@ -579,7 +579,7 @@ const ED_ELSEWHERE_MARKERS: readonly (string | number)[] = [
   WARD_DECIDED_AT,
   // Which community team was asked, and the role that answered for it.
   "Inner City Clinic",
-  "Flow coordinator",
+  "Bed coordinator",
 ];
 
 /**
@@ -819,7 +819,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
       /*
        * The second half of non-vacuity, and the half the ward markers never needed. "Elsewhere"
        * means something different from each seat: this fixture's community arm is the one that
-       * ACCEPTED, so `"accepted"`, `"community_team"`, `"Flow coordinator"` and `ELSEWHERE_DECIDED_AT`
+       * ACCEPTED, so `"accepted"`, `"community_team"`, `"Bed coordinator"` and `ELSEWHERE_DECIDED_AT`
        * are leaks to a ward and are this team's own answer. A marker that was secretly the team's own
        * fact would make the absence sweep below assert the projection must hide the team's own
        * decision — the opposite of the ruling — and it would fail loudly rather than vacuously, which
@@ -1318,7 +1318,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
       const projection = communityScopedReferral(multiDestinationReferral())!;
       expect(projection.addressing.state).toBe("accepted");
       expect(projection.addressing.decidedAt).toBe(ELSEWHERE_DECIDED_AT);
-      expect(projection.addressing.decidedBy).toBe("Flow coordinator");
+      expect(projection.addressing.decidedBy).toBe("Bed coordinator");
       expect(projection.addressing.destination.kind).toBe("community_team");
       expect(projection.addressing.destination.teamName).toBe("Inner City Clinic");
     });
@@ -1850,7 +1850,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
         originSiteCode: "RPH",
         transportNeeded: false,
         ...FIXTURE_HISTORY,
-        localBedSought: { at: RAISED_AT + 5, by: "Flow coordinator" },
+        localBedSought: { at: RAISED_AT + 5, by: "Bed coordinator" },
       };
 
       // POSITIVE CONTROL 0 — the root fields this projection leaves out must be ON the source
@@ -2123,7 +2123,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
         transportNeeded: false,
         ...FIXTURE_HISTORY,
         // Declared on the projection, and the positive control for the sweep below.
-        localBedSought: { at: RAISED_AT + 5, by: "Flow coordinator" },
+        localBedSought: { at: RAISED_AT + 5, by: "Bed coordinator" },
       };
 
       // POSITIVE CONTROL 1 — the fields must be on the source referral, or the absences below prove
@@ -2191,7 +2191,7 @@ describe("FD-23 — a ward cannot see where else a patient has been referred", (
         urgency: 2,
         originSiteCode: "RPH",
         transportNeeded: false,
-        localBedSought: { at: RAISED_AT + 5, by: "Flow coordinator" },
+        localBedSought: { at: RAISED_AT + 5, by: "Bed coordinator" },
         destinations: [
           {
             destination: {

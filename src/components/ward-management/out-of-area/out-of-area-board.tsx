@@ -793,7 +793,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         <Hero
           level={1}
           eyebrow={`Out of area · Statewide · ${bedDays} bed days · longest ${longest} days`}
-          title={`${entries.length} away from home`}
+          // H-0887: the page heading names the page, not only the count.
+          title={
+            <>
+              <SrOnly>Out of area:</SrOnly> {entries.length} away from home
+            </>
+          }
           aside={
             <span className={styles.heroActs}>
               <span className={styles.since} data-testid="ward-out-of-area-since">
@@ -1097,7 +1102,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                     <span className={styles.footNote}>
                       <StatusGlyph tone="closed" size={9} />
                       <span>
-                        <b>{bedDays}</b> bed days across {entries.length} people
+                        <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
+                        {entries.length === 1 ? "person" : "people"}
                       </span>
                     </span>
                   }

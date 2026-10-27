@@ -12,6 +12,7 @@ import {
   referralQueueOrder,
 } from "@/components/ward-management/ward-referrals";
 import { allUnits, unitById, wardSites } from "@/components/ward-management/ward-sites";
+import { wardChoiceName } from "./helpers/ward-choice-name";
 
 /**
  * Task 7 (Phase 7, "The front door"). One journey: a referral is raised at PHONE WIDTH in the
@@ -98,8 +99,8 @@ type SlideOutReferral = {
   urgency: UrgencyLevel;
   bedSecurity: "Open" | "Secure";
   highAcuityNursing: boolean;
-  /** `mht` needs transport; `carer` (patient or carer accompanied) does not. */
-  transport: "mht" | "carer";
+  /** Mental Health Transport needs transport; Family or carer does not. */
+  transport: "Mental Health Transport" | "Family or carer";
   /** The wards the referral is addressed to, in the order they are ticked. */
   unitIds: readonly string[];
   /** Units the Wards step must NOT offer for this person (asserted before ticking). */
@@ -184,10 +185,10 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
   await expect(wards).toBeVisible();
   for (const unitId of referral.notOffered ?? []) {
-    await expect(wards.getByRole("checkbox", { name: new RegExp(`\\b${unitId}\\b`, "u") })).toHaveCount(0);
+    await expect(wards.getByRole("checkbox", { name: wardChoiceName(unitId) })).toHaveCount(0);
   }
   for (const unitId of referral.unitIds) {
-    await tapChoice(wards.getByRole("checkbox", { name: new RegExp(`\\b${unitId}\\b`, "u") }));
+    await tapChoice(wards.getByRole("checkbox", { name: wardChoiceName(unitId) }));
   }
   await sheet.getByLabel("Transport", { exact: true }).selectOption(referral.transport);
 
@@ -790,7 +791,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       urgency: Number(RAISED.urgency) as UrgencyLevel,
       bedSecurity: "Open",
       highAcuityNursing: false,
-      transport: "mht",
+      transport: "Mental Health Transport",
       unitIds: [ACCEPT_UNIT_ID, FEMALE_ONLY_UNIT_ID],
       notOffered: [WRONG_AGE_UNIT_ID],
     });
@@ -1042,7 +1043,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       urgency: Number(RAISED.urgency) as UrgencyLevel,
       bedSecurity: unitHasOpenBeds(unit) ? "Open" : "Secure",
       highAcuityNursing: true,
-      transport: "carer",
+      transport: "Family or carer",
       unitIds: [unit.id],
     });
     await expectNoReloadSince(page, "sending the far referral from the slide-out");

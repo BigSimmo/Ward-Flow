@@ -196,7 +196,7 @@ export function WardScreenTopBar({
             // Notices (the bell) and More beside it, where the chips above the tabs used to be.
             <span className={styles.phoneHeroFoot}>
               <span className={styles.phoneHeroConfirmed}>
-                {unit.allocatable.source === "ward" ? "Confirmed" : "Last figure"}{" "}
+                {unit.allocatable.source === "ward" ? "Capacity confirmed" : "Last capacity figure"}{" "}
                 {formatInstant(unit.allocatable.confirmedAt)}
               </span>
               {confirmButton}

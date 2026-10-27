@@ -1,6 +1,11 @@
 "use client";
 
-import { clearanceChecklistWords, referralNeedsWords, type ReferralIntakeDetails } from "./referral-submission";
+import {
+  clearanceChecklistWords,
+  referralNeedsWords,
+  transportLabel,
+  type ReferralIntakeDetails,
+} from "./referral-submission";
 import { ReferralDocumentLinks } from "./referral-document-links";
 import styles from "./ward-referral-drawer.module.css";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
@@ -72,13 +77,13 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
         {intake.arrival && (
           <span>
             <strong>Proposed arrival</strong>
-            {intake.arrival.transport} ·{" "}
+            {transportLabel(intake.arrival.transport)} ·{" "}
             {formatReferralIntakeTime(intake.arrival.estimatedAt, intake.arrival, board?.dayZero, board?.now)}
             {intake.arrival.reference ? ` · ${intake.arrival.reference}` : ""}
           </span>
         )}
       </div>
-      <ReferralDocumentLinks charts={intake.charts} />
+      <ReferralDocumentLinks charts={intake.charts} toFollow={intake.chartsToFollow} />
     </details>
   );
 }

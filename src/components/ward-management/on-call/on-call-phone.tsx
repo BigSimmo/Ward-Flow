@@ -117,7 +117,7 @@ export function PhoneFocal({
           <ServiceTag service={entry.service} label="" />
           {keyLineLabel(entry)}
         </span>
-        <span className={styles.focalNumber}>{number ?? "Not held"}</span>
+        <span className={styles.focalNumber}>{number ?? "Not recorded"}</span>
         <span className={styles.focalUntil}>
           <Until entry={entry} minute={actions.minute} />
           <span>{then}</span>

@@ -2,6 +2,17 @@ import { communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
 
+/**
+ * Who a care fact was recorded by, as stored. A19 (26 Oct 2026) renamed the coordinator desk, so a fact
+ * saved before then still reads "Flow coordinator". Restore keeps accepting it, and the screen shows it
+ * under the current name through `careRecordedByLabel`.
+ */
+const CARE_RECORDED_BY = ["Ward manager", "Bed coordinator", "Flow coordinator", "Community service"] as const;
+
+export function careRecordedByLabel(recordedBy: string): string {
+  return recordedBy === "Flow coordinator" ? "Bed coordinator" : recordedBy;
+}
+
 /** Closed, synthetic workflow facts. No narrative, patient identifiers or computed legal clocks. */
 export const CARE_CONTACTS = [
   { id: "demo-adult-clinician", label: "Dr Alex Taylor — demonstration adult clinician" },
@@ -191,10 +202,7 @@ export function validCareJourney(value: unknown): value is CareJourney {
     )
       return false;
     return (
-      finite(recordedAt) &&
-      member(["Ward manager", "Flow coordinator", "Community service"], recordedBy) &&
-      change.kind === kind &&
-      validCareChange(change)
+      finite(recordedAt) && member(CARE_RECORDED_BY, recordedBy) && change.kind === kind && validCareChange(change)
     );
   };
   const statusMap = (m: unknown, choices: readonly string[], document = false) => {

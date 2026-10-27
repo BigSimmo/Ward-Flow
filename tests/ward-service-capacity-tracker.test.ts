@@ -188,7 +188,7 @@ describe("service-capacity-tracker: evaluateCompoundEscalation", () => {
     expect(alert.actionRequired).toBe(true);
   });
 
-  it("evaluates Level 4 Black Gridlock when both Inpatient and ED are Red", () => {
+  it("evaluates Level 4 (no beds) when both Inpatient and ED are Red", () => {
     const alert = evaluateCompoundEscalation("North Metro", "red", 2, 3.1, {
       departmentsCount: 2,
       totalWaiting: 5,
@@ -202,7 +202,7 @@ describe("service-capacity-tracker: evaluateCompoundEscalation", () => {
       clinicalAdvisory: "2 past target",
     });
     expect(alert.level).toBe("black");
-    expect(alert.protocolTier).toBe("Level 4 (Black Gridlock)");
+    expect(alert.protocolTier).toBe("Level 4 (No beds)");
     expect(alert.actionRequired).toBe(true);
   });
 });

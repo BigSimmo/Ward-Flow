@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { nextNonWorkingClosure } from "@/components/ward-management/discharges/discharge-service-hours";
 import { horizonDays } from "@/components/ward-management/forecast/forecast-horizon";
-import { WA_PUBLIC_HOLIDAYS } from "@/components/ward-management/wa-public-holidays";
+import {
+  holidaysListedFor,
+  WA_PUBLIC_HOLIDAYS,
+  WA_PUBLIC_HOLIDAYS_LAST_YEAR,
+} from "@/components/ward-management/wa-public-holidays";
 import { MINUTES_PER_DAY, perthMidnight } from "@/components/ward-management/ward-clock";
 
 const dates = WA_PUBLIC_HOLIDAYS.map((holiday) => holiday.date);
@@ -29,6 +33,13 @@ describe("WA public holidays", () => {
     const closure = nextNonWorkingClosure("pharmacy", 10 * 60, dayZero);
     expect(closure?.closedFor).toEqual(["Australia Day"]);
     expect(closure?.reopensAt).toBe(2 * MINUTES_PER_DAY + 8 * 60 + 30);
+  });
+
+  it("says when a day is past the last listed year (TC2-07, H-0766)", () => {
+    expect(WA_PUBLIC_HOLIDAYS_LAST_YEAR).toBe(lastYear);
+    // 23:30 Perth on 31 December of the last year is still listed; 00:30 on 1 January is not.
+    expect(holidaysListedFor(new Date(perthMidnight(lastYear, 11, 31).getTime() + 23.5 * 3_600_000))).toBe(true);
+    expect(holidaysListedFor(new Date(perthMidnight(lastYear + 1, 0, 1).getTime() + 0.5 * 3_600_000))).toBe(false);
   });
 
   it("marks weekday holidays only in the forecast's seven days", () => {

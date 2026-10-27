@@ -53,6 +53,7 @@ import {
 } from "./ward-audit";
 import { forgetDowntimePack } from "./reports/downtime-pack";
 
+import { sharedBoardNow } from "@/components/ward-management/ward-shared-clock";
 import {
   absoluteWallClockMinutes,
   demoDayZero,
@@ -74,6 +75,7 @@ import {
   useDemoStateRead,
   WARD_FLOW_DEMO_STORAGE_KEY,
 } from "./ward-flow-demo-storage";
+import { OPEN_ITEMS_CLOSED_NOTICE } from "./ward-flow-demo-storage-constants";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "./ward-patient-resolver";
 import * as closingLoop from "./ward-flow-closing-loop-context";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -739,7 +741,7 @@ function WardFlowWorld({
 
   const now =
     shared.enabled && shared.snapshot
-      ? shared.snapshot.now
+      ? sharedBoardNow(shared.snapshot.now, shared.receivedAt)
       : NOW_ANCHOR + anchorOffsetMinutes + container.restoredElapsed + Math.max(0, elapsed) + state.clockOffsetMinutes;
 
   const nowRef = useRef(now);
@@ -935,6 +937,22 @@ function WardFlowWorld({
    * `sessionAdopted` gates the storage write below until it has run. The read loads on demand.
    */
   const demoRead = useDemoStateRead(!shared.enabled && initialNow === undefined, dayZero, mountedAtAbsolute);
+  // CS3-17: a click or key press before the saved day is adopted may have opened a panel, which the
+  // re-key below closes. Noted here so the restore notice can say so (`OPEN_ITEMS_CLOSED_NOTICE`).
+  // A layout effect, so it listens from the first commit, before any screen's own effects run.
+  const touchedBeforeAdoption = useRef(false);
+  useLayoutEffect(() => {
+    if (container.sessionAdopted) return;
+    const mark = () => {
+      touchedBeforeAdoption.current = true;
+    };
+    window.addEventListener("pointerdown", mark, true);
+    window.addEventListener("keydown", mark, true);
+    return () => {
+      window.removeEventListener("pointerdown", mark, true);
+      window.removeEventListener("keydown", mark, true);
+    };
+  }, [container.sessionAdopted]);
   useEffect(() => {
     if (shared.enabled) return;
     if (initialNow !== undefined || mountedAtAbsolute === null || !demoRead) return;
@@ -948,6 +966,7 @@ function WardFlowWorld({
       );
     // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage read
     if (recoveryNotice === STORAGE_UNAVAILABLE) setStorageUnavailable(true);
+    const touched = touchedBeforeAdoption.current;
     dispatchContainer({
       type: "ADOPT_SAVED_SESSION",
       [ADOPT_SESSION]: (current) => {
@@ -971,7 +990,8 @@ function WardFlowWorld({
             restoredElapsed,
             sessionAdopted: false,
             sessionRestored: true,
-            recoveryNotice,
+            recoveryNotice:
+              touched && recoveryNotice ? `${recoveryNotice} ${OPEN_ITEMS_CLOSED_NOTICE}` : recoveryNotice,
           };
           for (const event of current.preAdoptionEvents ?? [])
             restored = trackWardFlowTypedTextDispatch(restored, event);

@@ -31,7 +31,6 @@ import {
   type ReferralGender,
   type Security,
   type RecordedSex,
-  type TransportLegalStatus,
 } from "@/components/ward-management/ward-model";
 import { minutesFromTimeInput, type TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import {
@@ -156,8 +155,7 @@ export function edReferralClockLines(clocks: ReferralClocks): { department: EdCl
 
 /**
  * The `<option>` value standing for "no reason chosen yet", for the same reason
- * `NO_LEGAL_FORM_VALUE` and `NO_TRANSPORT_PROVIDER_VALUE` exist: a `<select>` option value is
- * always a string.
+ * `NO_LEGAL_FORM_VALUE` exists: a `<select>` option value is always a string.
  *
  * ⚠️ **AND IT IS THE SELECTED OPTION ON EVERY OPEN, WHICH IS NOT MERELY A UI PREFERENCE.**
  * A pre-selected reason is a reason a clinician who meant something else records by pressing
@@ -516,34 +514,6 @@ export function edWaitTone(
   return undefined;
 }
 
-/**
- * ⚠️ **THE ESCORT QUESTION OPENS BLANK, AND NOTHING ANYWHERE SUPPLIES AN ANSWER FOR IT** (owner,
- * relayed 2026-08-30). Not from `legalStatus`, not from the last booking, not as a "usually".
- *
- * **His reason is that a pre-filled clinical judgement is answered by clicking past it**, and the
- * record then asserts that a clinician decided when nobody did — worse than the honest derivation
- * it replaces, because it launders an automatic value through a human's name.
- *
- * ⚠️ **THE DEFECT THIS NAMED IS NOW FIXED, AND THIS CLAUSE SAID OTHERWISE UNTIL 2026-09-01.** It
- * read "`HANDOVER_READY` still computes `movement.legalStatus !== "Voluntary"` today". It does not:
- * that fabrication was deleted when `BOOK_TRANSPORT` landed on 2026-08-31, and the reducer's
- * `HANDOVER_READY` case now only refuses a movement with no booked transport and sets the stage.
- * The reason for keeping this control blank is unchanged — re-creating the derivation as a default
- * here would restore the defect rather than move it — but a comment claiming a live defect that has
- * been fixed sends a reader hunting for code that is not there.
- *
- * **If this control ever feels unhelpful for being blank, the help is the question being legible,
- * never the answer being supplied.**
- *
- * The reducer refuses a missing answer independently (`case "BOOK_TRANSPORT"`), so this is not the
- * only thing holding the rule — and it must never contradict it either: every state this function
- * calls blocked is a state the reducer would reject.
- */
-export const ESCORT_ANSWERS = [
-  { value: true, label: "Escort required" },
-  { value: false, label: "No escort required" },
-] as const;
-
 export type TransportDraftState = TransportBookingAnswers;
 
 /** Re-applied every time the panel is opened as well as when it closes, so a previous booking's
@@ -557,18 +527,6 @@ export const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   estimatedTime: "",
   estimatedDay: "today",
 };
-
-/** Derived from `TRANSPORT_LEGAL_STATUSES`, never hand-listed — the same discipline
- *  `TRANSPORT_PROVIDERS.map` below already holds to, so a third status added there cannot be
- *  silently omitted from this control. */
-export const TRANSPORT_LEGAL_STATUS_LABELS: Record<TransportLegalStatus, string> = {
-  voluntary: "Voluntary",
-  involuntary: "Involuntary",
-};
-
-/** The `<option>` value standing for "nobody chosen yet", for the same reason
- *  `NO_LEGAL_FORM_VALUE` above exists: a `<select>` option value is always a string. */
-export const NO_TRANSPORT_PROVIDER_VALUE = "";
 
 /**
  * The date-plus-time draft for the two "actions block" panels T3 adds — "Record expiry from the

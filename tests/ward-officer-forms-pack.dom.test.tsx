@@ -14,11 +14,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 afterEach(cleanup);
 
-const form = (formName: string, fileName: string, uploadedAt: number) => ({
+const form = (formName: string, sizeBytes: number, uploadedAt: number) => ({
   id: `${formName}-${uploadedAt}`,
   formName,
-  fileName,
-  sizeBytes: 1024,
+  fileType: "PDF",
+  sizeBytes,
   uploadedAt,
   uploadedBy: "officer",
 });
@@ -27,15 +27,15 @@ describe("transport forms pack", () => {
   it("fills each slot from recorded uploads and keeps the latest replacement", () => {
     const movement = {
       uploadedForms: [
-        form("Form 1B referral", "old-1b.pdf", 10),
-        form("Form 1A referral", "new-1a.pdf", 20),
-        form("Risk assessment", "risk.pdf", 15),
+        form("Form 1B referral", 1024, 10),
+        form("Form 1A referral", 2048, 20),
+        form("Risk assessment", 3072, 15),
       ],
     } as unknown as Movement;
     expect(packCount(movement)).toBe(2);
-    expect(packForm(movement, "legal")?.fileName).toBe("new-1a.pdf");
+    expect(packForm(movement, "legal")?.sizeBytes).toBe(2048);
     expect(packForm(movement, "order")).toBeUndefined();
-    expect(packForm(movement, "risk")?.fileName).toBe("risk.pdf");
+    expect(packForm(movement, "risk")?.sizeBytes).toBe(3072);
   });
 
   it("needs no forms for a voluntary transfer", () => {
@@ -69,7 +69,9 @@ describe("transport forms pack", () => {
 
     expect(screen.queryByRole("dialog", { name: /Upload Form 4A/ })).toBeNull();
     const after = screen.getByTestId("ward-officer-forms-pack-WF-005");
-    expect(within(after).getByText(/form-4a\.pdf/)).toBeTruthy();
+    // H-0049: the pack shows the file type and size, never the chosen file's name.
+    expect(within(after).getByText(/PDF · 1 KB/)).toBeTruthy();
+    expect(within(after).queryByText(/form-4a/)).toBeNull();
     expect(
       Number(
         within(after)

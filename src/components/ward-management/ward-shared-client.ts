@@ -80,8 +80,9 @@ export type SharedView = {
   workingAs?: string | null;
   /** With `choose-role`: the roles to choose from. */
   choices?: readonly SharedRoleChoice[];
-  /** With `no-role`: whether this server takes requests for access. */
+  /** With `no-role`: whether this server takes requests for access, and its refusal code (`role-needs-service`). */
   canRequest?: boolean;
+  noRoleReason?: string;
   /** The signed-in account's id, to say "You" in the access lists. */
   actorId?: string | null;
   /** This tab chose its role, so it can go back and choose another. */
@@ -758,6 +759,7 @@ export class SharedWorkspaceClient {
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
     const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
+    const tvRead = workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting");
     const current = () => {
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
@@ -804,7 +806,6 @@ export class SharedWorkspaceClient {
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
-
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -812,6 +813,8 @@ export class SharedWorkspaceClient {
           authorization: `Bearer ${token}`,
           ...(body ? { "content-type": "application/json" } : {}),
           ...(as ? { "x-ward-working-as": as } : {}),
+          // The server logs a whole read from the bed meeting TV board as "tv" (H-0731).
+          ...(tvRead ? { "x-ward-screen": "tv" } : {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
         signal: anySignal([
@@ -889,7 +892,8 @@ export class SharedWorkspaceClient {
     const { response, value, noRole } = answer;
     // A powerful step needs a fresh sign-in. The caller asks for the password and tries again.
     if (response.status === 401 && value?.code === "step-up") return { response, value };
-    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true });
+    const noRoleReason = typeof value?.code === "string" ? value.code : undefined;
+    if (noRole) throw gate({ status: "no-role", canRequest: value?.canRequest === true, noRoleReason });
     // A role refusal on an access step or the record access log comes back as its reason, not as a sign-out.
     if (response.status === 403 && (path.startsWith("/v1/workspace/access") || path === "/v1/workspace/record-access"))
       return { response, value };

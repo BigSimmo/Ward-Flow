@@ -73,6 +73,15 @@ export function TrafficDiagram({
   }).sort((a, b) => b.count - a.count);
 
   const isHoverActive = hover !== null;
+  // A-10 (fresh audit 26 Oct 2026): a highlight follows focus and a tap as well as the mouse, so a
+  // keyboard user or an iPad can trace which line is which corridor.
+  const highlight = (target: NonNullable<HoverTarget>) => ({
+    onMouseEnter: () => setHover(target),
+    onMouseLeave: () => setHover(null),
+    onFocus: () => setHover(target),
+    onBlur: () => setHover(null),
+    onClick: () => setHover(target),
+  });
 
   return (
     <div className={styles.trafficSplit}>
@@ -120,15 +129,12 @@ export function TrafficDiagram({
                     d={orthogonalRoute(y1, y2, laneX)}
                     strokeWidth={2 + Math.min(corridor.count, 4) * 1.25}
                     vectorEffect="non-scaling-stroke"
-                    onMouseEnter={() =>
-                      setHover({
-                        type: "corridor",
-                        originEdId: corridor.originEdId,
-                        destinationId: corridor.acceptedUnitId,
-                        key: `${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage}`,
-                      })
-                    }
-                    onMouseLeave={() => setHover(null)}
+                    {...highlight({
+                      type: "corridor",
+                      originEdId: corridor.originEdId,
+                      destinationId: corridor.acceptedUnitId,
+                      key: `${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage}`,
+                    })}
                   >
                     <title>{title}</title>
                   </path>
@@ -162,15 +168,12 @@ export function TrafficDiagram({
                     d={orthogonalRoute(y1, y2, laneX)}
                     strokeWidth={2}
                     vectorEffect="non-scaling-stroke"
-                    onMouseEnter={() =>
-                      setHover({
-                        type: "corridor",
-                        originEdId: corridor.originEdId,
-                        destinationId: corridor.unitId,
-                        key: `${corridor.originEdId} ${corridor.unitId} refused`,
-                      })
-                    }
-                    onMouseLeave={() => setHover(null)}
+                    {...highlight({
+                      type: "corridor",
+                      originEdId: corridor.originEdId,
+                      destinationId: corridor.unitId,
+                      key: `${corridor.originEdId} ${corridor.unitId} refused`,
+                    })}
                   >
                     <title>{`${from?.label ?? corridor.originEdId} to ${to?.label ?? corridor.unitId}: ${corridor.count} ${corridor.count === 1 ? "refusal" : "refusals"} today; ${reasons}.`}</title>
                   </path>
@@ -199,8 +202,9 @@ export function TrafficDiagram({
                   data-active={isNodeActive ? "true" : undefined}
                   data-dimmed={isNodeDimmed ? "true" : undefined}
                   style={{ top: `${(originY.get(endpoint.id) ?? NODE_TOP) - 22}px` }}
-                  onMouseEnter={() => setHover({ type: "endpoint", id: endpoint.id, side: "origin" })}
-                  onMouseLeave={() => setHover(null)}
+                  role="button"
+                  tabIndex={0}
+                  {...highlight({ type: "endpoint", id: endpoint.id, side: "origin" })}
                 >
                   <strong title={endpoint.label}>{endpoint.shortLabel ?? endpoint.label}</strong>
                   <small>{endpointSummary(endpoint.id, "origin", corridors, refusedCorridors)}</small>
@@ -228,8 +232,9 @@ export function TrafficDiagram({
                   data-active={isNodeActive ? "true" : undefined}
                   data-dimmed={isNodeDimmed ? "true" : undefined}
                   style={{ top: `${(destinationY.get(endpoint.id) ?? NODE_TOP) - 22}px` }}
-                  onMouseEnter={() => setHover({ type: "endpoint", id: endpoint.id, side: "destination" })}
-                  onMouseLeave={() => setHover(null)}
+                  role="button"
+                  tabIndex={0}
+                  {...highlight({ type: "endpoint", id: endpoint.id, side: "destination" })}
                 >
                   <strong>{endpoint.label}</strong>
                   <small>{endpointSummary(endpoint.id, "destination", corridors, refusedCorridors)}</small>
@@ -288,23 +293,25 @@ export function TrafficDiagram({
                   <li
                     key={`${corridor.originEdId} ${corridor.acceptedUnitId} ${corridor.stage} rank`}
                     className={isItemActive ? styles.railItemActive : undefined}
-                    onMouseEnter={() =>
-                      setHover({
+                  >
+                    <button
+                      type="button"
+                      className={styles.railRow}
+                      {...highlight({
                         type: "corridor",
                         originEdId: corridor.originEdId,
                         destinationId: corridor.acceptedUnitId,
-                      })
-                    }
-                    onMouseLeave={() => setHover(null)}
-                  >
-                    <span>
-                      {ed ? `${ed.siteCode} ED` : corridor.originEdId} to{" "}
-                      {wardLabel(corridor.acceptedUnitId, unit?.name)}
-                      <small>
-                        {corridor.stages.map((row) => `${stageCopy[row.stage].label} ${row.count}`).join(" · ")}
-                      </small>
-                    </span>
-                    <strong>{corridor.count}</strong>
+                      })}
+                    >
+                      <span>
+                        {ed ? `${ed.siteCode} ED` : corridor.originEdId} to{" "}
+                        {wardLabel(corridor.acceptedUnitId, unit?.name)}
+                        <small>
+                          {corridor.stages.map((row) => `${stageCopy[row.stage].label} ${row.count}`).join(" · ")}
+                        </small>
+                      </span>
+                      <strong>{corridor.count}</strong>
+                    </button>
                   </li>
                 );
               })}
@@ -326,20 +333,22 @@ export function TrafficDiagram({
                 <li
                   key={`${corridor.originEdId} ${corridor.unitId} refused rank`}
                   className={isItemActive ? styles.railItemActive : undefined}
-                  onMouseEnter={() =>
-                    setHover({
+                >
+                  <button
+                    type="button"
+                    className={styles.railRow}
+                    {...highlight({
                       type: "corridor",
                       originEdId: corridor.originEdId,
                       destinationId: corridor.unitId,
-                    })
-                  }
-                  onMouseLeave={() => setHover(null)}
-                >
-                  <span>
-                    {ed ? `${ed.siteCode} ED` : corridor.originEdId} to {wardLabel(corridor.unitId, unit?.name)}
-                    <small>{corridor.reasons.map(reasonLabel).join(", ")}</small>
-                  </span>
-                  <strong>{corridor.count}</strong>
+                    })}
+                  >
+                    <span>
+                      {ed ? `${ed.siteCode} ED` : corridor.originEdId} to {wardLabel(corridor.unitId, unit?.name)}
+                      <small>{corridor.reasons.map(reasonLabel).join(", ")}</small>
+                    </span>
+                    <strong>{corridor.count}</strong>
+                  </button>
                 </li>
               );
             })}

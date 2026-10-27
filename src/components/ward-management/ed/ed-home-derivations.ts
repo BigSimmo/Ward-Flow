@@ -94,7 +94,7 @@ export function isDetainedUnderTheAct(legalStatus: LegalStatus): boolean {
 /** Each journey stage in the words an ED board uses. Shared by the ED index and the ED TV view. */
 export const ED_STAGE_LABELS: Record<MovementStage, string> = {
   placement_requested: "No bed yet",
-  destination_review: "Finding a ward",
+  destination_review: "No bed yet, ward reviewing",
   accepted_awaiting_bed: "Accepted, no bed yet",
   pulled: "Bed pulled",
   handover_ready: "Handover ready",

@@ -105,7 +105,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
     const confirmedBanner = screen.getByTestId("ward-morning-rollup-confirmed-banner");
     expect(confirmedBanner).toBeInTheDocument();
     expect(confirmedBanner).toHaveTextContent("Morning bed numbers confirmed (due 09:30)");
-    expect(confirmedBanner).toHaveTextContent("3 discharges scheduled today");
+    expect(confirmedBanner).toHaveTextContent("3 discharges planned today");
   });
 
   it("toggles the WardNotificationCenter when the Tasks & Buzzes action button is clicked", () => {

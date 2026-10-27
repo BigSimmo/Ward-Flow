@@ -5,6 +5,7 @@ import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-prov
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { involuntaryBedNeededForLegalStatus } from "@/components/ward-management/ward-eligibility";
+import { SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import {
@@ -26,7 +27,7 @@ import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
 import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
-import { type DocumentationDraft } from "./referral-flow-panels";
+import { chartAnswered, type DocumentationDraft } from "./referral-flow-panels";
 import {
   GENDER_UNANSWERED,
   REFERRAL_GENDER_NOT_RECORDED,
@@ -47,10 +48,16 @@ import { originName } from "@/components/ward-management/ward-movement-origin";
  * The legal-status choices, as bare register codes. Their visible text is built from the Chief
  * Psychiatrist register at render time by `legalStatusOptionLabel` below — never written here.
  *
+ * WT-14 (walk-through, 26 Oct 2026): the referral offered only 1A, 4A and 5A while the ED raise,
+ * Pull the bed and the ward's placement form offered the full intake list, so a patient on a 3B
+ * could not be referred as one. The codes now come from the one intake list
+ * (`SELECTABLE_LEGAL_FORMS`), in its order. The clinician chooses the form (product owner,
+ * 24 Aug 2026), so no stage narrows it.
+ *
  * `"Voluntary"` is not a form code and the register has no entry for it, so that option keeps its
  * own label and is not in this list.
  */
-export const LEGAL_STATUS_FORM_CODES = ["1A", "4A", "5A"] as const;
+export const LEGAL_STATUS_FORM_CODES: readonly string[] = SELECTABLE_LEGAL_FORMS.map((form) => form.code);
 
 /**
  * "Form 4A (Transport order)" — the register's own title, looked up at render time.
@@ -70,21 +77,6 @@ export const LEGAL_STATUS_FORM_CODES = ["1A", "4A", "5A"] as const;
 export function legalStatusOptionLabel(code: string): string {
   const title = formTitleForCode(code);
   return title === null ? `Form ${code}` : `Form ${code} (${title})`;
-}
-
-export function transportLabel(code: string): string {
-  switch (code) {
-    case "mht":
-      return "Mental Health Transport (Contracted MHT)";
-    case "rfds":
-      return "RFDS Aeromedical Flight Escort";
-    case "stjohn":
-      return "St John Ambulance (Priority 2 Escort)";
-    case "carer":
-      return "Patient / Carer Accompanied Transport";
-    default:
-      return "Mental Health Transport";
-  }
 }
 
 export type WardReferralDrawerProps = {
@@ -133,7 +125,6 @@ export type MockPatientProfile = {
   catchment: string;
   destType: string;
   urgency: string;
-  transportVal: string;
   transitNote: string;
   riskFlags: {
     aggression: boolean;
@@ -207,12 +198,12 @@ export function wardReferralDestinations(
  * record's own name, record number, origin, legal status and urgency, "Not recorded" where it holds
  * none, and the free-text fields start empty.
  */
-export const SAMPLE_PATIENTS: Record<string, { destType: string; transportVal: string }> = {
-  "WF-009": { destType: "ward", transportVal: "mht" },
-  "WF-004": { destType: "ward", transportVal: "mht" },
-  "WF-002": { destType: "community", transportVal: "carer" },
-  "WF-006": { destType: "ward", transportVal: "stjohn" },
-  custom: { destType: "ward", transportVal: "mht" },
+export const SAMPLE_PATIENTS: Record<string, { destType: string }> = {
+  "WF-009": { destType: "ward" },
+  "WF-004": { destType: "ward" },
+  "WF-002": { destType: "community" },
+  "WF-006": { destType: "ward" },
+  custom: { destType: "ward" },
 };
 
 /**
@@ -249,7 +240,6 @@ export function sampleProfile(
     doctorNote: "",
     clinicalSummary: "",
     destType: sample.destType,
-    transportVal: sample.transportVal,
     transitNote: "",
     riskFlags: NO_RISK_FLAGS,
   };
@@ -483,8 +473,8 @@ export function documentationNeeded(draft: DocumentationDraft): number {
     if (!draft.contactPhone.trim()) needed += 1;
   }
   if (!draft.triage) needed += 1;
-  if (!draft.charts.some((chart) => chart.kind === "medication")) needed += 1;
-  if (!draft.charts.some((chart) => chart.kind === "observation")) needed += 1;
+  if (!chartAnswered(draft, "medication")) needed += 1;
+  if (!chartAnswered(draft, "observation")) needed += 1;
   if (!draft.additional) needed += 1;
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other")) needed += 1;
   return needed;

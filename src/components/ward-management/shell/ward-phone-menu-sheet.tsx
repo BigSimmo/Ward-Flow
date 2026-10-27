@@ -9,7 +9,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
 import { Dot } from "@/components/wf";
-import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import type { SearchResultItem } from "@/components/ward-management/ward-global-search";
@@ -25,6 +25,7 @@ import { usePhoneCreateOptions, type PhoneCreateId } from "./ward-phone-create-o
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import { WardMyWards } from "./ward-my-wards";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
+import { useDeskRoleLabel } from "./ward-access-store";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "./ward-phone-menu";
 import styles from "./ward-phone-menu.module.css";
 import actNowStyles from "./ward-phone-menu-act-now.module.css";
@@ -283,26 +284,27 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
  * go to Settings, where a second button opened the same drawer.
  */
 function WhoLink({ role, onSwitch }: { role: WardChromeRole; onSwitch: () => void }) {
+  const roleLabel = useDeskRoleLabel(role);
   return (
     <button
       type="button"
       className={styles.who}
       onClick={onSwitch}
       aria-haspopup="dialog"
-      aria-label={`${CHROME_ROLE_LABELS[role]}. Go to a desk`}
+      aria-label={`${roleLabel}. Go to a desk`}
       data-testid="ward-phone-menu-switch-workstation"
     >
       {/* v10 Menu sheet: an initials avatar. The prototype has no signed-in person, so the
           initials are the workstation's ("BC" for Bed coordinator), never an invented name. */}
       <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">
-        {CHROME_ROLE_LABELS[role]
+        {roleLabel
           .split(/\s+/u)
           .slice(0, 2)
           .map((word) => word[0]?.toUpperCase() ?? "")
           .join("")}
       </span>
       <span className={styles.whoText}>
-        <span className={styles.whoName}>{CHROME_ROLE_LABELS[role]}</span>
+        <span className={styles.whoName}>{roleLabel}</span>
         {/* shell-2 (Josh, 13 Oct 2026): "Go to a desk", not "Switch workstation". Opening a desk
             goes to that desk's page; the Menu, Needs you and Tasks stay this workstation's own. */}
         <span className={styles.whoMeta}>Go to a desk</span>

@@ -127,7 +127,7 @@ export function WardFlowErrorPanel({
 
         {error.digest && (
           <p className="mt-2 font-mono text-xs text-[color:var(--text-muted)]" data-testid="ward-flow-error-digest">
-            Digest: {error.digest}
+            Error reference: {error.digest}
           </p>
         )}
 

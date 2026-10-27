@@ -321,9 +321,9 @@ export type PullReleaseReason = (typeof PULL_RELEASE_REASONS)[number];
  * Owner ruling 5, 2026-09-01
  * (`docs/ward-flow/owner-rulings-2026-09-01-fourteen-decisions.md`): **"Ward manager" wins,
  * everywhere, one spelling.** Before this ruling both fields carried whichever of three spellings
- * a given seed line happened to use — `"Ward manager"`, `"Flow coordinator"` and `"Nurse unit
+ * a given seed line happened to use — `"Ward manager"`, `"Bed coordinator"` and `"Nurse unit
  * manager"` were all live — because the fields were typed `string | null` with no runtime
- * vocabulary of their own to hold them to one. `"Flow coordinator"` and `"Nurse unit manager"` are
+ * vocabulary of their own to hold them to one. `"Bed coordinator"` and `"Nurse unit manager"` are
  * NOT this field's second and third roles; they were two other spellings of this ONE role, now
  * reconciled.
  *

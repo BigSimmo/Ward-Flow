@@ -45,7 +45,8 @@ function subscribe(onChange: () => void): () => void {
   };
 }
 
-function isTvPath(pathname: string): boolean {
+/** Whether a pathname is the TV view (any of its screens: they differ by query only). */
+export function isTvPath(pathname: string): boolean {
   return pathname === WARD_BED_MEETING_TV_HREF;
 }
 

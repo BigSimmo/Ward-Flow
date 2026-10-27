@@ -37,7 +37,7 @@ describe("follow-up arrangement form uses actual provider state", () => {
     ]) {
       fireEvent.change(screen.getByRole("combobox", { name: "Arrangement status" }), { target: { value } });
       fireEvent.click(screen.getByRole("button", { name: "Record follow-up status" }));
-      expect(screen.getByTestId("ward-discharge-follow-up-status")).toHaveTextContent(`${label} · Flow coordinator`);
+      expect(screen.getByTestId("ward-discharge-follow-up-status")).toHaveTextContent(`${label} · Bed coordinator`);
     }
     expect(screen.getByText(/does not confirm that follow-up occurred/)).toBeInTheDocument();
   });

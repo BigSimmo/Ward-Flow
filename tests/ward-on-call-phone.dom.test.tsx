@@ -117,11 +117,11 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(screen.queryByRole("button", { name: `Call ${crisis.name}, ${crisisNumber}` })).not.toBeInTheDocument();
   });
 
-  it("shows 'Not held', no copy button and no crisis row when the line has no number", () => {
+  it("shows 'Not recorded', no copy button and no crisis row when the line has no number", () => {
     const desk = synthetic({ id: "sw-bfc", name: "Synthetic desk", email: "desk@example.invalid" });
     render(<PhoneFocal entries={[desk]} actions={makeActions({ entries: [desk] })} onOpen={vi.fn()} />);
 
-    expect(screen.getByText("Not held")).toBeInTheDocument();
+    expect(screen.getByText("Not recorded")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Copy number" })).not.toBeInTheDocument();
     expect(screen.queryByText("MHERL crisis line")).not.toBeInTheDocument();
     expect(screen.getByText("24 hours")).toBeInTheDocument();

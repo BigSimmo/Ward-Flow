@@ -86,8 +86,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           </Select>
         </Field>
         <p className={styles.note}>
-          The ward stops being offered for new patients. Beds already held or accepted here stay until someone moves
-          them.
+          The ward stops being offered for new patients. Beds already pulled here, and patients already accepted here,
+          stay until someone moves them.
         </p>
         <Button
           size="sm"
