@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-26-inline-forms-changed-meanwhile",
-    "date": "2026-10-26",
-    "line": "If another desk changes a record while your form is open, saving now tells you instead of overwriting it."
-  },
-  {
     "id": "2026-10-26-pull-the-bed-home",
     "date": "2026-10-26",
     "line": "Home lists accepted referrals with no bed pulled, and Pull the bed now takes two taps in one sheet."
@@ -98,5 +93,10 @@
     "id": "2026-10-27-ed-quick-answers",
     "date": "2026-10-27",
     "line": "The ED Ask for a bed form keeps every answer when you choose quickly on a phone."
+  },
+  {
+    "id": "2026-10-27-seven-travel-choices",
+    "date": "2026-10-27",
+    "line": "Every screen asking how a patient travels offers the same seven choices, with none picked for you."
   }
 ]
