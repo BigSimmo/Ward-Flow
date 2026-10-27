@@ -1,0 +1,143 @@
+.field {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: 8px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: text;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  background: rgb(0 0 0 / 40%);
+}
+
+.box {
+  display: flex;
+  width: min(640px, 100%);
+  max-height: 76vh;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: 12px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  overflow: hidden;
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.input {
+  flex: 1;
+  min-height: 52px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.group {
+  margin: 10px 14px 4px;
+  color: var(--wf-ink-2);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+}
+
+.active {
+  background: var(--wf-hover);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.detail {
+  color: var(--wf-ink-2);
+  font-size: 0.875rem;
+}
+
+.action {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.notice {
+  padding: 12px 14px;
+}
+
+.notice p {
+  margin: 4px 0 0;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 14px;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: 0.875rem;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+}
+
+.box {
+  position: relative;
+}
