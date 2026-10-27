@@ -144,7 +144,7 @@ describe("review regressions: numbered bed accounting and accepted direct referr
       now: now + 2,
       admissionId: admission.id,
     });
-    expect(undone.rejections.at(-1)?.reason).toMatch(/already held/);
+    expect(undone.rejections.at(-1)?.reason).toMatch(/already pulled/);
     expect(undone.movements).toEqual(reservedAgain.movements);
     expect(undone.referrals).toEqual(reservedAgain.referrals);
     expect(undone.admissions).toEqual(reservedAgain.admissions);
