@@ -18,6 +18,7 @@ import {
   ownershipAdmission,
   partitionMergeOwnership,
   filterAdmissionMergePaths,
+  incomingIsMainline,
   WARD_FLOW_IDENTITY_ANCHOR,
 } from "../scripts/pre-commit-checks.mjs";
 import { HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY } from "./helpers/ward-flow-history";
@@ -326,6 +327,49 @@ describe("complete staged ownership admission", () => {
         signOutText: `Open sign-outs only\n- 2026-10-17 | Peer | ward/peer | | ${file}\n`,
       }).blocked,
     ).toBe(true);
+  });
+
+  it("lets main's exact copy of a peer's claimed file through a merge-main commit only", () => {
+    const file = "docs/ward-flow/a.md";
+    const input = {
+      ownershipPaths: [file, "docs/ward-flow/b.md"],
+      requiredClaims: [],
+      mainlineIncoming: [file],
+      logAvailable: true,
+      taskBranch: true,
+      branch: "ward/mine",
+      root: "",
+      merging: true,
+      signOutText: `Open sign-outs only\n- 2026-10-27 | Peer | ward/peer | | ${file}\n`,
+    };
+    expect(ownershipAdmission(input).blocked).toBe(false);
+    // Outside a merge, or for a path the merge itself changed, the overlap still blocks.
+    expect(ownershipAdmission({ ...input, merging: false }).blocked).toBe(true);
+    expect(ownershipAdmission({ ...input, mainlineIncoming: [] }).blocked).toBe(true);
+    expect(
+      ownershipAdmission({
+        ...input,
+        signOutText: `Open sign-outs only\n- 2026-10-27 | Peer | ward/peer | | docs/ward-flow/b.md\n`,
+      }).blocked,
+    ).toBe(true);
+  });
+
+  it("treats only commits already in origin/main as mainline", () => {
+    const main = "a".repeat(40);
+    const inMain = "b".repeat(40);
+    const peer = "c".repeat(40);
+    const run = (args: string[]) => {
+      if (args[0] === "rev-parse") return `${main}\n`;
+      if (args[0] === "merge-base") return args[1] === inMain ? `${inMain}\n` : `${main}\n`;
+      throw Error("unexpected");
+    };
+    expect(incomingIsMainline(inMain, run)).toBe(true);
+    expect(incomingIsMainline(peer, run)).toBe(false);
+    expect(
+      incomingIsMainline(inMain, () => {
+        throw Error("no origin/main");
+      }),
+    ).toBe(false);
   });
 });
 

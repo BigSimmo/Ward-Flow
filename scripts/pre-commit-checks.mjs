@@ -28,8 +28,10 @@
  *
  * During a merge (MERGE_HEAD present), staged scan and ownership admission still
  * run. Only unchanged-on-HEAD paths that exactly match one incoming tree may
- * omit a new own sign-out; active overlaps always block. The normal hook skips
- * lint and typecheck during a merge.
+ * omit a new own sign-out. Active overlaps block, except on those clean paths
+ * when the incoming commit is already in origin/main: the merge then records
+ * main's own copy and authors nothing in a peer's claimed file. The normal hook
+ * skips lint and typecheck during a merge.
  *
  * Also: a clash guard. Staged files that another branch has signed out in the
  * shared sign-out file (D:/Repos/ward-flow-logs/sign-out.md,
@@ -203,20 +205,36 @@ export function partitionMergeOwnership(changes, { base, head, incoming, index }
 
 /** Unknown, octopus, conflicted or multiple-base provenance receives no exemption. */
 export function mergeOwnershipScope(changes, incomingHeads, run = git) {
-  const fallback = { cleanIncoming: [], requiredClaims: [...new Set(changes.flatMap((change) => change.paths))] };
+  const fallback = {
+    cleanIncoming: [],
+    mainlineIncoming: [],
+    requiredClaims: [...new Set(changes.flatMap((change) => change.paths))],
+  };
   if (incomingHeads.length !== 1 || !/^[a-f0-9]{40,64}$/.test(incomingHeads[0])) return fallback;
   try {
     const bases = run(["merge-base", "--all", "HEAD", incomingHeads[0]]).trim().split(/\r?\n/);
     if (bases.length !== 1 || !/^[a-f0-9]{40,64}$/.test(bases[0])) return fallback;
     const tree = (ref) => parseOwnershipTree(run(["ls-tree", "-r", "-z", "--full-tree", ref]));
-    return partitionMergeOwnership(changes, {
+    const result = partitionMergeOwnership(changes, {
       base: tree(bases[0]),
       head: tree("HEAD"),
       incoming: tree(incomingHeads[0]),
       index: parseOwnershipTree(run(["ls-files", "--stage", "-z"]), true),
     });
+    return { ...result, mainlineIncoming: incomingIsMainline(incomingHeads[0], run) ? result.cleanIncoming : [] };
   } catch {
     return fallback;
+  }
+}
+
+/** True only when the incoming commit is already in origin/main. Any failure means no. */
+export function incomingIsMainline(incomingHead, run = git) {
+  try {
+    const main = run(["rev-parse", "--verify", "--quiet", "refs/remotes/origin/main^{commit}"]).trim();
+    if (!/^[a-f0-9]{40,64}$/.test(main)) return false;
+    return run(["merge-base", incomingHead, main]).trim() === incomingHead;
+  } catch {
+    return false;
   }
 }
 
@@ -249,6 +267,7 @@ export function filterAdmissionMergePaths(paths, incomingHeads, run = git) {
 export function ownershipAdmission({
   ownershipPaths,
   requiredClaims = ownershipPaths,
+  mainlineIncoming = /** @type {string[]} */ ([]),
   logAvailable,
   signOutText = "",
   branch,
@@ -259,7 +278,14 @@ export function ownershipAdmission({
 }) {
   if (skip) return { blocked: false, skipped: true, clashes: [], unsigned: [] };
   if (!logAvailable) return { blocked: true, missingLog: true, clashes: [], unsigned: [] };
-  const clashes = signOutConflicts(ownershipPaths, signOutText, branch, root);
+  // Main's exact copy of a file, brought in unchanged by a merge, edits nothing a peer has claimed.
+  const mainline = new Set(merging ? mainlineIncoming : []);
+  const clashes = signOutConflicts(
+    ownershipPaths.filter((file) => !mainline.has(file)),
+    signOutText,
+    branch,
+    root,
+  );
   const unsigned = taskBranch || merging ? unsignedWardFiles(requiredClaims, signOutText, branch, root) : [];
   return { blocked: clashes.length > 0 || unsigned.length > 0, clashes, unsigned };
 }
@@ -1027,7 +1053,8 @@ async function main() {
   }
 
   // 1b. Admission covers every staged path, including deletions and rename sources.
-  // Exact incoming tree identity can waive a new claim, never the active-overlap check.
+  // Exact incoming tree identity can waive a new claim. It waives the active-overlap check only
+  // when the incoming commit is already in origin/main.
   const signOutLogPresent = existsSync(SIGN_OUT_FILE);
   if (admissionOnly && process.env.SKIP_SIGNOUT_GUARD === "1") {
     failed = true;
@@ -1041,10 +1068,11 @@ async function main() {
       : branch.startsWith("ward/");
     const mergeScope = merging
       ? mergeOwnershipScope(scope.changes, incomingHeads)
-      : { cleanIncoming: [], requiredClaims: scope.ownershipPaths };
+      : { cleanIncoming: [], mainlineIncoming: [], requiredClaims: scope.ownershipPaths };
     const admission = ownershipAdmission({
       ownershipPaths: [...new Set([...scope.ownershipPaths, ...admissionMergePaths])],
       requiredClaims: [...new Set([...mergeScope.requiredClaims, ...admissionMergePaths])],
+      mainlineIncoming: (mergeScope.mainlineIncoming ?? []).filter((file) => !admissionMergePaths.includes(file)),
       logAvailable: signOutLogPresent,
       signOutText,
       branch,
@@ -1060,7 +1088,9 @@ async function main() {
     }
     if (mergeScope.cleanIncoming.length > 0 && !admission.missingLog)
       report.push(
-        `${mergeScope.cleanIncoming.length} clean incoming path(s): active overlaps checked; no new own sign-out required`,
+        `${mergeScope.cleanIncoming.length} clean incoming path(s): no new own sign-out required; ${
+          (mergeScope.mainlineIncoming ?? []).length
+        } from origin/main skip the overlap check`,
       );
     if (clashes.length > 0) {
       failed = true;
