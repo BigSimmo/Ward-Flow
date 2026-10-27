@@ -647,6 +647,14 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     };
   }, [pathname, roleCategory]);
 
+  // Once the slide-out has closed, arriving on its route again (browser Forward) must open it again.
+  const referralWasOpenRef = useRef(false);
+  useEffect(() => {
+    const open = openPanel === "referral";
+    if (referralWasOpenRef.current && !open) routeReferralOpenedRef.current = false;
+    referralWasOpenRef.current = open;
+  }, [openPanel]);
+
   // Every link to the slide-out route — the patient page's Refer, the board's New referral, a search
   // preview, the rail — opens the slide-out in place instead of leaving the page. Capture phase on
   // window, so it runs before the link's own handler; `Link` does not navigate a prevented click.
