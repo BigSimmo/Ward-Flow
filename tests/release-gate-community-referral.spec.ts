@@ -284,6 +284,8 @@ test("Community referral: a community team refers from its own desk, the ward it
   await freeBed.click();
   await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted.");
   await expect(page.getByTestId(bedTestId)).toHaveAttribute("data-state", "held");
+  // H-0893: an answered referral folds behind "Show N answered" below the waiting ones.
+  await inbox.getByRole("button", { name: /^Show \d+ answered$/ }).click();
   await expect(inboxEntry).toContainText("Accepted");
   await expectAccessible(page, testInfo, "ward Bed board after accepting into a held bed");
   await expectNoReloadSince(page, "the ward accepting into a held bed");
