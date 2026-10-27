@@ -108,7 +108,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
         <ReferralDrawerHead s={s} />
         {s.draftRestored ? (
           <p role="status">
-            Draft restored from this session —{" "}
+            Draft restored in this tab —{" "}
             <Button variant="ghost" size="sm" onClick={s.clearRecoveredDraft}>
               Clear
             </Button>
