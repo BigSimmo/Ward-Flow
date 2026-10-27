@@ -16,6 +16,8 @@ describe("Help roles reference", () => {
       expect(r.summary).toBe(DESK_GUIDES[r.id].summary);
     }
     expect(ACCESS_ROLE_LABELS.bed_manager).toBe("Site bed manager");
-    expect(ROLE_REFERENCE.map((r) => r.name)).toEqual(expect.arrayContaining(["Executive", "Access admin", "TV board"]));
+    expect(ROLE_REFERENCE.map((r) => r.name)).toEqual(
+      expect.arrayContaining(["Executive", "Access admin", "TV board"]),
+    );
   });
 });
