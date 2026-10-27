@@ -1296,11 +1296,9 @@ test.describe("@mockup Role switcher — the loop", () => {
     await shortlist.getByTestId("ward-shortlist-candidate-rgh-adult-secure").click();
     // Option B (Josh, 13 Oct 2026; D-30): Home's Refer now opens the referral slide-out (a referral
     // for the coordinator queue) rather than offering the wards at once. Override still offers the
-    // chosen wards directly, with a reason and a second sign-off, so the loop offers through it.
+    // chosen wards directly, with a reason (D-86: no second sign-off), so the loop offers through it.
     await shortlist.getByTestId("ward-shortlist-override-toggle").click();
     await shortlist.getByLabel(/Reason for overriding/).selectOption("Clinical urgency outweighs the mismatch");
-    await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
-    await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
     await shortlist.getByRole("button", { name: "Record override" }).click();
     // Three live referrals — exactly why the ward hop below cannot be inferred and must use the
     // picker (addendum R52). Whole-branch review M3: the old regex-based `toContainText` assertion

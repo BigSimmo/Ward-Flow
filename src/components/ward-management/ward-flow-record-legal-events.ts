@@ -41,8 +41,14 @@ export function reduceRecordedLegalEvent(
     case "RECORD_LEGAL_FORM_EXPIRY": {
       const movement = findMovement(state, event.movementId);
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      // #219 (Josh, 27 Oct 2026): a ward records the expiry only for a person admitted to its own
+      // bed, as it records the form (WT-03). Which ward is checked by scope, as for that event.
+      const wardAdmitted = event.role === "ward" && admittedStayForArrival(movement, state.admissions) !== undefined;
+      if (event.role === "ward" && !wardAdmitted) {
+        return reject(state, event, "A ward records a form's expiry only for a person admitted to its own bed.");
+      }
       // T2r finding 11: a fixed sentence, never interpolating the clinical `closure.reason`.
-      if (movement.closure) {
+      if (movement.closure && !wardAdmitted) {
         return reject(state, event, "This record is closed, so no expiry can be added to it.");
       }
       // §2's exact sentence — there is no form here to attach a typed expiry to, so this refuses

@@ -59,6 +59,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
       "contact",
       "catchmentService",
       "catchmentConfirmed",
+      "catchmentNotKnown",
       "homeRegion",
       "sourceKind",
       "referralSex",
@@ -89,6 +90,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
     !optional(value.communityPurpose, (item) => oneOf(item, COMMUNITY_REFERRAL_PURPOSES)) ||
     !optional(value.unidentified, (item) => item === null || string(item)) ||
     !optional(value.needsChartReattachment, boolean) ||
+    !optional(value.catchmentNotKnown, boolean) ||
     !boolean(value.highAcuity) ||
     !boolean(value.catchmentConfirmed) ||
     !Array.isArray(value.selectedUnitIds) ||

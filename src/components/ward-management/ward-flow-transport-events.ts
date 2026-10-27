@@ -3,12 +3,13 @@ import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
+  ABSCONDED_IN_TRANSIT,
   CANCEL_TRANSPORT_REASONS,
   GENDER_NO_LONGER_SUITS_REFUSAL,
   STOP_TRANSPORT_REASONS,
   TRANSPORT_WHEREABOUTS,
 } from "@/components/ward-management/ward-change-reasons";
-import { cadNumberProblem, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
+import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -47,7 +48,8 @@ export type TransportEvent = Extract<
       | "CANCEL_TRANSPORT"
       | "STOP_TRANSPORT"
       | "SET_ARRIVAL_DETAILS"
-      | "EVALUATE_ARRIVAL_LATENESS";
+      | "EVALUATE_ARRIVAL_LATENESS"
+      | "RECORD_TRANSPORT_CAD";
   }
 >;
 
@@ -280,6 +282,8 @@ export function reduceTransportEvent(
           ...movement.transport,
           collectedAt: movement.transport.collectedAt ?? event.now,
           ...(collectedException ? { exceptions: [...(movement.transport.exceptions ?? []), collectedException] } : {}),
+          // #236: recorded only when the crew tapped it. Absent never blocks a collection.
+          ...(event.identityChecked === true ? { identityChecked: { at: event.now, by: event.role } } : {}),
         },
         // Nothing is blocking a patient who is in a vehicle — and the SEED already says so in these
         // exact words on its two `moving` movements. Reused verbatim rather than reworded.
@@ -659,16 +663,16 @@ export function reduceTransportEvent(
       if (typeof event.escortRequired !== "boolean") {
         return reject(state, event, `BOOK_TRANSPORT escortRequired must be answered, and it has no default`);
       }
-      // Owner's third ruling: this logs a booking already made by phone, and the three facts from
-      // that call are required, never defaulted.
-      // A ward escort or a family member has no dispatch service, so no number exists to log.
-      const needsCad = providerNeedsCadNumber(event.provider);
-      if (needsCad && (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0)) {
-        return reject(state, event, `BOOK_TRANSPORT cadNumber must be answered, and it has no default`);
+      // Owner's third ruling: this logs a booking already made by phone, and its facts are never
+      // defaulted. CAD to follow (Josh, 27 Oct 2026): a dispatched service may be booked before the
+      // provider gives its number, so a blank CAD books and the job shows "CAD to follow" until
+      // `RECORD_TRANSPORT_CAD` adds it. Nothing is filled in for it.
+      if (event.cadNumber !== undefined && typeof event.cadNumber !== "string") {
+        return reject(state, event, `BOOK_TRANSPORT cadNumber must be typed text or left blank`);
       }
       // HAZ-03 (#430): a placeholder or free text is not a dispatch number. Same rule as the forms.
       const cadProblem =
-        typeof event.cadNumber === "string" && (needsCad || event.cadNumber.trim().length > 0)
+        typeof event.cadNumber === "string" && event.cadNumber.trim().length > 0
           ? cadNumberProblem(event.cadNumber)
           : undefined;
       if (cadProblem !== undefined) {
@@ -1060,7 +1064,62 @@ export function reduceTransportEvent(
           ),
         );
       }
+      // #154 (Josh, 27 Oct 2026): a patient who absconds in transit from a ward stay is still that
+      // ward's patient, so the sending ward is told to record them absent without leave
+      // (`RECORD_ABSENT_WITHOUT_LEAVE`). Nothing is recorded for it: the ward records the absence.
+      const sendingStay = movementSourceAdmission(state, movement);
+      if (event.reason === ABSCONDED_IN_TRANSIT && sendingStay?.state === "occupied") {
+        stopNotices.push(
+          makeNotice(
+            event.now,
+            state.notices.length,
+            "transport_stopped_ward",
+            { role: "ward", placeId: sendingStay.unitId },
+            { movementId: movement.id, unitId: sendingStay.unitId },
+            `Your patient for ${movement.id} absconded in transit and their whereabouts are unknown. Record them absent without leave.`,
+          ),
+        );
+      }
       return appendNotices(next, stopNotices);
+    }
+
+    case "RECORD_TRANSPORT_CAD": {
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      const job = movement.transport;
+      if (!job || job.cancelledAt !== undefined || job.arrivedAt !== undefined || movement.closure) {
+        return reject(state, event, `movement ${movement.id} has no live transport job to add a CAD number to`);
+      }
+      if (job.cadNumber !== undefined && job.cadNumber.trim().length > 0) {
+        return reject(state, event, `transport for movement ${movement.id} already has a CAD number`);
+      }
+      if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
+        return reject(state, event, `RECORD_TRANSPORT_CAD cadNumber must be answered, and it has no default`);
+      }
+      // HAZ-03 (#430): the same placeholder rule as the booking.
+      const lateCadProblem = cadNumberProblem(event.cadNumber);
+      if (lateCadProblem !== undefined) {
+        return reject(state, event, `RECORD_TRANSPORT_CAD cadNumber refused: ${lateCadProblem}`);
+      }
+      // A ward adds the number only for a journey it sent, as it booked it (WLQ-11).
+      if (event.role === "ward") {
+        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        const sendingWard =
+          movementSourceAdmission(state, movement)?.unitId ??
+          referral?.originUnitId ??
+          (movement as { originUnitId?: string }).originUnitId;
+        if (!event.actingUnitId || event.actingUnitId !== sendingWard) {
+          return reject(
+            state,
+            event,
+            `RECORD_TRANSPORT_CAD was raised acting as unit ${event.actingUnitId ?? "none"}; only the sending ward adds the CAD number`,
+          );
+        }
+      }
+      return replaceMovement(state, movement.id, {
+        ...movement,
+        transport: { ...job, cadNumber: event.cadNumber.trim(), cadAdded: { at: event.now, by: event.role } },
+      });
     }
 
     case "SET_ARRIVAL_DETAILS": {

@@ -204,7 +204,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     expect(screen.getByTestId("ward-ed-examine-form-WF-011")).toBeTruthy();
   });
 
-  it("state 2: names the answers left, marks the empty CAD field, and moves to it", () => {
+  it("state 2: names the answers left, and a blank CAD warns as CAD to follow without blocking", () => {
     openSheet();
     fireEvent.click(
       within(screen.getByTestId("ward-ed-unavailable-handover-WF-011")).getByRole("button", {
@@ -213,10 +213,16 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     );
     const dialog = screen.getByTestId("ward-ed-book-transport-WF-011");
     const left = within(dialog).getByTestId("ward-ed-book-transport-left-WF-011");
-    // A34: legal status starts from Legal now, so it is not among the answers left.
-    expect(left.textContent).toContain("4 answers left: provider, CAD number, estimated time, escort answer");
+    // A34: legal status starts from Legal now, so it is not among the answers left. CAD to follow
+    // (Josh, 27 Oct 2026): the CAD number is not a missing answer either.
+    expect(left.textContent).toContain("3 answers left: provider, estimated time, escort answer");
+    // The confirm keeps its full sentence for screen readers.
+    const confirm = within(dialog).getByTestId("ward-ed-book-transport-confirm-WF-011");
+    expect(confirm.title).toMatch(/choose who is collecting the patient/);
 
+    fireEvent.click(within(left).getByRole("button", { name: "Add provider" }));
     const provider = within(dialog).getByTestId("ward-ed-transport-provider-WF-011") as HTMLSelectElement;
+    expect(document.activeElement).toBe(provider);
     fireEvent.change(provider, { target: { value: provider.options[1].value } });
     fireEvent.click(within(dialog).getByTestId("ward-ed-transport-escort-yes-WF-011"));
     fireEvent.click(within(dialog).getByTestId("ward-ed-transport-legal-status-involuntary-WF-011"));
@@ -224,26 +230,14 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
       target: { value: "13:30" },
     });
 
-    expect(left.textContent).toContain("1 answer left: CAD number");
+    expect(within(dialog).queryByTestId("ward-ed-book-transport-left-WF-011")).toBeNull();
     const cad = within(dialog).getByTestId("ward-ed-transport-cad-number-WF-011") as HTMLInputElement;
     expect(cad.value).toBe("");
-    expect(cad.hasAttribute("data-missing")).toBe(true);
-    const described = (cad.getAttribute("aria-describedby") ?? "")
-      .split(" ")
-      .map((id) => document.getElementById(id)?.textContent);
-    expect(described).toContain("Read it off the call with the provider.");
-    // The confirm keeps its full sentence for screen readers.
-    const confirm = within(dialog).getByTestId("ward-ed-book-transport-confirm-WF-011");
-    expect(confirm.getAttribute("aria-disabled")).toBe("true");
-    expect(confirm.title).toMatch(/enter the CAD transport number/);
-
-    fireEvent.click(within(left).getByRole("button", { name: "Add CAD number" }));
-    expect(document.activeElement).toBe(cad);
+    expect(within(dialog).getByTestId("ward-ed-transport-cad-to-follow-WF-011").textContent).toContain("CAD to follow");
+    expect(confirm.getAttribute("aria-disabled")).toBeNull();
 
     fireEvent.change(cad, { target: { value: "CAD-48213" } });
-    expect(within(dialog).queryByTestId("ward-ed-book-transport-left-WF-011")).toBeNull();
-    expect(within(dialog).queryByTestId("ward-ed-book-transport-needs-WF-011")).toBeNull();
-    expect(cad.hasAttribute("data-missing")).toBe(false);
+    expect(within(dialog).queryByTestId("ward-ed-transport-cad-to-follow-WF-011")).toBeNull();
     expect(confirm.getAttribute("aria-disabled")).toBeNull();
   });
 });

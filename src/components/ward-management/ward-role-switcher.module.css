@@ -61,6 +61,24 @@
     box-shadow var(--duration-fast, 150ms);
 }
 
+/* Finding 261 (Josh, 27 Oct 2026): the words sit beside the icon inside the one button, so they open
+   the switcher too. The accessible name already starts with them, so they are hidden from it. */
+.trigger[data-words] {
+  display: inline-flex;
+  align-items: center;
+  width: auto;
+  gap: var(--rs-space-6);
+  padding: 0 var(--rs-space-10);
+  color: var(--rs-heading);
+}
+
+.triggerWords {
+  font-size: var(--text-sm-minus);
+  font-weight: 600;
+  line-height: var(--rs-leading-tight);
+  white-space: nowrap;
+}
+
 .trigger:hover {
   border-color: var(--rs-border);
   background: var(--rs-canvas);

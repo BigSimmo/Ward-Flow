@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -33,8 +33,10 @@ import {
 } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardRail } from "@/components/ward-management/shell/ward-rail";
 
-describe("Builder 2 - ED statutory form dropdown (ED-FORM-DROPDOWN)", () => {
-  it("offers the statutory forms in a native select and changes only the screen draft", () => {
+describe("Builder 2 - ED statutory form (ED-FORM-DROPDOWN)", () => {
+  // Finding 9 (Josh, 27 Oct 2026): the board shows the recorded legal form. The old screen-only
+  // dropdown could show a form the record did not hold.
+  it("shows the recorded legal form as text, with no screen-only dropdown", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <EdScreen edId="arm-ed" />
@@ -42,19 +44,10 @@ describe("Builder 2 - ED statutory form dropdown (ED-FORM-DROPDOWN)", () => {
     );
     // Device audit 11 Oct 2026 (owner pick A2): board edits live in the person sheet; the row name opens it.
     fireEvent.click(screen.getByTestId("ward-ed-row-name-WF-001"));
-    const selector = screen.getByTestId("ward-ed-form-pill-WF-001");
-    expect(selector).toHaveRole("combobox");
-    expect(
-      within(selector)
-        .getAllByRole("option")
-        .map((option) => (option as HTMLOptionElement).value),
-    ).toEqual(["", "1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"]);
-    expect(selector).toHaveValue("1A");
-    fireEvent.change(selector, { target: { value: "3D" } });
-    expect(selector).toHaveValue("3D");
-    expect(screen.getByText("Unsaved changes · This screen only")).toBeInTheDocument();
-    fireEvent.change(selector, { target: { value: "" } });
-    expect(selector).toHaveValue("");
+    const shown = screen.getByTestId("ward-ed-form-pill-WF-001");
+    expect(shown).toHaveTextContent("Form 1A");
+    expect(shown).not.toHaveRole("combobox");
+    expect(screen.queryByRole("combobox", { name: /^Legal form for/ })).toBeNull();
   });
 });
 

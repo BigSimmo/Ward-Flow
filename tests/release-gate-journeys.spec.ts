@@ -144,8 +144,6 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await expectAccessible(page, testInfo, "coordinator Placement with a ward chosen");
   await shortlist.getByTestId("ward-shortlist-override-toggle").click();
   await shortlist.getByLabel(/Reason for overriding/).selectOption("Clinical urgency outweighs the mismatch");
-  await shortlist.getByTestId("ward-shortlist-override-second-sign-off").check();
-  await shortlist.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
   await shortlist.getByRole("button", { name: "Record override" }).click();
   await expect(shortlist).toContainText("Parallel referral:");
   await expectNoReloadSince(page, "offering the ward");

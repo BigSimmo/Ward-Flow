@@ -59,6 +59,13 @@ function LastPatientGender() {
   return <span data-testid="last-patient-gender">{last && "gender" in last ? (last.gender ?? "none") : "none"}</span>;
 }
 
+/** Echoes the most-recently-added patient's Aboriginal or Torres Strait Islander status (finding 51). */
+function LastPatientIndigenousStatus() {
+  const { patients } = useWardFlow();
+  const last = patients[patients.length - 1];
+  return <span data-testid="last-patient-indigenous">{last?.aboriginalOrTorresStraitIslanderStatus ?? "none"}</span>;
+}
+
 /** Echoes the live referral count — the "stays two acts" catcher: `ADD_PATIENT` must never create
  *  a `Referral`, however this screen's fields grow in the future. */
 function ReferralCount() {
@@ -72,6 +79,7 @@ function renderForm() {
       <AddPatientForm />
       <PatientCount />
       <LastPatientGender />
+      <LastPatientIndigenousStatus />
       <ReferralCount />
     </WardFlowProvider>,
   );
@@ -742,7 +750,7 @@ describe("AddPatientForm safety regressions", () => {
     fillDraft();
     fireEvent.click(screen.getByRole("radio", { name: "Female" }));
     fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
-      target: { value: "aboriginal" },
+      target: { value: "Aboriginal, not Torres Strait Islander" },
     });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
     expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
@@ -752,7 +760,7 @@ describe("AddPatientForm safety regressions", () => {
       expect(screen.getByLabelText(label)).toHaveValue("");
     }
     expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("not-stated");
+    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
@@ -767,6 +775,29 @@ describe("AddPatientForm safety regressions", () => {
     expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).not.toBeRequired();
   });
 
+  // Finding 51 (Josh, 27 Oct 2026): the answer is saved, the list opens blank, and blank never blocks.
+  it("saves the Aboriginal or Torres Strait Islander answer on the record, and saves none when left blank", async () => {
+    renderForm();
+    const field = screen.getByLabelText("Aboriginal or Torres Strait Islander");
+    expect(field).toHaveValue("");
+    expect(screen.queryByText("not saved")).toBeNull();
+    const before = Number(screen.getByTestId("patient-count").textContent);
+    fillDraft();
+    fireEvent.change(field, { target: { value: "Torres Strait Islander, not Aboriginal" } });
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
+    expect(screen.getByTestId("last-patient-indigenous")).toHaveTextContent("Torres Strait Islander, not Aboriginal");
+  });
+
+  it("adds a patient with the Aboriginal or Torres Strait Islander answer left blank", async () => {
+    renderForm();
+    const before = Number(screen.getByTestId("patient-count").textContent);
+    fillDraft();
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
+    expect(screen.getByTestId("last-patient-indigenous")).toHaveTextContent("none");
+  });
+
   it("hides Print and Save draft, which only ever said they were not wired (overall review, 20 Oct 2026)", () => {
     renderForm();
     expect(screen.queryByRole("button", { name: "Print" })).not.toBeInTheDocument();
@@ -779,7 +810,7 @@ describe("AddPatientForm safety regressions", () => {
     // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
     if (field === "Indigenous status")
       fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
-        target: { value: "aboriginal" },
+        target: { value: "Aboriginal, not Torres Strait Islander" },
       });
     if (field === "Gender") fireEvent.click(screen.getByRole("radio", { name: "Female" }));
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));

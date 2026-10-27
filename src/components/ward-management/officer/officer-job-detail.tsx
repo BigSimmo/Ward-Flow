@@ -4,7 +4,8 @@
 // out of `officer-screen.tsx`; each helper is called during `OfficerScreen`'s render with the screen
 // state it reads, passed as `OfficerJobDetailContext`.
 
-import { providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
+import { CAD_TO_FOLLOW, cadNumberToFollow, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
+import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
 import { Check, Lock } from "lucide-react";
 
 import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
@@ -63,6 +64,10 @@ export type OfficerJobDetailContext = {
   diversionOpen: boolean;
   diversionPlace: TransportWhereabouts | undefined;
   diversionReason: DiversionReason | undefined;
+  /** #236: whether the crew has tapped the identity check for this job, sent with Collected. */
+  identityChecked: (movement: Movement) => boolean;
+  /** The name, UMRN and date of birth the crew checks with the sending team. */
+  identityFor: (movement: Movement) => { name: string; umrn: string; dob: string };
   isPhone: boolean;
   now: Instant;
   officerPatientName: (movement: Movement) => string;
@@ -77,6 +82,7 @@ export type OfficerJobDetailContext = {
   setDiversionPlace: Dispatch<SetStateAction<TransportWhereabouts | undefined>>;
   setDiversionReason: Dispatch<SetStateAction<DiversionReason | undefined>>;
   showToast: (msg: string) => void;
+  toggleIdentityChecked: (movement: Movement) => void;
   unitFor: (movement: Movement) => Unit | undefined;
 };
 
@@ -152,6 +158,8 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     diversionOpen,
     diversionPlace,
     diversionReason,
+    identityChecked,
+    identityFor,
     isPhone,
     now,
     officerPatientName,
@@ -166,6 +174,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     setDiversionPlace,
     setDiversionReason,
     showToast,
+    toggleIdentityChecked,
     unitFor,
   } = ctx;
   const transport = movement.transport;
@@ -285,7 +294,13 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         <div>
           <dt>CAD</dt>
           <dd className={styles.mono}>
-            {transport.cadNumber ?? (providerNeedsCadNumber(transport.provider) ? "Not recorded" : "Not needed")}
+            {cadNumberToFollow(transport) ? (
+              <>
+                <StatusGlyph tone="warning" size={9} /> {CAD_TO_FOLLOW}
+              </>
+            ) : (
+              (transport.cadNumber ?? (providerNeedsCadNumber(transport.provider) ? "Not recorded" : "Not needed"))
+            )}
           </dd>
         </div>
       </dl>
@@ -378,6 +393,36 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         </span>
       ) : null}
 
+      {/* #236 (Josh, 27 Oct 2026): one tap before Collected, with the facts to check. Never a gate. */}
+      {leg === "En route" && !movement.closure
+        ? (() => {
+            const identity = identityFor(movement);
+            const checked = identityChecked(movement);
+            return (
+              <section
+                className={styles.section}
+                aria-label="Identity at collection"
+                data-testid={`ward-officer-identity-${movement.id}`}
+              >
+                <h3 className={styles.sectionTitle}>Identity at collection</h3>
+                <p>
+                  {identity.name} · {identity.umrn} · DOB {identity.dob}
+                </p>
+                <Button
+                  size="sm"
+                  variant={checked ? "pri" : "sec"}
+                  icon={checked ? Check : undefined}
+                  aria-pressed={checked}
+                  data-testid={`ward-officer-identity-check-${movement.id}`}
+                  onClick={() => toggleIdentityChecked(movement)}
+                >
+                  Identity checked with the sending team
+                </Button>
+              </section>
+            );
+          })()
+        : null}
+
       {pastWardEta(movement, now) && movement.arrivalDetails ? (
         <div
           className={styles.overdue}
@@ -414,7 +459,10 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
               </div>
               <div data-testid={`ward-officer-cad-number-${movement.id}`}>
                 <dt>CAD (dispatch) number</dt>
-                <dd>{cadNumberLabel(transport)}</dd>
+                <dd>
+                  {cadNumberToFollow(transport) ? <StatusGlyph tone="warning" size={9} /> : null}
+                  {cadNumberLabel(transport)}
+                </dd>
               </div>
             </>
           )}
@@ -470,7 +518,21 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
               <dd>{transportExceptionText(exception)}</dd>
             </div>
           ))}
+          {transport.identityChecked ? (
+            <div data-testid={`ward-officer-identity-checked-${movement.id}`}>
+              <dt>Identity checked</dt>
+              <dd>With the sending team, {formatInstantWithDay(transport.identityChecked.at, now)}</dd>
+            </div>
+          ) : null}
         </dl>
+        {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
+        {cadNumberToFollow(transport) && !movement.closure ? (
+          <TransportCadToFollow
+            movementId={movement.id}
+            role="officer"
+            testId={`ward-officer-cad-to-follow-${movement.id}`}
+          />
+        ) : null}
       </section>
 
       {movement.arrivalDetails ? (
