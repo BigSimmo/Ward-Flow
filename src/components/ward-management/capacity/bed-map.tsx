@@ -637,7 +637,8 @@ function ServiceGroup({
   const totalClosed = group.wards.reduce((sum, w) => sum + w.closed, 0);
   // Occupied or Pulled, one decimal: the one occupancy count (`ward-occupancy.ts`) the rail and
   // every other page print for the same service (device audit, 11 Oct 2026).
-  const totalInUse = group.wards.reduce((sum, w) => sum + w.occupied + w.pulled, 0);
+  const totalPulled = group.wards.reduce((sum, w) => sum + w.pulled, 0);
+  const totalInUse = group.wards.reduce((sum, w) => sum + w.occupied, 0) + totalPulled;
   const occPct = totalBeds > 0 ? ((totalInUse / totalBeds) * 100).toFixed(1) : "0.0";
 
   const checkScrollState = useCallback(() => {
@@ -793,6 +794,7 @@ function ServiceGroup({
           </h3>
           <span className={styles.serviceCapacityBadge}>
             {totalReady > 0 ? `${totalReady} ready` : "none ready"} · {totalClosed} closed · {occPct}% occupancy
+            {totalPulled > 0 ? ` (includes ${totalPulled} pulled)` : ""}
           </span>
         </div>
 

@@ -118,9 +118,9 @@ const NETWORK_TABS = ["freeing", "attention"] as const;
 const PHONE_TABS = ["overview", "wards", "planned"] as const;
 
 const HIGHLIGHT_LABELS: Record<string, string> = {
-  ready: "Any bed ready",
-  "locked-ready": "Locked bed ready",
-  "open-ready": "Open bed ready",
+  ready: "Wards with any bed ready",
+  "locked-ready": "Wards with a locked bed ready",
+  "open-ready": "Wards with an open bed ready",
   "needs-confirming": "Count not confirmed",
 };
 
@@ -777,7 +777,10 @@ export function CapacityScreen() {
                   }}
                 />
                 <HeroStat value={totalPulled} label="Beds pulled" tone={totalPulled > 0 ? "warning" : undefined} />
-                <HeroStat value={occupancyPercentText} label="Of beds in use" />
+                <HeroStat
+                  value={occupancyPercentText}
+                  label={totalPulled > 0 ? `Of beds in use, including ${totalPulled} pulled` : "Of beds in use"}
+                />
               </>
             ) : undefined
           }
