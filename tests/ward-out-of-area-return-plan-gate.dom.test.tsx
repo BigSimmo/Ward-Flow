@@ -46,7 +46,9 @@ describe("out-of-area return plan — Send to ward gate and Mark ward agreed wir
 
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-home-hospital"), { target: { value: "RPH" } });
     fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-mode")).getByLabelText("Road"));
-    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-provider"), { target: { value: "Ambulance service" } });
+    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-provider"), {
+      target: { value: "Ambulance (St John)" },
+    });
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-cad"), { target: { value: "CAD-7788" } });
     fireEvent.click(screen.getByLabelText("Voluntary"));
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-estimated-time"), { target: { value: "14:30" } });

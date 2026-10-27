@@ -138,15 +138,43 @@ export type AtsCategory = (typeof ATS_CATEGORIES)[number];
 
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number];
 
-export const ARRIVAL_MODES = ["mental_health_transport", "ambulance", "police", "hospital_transfer", "self"] as const;
+/**
+ * WT-13 (Josh, 26 Oct 2026): one list of how a person travels, the same seven words on every screen
+ * that asks (referral, Pull the bed, arrival details, transport booking). Every list opens blank:
+ * nothing is chosen for the person. Each screen still stores what it stored before, so older records
+ * read as they did; only the choices offered and their words are shared.
+ */
+export const TRAVEL_MODES = [
+  "Ambulance (St John)",
+  "Mental Health Transport",
+  "Patient transport service",
+  "RFDS",
+  "Police escort",
+  "Ward escort",
+  "Family or carer",
+] as const;
+export type TravelMode = (typeof TRAVEL_MODES)[number];
+
+/** The arrival plan's stored keys, in `TRAVEL_MODES` order. `hospital_transfer` is the patient transport service. */
+export const ARRIVAL_MODES = [
+  "ambulance",
+  "mental_health_transport",
+  "hospital_transfer",
+  "rfds",
+  "police",
+  "ward_escort",
+  "self",
+] as const;
 export type ArrivalMode = (typeof ARRIVAL_MODES)[number];
 
-export const ARRIVAL_MODE_LABELS: Record<ArrivalMode, string> = {
-  mental_health_transport: "Mental Health Transport",
+export const ARRIVAL_MODE_LABELS: Record<ArrivalMode, TravelMode> = {
   ambulance: "Ambulance (St John)",
-  police: "Police Escort",
-  hospital_transfer: "Inter-Hospital Patient Transport",
-  self: "Self / Family / Carer",
+  mental_health_transport: "Mental Health Transport",
+  hospital_transfer: "Patient transport service",
+  rfds: "RFDS",
+  police: "Police escort",
+  ward_escort: "Ward escort",
+  self: "Family or carer",
 };
 
 export type MovementArrivalDetails = {

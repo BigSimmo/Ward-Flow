@@ -99,8 +99,8 @@ type SlideOutReferral = {
   urgency: UrgencyLevel;
   bedSecurity: "Open" | "Secure";
   highAcuityNursing: boolean;
-  /** `mht` needs transport; `carer` (patient or carer accompanied) does not. */
-  transport: "mht" | "carer";
+  /** Mental Health Transport needs transport; Family or carer does not. */
+  transport: "Mental Health Transport" | "Family or carer";
   /** The wards the referral is addressed to, in the order they are ticked. */
   unitIds: readonly string[];
   /** Units the Wards step must NOT offer for this person (asserted before ticking). */
@@ -791,7 +791,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       urgency: Number(RAISED.urgency) as UrgencyLevel,
       bedSecurity: "Open",
       highAcuityNursing: false,
-      transport: "mht",
+      transport: "Mental Health Transport",
       unitIds: [ACCEPT_UNIT_ID, FEMALE_ONLY_UNIT_ID],
       notOffered: [WRONG_AGE_UNIT_ID],
     });
@@ -1043,7 +1043,7 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
       urgency: Number(RAISED.urgency) as UrgencyLevel,
       bedSecurity: unitHasOpenBeds(unit) ? "Open" : "Secure",
       highAcuityNursing: true,
-      transport: "carer",
+      transport: "Family or carer",
       unitIds: [unit.id],
     });
     await expectNoReloadSince(page, "sending the far referral from the slide-out");

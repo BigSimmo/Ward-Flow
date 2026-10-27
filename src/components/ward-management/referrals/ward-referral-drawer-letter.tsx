@@ -11,7 +11,8 @@ import { chartsCountText } from "./referral-document-links";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 import { referralIsbarText, referralLetterText } from "./referral-letter";
 import { StatusGlyph } from "@/components/wf";
-import { transportLabel, countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
+import { countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
+import { transportLabel } from "./referral-submission";
 import { CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
