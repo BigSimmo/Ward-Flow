@@ -20,6 +20,7 @@ import {
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
+import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
 import {
@@ -301,7 +302,15 @@ export function wardBedRoster({
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
       // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
-      bedHold: status === "incoming" ? bedHoldOf(linkedMovement?.pullExpiresAt, now) : undefined,
+      // WT-07: Delivered stops the pull clock; the bed then awaits the ward's arrival check.
+      bedHold:
+        status === "incoming" && !(linkedMovement && deliveredAwaitingWard(linkedMovement))
+          ? bedHoldOf(linkedMovement?.pullExpiresAt, now)
+          : undefined,
+      deliveredAt:
+        status === "incoming" && linkedMovement && deliveredAwaitingWard(linkedMovement)
+          ? linkedMovement.transport?.arrivedAt
+          : undefined,
     };
   });
 

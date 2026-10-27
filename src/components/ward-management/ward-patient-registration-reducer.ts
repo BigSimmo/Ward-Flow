@@ -3,6 +3,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import { GENDERS, sameRecordNumber, type Patient } from "./ward-patients";
 import { isPatientRegistrationScope } from "./ward-patient-registration";
 import { perthIsoDay } from "./ward-clock";
+import { RECORDED_SEXES } from "./ward-model-vocabulary";
 
 /**
  * Why a date of birth cannot be stored, or undefined when it can (production audit 24 Oct 2026,
@@ -36,6 +37,11 @@ export function reducePatientRegistration(
   if (event.gender !== undefined && !GENDERS.includes(event.gender)) {
     return reject(state, event, "ADD_PATIENT gender must be chosen from GENDERS");
   }
+  // WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once here and carried to every later
+  // step. Optional like gender; "Not recorded" is the key absent, never stored as a value.
+  if (event.sex !== undefined && !RECORDED_SEXES.some((sex) => sex === event.sex && sex !== "Not recorded")) {
+    return reject(state, event, "ADD_PATIENT sex must be chosen from RECORDED_SEXES");
+  }
   // ENG-02 (production audit 24 Oct 2026): the form's non-blank rule is not the only guard. Any
   // desk calling the server reaches this reducer, and a person with no record number or name
   // cannot be matched. Trimmed values are checked and stored.
@@ -66,6 +72,7 @@ export function reducePatientRegistration(
     // Spread in only when supplied: "not yet recorded" is the key absent, never
     // present-and-`undefined`.
     ...(event.gender === undefined ? {} : { gender: event.gender }),
+    ...(event.sex === undefined ? {} : { sex: event.sex }),
     ...(suburb === undefined ? {} : { suburb }),
     // v10 pass 2: when the record was added, so Add patient can count "Added today".
     addedAt: event.now,

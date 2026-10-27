@@ -159,7 +159,7 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
     );
   }
 
-  const source = recorded.fromEdBoard ? "From the ED board" : undefined;
+  const source = recorded.fromEdBoard ? "From the ED board" : "From the referral";
   return (
     <form
       className={styles.form}

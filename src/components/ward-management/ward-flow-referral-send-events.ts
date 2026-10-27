@@ -265,6 +265,23 @@ export function reduceReferralSendEvent(
       ) {
         return reject(state, event, "RAISE_REFERRAL names a different patient from the one this referral is for");
       }
+      /**
+       * WT-04 and WT-30 (walk-through, 26 Oct 2026): a journey started from an ED referral a ward
+       * accepted opens when the person was recorded in the department, or else when the referral was
+       * sent, never later than now. The ED wait clock keeps the time already waited, and the stage
+       * history carries the recorded request and acceptance times instead of the pull time.
+       */
+      const edReferral = department && continuedAcceptance ? raisedFrom : undefined;
+      const openedAt = edReferral
+        ? Math.min(
+            edReferral.inDepartmentAt ?? edReferral.triagedAt ?? edReferral.raisedAt,
+            edReferral.raisedAt,
+            event.now,
+          )
+        : event.now;
+      const acceptedAt = continuedAcceptance
+        ? Math.min(continuedAcceptance.decidedAt ?? event.now, event.now)
+        : undefined;
       const created: Movement = {
         id: nextReferralId(sequence),
         ...(department
@@ -276,7 +293,7 @@ export function reduceReferralSendEvent(
               originCommunity: { siteCode: raisedFrom!.originSiteCode, teamName: raisedFrom!.sendingTeamName },
               ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
             }),
-        openedAt: event.now,
+        openedAt,
         patientId: event.patientId ?? raisedFrom?.patientId,
         // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
         // guard above refuses anything that does not resolve.
@@ -295,7 +312,12 @@ export function reduceReferralSendEvent(
         // patient already in the queue, not a property of arriving.
         flaggedUrgent: false,
         urgency: event.draft.urgency,
-        ...(raisedFrom?.medicalClearance === undefined ? {} : { medicalClearance: { ...raisedFrom.medicalClearance } }),
+        // WT-06: with no clearance recorded since, the ED referrer's own answer at Send is carried.
+        ...(raisedFrom?.medicalClearance !== undefined
+          ? { medicalClearance: { ...raisedFrom.medicalClearance } }
+          : edReferral?.intake?.medicalClearance !== undefined
+            ? { medicalClearance: { cleared: edReferral.intake.medicalClearance.cleared, at: edReferral.raisedAt } }
+            : {}),
         ...(event.draft.atsCategory === undefined && raisedFrom?.atsCategory === undefined
           ? {}
           : { atsCategory: event.draft.atsCategory ?? raisedFrom?.atsCategory }),
@@ -335,7 +357,7 @@ export function reduceReferralSendEvent(
         ...(continuedAcceptance
           ? {
               acceptedUnitId: event.acceptedUnitId,
-              acceptedAt: continuedAcceptance.decidedAt ?? event.now,
+              acceptedAt,
               genderPlacements: raisedFrom?.genderPlacements,
               ...(continuedAcceptance.heldBedNumber === undefined
                 ? {}
@@ -347,9 +369,24 @@ export function reduceReferralSendEvent(
         withdrawnReferrals: [],
         unwinds: [],
         // The creation moment is the first entry, with no `from`.
-        stageChanges: [
-          { at: event.now, to: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested", by: event.role },
-        ],
+        stageChanges:
+          edReferral && acceptedAt !== undefined && openedAt < acceptedAt
+            ? [
+                { at: openedAt, to: "placement_requested", by: "ed" },
+                {
+                  at: acceptedAt,
+                  from: "placement_requested",
+                  to: "accepted_awaiting_bed",
+                  by: continuedAcceptance?.decidedBy ?? event.role,
+                },
+              ]
+            : [
+                {
+                  at: openedAt,
+                  to: continuedAcceptance ? "accepted_awaiting_bed" : "placement_requested",
+                  by: event.role,
+                },
+              ],
         // `formedAt` is deliberately unset: when a patient was formed in the community is a fact
         // only a clinician holds, and no rule may invent it. The fixture keeps its authored values.
       };

@@ -279,7 +279,15 @@ export function WardBedDossierDrawer({
   const ageSex = [typeof bedItem?.age === "number" ? String(bedItem.age) : null, bedItem?.sex ?? null];
   const subline = isReady
     ? "No patient is allocated by this drawer. Review current referrals with the bed coordinator."
-    : [...ageSex, bedItem?.stayBand ?? (bedItem?.status === "incoming" ? "Arriving" : null)]
+    : [
+        ...ageSex,
+        bedItem?.stayBand ??
+          (bedItem?.status === "incoming"
+            ? typeof bedItem?.deliveredAt === "number"
+              ? "Delivered, confirm arrival"
+              : "Arriving"
+            : null),
+      ]
         .filter(Boolean)
         .join(" · ") || "On this ward";
 
@@ -813,7 +821,9 @@ export function WardBedDossierDrawer({
                         {isAwayAtEd
                           ? `Away at an ED ${bedItem.awayAtEdHours}h, bed held`
                           : bedItem?.status === "incoming"
-                            ? "Arriving"
+                            ? typeof bedItem?.deliveredAt === "number"
+                              ? "Delivered, confirm arrival"
+                              : "Arriving"
                             : "On the ward"}
                       </Row>
                       <Row label="Observation level">{observation}</Row>
@@ -1083,7 +1093,8 @@ function nowLabel(bedItem: BedItem | undefined, isReady: boolean): string {
   if (bedItem.blockReason) return "Held up";
   if (bedItem.awayAtEdHours != null) return "Away at an ED";
   if (bedItem.status === "leave") return "On leave";
-  if (bedItem.status === "incoming") return "Arriving";
+  // WT-07: Delivered is the one state after the officer hands over, until the ward confirms.
+  if (bedItem.status === "incoming") return typeof bedItem.deliveredAt === "number" ? "Delivered" : "Arriving";
   if (bedItem.pastDate) return "Past date";
   if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
     return "Leaving";

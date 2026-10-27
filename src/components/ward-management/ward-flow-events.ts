@@ -638,9 +638,8 @@ export type WardFlowEvent =
    * created by arrival is correct on every screen showing admitted people and absent at exactly the
    * moment the flow describes.
    *
-   * Carries identity because identity lives on `Patient` and nowhere else, by owner ruling PD-1
-   * (2026-08-30). It does not carry a referral, a movement or a unit: a patient exists before any of
-   * them and outlives all of them.
+   * Carries identity because identity lives on `Patient` alone (PD-1, 2026-08-30), never a referral,
+   * movement or unit. WT-05: optional recorded `sex` is asked here once, checked like `gender`.
    *
    * `gender` ADDED, owner ruling 2026-09-09/2026-09-10 — OPTIONAL, unlike the four identity fields
    * above. Most callers of this event do not know a new patient's gender yet, and omitting it is the
@@ -664,6 +663,7 @@ export type WardFlowEvent =
       familyName: string;
       dateOfBirth: string;
       gender?: Gender;
+      sex?: string;
       suburb?: string;
     }
   | {

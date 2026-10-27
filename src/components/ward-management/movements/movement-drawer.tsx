@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
+import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { useRouter } from "next/navigation";
 import { BedSingle, ChevronRight, FileText, Flag, Lock, Truck, X } from "lucide-react";
 
@@ -406,7 +407,7 @@ export function MovementDrawer({
         <div className={d.status}>
           <p className={d.statusLine}>
             <StatusGlyph tone={movement.flaggedUrgent ? "danger" : "neutral"} size={9} />
-            <strong>{stageCopy[movement.stage].label}</strong>
+            <strong>{movementStatusLabel(movement)}</strong>
             {legState && legAt !== undefined ? (
               <span className={d.trunc}>
                 · {LEG_WORD[legState] ?? legState} <span className={d.mono}>{formatInstantWithDay(legAt, now)}</span>
@@ -789,7 +790,7 @@ function MovementPhoneSheet({
                 ? closure.outcome === "arrived"
                   ? "Arrived"
                   : "Did not proceed"
-                : stageCopy[movement.stage].label}
+                : movementStatusLabel(movement)}
             </Badge>
           </span>
         </span>

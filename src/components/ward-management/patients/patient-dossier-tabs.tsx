@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReferralChart } from "@/components/ward-management/referrals/referral-submission";
 import { activeCommunityTreatmentOrder, formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -779,6 +780,7 @@ export function PatientDocumentsTab({
   patient,
   now,
   onRecordDocument,
+  referralCharts = [],
 }: {
   record: PatientNowRecord;
   movement?: Movement;
@@ -787,6 +789,8 @@ export function PatientDocumentsTab({
   patient?: Patient;
   now: number;
   onRecordDocument: () => void;
+  /** WT-06: the charts the referrer attached, named and sized only. */
+  referralCharts?: readonly ReferralChart[];
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -817,6 +821,18 @@ export function PatientDocumentsTab({
       when: `${clock(d.uploadedAt)} AWST`,
       status: "Metadata recorded",
       file: uploadedFileLabel(d),
+    })),
+    ...referralCharts.map((chart, index) => ({
+      id: `referral-chart-${index}`,
+      kind: "referral",
+      title:
+        chart.kind === "medication" ? "Medication chart" : chart.kind === "observation" ? "Observation chart" : "Chart",
+      code: "Chart",
+      from: "Attached to the referral",
+      by: "Referrer",
+      when: "At Send",
+      status: "Attached",
+      file: chart.name,
     })),
   ].filter(
     (d) =>
