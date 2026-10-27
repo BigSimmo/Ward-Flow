@@ -1452,14 +1452,11 @@ export function heldBedRefusal(
       other.acceptedUnitId === unit.id &&
       other.heldBedNumber === bedNumber,
   );
+  // The referral's own accepted arm is checked before the scan of every movement; both are pure, so
+  // the order only saves time (most referrals hold no bed here).
   const heldByReferral = state.referrals.some(
     (referral) =>
       referral.id !== exceptReferralId &&
-      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
-      !state.movements.some(
-        (movement) =>
-          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
-      ) &&
       referral.destinations.some(
         (arm) =>
           arm.state === "accepted" &&
@@ -1467,6 +1464,11 @@ export function heldBedRefusal(
           arm.destination.kind === "psychiatric_ward" &&
           // A referral sent to any ward names its ward only once accepted (`acceptedUnitId`).
           (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
+      ) &&
+      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
+      !state.movements.some(
+        (movement) =>
+          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
       ),
   );
   return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already pulled for someone` : null;
