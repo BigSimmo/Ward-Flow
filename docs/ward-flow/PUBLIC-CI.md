@@ -78,7 +78,7 @@ Refresh committed duration records only from reviewed comparable measurements; s
 fixtures and local durations do not establish hosted savings.
 
 CI no longer runs a related-test pass in static checks: the unit shards run every file on every PR,
-so it only repeated work (about 3.7 minutes a push on 27 October 2026). `npm run test:related` keeps
+so it only repeated work (a mean of 1.1 minutes a push over 68 runs, up to 5.8, on 27 October 2026). `npm run test:related` keeps
 the same selection for local iteration. It follows literal imports, re-exports and CommonJS requires through
 `src`, `scripts`, `tests` and `backend/ward-flow`. Both focused entry points share this selector.
 Declared source-reading guards, including the appearance-key scan across all `src/`, are retained
