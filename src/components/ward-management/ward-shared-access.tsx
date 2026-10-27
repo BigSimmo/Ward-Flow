@@ -41,7 +41,7 @@ import styles from "./ward-shared-access.module.css";
 import { CLINICAL_VALUES } from "./ward-clinical-values";
 import { DowntimePackBoundary } from "./reports/downtime-pack-context";
 import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
-import { publishLiveRefresh } from "@/components/wf";
+import { publishLiveRefresh, Spinner } from "@/components/wf";
 import { subscribeDemoMenu } from "./tools/ward-demo-menu-open";
 import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
@@ -96,6 +96,8 @@ export type WardSharedConnection = SharedView & {
   credentials?: WardCredentialForm;
   enabled: boolean;
   signedIn: boolean;
+  /** P013: signed in and the first workspace read has not settled yet. */
+  connecting?: boolean;
   /** #791: the signed-in account's email, shown beside Sign out so the person knows which account this is. */
   accountEmail?: string | null;
   signIn: () => void;
@@ -628,6 +630,18 @@ function WardSharedWorkspaceContent({
         )}
         {connection.signedIn && <FrontDoorStatusButton onClick={connection.signOut}>Sign out</FrontDoorStatusButton>}
       </FrontDoorStatus>
+    );
+  // P013 (Josh, 27 Oct 2026): while the first read after connecting is still out, a spinner with
+  // no text stands in for the sign-in or Reconnect screen, since nothing has failed yet.
+  if (connection.signedIn && connection.connecting && !connection.snapshot)
+    return (
+      <div
+        data-testid="ward-shared-reconnecting"
+        aria-busy="true"
+        style={{ display: "grid", placeItems: "center", minHeight: "100dvh" }}
+      >
+        <Spinner />
+      </div>
     );
   // Signed in, but the shared workspace did not open: say so, and offer the two ways on.
   if (connection.signedIn && !connection.snapshot && connection.status !== "not-authorised")
