@@ -74,8 +74,12 @@ describe("ShortlistPanel: a non-binary placement explains itself, then succeeds 
     fireEvent.click(referButton);
     expect(screen.queryByTestId("ward-shortlist-referred-badge")).toBeNull();
 
+    // Finding 114: aria-disabled with its reason shown, so keyboard and screen-reader users hear why.
     const submit = screen.getByTestId("ward-shortlist-gender-placement-submit");
-    expect((submit as HTMLButtonElement).disabled).toBe(true);
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    expect(document.getElementById(submit.getAttribute("aria-describedby")!)?.textContent).toBe("Choose a reason");
+    fireEvent.click(submit);
+    expect(screen.queryByTestId("ward-shortlist-referred-badge")).toBeNull();
   });
 
   it("with a reason chosen and the tick checked, the placement succeeds", () => {

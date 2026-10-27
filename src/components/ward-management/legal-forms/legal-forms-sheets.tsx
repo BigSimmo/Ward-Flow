@@ -170,6 +170,8 @@ export function RecordFormSheet({
     movementId: string;
     formCode: string;
     writtenAt: Instant;
+    /** Finding 203: Metro or Country for a Form 1A, sent only when chosen. */
+    region?: "metro" | "country";
   }) => boolean | string | Promise<boolean | string>;
   /** The movement a patient record's "Record a form" link opened the sheet for (&record=1). */
   targetMovement?: string;
@@ -182,6 +184,8 @@ export function RecordFormSheet({
   const [timeClearedNote, setTimeClearedNote] = useState(false);
   const [timeOnForm, setTimeOnForm] = useState("");
   const [dateOnForm, setDateOnForm] = useState("");
+  // Finding 203 (27 Oct 2026): a Form 1A's region, as in the side panel. Opens blank, never guessed.
+  const [region, setRegion] = useState<"" | "metro" | "country">("");
   const [saving, setSaving] = useState(false);
   // Counts presses of Save while something is missing; the error summary shows from the first.
   const [refusedSaves, setRefusedSaves] = useState(0);
@@ -346,6 +350,7 @@ export function RecordFormSheet({
                   clearDraft();
                   setTimeOnForm("");
                   setDateOnForm("");
+                  setRegion("");
                   setRefusedSaves(0);
                   setTimeClearedNote(false);
                   onDraft({ form: "", movement: "" });
@@ -359,8 +364,12 @@ export function RecordFormSheet({
               };
               try {
                 const result =
-                  onSaveForm?.({ movementId: draft.movement, formCode: draft.form, writtenAt: parsedWrittenAt }) ??
-                  false;
+                  onSaveForm?.({
+                    movementId: draft.movement,
+                    formCode: draft.form,
+                    writtenAt: parsedWrittenAt,
+                    ...(draft.form === "1A" && region ? { region } : {}),
+                  }) ?? false;
                 if (typeof result === "boolean" || typeof result === "string") finish(result);
                 else void result.then(finish, () => finish(false));
               } catch {
@@ -393,6 +402,20 @@ export function RecordFormSheet({
             ))}
           </Select>
         </Field>
+        {draft.form === "1A" ? (
+          <Field label="Region" id={`${typeId}-region`}>
+            <Select
+              disabled={saving}
+              value={region}
+              onChange={(event) => setRegion(event.target.value as "" | "metro" | "country")}
+              data-testid="ward-legal-forms-record-region"
+            >
+              <option value="">Choose metro or country</option>
+              <option value="metro">Metro</option>
+              <option value="country">Country</option>
+            </Select>
+          </Field>
+        ) : null}
         <Field label="Movement" id={movementId} error={problemFor(movementId)}>
           <Select
             disabled={saving}

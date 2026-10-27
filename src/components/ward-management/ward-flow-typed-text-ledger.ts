@@ -24,6 +24,7 @@ type TypedTextEventType =
   | "ADD_REFERRAL_CORRECTION"
   | "BOOK_TRANSPORT"
   | "RECORD_REPATRIATION"
+  | "RECORD_TRANSPORT_CAD"
   | "SET_ARRIVAL_DETAILS"
   | "UPLOAD_PATIENT_FORM"
   | "DISPATCH_BROADCAST_ALERT"
@@ -67,6 +68,7 @@ const NOT_TYPED_KEYS: { readonly [T in TypedTextEventType]: readonly string[] } 
   ADD_REFERRAL_CORRECTION: ["referralId", "actingPlaceId"],
   BOOK_TRANSPORT: ["movementId", "provider", "actingUnitId", "actingPlaceId", "transportLegalStatus", "gaps", "reason"],
   RECORD_REPATRIATION: ["admissionId", "mode", "provider", "transportLegalStatus"],
+  RECORD_TRANSPORT_CAD: ["movementId", "actingUnitId"],
   SET_ARRIVAL_DETAILS: ["actingUnitId", "movementId", "arrivalMode"],
   UPLOAD_PATIENT_FORM: ["movementId", "fileType"],
   DISPATCH_BROADCAST_ALERT: ["severity", "category", "targetScope", "kind"],

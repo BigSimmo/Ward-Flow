@@ -364,32 +364,36 @@ export function WardBedDossierDrawer({
   const dueForPrep = admission?.state === "occupied" && deriveAfternoonDischarges([admission], now).length > 0;
   // H-0981 / WS-17: while the blocker form is open the barrier shows as plain text, so recording a
   // blocker is one choice, not two dropdowns. Its dropdown comes back when the blocker form closes.
-  const barrierRow =
-    admission && bedItem?.admissionId ? (
-      <Row label="Barrier">
-        {onSetBarrier && stayDays !== null && !quickBlockerOpen ? (
-          <select
-            className={styles.select}
-            aria-label="Discharge barrier"
-            data-testid="ward-drawer-barrier-select"
-            value={admission.dischargeBarrier ?? "None"}
-            onChange={(e) => {
-              const value = e.target.value;
-              onSetBarrier(admission.id, isDischargeBarrier(value) ? value : null);
-            }}
-          >
-            <option value="None">None recorded</option>
-            {DISCHARGE_BARRIERS.map((barrier) => (
-              <option key={barrier} value={barrier}>
-                {barrier}
-              </option>
-            ))}
-          </select>
-        ) : (
-          (admission.dischargeBarrier ?? "None recorded")
-        )}
-      </Row>
+  const barrierSelect =
+    admission && bedItem?.admissionId && onSetBarrier && stayDays !== null && !quickBlockerOpen ? (
+      <select
+        className={styles.select}
+        aria-label="Discharge barrier"
+        data-testid="ward-drawer-barrier-select"
+        value={admission.dischargeBarrier ?? "None"}
+        onChange={(e) => onSetBarrier(admission.id, isDischargeBarrier(e.target.value) ? e.target.value : null)}
+      >
+        <option value="None">None recorded</option>
+        {DISCHARGE_BARRIERS.map((barrier) => (
+          <option key={barrier} value={barrier}>
+            {barrier}
+          </option>
+        ))}
+      </select>
     ) : null;
+  const barrierValue =
+    barrierSelect ?? (admission && bedItem?.admissionId ? (admission.dischargeBarrier ?? "None recorded") : null);
+  // Finding 61 (Josh, 27 Oct 2026): blocker (today) and barrier (long-stay reason) under one label.
+  const holdUpRow = (
+    <Row label="What is holding them up">
+      <div data-testid="ward-drawer-hold-up-today">Today: {bedItem?.blockReason ?? "None recorded"}</div>
+      {(barrierValue ?? bedItem?.dischargeBarrier) ? (
+        <div data-testid="ward-drawer-hold-up-long-stay">
+          Long-stay reason: {barrierValue ?? bedItem?.dischargeBarrier}
+        </div>
+      ) : null}
+    </Row>
+  );
   // Top 25 item 4: still being made ready past the set time. A question for the ward, never an
   // automatic opening: Ready below is the only way the bed is offered again.
   const staleFor =
@@ -638,7 +642,7 @@ export function WardBedDossierDrawer({
           roleLockNote={<BedClosureControls {...bedClosure}>{roleLockNote}</BedClosureControls>}
           bedDrawerRef={bedDrawerRef}
           onKeyDown={onKeyDown}
-          planRows={barrierRow}
+          planRows={holdUpRow}
           planNote={prepNote}
           planCriteria={criteriaCard}
           sentJourney={sentJourneyControls}
@@ -864,9 +868,7 @@ export function WardBedDossierDrawer({
                       </Row>
                       <Row label="Confirmed">{confirmation}</Row>
                       {dateMoves ? <Row label="Date moves">{dateMoves}</Row> : null}
-                      <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
-                      {barrierRow ??
-                        (bedItem?.dischargeBarrier ? <Row label="Barrier">{bedItem.dischargeBarrier}</Row> : null)}
+                      {holdUpRow}
                     </dl>
                     {prepNote}
                     <BlockerEditor
@@ -1324,7 +1326,6 @@ function PhoneBedSheet({
               <h3 className={styles.phoneSec}>Plan to leave</h3>
               <dl className={styles.phoneKv}>
                 <Row label="Expected">{expectedPlan}</Row>
-                <Row label="Blocker">{bedItem?.blockReason ?? "None recorded"}</Row>
                 {planRows}
                 {isOccupied && admissionId ? (
                   // The longest destinations do not fit beside the label at 390px, so the select takes its own line.

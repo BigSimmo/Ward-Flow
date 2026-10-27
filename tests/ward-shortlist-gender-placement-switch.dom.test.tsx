@@ -69,6 +69,6 @@ describe("ShortlistPanel: the gender placement answer belongs to one patient", (
 
     expect((screen.getByTestId("ward-shortlist-gender-placement-reason") as HTMLSelectElement).value).toBe("");
     expect((screen.getByTestId("ward-shortlist-gender-placement-checked") as HTMLInputElement).checked).toBe(false);
-    expect((screen.getByTestId("ward-shortlist-gender-placement-submit") as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("ward-shortlist-gender-placement-submit")).toHaveAttribute("aria-disabled", "true");
   });
 });

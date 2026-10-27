@@ -2737,7 +2737,9 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
       movementId: forCancel.movementId,
       provider: TRANSPORT_PROVIDERS[0],
       escortRequired: true,
-      cadNumber: "CAD-STUB-0001",
+      // Friction decisions (27 Oct 2026): the CAD number may follow the booking, so this booking
+      // leaves it blank and RECORD_TRANSPORT_CAD adds it, which the sweep must see accepted.
+      cadNumber: "",
       transportLegalStatus: "voluntary",
       estimatedAt: 0,
     });
@@ -2745,7 +2747,20 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
       booked.rejections,
       `BOOK_TRANSPORT for Form ${code} was refused: ${booked.rejections.at(-1)?.reason}`,
     ).toEqual([]);
-    const readyForHandover = wardFlowReducer(booked, {
+    const cadAdded = wardFlowReducer(booked, {
+      type: "RECORD_TRANSPORT_CAD",
+      role: EVENT_ROLE.RECORD_TRANSPORT_CAD[0],
+      now: NOW_ANCHOR,
+      movementId: forCancel.movementId,
+      cadNumber: "CAD-STUB-0001",
+    });
+    expect(
+      cadAdded.rejections,
+      `RECORD_TRANSPORT_CAD for Form ${code} was refused: ${cadAdded.rejections.at(-1)?.reason}`,
+    ).toEqual([]);
+    accepted.add("RECORD_TRANSPORT_CAD");
+    offenders.push(...offendingFormsIn(cadAdded, `RECORD_TRANSPORT_CAD(${code})`));
+    const readyForHandover = wardFlowReducer(cadAdded, {
       type: "HANDOVER_READY",
       role: EVENT_ROLE.HANDOVER_READY[0],
       now: NOW_ANCHOR,

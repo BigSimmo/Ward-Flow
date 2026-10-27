@@ -58,6 +58,8 @@ const DEFINITION_FILES = new Set([
   // 22 Oct 2026: the protected record path (discharge records, audit reviews) moved out unchanged.
   `${WARD_ROOT}/ward-flow-protected-record-events.ts`,
   `${WARD_ROOT}/ward-flow-events.ts`,
+  // 27 Oct 2026: PATIENT_COLLECTED and RECORD_TRANSPORT_CAD declared beside the union, for its line cap.
+  `${WARD_ROOT}/ward-transport-collection-events.ts`,
   // 27 Oct 2026: the inbox events moved out of ward-flow-events.ts unchanged (H-0283).
   `${WARD_ROOT}/ward-inbox-events.ts`,
   // Holds a classification list of every event name (which carry typed text vs. not), not dispatches.
