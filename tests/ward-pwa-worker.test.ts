@@ -405,6 +405,10 @@ describe("the offline page", () => {
     expect(html).toContain("prefers-color-scheme: dark");
   });
 
+  it("retries by itself every 15 seconds without script, so it clears when the network returns (P041)", () => {
+    expect(html).toMatch(/<meta http-equiv="refresh" content="15" \/>/);
+  });
+
   it("points staff to the latest printed or saved downtime pack (fix plan item 9)", () => {
     expect(html).toMatch(/latest downtime pack/);
     expect(html).toMatch(/printed copy, or the PDF saved/);

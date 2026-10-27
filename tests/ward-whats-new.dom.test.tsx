@@ -44,6 +44,13 @@ describe("what's new note", () => {
     expect(screen.queryByTestId("ward-whats-new")).toBeNull();
   });
 
+  it("sits under drawers, dialogs and toasts, so it never covers their buttons (P004)", () => {
+    window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
+    render(<WardWhatsNew />);
+    const host = screen.getByTestId("ward-whats-new").closest("[data-overlay-host]");
+    expect(host?.getAttribute("data-overlay-host")).toBe("overlay");
+  });
+
   it("lists only the changes added since this device last closed it", () => {
     window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
     const before = WHATS_NEW.at(-2) as WhatsNewEntry;
