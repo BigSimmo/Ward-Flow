@@ -31,6 +31,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { HealthService } from "@/components/ward-management/ward-model";
+import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import { HospitalCapacityMatrix } from "./hospital-capacity-matrix";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
@@ -60,12 +61,6 @@ import {
 } from "./statistics-network-cards";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
-
-/** "no_specialling" reads "No specialling". */
-const sentenceCase = (text: string) => {
-  const spaced = text.replace(/_/g, " ");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-};
 
 /**
  * ACROSS ALL SERVICES — the whole-of-prototype and Western Australia section.
@@ -249,7 +244,7 @@ export function StatisticsOverviewScreen() {
             declinesReadout.ok
               ? declinesReadout.value.tallies.map((tally, index) => ({
                   id: tally.reason,
-                  label: sentenceCase(tally.reason),
+                  label: DECLINE_REASON_LABELS[tally.reason],
                   count: tally.count,
                   shown: declinesShown[index]!,
                 }))
@@ -369,7 +364,7 @@ export function StatisticsOverviewScreen() {
                         }
                         rows={declinesReadout.value.tallies.map((tally, index) => ({
                           id: tally.reason,
-                          label: sentenceCase(tally.reason),
+                          label: DECLINE_REASON_LABELS[tally.reason],
                           ...withheldBar(tally.count, declinesShown[index]!),
                           display: (
                             <span data-testid={`ward-statistics-overview-decline-${tally.reason}`}>

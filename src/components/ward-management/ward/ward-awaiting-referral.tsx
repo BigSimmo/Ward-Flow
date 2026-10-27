@@ -1,19 +1,52 @@
 import dynamic from "next/dynamic";
+import { createContext, useContext, type ComponentProps } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { durMinutes } from "@/components/wf";
+import { Drawer, durMinutes } from "@/components/wf";
 import { patientFitLine, type ReferralFit } from "./ward-referral-fit";
 import styles from "./ward-home-tab.module.css";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
 // The full referral loads when a ward opens it, so its sections and the seeded referral details
 // stay out of the ward page's first script.
-export const WardReferralDetailDrawer = dynamic(
+const LazyReferralDetailDrawer = dynamic(
   () => import("./ward-referral-detail").then((module) => module.WardReferralDetailDrawer),
-  { ssr: false, loading: () => null },
+  { ssr: false, loading: () => <ReferralDrawerLoading /> },
 );
+
+type ReferralDrawerProps = ComponentProps<typeof LazyReferralDetailDrawer>;
+const OpeningReferral = createContext<ReferralDrawerProps | null>(null);
+
+/**
+ * While the referral's script arrives on a slow phone, the drawer opens at once and says so, rather
+ * than the tap appearing to do nothing (PC review, 27 Oct 2026). It can be closed while it waits.
+ */
+function ReferralDrawerLoading() {
+  const props = useContext(OpeningReferral);
+  if (!props) return null;
+  return (
+    <Drawer
+      open
+      onClose={props.onClose}
+      title={props.identity.displayName}
+      description={`Referral to ${props.unit.name}`}
+    >
+      <p role="status" data-testid="ward-referral-drawer-loading">
+        Opening the referral…
+      </p>
+    </Drawer>
+  );
+}
+
+export function WardReferralDetailDrawer(props: ReferralDrawerProps) {
+  return (
+    <OpeningReferral.Provider value={props}>
+      <LazyReferralDetailDrawer {...props} />
+    </OpeningReferral.Provider>
+  );
+}
 
 /**
  * Who is coming, on the overview's incoming card. Josh, 22 Oct 2026: a ward sees the patient's name
