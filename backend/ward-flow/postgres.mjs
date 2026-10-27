@@ -12,7 +12,17 @@ import {
   ROLE_ACCESS_MIGRATION,
 } from "./migrations.mjs";
 import { errorFields, freshAlerts } from "./push.mjs";
-import { assembleWorld, conflicts, coveredRecords, markerKind, planSave, recordToken, splitWorld } from "./records.mjs";
+import {
+  assembleWorld,
+  conflictingCollection,
+  conflictRecordType,
+  coveredRecords,
+  staleReason,
+  markerKind,
+  planSave,
+  recordToken,
+  splitWorld,
+} from "./records.mjs";
 import {
   ARCHIVE_PRESSURE_AFTER_MINUTES,
   SCOPED_REPLY_CACHE_ENTRIES,
@@ -2484,9 +2494,10 @@ export function createWorkspaceStore(
         let changes = {};
         let completion = {};
         let reason = row.core
-          ? "Someone else changed this record first. Review the latest board before trying again."
+          ? "Another desk changed this record first. Review the latest board before trying again."
           : "The workspace changed. Review the latest board before trying again.";
         let code = null;
+        let recordType = null;
         let partly = null;
         let covered = null;
         const priorRevision = Number(row.revision);
@@ -2522,18 +2533,23 @@ export function createWorkspaceStore(
           // latest workspace, unless someone else has since changed a record it changes or names.
           const applied = engine.applyCommand(row.payload, event, at);
           const after = applied.outcome === "accepted" ? applied.world : row.payload;
-          const stale =
-            priorRevision !== expectedRevision &&
-            conflicts({
-              stored: row.stored,
-              core: row.core,
-              before: row.payload,
-              after,
-              event,
-              expectedRevision,
-              priorRevision,
-              seen,
-            });
+          const clash =
+            priorRevision === expectedRevision
+              ? null
+              : conflictingCollection({
+                  stored: row.stored,
+                  core: row.core,
+                  before: row.payload,
+                  after,
+                  event,
+                  expectedRevision,
+                  priorRevision,
+                  seen,
+                });
+          const stale = clash !== null;
+          // P058: the reply names the record type only, never a patient, bed or record id.
+          if (stale) reason = staleReason(clash);
+          if (stale) recordType = conflictRecordType(clash);
           if (!stale) {
             ({ outcome, changes, reason } = applied);
             partly = applied.partly ?? null;
@@ -2612,6 +2628,7 @@ export function createWorkspaceStore(
           ...(outcome === "accepted" ? completion : {}),
           ...(reason ? { error: reason } : outcome === "accepted" && partly ? { error: partly } : {}),
           ...(code ? { code } : {}),
+          ...(outcome === "stale" ? { code: "stale", recordType: recordType ?? "record" } : {}),
           ...(covered?.length ? { covered } : {}),
         };
         await audit(client, view, actorId, {
