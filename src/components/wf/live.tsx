@@ -85,6 +85,30 @@ function subscribeLiveRefresh(listener: () => void) {
   };
 }
 
+/*
+ * P167: a hidden tab skips its refreshes, so its last good refresh ages while nobody can see it. The
+ * gap is counted from when the tab was last shown, so coming back (or closing a duplicate tab) gives
+ * the refresh its normal time before the chip says Stale. 0 means shown since the page opened.
+ */
+let visibleSince = 0;
+const visibleListeners = new Set<() => void>();
+function onVisibility() {
+  visibleSince = document.visibilityState === "hidden" ? -1 : Date.now();
+  for (const listener of visibleListeners) listener();
+}
+function subscribeVisible(listener: () => void) {
+  if (visibleListeners.size === 0) {
+    // Unwatched, the last value may be old: start from the page as it is now.
+    visibleSince = document.visibilityState === "hidden" ? -1 : 0;
+    document.addEventListener("visibilitychange", onVisibility);
+  }
+  visibleListeners.add(listener);
+  return () => {
+    visibleListeners.delete(listener);
+    if (visibleListeners.size === 0) document.removeEventListener("visibilitychange", onVisibility);
+  };
+}
+
 /**
  * CS-13: whether the last good shared refresh is older than its limit. Re-checked at that deadline
  * (a few seconds), not on the minute, so a hung refresh turns Stale on time (Codex review of #504).
@@ -96,9 +120,14 @@ export function useSharedRefreshLate(active = true): boolean {
     () => liveRefresh,
     () => undefined,
   );
+  const shownSince = useSyncExternalStore(
+    subscribeVisible,
+    () => visibleSince,
+    () => 0,
+  );
   const deadline =
-    active && refresh?.receivedAt !== undefined && refresh.staleAfterMs !== undefined
-      ? refresh.receivedAt + refresh.staleAfterMs
+    active && shownSince >= 0 && refresh?.receivedAt !== undefined && refresh.staleAfterMs !== undefined
+      ? Math.max(refresh.receivedAt, shownSince) + refresh.staleAfterMs
       : undefined;
   const [lateAt, setLateAt] = useState<number | undefined>(undefined);
   useEffect(() => {
@@ -151,7 +180,8 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   // A1-18 (audit 13 Oct 2026): a chip asked to read live says Offline while the browser has no
   // connection, so no page shows a live dot over a session that is not updating.
   const online = useBrowserOnline();
-  // CS-13: and Stale while the shared refresh is failing or its last good refresh is too old.
+  // CS-13: and Stale once the last good refresh is too old. P167: one failed or slow refresh is not
+  // a gap by itself; a publisher with a limit turns Stale only when that limit passes.
   const refresh = useSyncExternalStore(
     subscribeLiveRefresh,
     () => liveRefresh,
@@ -159,7 +189,13 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
   );
   const late = useSharedRefreshLate(requested === "live");
   const state: LiveState =
-    requested !== "live" ? requested : !online ? "offline" : refresh?.unavailable || late ? "stale" : "live";
+    requested !== "live"
+      ? requested
+      : !online
+        ? "offline"
+        : late || (refresh?.unavailable && refresh.staleAfterMs === undefined)
+          ? "stale"
+          : "live";
   const word = WORD[state];
   const staleAt = asAt ?? refresh?.receivedAt;
   const asAtText = state === "stale" && staleAt != null ? `as at ${clk(staleAt)}` : null;
