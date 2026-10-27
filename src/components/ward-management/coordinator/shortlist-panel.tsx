@@ -2410,7 +2410,11 @@ export function ShortlistPanel({
               data-testid="ward-change-urgency-toggle"
               aria-expanded={urgencyChangeOpen}
               className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-              onClick={() => setUrgencyChangeOpen((open) => !open)}
+              onClick={() => {
+                setUrgencyChangeOpen((open) => !open);
+                // H-0127: start from the tier on the board now, which another desk may have changed.
+                setUrgencyDraft({ urgency: movement?.urgency ?? 1, reason: undefined });
+              }}
             >
               Change urgency
             </button>
