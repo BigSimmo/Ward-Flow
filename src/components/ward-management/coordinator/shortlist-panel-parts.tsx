@@ -56,6 +56,14 @@ export const LEGAL_STATUS_OPTIONS: LegalStatus[] = [
 // see that file's own doc comment on `SEXES` for the defect class this prevents.
 export const URGENCY_OPTIONS = URGENCY_LEVELS;
 
+/**
+ * P125 (audit 27 Oct 2026): "Pulled" is the D-81/D-85 word and is not swapped. The shortlist says
+ * once, in plain words (word-list.md: "A bed kept for one named, accepted incoming patient"), what
+ * it means, with a way into the Help glossary. Exact text awaits Josh's confirmation.
+ */
+export const PULLED_EXPLANATION = "Pulled means a bed kept for one named, accepted incoming patient, for a set time.";
+export const GLOSSARY_LINK_TEXT = "Help glossary";
+
 export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonly Admission[]) {
   const states = bedStates(unit, admissions, bedReleases, []);
   const pendingPreparation = states.beingMadeReady;
