@@ -191,7 +191,9 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   Loading, not live yet. Taps work once this goes.
                 </p>
                 <WardRecoveryNotice />
-                <div className={styles.bannerHolder}>
+                {/* `data-wf-bar-notes`: the band counts these notes as part of the header (wf/band.ts), so a
+                page still opens on its hero band while a note is showing. */}
+                <div className={styles.bannerHolder} data-wf-bar-notes="">
                   <WardBroadcastBanner />
                   <WardOfflineBanner />
                   {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}

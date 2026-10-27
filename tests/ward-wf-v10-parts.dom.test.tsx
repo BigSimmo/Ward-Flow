@@ -35,6 +35,7 @@ import {
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 /**
  * Design system v10 shared parts and the band header state (10 Oct 2026). These pin the rules a
@@ -234,6 +235,53 @@ describe("Hero: quiet and band", () => {
       // jsdom has no layout, so the hero reads as far from the header: measured, not a band.
       expect(screen.getByTestId("measured-hero")).toHaveAttribute("data-band", expect.stringMatching(/^(on|off)$/u));
     } finally {
+      scroller.remove();
+    }
+  });
+});
+
+// Josh, 27 Oct 2026: a pinned note under the header (an access banner on some desks, the demo
+// saving note once text was typed) pushed the hero past the slack, so the page fell back to the old
+// floating card. The notes now count as part of the header.
+describe("Hero band under pinned header notes", () => {
+  it("still bands when a note sits between the header and the hero", () => {
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    const bar = document.createElement("header");
+    bar.setAttribute("data-wf-bar", "");
+    const notes = document.createElement("div");
+    notes.setAttribute("data-wf-bar-notes", "");
+    const page = document.createElement("div");
+    scroller.append(bar, notes, page);
+    document.body.append(scroller);
+    Object.defineProperty(bar, "offsetHeight", { configurable: true, value: 60 });
+    Object.defineProperty(notes, "offsetHeight", { configurable: true, value: 48 });
+    // Header 60px, note 48px, then the page's own 16px inset: 124px down, 64px under the header.
+    const rect = (top: number, height: number) =>
+      ({
+        top,
+        bottom: top + height,
+        left: 16,
+        right: 1000,
+        width: 984,
+        height,
+        x: 16,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    const spy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      if (this === scroller) return { ...rect(0, 900), left: 0, right: 1016, width: 1016 };
+      return rect(124, 200);
+    });
+    installMatchMediaStub(true);
+    try {
+      render(<Hero title="Under a note" testId="noted-hero" />, { container: page });
+      const hero = screen.getByTestId("noted-hero");
+      expect(hero).toHaveAttribute("data-band", "on");
+      expect(hero.style.getPropertyValue("--wf-band-top")).toBe("16px");
+    } finally {
+      spy.mockRestore();
+      installMatchMediaStub();
       scroller.remove();
     }
   });

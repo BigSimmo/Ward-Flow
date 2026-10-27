@@ -22,6 +22,9 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * usual 16px page insets (desktop and tablet only; phone is unchanged). The measure then writes
  * `data-band="on"` with the real insets, or `data-band="off"` when the page does not open on it.
  *
+ * The pinned notes under the header (`data-wf-bar-notes`) count as part of the header: the hero
+ * bands from under them, and while the header is ink they take the band's top colour too.
+ *
  * The header stays in flow above the page and paints the band's top colour at rest, so the band
  * reads as one surface from the top of the window. The hero never rises above the page's own
  * box: the desktop `.shell` clips vertical overflow (`tests/ward-shell-fill.test.ts`), and a
@@ -82,10 +85,21 @@ function scrollAreaOf(element: HTMLElement): HTMLElement | null {
   return element.closest<HTMLElement>("[data-wf-scroller]");
 }
 
-/** The header sits first in the work column. Its height is what the hero pads under. */
+/** The pinned notes under the header (offline, broadcast, downtime, demo saving, access). */
+function barNotesIn(scroller: HTMLElement): HTMLElement | null {
+  return scroller.querySelector<HTMLElement>("[data-wf-bar-notes]");
+}
+
+/**
+ * The header sits first in the work column, with its pinned notes under it. Their heights are what
+ * the hero pads under. The notes count as part of the header (Josh, 27 Oct 2026): counted as page
+ * content, any note (an access banner on some desks, the demo saving note once text was typed)
+ * pushed the hero past the slack and turned it back into the old floating card.
+ */
 function barHeightIn(scroller: HTMLElement): number {
   const bar = scroller.querySelector<HTMLElement>("[data-wf-bar]");
-  return bar ? bar.offsetHeight : 0;
+  const notes = barNotesIn(scroller);
+  return (bar ? bar.offsetHeight : 0) + (notes ? notes.offsetHeight : 0);
 }
 
 function sameBleed(a: Bleed, b: Bleed) {
@@ -173,6 +187,9 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(schedule) : null;
     observer?.observe(scroller);
     observer?.observe(hero);
+    // A note arriving or leaving moves the hero without resizing either of those.
+    const notes = barNotesIn(scroller);
+    if (notes) observer?.observe(notes);
     query.addEventListener("change", schedule);
     window.addEventListener("resize", schedule);
     return () => {
