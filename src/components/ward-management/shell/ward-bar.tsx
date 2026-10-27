@@ -607,7 +607,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
 
   /** Closing on the slide-out route settles the URL on the Referrals board it sits over. */
   const closeReferral = useCallback(() => {
-    if (!isReferralSheetPath(pathname)) {
+    // Opened by an in-app link (P150): its own history entry carries the route, so Back restores the page.
+    if (!isReferralSheetPath(pathname) || window.history.state?.wardDrawer === "referral") {
       closePopover("referral");
       return;
     }
@@ -663,6 +664,13 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       event.stopPropagation();
       const search = new URL(anchor.href, window.location.origin).searchParams;
       openReferral(withRoleCategory(request, search, roleCategory), anchor);
+      // Show the route in the address bar (P150) on the drawer's own history entry, so Back and close
+      // step off it together. Marked opened first so arriving on the route does not open it again.
+      if (window.history.state?.wardDrawer === "referral") {
+        routeReferralOpenedRef.current = true;
+        const url = new URL(anchor.href, window.location.origin);
+        window.history.replaceState(window.history.state, "", url.pathname + url.search);
+      }
     };
     window.addEventListener("click", onClick, true);
     return () => window.removeEventListener("click", onClick, true);
