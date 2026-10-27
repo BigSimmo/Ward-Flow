@@ -176,3 +176,64 @@ test("a desk's audit read keeps the cursor rules and leaves out role changes in 
   assert.ok(auditSql.includes("actor_scope IS NOT NULL"));
   assert.equal(auditSql.includes("changes"), false);
 });
+
+// Codex P1 on #1039: the real engine's role-grant rule (`scopeWithin`) only lets a statewide or
+// service place contain anything, so ward, ED and site desks read nothing. These use the real engine.
+test("ward, ED and site desks read only changes made inside their place, with the real engine", async () => {
+  const engine = await import("./dist/engine.mjs");
+  const { deskAuditPage } = await import("./desk-audit.mjs");
+  const world = engine.seedWorld(new Date("2026-10-27T04:00:00Z"));
+  const places = engine.accessPlaces(world);
+  const edSite = places.edSiteCode("jhc-ed");
+  assert.ok(edSite);
+  const senders = {
+    rph: { kind: "ward", unitIds: ["rph-adult-secure"] },
+    rphOlder: { kind: "ward", unitIds: ["rph-older-adult"] },
+    scgh: { kind: "ward", unitIds: ["scgh-adult-open"] },
+    both: { kind: "ward", unitIds: ["rph-adult-secure", "scgh-adult-open"] },
+    ed: { kind: "ed", edId: "jhc-ed" },
+    rphSite: { kind: "site", siteCode: "RPH" },
+    edSiteDesk: { kind: "site", siteCode: edSite },
+    service: { kind: "service", service: places.unitService("rph-adult-secure") },
+    statewide: { kind: "statewide" },
+  };
+  const auditRows = Object.entries(senders).map(([name, scope], index) => ({
+    sequence: String(100 - index),
+    actor_role:
+      scope.kind === "statewide"
+        ? "coordinator"
+        : scope.kind === "ed"
+          ? "ed"
+          : scope.kind === "site"
+            ? "bed_manager"
+            : "ward",
+    actor_scope: scope,
+    action: `CLOSE_UNIT`,
+    outcome: "accepted",
+    committed_at: "2026-10-27T12:00:00.000Z",
+    name,
+  }));
+  const pool = { query: async () => ({ rows: auditRows }) };
+  const read = async (scope) => {
+    const page = await deskAuditPage({
+      pool,
+      workspaceId: "synthetic",
+      engine,
+      readPayload: async () => world,
+      view: { version: LATEST_MIGRATION, access: { role: "ward", scope } },
+      minimumVersion: 1,
+    });
+    return page.events.map((event) => auditRows.find((row) => row.sequence === event.sequence).name);
+  };
+  assert.deepEqual(await read(senders.rph), ["rph"]);
+  assert.deepEqual(await read(senders.both), ["rph", "scgh", "both"]);
+  assert.deepEqual(await read(senders.ed), ["ed"]);
+  assert.deepEqual(
+    await read(senders.rphSite),
+    ["rph", "rphOlder", "rphSite"].concat(edSite === "RPH" ? ["ed", "edSiteDesk"] : []),
+  );
+  // Access scoping never widens: no desk below a service reads a service or statewide sender.
+  for (const scope of [senders.rph, senders.ed, senders.rphSite, senders.edSiteDesk])
+    for (const wider of ["service", "statewide"]) assert.equal((await read(scope)).includes(wider), false, wider);
+  assert.equal((await read(senders.scgh)).includes("rph"), false);
+});

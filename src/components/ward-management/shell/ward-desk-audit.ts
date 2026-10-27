@@ -18,6 +18,14 @@ import { SharedAccessContext } from "./ward-shared-access-context";
 /** How often an open shell asks again for new audit rows. */
 export const ACTIVITY_AUDIT_REFRESH_MS = 60_000;
 const SHOWN = 20;
+/** The audit actions that fill the Activity filters, as the tab's own feed files them; any other is `other`. */
+const ACTION_CATEGORY: Readonly<Record<string, CommandActivity["content"]["changes"][number]["category"]>> = {
+  DECLINE: "decline",
+  RECORD_ESCALATION: "escalation",
+  RAISE_REFERRAL: "referral",
+  RECEIVE_REFERRAL: "referral",
+  PULL_PATIENT: "transfer",
+};
 
 type ReadActivityAudit = SharedWorkspaceClient["readActivityAudit"];
 export type DeskAuditState =
@@ -43,7 +51,7 @@ export function auditActivity(
       id,
       time: formatInstantWithDay(at, now),
       text: refused ? `${action} was refused.` : `${action}.`,
-      category: "other" as const,
+      category: refused ? "other" : (ACTION_CATEGORY[event.action] ?? "other"),
     };
   });
   return { changes, tones, lastEventAt: rows[0]?.at };

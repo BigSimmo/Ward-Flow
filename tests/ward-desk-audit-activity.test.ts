@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { auditActivity } from "@/components/ward-management/shell/ward-desk-audit";
 
@@ -36,5 +36,31 @@ describe("P056: Activity from the server audit", () => {
 
   it("is empty, with no last event, when the desk's audit has no rows", () => {
     expect(auditActivity([], now)).toEqual({ changes: [], tones: {}, lastEventAt: undefined });
+  });
+});
+
+describe("Codex P2 on #1039: audit actions keep the Activity filter categories", () => {
+  it("files declines, escalations, referrals and transfers under their filters, and the rest under other", () => {
+    const shown = auditActivity(
+      [
+        row("1", "DECLINE", "accepted", "2026-10-27T12:01:00.000Z"),
+        row("2", "RECORD_ESCALATION", "accepted", "2026-10-27T12:02:00.000Z"),
+        row("3", "RAISE_REFERRAL", "accepted", "2026-10-27T12:03:00.000Z"),
+        row("4", "RECEIVE_REFERRAL", "accepted", "2026-10-27T12:04:00.000Z"),
+        row("5", "PULL_PATIENT", "accepted", "2026-10-27T12:05:00.000Z"),
+        row("6", "CLOSE_UNIT", "accepted", "2026-10-27T12:06:00.000Z"),
+        row("7", "DECLINE", "rejected", "2026-10-27T12:07:00.000Z"),
+      ],
+      now,
+    );
+    expect(Object.fromEntries(shown.changes.map((change) => [change.id, change.category]))).toEqual({
+      "audit:1": "decline",
+      "audit:2": "escalation",
+      "audit:3": "referral",
+      "audit:4": "referral",
+      "audit:5": "transfer",
+      "audit:6": "other",
+      "audit:7": "other",
+    });
   });
 });

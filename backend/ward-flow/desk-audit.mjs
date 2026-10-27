@@ -1,4 +1,4 @@
-﻿// @ts-check
+// @ts-check
 /**
  * P056: the Activity feed of a desk that is neither the statewide coordinator nor an access admin.
  * It reads only the changes made by desks whose own place lies wholly inside this desk's place, and
@@ -10,7 +10,24 @@
 const WITHHELD_ACTIONS = /^(ACCESS_|BREAK_GLASS)/;
 
 /**
- * @param {{ pool: { query: Function }, workspaceId: string, engine: any, readPayload: () => Promise<unknown>, view: any, cursor?: string | null, minimumVersion: number }} input
+ * Whether a sender's place lies wholly inside the reading desk's place. A statewide or service desk
+ * keeps the engine's own rule; that rule refuses every narrower desk, so a ward, ED or site desk is
+ * answered here: a ward reads wards made only of its own wards, an ED its own ED, a site the wards,
+ * EDs and site at that site. Any other place, or any place it cannot read, contains nothing.
+ */
+function senderInside(engine, payload, inner, outer) {
+  if (outer.kind === "statewide" || outer.kind === "service") return engine.scopeWithin(payload, inner, outer);
+  const wards = (test) => inner.kind === "ward" && inner.unitIds.length > 0 && inner.unitIds.every(test);
+  if (outer.kind === "ward") return wards((id) => outer.unitIds.includes(id));
+  if (outer.kind === "ed") return inner.kind === "ed" && inner.edId === outer.edId;
+  if (outer.kind !== "site") return false;
+  const places = engine.accessPlaces(payload);
+  if (inner.kind === "site") return inner.siteCode === outer.siteCode;
+  if (inner.kind === "ed") return places.edSiteCode(inner.edId) === outer.siteCode;
+  return wards((id) => places.unitSiteCode(id) === outer.siteCode);
+}
+
+/** * @param {{ pool: { query: Function }, workspaceId: string, engine: any, readPayload: () => Promise<unknown>, view: any, cursor?: string | null, minimumVersion: number }} input
  */
 export async function deskAuditPage({ pool, workspaceId, engine, readPayload, view, cursor = null, minimumVersion }) {
   const none = { events: [], complete: true, nextCursor: null };
@@ -28,7 +45,7 @@ export async function deskAuditPage({ pool, workspaceId, engine, readPayload, vi
       before = row.sequence;
       if (typeof row.action !== "string" || WITHHELD_ACTIONS.test(row.action)) continue;
       const sender = engine.parseAccess(row.actor_role, row.actor_scope);
-      if (!sender || !engine.scopeWithin(payload, sender.scope, view.access.scope)) continue;
+      if (!sender || !senderInside(engine, payload, sender.scope, view.access.scope)) continue;
       events.push({ sequence: row.sequence, action: row.action, outcome: row.outcome, committed_at: row.committed_at });
       if (events.length === 200) return { events, complete: false, nextCursor: String(before) };
     }
