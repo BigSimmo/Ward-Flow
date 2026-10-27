@@ -296,7 +296,7 @@ describe("ACCEPT_IN_PRINCIPLE with a bed number (the ward Bed board)", () => {
       ),
     };
     const taken = wardFlowReducer(held, { ...event, bedNumber: 2 });
-    expect(lastRefusal(held, taken)).toMatch(/is already held for someone/);
+    expect(lastRefusal(held, taken)).toMatch(/is already pulled for someone/);
   });
 });
 
