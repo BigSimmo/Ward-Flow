@@ -69,7 +69,7 @@ describe("Bed board move to an open bed (audit CS3-12)", () => {
         </ToastProvider>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${lockedStayBed}`));
     fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${freeOpenBed}`));
@@ -96,7 +96,7 @@ describe("Bed board move to an open bed (audit CS3-12)", () => {
         </ToastProvider>
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const before = screen.getByTestId(`ward-board-bed-${lockedStayBed}`).getAttribute("aria-label");
     fireEvent.click(screen.getByTestId(`ward-board-bed-${lockedStayBed}`));
     fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));

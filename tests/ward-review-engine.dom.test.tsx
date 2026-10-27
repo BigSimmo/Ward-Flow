@@ -130,7 +130,7 @@ describe("review caller regressions", () => {
     routing.push.mockClear();
     routing.dispatch.mockClear();
     renderWard();
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const occupied = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")].find(
       (item) => !/ready|closed|pulled/.test(item.getAttribute("aria-label") ?? ""),
     );
@@ -144,7 +144,7 @@ describe("review caller regressions", () => {
     routing.query = "tab=board";
     routing.dispatch.mockClear();
     renderWard(<DirectReferral />);
-    expect(screen.getByRole("tab", { name: /^Bed board/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Bed board" })).toBeVisible();
     const before = JSON.parse(screen.getByTestId("arm").textContent!);
     expect(before.state).toBe("accepted");
     expect(before.heldBedNumber).toBeUndefined();

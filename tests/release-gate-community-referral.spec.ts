@@ -270,9 +270,7 @@ test("Community referral: a community team refers from its own desk, the ward it
   const inboxEntry = inbox.locator("article").filter({ hasText: PERSON.umrn });
   await expect(inboxEntry).toContainText("Awaiting review");
   await expectAccessible(page, testInfo, "ward desk with the team's referral in its inbox");
-  const boardTab = page.getByTestId("ward-tab-board");
-  if (await boardTab.isVisible()) await boardTab.click();
-  else await page.getByRole("button", { name: "Bed board shows where everyone is", exact: true }).click();
+  await page.getByTestId("ward-open-bed-board").click();
   const pick = page.getByTestId(`ward-board-pick-${referralId}`);
   await expect(pick).toBeVisible();
   await pick.click();
@@ -323,9 +321,7 @@ test("Community referral: a community team refers from its own desk, the ward it
 
   // --- D-76: the ward starts the journey from the team, pulls the bed and confirms arrival. ---
   await goToDesk(page, wardDesk(UNIT_ID, unitName), "ward-unit-screen");
-  const boardTabAgain = page.getByTestId("ward-tab-board");
-  if (await boardTabAgain.isVisible()) await boardTabAgain.click();
-  else await page.getByRole("button", { name: "Bed board shows where everyone is", exact: true }).click();
+  await page.getByTestId("ward-open-bed-board").click();
   const awaiting = page.getByRole("region", { name: "Accepted referrals awaiting placement" });
   await expect(awaiting).toContainText(`${PERSON.givenName} ${PERSON.familyName}`);
   // No ED is named, so the ward's own desk may start it: never "Ask the flow coordinator".

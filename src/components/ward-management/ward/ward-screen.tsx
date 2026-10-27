@@ -2159,8 +2159,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         className={styles.tabBtn}
         role="tab"
         id="tabBtn-attn"
-        aria-selected={activeTab !== "return" && activeTab !== "board"}
-        tabIndex={activeTab !== "return" && activeTab !== "board" ? 0 : -1}
+        // Josh, 27 Oct 2026: two views, Ward home and Decisions. Placing and moving beds (the old Bed
+        // board tab) opens inside Ward home, so Ward home stays the chosen view while it is open.
+        aria-selected={activeTab !== "return"}
+        tabIndex={activeTab !== "return" ? 0 : -1}
         aria-controls={
           activeTab === "coming"
             ? "tab-coming"
@@ -2177,36 +2179,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           selectActiveTab("attn");
         }}
       >
-        <span>Ward home</span>
-      </button>
-    </li>
-  );
-  const tabBoard = (
-    <li role="presentation">
-      <button
-        type="button"
-        className={styles.tabBtn}
-        role="tab"
-        id="tabBtn-board"
-        aria-selected={activeTab === "board"}
-        tabIndex={activeTab === "board" ? 0 : -1}
-        aria-controls="tab-attn"
-        aria-label={
-          boardWaiting.length > 0
-            ? `Bed board (pick up and place), ${boardWaiting.length} waiting to be placed`
-            : "Bed board (pick up and place)"
-        }
-        data-testid="ward-tab-board"
-        onClick={() => {
-          selectActiveTab("board");
-        }}
-      >
-        <span>Bed board</span>
-        {boardWaiting.length > 0 ? (
-          <span className={styles.tabBadge} aria-hidden="true">
-            {boardWaiting.length}
-          </span>
-        ) : null}
+        <span className={styles.tabLabel} data-label="Ward home">
+          Ward home
+        </span>
       </button>
     </li>
   );
@@ -2225,7 +2200,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           selectActiveTab("return");
         }}
       >
-        <span>Decisions</span>
+        <span className={styles.tabLabel} data-label="Decisions">
+          Decisions
+        </span>
         <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
@@ -2295,7 +2272,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             notificationTriggerRef={notificationTriggerRef}
             tabHome={tabHome}
             tabDecisions={tabDecisions}
-            tabBoard={tabBoard}
             bedQuery={bedQuery}
             setBedQuery={setBedQuery}
             activeTab={activeTab}
@@ -2311,7 +2287,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           />
         )}
         {isPhone && !phoneCardOpen ? (
-          /* Phone (v10): the three views pin under the header as one segmented control, outside the
+          /* Phone (v10): the two views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */
           <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
             <ul
@@ -2323,7 +2299,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             >
               {tabHome}
               {tabDecisions}
-              {tabBoard}
             </ul>
           </nav>
         ) : null}

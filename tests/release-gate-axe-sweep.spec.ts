@@ -159,12 +159,12 @@ test("axe: the ED actions menu when open has no serious or critical violation", 
 
 /**
  * DA-20, the third open structure: a ward's bed drawer (Bed, Plan to leave and the rest) only
- * exists once a bed is opened. It opens from the Bed board tab, which desktop and phone both show,
+ * exists once a bed is opened. It opens from Place or move on Ward home, which desktop and phone both show,
  * and is scanned with its first tab showing.
  */
 test("axe: a ward's bed drawer when open has no serious or critical violation", async ({ page }, testInfo) => {
   await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
-  await page.locator("#tabBtn-board").click();
+  await page.getByTestId("ward-open-bed-board").click();
   await page.getByTestId("ward-board-bed-1").click();
   await expect(page.getByTestId("bed-telemetry-drawer")).toBeVisible();
   await expectAccessible(page, testInfo, "ward bed drawer open");
