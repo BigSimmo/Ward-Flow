@@ -9,12 +9,12 @@ import { SharedSessionContext } from "./ward-shared-session-context";
  * links. Josh, 27 Oct 2026: the strip above the app that used to hold them was pointless, so it now
  * shows only when a save or the connection needs action. Nothing in the local demo.
  */
-export function WardAccountActions({ className }: { className: string }) {
+export function WardAccountActions({ className, wrapClassName }: { className: string; wrapClassName?: string }) {
   const session = useContext(SharedSessionContext);
   if (!session) return null;
   const signOutLabel = session.accountEmail ? `Sign out ${session.accountEmail}` : "Sign out";
   return (
-    <>
+    <div className={wrapClassName}>
       {session.switchRole ? (
         <button
           type="button"
@@ -39,6 +39,6 @@ export function WardAccountActions({ className }: { className: string }) {
         <LogOut aria-hidden="true" strokeWidth={1.75} />
         <span>Sign out</span>
       </button>
-    </>
+    </div>
   );
 }

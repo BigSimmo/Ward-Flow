@@ -1087,8 +1087,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             <Settings aria-hidden="true" strokeWidth={1.75} />
             <span>Settings</span>
           </Link>
-          <WardAccountActions className={styles.utilityLink} />
         </div>
+        {/* Sign out (shared board only) has its own row: Josh, 27 Oct 2026, the strip above the app
+            that held it is hidden. */}
+        <WardAccountActions className={styles.utilityLink} wrapClassName={styles.utilityLinks} />
 
         <div className={styles.userCardWrap}>
           {/* B6 (Josh, 19 Oct 2026): one switcher. The person opens Go to a desk, which sets both the
