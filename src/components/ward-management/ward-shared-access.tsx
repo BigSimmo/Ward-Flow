@@ -458,13 +458,8 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
         : null,
     [connection.enabled, connection.recovering, connected, accessApi, actorId],
   );
-  // Once the header holds the Prototype pill there is no bar above the app, so it takes 0px.
-  useEffect(() => {
-    document.documentElement.style.setProperty("--wf-data-bar-height", "0px");
-    return () => {
-      document.documentElement.style.removeProperty("--wf-data-bar-height");
-    };
-  }, []);
+  // The header holds the Prototype pill, so the only strip above the app is the account strip
+  // (`WardSharedSaveStatus`), which publishes its own height as --wf-data-bar-height.
   const detail = `Invented records · ${
     connection.enabled
       ? connected
