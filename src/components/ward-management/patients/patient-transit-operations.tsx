@@ -140,6 +140,10 @@ export function PatientTransitOperations({
   const [bookingAnswers, setBookingAnswers] = useState<TransportBookingAnswers>(BLANK_TRANSPORT_BOOKING);
   const [bookingLegalReason, setBookingLegalReason] = useState<TransportExceptionReason | "">("");
   const bookingSave = useWardFormSave(movement.id);
+  // H-0117 (audit SM2-03): Ask wards and the override reason keep their answers until the save is
+  // confirmed, the same as the booking form above.
+  const askSave = useWardFormSave(`${movement.id}:ask-wards`);
+  const overrideSave = useWardFormSave(`${movement.id}:override`);
   // Walk-through WT-11: an arrival with nothing open still checks the name and UMRN first.
   const [arriveConfirm, setArriveConfirm] = useState(false);
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
@@ -267,52 +271,70 @@ export function PatientTransitOperations({
           <button
             type="button"
             className={styles.primary}
-            disabled={!overrideReason}
+            disabled={!overrideReason || overrideSave.pending}
             title={!overrideReason ? "Choose an override reason first" : undefined}
             onClick={() => {
-              if (!overrideReason || !lastActionRejection) return;
+              if (!overrideReason || !lastActionRejection || overrideSave.pending) return;
               const reason = overrideReason;
-              noteAttempt();
-              if (lastActionRejection.attempted === "ACCEPT_IN_PRINCIPLE") {
-                if (!gate("ACCEPT_IN_PRINCIPLE").allowed) return;
-                const unitId = overrideUnitId || destination?.id;
-                if (!unitId) return;
-                dispatch({
-                  type: "ACCEPT_IN_PRINCIPLE",
-                  role: routeRole,
-                  now,
-                  movementId: movement.id,
-                  unitId,
-                  overrideReason: reason,
-                });
-              } else if (lastActionRejection.attempted === "PULL_PATIENT") {
-                const unitId = overrideUnitId || destination?.id;
-                if (!unitId) return;
-                dispatch({
-                  type: "PULL_PATIENT",
-                  role: routeRole,
-                  now,
-                  movementId: movement.id,
-                  unitId,
-                  overrideReason: reason,
-                });
-              } else if (lastActionRejection.attempted === "REFER_TO_UNITS") {
-                const unitIds = overrideUnitIds.length > 0 ? overrideUnitIds : selectedTargets;
-                if (unitIds.length === 0) return;
-                dispatch({
-                  type: "REFER_TO_UNITS",
-                  role: "coordinator",
-                  now,
-                  movementId: movement.id,
-                  unitIds,
-                  overrideReason: reason,
-                });
-              }
-              setOverrideReason("");
+              const attempted = lastActionRejection.attempted;
+              if (attempted === "ACCEPT_IN_PRINCIPLE" && !gate("ACCEPT_IN_PRINCIPLE").allowed) return;
+              const unitId = overrideUnitId || destination?.id;
+              const unitIds = overrideUnitIds.length > 0 ? overrideUnitIds : selectedTargets;
+              if (attempted === "REFER_TO_UNITS" ? unitIds.length === 0 : !unitId) return;
+              // The card stays on the refusal it answers until this save is accepted.
+              overrideSave.submit(
+                () => {
+                  if (attempted === "ACCEPT_IN_PRINCIPLE" && unitId) {
+                    return dispatch({
+                      type: "ACCEPT_IN_PRINCIPLE",
+                      role: routeRole,
+                      now,
+                      movementId: movement.id,
+                      unitId,
+                      overrideReason: reason,
+                    });
+                  }
+                  if (attempted === "PULL_PATIENT" && unitId) {
+                    return dispatch({
+                      type: "PULL_PATIENT",
+                      role: routeRole,
+                      now,
+                      movementId: movement.id,
+                      unitId,
+                      overrideReason: reason,
+                    });
+                  }
+                  return dispatch({
+                    type: "REFER_TO_UNITS",
+                    role: "coordinator",
+                    now,
+                    movementId: movement.id,
+                    unitIds,
+                    overrideReason: reason,
+                    ...(needsGenderPlacement && genderReason && wardChecked
+                      ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                      : {}),
+                  });
+                },
+                () => {
+                  setOverrideReason("");
+                  noteAttempt();
+                  // The wards are now asked: the Ask wards refusal and ticks it answered are done with.
+                  if (attempted === "REFER_TO_UNITS") {
+                    askSave.clearError();
+                    setSelected([]);
+                  }
+                },
+              );
             }}
           >
             Record reason and continue
           </button>
+          {overrideSave.error ? (
+            <p className={styles.deckHint} role="alert" data-testid="ward-transit-override-failure">
+              {overrideSave.error}
+            </p>
+          ) : null}
         </div>
       </section>
     ) : null;
@@ -322,7 +344,8 @@ export function PatientTransitOperations({
     selectedTargets.length === 0 ||
     // Another coordinator can ask a ward while ticks are held, leaving fewer slots than ticks.
     selectedTargets.length > askSlots ||
-    (needsGenderPlacement && (!genderReason || !wardChecked));
+    (needsGenderPlacement && (!genderReason || !wardChecked)) ||
+    askSave.pending;
   const askRow = ({ unit, verdict }: (typeof candidates)[number]) => {
     const checked = selectedTargets.includes(unit.id);
     const full = !checked && selectedTargets.length >= askSlots;
@@ -510,17 +533,20 @@ export function PatientTransitOperations({
               : () => {
                   setOverrideUnitIds(selectedTargets);
                   noteAttempt();
-                  dispatch({
-                    type: "REFER_TO_UNITS",
-                    role: "coordinator",
-                    now,
-                    movementId: movement.id,
-                    unitIds: selectedTargets,
-                    ...(needsGenderPlacement && genderReason && wardChecked
-                      ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                      : {}),
-                  });
-                  setSelected([]);
+                  askSave.submit(
+                    () =>
+                      dispatch({
+                        type: "REFER_TO_UNITS",
+                        role: "coordinator",
+                        now,
+                        movementId: movement.id,
+                        unitIds: selectedTargets,
+                        ...(needsGenderPlacement && genderReason && wardChecked
+                          ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                          : {}),
+                      }),
+                    () => setSelected([]),
+                  );
                 }
           }
         >
@@ -532,6 +558,11 @@ export function PatientTransitOperations({
           <ArrowRight size={16} aria-hidden="true" />
         </button>
       </div>
+      {askSave.error ? (
+        <p className={styles.deckHint} role="alert" data-testid="ward-transit-ask-failure">
+          {askSave.error}
+        </p>
+      ) : null}
     </section>
   );
   const dispatchPanel = (
