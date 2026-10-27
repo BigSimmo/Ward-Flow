@@ -292,7 +292,11 @@ export function reduceUndoEvent(
               }),
           )
         )
-          return reject(state, event, "This patient now occupies or holds another bed, so this step cannot be undone");
+          return reject(
+            state,
+            event,
+            "This patient is now in another bed or has one pulled, so this step cannot be undone",
+          );
         const unit = findUnit(undone, admission.unitId);
         if (unit && admission.bedNumber !== undefined) {
           const conflict =
