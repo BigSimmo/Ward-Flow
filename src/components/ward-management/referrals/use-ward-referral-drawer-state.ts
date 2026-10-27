@@ -15,6 +15,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { referralAgeBand } from "./referral-age-band";
+import { cleanReferralFields } from "./referral-text-clean";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -920,7 +921,7 @@ export function useWardReferralDrawerState({
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
-    const intake: ReferralIntakeDetails = {
+    const intake: ReferralIntakeDetails = cleanReferralFields({
       catchment: catchmentNotKnown
         ? { teamName: "", confirmed: true, notKnown: true }
         : { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
@@ -948,7 +949,7 @@ export function useWardReferralDrawerState({
           }
         : {}),
       ...(needs && referralNeedsWords(needs).length ? { needs } : {}),
-    };
+    });
     const intakeError = referralIntakeError(intake);
     if (intakeError) {
       setFlowError(intakeError);
@@ -961,7 +962,7 @@ export function useWardReferralDrawerState({
       return;
     }
     setFlowError(null);
-    submitReferral({
+    submitReferral(cleanReferralFields({
       type: "RECEIVE_REFERRAL",
       role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
       now,
@@ -980,7 +981,7 @@ export function useWardReferralDrawerState({
       history: unidentifiedHistory,
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
-    });
+    }));
   }
 
   // Recipient inboxes, read from the provider the ward screen already uses.
