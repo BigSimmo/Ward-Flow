@@ -350,7 +350,13 @@ describe("planned bookings for every desk that reads the bed forecast (Josh, 27 
   });
 
   it("sends the executive every booking as counts, naming nobody", () => {
-    const named = { ...booking, id: "PA-NAMED", patientId: state.patients[0].id, initials: null, gender: "Male" as const };
+    const named = {
+      ...booking,
+      id: "PA-NAMED",
+      patientId: state.patients[0].id,
+      initials: null,
+      gender: "Male" as const,
+    };
     const scoped = scopeWardFlowState(
       { ...world, plannedAdmissions: [...world.plannedAdmissions, named] },
       { role: "executive", scope: { kind: "statewide" } },
