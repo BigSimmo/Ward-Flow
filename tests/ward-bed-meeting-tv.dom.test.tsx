@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/link", () => ({
-  default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
-    <a href={href} {...rest}>
+  default: ({ children, href, replace, ...rest }: { children: ReactNode; href: string; replace?: boolean }) => (
+    <a href={href} data-replace={replace ? "true" : undefined} {...rest}>
       {children}
     </a>
   ),
@@ -328,7 +328,7 @@ describe("the bed meeting TV view", () => {
     expect(tv).toHaveTextContent("Not approved for clinical use");
     // Overall review (20 Oct 2026): the footer names the shift the rest of the app shows, and the
     // standard scenario is a day, so it never reads "Standard night" beside "Day shift".
-    expect(tv).toHaveTextContent("Day shift · Scenario: Standard day");
+    expect(tv).toHaveTextContent("Day shift · Demo data: Standard day");
     expect(tv).not.toHaveTextContent("Standard night");
     const layoutCss = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
     expect(layoutCss).toMatch(/\.shellRow:has\(\[data-wf-tv-clean\]\) > \[data-testid="ward-rail"\]/u);
@@ -369,6 +369,14 @@ describe("the ward and ED TV views", () => {
     for (const service of tvHealthServices(state.units)) {
       expect(hrefs).toContain(bedMeetingTvHref({ service: tvServiceParam(service) }));
     }
+  });
+
+  // #1004 review: a screen change replaces the TV entry, so Leave TV view still goes back past it.
+  it("changes screen without adding to the back history", () => {
+    renderTv();
+    const links = within(screen.getByTestId("bed-meeting-tv-picker")).getAllByRole("link");
+    expect(links.length).toBeGreaterThan(0);
+    for (const link of links) expect(link).toHaveAttribute("data-replace", "true");
   });
 
   it("closes the screen picker once a screen is chosen (WT-21)", () => {

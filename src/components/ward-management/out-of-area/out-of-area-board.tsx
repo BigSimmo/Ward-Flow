@@ -836,7 +836,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 }
                 onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
               >
-                Plan next return
+                {nextUp ? `Plan next return ${patientOf(nextUp).displayName}` : "Plan next return"}
               </Button>
               <Button
                 variant="onHero"

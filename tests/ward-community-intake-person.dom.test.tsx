@@ -116,6 +116,20 @@ describe("community intake names its person", () => {
     });
     expect(patientRow()).toHaveTextContent("Not yet identified, Woman, about 40, at Midland station");
   });
+
+  it("P157: says a provisional name is allowed and keeps the unidentified prefix", () => {
+    vi.unstubAllGlobals();
+    renderIntake();
+    fireEvent.click(screen.getByTestId("ward-referral-unidentified"));
+    const input = screen.getByTestId("ward-referral-unidentified-description");
+    expect(document.getElementById(`${input.id}-hint`)).toHaveTextContent(/^name if known, or a description$/);
+    expect(input).toHaveAttribute(
+      "placeholder",
+      'For example, "J. Smith (unconfirmed)" or man about 30, brought in by police',
+    );
+    fireEvent.change(input, { target: { value: "J. Smith (unconfirmed)" } });
+    expect(patientRow()).toHaveTextContent("Not yet identified, J. Smith (unconfirmed)");
+  });
 });
 
 describe("matchReferralPatient", () => {
