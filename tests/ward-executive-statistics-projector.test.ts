@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { isExecutiveNetworkAggregate } from "../src/components/ward-management/statistics/executive-statistics-contract";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
@@ -41,7 +40,6 @@ import {
   communityMembershipResolution,
 } from "../src/components/ward-management/community/community-derivations";
 import { executiveCommunityService } from "../src/components/ward-management/statistics/executive-statistics-derivations";
-import { mapClinicToServiceAndHospital } from "../src/components/ward-management/tools/ward-catchment-resolver";
 import { HEALTH_SERVICES } from "../src/components/ward-management/ward-model";
 import { ExecutiveCountRelease } from "../src/components/ward-management/statistics/executive-statistics-release";
 import { scopeWardFlowState } from "../src/components/ward-management/ward-access-state";
@@ -442,9 +440,81 @@ describe("the inactive full reporting bundle", () => {
   it("uses current team membership and clinic service mapping without serialising subject lists", () => {
     const state = seedWardFlowState();
     const dto = reporting(state);
+    // Pin the reviewed prototype vocabulary independently of the UI module's export layout.
+    const clinicsByService = {
+      SMHS: [
+        "Alma Street",
+        "Alma Street (Central)",
+        "Alma Street (Cockburn)",
+        "Alma Street (Fremantle)",
+        "Alma Street (Melville)",
+        "Kwinana",
+        "Peel",
+        "Rockingham",
+      ],
+      EMHS: [
+        "Armadale",
+        "Armadale (Mead Centre)",
+        "Armadale (Mead)",
+        "Bentley",
+        "Eudoria Street (Gosnells)",
+        "Eudoria Street (Thornlie)",
+        "ICC",
+        "Inner City",
+        "Inner City (central)",
+        "Inner City Clinic",
+        "Mead Centre (Armadale)",
+        "Mead Centre (Kelmscott)",
+        "Meade Centre (Armadale)",
+        "Midland",
+        "Mills Street",
+        "Swan",
+      ],
+      NMHS: ["Clarkson", "Joondalup", "Mirrabooka", "Osborne", "Osborne Park", "Subiaco"],
+      WACHS: [
+        "Albany",
+        "Bunbury",
+        "Central Great Southern",
+        "Central Wheatbelt",
+        "Central Wheatbelt H.S.",
+        "East Wheatbelt",
+        "East Wheatbelt HS",
+        "Gascoyne",
+        "Gascoyne H.S.",
+        "Gascoyne HS",
+        "Geraldton HS",
+        "Great South",
+        "Great Southern",
+        "Kimberley",
+        "Kimberley HS",
+        "Lower Great Southern",
+        "Merredin",
+        "Midwest H.S.",
+        "Murchison HS",
+        "Narrogin",
+        "North West",
+        "North. Goldfield H.S.",
+        "Northam",
+        "Nth Goldfield H.S.",
+        "Nth Goldfield HS",
+        "Pilbara",
+        "South East Coastal",
+        "Southern Coastal HS",
+        "Upper Great Southern",
+        "West Pilbara",
+        "Western H.S.",
+        "Western HS",
+        "Wheat Belt",
+        "Wheatbelt HS",
+      ],
+    };
+    const expectedServices = Object.fromEntries(
+      Object.entries(clinicsByService).flatMap(([service, clinics]) => clinics.map((clinic) => [clinic, service])),
+    );
+    expect(COMMUNITY_TEAM_PAGES.map((team) => team.name).sort()).toEqual(Object.keys(expectedServices).sort());
     for (const team of COMMUNITY_TEAM_PAGES) {
       const mapped = executiveCommunityService(team.name);
-      expect(mapped.code).toBe(mapClinicToServiceAndHospital(team.name).code);
+      expect(mapped.code).toBe(expectedServices[team.name]);
       const shown = dto.teams.find((entry) => entry.id === team.id)!;
       const lists = communityHubLists(state.admissions, team, state.referrals);
       const resolution = communityMembershipResolution(state.admissions, team, state.referrals);
@@ -630,19 +700,10 @@ describe("the inactive full reporting bundle", () => {
         expect(isExecutiveReportingFoundation(result)).toBe(true);
         return Math.round((performance.now() - start) * 10) / 10;
       });
-      const roots = [
-        "src/components/ward-management/statistics/executive-statistics-contract.ts",
-        "src/components/ward-management/statistics/executive-statistics-projector.ts",
-        "src/components/ward-management/statistics/executive-statistics-derivations.ts",
-        "src/components/ward-management/statistics/executive-statistics-release.ts",
-        "src/components/ward-management/ward-access-state.ts",
-        "src/components/ward-management/ward-access-scope.ts",
-      ];
-      const sourceHashes = Object.fromEntries(
-        roots.map((path) => [path, createHash("sha256").update(readFileSync(path)).digest("hex")]),
-      );
+      // The calling measurement harness supplies provenance; this test does not read application source.
+      const sourceRevision = process.env.WF_EXECUTIVE_SOURCE_REVISION ?? null;
       process.stdout.write(
-        `${JSON.stringify({ measurement: "executive-current-seed-projection", warmCalls: 1, measuredCalls: 3, milliseconds, sourceHashes, fixtureHash: createHash("sha256").update(JSON.stringify(state)).digest("hex"), wards: state.units.length, movements: state.movements.length, admissions: state.admissions.length, node: process.version })}\n`,
+        `${JSON.stringify({ measurement: "executive-current-seed-projection", warmCalls: 1, measuredCalls: 3, milliseconds, sourceRevision, fixtureHash: createHash("sha256").update(JSON.stringify(state)).digest("hex"), wards: state.units.length, movements: state.movements.length, admissions: state.admissions.length, node: process.version })}\n`,
       );
     },
   );

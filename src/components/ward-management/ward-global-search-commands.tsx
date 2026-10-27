@@ -1,5 +1,6 @@
 "use client";
 import type { WardGlobalSearchProps } from "./ward-global-search";
+import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-global-search.module.css";
 import { WARD_REFERRAL_INTAKE_HREF } from "./ward-nav";
 type DeskRole = "coordinator" | "ward" | "ed" | "officer";
@@ -48,10 +49,10 @@ export function WardSearchCommands({
           <button
             type="button"
             className={styles.commandBtn}
-            disabled={!resultsCurrent || demoOff}
+            aria-disabled={!resultsCurrent || demoOff}
             aria-describedby={demoOff ? demoOffId : undefined}
             data-testid="ward-global-search-cmd-advance-clock"
-            onClick={onAdvanceClock}
+            onClick={!resultsCurrent || demoOff ? ignoreUnavailableActivation : onAdvanceClock}
           >
             <span className={styles.commandLabel}>Advance demo clock +15m</span>
             <kbd className={styles.hintKbd}>+15m</kbd>

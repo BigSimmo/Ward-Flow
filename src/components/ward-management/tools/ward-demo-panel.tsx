@@ -8,7 +8,7 @@ import { Dialog } from "@/components/wf";
 
 import { WardDemoReset, demoDataReach } from "../demo-reset/ward-demo-reset";
 import { WardPracticeMode } from "../demo-reset/ward-practice-mode";
-import { formatInstant } from "../ward-clock";
+import { formatInstant, formatInstantWithDay } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../ward-flow-raise";
 import type { WardCommandOutcome } from "../ward-shared-client";
@@ -59,7 +59,9 @@ function ExecutiveDemoPanel() {
         ))}
       </div>
       <div className={styles.demoRow}>
-        <span className={styles.demoClock}>Demo clock {report && <b>{formatInstant(report.network.asAt.now)}</b>}</span>
+        <span className={styles.demoClock}>
+          Demo clock {report && <b>{formatInstantWithDay(report.network.asAt.now, report.network.asAt.now)}</b>}
+        </span>
         <button type="button" disabled className={styles.secondaryButton}>
           +15 min
         </button>

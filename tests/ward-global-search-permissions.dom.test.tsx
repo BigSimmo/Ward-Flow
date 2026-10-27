@@ -34,6 +34,7 @@ import { allUnits } from "@/components/ward-management/ward-sites";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 import type { ExecutiveSearchCatalogue } from "@/components/ward-management/search/ward-smart-search";
 import { MenuSearchResults } from "@/components/ward-management/shell/ward-phone-menu-results";
+import { WardSearchCommands } from "@/components/ward-management/ward-global-search-commands";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardShellPublicProvider } from "@/components/ward-management/shell/ward-shell-public-context";
 import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
@@ -61,8 +62,10 @@ const catalogue: ExecutiveSearchCatalogue = {
 };
 const units = allUnits();
 const places = wardPlaceLookup(units);
-const canOpenHref = (href: string) =>
+const roleCanOpenHref = (href: string) =>
   screenDecision({ role: "executive", scope: { kind: "statewide" } }, screenForPath(href), places).open;
+// Exercise a caller's narrower permission set without pinning a changeable role rule.
+const canOpenHref = (href: string) => href !== "/ward-flow/capacity" && roleCanOpenHref(href);
 afterEach(() => {
   cleanup();
   guard.forbidRecords = false;
@@ -76,6 +79,38 @@ afterEach(() => {
 });
 const input = () => screen.getByTestId("ward-global-search-input");
 describe("search choices follow caller-owned permissions", () => {
+  it("keeps an unavailable demo-clock explanation focusable without running the command", () => {
+    const advance = vi.fn();
+    const commands = (demoOff: boolean, resultsCurrent = true) => (
+      <WardSearchCommands
+        demoOff={demoOff}
+        demoOffId="synthetic-clock-reason"
+        demoOffText="Demo clock unavailable"
+        resultsCurrent={resultsCurrent}
+        canRunAction={() => true}
+        canOpenHref={() => false}
+        onAdvanceClock={advance}
+        onSwitchDesk={() => {}}
+        onHandover={() => {}}
+        shortcutsExpanded={false}
+        onToggleShortcuts={() => {}}
+      />
+    );
+    const view = render(commands(true));
+    const button = screen.getByTestId("ward-global-search-cmd-advance-clock");
+    button.focus();
+    expect(button).toHaveFocus();
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(button).toHaveAccessibleDescription("Demo clock unavailable");
+    fireEvent.click(button);
+    expect(advance).not.toHaveBeenCalled();
+    view.rerender(commands(false, false));
+    fireEvent.click(button);
+    expect(advance).not.toHaveBeenCalled();
+    view.rerender(commands(false));
+    fireEvent.click(button);
+    expect(advance).toHaveBeenCalledOnce();
+  });
   it("filters ordinary starting and typed navigation and quick commands without removing public places", () => {
     installMatchMediaStub(false);
     render(
@@ -198,7 +233,9 @@ describe("search choices follow caller-owned permissions", () => {
     );
     const view = render(menu("capacity"));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Searching" })).not.toBeInTheDocument());
-    expect(screen.queryByRole("link", { name: /Capacity/ })).not.toBeInTheDocument();
+    expect(screen.queryAllByRole("link", { name: /Capacity/ })).toHaveLength(
+      Number(roleCanOpenHref("/ward-flow/capacity")),
+    );
     view.rerender(menu(units[0]!.name));
     await waitFor(() =>
       expect(

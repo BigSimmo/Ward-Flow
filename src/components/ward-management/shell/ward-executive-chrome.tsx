@@ -22,7 +22,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { Sheet, useIsPhone, useMediaQuery, useWfBandActive } from "@/components/wf";
-import { formatInstant } from "../ward-clock";
+import { formatInstantWithDay } from "../ward-clock";
 import { useExecutiveStatistics } from "../statistics/executive-statistics-context";
 import { releasedCountText, ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
 import { WardDataModeSlot } from "../ward-shared-access";
@@ -318,7 +318,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     document.addEventListener("keydown", handle);
     return () => document.removeEventListener("keydown", handle);
   }, [preferences.open]);
-  const clock = shell ? formatInstant(shell.now) : "";
+  const clock = shell ? formatInstantWithDay(shell.now, shell.now) : "";
   useEffect(() => {
     publishLiveClock(clock || undefined);
     return () => publishLiveClock(undefined);

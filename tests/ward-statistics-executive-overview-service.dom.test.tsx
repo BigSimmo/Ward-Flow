@@ -18,6 +18,10 @@ import { StatisticsServiceScreen } from "@/components/ward-management/statistics
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
+import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 
 /**
  * Executive Statistics on the Overview and one health service (role access plan, Josh's yes 15 Oct
@@ -45,7 +49,32 @@ function asPhone() {
   );
 }
 
-function renderScreen(node: ReactNode) {
+function renderScreen(node: ReactNode, executive = false) {
+  if (executive) {
+    const state = seedWardFlowState();
+    const data = projectExecutiveReportingFoundation(
+      state,
+      { role: "executive", scope: { kind: "statewide" } },
+      {
+        now: NOW_ANCHOR,
+        dayZero: "2026-10-24T00:00:00.000Z",
+        startedAt: "2026-10-24T00:00:00.000Z",
+        places: wardPlaceLookup(state.units),
+      },
+    );
+    const binding = { actorId: "synthetic-service-report", accessContext: "b".repeat(64), epoch: 0, revision: 1 };
+    return render(
+      <ToastProvider>
+        <ExecutiveStatisticsProvider
+          binding={binding}
+          snapshot={{ binding, receivedAt: 100, expiresAt: 200, data }}
+          now={150}
+        >
+          {node}
+        </ExecutiveStatisticsProvider>
+      </ToastProvider>,
+    );
+  }
   return render(
     <ToastProvider>
       <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>
@@ -118,7 +147,7 @@ describe("the phone More figures sheet on the executive desk, counts only (D-77 
   it("words a small decline the way the desktop does", () => {
     asPhone();
     asDesk("executive", true);
-    renderScreen(<StatisticsScreen />);
+    renderScreen(<StatisticsScreen />, true);
     const declines = within(openMoreFigures().getByRole("list", { name: "Declines by reason" }));
     // Seed: one no-bed decline.
     expect(declines.getAllByText("fewer than 5").length).toBeGreaterThan(0);
@@ -138,13 +167,18 @@ describe("the phone More figures sheet on the executive desk, counts only (D-77 
 describe("one health service on the executive desk, counts only", () => {
   it("words small referral and far-from-home counts, and keeps ready beds exact", () => {
     asDesk("executive", true);
-    renderScreen(<StatisticsServiceScreen serviceId="North Metro" />);
+    renderScreen(<StatisticsServiceScreen serviceId="North Metro" />, true);
 
-    // Seed: two referrals raised, both placed within; four people far from home, all by air.
-    expect(text("ward-statistics-service-placement-raised")).toBe("fewer than 5");
-    expect(text("ward-statistics-service-placement-within")).toBe("fewer than 5");
-    expect(text("ward-statistics-service-out-of-area-value")).toBe("fewer than 5");
-    expect(text("ward-statistics-service-out-of-area-band-air_transport_only-count")).toBe("fewer than 5");
+    // The complete release withholds these related small counts across the report bundle.
+    for (const id of [
+      "ward-statistics-service-placement-raised",
+      "ward-statistics-service-placement-within",
+      "ward-statistics-service-out-of-area-value",
+      "ward-statistics-service-out-of-area-band-air_transport_only-count",
+    ]) {
+      expect(text(id)).toBe("not shown");
+      expect(text(id)).not.toBe("fewer than 5");
+    }
     expect(text("ward-statistics-service-out-of-area-band-three_hours_or_more-count")).toBe("0");
 
     expect(text("ward-statistics-service-ready-total")).toBe("4");
@@ -153,18 +187,21 @@ describe("one health service on the executive desk, counts only", () => {
 
   it("hides the part beside a lone hidden one, so it cannot be worked back from Raised", () => {
     asDesk("executive", true);
-    renderScreen(<StatisticsServiceScreen serviceId="East Metro" />);
+    renderScreen(<StatisticsServiceScreen serviceId="East Metro" />, true);
 
-    // Seed: 16 raised, one accepted at a South Metro ward, 15 not yet accepted.
-    expect(text("ward-statistics-service-placement-raised")).toBe("16");
-    expect(text("ward-statistics-service-placement-to-South Metro-count")).toBe("fewer than 5");
+    // The complete release withholds the total as well as its complementary parts.
+    expect(text("ward-statistics-service-placement-raised")).toBe("not shown");
+    expect(text("ward-statistics-service-placement-raised")).not.toBe("16");
+    expect(text("ward-statistics-service-placement-to-South Metro-count")).toBe("not shown");
+    expect(text("ward-statistics-service-placement-to-South Metro-count")).not.toBe("fewer than 5");
     expect(text("ward-statistics-service-placement-not-yet")).toBe("not shown");
-    expect(text("ward-statistics-service-placement-elsewhere")).toBe("fewer than 5");
+    expect(text("ward-statistics-service-placement-elsewhere")).toBe("not shown");
+    expect(text("ward-statistics-service-placement-elsewhere")).not.toBe("fewer than 5");
   });
 
   it("replaces the ED swarm and the far-from-home table with the note", () => {
     asDesk("executive", true);
-    renderScreen(<StatisticsServiceScreen serviceId="North Metro" />);
+    renderScreen(<StatisticsServiceScreen serviceId="North Metro" />, true);
 
     expect(screen.queryByTestId("ward-statistics-service-ed-swarm")).toBeNull();
     expect(screen.getByTestId("ward-statistics-service-ed-swarm-not-listed")).toHaveTextContent(
@@ -178,11 +215,12 @@ describe("one health service on the executive desk, counts only", () => {
   it("on a phone, counts the people far from home without listing them", () => {
     asPhone();
     asDesk("executive", true);
-    renderScreen(<StatisticsServiceScreen serviceId="North Metro" />);
+    renderScreen(<StatisticsServiceScreen serviceId="North Metro" />, true);
 
     const row = screen.getByTestId("ward-statistics-service-phone-out-of-area");
-    expect(row).toHaveTextContent("fewer than 5 people out of area");
-    // Bed days add up each stay, so beside a worded count they are not shown either.
+    expect(row).toHaveTextContent("not shown people out of area");
+    expect(row).not.toHaveTextContent("fewer than 5 people out of area");
+    // Bed days add up each stay, so beside a withheld count they are not shown either.
     expect(row).toHaveTextContent("bed days not shown");
     fireEvent.click(row);
     expect(screen.getByTestId("ward-statistics-service-phone-out-of-area-not-listed")).toBeInTheDocument();

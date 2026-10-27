@@ -280,12 +280,11 @@ test("a desk that cannot see an archived record gets no summary for it", async (
   assert.equal(JSON.stringify(reply.partialView).includes(referral.id), false);
 });
 
-test("roles that are not sender desks, and an unbound read, get records as before and no summary", async () => {
+test("ordinary non-sender desks and an unbound read omit summaries; executive archive access is denied", async () => {
   const referral = referralFixture();
   const { live, records } = archived(referral.world, { referralIds: [referral.id] });
   for (const access of [
     { role: "ed", scope: { kind: "ed", edId: "jhc-ed" } },
-    { role: "executive", scope: { kind: "statewide" } },
     { role: "coordinator", scope: { kind: "statewide" } },
   ]) {
     const reply = await store(live, records).archive(viewFor(access));
@@ -297,6 +296,10 @@ test("roles that are not sender desks, and an unbound read, get records as befor
       access.role,
     );
   }
+  await assert.rejects(
+    store(live, records).archive(viewFor({ role: "executive", scope: { kind: "statewide" } })),
+    /Executive reporting does not include record access/,
+  );
   const unbound = await store(live, records).archive(undefined);
   assert.equal(Object.hasOwn(unbound, "partialView"), false);
   assert.equal(unbound.records.length, records.length);
