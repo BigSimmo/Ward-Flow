@@ -353,7 +353,7 @@ export function TransportBookingForm({
               data-testid={tid("time")}
               className={styles.mono}
               inputMode="numeric"
-              placeholder="HH:MM, 24-hour"
+              placeholder="HH:MM"
               autoComplete="off"
               disabled={pending}
               value={answers.estimatedTime}
