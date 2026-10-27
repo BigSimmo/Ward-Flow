@@ -406,7 +406,12 @@ export function AddPatientForm() {
     toast?.push(
       late
         ? { tone: "info", title: `${added.givenName} ${added.familyName}, ${added.umrn}: record now available` }
-        : { tone: "success", title: `${added.givenName} ${added.familyName} added, ${added.umrn}` },
+        : {
+            tone: "success",
+            title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
+            // P143 (Josh, 27 Oct 2026, 8:57 PM): refer path only. A plain add already opens the page.
+            ...(prior.intent === "refer" ? { nextStep: { label: "Open patient", href: patientHref(added.id) } } : {}),
+          },
     );
     if (prior.intent === "refer") {
       submitIntentRef.current = "profile";
