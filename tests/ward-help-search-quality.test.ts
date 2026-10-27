@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { askHelp, closestHowTos, correctWords, questionWords } from "@/components/ward-management/help/ward-help-howto";
+import {
+  askHelp,
+  closestHowTos,
+  correctedQuestionWords,
+  correctWords,
+  questionWords,
+} from "@/components/ward-management/help/ward-help-howto";
 import { HELP_SYNONYMS } from "@/components/ward-management/help/ward-help-synonyms";
 import { allowedSlips, editDistance, nearestWord } from "@/components/ward-management/help/ward-help-typo";
 
@@ -47,6 +53,9 @@ const GOLDEN: readonly (readonly [question: string, top: string])[] = [
   ["favorite ward", "pin-ward"],
   ["dark mode", "theme"],
   ["dakr mode", "theme"],
+  // Typos in words the stemmer would shorten: mend the word first, then stem it.
+  ["thme", "theme"],
+  ["handove", "sign-off-handover"],
   ["compact rows", "density"],
   ["turn on notifications", "notifications"],
   ["mute sound", "buzz"],
@@ -104,6 +113,13 @@ describe("typo tolerance", () => {
     expect(nearestWord("theme", ["transport", "theme"], known)).toBe("theme");
     expect(nearestWord("zzzzzzzz", ["transport", "theme"], known)).toBe("zzzzzzzz");
     expect(nearestWord("tranpsort", ["transport", "theme"], known)).toBe("transport");
+  });
+
+  it("mends a typo before stemming, so a shortened stem does not lose its slips", () => {
+    expect(askHelp("thme", "coordinator")[0]?.howTo.id).toBe("theme");
+    expect(askHelp("handove", "coordinator").length).toBeGreaterThan(0);
+    expect(correctedQuestionWords("thme")).toEqual(questionWords("theme"));
+    expect(correctedQuestionWords("handove")).toEqual(questionWords("handover"));
   });
 
   it("gives the same words for the same question every time", () => {

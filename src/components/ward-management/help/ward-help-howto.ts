@@ -607,6 +607,47 @@ export function correctWords(words: readonly string[]): readonly string[] {
   return [...new Set(words.map((word) => nearestWord(word, list, known)))];
 }
 
+/** A word as typed: lower case, letters and digits only, no endings taken off. */
+function plainWord(word: string): string {
+  return word.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** The words as written, endings still on, split the way a question is. */
+function plainWords(text: string): string[] {
+  return text
+    .split(/[\s,.?!/]+/)
+    .filter((word) => word && !STOP.has(word.toLowerCase().replace(/'/g, "")))
+    .map(plainWord)
+    .filter(Boolean);
+}
+
+let plainVocabulary: { list: readonly string[]; known: ReadonlySet<string> } | undefined;
+/** Every word as written in the how-tos (title and keywords first) and the synonym list, endings on. */
+function howToPlainVocabulary() {
+  if (!plainVocabulary) {
+    const strong = HOW_TOS.flatMap((howTo) => plainWords(`${howTo.title} ${howTo.keywords}`));
+    const weak = HOW_TOS.flatMap((howTo) => plainWords(howTo.answer));
+    const synonyms = HELP_SYNONYMS.map(([word]) => plainWord(word));
+    const list = [...new Set([...strong, ...weak, ...synonyms])];
+    plainVocabulary = { list, known: new Set(list) };
+  }
+  return plainVocabulary;
+}
+
+/**
+ * The question's word stems with typos mended first (P9). A typed word is mended against the words
+ * as written, then stemmed, because stemming first shortens the word and changes how many slips it
+ * may hold ("thme" is one slip from "theme" but would be a three-letter stem). Same words in, same
+ * words out.
+ */
+export function correctedQuestionWords(query: string): readonly string[] {
+  const { list, known } = howToPlainVocabulary();
+  const words = plainWords(query)
+    .map((word) => stem(nearestWord(word, list, known)))
+    .filter((word) => word.length > 1);
+  return [...new Set(words)];
+}
+
 export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean };
 
 /**
@@ -616,7 +657,7 @@ export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean 
  * so the same words always give the same answers. Answers scoring under half the best are dropped.
  */
 export function askHelp(query: string, role: WardTourRole, limit = 6): readonly HowToMatch[] {
-  const words = correctWords(questionWords(query));
+  const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
   const needed = Math.max(1, Math.ceil(words.length / 2));
   const scored = HOW_TOS.flatMap((howTo, order) => {
@@ -653,7 +694,7 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
  * this desk's own before others, then list order. Empty when no word is shared at all.
  */
 export function closestHowTos(query: string, role: WardTourRole, limit = 3): readonly HowToMatch[] {
-  const words = correctWords(questionWords(query));
+  const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
   return HOW_TOS.flatMap((howTo, order) => {
     const { strong, weak } = wordsOf(howTo);
