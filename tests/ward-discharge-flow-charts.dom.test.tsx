@@ -90,7 +90,8 @@ describe("Discharges charts under the table (direction A)", () => {
     const options = within(screen.getByRole("combobox", { name: "Status" })).getAllByRole("option");
     for (const key of ["blocked", "confirmed", "expected", "departed"]) {
       const chip = screen.getByTestId(`ward-discharge-kpi-${key}`);
-      const count = /: (\d+)$/u.exec(chip.getAttribute("aria-label") ?? "")?.[1];
+      // P082: the chip's name starts with the count it shows.
+      const count = /^(\d+) /u.exec(chip.getAttribute("aria-label") ?? "")?.[1];
       const option = options.find((candidate) => (candidate as HTMLOptionElement).value === key)!;
       expect(option.textContent).toMatch(new RegExp(` · ${count}$`, "u"));
     }
