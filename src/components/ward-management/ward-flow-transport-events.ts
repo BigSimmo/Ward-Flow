@@ -786,7 +786,9 @@ export function reduceTransportEvent(
           escortRequired: event.escortRequired,
           // Owner's third ruling, 2026-09-17: the phone-logged facts, required and stored exactly
           // as answered — see each field's own doc comment on `TransportJob` (`ward-model.ts`).
-          ...(event.cadNumber.trim().length > 0 ? { cadNumber: event.cadNumber } : {}),
+          ...(typeof event.cadNumber === "string" && event.cadNumber.trim().length > 0
+            ? { cadNumber: event.cadNumber }
+            : {}),
           transportLegalStatus: event.transportLegalStatus,
           estimatedAt: event.estimatedAt,
           ...(bookingException ? { exceptions: [bookingException] } : {}),

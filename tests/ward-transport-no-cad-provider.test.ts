@@ -11,7 +11,7 @@ import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR;
 
-function book(provider: string, cadNumber: string) {
+function book(provider: string, cadNumber: string | undefined) {
   return wardFlowReducer(seedWardFlowState(), {
     type: "BOOK_TRANSPORT",
     role: "coordinator",
@@ -40,6 +40,12 @@ describe("transport without a dispatch service", () => {
     const job = next.movements.find((movement) => movement.id === "WF-004")!.transport!;
     expect(job.provider).toBe("Ward escort");
     expect(job.cadNumber).toBeUndefined();
+  });
+
+  it("books a family member when the CAD number is left out of the event", () => {
+    const next = book("Family or carer", undefined);
+    expect(next.rejections).toEqual([]);
+    expect(next.movements.find((movement) => movement.id === "WF-004")!.transport!.cadNumber).toBeUndefined();
   });
 
   it("still refuses a dispatched service with no CAD number, or a placeholder from anyone", () => {
