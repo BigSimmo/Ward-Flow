@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { drawerFootStatus, drawerRailHeading } from "@/components/ward-management/referrals/referral-drawer-foot-status";
+import {
+  drawerFootStatus,
+  drawerRailHeading,
+} from "@/components/ward-management/referrals/referral-drawer-foot-status";
 import { referralContactError } from "@/components/ward-management/referrals/referral-submission";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
