@@ -52,8 +52,10 @@ describe("coverage inventory", () => {
 
   it("keeps conservative whole-repository floors alongside scoped ratchets", () => {
     const config = readFileSync(new URL("../vitest.config.mts", import.meta.url), "utf8");
-    expect(config).toMatch(/thresholds:\s*\{\s*\/\/[\s\S]*?statements: 52,[\s\S]*?branches: 49,/);
-    expect(config).toMatch(/functions: 54,[\s\S]*?lines: 53,/);
+    expect(config).toMatch(/thresholds:\s*\{\s*\/\/[\s\S]*?statements: 80,[\s\S]*?branches: 77,/);
+    expect(config).toMatch(/functions: 81,[\s\S]*?lines: 81,/);
     expect(config).toContain('"src/{lib/**/*.ts,app/**/route.ts,components/**/*.{ts,tsx}}"');
+    // H-0911: the engine the backend bundles keeps a floor of its own.
+    expect(config).toContain('"src/components/ward-management/ward-flow-*.ts"');
   });
 });
