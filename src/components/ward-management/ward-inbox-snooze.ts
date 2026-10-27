@@ -39,8 +39,11 @@ export type InboxSnoozeEntry =
   | { at: Instant; by: string; kind: "snoozed"; until: Instant; reason: InboxSnoozeReason }
   | { at: Instant; by: string; kind: "returned" };
 
-/** Who took ownership of a row and when. Append-only; the latest entry is the current owner. */
-export type InboxOwnershipEntry = { at: Instant; by: string };
+/**
+ * Who took ownership of a row and when. Append-only; the latest entry is the current owner, unless it
+ * is a release (P019, `RELEASE_INBOX_ITEM_OWNERSHIP`), which hands the row back to the queue.
+ */
+export type InboxOwnershipEntry = { at: Instant; by: string; kind?: "released" };
 
 export type SnoozePresetId = "30m" | "1h" | "4h" | "shift-end";
 
@@ -110,7 +113,7 @@ export function currentInboxOwner(
   since?: Instant,
 ): InboxOwnershipEntry | undefined {
   const latest = entries?.at(-1);
-  return latest && !beforeOccurrence(latest, since) ? latest : undefined;
+  return latest && latest.kind !== "released" && !beforeOccurrence(latest, since) ? latest : undefined;
 }
 
 /** Splits rows into the active list and the snoozed list, keeping each list's own order. */
