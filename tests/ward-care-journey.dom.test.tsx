@@ -76,14 +76,23 @@ describe("care journey controls use the actual guarded provider", () => {
     fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("recorded Bed coordinator");
-    expect(screen.getByText("completed · appointment 1")).toBeInTheDocument();
+    // Fresh audit W-4: the outcome reads in sentence case and the internal appointment version never shows.
+    expect(screen.getByText("Completed · first booking")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent(/Dr Alex Taylor.* · Telephone · /u);
     fireEvent.click(screen.getByRole("button", { name: "Record appointment" }));
     expect(screen.getByText("No contact recorded for the current appointment")).toBeInTheDocument();
-    expect(screen.queryByText("completed · appointment 1")).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("appointment 1 (previous)");
+    expect(screen.queryByText("Completed · first booking")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent("first booking (previous)");
+    fireEvent.click(screen.getByRole("button", { name: "Record contact outcome" }));
+    expect(screen.getByText("Completed · rebooked once")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Care journey" })).not.toHaveTextContent(/appointment \d/u);
   });
   it("records a planning fact and filters adult-only forms out of CAMHS", () => {
     start();
+    // Fresh audit W-4: the planning item "handover" is a task, not the transfer step "Handed over".
+    expect(
+      within(screen.getByRole("combobox", { name: "Planning item" })).getByRole("option", { name: "Handover" }),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByRole("combobox", { name: "Planning item" }), { target: { value: "crisis_plan" } });
     fireEvent.change(screen.getByRole("combobox", { name: "Planning status" }), { target: { value: "completed" } });
     fireEvent.click(screen.getByRole("button", { name: "Record planning item" }));
