@@ -309,12 +309,16 @@ export function useWardReferralDrawerState({
   const deskScope = useEffectiveWardAccess().scope;
   const deskOriginSite = deskScope.kind === "ed" ? edById(deskScope.edId)?.siteCode : undefined;
   const deskSendingTeam = deskScope.kind === "team" ? deskScope.teamName : undefined;
-  const [sourceKind, setSourceKind] = useState<"community" | "ed">(
+  // Opener values (props or web address) win over a kept draft when the drawer starts.
+  const openerSourceKind: "community" | "ed" | undefined =
     (initialSendingTeam ? "community" : undefined) ??
-      (urlPrefill?.source === "ed" && effectiveInitialOriginSiteCode ? "ed" : undefined) ??
-      (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
-        ? "ed"
-        : kept?.sourceKind) ??
+    (urlPrefill?.source === "ed" && effectiveInitialOriginSiteCode ? "ed" : undefined) ??
+    (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
+      ? "ed"
+      : undefined);
+  const [sourceKind, setSourceKind] = useState<"community" | "ed">(
+    openerSourceKind ??
+      kept?.sourceKind ??
       (liveOriginSite || initialCategory === "ed" || deskOriginSite ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
@@ -469,7 +473,15 @@ export function useWardReferralDrawerState({
     isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
-    unloadSafe: () => referralDraftKeptOnScreen(draftStorageKey, draftNow),
+    // An unfinished New patient form is not kept, so it always counts as unsaved.
+    unloadSafe: () =>
+      JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
+      referralDraftKeptOnScreen(draftStorageKey, draftNow, {
+        destType: initialDestination,
+        sourceKind: openerSourceKind,
+        originSiteCode: effectiveInitialOriginSiteCode,
+        sendingTeam: initialSendingTeam,
+      }),
   });
   const requestClose = useCallback(() => {
     if (guardOpen) return setGuardOpen(false);

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
@@ -95,5 +95,40 @@ describe("referral drawer reload prompt (P158)", () => {
       referralDraftKeptOnScreen(key(), { ...draft, documentation: { ...draft.documentation, charts: [chart] } }),
     ).toBe(false);
     expect(referralDraftKeptOnScreen(undefined, draft)).toBe(false);
+  });
+
+  it("prompts when a value from the web address would replace the kept draft on reload", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer initialPatientId="PT-023" initialDestination="ward" onClose={() => {}} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByRole("button", { name: "Community" }));
+    act(() => vi.advanceTimersByTime(500));
+    expect(unloadPrompts()).toBe(true);
+  });
+
+  it("does not prompt when the web address values match the kept draft", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer initialPatientId="PT-023" initialDestination="ward" onClose={() => {}} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Referral" }));
+    fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Synthetic url draft" } });
+    act(() => vi.advanceTimersByTime(500));
+    expect(unloadPrompts()).toBe(false);
+  });
+
+  it("prompts while unfinished New patient details are typed", () => {
+    openAndType("Synthetic new patient draft");
+    act(() => vi.advanceTimersByTime(500));
+    expect(unloadPrompts()).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Patient" }));
+    fireEvent.click(screen.getByRole("button", { name: "New patient" }));
+    const form = screen.getByTestId("ward-referral-new-patient");
+    fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
+    act(() => vi.advanceTimersByTime(500));
+    expect(unloadPrompts()).toBe(true);
   });
 });

@@ -9,9 +9,18 @@ type OnScreenDraft = { documentation?: { charts?: readonly unknown[] }; needsCha
  * the browser's own "Reload site?" prompt can be skipped. The session copy must be saved, valid and
  * identical to the screen, and no charts may be attached (attachment bytes are never kept).
  */
-export function referralDraftKeptOnScreen(storageKey: string | undefined, draft: OnScreenDraft): boolean {
+export function referralDraftKeptOnScreen(
+  storageKey: string | undefined,
+  draft: OnScreenDraft,
+  openerValues: Record<string, unknown> = {},
+): boolean {
   if (!storageKey || !draft.documentation || (draft.documentation.charts?.length ?? 0) > 0) return false;
   if (!referralRecoverySaved()) return false;
+  // Values from the opener or web address replace the kept ones on reload, so they must match too.
+  const onScreen = draft as Record<string, unknown>;
+  for (const [field, value] of Object.entries(openerValues)) {
+    if (value !== undefined && value !== onScreen[field]) return false;
+  }
   const raw = readSessionDraft(storageKey);
   if (raw === null) return false;
   try {
