@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
-import { markTourSeen, readTourStep, saveTourStep, useTourRole } from "./ward-help-store";
+import { markTourSeen, readTourStep, readTourStepId, saveTourStep, useTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import {
   TOUR_ROLE_LABELS,
@@ -147,10 +147,11 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const steps = useMemo(() => tourSteps(role, device, facts), [role, device, facts]);
   const canDo = useMemo(() => tourCanDo(role), [role]);
   // The place is held by the step's id, so crossing the phone width (a different set of steps)
-  // keeps the same step, or the nearest one when that device has no such step.
+  // keeps the same step, or the nearest one when that device has no such step. The saved place
+  // carries the id too, so a tour closed on one width reopens on the same subject on the other.
   const [place, setPlace] = useState(() => {
     const at = Math.min(readTourStep(role), Math.max(0, steps.length - 1));
-    return { id: steps[at]?.id, at };
+    return { id: readTourStepId(role) ?? steps[at]?.id, at };
   });
   const found = steps.findIndex((candidate) => candidate.id === place.id);
   const index = found >= 0 ? found : Math.min(place.at, Math.max(0, steps.length - 1));
@@ -230,9 +231,9 @@ export function WardTour({ onClose }: { onClose: () => void }) {
 
   const close = useCallback(() => {
     markTourSeen(role);
-    saveTourStep(role, last ? 0 : index);
+    saveTourStep(role, last ? 0 : index, step?.id);
     onClose();
-  }, [index, last, onClose, role]);
+  }, [index, last, onClose, role, step?.id]);
 
   // The shared modal contract: the page behind is inert and held still, Tab stays in the card,
   // Escape closes the tour wherever focus is (on a phone often not inside the card), and focus goes
@@ -248,7 +249,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   function go(next: number) {
     const clamped = Math.min(Math.max(0, next), steps.length - 1);
     setPlace({ id: steps[clamped]?.id, at: clamped });
-    saveTourStep(role, clamped);
+    saveTourStep(role, clamped, steps[clamped]?.id);
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
