@@ -24,6 +24,7 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import styles from "./bed-meeting-agenda.module.css";
+import { useBedMeetingDone, type MarkBedMeetingActionDone } from "./use-bed-meeting-done";
 
 /**
  * Smart features idea 5 (19 Oct 2026): the bed meeting's agenda, built from fixed rules, and its
@@ -56,6 +57,8 @@ function BedMeetingAgenda() {
     lastDoneAt.current = at;
     return true;
   }, []);
+  // H-0150: held here, not in the row, so the toast's Undo outlives the row it closes.
+  const markActionDone = useBedMeetingDone("coordinator");
   // NB-02 / RB-N01: the closed action's row leaves with it; focus goes to the row now in its place.
   const actionList = useRef<HTMLUListElement>(null);
   const actionSummary = useRef<HTMLParagraphElement>(null);
@@ -96,6 +99,7 @@ function BedMeetingAgenda() {
                   now={now}
                   name={patientOf(row.record).displayName}
                   owner={ownerText(row.action)}
+                  onMarkDone={markActionDone}
                   claimDone={() => {
                     if (!claimDone()) return false;
                     markDone(index);
@@ -145,14 +149,15 @@ function ActionRow({
   name,
   owner,
   claimDone,
+  onMarkDone,
 }: {
   row: MeetingActionRow;
   now: Instant;
   name: string;
   owner: string;
   claimDone: () => boolean;
+  onMarkDone: MarkBedMeetingActionDone;
 }) {
-  const raise = useWardRaise("coordinator");
   const overdue = row.action.dueAt < now;
   return (
     <li className={styles.row}>
@@ -170,7 +175,7 @@ function ActionRow({
         onClick={(event) => {
           // The second click of a double click is never a fresh Done.
           if (event.detail > 1 || !claimDone()) return;
-          raise("COMPLETE_BED_MEETING_ACTION", { subject: row.subject, action: row.action.kind });
+          onMarkDone(row.subject, row.action.kind);
         }}
         data-testid="bed-meeting-action-done"
       >

@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({
 
 import type { BedMeetingSubject } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
+import { ToastProvider } from "@/components/wf";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import {
   resetWardAccessStoreForTests,
@@ -153,6 +154,27 @@ describe("bed meeting actions due on a record", () => {
     fireEvent.click(screen.getByTestId("meeting-action-mark-done"));
     expect(screen.getByTestId("refusals")).toHaveTextContent("0");
     expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+  });
+
+  it("offers Undo on the toast after Mark done, and Undo opens the action again (H-0150)", async () => {
+    asDesk({ role: "coordinator", scope: { kind: "statewide" } });
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <RecordAtMeeting subject={ADMISSION} owner="ed" />
+          <MeetingActionsDue subject={ADMISSION} />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    recordAction();
+    fireEvent.click(screen.getByTestId("meeting-action-mark-done"));
+    expect(screen.queryByTestId("meeting-actions-due")).not.toBeInTheDocument();
+    expect(await screen.findByText("Marked done: Book transport.")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Undo/u }));
+    expect(screen.getByTestId("refusals")).toHaveTextContent("0");
+    expect(await screen.findByTestId("meeting-actions-due")).toHaveTextContent("Book transport");
+    expect(await screen.findByText("Undone. Book transport is open again.")).toBeInTheDocument();
   });
 
   it("closes only the tapped action on a double click (Audit 7 NB-02)", () => {

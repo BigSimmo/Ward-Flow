@@ -1,10 +1,17 @@
-import { act, render } from "@testing-library/react";
+import "@testing-library/jest-dom/vitest";
+import { act, render, screen } from "@testing-library/react";
+import { useContext } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { absoluteWallClockMinutes, demoDayZero } from "@/components/ward-management/ward-clock";
 import { tryWriteDemoState, WARD_FLOW_DEMO_STORAGE_KEY } from "@/components/ward-management/ward-flow-demo-storage";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
+
+function Notice() {
+  return <p data-testid="notice">{useContext(WardRecoveryNoticeContext) ?? ""}</p>;
+}
 
 // Design audit DA-01: opening a new tab must not reset the day in the tabs already open. A fresh
 // tab asks the open tabs for their day and adopts it; it never broadcasts its untouched seed.
@@ -93,11 +100,13 @@ describe("a newly opened demo tab", () => {
     };
     render(
       <WardFlowProvider>
-        <p>Ward Flow</p>
+        <Notice />
       </WardFlowProvider>,
     );
     await settle();
     expect(savedOffset()).toBe(15);
+    // NB-08: the adoption is said, not silent.
+    expect(screen.getByTestId("notice")).toHaveTextContent("Brought up to date from another open tab.");
   });
 });
 

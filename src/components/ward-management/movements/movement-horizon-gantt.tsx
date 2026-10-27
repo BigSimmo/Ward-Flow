@@ -67,7 +67,7 @@ interface DensitySettings {
 
 const DENSITY_CONFIG: Record<HorizonDensity, DensitySettings> = {
   compact: {
-    barHeight: 22,
+    barHeight: 24,
     barGap: 2,
     barTop: 6,
     fontSize: "var(--text-xs)",
@@ -525,7 +525,7 @@ export function MovementHorizonGantt({
                                   className={`${styles.ganttBar} ${swatchClass}${isSelected ? ` ${styles.activeSelect}` : ""}${isScrubMatch ? ` ${styles.scrubActive}` : ""}`}
                                   style={
                                     {
-                                      // A bar is never narrower than its "Surname, I" label
+                                      // A bar is never narrower than a short "Surname, Given" label
                                       // (device audit, 11 Oct 2026: many patients share a
                                       // surname, so a cut one is ambiguous), and a bar near the
                                       // far edge keeps that width inside the track.
@@ -684,14 +684,15 @@ function formatGanttBarLabel(ev: MovementHorizonEvent, zoom: number): string {
               : "Admit";
 
   // Owner, 26 Sept 2026: the bar names the patient; the WF journey number is not shown.
-  // v6 (7 Oct 2026): the bar reads "Surname, I"; the full name stays in the accessible name.
-  const name = shortName(barPatientName(ev));
+  // v6 (7 Oct 2026), D-83 (26 Oct 2026): the bar reads "Surname, Given" in full; the CSS ellipsis
+  // cuts a long one, and the full name stays in the accessible name.
+  const name = formalName(barPatientName(ev));
   if (pct < 12) return name;
   if (pct < 22) return `${name} · ${sub}`;
   return `${name} · ${ev.title}`;
 }
 
-/** The narrowest a bar draws: wide enough for "Pallowmere, O" at the bar's type size. */
+/** The narrowest a bar draws: wide enough for "Pallowmere, O…" at the bar's type size. */
 const BAR_MIN_WIDTH = "7.5rem";
 
 /** The patient's name for a bar, or the resolver's own "Name not recorded" when none is linked. */
@@ -706,12 +707,4 @@ function formalName(name: string): string {
   if (parts.length < 2) return name;
   const surname = parts[parts.length - 1];
   return `${surname}, ${parts.slice(0, -1).join(" ")}`;
-}
-
-/** "Noor Tremalow" to "Tremalow, N", the bar's short label. */
-function shortName(name: string): string {
-  const formal = formalName(name);
-  const [surname, given] = formal.split(", ");
-  if (given === undefined || formal === NAME_NOT_RECORDED) return formal;
-  return `${surname}, ${given.charAt(0)}`;
 }

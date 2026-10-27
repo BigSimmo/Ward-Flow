@@ -117,7 +117,7 @@ describe("the ward flow error panel refuses to swallow the error", () => {
       });
       expect(document.body.textContent).not.toContain("Synthetic Person Example");
       expect(screen.queryByTestId("ward-flow-error-stack")).toBeNull();
-      expect(screen.getByTestId("ward-flow-error-message").textContent).toContain("Quote the digest");
+      expect(screen.getByTestId("ward-flow-error-message").textContent).toContain("Quote the error reference");
       expect(screen.getByTestId("ward-flow-error-digest").textContent).toContain("digest-for-the-server-log");
     } finally {
       vi.unstubAllEnvs();

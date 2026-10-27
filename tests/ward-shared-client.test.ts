@@ -1046,9 +1046,10 @@ describe("shared workspace connection", () => {
     await expect(client.pushSubscribe({ endpoint: "https://push.example.test/1", keys: {} })).resolves.toBe("role");
     expect(view?.status).toBe("ready");
     expect(view?.snapshot?.revision).toBe(1);
-    // The end date goes as a time, worked out from minutes, never from the demo clock.
-    const expiresAt = Date.parse((bodies[0] as { expiresAt: string }).expiresAt);
-    expect(Math.abs(expiresAt - (Date.now() + 60 * 60_000))).toBeLessThan(60_000);
+    // TC2-04 (H-0763): the length goes as minutes, never as a date from this device's clock or the
+    // demo clock; the server sets the end on its own clock, as it does for cover.
+    expect(bodies[0]).toMatchObject({ expiresInMinutes: 60 });
+    expect(bodies[0]).not.toHaveProperty("expiresAt");
     client.dispose();
   });
   it("opens a record through the server's break glass, and shows the board it answers with", async () => {
@@ -1518,5 +1519,42 @@ describe("H-0731: the TV board names itself on workspace reads", () => {
       client.dispose();
     }
     expect(seen).toEqual(["tv", null]);
+  });
+});
+
+describe("access deadline on the server's clock (TC2-05, H-0764)", () => {
+  const read = (deviceSkewMs: number) => {
+    let view: SharedView | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async () => {
+        // The server's clock is `deviceSkewMs` ahead of this device; 30 minutes of access are left on it.
+        const serverTime = Date.now() + deviceSkewMs;
+        const accessUntil = serverTime + 30 * 60_000;
+        return Response.json({ serverTime, accessUntil, snapshot: { ...snapshot(1), accessUntil } });
+      },
+    });
+    return { client, view: () => view };
+  };
+
+  it("keeps 30 minutes when the device is two hours slow, not two and a half hours", async () => {
+    const { client, view } = read(2 * 3_600_000);
+    await client.refresh();
+    expect(view()?.status).toBe("ready");
+    expect(Math.abs(view()!.accessUntil! - (Date.now() + 30 * 60_000))).toBeLessThan(5_000);
+    client.dispose();
+  });
+
+  it("does not refuse the workspace when the device is two hours fast", async () => {
+    const { client, view } = read(-2 * 3_600_000);
+    await client.refresh();
+    expect(view()?.status).toBe("ready");
+    expect(view()?.error ?? null).toBeNull();
+    expect(Math.abs(view()!.accessUntil! - (Date.now() + 30 * 60_000))).toBeLessThan(5_000);
+    client.dispose();
   });
 });

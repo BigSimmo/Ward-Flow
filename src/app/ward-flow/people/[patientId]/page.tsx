@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import { UMRN_IN_ADDRESS } from "@/components/ward-management/ward-patients";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -17,7 +16,7 @@ export const metadata: Metadata = {
   // client-side navigation that this static export cannot see. The route segment, the file and the
   // `PatientId` type stay named for the person — D-1 does not authorise renaming those.
   title: "Patient — Ward Flow",
-  description: "Unified synthetic patient dossier and transit operations for Ward Flow.",
+  description: "Synthetic patient record and transport for Ward Flow.",
 };
 
 export default async function WardPersonPage({
@@ -33,7 +32,9 @@ export default async function WardPersonPage({
   try {
     segment = decodeURIComponent(patientId);
   } catch {
-    return <WardMovementNotFound requestedId={patientId} reason="not-a-person-id" />;
+    // A1K-05 (Josh, 27 Oct 2026): a malformed address is a real 404. A well-formed id this device
+    // does not hold keeps the soft not-found below, as people added at runtime live on the client.
+    notFound();
   }
   // D-39 (15 Oct 2026): the address carries a code, never a person or journey number. The code is
   // read first. An old link with the raw id still works: it is sent on to the coded address.
@@ -44,10 +45,8 @@ export default async function WardPersonPage({
   const id = decoded ?? segment;
   // D-39: patient links never go by UMRN, so a UMRN in the address is not resolved. It gets the
   // plain not-found, which quotes nothing back (the UMRN is not passed on).
-  if (UMRN_IN_ADDRESS.test(id)) return <WardMovementNotFound requestedId="" reason="not-a-person-id" />;
-  if (!id.startsWith("PT-") && !id.startsWith("WF-")) {
-    return <WardMovementNotFound requestedId={id} reason="not-a-person-id" />;
-  }
+  if (UMRN_IN_ADDRESS.test(id)) notFound();
+  if (!id.startsWith("PT-") && !id.startsWith("WF-")) notFound();
   return (
     <PatientNowScreen
       patientId={id.startsWith("PT-") ? id : undefined}

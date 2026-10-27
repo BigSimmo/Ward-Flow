@@ -69,8 +69,8 @@ export function referralPresentationLists(
         : presentation.kind === "record" && ordinaryQueue.has(referral.id),
     )
     .map(({ referral }) => referral)
-    // D-32's existing queue order: longest wait first, urgency only breaks equal-time ties.
-    .sort((a, b) => a.raisedAt - b.raisedAt || a.urgency - b.urgency);
+    // D-32's queue order, the same as `referralQueueOrder`: longest wait first, then id (H-0330).
+    .sort((a, b) => a.raisedAt - b.raisedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   const decidedEntries = entries.filter(({ referral, presentation }) =>
     presentation.kind === "sender"
       ? presentation.state !== "queued" || presentation.withdrawn

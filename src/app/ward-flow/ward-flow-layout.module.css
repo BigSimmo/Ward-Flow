@@ -335,6 +335,21 @@
   display: none;
 }
 
+/* H-0111: on a first load whose stored desk is not the coordinator's, the server's page is the
+   coordinator's, so the page area stays hidden until the app has drawn the desk's own page
+   (ward-desk-early.ts). The header, rail and loading note still show. If the code never runs, the
+   page shows after 8 seconds rather than staying blank. */
+:global(html[data-wf-desk-pending]) .shellContent > :global([data-ward-ground]) {
+  visibility: hidden;
+  animation: deskPendingGiveUp 0s 8s forwards;
+}
+
+@keyframes deskPendingGiveUp {
+  to {
+    visibility: visible;
+  }
+}
+
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */
 .bannerHolder {
   position: sticky;

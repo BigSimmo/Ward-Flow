@@ -5,6 +5,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalSto
 import { StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
+import { plural } from "@/components/ward-management/ward-plural";
 
 import styles from "./home.module.css";
 import {
@@ -74,10 +75,6 @@ function subscribe(onChange: () => void) {
 const pendingLeaveSaves = new Map<string, number>();
 
 const serverLastLook = () => null;
-
-export function plural(count: number, one: string, many: string): string {
-  return `${count} ${count === 1 ? one : many}`;
-}
 
 /** One line of the timeline: the bar's Activity projection (`deriveCommandActivity`). */
 export type SinceActivityLine = {

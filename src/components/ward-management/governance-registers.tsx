@@ -1127,7 +1127,7 @@ function GovernanceSession({
               },
               {
                 title: "Notifiable incidents",
-                text: "AWOL, death and serious harm, with the time the Chief Psychiatrist was told.",
+                text: "Absent without leave, death and serious harm, with the time the Chief Psychiatrist was told.",
               },
             ].map((entry) => (
               <Card key={entry.title} className={thirdEdition.previewCard} aria-label={`${entry.title} register`}>

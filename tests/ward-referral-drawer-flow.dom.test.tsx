@@ -162,7 +162,7 @@ describe("approved four-tab referral drawer journey", () => {
     expect(screen.getByTestId("submitted-count")).toHaveTextContent(String(baseline + 1));
     const inbox = screen.getByRole("region", { name: "Ward referral inbox" });
     expect(inbox).toHaveTextContent("Synthetic patient story for inbox review");
-    fireEvent.click(within(inbox).getByRole("button", { name: "Waitlist" }));
+    fireEvent.click(within(inbox).getByRole("button", { name: "Waiting list" }));
     expect(inbox).toHaveTextContent("On waiting list");
     const board = screen.getByTestId("ward-referral-board-screen");
     // Option A (9 Oct 2026): filters highlight and never hide, so the waitlisted referral is on the queue as it stands.

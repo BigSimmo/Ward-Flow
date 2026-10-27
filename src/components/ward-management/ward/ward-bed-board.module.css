@@ -245,8 +245,9 @@
   color: var(--wf-ink-3);
 }
 
-/* Surname, then the initial that never truncates (the surname gives way first). The box fills the
-   free space so the cell can cut the surname to end at its ellipsis (ward-bed-board.tsx). */
+/* Surname, then the given name (D-83). The surname gives way first; the given name only takes an
+   ellipsis once the surname is down to one letter. The box fills the free space so the cell can
+   cut the surname to end at its ellipsis (ward-bed-board.tsx). */
 .cellName {
   display: flex;
   flex: 1 1 auto;
@@ -254,7 +255,10 @@
 }
 
 .cellInitial {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
   color: var(--wf-ink-3);

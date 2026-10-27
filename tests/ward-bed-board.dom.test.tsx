@@ -1,4 +1,4 @@
-// v10 pass 3 (Josh, 10 Oct 2026): the ward page's Bed board tab. Pick up and place on the shared
+// v10 pass 3 (Josh, 10 Oct 2026): the ward page's Bed board, opened from Ward home since 27 Oct 2026. Pick up and place on the shared
 // engine (`PLACE_IN_BED`, `ACCEPT_REFERRAL` with a bed number), and Undo on the toast reverses both
 // the bed and the referral (build guide acceptance check "Place then Undo returns the referral and
 // the bed to their first state").
@@ -47,7 +47,7 @@ function renderBoard(events: WardFlowEvent[] = []) {
       </ToastProvider>
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+  fireEvent.click(screen.getByTestId("ward-open-bed-board"));
   return within(screen.getByTestId("ward-bed-board-plan"));
 }
 
@@ -59,12 +59,16 @@ const firstBed = (predicate: (label: string) => boolean) =>
 const bedNo = (cell: HTMLElement) => Number(cell.dataset.testid?.replace("ward-board-bed-", ""));
 
 describe("Ward Bed board — pick up and place, with Undo", () => {
-  it("opens as a third tab and draws one cell per bed", () => {
+  it("opens inside Ward home, leaves two view tabs and draws one cell per bed", () => {
     renderBoard();
-    expect(screen.getByRole("tab", { name: /^Bed board/ })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("heading", { name: "Bed board" })).toBeVisible();
+    expect([...document.querySelectorAll('#mainTabList [role="tab"]')].map((tab) => tab.id)).toEqual([
+      "tabBtn-attn",
+      "tabBtn-return",
+    ]);
     expect(screen.getByRole("tab", { name: "Ward home (Worth Your Attention)" })).toHaveAttribute(
       "aria-selected",
-      "false",
+      "true",
     );
     expect(document.querySelectorAll("[data-testid^='ward-board-bed-']")).toHaveLength(24);
   });

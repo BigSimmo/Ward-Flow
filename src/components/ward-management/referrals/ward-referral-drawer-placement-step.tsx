@@ -37,7 +37,7 @@ import {
   type Unit,
   type WardReferralDestination,
 } from "@/components/ward-management/ward-model";
-import { referralEligibility } from "@/components/ward-management/ward-eligibility";
+import { mixSexOf, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardReferralDestinations } from "./ward-referral-drawer-model";
@@ -68,7 +68,8 @@ export function wardRefusalWords(
     transportNeeded: false,
     history: "",
   };
-  const failed = referralEligibility(probe, ward, unit, now).gates.find((gate) => !gate.pass);
+  const gates = referralEligibility(probe, ward, unit, now).gates;
+  const failed = gates.find((gate) => !gate.pass);
   const designation = unit.sexDesignation === "Female only" ? "Female-only ward" : "Male-only ward";
   switch (failed?.gate) {
     case "age":
@@ -83,8 +84,13 @@ export function wardRefusalWords(
       return "Forensic ward, not offered";
     case "security":
       return "No locked bed free";
+    // #835: the bay-mix gate also fails with no bed ready, which the ready count already says, and
+    // with no female or male answer recorded, when "no same-sex patients" is not the reason.
     case "sex_mix":
-      return "No same-sex patients and only one bed ready";
+      if (gates.some((gate) => gate.gate === "allocatable_bed" && !gate.pass)) return undefined;
+      return mixSexOf(ward.gender, ward.sex) === undefined
+        ? "Gender not recorded as female or male; needs more than one bed ready"
+        : "No same-sex patients and only one bed ready";
     // Codex review of #504: a stale count is not "Bed ready". The confirmed time beside it says when.
     case "capacity_freshness":
       return "Count out of date";
@@ -290,7 +296,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
             <div className={styles.wardTableHead} aria-hidden="true">
               <span>Ward</span>
               <span>Ready</span>
-              <span>Waitlist</span>
+              <span>Waiting list</span>
             </div>
             <div role="list" aria-label="Placement Destination Options">
               {realTimeMatch.sortedUnits.map((unit, index) => {
@@ -384,7 +390,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                     <span className={styles.wardFigure}>
                       <strong className={styles.mono}>{waiting}</strong>
                       {/* v10 phone: the card has no column head, so the figure names itself. */}
-                      <small className={styles.wardFigureName}>waitlist</small>
+                      <small className={styles.wardFigureName}>waiting list</small>
                     </span>
                   </label>
                 );

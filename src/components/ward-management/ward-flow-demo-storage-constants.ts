@@ -23,6 +23,9 @@ export const RESTORED_NOTICE_PREFIX = "Restored the last successful save from";
 export const OPEN_ITEMS_CLOSED_NOTICE =
   "Anything you had open was closed when the save loaded. Open it again to carry on.";
 
+/** NB-08: a new tab that takes the day from a tab already open says so, once. */
+export const BROUGHT_UP_TO_DATE_NOTICE = "Brought up to date from another open tab.";
+
 export const STORAGE_UNAVAILABLE =
   "Demo storage is unavailable. Changes stay in memory and may be lost when this page closes.";
 

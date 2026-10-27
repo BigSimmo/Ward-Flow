@@ -47,6 +47,8 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useDeviceChoice } from "@/components/ward-management/shell/use-device-choice";
 import type { HealthService, MovementStage } from "@/components/ward-management/ward-model";
+import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabulary";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
@@ -80,6 +82,8 @@ import styles from "./ed-index.module.css";
 
 type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "past-target" | "waiting" | "clear";
+const SERVICE_FILTERS: readonly ServiceFilter[] = ["all", ...HEALTH_SERVICES];
+const STATUS_FILTERS: readonly StatusFilter[] = ["all", "past-target", "waiting", "clear"];
 type OrderBy = "longest" | "most" | "service";
 type ViewMode = "cards" | "table" | "lanes";
 const ORDERS: readonly OrderBy[] = ["longest", "most", "service"];
@@ -140,8 +144,9 @@ export function EdIndex() {
   const { now, paused, togglePause } = usePageLive();
   const accessTarget = configuration.edAccessTargetMinutes;
 
-  const [service, setService] = useState<ServiceFilter>("all");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  // DA-15: the filters live in the address, so a reload or a shared link keeps them.
+  const [service, setService] = useAddressTab<ServiceFilter>("service", SERVICE_FILTERS, "all");
+  const [status, setStatus] = useAddressTab<StatusFilter>("status", STATUS_FILTERS, "all");
   // Smart features idea 9: the order and layout last chosen on this device, never a filter.
   const [order, setOrder] = useDeviceChoice("ward_flow_choice_ed_index_order", ORDERS, "longest");
   const [view, setView] = useDeviceChoice("ward_flow_choice_ed_index_view", VIEWS, "cards");
@@ -301,7 +306,7 @@ export function EdIndex() {
     const next = ordered[(index + delta + ordered.length) % ordered.length];
     if (next) setPreviewId(next.summary.ed.id);
   };
-  const pickService = (id: HealthService) => setService((value) => (value === id ? "all" : id));
+  const pickService = (id: HealthService) => setService(service === id ? "all" : id);
 
   const statusControl = (
     <Segmented

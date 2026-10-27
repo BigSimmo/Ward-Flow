@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { CheckCircle2, MapPin, Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
@@ -30,6 +30,7 @@ import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
 export function ReferralPatientStep({
@@ -116,6 +117,28 @@ export function ReferralPatientStep({
   const journeyElsewhere = openJourney && openJourney.siteCode !== originSiteCode ? openJourney : undefined;
   const originName = siteDirectory.find((site) => site.code === originSiteCode)?.emergencyDepartment?.name;
   const someoneChosen = !!patientRecord || unidentified !== null;
+  // H-0731: choosing a person to refer opens their record, which shows its recorded address. In the
+  // signed-in shared workspace the server logs that opening and only then sends the address. Logged
+  // as the patient record: a first referral has no referral or journey for the server to match yet.
+  // A missing address is "not recorded" only once the server has sent this record's detail.
+  const session = useContext(SharedSessionContext);
+  const chosenId = patientRecord?.id;
+  const [addressReply, setAddressReply] = useState<{ id: string; sent: boolean }>();
+  useEffect(() => {
+    if (!chosenId || !session) return;
+    let current = true;
+    void Promise.resolve(session.logRecordView(chosenId, "patient"))
+      .then((sent) => sent === true)
+      .catch(() => false)
+      .then((sent) => {
+        if (current) setAddressReply({ id: chosenId, sent });
+      });
+    return () => {
+      current = false;
+    };
+  }, [session, chosenId]);
+  const addressReplied = addressReply?.id === chosenId ? addressReply : undefined;
+  const addressUnknown = !!session && !!chosenId && !addressReplied?.sent;
   // Audit A-4: the search keeps the typeahead's keys (search/patient-typeahead.tsx). Nothing is
   // highlighted until an Arrow key moves there, and a new list starts with nothing highlighted.
   const [highlight, setHighlight] = useState(-1);
@@ -709,7 +732,11 @@ export function ReferralPatientStep({
           <p className={styles.bodyMeta}>
             {patientRecord?.address
               ? `Recorded address ${patientRecord.address}`
-              : "Address not recorded, search the suburb"}
+              : !addressUnknown
+                ? "Address not recorded, search the suburb"
+                : addressReplied
+                  ? "Address not available, search the suburb"
+                  : "Checking the recorded address"}
           </p>
           <div className={styles.suggestion}>
             <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />

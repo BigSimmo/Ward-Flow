@@ -49,7 +49,7 @@ describe("criteria led discharge tags with the flag on", () => {
 
   it("tags each Bed board cell that has criteria, and the cell still reads the full phrase", () => {
     renderWard();
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const cells = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")).filter(
       (cell) => /Criteria led discharge/.test(cell.getAttribute("aria-label") ?? ""),
     );
@@ -105,7 +105,7 @@ describe("criteria led discharge tags with the flag off", () => {
   it("shows no tag on the Bed board, Home tiles or the Discharges list", () => {
     renderWard();
     expect(screen.queryAllByTestId("ward-criteria-led-tag")).toHaveLength(0);
-    fireEvent.click(screen.getByRole("tab", { name: /^Bed board/ }));
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     expect(screen.queryAllByTestId("ward-criteria-led-tag")).toHaveLength(0);
   });
 

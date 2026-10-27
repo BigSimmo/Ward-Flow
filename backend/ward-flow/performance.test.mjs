@@ -10,6 +10,7 @@ import * as engine from "./dist/engine.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { createWorkspaceStore, storedAuditChanges } from "./postgres.mjs";
 import { planSave } from "./records.mjs";
+import { withoutRecordDetail } from "./record-detail.mjs";
 import { LruCache, gzipSegments, jsonResponse, registerPart, replySegments, segmentBytes } from "./reply-cache.mjs";
 import { listen, processCacheNotice } from "./server.mjs";
 
@@ -164,8 +165,8 @@ test("PS-05: a full read reuses the scoped board per revision and access, and ne
   assert.equal(scoped, 2, "the second read of the same desk reuses its scoped board");
   assert.equal(a1.payload, a2.payload);
   assert.notEqual(a1.payload, b1.payload);
-  assert.deepEqual(a1.payload, engine.scopeWorld(world, first.access, start));
-  assert.deepEqual(b1.payload, engine.scopeWorld(world, second.access, start));
+  assert.deepEqual(a1.payload, withoutRecordDetail(engine.scopeWorld(world, first.access, start)));
+  assert.deepEqual(b1.payload, withoutRecordDetail(engine.scopeWorld(world, second.access, start)));
   assert.notDeepEqual(a1.payload, b1.payload, "two places see different boards");
   // A save moves the revision: the next read scopes again.
   assert.equal((await store.command(actorId, crypto.randomUUID(), a1.revision, refresh(units[0]))).status, 200);

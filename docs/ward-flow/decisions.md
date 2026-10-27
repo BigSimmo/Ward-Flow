@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-27 - added D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-27 - added D-87 (D-36 and D-37 replaced by the real-data gate; they overstated governance readiness) and D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -449,7 +449,7 @@ is inferred.
 - **Decision:** Regional multi-leg patient journeys (e.g., Kimberley, Pilbara, or Goldfields transport involving Royal Flying Doctor Service flights and secondary road ambulances) are formally deferred to the post-pilot regional expansion phase. The current prototype models metropolitan road transport via St John WA Patient Transfer.
 - **Why:** Regional aeromedical transfers involve complex flight logistics, weather delays, and multi-agency coordination that would add excessive complexity to the core metropolitan prototype demonstration.
 
-## D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026)
+## D-36. Affirmation of External Governance & Clinical Safety Hard Gates (6 October 2026) (Replaced by D-87)
 
 - **Date:** 6 October 2026. **Decided by:** Josh (affirming Item 63 ruling of 17 September 2026).
 - **Decision:** The 10 external human, legal, and ethical governance gates remain formally parked hard gates until the prototype progresses toward production readiness and before ANY real patient data or live EHR connection is permitted (per Item 63):
@@ -464,7 +464,7 @@ is inferred.
   - Post-Incident Review (PIR) forensic audit logging standard.
 - **Why:** These activities require external institutional, legal, and regulatory processes that cannot be simulated or solved in code. They are intentionally decoupled from the demonstration prototype per the Prototype Operating Mode.
 
-## D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026)
+## D-37. External Governance Hard Gate Operational Postures & Resolution Roadmap (6 October 2026) (Replaced by D-87)
 
 > **Implementation clarification — 8 October 2026 (evidence, not a new owner ruling):**
 > D-37 records intended standards and internal adoption. It does not constitute
@@ -985,3 +985,15 @@ is inferred.
 - **Decision:** overrides the second approver part of D-80 item 17. An authorised role grant works at once, as D-66 decided, and no second approver is built, including behind a switch. The security stream's branch removed its switched-off second approver build before any PR.
 - **Unchanged:** every D-66 safeguard (sign-in, an authorised granter, no self grants, a place within the granter's scope, a future end date, automatic switch off when unused, revocation, recent sign-in for access changes and the audit trail), and the rest of D-80 item 17.
 - **Why:** Josh does not want a two-person approval step for access grants.
+
+## D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026)
+
+- **Date:** 27 October 2026 (`2026-10-27`). **Decided by:** Josh, in the Ward Flow project chat, approving the governance recommendation (H-0736). His words: "Go ahead with all recommendations please".
+- **Decision:** D-36 and D-37 are replaced. Their wording overstated governance readiness (for example "complete pre-pilot governance readiness", "approved for submission", "tamper-evident" and Azure Entra ID isolation). None of that has been approved by any institution. Azure is retired (D-55).
+- **What applies instead:**
+  - The intended purpose statement in `governance/02-intended-purpose-statement.md` (shared project folder), once signed.
+  - The real-data gate: a sponsor, clinical safety owner and privacy officer named; the privacy impact assessment signed; a privacy review of names shown everywhere (D-83); HSP ICT approval; a hosting review (D-84 covers the prototype only); a private repository; and Supabase Pro with a proven restore. No real data until all are signed.
+  - The Clinical Safety Case and Cultural Safety Charter remain reference material for the prototype, not gates (Prototype Operating Mode).
+- **Also:** the PRODUCTION-READINESS GOV-001 wording on "timer functions" and "countdown alerts" is replaced by the intended purpose statement.
+- **Boundary:** this records no institutional, legal or regulatory approval and authorises no real data, deployment, provider change or spending. D-36 and D-37 text is kept as history.
+- **Why:** untrue readiness claims make reviewers distrust the honest drafts (governance audit 26 October 2026, GV-18).

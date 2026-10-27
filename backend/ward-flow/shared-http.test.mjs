@@ -141,6 +141,16 @@ test("a role removed while a request is in flight answers 403, not a server erro
   assert.match((await response.json()).error, /No Ward Flow role/);
 });
 
+test("a save's answer carries the server's time with its board (TC2-05, H-0764)", async () => {
+  const snapshot = { revision: 2, accessUntil: Date.now() + 60_000 };
+  const { handler } = setup(coordinator, "prototype", {
+    command: async () => ({ status: 200, body: { snapshot } }),
+  });
+  const value = await (await handler(request("/commands", body))).json();
+  assert.equal(value.snapshot.accessUntil, snapshot.accessUntil);
+  assert.ok(Math.abs(value.serverTime - Date.now()) < 5_000);
+});
+
 test("clinical labels and invalid command envelopes are rejected", async () => {
   const { calls, handler } = setup();
   for (const invalid of [
@@ -453,6 +463,36 @@ test("access and break glass routes check their fields and pass the store's answ
     assert.equal((await handler(request(path, data))).status, 400, path);
   assert.equal((await handler(request("/access/grant"))).status, 405);
   assert.equal(seen.length, 5);
+});
+
+test("a role's length in minutes is turned into an end date on the server's clock (TC2-04, H-0763)", async () => {
+  const seen = [];
+  const answer =
+    (name) =>
+    async (...args) => {
+      seen.push([name, ...args]);
+      return { status: 200, body: { name } };
+    };
+  const { handler } = setup(coordinator, "prototype", {
+    grantAccess: answer("grant"),
+    decideRequest: answer("decide"),
+  });
+  const grant = { actorId: other, role: "ward", scope: { kind: "ward", unitIds: ["unit-a"] }, expiresInMinutes: 60 };
+  const before = Date.now();
+  assert.equal((await handler(request("/access/grant", grant))).status, 200);
+  const requestId = "77777777-7777-4777-8777-777777777777";
+  assert.equal(
+    (await handler(request("/access/decide", { requestId, decision: "approved", expiresInMinutes: 90 }))).status,
+    200,
+  );
+  const after = Date.now();
+  const granted = seen[0][2].expiresAt.getTime();
+  assert.ok(granted >= before + 60 * 60_000 && granted <= after + 60 * 60_000);
+  const approved = seen[1][4].getTime();
+  assert.ok(approved >= before + 90 * 60_000 && approved <= after + 90 * 60_000);
+  for (const expiresInMinutes of [0, -5, 1.5, "60"])
+    assert.equal((await handler(request("/access/grant", { ...grant, expiresInMinutes }))).status, 400);
+  assert.equal(seen.length, 2);
 });
 
 test("the powerful steps need a recent sign-in, and say so with their own code", async () => {
@@ -770,6 +810,8 @@ test("an older store without session identity omits receipt scope even with fini
   const value = await response.json();
   assert.equal(Number.isFinite(value.accessUntil), true);
   assert.equal(Object.hasOwn(value, "receiptScope"), false);
+  // TC2-05 (H-0764): the answer carries the server's own time, so the app reads the deadline on it.
+  assert.ok(Math.abs(value.serverTime - Date.now()) < 5_000);
 });
 
 async function workspaceWithSessionIdentity(identity) {

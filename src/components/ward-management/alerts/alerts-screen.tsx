@@ -934,11 +934,14 @@ function AlertsWorkspace() {
         "None firing now. The conditions checked are named in the header.",
         urgencyLink(0),
       )}
-      {access.role === "coordinator" ? (
+      {access.role === "coordinator" || access.role === "bed_manager" ? (
         <ForecastAlertsGroup
           now={now}
           className={styles.group}
-          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} aside="coordinators only" />}
+          readOnly={access.role === "bed_manager"}
+          head={(count) => (
+            <GroupHead tone="warning" label="Forecast" count={count} aside="coordinators, bed managers" />
+          )}
         />
       ) : null}
       {groupSection(

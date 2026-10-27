@@ -260,7 +260,7 @@ export function PriorityQueue({
             className={styles.noShrink}
           >
             {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). */}
-            Form due
+            Form due (as written)
           </FilterChip>
         ) : null}
       </div>
