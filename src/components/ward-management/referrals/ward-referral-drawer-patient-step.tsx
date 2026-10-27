@@ -526,6 +526,19 @@ export function ReferralPatientStep({
                   onChange={(e) => setUnidentified(e.target.value)}
                 />
               </Field>
+              <div className={styles.confirmRow}>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => {
+                    setUnidentified(null);
+                    setIsSearchOpen(true);
+                    requestAnimationFrame(() => searchInputRef.current?.focus());
+                  }}
+                >
+                  Find a patient instead
+                </button>
+              </div>
             </div>
           )}
 
