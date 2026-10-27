@@ -535,7 +535,8 @@ export function ContactFields({
             data-invalid={error ? true : undefined}
           >
             <div className={styles.fieldLabelRow}>
-              <label htmlFor={`${id}-${key}`} className={styles.required}>
+              {/* Finding 44 (Josh, 27 Oct 2026): the email is asked but never blocks a send. */}
+              <label htmlFor={`${id}-${key}`} className={key === "email" ? undefined : styles.required}>
                 {label}
               </label>
             </div>
@@ -543,7 +544,7 @@ export function ContactFields({
               id={`${id}-${key}`}
               className={styles.fieldInput}
               type={type}
-              required
+              required={key !== "email"}
               placeholder={placeholder}
               aria-invalid={error ? true : undefined}
               aria-describedby={error ? `${id}-${key}-error` : undefined}

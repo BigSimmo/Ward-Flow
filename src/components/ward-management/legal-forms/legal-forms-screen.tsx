@@ -490,7 +490,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
         const movementId = selected.id;
         runRecorded(
           () => {
-            const written = { movementId, formCode, writtenAt, region, ageBand };
+            const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
             const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
             // The panel's Change form closes only once the engine has accepted the time.
             const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
@@ -1128,11 +1128,12 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           now={now}
           recordUnavailable={sheetReason}
           targetMovement={recordOnOpen ? initialMovementId : undefined}
-          onSaveForm={({ movementId, formCode, writtenAt }) => {
+          onSaveForm={({ movementId, formCode, writtenAt, region }) => {
             if (!writtenGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
             const movement = recordable.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
-            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", { movementId, formCode, writtenAt });
+            const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}) };
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {

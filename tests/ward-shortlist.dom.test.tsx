@@ -5,7 +5,7 @@ import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
-import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
+import { ESCALATION_CONTACTS, URGENT_MARK_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { URGENCY_LEVELS } from "@/components/ward-management/ward-model";
@@ -78,10 +78,11 @@ describe("ShortlistPanel escalation contact", () => {
     expect(select.tagName).toBe("SELECT");
     expect(select).toBeInstanceOf(HTMLSelectElement);
 
+    // Finding 110: a blank "Choose who is being contacted" option first, then the fixed list.
     const optionValues = Array.from((select as HTMLSelectElement).options).map((option) => option.value);
-    expect(optionValues).toEqual([...ESCALATION_CONTACTS]);
+    expect(optionValues).toEqual(["", ...ESCALATION_CONTACTS]);
     const optionText = Array.from((select as HTMLSelectElement).options).map((option) => option.textContent);
-    expect(optionText).toEqual([...ESCALATION_CONTACTS]);
+    expect(optionText).toEqual(["Choose who is being contacted", ...ESCALATION_CONTACTS]);
 
     // The decisive proof this task exists for: no textarea and no free-text input anywhere in
     // the escalation form, scoped so the unrelated override-reason textarea elsewhere on this
@@ -122,16 +123,26 @@ describe("ShortlistPanel escalation contact", () => {
     expect(screen.getByTestId("ward-shortlist-escalation-toggle").textContent).toBe("Update escalation");
   });
 
-  it("defaults the picker to the first ESCALATION_CONTACTS entry and never submits an empty value", () => {
+  // Finding 110 (27 Oct 2026): the picker opens blank, so nothing is recorded until a contact is chosen.
+  it("opens the picker blank and keeps Record escalation unavailable, with its reason, until a contact is chosen", () => {
     renderShortlist();
     fireEvent.click(screen.getByTestId("ward-shortlist-escalation-toggle"));
 
     const select = screen.getByTestId("ward-shortlist-escalation-contact") as HTMLSelectElement;
-    expect(select.value).toBe(ESCALATION_CONTACTS[0]);
+    expect(select.value).toBe("");
 
-    fireEvent.click(screen.getByTestId("ward-shortlist-escalation-submit"));
-    const record = screen.getByTestId("ward-shortlist-escalation-record");
-    expect(record.textContent).toContain(`contact: "${ESCALATION_CONTACTS[0]}"`);
+    const submit = screen.getByTestId("ward-shortlist-escalation-submit");
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Choose who is being contacted first")).toBeInTheDocument();
+    fireEvent.click(submit);
+    expect(screen.queryByTestId("ward-shortlist-escalation-record")).toBeNull();
+
+    fireEvent.change(select, { target: { value: ESCALATION_CONTACTS[0] } });
+    expect(submit).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(submit);
+    expect(screen.getByTestId("ward-shortlist-escalation-record").textContent).toContain(
+      `contact: "${ESCALATION_CONTACTS[0]}"`,
+    );
   });
 });
 
@@ -153,17 +164,46 @@ describe("ShortlistPanel urgency picker", () => {
       `Urgency tier for ${seedPatientName(TARGET_MOVEMENT_ID)}`,
     ) as HTMLSelectElement;
 
+    // Finding 156 (Josh, 27 Oct 2026): one control, with Urgent above tier 1.
     const optionText = [...picker.options].map((option) => option.textContent);
-    expect(optionText).toEqual(URGENCY_LEVELS.map((level) => urgencyTierLabel(level)));
+    expect(optionText).toEqual(["Urgent · ahead of tier 1", ...URGENCY_LEVELS.map((level) => urgencyTierLabel(level))]);
 
     // The VALUE stays the bare tier: the reducer and every value-reading test are unchanged.
     const optionValues = [...picker.options].map((option) => option.value);
-    expect(optionValues).toEqual(URGENCY_LEVELS.map((level) => String(level)));
+    expect(optionValues).toEqual(["urgent", ...URGENCY_LEVELS.map((level) => String(level))]);
 
     // Non-vacuity: the labels really do carry a direction, so a `urgencyTierLabel` that returned
     // the bare tier again would fail here even though the first assertion still matched.
     expect(optionText).toContain("Tier 1 · most urgent");
     expect(optionText).toContain("Tier 3 · least urgent");
+  });
+
+  // Finding 156: choosing Urgent flags the patient, and asks why (the flag's own reason list).
+  it("flags the patient urgent from the same control once a reason is chosen", () => {
+    renderShortlist();
+    fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
+    const picker = screen.getByLabelText(
+      `Urgency tier for ${seedPatientName(TARGET_MOVEMENT_ID)}`,
+    ) as HTMLSelectElement;
+    fireEvent.change(picker, { target: { value: "urgent" } });
+    const submit = screen.getByRole("button", { name: "Record urgency change" });
+    expect(submit).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Choose why this is urgent first")).toBeInTheDocument();
+    const reason = screen.getByLabelText("Why is this urgent?") as HTMLSelectElement;
+    fireEvent.change(reason, { target: { value: URGENT_MARK_REASONS[0] } });
+    expect(submit).not.toHaveAttribute("aria-disabled");
+    expect(document.body.textContent).not.toContain("Flagged urgent");
+    fireEvent.click(submit);
+    // The badge reads "Flagged" with " urgent" in a screen reader span.
+    expect(document.body.textContent).toContain("Flagged urgent");
+  });
+
+  // Finding 15: a tier change no longer needs a reason.
+  it("records a tier change with no reason chosen", () => {
+    renderShortlist();
+    fireEvent.click(screen.getByTestId("ward-change-urgency-toggle"));
+    const submit = screen.getByRole("button", { name: "Record urgency change" });
+    expect(submit).not.toHaveAttribute("aria-disabled");
   });
 });
 
@@ -420,6 +460,10 @@ describe("ShortlistPanel: live referrals are pre-selected and locked (RA1, item 
     fireEvent.click(screen.getByTestId(`ward-shortlist-withdraw-toggle-${UNIT_B}`));
     const submit = screen.getByTestId(`ward-shortlist-withdraw-submit-${UNIT_B}`);
     expect(submit.getAttribute("aria-disabled"), "no reason chosen yet").toBe("true");
+    // Finding 117: the toggle asks, and the submit names the ward it withdraws from.
+    expect(screen.getByTestId(`ward-shortlist-withdraw-toggle-${UNIT_B}`).textContent).toBe("Withdraw this request?");
+    expect(submit.textContent).toMatch(/^Withdraw request to /u);
+    expect(screen.getByText("Choose a reason to withdraw this request")).toBeInTheDocument();
 
     const select = screen.getByTestId(`ward-shortlist-withdraw-reason-${UNIT_B}`) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "bed_no_longer_available" } });

@@ -27,6 +27,7 @@ import { wardMovements } from "@/components/ward-management/ward-movements";
 import { clock } from "@/components/ward-management/patients/patient-now-records";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 
@@ -197,7 +198,10 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(badge).toHaveTextContent(/transport booked/i);
 
     const cadNumber = within(section).getByTestId("ward-patient-cad-number");
-    expect(cadNumber).toHaveTextContent(movement.transport!.cadNumber ?? "Not recorded");
+    // CAD to follow (Josh, 27 Oct 2026): a dispatched job booked without a CAD says so.
+    expect(cadNumber).toHaveTextContent(
+      movement.transport!.cadNumber ?? (cadNumberToFollow(movement.transport!) ? CAD_TO_FOLLOW : "Not recorded"),
+    );
 
     const eta = within(section).getByTestId("ward-patient-transport-eta");
     expect(eta).toHaveTextContent(

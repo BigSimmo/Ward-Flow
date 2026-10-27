@@ -2,7 +2,9 @@
 
 import {
   clearanceChecklistWords,
+  referralCatchmentWords,
   referralNeedsWords,
+  referrerContactWords,
   transportLabel,
   type ReferralIntakeDetails,
 } from "./referral-submission";
@@ -20,7 +22,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
       <div className={styles.confirmationFacts}>
         <span>
           <strong>Catchment</strong>
-          {intake.catchment.teamName} · confirmed{intake.catchment.service ? ` · ${intake.catchment.service}` : ""}
+          {referralCatchmentWords(intake.catchment)}
         </span>
         <span>
           <strong>Medical clearance</strong>
@@ -44,7 +46,7 @@ export function ReferralIntakeSummary({ intake }: { intake?: ReferralIntakeDetai
         </span>
         <span>
           <strong>Contact</strong>
-          {intake.referrer.phone} · {intake.referrer.email}
+          {referrerContactWords(intake.referrer)}
         </span>
         <span>
           <strong>Location / service</strong>

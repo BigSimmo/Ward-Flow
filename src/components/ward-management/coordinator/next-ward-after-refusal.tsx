@@ -21,7 +21,6 @@ export function NextWardAfterRefusal({
   units,
   now,
   chosenUnitIds,
-  slotsLeft,
   onChoose,
 }: {
   movement: Movement;
@@ -29,8 +28,6 @@ export function NextWardAfterRefusal({
   now: Instant;
   /** Wards already picked in the shortlist's referral selection. */
   chosenUnitIds: readonly string[];
-  /** How many more wards the referral can take before the parallel referral limit. */
-  slotsLeft: number;
   onChoose: (unitId: string) => void;
 }) {
   const next = deriveNextWardsAfterRefusal(movement, units, now);
@@ -70,8 +67,8 @@ export function NextWardAfterRefusal({
                     size="sm"
                     variant={chosen ? "tint" : "sec"}
                     aria-pressed={chosen}
-                    disabledReason={!chosen && slotsLeft <= 0 ? "The referral limit is reached." : undefined}
-                    reasonDisplay="tooltip"
+                    // Finding 188 (Josh, 27 Oct 2026): past the usual limit is a warning on the
+                    // shortlist footer, never a block here.
                     onClick={() => onChoose(candidate.unit.id)}
                   >
                     {chosen ? "Added to referral" : "Add to referral"}

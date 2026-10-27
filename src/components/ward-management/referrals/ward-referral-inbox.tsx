@@ -130,6 +130,12 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
               : "Patient story not recorded")}
         </p>
         <ReferralIntakeSummary intake={entry.intake} />
+        {/* Finding 80: a refused answer shows on the card that was answered, not atop the inbox. */}
+        {lastError && attempt?.id === entry.id ? (
+          <p className={styles.flowError} role="alert" data-testid={`ward-referral-inbox-refusal-${entry.id}`}>
+            {lastError}
+          </p>
+        ) : null}
         {live && (
           <div className={styles.answerOptions}>
             {isCoordinator && needsGenderPlacement ? (
@@ -303,11 +309,6 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
   return (
     <section className={styles.refCard} aria-label="Ward referral inbox">
       <h2 className={styles.refCardTitle}>Referral inbox · {waiting.length} waiting</h2>
-      {lastError && (
-        <p className={styles.flowError} role="alert">
-          {lastError}
-        </p>
-      )}
       {waiting.map(renderEntry)}
       {answered.length > 0 && (
         <button

@@ -290,6 +290,11 @@ const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> =
   { file: "discharges/discharge-board.tsx", name: "CHART_DAYS_AHEAD", why: "chart window" },
   { file: "legal-forms/legal-forms-screen.tsx", name: "CHART_WINDOW_MINUTES", why: "chart window" },
   { file: "on-call/on-call-checks.ts", name: "CHECK_DUE_DAYS", why: "when a directory entry is re-checked" },
+  {
+    file: "ward/ward-leave-paper-authority.tsx",
+    name: "OLD_PAPER_DAYS",
+    why: "when an old leave paper gets a check-it-is-current warning; never refuses",
+  },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_MAX_STAY_DAYS", why: "input bound on a typed date" },
   { file: "ward-admissions.ts", name: "PLANNED_ADMISSION_WINDOW_DAYS", why: "how far ahead the planned list looks" },
   { file: "ward-bed-availability.ts", name: "MIDDAY_MINUTES", why: "a day-part bin" },
