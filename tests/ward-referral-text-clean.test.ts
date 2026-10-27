@@ -103,7 +103,13 @@ describe("P148 drawer gates check the cleaned value (review PRRT_kwDOUudBMM6wvN0
   it("accepts a pasted phone number carrying bidi controls once cleaned, and keeps every contact key", async () => {
     const { cleanReferralContact } = await import("../src/components/ward-management/referrals/referral-text-clean");
     const { referralContactError } = await import("../src/components/ward-management/referrals/referral-submission");
-    const dirty = { name: " Dr A\u202E ", email: "", phone: "\u202A08 9346 3333\u202C", role: "Registrar", location: "ED" };
+    const dirty = {
+      name: " Dr A\u202E ",
+      email: "",
+      phone: "\u202A08 9346 3333\u202C",
+      role: "Registrar",
+      location: "ED",
+    };
     expect(referralContactError(dirty)).not.toBeNull();
     const cleaned = cleanReferralContact(dirty);
     expect(cleaned).toEqual({ name: "Dr A", email: "", phone: "08 9346 3333", role: "Registrar", location: "ED" });
