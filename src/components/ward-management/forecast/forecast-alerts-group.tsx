@@ -46,6 +46,11 @@ function alertKey(alert: ForecastAlert): string {
   return "worse";
 }
 
+/** W-10 (fresh audit 26 Oct 2026): every alert line names its unit, so "3" is never read as hours. */
+function bedsWord(count: number): string {
+  return `${count} ${count === 1 ? "bed" : "beds"}`;
+}
+
 function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }) {
   const row = (title: string, body: string, href: string, action: string) => (
     <li className={styles.alertRow} data-testid={`ward-alerts-forecast-${alertKey(alert)}`}>
@@ -62,7 +67,7 @@ function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }
     case "kind_short":
       return row(
         `${BED_KIND_LABEL[alert.id]} short tomorrow`,
-        `Likely ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${alert.threshold} or more short (Settings).`,
+        `Likely ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${bedsWord(alert.threshold)} or more short (Settings).`,
         "/ward-flow/capacity",
         "See forecast",
       );
@@ -71,14 +76,14 @@ function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }
         `May pass the ED access target at ${forecastEdName(alert.edId)}`,
         `${alert.people} ${alert.people === 1 ? "person passes" : "people pass"} the access target before a suitable bed is due, first in ${splitDuration(alert.firstMinutesLeft)}.${
           alert.alreadyOver > 0 ? ` ${alert.alreadyOver} already past it.` : ""
-        } Alert set at ${alert.threshold % 60 === 0 ? `${alert.threshold / 60} hours` : splitDuration(alert.threshold)} before the target (Settings).`,
+        } Alert set at ${alert.threshold % 60 === 0 ? `${alert.threshold / 60} ${alert.threshold === 60 ? "hour" : "hours"}` : splitDuration(alert.threshold)} before the target (Settings).`,
         edHref(alert.edId),
         "See who",
       );
     case "forecast_worse":
       return row(
         "Forecast got worse",
-        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Alert set at a drop of ${alert.threshold} or more beds (Settings).`,
+        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Alert set at a drop of ${bedsWord(alert.threshold)} or more (Settings).`,
         "/ward-flow/capacity",
         "See forecast",
       );
