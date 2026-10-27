@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   SharedWorkspaceClient,
   type SharedSnapshot,
@@ -85,7 +85,8 @@ describe("record detail from a logged opening", () => {
       // Another desk: the server's access context names the account, desk and place.
       accessContext = "b".repeat(64);
       client.switchRole();
-      await client.refresh();
+      await vi.waitFor(() => expect(view?.snapshot?.accessContext).toBe("b".repeat(64)));
+      expect(shown()).toBeDefined();
       expect(shown()?.address).toBeUndefined();
     } finally {
       client.dispose();

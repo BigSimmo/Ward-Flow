@@ -29,6 +29,9 @@ export function withoutRecordDetail(world) {
   };
 }
 
+/** The longest detail field the app takes (`parseRecordDetail`); a longer one is left out. */
+const DETAIL_MAX_LENGTH = 500;
+
 /**
  * One patient's detail fields, as recorded. Empty when none is recorded.
  * @param {any} patient
@@ -37,7 +40,10 @@ export function withoutRecordDetail(world) {
 export function recordDetailOf(patient) {
   /** @type {Record<string, string>} */
   const detail = {};
-  for (const field of RECORD_DETAIL_FIELDS) if (typeof patient?.[field] === "string") detail[field] = patient[field];
+  for (const field of RECORD_DETAIL_FIELDS) {
+    const value = patient?.[field];
+    if (typeof value === "string" && value.length <= DETAIL_MAX_LENGTH) detail[field] = value;
+  }
   return detail;
 }
 

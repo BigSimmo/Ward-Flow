@@ -35,6 +35,10 @@ test("a board is sent without the record detail, and the world it came from is u
 test("the detail of one patient names only the detail fields it holds", () => {
   assert.deepEqual(recordDetailOf({ id: "PT-SYN-1", address: "No. 7", givenName: "Ada" }), { address: "No. 7" });
   assert.deepEqual(recordDetailOf(undefined), {});
+  // The app refuses a detail with a field over 500 characters, so the server leaves that field out.
+  assert.deepEqual(recordDetailOf({ address: "x".repeat(501), interpreterLanguage: "Greek" }), {
+    interpreterLanguage: "Greek",
+  });
   assert.deepEqual([...RECORD_DETAIL_FIELDS], ["address", "interpreterLanguage"]);
 });
 

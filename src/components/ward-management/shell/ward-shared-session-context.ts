@@ -13,8 +13,11 @@ export type SharedSession = {
    * With a `reason`, only this tab signs out and the sign-in screen says why.
    */
   signOut: (reason?: string) => void;
-  /** Tells the server this desk opened a patient's record (review item 9). Best effort. */
-  logRecordView: (patientId: string, surface: RecordViewSurface) => void;
+  /**
+   * Tells the server this desk opened a patient's record (review item 9). Best effort. Settles once
+   * the server's reply, and any record detail it sent (H-0731), has been taken.
+   */
+  logRecordView: (patientId: string, surface: RecordViewSurface) => Promise<void> | void;
 };
 
 export const SharedSessionContext = createContext<SharedSession | null>(null);
