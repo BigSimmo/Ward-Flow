@@ -1,4 +1,4 @@
-import { endFrontDoorPass } from "@/components/front-door/front-door-pass-client";
+import { endFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
 import { clearSessionDrafts } from "./ward-session-drafts";
 
 /**

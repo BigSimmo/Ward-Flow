@@ -5,7 +5,7 @@ import {
   WardSessionEndingNotice,
   WardSharedAccess,
 } from "../src/components/ward-management/ward-shared-access";
-import { SIGNED_OUT_NOTICE } from "../src/components/front-door/front-door-notice";
+import { SIGNED_OUT_NOTICE } from "../src/components/ward-management/front-door/front-door-notice";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { SharedWorkspaceClient } from "../src/components/ward-management/ward-shared-client";
 import { releasePhonePush } from "../src/components/ward-management/shell/ward-phone-push";

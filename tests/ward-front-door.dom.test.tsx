@@ -1,8 +1,8 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { FrontDoor, publicDemoUrl } from "../src/components/front-door/front-door";
-import { SIGNED_OUT_NOTICE, frontDoorNotice } from "../src/components/front-door/front-door-notice";
+import { FrontDoor, publicDemoUrl } from "../src/components/ward-management/front-door/front-door";
+import { SIGNED_OUT_NOTICE, frontDoorNotice } from "../src/components/ward-management/front-door/front-door-notice";
 import type { WardCredentialForm } from "../src/components/ward-management/use-ward-supabase-shared";
 
 function form(overrides: Partial<WardCredentialForm> = {}): WardCredentialForm {

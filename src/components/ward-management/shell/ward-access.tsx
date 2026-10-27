@@ -17,7 +17,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Button, buttonClass, useModalFocus } from "@/components/wf";
-import { IdleLockScreen, IdleWarningSheet } from "@/components/front-door/lock-cards-lazy";
+import { IdleLockScreen, IdleWarningSheet } from "@/components/ward-management/front-door/lock-cards-lazy";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";

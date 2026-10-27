@@ -35,8 +35,8 @@ let loadedClient: typeof SharedWorkspaceClient | null = null;
 import { WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-auth-link";
 import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
 import { createWardAuth, tabStorage } from "./ward-auth-session";
-import { renewFrontDoorPass } from "@/components/front-door/front-door-pass-client";
-import { SIGNED_OUT_NOTICE } from "@/components/front-door/front-door-notice";
+import { renewFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
+import { SIGNED_OUT_NOTICE } from "@/components/ward-management/front-door/front-door-notice";
 
 /**
  * At sign-out: revoke this account's phone alerts for this device, so the next person at a shared

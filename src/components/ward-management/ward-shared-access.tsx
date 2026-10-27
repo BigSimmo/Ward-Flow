@@ -19,7 +19,11 @@ import { usePathname } from "next/navigation";
 import type { SharedChangeResult, SharedView, SharedWorkspaceClient, WardCommandDispatch } from "./ward-shared-client";
 import { PhonePushAccessContext, type PhonePushAccess, type PhonePushApi } from "./shell/ward-phone-push";
 import { useWardSupabaseShared, type WardCredentialForm } from "./use-ward-supabase-shared";
-import { FrontDoor, FrontDoorStatus, FrontDoorStatusButton } from "@/components/front-door/front-door-lazy";
+import {
+  FrontDoor,
+  FrontDoorStatus,
+  FrontDoorStatusButton,
+} from "@/components/ward-management/front-door/front-door-lazy";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
 import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import {

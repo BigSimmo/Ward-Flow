@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { FrontDoorPage } from "@/components/front-door/front-door-page";
+import { FrontDoorPage } from "@/components/ward-management/front-door/front-door-page";
 import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
 import { frontDoorRequired, safeNextPath } from "@/lib/front-door-pass";
 
