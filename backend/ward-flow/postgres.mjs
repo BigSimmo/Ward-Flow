@@ -23,6 +23,7 @@ import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
 import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 import { forecastHistoryStore } from "./forecast-history.mjs";
+import { deskAuditPage } from "./desk-audit.mjs";
 
 /**
  * One run of `task` at a time. A call while one is out joins it and asks for one more pass, so
@@ -1801,6 +1802,17 @@ export function createWorkspaceStore(
      * The HTTP layer refuses everyone else before this runs.
      */
     auditPage,
+    /** P056: a desk's Activity, the kind and time of changes made inside its own place (desk-audit.mjs). */
+    deskAuditPage: (view, cursor = null) =>
+      deskAuditPage({
+        pool,
+        workspaceId,
+        engine,
+        view,
+        cursor,
+        minimumVersion: ROLE_ACCESS_MIGRATION,
+        readPayload: async () => (await readWorld(pool, "payload"))?.payload,
+      }),
     // Legacy callers keep their array result; HTTP uses auditPage's explicit continuation.
     async audit(view, cursor = null) {
       return (await auditPage(view, cursor)).events;
