@@ -8,7 +8,7 @@ import { useWardSharedSave } from "./shell/ward-shared-save-context";
 import { saveProblem } from "./ward-save-failure";
 import styles from "./ward-shared-save-status.module.css";
 
-const RELOAD_WARNING = "Reloading now will lose this unconfirmed action. Stay on this page and use Retry first.";
+const RELOAD_WARNING = "Not confirmed yet. Do not reload: reloading now would lose this action. Press Retry first.";
 
 /** Keep recovery inside the top overlay's focus trap, without reopening or closing any record. */
 function useRecoveryHost(show: boolean): HTMLElement | null {
@@ -97,7 +97,7 @@ export function WardSharedSaveStatus({
     connection.retry();
   };
   const message = saving
-    ? "Saving shared changes…"
+    ? "Saving shared changes… Keep this page open until the save is confirmed."
     : connection.status === "unavailable"
       ? // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
         connection.boardCurrent
@@ -107,7 +107,7 @@ export function WardSharedSaveStatus({
   const detail: ReactNode = (
     <>
       {connection.error && <span> {connection.error}</span>}
-      {save?.unconfirmedSave && <p>{RELOAD_WARNING}</p>}
+      {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
     </>
   );
   return (
@@ -126,7 +126,7 @@ export function WardSharedSaveStatus({
           {message}
           {connection.error && <span> {connection.error}</span>}
         </span>
-        {save?.unconfirmedSave && <p>{RELOAD_WARNING}</p>}
+        {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
         {problem && (
           <span className={styles.end}>
             {connection.status === "unavailable" && (

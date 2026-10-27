@@ -78,7 +78,7 @@ describe("shared recovery within an open sheet", () => {
     const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
     const recovery = await within(dialog).findByTestId("ward-shared-recovery");
     expect(screen.getAllByRole("status")).toHaveLength(1);
-    expect(within(recovery).getByText(/Reloading now will lose/)).toBeVisible();
+    expect(within(recovery).getByText(/Do not reload: reloading now would lose this action/)).toBeVisible();
     expect(within(dialog).getByRole("textbox", { name: "Synthetic choice" })).toHaveValue("retained choice");
     expect(within(dialog).getByRole("button", { name: "Confirm draft" })).toBeDisabled();
     fireEvent.click(within(recovery).getByRole("button", { name: "Retry" }));
@@ -96,7 +96,9 @@ describe("shared recovery within an open sheet", () => {
     retry.focus();
     expect(retry).toHaveFocus();
     view.rerender(<Harness shared={{ ...shared, status: "saving", error: null }} />);
-    expect(within(dialog).getByText("Saving shared changes…")).toBeVisible();
+    expect(
+      within(dialog).getByText("Saving shared changes… Keep this page open until the save is confirmed."),
+    ).toBeVisible();
     expect(within(dialog).queryByRole("button", { name: "Retry" })).toBeNull();
     view.rerender(<Harness shared={{ ...shared, status: "ready", error: null, unconfirmedSave: false }} />);
     await waitFor(() => expect(within(dialog).queryByTestId("ward-shared-recovery")).toBeNull());
@@ -138,7 +140,7 @@ describe("shared recovery within an open sheet", () => {
     const dialog = await screen.findByRole("dialog", { name: "Synthetic record" });
     const recovery = await within(dialog).findByTestId("ward-shared-recovery");
     expect(within(recovery).getByRole("button", { name: "Retry" })).toBeVisible();
-    expect(within(recovery).queryByText(/Reloading now will lose/)).toBeNull();
+    expect(within(recovery).queryByText(/Do not reload: reloading now would lose this action/)).toBeNull();
   });
 
   it("returns recovery to the page when a sheet closes and removes owned hosts on unmount", async () => {
