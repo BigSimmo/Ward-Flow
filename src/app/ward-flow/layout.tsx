@@ -39,9 +39,9 @@ import {
 } from "@/components/ward-management/shell/ward-access";
 import { WardRowDensity } from "@/components/ward-management/settings/row-density";
 import { WardGround } from "@/components/ward-management/ward-shell";
-import { WardAccessFirstPaintHold } from "@/components/ward-management/shell/ward-access-hold";
+import { WardDeskPendingClear } from "@/components/ward-management/shell/ward-access-hold";
+import { WARD_DESK_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-desk-early";
 
-import WardFlowLoading from "./loading";
 import styles from "./ward-flow-layout.module.css";
 
 /**
@@ -158,6 +158,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               suppressHydrationWarning
               dangerouslySetInnerHTML={{ __html: WARD_EARLY_TAP_SCRIPT }}
             />
+            {/* H-0111: marks a first load whose stored desk is not the coordinator's (ward-desk-early.ts). */}
+            <script
+              nonce={nonce}
+              suppressHydrationWarning
+              dangerouslySetInnerHTML={{ __html: WARD_DESK_EARLY_SCRIPT }}
+            />
           </WardFirstDocumentOnly>
           {/* v10 pass 2: one ToastProvider for every ward route, so `useToast` (Undo toasts) works on
           any page without each screen mounting its own region. */}
@@ -203,18 +209,12 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 </div>
                 <WardPhoneDesktopOnly />
                 {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
-                H-0111: on first load the page waits for this device's desk (shell/ward-access-hold.tsx). */}
-                <WardAccessFirstPaintHold
-                  fallback={
-                    <WardGround>
-                      <WardFlowLoading />
-                    </WardGround>
-                  }
-                >
-                  <WardAccessGate>
-                    <WardGround>{children}</WardGround>
-                  </WardAccessGate>
-                </WardAccessFirstPaintHold>
+                H-0111: a stored desk other than the coordinator's keeps the page area hidden on first
+                load until it is drawn for that desk (shell/ward-desk-early.ts). */}
+                <WardAccessGate>
+                  <WardGround>{children}</WardGround>
+                </WardAccessGate>
+                <WardDeskPendingClear />
                 <WardPrintFooter />
                 <WardIdleLock />
                 {/* A11: a browser locked as a TV shows only TV views until someone unlocks it. */}

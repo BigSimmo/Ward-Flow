@@ -1,25 +1,20 @@
 "use client";
 
-import { useSyncExternalStore, type ReactNode } from "react";
-
-import { useWardFeatureFlag } from "./ward-feature-flag-store";
+import { useEffect, useSyncExternalStore } from "react";
+import { WARD_DESK_PENDING_ATTRIBUTE } from "./ward-desk-early";
 
 const never = () => () => {};
 
 /**
- * H-0111 (Josh, 27 Oct 2026): the server cannot know which desk a device has taken, because the desk
- * is kept on the device. So the first page sent, and the browser's first pass over it, were drawn
- * for the whole network, and a desk could briefly see a page that is not part of its role. With
- * role access on, the page area waits for the device's own desk: `fallback` is sent and drawn first,
- * and the page follows straight after. Pages opened later in the app are drawn at once.
+ * H-0111: clears the first-load mark set by `WARD_DESK_EARLY_SCRIPT` once the app has drawn the
+ * device's own desk. The browser's first pass draws the server's page; the pass straight after it
+ * reads the stored desk (here and in the access store together), and this effect runs once that
+ * pass is on screen, so the page area is shown with the right desk's page and never the wrong one.
  */
-export function WardAccessFirstPaintHold({ fallback, children }: { fallback: ReactNode; children: ReactNode }) {
-  const on = useWardFeatureFlag("role-access");
-  // False on the server and in the browser's first pass over the server's page, true after that.
-  const deskKnown = useSyncExternalStore(
-    never,
-    () => true,
-    () => false,
-  );
-  return <>{on && !deskKnown ? fallback : children}</>;
+export function WardDeskPendingClear() {
+  const deskKnown = useSyncExternalStore(never, () => true, () => false);
+  useEffect(() => {
+    if (deskKnown) document.documentElement.removeAttribute(WARD_DESK_PENDING_ATTRIBUTE);
+  }, [deskKnown]);
+  return null;
 }
