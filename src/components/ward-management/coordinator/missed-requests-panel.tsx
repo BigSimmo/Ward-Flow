@@ -75,7 +75,7 @@ export function MissedRequestsPanel() {
         meta={
           items.length === 0
             ? "Nobody missed: every open bed request has a ward asked, and none is doubled"
-            : `${items.length} to confirm: missed or doubled bed requests`
+            : `${items.length} bed requests to check (missed or sent twice)`
         }
         action={
           items.length > 0 ? (
@@ -128,7 +128,7 @@ export function MissedRequestsPanel() {
           {checked ? (
             <>
               <StatusGlyph tone="success" size={9} />
-              {`Checked, all accounted for · ${checked.by} at ${formatInstantWithDay(checked.at, now)}`}
+              {`All checked · ${checked.by} at ${formatInstantWithDay(checked.at, now)}`}
             </>
           ) : (
             <Button
@@ -142,7 +142,7 @@ export function MissedRequestsPanel() {
               }}
               data-testid="ward-missed-check-done"
             >
-              Checked, all accounted for
+              {items.length > 0 ? `Mark all ${items.length} checked` : "Mark all checked"}
             </Button>
           )}
         </p>
