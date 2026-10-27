@@ -39,7 +39,7 @@ const OPEN_MESSAGE = "ward-flow-open";
 // tests/ward-pwa-worker.test.ts recomputes it and fails when the page changes without it.
 const CACHE_PREFIX = "ward-flow-static-";
 const CACHE_VERSION = "v2";
-const OFFLINE_PAGE_REVISION = "8f9a3a72427e";
+const OFFLINE_PAGE_REVISION = "8c1f4b3ebc3a";
 const STATIC_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}-${OFFLINE_PAGE_REVISION}`;
 const OFFLINE_URL = "/ward-flow-offline.html";
 // Best effort: a missing icon must not stop the worker installing, or phone alerts would stop too.

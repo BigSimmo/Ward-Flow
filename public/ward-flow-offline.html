@@ -5,11 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="robots" content="noindex, nofollow" />
     <meta name="color-scheme" content="light dark" />
+    <meta http-equiv="refresh" content="15" />
     <title>Ward Flow needs a connection</title>
     <!--
       Shown by public/ward-flow-push-sw.js only when a Ward Flow page cannot be loaded at all. A
       static file with no data and no script: the strict script-src would block an inline script,
       so Try again is a plain link back to the page that failed.
+      A meta refresh reloads the failed page every 15 seconds (P041), so the page clears by itself
+      once the network is back, with no script.
     -->
     <style>
       :root {
@@ -91,7 +94,7 @@
   <body>
     <main>
       <h1>Ward Flow needs a connection</h1>
-      <p>This page could not load. Check Wi-Fi or mobile data, then try again.</p>
+      <p>This page could not load. Check Wi-Fi or mobile data, then try again. It also tries again by itself every 15 seconds.</p>
       <p><a class="retry" href="">Try again</a></p>
       <p>
         If Ward Flow stays down, work from the latest downtime pack: the printed copy, or the PDF saved to your
