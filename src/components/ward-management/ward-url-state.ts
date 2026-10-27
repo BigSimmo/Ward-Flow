@@ -55,6 +55,9 @@ export function replaceSearchParams(updates: Readonly<Record<string, string | nu
   }
   if (url.href === window.location.href) return;
   window.history.replaceState(window.history.state, "", url.toString());
+  // Announce now, not only from the patched history's microtask, so the tap that chose the view
+  // re-renders in the same batch as its other state (H-0186: Home's list and its cleared selection).
+  window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT));
 }
 
 /** The address's query string (`?a=1`), kept current. Empty on the server and during hydration. */

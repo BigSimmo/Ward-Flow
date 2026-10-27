@@ -73,7 +73,7 @@ describe("community team screen: search and dossier come from the patient record
     typeSearch("UM100010");
     fireEvent.click(screen.getByTestId("ward-community-search-hit-PT-010"));
 
-    const dossier = screen.getByRole("dialog", { name: "Patient dossier: Farah Davenporton · UM100010" });
+    const dossier = screen.getByRole("dialog", { name: "Patient record: Farah Davenporton · UM100010" });
     expect(within(dossier).getAllByText("Not recorded in Ward Flow")).toHaveLength(3);
     for (const invented of ["Dr S. Chen", "Tier 1 Intensive Outreach", "25 Sep 2026", "Form 1A MHA"]) {
       expect(dossier.textContent, invented).not.toContain(invented);

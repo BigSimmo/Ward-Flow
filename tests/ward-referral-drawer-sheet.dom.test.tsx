@@ -14,6 +14,7 @@ import { SETTINGS_DEMO_PROFILE, profileForChromeRole } from "@/components/ward-m
 import { referralIsbarText, referralLetterText } from "@/components/ward-management/referrals/referral-letter";
 import { referralIntakeError } from "@/components/ward-management/referrals/referral-submission";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { TRAVEL_MODES } from "@/components/ward-management/ward-model";
 
 /*
  * Option B of the referral slide-out (Josh, 8 Oct 2026): Refer to first, steps named by the
@@ -77,12 +78,13 @@ describe("referral slide-out, option B", () => {
     expect(referTo().getByRole("button", { name: "Community" })).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("offers no police escort as transport", () => {
+  it("offers the one shared travel list, with nothing chosen (WT-13)", () => {
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
     fireEvent.click(screen.getAllByRole("checkbox")[0]!);
-    const transport = screen.getByLabelText("Transport");
-    expect(within(transport).queryByRole("option", { name: /police/i })).not.toBeInTheDocument();
+    const transport = screen.getByLabelText("Transport") as HTMLSelectElement;
+    expect(transport.value).toBe("");
+    expect([...transport.options].slice(1).map((option) => option.value)).toEqual([...TRAVEL_MODES]);
   });
 
   it("shows a Ready to send summary beside the form", () => {
@@ -416,7 +418,9 @@ describe("owner pins carried over from the retired full-page form", () => {
     const rows = within(screen.getByRole("list", { name: "Placement Destination Options" })).getAllByRole("listitem");
     const text = rows.map((row) => row.textContent ?? "");
     // WF-009's person needs an involuntary bed; SJGS is not set up for one, so it is not "Bed ready".
-    const sjgs = text.find((row) => row.includes("sjgs-adult-secure"))!;
+    // Walk-through WT-27: rows show the ward name and site code, never the internal ward id.
+    expect(text.some((row) => row.includes("sjgs-adult-secure"))).toBe(false);
+    const sjgs = text.find((row) => row.includes("SJGS Adult Secure"))!;
     expect(sjgs).toContain("Not set up for involuntary admissions");
     expect(sjgs).not.toContain("Bed ready");
     // Every count says how fresh it is, and the order is by health service, never by beds or catchment.

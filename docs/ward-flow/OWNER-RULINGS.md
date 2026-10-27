@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**603 rulings/items extracted, across 38 of 44 files.**
+**604 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 346 distinct IDs
+## ID index — 347 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -254,6 +254,7 @@ safe global key across 30 files.
 | `D-83` | `decisions.md`:957 | D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026) |
 | `D-84` | `decisions.md`:967 | D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026) |
 | `D-85` | `decisions.md`:975 | D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026) |
+| `D-86` | `decisions.md`:982 | D-86. No second approver for role grants, at pilot or otherwise (27 October 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -444,7 +445,7 @@ safe global key across 30 files.
 | `R-B-13` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:189 | R-B-13 — Sex now; a human handles divergence |
 | `R-B-14` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:204 | R-B-14 — The two withdrawal labels stay separate |
 | `R-B-15` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:216 | R-B-15 — "Suggested destination" is the right label |
-| `R-B-18` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:226 | R-B-18 — The whole state |
+| `R-B-18` | `archive/dated-notes/owner-rulings-2026-09-04-decision-batch.md`:230 | R-B-18 — The whole state |
 | `R1` | `archive/dated-notes/owner-rulings-2026-09-02-afternoon.md`:8 | R1 — The engine stays advisory |
 | `R2` ⚠️ **25 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/owner-answers-2026-09-17.md`:261 | R2-1 — Recommendation accepted. For a patient on a legal form, "For discharge" from the ED needs the examination outcome recorded first, the same as a community referral. |
@@ -537,13 +538,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 38 files
 
-### `decisions.md` (2026-09-01 – 2026-10-26 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-10-27 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-85 item(s):
+86 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -630,6 +631,7 @@ safe global key across 30 files.
 - `D-83` — line 957, heading: "D-83. Patient names stay in full on every screen, copy and TV; privacy work must not make the app less useful (26 October 2026)"
 - `D-84` — line 967, heading: "D-84. The live app stays on Railway Singapore for now, and there is no server-side TV account yet (26 October 2026)"
 - `D-85` — line 975, heading: "D-85. "Held" only for a bed kept for its own patient; "pulled" for an incoming bed; "held up" for a delay (26 October 2026)"
+- `D-86` — line 982, heading: "D-86. No second approver for role grants, at pilot or otherwise (27 October 2026)"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
@@ -1190,7 +1192,7 @@ safe global key across 30 files.
 - `R-B-13` — line 189, heading: "R-B-13 — Sex now; a human handles divergence"
 - `R-B-14` — line 204, heading: "R-B-14 — The two withdrawal labels stay separate"
 - `R-B-15` — line 216, heading: "R-B-15 — "Suggested destination" is the right label"
-- `R-B-18` — line 226, heading: "R-B-18 — The whole state"
+- `R-B-18` — line 230, heading: "R-B-18 — The whole state"
 
 ### `archive/dated-notes/owner-decisions-to-settle-2026-09-04.md` (2026-09-04)
 

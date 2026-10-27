@@ -374,7 +374,9 @@ describe("a folded group's summary row states its own totals, never the network'
         expect(["Yes", "No"], `${service} has a ward whose MHA cell reads "${ownText(cell)}"`).toContain(ownText(cell));
       }
       const authorised = authorisedCells.filter((cell) => ownText(cell) === "Yes").length;
-      expect(ownText(mha), `${service}'s MHA total`).toBe(`${authorised} of ${wardRows.length} involuntary-capable`);
+      expect(ownText(mha), `${service}'s MHA total`).toBe(
+        `${authorised} of ${wardRows.length} are authorised hospitals`,
+      );
 
       readyByGroup.push(expectedReady);
       if (expectedReady > 0 || expectedOccupied > 0 || (expectedFreeing !== undefined && expectedFreeing > 0)) {

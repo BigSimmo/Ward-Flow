@@ -139,7 +139,7 @@ describe("WardGlobalSearch", () => {
         movements={wardMovements}
         patients={wardPatients}
         units={units}
-        scope="ED mental health"
+        scope="ED clinician"
         onNavigate={onNavigate}
       />,
     );
@@ -148,7 +148,7 @@ describe("WardGlobalSearch", () => {
 
   it("renders the scope chip exactly as given, with no role logic applied to it", () => {
     renderSearch();
-    expect(screen.getByTestId("ward-global-search-scope")).toHaveTextContent("ED mental health");
+    expect(screen.getByTestId("ward-global-search-scope")).toHaveTextContent("ED clinician");
   });
 
   it("opens the start screen on focus: common screens and actions, never a catalogue of records", () => {

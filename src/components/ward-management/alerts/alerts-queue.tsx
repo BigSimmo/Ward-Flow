@@ -40,7 +40,7 @@ export type QueueHandlers = {
 };
 
 const OWNER_SHORT: Record<string, string> = {
-  "Flow coordinator": "You",
+  "Bed coordinator": "You",
   "ED mental health team": "ED team",
   "Ward nurse in charge": "Ward NIC",
 };
@@ -50,8 +50,12 @@ const OWNER_SHORT: Record<string, string> = {
  * named (Maali, RPH Older Adult), never collapsed to "Ward": two chips both reading "Ward" could not
  * be told apart (ops-15, 13 Oct 2026). Ward names are already short.
  */
-export function ownerShort(owner: string): string {
-  return OWNER_SHORT[owner] ?? owner;
+export function ownerShort(owner: string, onCoordinatorDesk = true): string {
+  const short = OWNER_SHORT[owner];
+  // #801: "You" belongs to the coordinator desk alone. The role reads "Bed coordinator" on every
+  // desk, so any other desk sees the coordinator's rows under that name.
+  if (short === undefined || (short === "You" && !onCoordinatorDesk)) return owner;
+  return short;
 }
 
 function groupTone(group: AlertGroup): WfTone {
@@ -195,7 +199,7 @@ export function AlertRow({
         </span>
       </span>
       <span className={styles.cell}>
-        <span className={styles.cellMain}>{ownerShort(entry.owner)}</span>
+        <span className={styles.cellMain}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
         <span className={styles.quiet}>{state ?? entry.owner}</span>
       </span>
       <Age entry={entry} now={now} maxAge={maxAge} />
@@ -296,7 +300,7 @@ export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now
         <span className={styles.phoneRowAge}>
           {entry.raised !== undefined ? minutesText(Math.max(0, now - entry.raised)) : ""}
         </span>
-        <span className={styles.phoneRowOwner}>{ownerShort(entry.owner)}</span>
+        <span className={styles.phoneRowOwner}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
       </span>
     </li>
   );

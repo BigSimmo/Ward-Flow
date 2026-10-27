@@ -15,8 +15,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { cancelTransportBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
-import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import type { TransportBookingSubmission } from "@/components/ward-management/transport/transport-booking-form";
 import {
   BLANK_TRANSPORT_DRAFT,
   type TransportDraftState,
@@ -80,15 +79,7 @@ export function useCommunityScreenOverlayFocus({
 
 /** Transport booking and cancelling, for a bed this team's person holds. Called straight after the
  *  overlay focus hook above, so the two transport dialogs stack above the drawer and dialogs. */
-export function useCommunityScreenTransport({
-  raise,
-  now,
-  teamId,
-}: {
-  raise: WardRaise;
-  now: Instant;
-  teamId: string;
-}) {
+export function useCommunityScreenTransport({ raise, teamId }: { raise: WardRaise; now: Instant; teamId: string }) {
   const [transportBookFor, setTransportBookFor] = useState<string | undefined>(undefined);
   const [transportDraft, setTransportDraft] = useState<TransportDraftState>(BLANK_TRANSPORT_DRAFT);
   const [transportCancelFor, setTransportCancelFor] = useState<string | undefined>(undefined);
@@ -126,29 +117,10 @@ export function useCommunityScreenTransport({
 
   // Audit 24-3 SV-2: each dialog closes only once its save is accepted. The dialog's own
   // `useWardFormSave` keeps the answers and says why when it is refused or not confirmed.
-  function submitBookTransport(movementId: string, save: WardFormSave["submit"]) {
-    const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = transportDraft;
-    const estimatedAt = instantFromEstimatedTimeInputs(estimatedTime, estimatedDay, now);
-    if (
-      provider === undefined ||
-      escortRequired === undefined ||
-      cadNumberProblem(cadNumber) !== undefined ||
-      transportLegalStatus === undefined ||
-      estimatedAt === undefined
-    ) {
-      return;
-    }
+  // A34: the shared booking form hands over a complete booking only.
+  function submitBookTransport(movementId: string, booking: TransportBookingSubmission, save: WardFormSave["submit"]) {
     save(
-      () =>
-        raise("BOOK_TRANSPORT", {
-          movementId,
-          actingPlaceId: teamId,
-          provider,
-          escortRequired,
-          cadNumber: cadNumber.trim(),
-          transportLegalStatus,
-          estimatedAt,
-        }),
+      () => raise("BOOK_TRANSPORT", { movementId, actingPlaceId: teamId, ...booking }),
       () => {
         closeTransportBook();
         if (typeof window !== "undefined") {

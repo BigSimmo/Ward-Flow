@@ -852,7 +852,7 @@ function edMovement(
     urgencyChanges: [],
     overrides: [],
     stage,
-    owner: index % 2 === 0 ? "Flow coordinator" : "ED mental health team",
+    owner: index % 2 === 0 ? "Bed coordinator" : "ED mental health team",
     referredUnitIds: [],
     declines: [],
     blocker: stage === "placement_requested" ? "Awaiting destination response" : "No blocker",
@@ -1042,7 +1042,7 @@ function buildReferral(
       state: "accepted",
       acceptedUnitId: spec.outcome.acceptedBy,
       decidedAt,
-      decidedBy: "Flow coordinator",
+      decidedBy: "Bed coordinator",
     };
   } else if (spec.outcome) {
     const declinedBy = spec.outcome.declinedBy;
@@ -1141,7 +1141,7 @@ function inTransitTransfer(build: NetworkBuilder): void {
     urgencyChanges: [],
     overrides: [],
     stage: "moving",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     referredUnitIds: [],
     acceptedUnitId: "dn-mid-secure",
     acceptedAt: NOW_ANCHOR - 150,

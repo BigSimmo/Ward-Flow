@@ -47,7 +47,7 @@ const WHY_NO_ANSWER: HelpQuestion = {
 const TV_QUESTION: HelpQuestion = {
   question: "How do I put this on the meeting room TV?",
   answer:
-    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back.",
+    "On a desktop, choose Open on TV on Capacity, or On TV on a ward or an ED. The TV is read only, shows full names as the desks do and updates on its own. Use Change screen to pick another meeting, ward or ED, Full screen for the wall screen and Leave TV view to come back. On a TV that stays on the wall, Lock as TV keeps that browser on TV views, even after a reload, until someone presses Unlock.",
 };
 
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
@@ -573,6 +573,12 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "ETA", meaning: "Estimated time of arrival, as quoted by the transport provider or the ward." },
   { term: "MDT", meaning: "Multidisciplinary team, such as the catchment MDT a community team holds." },
   { term: "MHA", meaning: "The Mental Health Act, the WA law the legal forms are named from." },
+  { term: "ATS", meaning: "Australasian Triage Scale category, as recorded at ED triage." },
+  { term: "RAMP", meaning: "Risk Assessment and Management Plan, the WA mental health form." },
+  { term: "PSP", meaning: "Personal support person: a carer, close family member, nominated person or guardian." },
+  { term: "MHAS", meaning: "Mental Health Advocacy Service." },
+  { term: "GP", meaning: "General practitioner." },
+  { term: "BPSD", meaning: "Behavioural and psychological symptoms of dementia." },
   { term: "ED", meaning: "Emergency department." },
   { term: "EDD", meaning: "Expected date of discharge." },
   { term: "UMRN", meaning: "Unit medical record number. Ward Flow uses invented ones only." },

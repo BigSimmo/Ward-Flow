@@ -110,7 +110,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(screen.getByText(/shown in this prototype only; no external notifications are sent\./i)).toBeInTheDocument();
 
     // Active directive card rendered in Alerts view
-    expect(screen.getByLabelText("Active Statewide Directive")).toBeInTheDocument();
+    expect(screen.getByLabelText("Current broadcast")).toBeInTheDocument();
     // Ops-11 (13 Oct 2026): nobody has acknowledged yet, counted against the desks the directive
     // asked: every ward and every ED desk for the all-units target, never the coordinator desk.
     expect(
@@ -153,7 +153,7 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     fireEvent.click(standDownBtn);
 
     // Active directive card disappears and confirmation toast appears
-    expect(screen.queryByLabelText("Active Statewide Directive")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Current broadcast")).not.toBeInTheDocument();
     expect(screen.getByText("Statewide broadcast directive stood down.")).toBeInTheDocument();
 
     // Global banner is no longer rendered

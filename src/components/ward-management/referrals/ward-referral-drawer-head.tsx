@@ -132,6 +132,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
   const {
     view,
     onViewChange,
+    patientAddedInForm,
     sectionId,
     previewOpen,
     confirmationOpen,
@@ -289,7 +290,8 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
               );
             })}
           </div>
-          {offersJump(s) ? (
+          {/* WT-28: nothing is pre-filled for a patient just added in this form, so no banner says so. */}
+          {offersJump(s) && !patientAddedInForm ? (
             <div className={styles.fastTrackBar} data-testid="ward-referral-fast-track">
               <span className={styles.fastTrackText}>
                 ✓ Patient &amp; referral details pre-filled from record — Jump to Clearance / Wards →

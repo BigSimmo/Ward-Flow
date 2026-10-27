@@ -85,14 +85,26 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
     .click();
   await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
   await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
-  await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
-  await page.getByTestId("ward-ed-referral-security").selectOption("Open");
-  await page.getByTestId("ward-ed-referral-sex").selectOption("Male");
-  await page.getByTestId("ward-ed-referral-gender").selectOption("Male");
-  await page.getByTestId("ward-ed-referral-legal-status").selectOption("Voluntary");
-  await page.getByTestId("ward-ed-referral-urgency").selectOption("3");
-  await page.getByTestId("ward-ed-referral-observation").selectOption("general");
+  // Each answer is checked as it is chosen. On the phone project (WebKit) Security once came back
+  // blank straight after Cohort (#830 run 40357923982, H-1019): the form read the select inside a
+  // queued state update, after React had put the select back. Stream R fixed the form; a lost
+  // answer now fails here, on the field that lost it, not as a greyed button two minutes later.
+  const raiseAnswers = [
+    ["ward-ed-referral-cohort", "Adult"],
+    ["ward-ed-referral-security", "Open"],
+    ["ward-ed-referral-sex", "Male"],
+    ["ward-ed-referral-gender", "Male"],
+    ["ward-ed-referral-legal-status", "Voluntary"],
+    ["ward-ed-referral-urgency", "3"],
+    ["ward-ed-referral-observation", "general"],
+  ] as const;
+  for (const [testId, value] of raiseAnswers) {
+    await page.getByTestId(testId).selectOption(value);
+    await expect(page.getByTestId(testId)).toHaveValue(value);
+  }
   await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
+  for (const [testId, value] of raiseAnswers) await expect(page.getByTestId(testId)).toHaveValue(value);
+  await expect(page.getByTestId("ward-ed-referral-submit")).toBeEnabled();
   await expectAccessible(page, testInfo, "ED raise form, filled");
   await page.getByTestId("ward-ed-referral-submit").click();
 

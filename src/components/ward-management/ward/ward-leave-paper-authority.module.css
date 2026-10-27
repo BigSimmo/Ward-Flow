@@ -1,0 +1,51 @@
+/* WT-02: the paper authority an involuntary stay needs before it is recorded as having left. */
+.note,
+.form {
+  flex: 1 1 100%;
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-left: 3px solid var(--wf-warning);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.note p,
+.form p {
+  margin: 0;
+}
+
+.form fieldset {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.form legend {
+  font-weight: 600;
+  margin-bottom: var(--wf-s-1);
+}
+
+.form label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.hint {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}

@@ -180,14 +180,15 @@ describe("Advanced clinical coordination features & behaviors", () => {
         now,
         movementId: movement.id,
         formName: "Form 4A Transport Order",
-        fileName: "form-4a-signed.pdf",
+        fileType: "PDF",
         sizeBytes: 245000,
       });
 
       const updated1 = result1.movements.find((m) => m.id === movement.id)!;
       expect(updated1.uploadedForms?.length).toBe(1);
       expect(updated1.uploadedForms?.[0].formName).toBe("Form 4A Transport Order");
-      expect(updated1.uploadedForms?.[0].fileName).toBe("form-4a-signed.pdf");
+      expect(updated1.uploadedForms?.[0].fileType).toBe("PDF");
+      expect(updated1.uploadedForms?.[0]).not.toHaveProperty("fileName");
       expect(updated1.uploadedForms?.[0].sizeBytes).toBe(245000);
       expect(updated1.uploadedForms?.[0].uploadedBy).toBe("ward");
 
@@ -206,6 +207,10 @@ describe("Advanced clinical coordination features & behaviors", () => {
       expect(updated2.uploadedForms?.length).toBe(2);
       expect(updated2.uploadedForms?.[1].formName).toBe("Clinical Transfer Summary");
       expect(updated2.uploadedForms?.[1].sizeBytes).toBe(512);
+      // H-0049: an event recorded before 26 Oct 2026 still replays; its file name is read for the
+      // file type and never kept.
+      expect(updated2.uploadedForms?.[1].fileType).toBe("PDF");
+      expect(JSON.stringify(updated2.uploadedForms)).not.toContain("transfer-summary-ed");
     });
   });
 });

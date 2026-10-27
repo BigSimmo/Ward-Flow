@@ -1,7 +1,7 @@
 import { numberedBedKind } from "./ward-bed-designation";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
-import { communityTeamById } from "@/components/ward-management/community/community-derivations";
+import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import {
   CANCEL_TRANSPORT_REASONS,
   GENDER_NO_LONGER_SUITS_REFUSAL,
@@ -25,6 +25,8 @@ import {
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { movementBedReservation } from "./ward-movement-bed-hold";
+import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
+import { sameObservation, type ObservationChange } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -489,6 +491,12 @@ export function reduceTransportEvent(
         // status check here too. Never once moving: arrival is always recorded.
         const arrivalLegalRefusal = heldUnitAuthorisationRefusal(state, movement);
         if (arrivalLegalRefusal) return reject(state, event, arrivalLegalRefusal);
+        // Audit S-3: the sending ward records when seclusion or restraint ended before the stay
+        // leaves. Once moving, arrival is always recorded and the seclusion view flags the gap.
+        const sourceRestrictiveRefusal = source
+          ? openRestrictivePracticeRefusal(findUnit(state, source.unitId)?.restrictivePractice, source.id)
+          : undefined;
+        if (sourceRestrictiveRefusal) return reject(state, event, sourceRestrictiveRefusal);
       }
 
       const updatedUnit: Unit = {
@@ -554,8 +562,25 @@ export function reduceTransportEvent(
       if (pulledAdmission && pulledAdmission.state === "pulled") {
         const { bedNumber: _previousNumber, ...withoutBedNumber } = pulledAdmission;
         void _previousNumber;
+        // Audit S-2: the journey and the held bed record one observation level. If they still
+        // differ here (a record from before the two were joined), the later recorded change wins and
+        // the stay keeps the change in its history, so neither level is dropped silently.
+        const lastChangeAt = (changes: readonly ObservationChange[] | undefined) =>
+          changes?.at(-1)?.at ?? Number.NEGATIVE_INFINITY;
+        const journeyLevelWins =
+          !sameObservation(movement.observation, pulledAdmission.observation) &&
+          lastChangeAt(movement.observationChanges) >= lastChangeAt(pulledAdmission.observationChanges);
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...withoutBedNumber,
+          ...(journeyLevelWins
+            ? {
+                observation: movement.observation,
+                observationChanges: [
+                  ...(pulledAdmission.observationChanges ?? []),
+                  { at: event.now, from: pulledAdmission.observation, to: movement.observation },
+                ],
+              }
+            : {}),
           state: "occupied",
           gender: movement.gender,
           arrivedAt: event.now,
@@ -675,11 +700,13 @@ export function reduceTransportEvent(
               `BOOK_TRANSPORT was raised acting as unit ${event.actingUnitId} but movement origin is ward ${sendingWard}; only the sending ward can book transport`,
             );
           }
-        } else if (movement.acceptedUnitId && event.actingUnitId === movement.acceptedUnitId) {
+        } else {
+          // Audit 2 E-20, as in RECORD_TRANSPORT_NEED: with no sending ward (an ED or community
+          // start), no ward desk books the transport; the origin and coordinator do.
           return reject(
             state,
             event,
-            `BOOK_TRANSPORT was raised acting as destination ward ${event.actingUnitId}; receiving ward cannot book transport`,
+            `BOOK_TRANSPORT was raised by ward ${event.actingUnitId}, but this patient did not start on a ward`,
           );
         }
       }
@@ -698,6 +725,24 @@ export function reduceTransportEvent(
           event,
           `BOOK_TRANSPORT actingPlaceId ${event.actingPlaceId} does not name a real community team`,
         );
+      }
+      // A journey another team sent is that team's to book, matched by name or slug as
+      // WITHDRAW_REFERRAL matches the sending team. One with no sending team on record is left to
+      // the server's scope check, which shows a team only the journeys it sent.
+      if (event.role === "community" && event.actingPlaceId !== undefined) {
+        const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+        const sendingTeamName = referral?.sendingTeamName;
+        if (
+          sendingTeamName !== undefined &&
+          event.actingPlaceId !== sendingTeamName &&
+          event.actingPlaceId !== communityTeamSlug(sendingTeamName)
+        ) {
+          return reject(
+            state,
+            event,
+            `caller community team ${event.actingPlaceId} is not the referral origin team (${sendingTeamName}); only the sending community team can book transport`,
+          );
+        }
       }
       if (!movement.acceptedUnitId && !movement.admissionId) {
         return reject(
@@ -882,8 +927,8 @@ export function reduceTransportEvent(
        * `docs/ward-flow/plans/2026-09-17-build-plan-referrals-transport.md` §4, T1.
        */
       const cancelledNote = bedIsHeld
-        ? "the bed is still held and nothing has been rebooked."
-        : "no bed is held and nothing has been rebooked.";
+        ? "the bed is still pulled and nothing has been rebooked."
+        : "no bed is pulled and nothing has been rebooked.";
       const transportNotices: Notice[] = [
         makeNotice(
           event.now,

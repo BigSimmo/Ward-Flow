@@ -295,7 +295,7 @@ describe("seeded admissions — coverage (a rule with no case is an untestable r
    * THE CATCHER FOR OWNER RULING 5, 2026-09-01: **"Ward manager" — everywhere, one spelling.**
    *
    * Before the ruling, `dischargeDateSetBy` and `dischargeConfirmedBy` carried whichever of three
-   * spellings a given seed line happened to use — `"Ward manager"`, `"Flow coordinator"` and
+   * spellings a given seed line happened to use — `"Ward manager"`, `"Bed coordinator"` and
    * `"Nurse unit manager"` were all live, because the fields were typed `string | null` with no
    * runtime vocabulary of their own. `Admission.dischargeDateSetBy`/`dischargeConfirmedBy` are now
    * typed `DischargeRoleLabel | null`, so a wrong literal fails `tsc` — but a value that reaches
@@ -306,7 +306,7 @@ describe("seeded admissions — coverage (a rule with no case is an untestable r
    *
    * Both fields are checked, not just `dischargeConfirmedBy`: before this test, nothing in this
    * file checked `dischargeDateSetBy`'s values at all, which is exactly how the seed carried
-   * `"Flow coordinator"` there unnoticed.
+   * `"Bed coordinator"` there unnoticed.
    */
   it("uses exactly one spelling of the ward's role for dischargeDateSetBy and dischargeConfirmedBy", () => {
     const setters = wardAdmissions.filter((admission) => admission.dischargeDateSetBy !== null);

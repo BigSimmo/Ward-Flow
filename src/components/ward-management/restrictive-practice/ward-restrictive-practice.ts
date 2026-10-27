@@ -91,6 +91,21 @@ export function openEpisodes(record: WardRestrictivePractice | undefined): Restr
   return (record?.episodes ?? []).filter((episode) => episode.endedAt === undefined);
 }
 
+/**
+ * Audit S-3 (26 Oct 2026): a stay cannot leave its ward while seclusion or restraint is still
+ * recorded as in use for it. Nothing ends an episode for the ward: the end time is the ward's own
+ * typed record, so the leaving step is refused until it is recorded.
+ */
+export function openRestrictivePracticeRefusal(
+  record: WardRestrictivePractice | undefined,
+  admissionId: string,
+): string | undefined {
+  const open = openEpisodes(record).filter((episode) => episode.admissionId === admissionId);
+  if (open.length === 0) return undefined;
+  const what = open.some((episode) => episode.practice === "seclusion") ? "Seclusion" : "Restraint";
+  return `${what} is still recorded as in use for this patient. Record when it ended before they leave the ward`;
+}
+
 /** The four events that write `Unit.restrictivePractice`, joined into `WardFlowEvent`. */
 export type RestrictivePracticeWardFlowEvent =
   | {

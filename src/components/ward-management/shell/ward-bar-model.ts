@@ -14,7 +14,8 @@ import {
   resolveWardPrimaryAction,
 } from "@/components/ward-management/ward-nav";
 import { wardPlaceIdFor, type WardPlace } from "@/components/ward-management/ward-place";
-import { edById, edShortName } from "@/components/ward-management/ward-sites";
+import type { WardAccessScope } from "@/components/ward-management/ward-role-access";
+import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   edHealthService,
   SERVICE_SCOPED_SCREENS,
@@ -276,11 +277,16 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
   return routeTitle;
 }
 
-/** Fixed jurisdiction resolution for place-specific views: the service a ward or ED route sits in. */
+/**
+ * Fixed jurisdiction resolution: the service a ward or ED route sits in, or else the service the
+ * signed-in desk is held to. A ward, ED, site or service desk off its own route (Handover, Alerts)
+ * read "Statewide" in the header although it sees only its own place (#838).
+ */
 export function fixedServiceFor(
   pathname: string,
   place: WardPlace | undefined,
   units: readonly Unit[],
+  deskScope?: WardAccessScope,
 ): HealthService | undefined {
   if (place) {
     if (place.kind === "ward") {
@@ -293,9 +299,29 @@ export function fixedServiceFor(
       const edMatch = /^\/ward-flow\/ed\/([^/]+)/.exec(pathname);
       if (edMatch) return edHealthService(decodeURIComponent(edMatch[1]));
     }
-    if (place.kind === "team") {
-      return undefined;
-    }
   }
-  return undefined;
+  return deskScope ? deskScopeService(deskScope, units) : undefined;
+}
+
+/** The one service a desk's scope sits in, or `undefined` for a statewide or unplaced desk. */
+function deskScopeService(scope: WardAccessScope, units: readonly Unit[]): HealthService | undefined {
+  switch (scope.kind) {
+    case "service":
+      return scope.service;
+    case "jobs":
+      return scope.service;
+    case "site":
+      return siteByCode(scope.siteCode)?.service;
+    case "ed":
+      return edHealthService(scope.edId);
+    case "ward": {
+      const services = new Set(
+        scope.unitIds.map((id) => units.find((unit) => unit.id === id)).map((unit) => unit && unitHealthService(unit)),
+      );
+      const [only] = services;
+      return services.size === 1 ? only : undefined;
+    }
+    default:
+      return undefined;
+  }
 }

@@ -46,7 +46,7 @@ import {
   communityUrgency,
 } from "./community-short-form";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
-import { documentationError, type DocumentationDraft } from "./referral-flow-panels";
+import { documentationError, intakeCharts, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
@@ -175,7 +175,6 @@ export function useWardReferralDrawerState({
   const searchId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const touchStartY = useRef<number | null>(null);
-
   const capacityRecords = useWardCapacity();
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
   const pathname = usePathname() ?? "";
@@ -185,7 +184,6 @@ export function useWardReferralDrawerState({
   const gate = useRoleGate();
   const access = useEffectiveWardAccess();
   const addPatientGate = gate("ADD_PATIENT");
-
   const {
     movements,
     patients,
@@ -255,7 +253,6 @@ export function useWardReferralDrawerState({
   // A2-3 (audit 13 Oct 2026): opened plainly, with no named person, the sheet starts on nobody,
   // never a demo person from another site.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
-
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
     initialPatientKey in SAMPLE_PATIENTS ? [] : [initialPatientKey],
@@ -263,6 +260,7 @@ export function useWardReferralDrawerState({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
+  const [addedInFormKey, setAddedInFormKey] = useState<string | null>(null); // WT-28
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
   const [selectedUnitIds, setSelectedUnitIds] = useState<string[]>(
@@ -406,7 +404,7 @@ export function useWardReferralDrawerState({
     setNotOnWard(reason && sendingWard ? { unitId: sendingWard.id, reason } : undefined);
   }
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
-  const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
+  const [transport, setTransport] = useState(kept?.transport ?? "");
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
   const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
@@ -460,11 +458,9 @@ export function useWardReferralDrawerState({
 
   // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
   // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
-
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
-
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartY.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
@@ -474,7 +470,6 @@ export function useWardReferralDrawerState({
       requestClose();
     }
   };
-
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const dirty = !sentReferralId && draftJson !== openingDraft;
@@ -618,10 +613,11 @@ export function useWardReferralDrawerState({
       ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
       : rawCurrentPatient;
 
-  function handleSelectPatient(key: string) {
+  function handleSelectPatient(key: string, addedInForm = false) {
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
+    setAddedInFormKey(addedInForm ? key : null);
     setNotOnWard(undefined);
     setAgeBand("");
     setUnidentified(null);
@@ -671,7 +667,7 @@ export function useWardReferralDrawerState({
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
     setClinicalSummary(p.clinicalSummary);
-    setTransport(p.transportVal);
+    setTransport("");
     setTransitNote(p.transitNote);
     setRiskFlags(p.riskFlags);
     setClearanceChecks({});
@@ -727,7 +723,7 @@ export function useWardReferralDrawerState({
     allowed: addPatientGate.allowed,
     reason: addPatientGate.reason,
     patient: newPatient,
-    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`),
+    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
   });
 
   // Live capacity for the patient's cohort and the chosen bed security.
@@ -976,7 +972,7 @@ export function useWardReferralDrawerState({
             }),
       },
       triageAndRampCompleted: !community && documentation.triage === "yes",
-      charts: community ? [] : documentation.charts,
+      ...intakeCharts(documentation, community),
       additionalDocuments: !community && documentation.additional === "yes",
       referrer: contact,
       ...(destType === "ward"
@@ -1014,7 +1010,7 @@ export function useWardReferralDrawerState({
       sendingTeamName: needsSendingTeam ? sendingTeam : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
-      transportNeeded: destType === "ward" && transport !== "carer",
+      transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
       history: unidentifiedHistory,
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
@@ -1130,6 +1126,7 @@ export function useWardReferralDrawerState({
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
   const draftNeeds = needsFor(destType, communityNeeds, edNeeds);
+  const letterCharts = intakeCharts(documentation, community);
   const letterInput: ReferralTextInput = {
     destinationPhrase: destination.phrase,
     patientName: patientRecord ? currentPatient.name : unidentifiedName,
@@ -1146,6 +1143,8 @@ export function useWardReferralDrawerState({
     clearance: clearance.label,
     clearanceChecklist: destType === "ward" ? clearanceChecklistWords(clearanceChecks) : "",
     needs: draftNeeds ? referralNeedsWords(draftNeeds) : [],
+    chartKinds: letterCharts.charts.map(({ kind }) => kind),
+    chartsToFollow: letterCharts.chartsToFollow,
     referrer: { name: contact.name, role: contact.role, phone: contact.phone },
   };
   async function copyText(text: string, done: string) {
@@ -1287,6 +1286,7 @@ export function useWardReferralDrawerState({
     isSearchOpen,
     setIsSearchOpen,
     noPatientChosen,
+    patientAddedInForm: addedInFormKey !== null && addedInFormKey === activePatientKey,
     bodyRef,
     sectionId,
     selectedUnitIds: offeredUnitIds,

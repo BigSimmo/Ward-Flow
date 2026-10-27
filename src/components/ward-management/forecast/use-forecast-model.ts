@@ -226,6 +226,26 @@ function readLocal(key: string): string | null {
 }
 
 /**
+ * P-5 (fresh audit 26 Oct 2026): each reseed or scenario switch starts a new key, so the keys this
+ * person wrote for earlier worlds are removed when the current one is written. Otherwise the local
+ * demo, which no sign-out ever sweeps, collected one set per reset with no bound. Another person's
+ * keys on a shared device are left alone.
+ */
+function dropEarlierWorlds(key: string) {
+  const person = key.slice(0, key.indexOf(":", key.indexOf(":") + 1) + 1);
+  try {
+    const stale: string[] = [];
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const candidate = window.localStorage.key(index);
+      if (candidate !== null && candidate !== key && candidate.startsWith(person)) stale.push(candidate);
+    }
+    for (const candidate of stale) window.localStorage.removeItem(candidate);
+  } catch {
+    // Storage that cannot be listed is left as it is.
+  }
+}
+
+/**
  * The daily forecast snapshots behind the track record. Every forecast view records today's entry
  * once (a second view the same demo day changes nothing). Kept per scenario, reseed and person.
  */
@@ -241,6 +261,7 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
     const before = parseForecastHistory(readLocal(key));
     if (before.some((existing) => existing.day === entry.day)) return;
     const next = recordForecastHistory(before, entry);
+    dropEarlierWorlds(key);
     try {
       window.localStorage.setItem(key, JSON.stringify(next));
     } catch {
@@ -277,6 +298,7 @@ export function useForecastMissReasons() {
   const record = useCallback(
     (entry: ForecastMissReasonEntry) => {
       const next = recordForecastMissReason(parseForecastMissReasons(readLocal(key)), entry);
+      dropEarlierWorlds(key);
       try {
         window.localStorage.setItem(key, JSON.stringify(next));
       } catch {

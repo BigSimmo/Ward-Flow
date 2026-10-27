@@ -179,7 +179,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                             setActiveDrawer("pxDrawer");
                           }}
                         >
-                          Open dossier
+                          Open record
                         </button>
                       </td>
                     </tr>
@@ -287,7 +287,7 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                                     setActiveDrawer("pxDrawer");
                                   }}
                                 >
-                                  Open dossier
+                                  Open record
                                 </button>
                               ) : null}
                               {canBook ? (

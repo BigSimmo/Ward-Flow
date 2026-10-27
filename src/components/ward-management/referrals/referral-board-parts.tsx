@@ -1,7 +1,7 @@
 "use client";
 
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
-import { bedsPendingPreparation, capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -13,7 +13,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { formatReferralIntakeTime } from "@/components/ward-management/ward-referral-seed-time";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
-import type { BedRelease, LeaveBed } from "@/components/ward-management/ward-model";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
@@ -319,11 +319,13 @@ export function WaitRunway({
 export type BedsReadySummary = {
   cells: { label: string; value: number }[];
   /**
-   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure. NA2-06 (audit 24 Oct 2026): with
-   * `admissions` it is `readyBedsNow` per ward, the figure Home, Capacity, the rail, Handover and
+   * L1 (review 12 Oct 2026): the one statewide "beds ready" figure. NA2-06 and NA3-01 (audits 24 and
+   * 26 Oct 2026): it is `readyBedsNow` per ward, the figure Home, Capacity, the rail, Handover and
    * Statistics print (`totalReadyBedsNow`), so a bed pulled for an incoming patient is not offered
-   * twice. Without them it falls back to the older `capacityBreakdown(...).availableNow`. Locked is
-   * a part of the cohort cells, never added on top: summing every cell read 33 against 26.
+   * twice. Admissions are required: the old fallback to `capacityBreakdown(...).availableNow` was the
+   * one the screen took, and it read one more than every other screen after a ward confirmed fewer
+   * beds than it had pulled. Locked is a part of the cohort cells, never added on top: summing every
+   * cell read 33 against 26.
    */
   total: number;
   /** Beds counted as ready that are still being made ready, so a pull would be refused today. */
@@ -333,11 +335,9 @@ export type BedsReadySummary = {
 
 export function bedsReadySummary(
   units: Unit[],
+  admissions: readonly Admission[],
   bedReleases: BedRelease[],
-  leaveBeds: readonly LeaveBed[],
   now: Instant,
-  /** NA2-06: pass the workspace's admissions to read the shared `readyBedsNow` figure. */
-  admissions?: readonly Admission[],
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let total = 0;
@@ -346,10 +346,7 @@ export function bedsReadySummary(
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
     // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
-    const ready =
-      admissions !== undefined
-        ? readyBedsNow(unit, admissions, bedReleases)
-        : capacityBreakdown(unit, bedReleases, [...leaveBeds], now).availableNow;
+    const ready = readyBedsNow(unit, admissions, bedReleases);
     total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.
@@ -705,7 +702,9 @@ export function ReferralPatientTab({
             <dd>{site}</dd>
           </div>
         </dl>
-        {intake?.charts.length ? <ReferralDocumentLinks charts={intake.charts} /> : null}
+        {intake?.charts.length || intake?.chartsToFollow?.length ? (
+          <ReferralDocumentLinks charts={intake.charts} toFollow={intake.chartsToFollow} />
+        ) : null}
       </Section>
 
       {/* Fix plan item 4 (21 Oct 2026): the owner desk and "Log a call", replacing the unwired Call button. */}
@@ -792,7 +791,7 @@ export function referralTimeline(
   for (const arm of referral.destinations) {
     const where = referralDestinationLabel(arm.destination);
     if (arm.waitlistedAt !== undefined)
-      entries.push({ at: arm.waitlistedAt, tone: "neutral", text: `${where} waitlisted` });
+      entries.push({ at: arm.waitlistedAt, tone: "neutral", text: `${where} put it on the waiting list` });
     if (arm.withdrawnAt !== undefined)
       entries.push({ at: arm.withdrawnAt, tone: "closed", text: `${where} withdrawn by the referrer` });
     // Smart features ideas 3 and 4: a receipt and the ward's asks. None of them is an answer.

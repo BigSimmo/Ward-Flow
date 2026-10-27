@@ -962,10 +962,16 @@ function useOnView(target: RefObject<HTMLElement | null>, mounted: boolean) {
     if (!mounted || !element || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver((entries) => {
       const entry = entries[entries.length - 1];
-      if (entry) setOnView(entry.isIntersecting);
+      if (!entry) return;
+      setOnView(entry.isIntersecting);
+      // H-0167: the clean TV layout for browsers without CSS :has() (ward-flow-layout.module.css).
+      document.documentElement.toggleAttribute("data-wf-tv-clean", entry.isIntersecting);
     });
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      document.documentElement.removeAttribute("data-wf-tv-clean");
+    };
   }, [target, mounted]);
   return onView;
 }
@@ -1080,18 +1086,8 @@ export type BedMeetingTvScreenProps = {
 
 export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeetingTvScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
-  const { units, movements, bedReleases, admissions, leaveBeds, referrals, scenario, configuration, shared } =
-    useWardFlowSelect(
-      "units",
-      "movements",
-      "bedReleases",
-      "admissions",
-      "leaveBeds",
-      "referrals",
-      "scenario",
-      "configuration",
-      "shared",
-    );
+  const liveRecords = useWardFlowSelect("units", "movements", "bedReleases", "admissions", "leaveBeds", "referrals");
+  const { scenario, configuration, shared } = useWardFlowSelect("scenario", "configuration", "shared");
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
   const patientOf = usePatientOf();
@@ -1127,6 +1123,15 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
   const [lastLive, setLastLive] = useState(now);
   if (live && lastLive !== now) setLastLive(now);
   const shownNow = live ? now : lastLive;
+  // TV-06 / CT-02 (H-0223): the records stop with the clock, so no figure moves while the screen says
+  // it is not updating (a write made in this browser meanwhile shows once it is live again).
+  const [lastLiveRecords, setLastLiveRecords] = useState(liveRecords);
+  if (
+    live &&
+    (Object.keys(liveRecords) as (keyof typeof liveRecords)[]).some((key) => liveRecords[key] !== lastLiveRecords[key])
+  )
+    setLastLiveRecords(liveRecords);
+  const { units, movements, bedReleases, admissions, leaveBeds, referrals } = live ? liveRecords : lastLiveRecords;
   const staleMinutes = live ? 0 : Math.max(0, Math.round(now - lastLive));
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);

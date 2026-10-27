@@ -108,7 +108,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
         return (
           <article className={styles.refCard} key={entry.id}>
             <h3 className={styles.refCardTitle}>
-              {referralInboxName(entry, patient.displayName)} · {patient.umrn}
+              {referralInboxName(entry, patient.displayName)} · {patient.umrn} · {entry.id}
             </h3>
             <p
               className={styles.refCardSubtitle}
@@ -117,7 +117,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
               {entry.withdrawnAt !== undefined
                 ? "Withdrawn by referrer"
                 : entry.waitlistedAt !== undefined && live
-                  ? "Waitlisted"
+                  ? "On waiting list"
                   : entry.state === "cancelled"
                     ? "Cancelled — accepted elsewhere"
                     : entry.state === "queued"
@@ -236,7 +236,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                       reason: "no_suitable_bed",
                       waitlist: true,
                     });
-                    watchDecision(entry.id, "Referral waitlisted", completion);
+                    watchDecision(entry.id, "Referral put on the waiting list", completion);
                   }}
                 >
                   Waitlist

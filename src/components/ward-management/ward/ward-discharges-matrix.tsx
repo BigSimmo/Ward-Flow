@@ -55,7 +55,7 @@ export function WardDischargesMatrix({
       </div>
 
       {/* Stream Tabs */}
-      <nav className={styles.streamTabs} aria-label="Discharge Operational Streams">
+      <nav className={styles.streamTabs} aria-label="Discharge streams">
         <button
           type="button"
           className={styles.streamTabBtn}
@@ -78,7 +78,7 @@ export function WardDischargesMatrix({
           data-active={subTab === "leave"}
           onClick={() => startTransition(() => setSubTab("leave"))}
         >
-          Leave &amp; AWOL ({unitLeaveBeds.length})
+          Leave and absent without leave ({unitLeaveBeds.length})
         </button>
         <button
           type="button"

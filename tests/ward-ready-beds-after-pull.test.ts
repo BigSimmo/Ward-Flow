@@ -61,7 +61,7 @@ describe("beds ready agrees on every screen after a pull", () => {
         );
         expect(board, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         // NA2-06 (audit 24 Oct 2026): Referrals' "Beds ready statewide" reads the same figure.
-        const referrals = bedsReadySummary(state.units, state.bedReleases, state.leaveBeds, now, state.admissions);
+        const referrals = bedsReadySummary(state.units, state.admissions, state.bedReleases, now);
         expect(referrals.total, `${scenario} seed ${seed} step ${step}`).toBe(boxes);
         const old = state.units.reduce((sum, unit) => sum + boundedBedAvailability(unit).available, 0);
         if (old !== boxes) oldFormulaSplit += 1;

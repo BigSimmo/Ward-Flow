@@ -59,8 +59,14 @@ type SeclusionRoomView =
   | ({ kind: "recorded" } & SeclusionRoomRecorded)
   | { kind: "not_recorded" };
 
-export function seclusionRoomView(record: WardRestrictivePractice | undefined): SeclusionRoomView {
-  const secluded = openEpisodes(record).filter((episode) => episode.practice === "seclusion");
+export function seclusionRoomView(
+  record: WardRestrictivePractice | undefined,
+  // Audit S-3: a seclusion whose patient has left the ward does not hold the room.
+  isOnWard: (admissionId: string) => boolean = () => true,
+): SeclusionRoomView {
+  const secluded = openEpisodes(record).filter(
+    (episode) => episode.practice === "seclusion" && isOnWard(episode.admissionId),
+  );
   const room = record?.seclusionRoom;
   const recorded = room ? { status: room.status, at: room.at, by: room.by } : undefined;
   if (secluded.length > 0) {

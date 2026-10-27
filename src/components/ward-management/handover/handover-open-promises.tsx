@@ -18,15 +18,19 @@ import styles from "./handover-open-promises.module.css";
  * commitments still open that carry a promised time or a next callback, overdue or still to come,
  * each with its recorded time and linked to its referral (no invented shift length), so the incoming coordinator inherits them.
  * Read only, in recorded order, and nothing is ranked. Renders nothing when none is due.
+ * Each row is one tap target: the name and ward, then the step and times underneath.
+ * On a phone it sits below the Since previous handover card as a rounded card like it.
  */
 export function HandoverOpenPromises({
   referrals,
   units,
   now,
+  layout = "page",
 }: {
   referrals: readonly Referral[];
   units: readonly Unit[];
   now: Instant;
+  layout?: "page" | "phone";
 }) {
   const baseId = useId();
   const patientOf = usePatientOf();
@@ -35,7 +39,12 @@ export function HandoverOpenPromises({
   if (items.length === 0) return null;
   const wardName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
   return (
-    <section className={styles.panel} aria-labelledby={`${baseId}-heading`} data-testid="ward-handover-open-promises">
+    <section
+      className={styles.panel}
+      data-layout={layout}
+      aria-labelledby={`${baseId}-heading`}
+      data-testid="ward-handover-open-promises"
+    >
       <h2 id={`${baseId}-heading`} className={styles.heading}>
         Open promises and callbacks to carry over ({items.length})
       </h2>
@@ -47,19 +56,20 @@ export function HandoverOpenPromises({
           const callback = item.status.nextCallbackAt;
           return (
             <li key={`${item.referral.id}-${item.unitId}`} data-testid={`ward-handover-promise-${item.referral.id}`}>
-              <Link href={referralBoardHref(item.referral.id)} className={styles.link}>
-                {nameFor(who.formalName, who.umrn)}
-              </Link>{" "}
-              <span>{wardName(item.unitId)}</span>
-              <span className={styles.note}>
-                {" "}
-                · {item.status.step ? referralCommitmentStepLabel(item.status.step.step) : "No step recorded"}
-                {item.status.promisedFor !== undefined
-                  ? ` · promised by ${formatInstantWithDay(item.status.promisedFor, now)}`
-                  : ""}
-                {callback ? ` · next callback ${formatInstantWithDay(callback.at, now)}` : ""}
-              </span>
-              {overdue ? <span className={styles.overdue}> · Promise overdue</span> : null}
+              <Link href={referralBoardHref(item.referral.id)} className={styles.row}>
+                <span className={styles.who}>
+                  <span className={styles.name}>{nameFor(who.formalName, who.umrn)}</span>{" "}
+                  <span className={styles.ward}>{wardName(item.unitId)}</span>
+                </span>
+                <span className={styles.meta}>
+                  {item.status.step ? referralCommitmentStepLabel(item.status.step.step) : "No step recorded"}
+                  {item.status.promisedFor !== undefined
+                    ? ` · promised by ${formatInstantWithDay(item.status.promisedFor, now)}`
+                    : ""}
+                  {callback ? ` · next callback ${formatInstantWithDay(callback.at, now)}` : ""}
+                  {overdue ? <span className={styles.overdue}> · Promise overdue</span> : null}
+                </span>
+              </Link>
             </li>
           );
         })}

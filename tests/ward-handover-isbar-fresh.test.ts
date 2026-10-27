@@ -14,7 +14,7 @@ const row = (fields: Partial<HandoverRow>) =>
     edShort: "SCGH ED",
     openedAt: 0,
     stage: "destination_review",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     ownerShort: "Coordinator",
     legalStatus: "Involuntary inpatient",
     formCode: "4C",

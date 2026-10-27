@@ -434,7 +434,7 @@ describe("read-only report screens", () => {
     };
     inProvider(<DowntimePackScreen />, { pack });
     expect(screen.getByTestId("ward-downtime-print-provenance").textContent).toMatch(
-      /Taken offline .* AWST · last sync .* AWST/u,
+      /Taken offline .* AWST · last updated .* AWST/u,
     );
   });
 

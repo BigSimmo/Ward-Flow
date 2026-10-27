@@ -10,7 +10,11 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[color:var(--surface-lux)] px-4 font-sans text-[color:var(--text)]">
+    // H-0882 (26 Oct 2026): the page had no main landmark, so the skip link went nowhere.
+    <main
+      id="main-content"
+      className="flex min-h-screen flex-col items-center justify-center bg-[color:var(--surface-lux)] px-4 font-sans text-[color:var(--text)]"
+    >
       <div className="w-full max-w-md rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-6 shadow-[var(--shadow-elevated)] text-center">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--info-soft)] text-[color:var(--info)]">
           <FileQuestion aria-hidden="true" className="h-6 w-6" />
@@ -32,6 +36,6 @@ export default function NotFound() {
           </ContextualBackLink>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

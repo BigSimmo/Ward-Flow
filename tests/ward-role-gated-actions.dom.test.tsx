@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { legalNowTransportStatus } from "@/components/ward-management/ward-transport-checks";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -238,6 +239,7 @@ describe("actions limited by the route's role (feature 11)", () => {
 function TransportForm({ save }: { save: () => void }) {
   const gate = useRoleGate();
   const noop = () => undefined;
+  const liveMovement = seedWardFlowState().movements[0];
   const ctx = {
     bookingRejection: undefined,
     transportPending: false,
@@ -247,37 +249,28 @@ function TransportForm({ save }: { save: () => void }) {
     displayEta: undefined,
     displayLegalStatus: "Not recorded",
     displayProvider: "Not recorded",
-    draftHoldEnd: undefined,
+    displayName: "Synthetic patient",
     gate,
-    handleSaveTransportBooking: (event: React.FormEvent) => {
-      event.preventDefault();
-      save();
-    },
     isTransportBooked: false,
-    legalNowStatus: undefined,
-    liveMovement: seedWardFlowState().movements[0],
+    liveMovement,
     mode: "held",
     now: NOW_ANCHOR,
     openTransportForm: noop,
+    saveTransportBooking: save,
     setShowTransportForm: noop,
-    setTransportCadDraft: noop,
-    setTransportEscortDraft: noop,
-    setTransportEtaDraft: noop,
-    setTransportFormErrors: noop,
-    setTransportLegalChanging: noop,
-    setTransportLegalDraft: noop,
+    setTransportAnswers: noop,
     setTransportLegalReason: noop,
-    setTransportProviderDraft: noop,
     showTransportForm: true,
-    transportCadDraft: "",
-    transportEscortDraft: undefined,
-    transportEtaDraft: "",
-    transportFormErrors: {},
-    transportLegalChanging: false,
-    transportLegalChoice: undefined,
-    transportLegalClash: false,
+    // Every answer in (A34 form), so only the role decides whether Save is available.
+    transportAnswers: {
+      provider: "Ambulance service",
+      escortRequired: false,
+      cadNumber: "CAD-48213",
+      transportLegalStatus: legalNowTransportStatus(liveMovement) ?? "involuntary",
+      estimatedTime: "23:30",
+      estimatedDay: "today",
+    },
     transportLegalReason: "",
-    transportProviderDraft: "",
   } satisfies PatientTransportSectionContext;
   return <>{renderTransportSection(ctx)}</>;
 }
@@ -291,7 +284,7 @@ describe("gated Save buttons stay disabled while nothing is saving", () => {
       </WardFlowProvider>,
     );
     const save = screen.getByTestId("ward-patient-confirm-transport-btn");
-    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute("aria-disabled", "true");
     const describedBy = save.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
     expect(document.getElementById(describedBy!)).toHaveTextContent(/only/);
@@ -304,7 +297,7 @@ describe("gated Save buttons stay disabled while nothing is saving", () => {
         <TransportForm save={vi.fn()} />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("ward-patient-confirm-transport-btn")).toBeEnabled();
+    expect(screen.getByTestId("ward-patient-confirm-transport-btn")).not.toHaveAttribute("aria-disabled");
   });
 });
 

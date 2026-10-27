@@ -11,8 +11,8 @@ import { COMMUNITY_REFERRAL_PURPOSES } from "../ward-model-referral-parts";
 import {
   CLEARANCE_CHECKS,
   CLEARANCE_STATUSES,
-  ED_ARRIVAL_MODES,
   FIRST_CONTACT_TARGETS,
+  SAVED_ED_ARRIVAL_MODES,
   REFERRAL_GENDER_NOT_RECORDED,
 } from "./referral-submission";
 import type { KeptDraft } from "./ward-referral-drawer-model";
@@ -100,13 +100,25 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
   if (!isRecord(contact) || !only(contact, contactKeys) || !strings(contact, contactKeys)) return false;
   if (
     !isRecord(documentation) ||
-    !only(documentation, ["medical", "expectedAt", "contactName", "contactPhone", "triage", "additional", "charts"]) ||
+    !only(documentation, [
+      "medical",
+      "expectedAt",
+      "contactName",
+      "contactPhone",
+      "triage",
+      "additional",
+      "charts",
+      "toFollow",
+    ]) ||
     !strings(documentation, ["expectedAt", "contactName", "contactPhone"]) ||
     ![documentation.medical, documentation.triage, documentation.additional].every((item) =>
       oneOf(item, ["", "yes", "no"]),
     ) ||
     !Array.isArray(documentation.charts) ||
-    documentation.charts.length !== 0
+    documentation.charts.length !== 0 ||
+    (documentation.toFollow !== undefined &&
+      (!Array.isArray(documentation.toFollow) ||
+        !documentation.toFollow.every((kind) => oneOf(kind, ["medication", "observation"]))))
   )
     return false;
   if (
@@ -130,7 +142,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
   if (
     !isRecord(edNeeds) ||
     !only(edNeeds, ["comingBy", "medicalReviewFirst", "expectedArrival"]) ||
-    !optional(edNeeds.comingBy, (item) => oneOf(item, ED_ARRIVAL_MODES)) ||
+    !optional(edNeeds.comingBy, (item) => oneOf(item, SAVED_ED_ARRIVAL_MODES)) ||
     !optional(edNeeds.medicalReviewFirst, boolean) ||
     !optional(edNeeds.expectedArrival, string)
   )

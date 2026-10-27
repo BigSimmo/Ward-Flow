@@ -28,9 +28,9 @@ function panel(props: {
 describe("handover sign-off names who signed", () => {
   it("names the recorded signer, not the desk viewing it", () => {
     const card = panel({ signedAt: NOW - 60_000, signedBy: "coordinator", viewerRole: "ward" });
-    expect(card).toHaveTextContent("Handed over byFlow coordinator");
-    expect(card).not.toHaveTextContent("Flow coordinatoryou");
-    expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent("as flow coordinator.");
+    expect(card).toHaveTextContent("Handed over byBed coordinator");
+    expect(card).not.toHaveTextContent("Bed coordinatoryou");
+    expect(screen.getByTestId("ward-handover-sign-off-visible-status")).toHaveTextContent("as bed coordinator.");
   });
 
   it("names the viewing desk while the handover is unsigned", () => {

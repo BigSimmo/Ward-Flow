@@ -33,7 +33,7 @@ describe("attributed follow-up arrangement pathway", () => {
     expect(next.admissions.find((row) => row.id === admission.id)?.followUp).toEqual({
       state: followUpState,
       recordedAt: NOW_ANCHOR,
-      recordedBy: "Flow coordinator",
+      recordedBy: "Bed coordinator",
     });
     expect(next.auditEvents.at(-1)).toMatchObject({
       outcome: "accepted",
