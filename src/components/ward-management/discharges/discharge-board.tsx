@@ -292,7 +292,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     data-testid={`ward-discharge-kpi-${key}`}
                     className={pageStyles.kpi}
                     aria-pressed={statusHighlight === key}
-                    aria-label={`${kpiCardLabel(key, population)}: ${counts[key]}`}
+                    // P082: the name starts with what the button shows (count, then label).
+                    aria-label={`${counts[key]} ${isPhone && key === "blocked" && population === "releases" ? `Held up (${kpiCardLabel(key, population)})` : kpiCardLabel(key, population)}`}
                     onClick={() => {
                       setHighlight(statusHighlight === key ? null : { kind: "status", status: key });
                       setStatus("all");

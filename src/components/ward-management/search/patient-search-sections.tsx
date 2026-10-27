@@ -101,6 +101,7 @@ export function PeopleSection({
                     type="button"
                     className={styles.previewButton}
                     data-testid={`ward-patient-search-person-preview-${patient.id}`}
+                    aria-label={`Preview ${patientListName(patient)}`}
                     onClick={() => onPreview(patient)}
                   >
                     Preview
@@ -210,6 +211,7 @@ export function ResultsSection({
                     type="button"
                     className={styles.previewButton}
                     data-testid={`ward-patient-search-referral-preview-${referral.id}`}
+                    aria-label={`Preview ${patientIdentityLine(resolveSubjectPatient(referral, umrnLookup))}`}
                     onClick={() => onPreviewReferral(referral)}
                   >
                     Preview
@@ -357,6 +359,7 @@ function ResultRow({
             type="button"
             className={styles.previewButton}
             data-testid={`ward-patient-search-movement-preview-${movement.id}`}
+            aria-label={`Preview ${patientName}`}
             onClick={() => onPreview(movement)}
           >
             Preview

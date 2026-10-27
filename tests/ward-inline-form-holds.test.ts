@@ -24,6 +24,7 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "alerts/alerts-screen.tsx": { cover: "popup", why: "Broadcast and alert detail open in modals." },
   "board/ward-board-detail-panel.tsx": { cover: "page form" },
   "board/ward-board-ward-diagnosis.tsx": { cover: "page form" },
+  "capacity/ward-closure-panel.tsx": { cover: "held", why: "Held once a reason or reopening time is chosen." },
   "board/ward-board.tsx": { cover: "popup", why: "Departure and release confirms are modal." },
   "community/community-screen.tsx": { cover: "held" },
   "community/use-community-screen-overlays.ts": { cover: "popup", why: "Transport booking is a modal sheet." },

@@ -659,6 +659,9 @@ class NetworkBuilder {
     return low + Math.floor(this.next() * (high - low + 1));
   }
 
+  /** P005: full names already given, so no two synthetic people share one. */
+  private readonly usedNames = new Set<string>();
+
   patient(person: PersonSpec): PatientId {
     const index = this.patients.length + 1;
     const number = String(index).padStart(4, "0");
@@ -672,11 +675,18 @@ class NetworkBuilder {
         : person.cohort === "Youth"
           ? this.between(2003, 2009)
           : this.between(1962, 2000);
+    const givenName = givenNames[index % givenNames.length];
+    // P005: a clash takes the next family name along, so only the later namesake changes.
+    let familyIndex = (index * 7) % MINERALS.length;
+    for (let tries = 0; tries < MINERALS.length && this.usedNames.has(`${givenName} ${MINERALS[familyIndex]}`); tries++)
+      familyIndex = (familyIndex + 1) % MINERALS.length;
+    const familyName = MINERALS[familyIndex];
+    this.usedNames.add(`${givenName} ${familyName}`);
     this.patients.push({
       id,
       umrn: `UM${700000 + index}`,
-      givenName: givenNames[index % givenNames.length],
-      familyName: MINERALS[(index * 7) % MINERALS.length],
+      givenName,
+      familyName,
       dateOfBirth: `${birthYear}-${String(this.between(1, 12)).padStart(2, "0")}-${String(this.between(1, 28)).padStart(2, "0")}`,
       sex: person.sex,
       ...(person.gender ? { gender: person.gender } : {}),
