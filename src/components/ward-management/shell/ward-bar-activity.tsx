@@ -85,12 +85,12 @@ export function WardBarActivityBody({
   commandActivity: CommandActivity;
   closePopover: (id: WardBarPopoverId, announce?: boolean) => void;
 }) {
-  // B3 P170: a row links to its record only where this desk may open it.
-  const canOpenHref = useCanOpenHref();
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardBar, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   ("use no memo");
+  // B3 P170: a row links to its record only where this desk may open it.
+  const canOpenHref = useCanOpenHref();
   return (
     <>
       {/* Phone (v10 Activity sheet): a plain list. The tally, search and category chips stay on
