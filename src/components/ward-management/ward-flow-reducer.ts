@@ -161,7 +161,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { subjectId } from "./ward-flow-subject-id";
-import { nextBedReleaseId, nextRuntimeIdNumber } from "./ward-runtime-ids";
+import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
 /**
@@ -1197,20 +1197,8 @@ export function makeNotice(
 export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
   const wanted = notices.filter((notice) => notice.to.role !== "demo");
   if (wanted.length === 0) return state;
-  // ENG-01 (H-0334): `makeNotice` counts from `notices.length`, and an Undo withdraws notices, so a
-  // new notice can take the id of a later one still held. Only such a clash is renumbered, past the
-  // highest number on that subject and kind; every other id is unchanged.
-  const taken = new Set(state.notices.map((notice) => notice.id));
-  const notifiable = wanted.map((notice) => {
-    if (!taken.has(notice.id)) {
-      taken.add(notice.id);
-      return notice;
-    }
-    const prefix = notice.id.replace(/\d+$/, "");
-    const id = `${prefix}${nextRuntimeIdNumber(taken, prefix)}`;
-    taken.add(id);
-    return { ...notice, id };
-  });
+  // ENG-01 (H-0334): an id an earlier Undo left clashing is renumbered; see `withFreshIds`.
+  const notifiable = withFreshIds(state.notices, wanted);
   return { ...state, notices: [...state.notices, ...notifiable] };
 }
 

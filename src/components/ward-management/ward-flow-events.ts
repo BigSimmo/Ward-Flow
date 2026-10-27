@@ -10,6 +10,7 @@ import type {
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
+import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -2363,10 +2364,7 @@ export type WardFlowEvent =
       now: Instant;
     }
   | {
-      /**
-       * Record that a team was contacted. This is the contact itself, not a sent message.
-       * Stores the team, the time, and the caller's role.
-       */
+      /** Record that a team was contacted: the contact itself, not a sent message. Stores team, time and role. */
       type: "RECORD_CLINICAL_CONTACT";
       role: WardFlowRole;
       now: Instant;
@@ -2721,16 +2719,7 @@ export type WardFlowEvent =
       /** A ward undoing its own record names itself. */
       actingUnitId?: string;
     }
-  | {
-      /** Takes back the newest `COMPLETE_BED_MEETING_ACTION` of this kind on this record (H-0150). */
-      type: "UNDO_BED_MEETING_ACTION";
-      role: WardFlowRole;
-      now: Instant;
-      recordSeq?: number;
-      subject: BedMeetingSubject;
-      action: BedMeetingActionKind;
-      actingUnitId?: string;
-    };
+  | UndoBedMeetingActionEvent;
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;
