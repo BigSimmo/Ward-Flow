@@ -718,12 +718,13 @@ export function createWorkspaceStore(
   /**
    * From migration 14, moves this world's closed records older than 30 days into the archive table
    * (`engine.archiveClosed`), in the save's own transaction, and returns the smaller world. Each row
-   * is written before the record leaves the workspace, so nothing is lost if the save fails.
+   * is written before the record leaves the workspace, so nothing is lost if the save fails. The
+   * move has its own audit row naming each record moved, under the save that triggered it (GV-27).
    * `afterMinutes` is the shorter window used once the workspace is near its limit (audit PS-02).
    * Returns the world and how many archive rows this save added.
    * @param {number} [afterMinutes]
    */
-  async function archiveOld(client, world, revision, at, afterMinutes = undefined) {
+  async function archiveOld(client, world, revision, at, view, actorId, afterMinutes = undefined) {
     const { world: kept, archived } = engine.archiveClosed(world, at, afterMinutes);
     if (!archived.length) return { world, inserted: 0 };
     const written = await client.query(
@@ -743,6 +744,15 @@ export function createWorkspaceStore(
         ),
       ],
     );
+    await audit(client, view, actorId, {
+      action: "ARCHIVE_CLOSED_RECORDS",
+      outcome: "accepted",
+      priorRevision: revision,
+      revision,
+      changes: {
+        archived: archived.map((record) => ({ collection: record.collection, recordId: record.id })),
+      },
+    });
     return { world: kept, inserted: written?.rowCount ?? 0 };
   }
   /**
@@ -1211,7 +1221,17 @@ export function createWorkspaceStore(
     return resolveViewer(actorId, options, pool, clock(), await schemaVersion());
   }
   /** Resolve through the caller's connection so locked writes never use a stale joined scope. */
-  async function resolveViewer(actorId, { bootstrap = false, workingAs = null }, connection, at, version) {
+  /**
+   * `touch: false` (fresh audit X-2) skips the "last worked as" write, for the push opt-out that a
+   * signed-out or expired sign-in may still call, so it cannot keep an unused role switched on.
+   */
+  async function resolveViewer(
+    actorId,
+    { bootstrap = false, workingAs = null, touch = true },
+    connection,
+    at,
+    version,
+  ) {
     const choices = bootstrap ? [{ membershipId: null, access: engine.STATEWIDE, own: engine.STATEWIDE }] : [];
     let needsService = false;
     if (version >= ROLE_ACCESS_MIGRATION) {
@@ -1292,6 +1312,7 @@ export function createWorkspaceStore(
     let recentGrant = false;
     const writeEvery = new Date(at.getTime() - LAST_USED_EVERY_MS);
     if (
+      touch &&
       chosen.membershipId &&
       version >= ACCESS_COVER_MIGRATION &&
       (!chosen.lastUsed || new Date(chosen.lastUsed) < writeEvery)
@@ -2049,6 +2070,21 @@ export function createWorkspaceStore(
       if (surface === "referral" && !(view.version >= REFERRAL_VIEW_MIGRATION))
         return { status: 200, body: { logged: false } };
       const at = clock();
+      // Fresh audit P-2: most openings repeat one already logged this minute, or come past the rate
+      // limit, and log nothing. Check that first on the record_access_actor index, so only an
+      // opening that may be logged pays for reading and scoping the whole board. The insert below
+      // checks both again under its lock.
+      const since = new Date(at.getTime() - VIEW_REPEAT_MS);
+      const { rows: recent } = await pool
+        .query(
+          "SELECT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3 AND surface=$4 AND viewed_at > $5) AS repeated, (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $5) >= $6 AS limited",
+          [workspaceId, view.actorId, patientId, surface, since, VIEW_RATE_LIMIT],
+        )
+        .catch((error) => {
+          forgetVersionOnMissing(error);
+          throw error;
+        });
+      if (recent[0]?.repeated || recent[0]?.limited) return { status: 200, body: { logged: false } };
       const stored = await readWorld(pool, "payload");
       if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
       const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
@@ -2475,6 +2511,8 @@ export function createWorkspaceStore(
                 row.payload,
                 row.revision,
                 at,
+                view,
+                actorId,
                 pressed ? sizeLimits.pressureAfterMinutes : undefined,
               );
               archivedRows = archiving.inserted;

@@ -98,6 +98,9 @@ export function WardSharedSaveStatus({
             Retry
           </button>
         )}
+        {connection.accountEmail && (
+          <span data-testid="ward-signed-in-as"> Signed in as {connection.accountEmail}.</span>
+        )}
         <button type="button" onClick={connection.signOut}>
           Sign out
         </button>

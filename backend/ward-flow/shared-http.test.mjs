@@ -914,3 +914,32 @@ test("a save past the workspace size limit is refused as full, never as a server
   assert.equal((await response.json()).code, "workspace-full");
   assert.equal(logs.at(-1).outcome, "workspace_full");
 });
+
+test("turning phone alerts off never counts as working the role (fresh audit X-2)", async () => {
+  const seen = [];
+  const { handler } = setup(coordinator, "prototype", {
+    viewer: async (actorId, options) => {
+      seen.push(options.touch);
+      return bootstrapViewer(actorId, options);
+    },
+  });
+  await handler(request("/push-unsubscribe", { endpoint: "https://push.example/1" }));
+  await handler(request());
+  assert.deepEqual(seen, [false, undefined]);
+});
+
+test("archived records sent to a desk are logged as a list read, and an empty archive is not (GV-27)", async () => {
+  const logged = [];
+  let records = [{ collection: "movements", body: { id: "MV-SYN-1" } }];
+  const { handler } = setup(coordinator, "prototype", {
+    archive: async () => ({ archived: records.length, records }),
+    logList: async (view, surface) => {
+      logged.push(surface);
+      return true;
+    },
+  });
+  assert.equal((await handler(request("/archive"))).status, 200);
+  records = [];
+  assert.equal((await handler(request("/archive?since=7"))).status, 200);
+  assert.deepEqual(logged, ["list"]);
+});

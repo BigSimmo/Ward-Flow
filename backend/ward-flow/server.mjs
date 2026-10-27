@@ -157,7 +157,7 @@ export function createHandler({
         });
       if (error instanceof VerifierUnavailableError)
         return respond(503, { error: "Sign-in verification unavailable; try again shortly" }, "verifier_unavailable");
-      return respond(401, { error: "Sign in with the authorised account" }, "auth_denied");
+      return respond(401, { code: "auth-denied", error: "Sign in with the authorised account" }, "auth_denied");
     }
     if (request.method !== "GET") return respond(405, { error: "Method not allowed" });
     try {

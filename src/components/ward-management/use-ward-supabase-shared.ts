@@ -79,6 +79,8 @@ function releasePhoneAlerts(baseUrl: string, token: string | null, chosen: strin
 export type WardCredentialForm = {
   open: boolean;
   recovery: boolean;
+  /** Fresh audit X-1: the account a recovery link is for, so a link from someone else is noticed. */
+  accountEmail?: string | null;
   signupAvailable: boolean;
   signUp: (email: string, password: string) => Promise<void>;
   busy: boolean;
@@ -147,8 +149,17 @@ export function useWardSupabaseShared(
 ) {
   const [view, setView] = useState<SharedView>(emptyView);
   const [signedIn, setSignedIn] = useState(false);
+  // #791: the signed-in account's email, shown beside Sign out. Memory only, like the auth's own copy.
+  const [accountEmail, setAccountEmail] = useState<string | null>(null);
   const [endsAt, setEndsAt] = useState<number | null>(null);
-  const [form, setForm] = useState({ open: false, recovery: false, busy: false, message: null as string | null });
+  const [form, setForm] = useState<{
+    open: boolean;
+    recovery: boolean;
+    busy: boolean;
+    message: string | null;
+    /** Fresh audit X-1: the account a recovery link signs in to, shown on "Set a new password". */
+    accountEmail?: string | null;
+  }>({ open: false, recovery: false, busy: false, message: null });
   // Latest factory, read when the session boots. Updated in an effect (not during render) and
   // declared before the boot effect so it is current when that effect runs; the boot effect keys
   // on `enabled` only, so an inline factory with a new identity each render does not reconnect.
@@ -162,6 +173,7 @@ export function useWardSupabaseShared(
     setPreviousEnabled(enabled);
     setView(emptyView);
     setSignedIn(false);
+    setAccountEmail(null);
     setForm({ open: false, recovery: false, busy: false, message: null });
   }
   const connection = useRef<SharedWorkspaceClient | null>(null);
@@ -218,6 +230,7 @@ export function useWardSupabaseShared(
       connection.current = null;
       if (!closed) {
         setSignedIn(false);
+        setAccountEmail(null);
         setEndsAt(null);
         setView({ ...emptyView, status: "ready" });
       }
@@ -242,6 +255,7 @@ export function useWardSupabaseShared(
       setDraftAccount(actorId);
       connectedActorId = actorId;
       setSignedIn(true);
+      setAccountEmail(auth.accountEmail);
       setForm({ open: false, recovery: false, busy: false, message: null });
       const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL!;
       const instance = auth;
@@ -454,7 +468,7 @@ export function useWardSupabaseShared(
               }
               await auth!.restore();
               if (auth!.isRecovery) {
-                setForm((old) => ({ ...old, open: true, recovery: true }));
+                setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth!.accountEmail }));
                 setView({ ...emptyView, status: "ready" });
               } else if (auth!.userId) {
                 await connect();
@@ -487,7 +501,7 @@ export function useWardSupabaseShared(
         await auth.restore(recovery);
         if (closed) return;
         if (auth.isRecovery) {
-          setForm((old) => ({ ...old, open: true, recovery: true }));
+          setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth?.accountEmail ?? null }));
           setView({ ...emptyView, status: "ready" });
         } else if (auth.userId) await connect();
         else {
@@ -513,6 +527,7 @@ export function useWardSupabaseShared(
   return {
     ...view,
     signedIn,
+    accountEmail,
     client: connection,
     signIn: () => setForm((old) => ({ ...old, open: true, message: null })),
     /** When this sign-in reaches the session limit, in wall-clock milliseconds; `null` when unknown. */

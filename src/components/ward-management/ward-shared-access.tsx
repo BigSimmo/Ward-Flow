@@ -44,6 +44,8 @@ import { WardPartialViewProvider } from "./ward-partial-view";
 import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
 
+/** How long the first connection may wait before Reconnect is offered: one shared request's limit. */
+const CONNECTING_STALL_MS = 15_000;
 const UNAVAILABLE_ACCESS_MESSAGE =
   "Shared access is unavailable. Reconnect and finish checking any uncertain save first.";
 /** Explicit shared-unavailable source: never let an outage select the local demonstration store. */
@@ -85,6 +87,8 @@ export type WardSharedConnection = SharedView & {
   credentials?: WardCredentialForm;
   enabled: boolean;
   signedIn: boolean;
+  /** #791: the signed-in account's email, shown beside Sign out so the person knows which account this is. */
+  accountEmail?: string | null;
   signIn: () => void;
   /** Sign out. With a `reason`, only this tab, and the sign-in screen says why. */
   signOut: (reason?: unknown) => void;
@@ -289,6 +293,15 @@ function WardCredentialFields({ form }: { form: WardCredentialForm }) {
       }}
     >
       <h2>{form.recovery ? "Set a new password" : signup ? "Create a Ward Flow account" : "Sign in to Ward Flow"}</h2>
+      {form.recovery && (
+        // Fresh audit X-1: a recovery link someone else sent signs this tab in to their account.
+        // Naming the account lets the person see that before setting a password for it.
+        <p data-testid="ward-recovery-account">
+          {form.accountEmail
+            ? `This link is for ${form.accountEmail}. If that is not your account, choose Cancel.`
+            : "This link's account could not be shown. If you did not ask for this link, choose Cancel."}
+        </p>
+      )}
       {!form.recovery && (
         <label>
           Email
@@ -654,12 +667,31 @@ function WardSharedWorkspaceContent({
     );
     return () => clearTimeout(timer);
   }, [connection.accessUntil, checkedAt]);
+  // #805: while the saved sign-in is checked and the board first read, nothing has failed, so the
+  // screen says so instead of offering Reconnect or a sign-in button, which read as a sign-out.
+  // Reconnect comes back only if the wait runs past the request limit without an answer.
+  const connecting =
+    connection.enabled &&
+    connection.status === "loading" &&
+    !connection.error &&
+    !connection.credentials?.open &&
+    !connection.snapshot;
+  const [stalled, setStalled] = useState(false);
+  useEffect(() => {
+    if (!connecting) return;
+    const timer = setTimeout(() => setStalled(true), CONNECTING_STALL_MS);
+    return () => {
+      clearTimeout(timer);
+      setStalled(false);
+    };
+  }, [connecting]);
   if (!connection.enabled) return children;
   if (connection.signedIn && connection.status === "choose-role")
     return (
       <WardRolePicker
         choices={connection.choices ?? []}
         onChoose={(id) => connection.chooseRole?.(id)}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -670,6 +702,7 @@ function WardSharedWorkspaceContent({
         reason={connection.noRoleReason}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -682,6 +715,7 @@ function WardSharedWorkspaceContent({
         canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
     );
@@ -694,8 +728,30 @@ function WardSharedWorkspaceContent({
         canRequest={connection.canRequest === true}
         api={connection.accessApi ?? null}
         onRetry={connection.retry}
+        accountEmail={connection.accountEmail}
         onSignOut={connection.signOut}
       />
+    );
+  if (connecting)
+    return (
+      <main id="main-content" className={styles.notice} aria-label="Opening Ward Flow" aria-busy="true">
+        <h1>Opening Ward Flow</h1>
+        <p role="status" data-testid="ward-shared-connecting">
+          {connection.signedIn
+            ? "Signed in. Connecting to the shared workspace. This can take up to 15 seconds."
+            : "Checking your sign-in."}
+        </p>
+        {stalled && (
+          <button type="button" onClick={connection.retry}>
+            {connection.signedIn ? "Reconnect" : "Try again"}
+          </button>
+        )}
+        {connection.signedIn && (
+          <button type="button" onClick={connection.signOut}>
+            Sign out
+          </button>
+        )}
+      </main>
     );
   if (!connection.signedIn || !connection.snapshot)
     return (
@@ -718,11 +774,6 @@ function WardSharedWorkspaceContent({
           </>
         )}
         {connection.error && <p role="alert">{connection.error}</p>}
-        {connection.signedIn && connection.status === "loading" && !connection.error && (
-          <p role="status" data-testid="ward-shared-connecting">
-            Signed in. Connecting to the shared workspace. This can take up to 15 seconds.
-          </p>
-        )}
         {connection.credentials?.open ? (
           <WardCredentialFields form={connection.credentials} />
         ) : connection.signedIn && connection.status !== "not-authorised" ? (
