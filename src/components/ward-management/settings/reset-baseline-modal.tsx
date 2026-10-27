@@ -34,7 +34,7 @@ function restoredValues(): readonly (readonly [string, string])[] {
     ["ED wait target", `${defaults.edAccessTargetMinutes / 60}h`],
     ["Wards asked at once", String(defaults.parallelReferralCap)],
     ["Pull time limit", shortDuration(defaults.pullHoldMinutes)],
-    ["Morning count", clock24(defaults.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES)],
+    ["Morning bed numbers due", clock24(defaults.morningRollupDeadlineMinutes ?? MORNING_ROLLUP_TIME_MINUTES)],
     ["Early warning", shortDuration(defaults.dueSoonMinutes ?? DUE_SOON_MINUTES)],
     ["Final warning", shortDuration(defaults.dueSoonUrgentMinutes ?? DUE_SOON_URGENT_MINUTES)],
     ["Referral decision", shortDuration(defaults.referralDecisionTargetMinutes ?? WARD_ANSWER_TARGET_MINUTES)],

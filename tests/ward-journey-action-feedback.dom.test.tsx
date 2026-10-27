@@ -337,7 +337,7 @@ describe("role restrictions and record actors", () => {
       .mockReturnValue({ commandId: "retry", status: "accepted" });
     renderCommand(<DischargeProbe />, dispatch);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open own discharge" })));
-    fireEvent.click(screen.getByRole("tab", { name: "Dossier" }));
+    fireEvent.click(screen.getByRole("tab", { name: "Record" }));
     fireEvent.click(screen.getByTestId("ward-discharge-update-date-btn"));
     const input = screen.getByTestId("ward-discharge-new-time-input");
     fireEvent.change(input, { target: { value: "23:15" } });

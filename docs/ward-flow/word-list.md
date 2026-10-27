@@ -69,28 +69,33 @@ The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, *
 
 ## People, services and short forms
 
-| Say               | Means                                                                               |
-| ----------------- | ----------------------------------------------------------------------------------- |
-| **ECT**           | Electroconvulsive therapy.                                                          |
-| **NIC**           | Nurse in charge.                                                                    |
-| **NUM**           | Nurse unit manager.                                                                 |
-| **CAHS**          | Child and Adolescent Health Service.                                                |
-| **EMHS**          | East Metropolitan Health Service.                                                   |
-| **NMHS**          | North Metropolitan Health Service.                                                  |
-| **SMHS**          | South Metropolitan Health Service.                                                  |
-| **WACHS**         | WA Country Health Service.                                                          |
-| **ED**            | Emergency department, after first use.                                              |
-| **AWOL**          | Absent without leave. On screen, written in full where there is room.               |
-| **CTO**           | Community treatment order.                                                          |
-| **EDD**           | Expected date of discharge.                                                         |
-| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.         |
-| **MDT**           | Multidisciplinary team.                                                             |
-| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014". |
-| Sign in, sign out | Never log in or log out.                                                            |
+| Say               | Means                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------ |
+| **ECT**           | Electroconvulsive therapy.                                                           |
+| **NIC**           | Nurse in charge.                                                                     |
+| **NUM**           | Nurse unit manager.                                                                  |
+| **CAHS**          | Child and Adolescent Health Service.                                                 |
+| **EMHS**          | East Metropolitan Health Service.                                                    |
+| **NMHS**          | North Metropolitan Health Service.                                                   |
+| **SMHS**          | South Metropolitan Health Service.                                                   |
+| **WACHS**         | WA Country Health Service.                                                           |
+| **ED**            | Emergency department, after first use.                                               |
+| **AWOL**          | Absent without leave. On screen, written in full where there is room.                |
+| **CTO**           | Community treatment order.                                                           |
+| **EDD**           | Expected date of discharge.                                                          |
+| **ETA**           | Estimated time of arrival, as quoted by the transport provider or the ward.          |
+| **MDT**           | Multidisciplinary team.                                                              |
+| **MHA**           | The Mental Health Act, the WA law the legal forms are named from. Never "MHA 2014".  |
+| **ATS**           | Australasian Triage Scale category, as recorded at ED triage.                        |
+| **RAMP**          | Risk Assessment and Management Plan, the WA mental health form.                      |
+| **PSP**           | Personal support person: a carer, close family member, nominated person or guardian. |
+| **MHAS**          | Mental Health Advocacy Service.                                                      |
+| **GP**            | General practitioner.                                                                |
+| **BPSD**          | Behavioural and psychological symptoms of dementia.                                  |
+| Sign in, sign out | Never log in or log out.                                                             |
 
-**Open question for Josh:** the coordinator's role is called "Bed coordinator" on most screens and
-"Flow coordinator" in the recorded decision field and some demo text. One name should win; until Josh
-chooses, do not add a third ("bed flow coordinator", "bed manager" for this role).
+**Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say
+"flow coordinator" or "bed manager" for this role. "Bed flow coordinator" stays only as an on-call title.
 
 ## Screens, figures and urgency
 
@@ -141,3 +146,20 @@ Nothing was changed.") says that reason, because it already names what to change
 - Australian spelling (colour, centre, organise, cancelled, stabilisation). Do not say US spelling (organize, stabilization, utilization, canceled, behavior, favorite).
 - Sentence case for buttons, labels and headings ("On leave", not "On Leave").
 - Say what happened, then what to do next. No exclamation marks.
+
+## Plain words (wording audit, 26 October 2026)
+
+Held is only for a patient's own leave or away bed (D-85). Held up is for delays.
+
+| Say                            | Do not say                              |
+| ------------------------------ | --------------------------------------- |
+| Beds held up by a blocker      | beds held by blockers                   |
+| the pull time limit passed at  | was held until (for a pulled bed)       |
+| Not recorded                   | not held (for a missing number or time) |
+| record                         | dossier                                 |
+| Authorised hospital            | involuntary-capable                     |
+| Expected arrival (as recorded) | real-time ETA                           |
+| Ward capacity                  | live capacity telemetry                 |
+| Current broadcast              | active statewide directive              |
+| Release pulled bed             | Release bed (for a pulled bed)          |
+| Error reference                | Digest                                  |

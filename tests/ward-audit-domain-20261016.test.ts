@@ -139,7 +139,7 @@ describe("audit domain boundary regressions, 16 October 2026", () => {
     expect(inboxRowExists(state, inboxItemId)).toBe(true);
     const next = wardFlowReducer(state, { type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now, inboxItemId });
     expect(next.rejections).toHaveLength(0);
-    expect(next.inboxAcknowledgements[inboxItemId]).toEqual([{ at: now, by: "Flow coordinator" }]);
+    expect(next.inboxAcknowledgements[inboxItemId]).toEqual([{ at: now, by: "Bed coordinator" }]);
     const missing = wardFlowReducer(state, {
       type: "ACKNOWLEDGE_INBOX_ITEM",
       role: "coordinator",

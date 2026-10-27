@@ -239,7 +239,7 @@ describe("community admitted table — transport booking and cancel", () => {
     expect(within(cell).queryByTestId(`ward-community-cancel-transport-${movementId}`)).toBeNull();
 
     fireEvent.click(within(cell).getByTestId("ward-community-open-dossier-AD-TRANSPORT-01"));
-    expect(screen.getByRole("dialog", { name: /Patient dossier: Farah Davenporton · UM100010/i })).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: /Patient record: Farah Davenporton · UM100010/i })).toBeTruthy();
   });
 
   it("Actions omits Open Dossier when patientId is null but still offers booking", () => {

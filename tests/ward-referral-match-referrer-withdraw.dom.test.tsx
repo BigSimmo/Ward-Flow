@@ -141,7 +141,7 @@ describe("sender referral presentation from a partial record", () => {
     expect(entries.filter((entry) => entry.at === summary.decidedAt)).toEqual([
       { at: summary.decidedAt, tone: "closed", text: "Referral declined" },
     ]);
-    expect(entries.some((entry) => /refused:|Opened by|asked for:|waitlisted/.test(entry.text))).toBe(false);
+    expect(entries.some((entry) => /refused:|Opened by|asked for:|waiting list/.test(entry.text))).toBe(false);
     expect(outcomeLabel(referral, null)).toBe("Progress unavailable");
   });
   it("does not turn a follow-up answer into an overall decision while the bed question stays open", () => {

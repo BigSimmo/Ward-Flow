@@ -364,7 +364,12 @@ export function OnCallScreen() {
         eyebrow={
           atLater ? `Who answers at ${hhmm(minute)}${minute < boardMinute ? " tomorrow" : ""}` : "Who to call now"
         }
-        title={`${answering.length} ${answering.length === 1 ? "line" : "lines"} answering`}
+        // H-0887: the page heading names the page, not only the count.
+        title={
+          <>
+            <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
+          </>
+        }
         // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
         titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
         stats={
@@ -454,7 +459,7 @@ export function OnCallScreen() {
                       <ServiceTag service={entry.service} label="" />
                       <span className={styles.truncate}>{keyLineLabel(entry)}</span>
                     </span>
-                    <span className={styles.keyNumber}>{numberAt(entry, minute) ?? "Not held"}</span>
+                    <span className={styles.keyNumber}>{numberAt(entry, minute) ?? "Not recorded"}</span>
                     <span className={styles.keyUntil}>
                       {now.kind === "on" ? (
                         now.allDay ? (
@@ -720,7 +725,8 @@ export function OnCallScreen() {
                 <StatusGlyph tone="warning" size={9} />
                 <span className={styles.disclosureText}>
                   Synthetic records. Every number is a mock from an unassigned range and every email uses a reserved
-                  domain. {checkDue.length} records are over {CHECK_DUE_DAYS} days since their last check.
+                  domain. {checkDue.length} {checkDue.length === 1 ? "record is" : "records are"} over {CHECK_DUE_DAYS}{" "}
+                  days since their last check.
                 </span>
               </span>
             </CardFoot>
@@ -1093,9 +1099,9 @@ function DowntimeCard({
         `${entry.name} (${entry.siteCode ?? SERVICE_META[entry.service].short}): ` +
         (entry.lines.length
           ? entry.lines
-              .map((item) => `${item.label} ${item.number ?? "not held"}, ${windowText(item.window)}`)
+              .map((item) => `${item.label} ${item.number ?? "not recorded"}, ${windowText(item.window)}`)
               .join("; ")
-          : `email ${entry.email ?? "not held"}`),
+          : `email ${entry.email ?? "not recorded"}`),
     )
     .join("\n");
   return (
@@ -1135,7 +1141,7 @@ function DowntimeCard({
                   </span>
                 </span>
               </td>
-              <td className={styles.number}>{item.number ?? "Not held"}</td>
+              <td className={styles.number}>{item.number ?? "Not recorded"}</td>
               <td className={styles.mono}>{windowText(item.window)}</td>
             </tr>
           ))}

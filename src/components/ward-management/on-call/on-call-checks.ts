@@ -75,7 +75,7 @@ export function checkIsDue(check: Pick<LastCheck, "daysAgo">): boolean {
   return check.daysAgo > CHECK_DUE_DAYS;
 }
 
-/** "Checked today by Flow coordinator", "Checked 12 days ago by Bed manager". */
+/** "Checked today by Bed coordinator", "Checked 12 days ago by Bed manager". */
 export function lastCheckText(check: LastCheck): string {
   const when = check.daysAgo === 0 ? "today" : check.daysAgo === 1 ? "yesterday" : `${check.daysAgo} days ago`;
   return `Checked ${when} by ${WARD_FLOW_ROLE_LABELS[check.by]}`;

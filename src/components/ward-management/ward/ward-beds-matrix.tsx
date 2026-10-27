@@ -27,11 +27,12 @@ interface WardBedsMatrixProps {
 function formatBedAriaLabel(bed: BedItem, eddMoved: string | null = null): string {
   const parts: string[] = [`${bed.bedLabel} ${bed.statusText}`];
   if (bed.patientAlias) parts.push(bed.patientAlias);
-  if (bed.stayDays !== undefined && bed.stayDays !== null) parts.push(`${bed.stayDays} days in bed`);
+  if (bed.stayDays !== undefined && bed.stayDays !== null)
+    parts.push(`${bed.stayDays} ${bed.stayDays === 1 ? "day" : "days"} in bed`);
   if (bed.pastDate) parts.push("Past expected discharge date");
   if (bed.isSpecialling && bed.observation) parts.push(`${observationSummary(bed.observation)} active`);
   if (bed.awayAtEdHours !== null && bed.awayAtEdHours !== undefined)
-    parts.push(`Away at ED for ${bed.awayAtEdHours} hours`);
+    parts.push(`Away at ED for ${bed.awayAtEdHours} ${bed.awayAtEdHours === 1 ? "hour" : "hours"}`);
   if (bed.legalStatusLabel) parts.push(bed.legalStatusLabel);
   if (bed.criteriaLedChip) parts.push(bed.criteriaLedChip.phrase);
   if (bed.blockReason) parts.push(`Discharge blocker: ${bed.blockReason}`);

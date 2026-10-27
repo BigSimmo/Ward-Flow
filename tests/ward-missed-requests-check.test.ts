@@ -174,7 +174,7 @@ describe('"Checked, all accounted for" (overall review, 20 Oct 2026)', () => {
     expect(checked.rejections).toEqual([]);
     expect(dailyCheckRecord(checked.inboxCompletions, NOW + 5)).toEqual({
       at: NOW + 5,
-      by: "Flow coordinator",
+      by: "Bed coordinator",
       kind: "completed",
     });
     // Nothing else moves: the rules behind the list still run on the same records.

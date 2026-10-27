@@ -611,8 +611,8 @@ export function PatientTransitOperations({
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Pull expired. Review the pull before progressing."
-                : `Bed pulled · ${dur(remaining)} remaining · expires ${clock(movement.pullExpiresAt!)}`}
+                ? "Pull time limit passed. The bed stays pulled until a person releases it or sets a new limit."
+                : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
           {/* The booked provider, CAD number, quoted ETA and escort show once, in the Transport block

@@ -149,12 +149,12 @@ export const STAGE_LABEL: Record<MovementStage, string> = {
 
 const OWNER_SHORT: Record<string, string> = {
   "ED mental health team": "ED team",
-  "Flow coordinator": "Coordinator",
+  "Bed coordinator": "Coordinator",
   "Ward nurse in charge": "Ward NIC",
 };
 
 /** The coordinator using this page. Owner names are role labels in this model. */
-export const HANDOVER_ME = "Flow coordinator";
+export const HANDOVER_ME = "Bed coordinator";
 
 /** Urgent first; otherwise "Constant" for a level that takes observation staff (fix plan item 10). */
 export type HandoverObs = "Standard" | "Urgent" | "Constant";
@@ -488,7 +488,7 @@ export function nextStep(
     const ready = row.to ? readyBeds(row.to.unitId) : 0;
     text =
       ready > 0
-        ? `Pull a bed, ${row.to!.name} shows ${ready} ready`
+        ? `Pull the bed, ${row.to!.name} shows ${ready} ready`
         : `Wait for a bed at ${row.to?.name ?? "the ward"}`;
   } else if (row.asked.length) {
     text =

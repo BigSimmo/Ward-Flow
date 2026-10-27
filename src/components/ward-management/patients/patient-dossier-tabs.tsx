@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
+import { uploadedFileLabel } from "../ward-uploaded-file";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
 import type { Patient } from "../ward-patients";
 import { calendarDateOf } from "../ward-clock";
@@ -97,7 +98,7 @@ function movementEvents(movement: Movement, unitName: (id: string) => string | u
     events.push({
       at: movement.escalation.at,
       tone: "info",
-      text: `Escalated after ${movement.escalation.triedUnitIds.length} wards tried`,
+      text: `Escalated after ${movement.escalation.triedUnitIds.length} ${movement.escalation.triedUnitIds.length === 1 ? "ward" : "wards"} tried`,
     });
   if (movement.acceptedAt !== undefined && movement.acceptedUnitId)
     events.push({
@@ -433,7 +434,7 @@ export function PatientHistoryTab({
 /** One label per admission state: a waitlisted person has no bed yet, a pulled bed is kept for them
  * ("Bed pulled", the one bed vocabulary; "hold" is for a leave bed only). */
 const STAY_CHIP: Record<Admission["state"], string> = {
-  waitlisted: "Waitlisted",
+  waitlisted: "On waiting list",
   pulled: "Bed pulled",
   occupied: "Current",
   departed: "Closed",
@@ -819,7 +820,7 @@ export function PatientDocumentsTab({
       by: d.uploadedBy,
       when: `${clock(d.uploadedAt)} AWST`,
       status: "Metadata recorded",
-      file: d.fileName,
+      file: uploadedFileLabel(d),
     })),
     ...referralCharts.map((chart, index) => ({
       id: `referral-chart-${index}`,

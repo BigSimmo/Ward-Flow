@@ -15,7 +15,7 @@ type Logistics = {
 
 function seededLogistics(anchor: number, release: BedRelease): Logistics | null {
   const ward = "Ward manager";
-  const coordinator = "Flow coordinator";
+  const coordinator = "Bed coordinator";
   switch (release.id) {
     // Expected time moved AFTER pharmacy confirmed: pharmacy needs checking again.
     case "derived-expected-AD-RGHS-07":

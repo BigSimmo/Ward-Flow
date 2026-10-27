@@ -133,6 +133,9 @@ export const ROLE_MENUS: Record<WardChromeRole, readonly RoleMenuItem[]> = {
     ["wards", "Wards"],
     ["movements", "Movements"],
     ["delays", "Waiting"],
+    // #821 (multi-account test, 26 Oct 2026): its own wards' incoming referrals, read only (D-80),
+    // were reachable only from Waiting's "Open Referrals" link.
+    ["referrals", "Referrals"],
     ["handover", "Handover"],
   ],
   executive: [["statistics", "Statistics"]],

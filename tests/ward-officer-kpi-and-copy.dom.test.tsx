@@ -257,13 +257,12 @@ describe("officer screen's refusals region has its own accessible name", () => {
 });
 
 /**
- * Item 31 (owner's 17 September answers): the officer's own "Arrived" becomes "Delivered" — the
- * action button, the guard-ledger bullet naming it, and the refusal label all read "Delivered".
- * The event dispatched stays `PATIENT_ARRIVED` (the ward, tracker and movements screens keep
- * "Arrived" for that same event, which this file does not touch).
+ * Josh, 26 Oct 2026 (H-0808, H-0809, replacing item 31's "Delivered"): the officer's last step reads
+ * "Arrived at ward" on the action button and the refusal label. The event dispatched stays
+ * `PATIENT_ARRIVED`, and the receiving ward still confirms the arrival (A4-16).
  */
-describe("item 31: the officer's own arrival wording reads Delivered, not Arrived", () => {
-  it("labels the arrival button Delivered, not Arrived, and a click still dispatches PATIENT_ARRIVED", () => {
+describe("the officer's last step reads Arrived at ward", () => {
+  it("labels the arrival button Arrived at ward, never Delivered, and a click still dispatches PATIENT_ARRIVED", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
@@ -279,8 +278,8 @@ describe("item 31: the officer's own arrival wording reads Delivered, not Arrive
 
     // v6: the four stage actions sit in the selected job's panel beside the list.
     const card = screen.getByTestId("ward-officer-detail");
-    expect(within(card).queryByRole("button", { name: "Arrived" })).not.toBeInTheDocument();
-    const button = within(card).getByRole("button", { name: "Delivered" });
+    expect(within(card).queryByRole("button", { name: "Delivered" })).not.toBeInTheDocument();
+    const button = within(card).getByRole("button", { name: "Arrived at ward" });
 
     fireEvent.click(button);
 
@@ -302,7 +301,7 @@ describe("item 31: the officer's own arrival wording reads Delivered, not Arrive
     expect(text).not.toContain("Cannot confirm Delivered");
   });
 
-  it("reports a refused arrival as 'Delivered was refused', not 'Arrived was refused'", () => {
+  it("reports a refused arrival as 'Arrived at ward was refused', not 'Delivered was refused'", () => {
     function Harness() {
       const { dispatch, now } = useWardFlow();
       return (
@@ -336,7 +335,7 @@ describe("item 31: the officer's own arrival wording reads Delivered, not Arrive
     // The label and " was refused: " sit in separate JSX text nodes (see the render above), so
     // this reads the refusal row's own combined textContent rather than a `getByText` regex.
     const refusalText = within(refusals).getByRole("listitem").textContent ?? "";
-    expect(refusalText).toContain("Delivered was refused:");
-    expect(refusalText).not.toContain("Arrived was refused:");
+    expect(refusalText).toContain("Arrived at ward was refused:");
+    expect(refusalText).not.toContain("Delivered was refused:");
   });
 });

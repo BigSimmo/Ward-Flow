@@ -1241,7 +1241,7 @@ export function MovementWorkspaceCockpit({
           <p className={styles.panelBlurb}>
             {open
               ? orphanedJob
-                ? "Six controls, all of which record against this movement immediately, and the first is a transport job booked against a bed that is no longer held. Confirming a destination is not built yet."
+                ? "Six controls, all of which record against this movement immediately, and the first is a transport job booked against a bed that is no longer pulled. Confirming a destination is not built yet."
                 : "Five controls, all of which record against this movement immediately. Two of them correct something already recorded, and each asks why. Confirming a destination is not built yet."
               : "These controls are the same ones an open movement has. On a closed movement the reducer refuses them, and the reasons are stated rather than the buttons being hidden."}
           </p>
@@ -1781,8 +1781,8 @@ export function MovementWorkspaceCockpit({
                 </p>
               ) : acceptedStageIndex > MOVEMENT_STAGES.indexOf("pulled") ? (
                 <p className={styles.actionSay}>
-                  This patient is past the point where a bed is only held. Handover is being prepared or the patient may
-                  already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
+                  This patient is past the point where a bed is only pulled. Handover is being prepared or the patient
+                  may already be moving, so the acceptance cannot be withdrawn here. Ring the ward.
                 </p>
               ) : (
                 <>

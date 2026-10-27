@@ -593,7 +593,7 @@ describe("how long a movement has waited", () => {
     urgencyChanges: [],
     overrides: [],
     stage: "placement_requested",
-    owner: "Flow coordinator",
+    owner: "Bed coordinator",
     referredUnitIds: [],
     declines: [],
     blocker: "No blocker",

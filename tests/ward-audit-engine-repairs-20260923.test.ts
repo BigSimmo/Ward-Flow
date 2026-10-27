@@ -591,18 +591,27 @@ describe("23 September engine audit repairs", () => {
     }
   });
   it.each([
-    { formName: "", fileName: "synthetic.pdf", sizeBytes: 512 },
-    { formName: "  ", fileName: "synthetic.pdf", sizeBytes: 512 },
+    { formName: "", fileType: "PDF", sizeBytes: 512 },
+    { formName: "  ", fileType: "PDF", sizeBytes: 512 },
+    { formName: "Synthetic details", sizeBytes: 512 },
+    { formName: "Synthetic details", fileType: "synthetic.pdf", sizeBytes: 512 },
+    // Events recorded before H-0049 (26 Oct 2026) carry a file name; an empty one is still refused.
     { formName: "Synthetic details", fileName: "", sizeBytes: 512 },
     { formName: "Synthetic details", fileName: "  ", sizeBytes: 512 },
     ...[undefined, 0, -1, NaN, Infinity, 0.5].map((sizeBytes) => ({
       formName: "Synthetic details",
-      fileName: "synthetic.pdf",
+      fileType: "PDF",
       sizeBytes,
     })),
   ])("rejects empty or invalid document details without a business-state change (%j)", (details) => {
     const state = seedWardFlowStateAt(0);
-    const next = wardFlowReducer(state, { type: "UPLOAD_PATIENT_FORM", role: "ed", now, movementId: id, ...details });
+    const next = wardFlowReducer(state, {
+      type: "UPLOAD_PATIENT_FORM",
+      role: "ed",
+      now,
+      movementId: id,
+      ...details,
+    } as WardFlowEvent);
     expect(next.movements).toBe(state.movements);
     expect(next.rejections).toHaveLength(state.rejections.length + 1);
   });
@@ -614,12 +623,12 @@ describe("23 September engine audit repairs", () => {
       now,
       movementId: id,
       formName: "Synthetic details",
-      fileName: "synthetic.pdf",
+      fileType: "PDF",
       sizeBytes: 512,
     });
     expect(movement(next).uploadedForms?.at(-1)).toMatchObject({
       formName: "Synthetic details",
-      fileName: "synthetic.pdf",
+      fileType: "PDF",
       sizeBytes: 512,
       uploadedAt: now,
       uploadedBy: "ed",

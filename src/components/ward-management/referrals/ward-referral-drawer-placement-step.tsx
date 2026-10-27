@@ -31,6 +31,7 @@ import { Field, SelectBox, Choice, CardHead } from "./ward-referral-drawer-field
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import {
   HOME_REGIONS,
+  TRAVEL_MODES,
   type Cohort,
   type Referral,
   type Unit,
@@ -561,10 +562,13 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                     value={transport}
                     onChange={(e) => setTransport(e.target.value)}
                   >
-                    <option value="mht">Mental Health Transport</option>
-                    <option value="rfds">RFDS aeromedical escort</option>
-                    <option value="stjohn">St John Ambulance escort</option>
-                    <option value="carer">Patient or carer accompanied</option>
+                    {/* WT-13: opens blank; nothing is chosen for the person. */}
+                    <option value="">Not chosen</option>
+                    {TRAVEL_MODES.map((mode) => (
+                      <option key={mode} value={mode}>
+                        {mode}
+                      </option>
+                    ))}
                   </select>
                 </SelectBox>
               </Field>

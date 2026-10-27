@@ -76,7 +76,7 @@ describe("ASSIGN_REFERRAL", () => {
     const assigned = wardFlowReducer(f.state, assign(f.referralId, { owner: "ed" }));
     expect(assigned.rejections).toEqual([]);
     const referral = referralIn(assigned, f.referralId);
-    expect(referral.ownerHistory).toEqual([{ owner: "ed", at: NOW, by: "Flow coordinator" }]);
+    expect(referral.ownerHistory).toEqual([{ owner: "ed", at: NOW, by: "Bed coordinator" }]);
     expect(currentReferralOwner(referral)?.owner).toBe("ed");
     expect(referral.destinations[0]!.state).toBe("queued");
     expect(referral.destinations[0]!.decidedAt).toBeUndefined();
@@ -169,7 +169,7 @@ describe("LOG_REFERRAL_CONTACT", () => {
     expect(logged.rejections).toEqual([]);
     const referral = referralIn(logged, f.referralId);
     expect(referral.contactLog).toEqual([
-      { contact: { kind: "psychiatric_ward", unitId: f.unitId }, outcome: "said_yes", at: NOW, by: "Flow coordinator" },
+      { contact: { kind: "psychiatric_ward", unitId: f.unitId }, outcome: "said_yes", at: NOW, by: "Bed coordinator" },
     ]);
     // "Said yes" on the phone is not an acceptance: the ward's copy still waits for its answer.
     expect(referral.destinations[0]!.state).toBe("queued");
@@ -196,7 +196,7 @@ describe("LOG_REFERRAL_CONTACT", () => {
       contact: { kind: "community_team", teamId: team.id },
       outcome: "call_back",
       at: NOW + 20,
-      by: "ED mental health",
+      by: "ED clinician",
     });
   });
 
@@ -248,7 +248,7 @@ describe("history wording", () => {
     const f = fixture();
     const assigned = buildHistoryEntry(assign(f.referralId), NOW);
     expect(assigned.summary).toBe("Referral assigned to a desk");
-    expect(assigned.who).toBe("Flow coordinator");
+    expect(assigned.who).toBe("Bed coordinator");
     expect(assigned.relatedLinks.referralId).toBe(f.referralId);
     const called = buildHistoryEntry(logCall(f.referralId), NOW);
     expect(called.summary).toBe("Call about a referral logged");
@@ -286,7 +286,7 @@ describe("saved owner and call records", () => {
       isValidStoredWardFlowState(
         saved((referral) => ({
           ...referral,
-          ownerHistory: [{ owner: "Dr Someone", at: NOW, by: "Flow coordinator" }],
+          ownerHistory: [{ owner: "Dr Someone", at: NOW, by: "Bed coordinator" }],
         })),
       ),
     ).toBe(false);
@@ -294,7 +294,7 @@ describe("saved owner and call records", () => {
       isValidStoredWardFlowState(
         saved((referral) => ({
           ...referral,
-          contactLog: [{ contact: { kind: "referrer" }, outcome: "typed", at: NOW, by: "Flow coordinator" }],
+          contactLog: [{ contact: { kind: "referrer" }, outcome: "typed", at: NOW, by: "Bed coordinator" }],
         })),
       ),
     ).toBe(false);
@@ -303,14 +303,14 @@ describe("saved owner and call records", () => {
         saved((referral) => ({
           ...referral,
           contactLog: [
-            { contact: { kind: "referrer" }, outcome: "no_answer", at: NOW, by: "Flow coordinator", note: "typed" },
+            { contact: { kind: "referrer" }, outcome: "no_answer", at: NOW, by: "Bed coordinator", note: "typed" },
           ],
         })),
       ),
     ).toBe(false);
     expect(
       isValidStoredWardFlowState(
-        saved((referral) => ({ ...referral, ownerHistory: [{ owner: "ed", at: "soon", by: "Flow coordinator" }] })),
+        saved((referral) => ({ ...referral, ownerHistory: [{ owner: "ed", at: "soon", by: "Bed coordinator" }] })),
       ),
     ).toBe(false);
   });

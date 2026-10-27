@@ -85,7 +85,7 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     const accept = inbox.getByRole("button", { name: "Accept referral" });
     expect(accept).toBeEnabled();
     fireEvent.click(accept);
-    expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Flow coordinator");
+    expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Bed coordinator");
   });
 
   it("greys the receiving ward's Accept for that transfer, with the reason", () => {
@@ -128,6 +128,6 @@ describe("the referral inbox answers as the route's role (B1)", () => {
     fireEvent.change(inbox.getByLabelText("Placement reason"), { target: { value: GENDER_PLACEMENT_REASONS[0] } });
     fireEvent.click(inbox.getByLabelText("I have checked this placement with the ward"));
     fireEvent.click(accept);
-    expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Flow coordinator");
+    expect(screen.getByTestId("decided")).toHaveTextContent("accepted|Bed coordinator");
   });
 });

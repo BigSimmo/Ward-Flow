@@ -51,7 +51,7 @@ const DECLINES: DeclineEntry[] = [
 const OVERRIDES: OverrideEntry[] = [
   {
     movement: MOVEMENT_A,
-    override: { at: NOW - 60, by: "Flow coordinator", reason: OVERRIDE_REASONS[0], unitIds: [UNIT.id] },
+    override: { at: NOW - 60, by: "Bed coordinator", reason: OVERRIDE_REASONS[0], unitIds: [UNIT.id] },
   },
 ];
 

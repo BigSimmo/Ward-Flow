@@ -296,7 +296,7 @@ describe("task workspace state filters and actions", () => {
     // v6 (TasksDrawer.webp): the meta line reads "Critical · Tobias Wren · UM100023", record number bare.
     expect(card).toHaveTextContent(/Tobias Wren·UM\d+/u);
     expect(card).not.toHaveTextContent(item.movementId);
-    expect(card).not.toHaveTextContent("Flow coordinator");
+    expect(card).not.toHaveTextContent("Bed coordinator");
     fireEvent.click(within(card).getByRole("button", { name: "Refer" }));
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "refer");
     // Ops-5: Contact opens the numbers this task needs, in place; the patient's contacts stay one tap on.
