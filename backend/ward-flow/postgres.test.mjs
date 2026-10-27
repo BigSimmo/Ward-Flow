@@ -16,6 +16,7 @@ import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
 import { verifyRuntimeRole } from "./portable-postgres.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
+import { withoutRecordDetail } from "./record-detail.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -159,8 +160,8 @@ test(
         "an account at its limit does not block a different account or invisible-record refusal",
         async () => {
           const colleague = { ...view, actorId: randomUUID() };
-          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: true });
-          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: false });
+          assert.equal((await store.logView(colleague, patientId, "patient")).body.logged, true);
+          assert.equal((await store.logView(colleague, patientId, "patient")).body.logged, false);
           assert.equal((await store.logView(colleague, "PT-SYN-INVISIBLE", "patient")).status, 404);
         },
       );
@@ -1110,7 +1111,8 @@ test(
         if (version === 9) {
           // Every record is back in the workspace row, exactly as it was, and the rows table is gone.
           const { rows } = await owner.query("SELECT payload FROM ward_flow.workspaces");
-          assert.deepEqual(rows[0].payload, beforeRecordsRollback);
+          // H-0731: a read sends the workspace without the record detail.
+          assert.deepEqual(withoutRecordDetail(rows[0].payload), beforeRecordsRollback);
           assert.equal((await owner.query("SELECT to_regclass('ward_flow.workspace_records') AS t")).rows[0].t, null);
           // The cached version still says 10; the read finds the table gone and reads the version again.
           assert.deepEqual((await store.read(actor)).payload, beforeRecordsRollback);
@@ -2021,9 +2023,9 @@ test(
       const [patientId, otherPatientId] = initial.payload.state.patients.map((patient) => patient.id);
       const opened = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
       assert.equal(opened.status, 200);
-      assert.deepEqual(await opened.json(), { logged: true });
+      assert.equal((await opened.json()).logged, true);
       const repeated = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
-      assert.deepEqual(await repeated.json(), { logged: false });
+      assert.equal((await repeated.json()).logged, false);
       assert.equal(
         (await request(`${first}/record-access`, credential, { patientId: "not a record id", surface: "patient" }))
           .status,
@@ -2058,7 +2060,7 @@ test(
         patientId: referred,
         surface: "referral",
       });
-      assert.deepEqual(await referralOpened.json(), { logged: true });
+      assert.equal((await referralOpened.json()).logged, true);
       const leaving = token(actor);
       assert.equal((await request(first, leaving)).status, 200);
       const signedOut = await request(`${first}/sign-out`, leaving, {});
