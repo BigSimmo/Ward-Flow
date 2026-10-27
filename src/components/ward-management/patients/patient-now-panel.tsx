@@ -22,7 +22,7 @@ import { patientJourneyStages } from "./patient-journey";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { type TabKey } from "./patient-now-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
-import type { LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import type { LeaveBed, Movement, TransportProvider, Unit } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
@@ -36,7 +36,7 @@ export type PatientNowPanelProps = {
   copied: boolean;
   dayZero: Date;
   displayCadNumber: string | undefined;
-  displayProvider: "Not recorded" | "Ambulance service" | "Patient transport service" | "Ward escort";
+  displayProvider: "Not recorded" | TransportProvider;
   gate: (eventType: WardFlowEventType, key?: string) => RoleGate;
   goneToEd: () => void;
   handleCopySummary: () => void;

@@ -169,7 +169,7 @@ function answerOf(addressing: ReferralAddressing): string {
   if (addressing.state === "accepted") return "Accepted";
   if (addressing.state === "declined") return "Declined";
   if (addressing.state === "cancelled") return "Cancelled";
-  return addressing.waitlistedAt !== undefined ? "Waitlisted" : "Waiting";
+  return addressing.waitlistedAt !== undefined ? "On waiting list" : "Waiting";
 }
 
 const plural = (n: number) => (n === 1 ? "" : "s");

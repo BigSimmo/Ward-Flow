@@ -768,8 +768,8 @@ export function communityCoveragePanel(view: CommunityScreenView) {
               <strong>
                 {waitlistedForTeam.length}{" "}
                 {waitlistedForTeam.length === 1
-                  ? "admission is matched to this team and still waitlisted"
-                  : "admissions are matched to this team and still waitlisted"}
+                  ? "admission is matched to this team and still on the waiting list"
+                  : "admissions are matched to this team and still on the waiting list"}
                 .
               </strong>{" "}
               {waitlistedForTeam.length === 1 ? "That person has" : "Those people have"} no pulled bed, so they appear

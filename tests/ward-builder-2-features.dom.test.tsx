@@ -189,7 +189,7 @@ describe("Builder 2 - Officer Form Inspection & Stateful Checkboxes", () => {
     expect(check0.checked).toBe(false);
 
     // Close dialog
-    const closeBtn = screen.getByRole("button", { name: /close form verification dialog/i });
+    const closeBtn = screen.getByRole("button", { name: /close paperwork checks/i });
     fireEvent.click(closeBtn);
   });
 });

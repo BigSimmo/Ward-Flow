@@ -1198,7 +1198,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
 
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-toggle-${revokedId}`));
     fireEvent.change(screen.getByTestId(`ward-ed-transport-provider-${revokedId}`), {
-      target: { value: "Ambulance service" },
+      target: { value: "Ambulance (St John)" },
     });
     fireEvent.click(screen.getByTestId(`ward-ed-transport-escort-no-${revokedId}`));
     // Owner's third ruling, 2026-09-17: the three phone-logged facts, required and never defaulted.

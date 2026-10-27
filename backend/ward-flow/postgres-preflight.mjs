@@ -354,12 +354,14 @@ function expectedConstraints(version, tables) {
     for (const check of [
       ...((version >= 8 && table === "audit" ? auditChecksFrom8 : checks[table]) ?? []),
       ...(version >= 9 && table === "memberships" ? membershipChecksFrom9 : []),
-      // Migration 13 added the referral detail to the screens a record view names.
+      // Migration 13 added the referral detail to the screens a record view names, 15 the list and TV.
       ...(table === "record_access"
         ? [
-            version >= 13
-              ? "surface = ANY (ARRAY['patient','movement','referral'])"
-              : "surface = ANY (ARRAY['patient','movement'])",
+            version >= 15
+              ? "surface = ANY (ARRAY['patient','movement','referral','list','tv'])"
+              : version >= 13
+                ? "surface = ANY (ARRAY['patient','movement','referral'])"
+                : "surface = ANY (ARRAY['patient','movement'])",
           ]
         : []),
     ])

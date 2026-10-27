@@ -2607,6 +2607,20 @@
   opacity: 1;
 }
 
+/* Audit A-1: a warning stays until it is closed, so its Close button takes taps. */
+.actionToastClose {
+  pointer-events: auto;
+  margin-left: 4px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: 24px;
+}
+
 /* ─── Perfected Third Edition Console Layout ─────────────────── */
 .cardPanel {
   background: var(--glass-fill, var(--surface));

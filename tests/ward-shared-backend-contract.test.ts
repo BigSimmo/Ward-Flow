@@ -13,6 +13,7 @@ import {
   validWorld,
   worldNow,
   PERSISTED_AUDIT_EVENTS,
+  storableCommand,
   type SharedWorld,
 } from "../backend/ward-flow/engine";
 import { wardFlowReducer } from "../src/components/ward-management/ward-flow-reducer";
@@ -562,5 +563,37 @@ describe("Frontend-to-backend shared workspace contract", () => {
       expect(validCommand({ type: "ADVANCE_CLOCK", role: "demo", minutes: 5, note })).toBe(false);
     }
     expect(validCommand({ type: "ADVANCE_CLOCK", role: "demo", minutes: 5 })).toBe(true);
+  });
+});
+
+describe("uploaded file names never reach the shared board (H-0049)", () => {
+  it("reads an older client's document file name for its type and drops it", () => {
+    const stored = storableCommand({
+      type: "UPLOAD_PATIENT_FORM",
+      role: "ward",
+      now: 1,
+      movementId: "WF-004",
+      formName: "Form 4A Transport Order",
+      fileName: "Synthetic-Name-Marker.pdf",
+      sizeBytes: 9,
+    });
+    expect(stored).toMatchObject({ fileType: "PDF", sizeBytes: 9 });
+    expect(stored).not.toHaveProperty("fileName");
+    const current = { type: "UPLOAD_PATIENT_FORM", movementId: "WF-004", fileType: "PNG", sizeBytes: 9 };
+    expect(storableCommand(current)).toBe(current);
+  });
+  it("replaces an older client's referral chart name with its file type", () => {
+    const stored = storableCommand({
+      type: "RECEIVE_REFERRAL",
+      intake: {
+        charts: [
+          { kind: "medication", name: "Synthetic-Name-Marker.pdf", mimeType: "application/pdf", sizeBytes: 4 },
+          { kind: "observation", name: "scan.jpg", mimeType: "image/jpeg", sizeBytes: 4, base64: "AAAA" },
+        ],
+      },
+    }) as { intake: { charts: Record<string, unknown>[] } };
+    expect(stored.intake.charts.map((chart) => chart.name)).toEqual(["PDF", "JPEG"]);
+    expect(stored.intake.charts[1]).not.toHaveProperty("base64");
+    expect(JSON.stringify(stored)).not.toContain("Synthetic-Name-Marker");
   });
 });

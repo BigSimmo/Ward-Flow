@@ -424,7 +424,7 @@ export function WardTasksDrawer({
           <span>{row.role}</span>
         </span>
         <span className={styles.callNumber}>
-          {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line held</span>}
+          {row.number ? <b className={styles.mono}>{row.number}</b> : <span>No line recorded</span>}
           {row.hours ? <span>{row.hours}</span> : null}
         </span>
       </li>

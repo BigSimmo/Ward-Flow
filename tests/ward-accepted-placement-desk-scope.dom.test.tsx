@@ -66,7 +66,7 @@ describe("accepted referral placement respects the desk's ED scope", () => {
     renderPlacement((deskId) => deskId === "scgh-adult-open");
     expect(screen.queryByRole("button", { name: "Start placement" })).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-accepted-placement-coordinator")).toHaveTextContent(
-      /Ask the flow coordinator to start it/,
+      /Ask the bed coordinator to start it/,
     );
   });
 

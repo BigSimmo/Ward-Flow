@@ -209,7 +209,7 @@ export function FlowChip({ closed, onOpen }: { closed: readonly ClosedTodayRow[]
   const left = closed.filter((row) => row.outcome === "Discharged" || row.outcome === "Transferred").length;
   const stopped = closed.filter((row) => row.outcome === "Did not proceed").length;
   return (
-    <button type="button" className={styles.flow} onClick={onOpen} title="Opens History">
+    <button type="button" className={styles.flow} onClick={onOpen} title="Opens history">
       <span className={styles.flowLead}>Today</span>
       <span className={styles.flowPart}>
         <StatusGlyph tone="success" size={9} />

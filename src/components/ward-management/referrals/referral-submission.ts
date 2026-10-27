@@ -1,4 +1,4 @@
-import { HEALTH_SERVICES, type HealthService, type ReferralGender } from "../ward-model";
+import { HEALTH_SERVICES, TRAVEL_MODES, type HealthService, type ReferralGender, type TravelMode } from "../ward-model";
 import { isSyntheticReferralTimelineBase } from "../ward-referral-seed-time";
 
 /**
@@ -63,7 +63,24 @@ export type ClearanceChecklist = Partial<Record<ClearanceCheck, ClearanceStatus>
 
 /** What a community team or an ED needs to know before the person reaches them. All optional. */
 export const FIRST_CONTACT_TARGETS = ["24 hours", "72 hours", "7 days"] as const;
-export const ED_ARRIVAL_MODES = ["Ambulance", "Mental Health Transport", "Family or carer"] as const;
+/**
+ * WT-13: Pull the bed now saves a `TRAVEL_MODES` word as written. A referral sent before then holds
+ * one of four short codes, read here in the shared list's words; nothing chosen reads as such.
+ */
+const OLD_TRANSPORT_CODES: Record<string, TravelMode> = {
+  mht: "Mental Health Transport",
+  rfds: "RFDS",
+  stjohn: "Ambulance (St John)",
+  carer: "Family or carer",
+};
+export function transportLabel(code: string): string {
+  return OLD_TRANSPORT_CODES[code] ?? (code || "Transport not chosen");
+}
+
+/** WT-13: the one travel list every screen offers (`TRAVEL_MODES`). */
+export const ED_ARRIVAL_MODES = TRAVEL_MODES;
+/** What a saved referral may hold: the list, plus the old "Ambulance" choice so an older referral still reads. */
+export const SAVED_ED_ARRIVAL_MODES = [...TRAVEL_MODES, "Ambulance"] as const;
 export type ReferralNeeds =
   | {
       kind: "community";
@@ -74,7 +91,7 @@ export type ReferralNeeds =
     }
   | {
       kind: "ed";
-      comingBy?: (typeof ED_ARRIVAL_MODES)[number];
+      comingBy?: (typeof SAVED_ED_ARRIVAL_MODES)[number];
       medicalReviewFirst?: boolean;
       /** Clock time as typed, "HH:MM" AWST. */
       expectedArrival?: string;
@@ -90,7 +107,7 @@ export function referralNeedsWords(needs: ReferralNeeds): string[] {
       needs.carerContact ? "Contact the carer" : "",
     ].filter(Boolean);
   return [
-    needs.comingBy ? `Coming by ${needs.comingBy.toLowerCase()}` : "",
+    needs.comingBy ? `Coming by ${needs.comingBy}` : "",
     needs.medicalReviewFirst === undefined
       ? ""
       : needs.medicalReviewFirst
@@ -155,7 +172,7 @@ function needsError(needs: ReferralNeeds): string | null {
   if (
     needs.kind !== "ed" ||
     !onlyFields(needs, ["kind", "comingBy", "medicalReviewFirst", "expectedArrival"]) ||
-    (needs.comingBy !== undefined && !ED_ARRIVAL_MODES.includes(needs.comingBy)) ||
+    (needs.comingBy !== undefined && !SAVED_ED_ARRIVAL_MODES.includes(needs.comingBy)) ||
     !optionalBoolean(needs.medicalReviewFirst) ||
     (needs.expectedArrival !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(needs.expectedArrival))
   )

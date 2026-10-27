@@ -107,8 +107,8 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
             {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
               <span id="pxDrawerHeading">
                 {selectedPatient
-                  ? `Patient dossier: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
-                  : `Patient dossier: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
+                  ? `Patient record: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
+                  : `Patient record: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
               </span>
             )}
             {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (

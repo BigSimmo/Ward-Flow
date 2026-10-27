@@ -145,7 +145,7 @@ export function NumberCell({ entry, actions }: { entry: DirectoryEntry; actions:
   const shown = (now.kind === "on" ? now.line : now.kind === "off" ? now.next : null) ?? entry.lines[0]!;
   return (
     <span className={cx(styles.numberCell, now.kind === "off" && styles.numberOff)}>
-      <span className={styles.number}>{shown.number ?? "Not held"}</span>
+      <span className={styles.number}>{shown.number ?? "Not recorded"}</span>
       <span className={styles.cellSub}>
         {shown.label}
         {entry.lines.length > 1 ? <span className={styles.mono}> +{entry.lines.length - 1}</span> : null}
@@ -228,7 +228,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
             "Inbox closes"
           ) : now.then ? (
             <>
-              Then {lower(now.then.label)}, <span className={styles.mono}>{now.then.number ?? "Not held"}</span>
+              Then {lower(now.then.label)}, <span className={styles.mono}>{now.then.number ?? "Not recorded"}</span>
             </>
           ) : (
             "Then closed"
@@ -289,7 +289,7 @@ function LinesBlock({ entry, actions }: { entry: DirectoryEntry; actions: Contac
                 <b>{item.label}</b>
                 <span className={styles.mono}>{windowText(item.window)}</span>
               </span>
-              <span className={styles.lineNumber}>{item.number ?? "Not held"}</span>
+              <span className={styles.lineNumber}>{item.number ?? "Not recorded"}</span>
               <span className={cx(styles.lineState, !current && styles.lineStateOff)}>
                 <StatusGlyph tone={current ? "success" : "neutral"} size={9} />
                 {current ? "Now" : next ? "Next" : "Off"}

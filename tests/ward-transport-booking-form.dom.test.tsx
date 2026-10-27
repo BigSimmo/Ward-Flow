@@ -58,7 +58,7 @@ const id = (part: Parameters<typeof transportBookingTestId>[1], option?: string)
   transportBookingTestId({ prefix: "t", suffix: "WF-1" }, part, option);
 
 function answerTheCall() {
-  fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ambulance service" } });
+  fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ambulance (St John)" } });
   fireEvent.click(screen.getByTestId(id("escort", "no")));
   fireEvent.change(screen.getByTestId(id("cad")), { target: { value: "CAD-48213" } });
   fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
@@ -95,7 +95,7 @@ describe("the one transport booking form", () => {
     answerTheCall();
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith({
-      provider: "Ambulance service",
+      provider: "Ambulance (St John)",
       escortRequired: false,
       cadNumber: "CAD-48213",
       transportLegalStatus: "involuntary",

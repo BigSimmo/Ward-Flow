@@ -403,7 +403,7 @@ export function useWardReferralDrawerState({
     setNotOnWard(reason && sendingWard ? { unitId: sendingWard.id, reason } : undefined);
   }
   const [clinicalSummary, setClinicalSummary] = useState(kept?.clinicalSummary ?? defaultPatient.clinicalSummary);
-  const [transport, setTransport] = useState(kept?.transport ?? defaultPatient.transportVal);
+  const [transport, setTransport] = useState(kept?.transport ?? "");
   const [transitNote, setTransitNote] = useState(kept?.transitNote ?? defaultPatient.transitNote);
   const [riskFlags, setRiskFlags] = useState<Record<string, boolean>>(kept?.riskFlags ?? defaultPatient.riskFlags);
   const [clearanceChecks, setClearanceChecks] = useState<ClearanceChecklist>(kept?.clearanceChecks ?? {});
@@ -664,7 +664,7 @@ export function useWardReferralDrawerState({
     setProvisionalDiag(p.provisionalDiag);
     setDoctorNote(p.doctorNote);
     setClinicalSummary(p.clinicalSummary);
-    setTransport(p.transportVal);
+    setTransport("");
     setTransitNote(p.transitNote);
     setRiskFlags(p.riskFlags);
     setClearanceChecks({});
@@ -1007,7 +1007,7 @@ export function useWardReferralDrawerState({
       sendingTeamName: needsSendingTeam ? sendingTeam : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
-      transportNeeded: destType === "ward" && transport !== "carer",
+      transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
       history: unidentifiedHistory,
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,

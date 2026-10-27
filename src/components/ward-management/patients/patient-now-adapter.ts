@@ -61,7 +61,7 @@ function movementVerdict(
     };
   if (acceptedUnit) {
     return movementHasBedHold(movement, admissions)
-      ? { tone: "good", short: "Bed Pulled", title: `Bed pulled at ${acceptedUnit.name}.`, gates: [] }
+      ? { tone: "good", short: "Bed pulled", title: `Bed pulled at ${acceptedUnit.name}.`, gates: [] }
       : {
           tone: "warn",
           short: "Accepted, Awaiting Bed",

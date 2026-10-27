@@ -138,7 +138,7 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
 
             {/*
               ⚠️ A ROLE, NEVER A PERSON. `Override.by` is written by the reducer from
-              `WARD_FLOW_ROLE_LABELS[event.role]` and holds a role label such as "Flow coordinator".
+              `WARD_FLOW_ROLE_LABELS[event.role]` and holds a role label such as "Bed coordinator".
               The wording below must never imply a named individual — "Decided by" plus a role reads
               as the role deciding, which is what happened.
             */}

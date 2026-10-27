@@ -32,7 +32,12 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     tab: "rules",
     keywords: "pulled bed pull hold reservation return expires time limit",
   },
-  { id: "morning-count", label: "Morning count", tab: "rules", keywords: "rollup ward count deadline" },
+  {
+    id: "morning-count",
+    label: "Morning bed numbers due",
+    tab: "rules",
+    keywords: "rollup morning count ward count deadline",
+  },
   { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge" },
   { id: "second-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
   { id: "first-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },

@@ -77,7 +77,7 @@ describe("PIR chronology: one person's records", () => {
     const actions = chronology.rows.map((row) => row.action);
     expect(actions[0]).toBe("Placement request opened");
     const override = chronology.rows.find((row) => row.action === "Placement override");
-    expect(override).toMatchObject({ reason: OVERRIDE_REASONS[1], who: "Flow coordinator", source: "Record" });
+    expect(override).toMatchObject({ reason: OVERRIDE_REASONS[1], who: "Bed coordinator", source: "Record" });
     const decline = chronology.rows.find((row) => row.action === "Ward declined");
     expect(decline?.reason).toBe(reasonLabel("no_suitable_bed"));
     // Sorted by occurrence: the decline (90 minutes ago) comes before the override (30 minutes ago).
@@ -115,7 +115,7 @@ describe("PIR chronology: one person's records", () => {
 
     const audit = chronology.rows.filter((row) => row.source === "Audit");
     expect(audit.length).toBeGreaterThan(0);
-    expect(audit[0]).toMatchObject({ before: movement.legalStatus, after: event.legalStatus, who: "Flow coordinator" });
+    expect(audit[0]).toMatchObject({ before: movement.legalStatus, after: event.legalStatus, who: "Bed coordinator" });
     const record = chronology.rows.find((row) => row.source === "Record" && row.action === "Legal status changed");
     expect(record).toMatchObject({ before: movement.legalStatus, after: event.legalStatus });
     expect(chronology.rows.filter((row) => row.source === "Session log")).toEqual([]);
@@ -332,7 +332,7 @@ describe("PIR chronology: one person's records", () => {
     expect(row).toMatchObject({
       before: formatSheetMoment(received, DAY_ZERO, { includeYearAndZone: true }),
       after: "Cleared",
-      who: "Flow coordinator",
+      who: "Bed coordinator",
       reason: legalFormReceiptCorrectionReasonLabels.recorded_in_error,
     });
   });
@@ -367,8 +367,8 @@ describe("PIR chronology: one person's records", () => {
     ];
     const rows = patientChronology(inputFor(state, { auditEvents: null, eventLog: log })).rows;
     const actions = rows.map((row) => row.action);
-    expect(actions).toContain(`Transport delivered to ${wardName}`);
-    expect(actions).toContain(`Transport delivered to ${wardName} (refused)`);
+    expect(actions).toContain(`Officer recorded arrival at ${wardName}`);
+    expect(actions).toContain(`Officer recorded arrival at ${wardName} (refused)`);
     expect(actions.some((action) => action.includes("Patient arrived"))).toBe(false);
     // The recorded delivery already says it, so only the refused attempt comes from the session log.
     expect(rows.filter((row) => row.source === "Session log")).toHaveLength(1);
@@ -426,7 +426,7 @@ describe("PIR chronology: one person's records", () => {
       ]),
     );
     expect(rows.find((row) => row.action === "Transport booked")).toMatchObject({
-      who: "Flow coordinator",
+      who: "Bed coordinator",
       recordedAt: null,
       after: "Patient transport service, escort required",
     });
