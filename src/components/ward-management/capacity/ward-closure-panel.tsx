@@ -8,6 +8,7 @@ import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
+import { useHoldOpenForm } from "../use-hold-open-form";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useUndoableStep } from "../use-undoable-step";
 import type { Unit } from "../ward-model";
@@ -83,6 +84,8 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
       }
     },
   });
+  // Audit CS3-01: a started close is checked against the board it opened on.
+  useHoldOpenForm(!unit.isClosed && (reason !== "" || reopenAfter !== ""));
   // B2a P001: the inputs clear only once the ward is seen closed, so a refused close keeps them.
   const [seenClosed, setSeenClosed] = useState(unit.isClosed);
   if (seenClosed !== unit.isClosed) {
