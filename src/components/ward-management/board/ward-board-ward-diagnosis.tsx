@@ -25,7 +25,7 @@ export function WardDiagnosisControl({
   occupant: Occupant;
   unitId: string;
   raise: WardRaise;
-  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string, spoken: string) => void;
+  dispatchAndReport: (record: () => ReturnType<WardCommandDispatch>, success: string) => void;
 }) {
   const [block, setBlock] = useState<TentativeDiagnosisBlock | "">(occupant.wardDiagnosis?.block ?? "");
   const unchanged = block === "" || block === occupant.wardDiagnosis?.block;
@@ -41,7 +41,6 @@ export function WardDiagnosisControl({
           occupant.tentativeDiagnosis === null
             ? `Ward's tentative diagnosis recorded: ${block}.`
             : `Ward's tentative diagnosis recorded: ${block}. The diagnosis the stay arrived with is kept.`,
-          "Ward's tentative diagnosis recorded.",
         );
       }}
     >
