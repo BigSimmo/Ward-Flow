@@ -46,7 +46,7 @@ const snapshot = {
   accessContext: "a".repeat(64),
   payload: { version: 1 as const, state: world, dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
 };
-const pack = () => downtimePack({ ...world, now: 642, identify: () => "Synthetic person" });
+const pack = () => downtimePack({ ...world, bedUnits: world.units, now: 642, identify: () => "Synthetic person" });
 afterEach(() => {
   cleanup();
   resetWardAccessStoreForTests();
