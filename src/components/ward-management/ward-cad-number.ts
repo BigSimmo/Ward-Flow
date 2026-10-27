@@ -69,11 +69,31 @@ export function cadNumberProblem(text: string): string | undefined {
 /**
  * Travel with no dispatch service behind it, so no CAD number exists to read off a call (form
  * friction audit, 27 Oct 2026). The booking form does not ask for one and the engine does not
- * refuse a booking without one. Every dispatched service still needs its number.
+ * refuse a booking without one.
  */
 const PROVIDERS_WITHOUT_CAD: ReadonlySet<string> = new Set(["Ward escort", "Family or carer"]);
 
 /** Whether a booking with this provider is logged against a CAD number. */
 export function providerNeedsCadNumber(provider: string | undefined): boolean {
   return provider === undefined || !PROVIDERS_WITHOUT_CAD.has(provider);
+}
+
+/** The words every screen shows for a dispatched job still waiting on its CAD number. */
+export const CAD_TO_FOLLOW = "CAD to follow";
+
+/**
+ * CAD to follow (Josh, 27 Oct 2026): a dispatched service may be booked before the provider gives
+ * its CAD number. The job is not blocked; it shows "CAD to follow" until the number is added
+ * (`RECORD_TRANSPORT_CAD`). True for a live dispatched job with no number.
+ */
+export function cadNumberToFollow(
+  transport: { provider: string; cadNumber?: string; cancelledAt?: number; arrivedAt?: number } | undefined,
+): boolean {
+  return (
+    transport !== undefined &&
+    transport.cancelledAt === undefined &&
+    transport.arrivedAt === undefined &&
+    providerNeedsCadNumber(transport.provider) &&
+    (transport.cadNumber ?? "").trim().length === 0
+  );
 }

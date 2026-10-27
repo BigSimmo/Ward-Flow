@@ -38,7 +38,8 @@ export function StepDownBoard({ now }: { now: Instant }) {
   // Item 2's cap warns and asks for a reason, never blocks: one reason per stay at the limit.
   const [capReasons, setCapReasons] = useState<Record<string, ReferralCapReason | "">>({});
   // Fix list 1.5: raise by name. One REFER_TO_UNITS construction site for every Refer on this board,
-  // sending the cap reason only when that movement is at the limit and a reason was chosen.
+  // sending the cap reason only when that movement is at the limit and a reason was chosen. Without
+  // one the refer still goes (finding 188).
   const raise = useMemo(() => wardRaise(dispatch, "coordinator", now), [dispatch, now]);
   // Referring is the bed coordinator's (EVENT_ROLE REFER_TO_UNITS). Another desk that can open
   // Capacity, such as a bed manager, sees the board read-only rather than raising as coordinator.
@@ -75,10 +76,12 @@ export function StepDownBoard({ now }: { now: Instant }) {
                   </p>
                   {row.transferMovement &&
                   row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap ? (
+                    // Finding 188 (Josh, 27 Oct 2026): the limit is a warning. Refer stays open, and a
+                    // chosen reason goes with the refer for the audit trail.
                     <label className={styles.capReason} data-testid="step-down-cap-reason">
                       <span>
                         {row.transferMovement.referredUnitIds.length} wards are already asked, the usual limit is{" "}
-                        {configuration.parallelReferralCap}. Choose a reason to ask another.
+                        {configuration.parallelReferralCap}. You can still ask another. Why ask another?
                       </span>
                       <select
                         value={capReasons[row.admission.id] ?? ""}
@@ -108,16 +111,10 @@ export function StepDownBoard({ now }: { now: Instant }) {
                               size="sm"
                               variant="sec"
                               disabled={row.transferMovement.referredUnitIds.includes(ward.unit.id)}
-                              // At the limit Refer waits for a reason, then sends it with the refer.
                               disabledReason={
                                 !canRefer && !row.transferMovement.referredUnitIds.includes(ward.unit.id)
                                   ? NOT_COORDINATOR
-                                  : !row.transferMovement.referredUnitIds.includes(ward.unit.id) &&
-                                      row.transferMovement.referredUnitIds.length >=
-                                        configuration.parallelReferralCap &&
-                                      !capReasons[row.admission.id]
-                                    ? "Choose a reason above to ask more wards than the usual limit."
-                                    : undefined
+                                  : undefined
                               }
                               onClick={() => {
                                 const movement = row.transferMovement;

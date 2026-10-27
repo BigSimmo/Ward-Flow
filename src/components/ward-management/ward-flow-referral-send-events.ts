@@ -12,6 +12,7 @@ import {
   OVERRIDE_REASONS,
   REFERRAL_CAP_REASONS,
   URGENCY_CHANGE_REASONS,
+  URGENCY_REASON_NOT_GIVEN,
   WARD_REQUEST_WITHDRAWAL_REASONS,
   wardRequestWithdrawalReasonLabels,
 } from "@/components/ward-management/ward-change-reasons";
@@ -683,25 +684,17 @@ export function reduceReferralSendEvent(
       }
       /**
        * RA1 (owner answer 18): re-referring adds wards and never silently drops a live one.
-       * `liveUnitIds` is the standing set; only `newUnitIds` enter the eligibility gate and cap
-       * check, so a live ward is neither re-checked nor double-counted.
+       * `liveUnitIds` is the standing set; only `newUnitIds` enter the eligibility gate, so a live
+       * ward is neither re-checked nor double-counted.
        */
       const liveUnitIds = movement.referredUnitIds;
       const uniqueUnitIds = Array.from(new Set(event.unitIds));
       const newUnitIds = uniqueUnitIds.filter((unitId) => !liveUnitIds.includes(unitId));
-      // The cap counts live plus new, whether or not the caller re-sent the live ids.
-      const combinedCount = liveUnitIds.length + newUnitIds.length;
-      // Top 25 item 2 (owner ruling, 15 Oct 2026): the cap is a safety check, so a chosen reason
-      // lets the extra ward be asked (kept in the audit trail). Without one it refuses, as before.
+      // Top 25 item 2 (owner ruling, 15 Oct 2026): a chosen reason for asking past the cap is kept
+      // in the audit trail. Finding 188 (Josh, 27 Oct 2026): the cap is a warning everywhere, so
+      // going past it no longer needs a reason. `overCapRecorded` below still marks it.
       if (event.overCapReason !== undefined && !REFERRAL_CAP_REASONS.includes(event.overCapReason)) {
         return reject(state, event, `REFER_TO_UNITS overCapReason must be chosen from REFERRAL_CAP_REASONS`);
-      }
-      if (combinedCount > state.configuration.parallelReferralCap && event.overCapReason === undefined) {
-        return reject(
-          state,
-          event,
-          `cannot refer to ${combinedCount} units at once — the parallel cap is ${state.configuration.parallelReferralCap}`,
-        );
       }
       if (!REFERRABLE_MOVEMENT_STAGES.includes(movement.stage)) {
         return reject(
@@ -1216,11 +1209,12 @@ export function reduceReferralSendEvent(
       if (!URGENCY_LEVELS.includes(event.urgency as (typeof URGENCY_LEVELS)[number])) {
         return reject(state, event, `CHANGE_URGENCY urgency must be chosen from URGENCY_LEVELS`);
       }
-      if (!URGENCY_CHANGE_REASONS.includes(event.reason)) {
+      if (event.reason !== undefined && !URGENCY_CHANGE_REASONS.includes(event.reason)) {
         /**
          * Runtime membership, not merely the type: a type-only guarantee passes `vitest run` with
          * no `tsc` involved. `changeReasonLabels` has no fallback, so an off-list value would
-         * render "undefined".
+         * render "undefined". Finding 15 (Josh, 27 Oct 2026): a reason is no longer required, and
+         * none is recorded as `not_given`.
          */
         return reject(state, event, `CHANGE_URGENCY reason must be chosen from URGENCY_CHANGE_REASONS`);
       }
@@ -1231,7 +1225,13 @@ export function reduceReferralSendEvent(
         urgency: event.urgency,
         urgencyChanges: [
           ...movement.urgencyChanges,
-          { at: event.now, from: movement.urgency, to: event.urgency, by: event.role, reason: event.reason },
+          {
+            at: event.now,
+            from: movement.urgency,
+            to: event.urgency,
+            by: event.role,
+            reason: event.reason ?? URGENCY_REASON_NOT_GIVEN,
+          },
         ],
       };
       return replaceMovement(state, movement.id, updated);

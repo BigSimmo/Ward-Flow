@@ -117,14 +117,12 @@ describe("the sending ward's own journey (D-80)", () => {
     fireEvent.change(within(controls).getByLabelText("Urgency tier for Synthetic person"), {
       target: { value: "1" },
     });
-    // No reason is chosen for the ward: the button refuses until one is.
-    fireEvent.click(within(controls).getByRole("button", { name: "Record urgency change" }));
-    expect(context.dispatch).not.toHaveBeenCalled();
-    fireEvent.change(within(controls).getByLabelText("Reason"), { target: { value: "reassessed" } });
+    // Finding 15 (27 Oct 2026): the reason is optional, so the change records without one.
     fireEvent.click(within(controls).getByRole("button", { name: "Record urgency change" }));
     expect(context.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "CHANGE_URGENCY", role: "ward", movementId: "WF-D80-BACK", urgency: 1 }),
     );
+    expect(context.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ reason: expect.anything() }));
   });
 
   it("offers nothing on a journey an ED sent for the same person", () => {

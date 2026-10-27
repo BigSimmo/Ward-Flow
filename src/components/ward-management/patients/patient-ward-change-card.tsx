@@ -94,6 +94,9 @@ export function PatientWardChangeCard({
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
   const [kind, setKind] = useState<LeaveKind>("off_ward");
+  // #101 (Josh, 27 Oct 2026): for a patient on an order, the ward ticks that the treating
+  // psychiatrist authorised the leave. Unticked is a warning, never a block. Opens unticked.
+  const [authorised, setAuthorised] = useState(false);
   /* v10 Patient, phone: "Record a change" is a heading over a row of chips, and the form rises
    * as a bottom sheet with Cancel beside its one primary. Desktop and tablet keep the card. */
   const isPhone = useIsPhone();
@@ -122,6 +125,7 @@ export function PatientWardChangeCard({
     onFormChange(form === next ? "none" : next);
     setTime("");
     setDay(0);
+    setAuthorised(false);
     setPresetId(null);
     setCustomTime(false);
   }
@@ -183,6 +187,25 @@ export function PatientWardChangeCard({
           <span>{leaveLegal.form}</span>
           {leaveLegal.onOrder ? <span>On an order: leave needs the treating psychiatrist&apos;s authority</span> : null}
         </p>
+      ) : null}
+      {form === "leave" && leaveLegal?.onOrder ? (
+        <>
+          <label className={styles.authorised}>
+            <input
+              type="checkbox"
+              checked={authorised}
+              onChange={(event) => setAuthorised(event.target.checked)}
+              data-testid="ward-patient-leave-authorised"
+            />
+            Leave authorised by the treating psychiatrist
+          </label>
+          {authorised ? null : (
+            <p className={styles.authorisedWarn} data-testid="ward-patient-leave-authorised-warning">
+              <StatusGlyph tone="warning" size={9} />
+              Not ticked. Check the treating psychiatrist has authorised this leave.
+            </p>
+          )}
+        </>
       ) : null}
       {form === "leave" && isPhone ? <span className={styles.phFieldLabel}>Kind of leave</span> : null}
       {form === "leave" ? (

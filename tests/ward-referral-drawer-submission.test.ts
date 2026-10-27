@@ -205,7 +205,8 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
   it("validates documentation and contact fields at the engine boundary", () => {
     expect(referralIntakeError(intake)).toBeNull();
     for (const invalid of [
-      { ...intake, referrer: { ...intake.referrer, email: "bad" } },
+      // Finding 44 (Josh, 27 Oct 2026): the email no longer blocks; the phone still does.
+      { ...intake, referrer: { ...intake.referrer, phone: "bad" } },
       { ...intake, catchment: { ...intake.catchment, confirmed: false } },
       { ...intake, medicalClearance: { cleared: false } },
       { ...intake, charts: [intake.charts[0]] },

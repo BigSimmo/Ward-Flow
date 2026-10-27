@@ -40,15 +40,6 @@
   font-weight: 600;
 }
 
-.changeView {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--wf-ink-2);
-}
-
 .group {
   display: grid;
   gap: var(--wf-s-2);

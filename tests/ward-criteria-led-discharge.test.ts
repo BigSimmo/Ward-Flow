@@ -22,6 +22,7 @@ import {
   nextDischargeCriteria,
   PATIENT_SPECIFIC_CRITERIA_MAX,
   PATIENT_SPECIFIC_CRITERION_MAX_LENGTH,
+  type DischargeCriteriaRecord,
 } from "@/components/ward-management/ward-discharge-criteria";
 import { eventCarriesTypedTextPayload } from "@/components/ward-management/ward-flow-persistence-classification";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
@@ -179,17 +180,48 @@ describe("nextDischargeCriteria and dischargeCriteriaStatus", () => {
     });
   });
 
-  it("clears earlier ticks when the psychiatrist reviews the list", () => {
+  // Finding 72 (Josh, 27 Oct 2026): a review keeps the tick on each criterion still on the list.
+  it("keeps ticks for criteria that stay on the list when the psychiatrist changes it", () => {
     if (!("record" in set) || !set.record) throw new Error("set refused");
-    const ticked = { ...set.record, items: set.record.items.map((item) => ({ ...item, metAt: now })) };
+    const ticked = {
+      ...set.record,
+      items: set.record.items.map((item, index) => ({ ...item, metAt: index === 0 ? now : null })),
+    };
     const reviewed = nextDischargeCriteria(
       ticked,
-      { criteria: ["Accommodation confirmed"], met: ["Accommodation confirmed"], setByTreatingPsychiatrist: true },
+      {
+        criteria: ["Accommodation confirmed", "Community follow up booked within 7 days"],
+        met: [],
+        setByTreatingPsychiatrist: true,
+      },
       "voluntary",
-      now + VALIDITY,
+      now + 5,
     );
     if (!("record" in reviewed) || !reviewed.record) throw new Error("review refused");
-    expect(dischargeCriteriaStatus(reviewed.record, "voluntary", now + VALIDITY).kind).toBe("in_progress");
+    expect(reviewed.record.setAt).toBe(now + 5);
+    expect(reviewed.record.items).toEqual([
+      { criterion: "Accommodation confirmed", metAt: now },
+      { criterion: "Community follow up booked within 7 days", metAt: null },
+    ]);
+    expect(dischargeCriteriaStatus(reviewed.record, "voluntary", now + 5).kind).toBe("in_progress");
+  });
+
+  it("restarts the ticks worded against the review, and every tick on a lapsed list", () => {
+    const bound = "Observations done and reviewed in the last 24 hours" as const;
+    const list: DischargeCriteriaRecord = {
+      setAt: now,
+      items: [
+        { criterion: "Accommodation confirmed", metAt: now },
+        { criterion: bound, metAt: now },
+      ],
+    };
+    const change = { criteria: ["Accommodation confirmed", bound], met: [], setByTreatingPsychiatrist: true };
+    const live = nextDischargeCriteria(list, change, "voluntary", now + 5);
+    if (!("record" in live) || !live.record) throw new Error("review refused");
+    expect(live.record.items.map((item) => item.metAt)).toEqual([now, null]);
+    const lapsed = nextDischargeCriteria(list, change, "voluntary", now + VALIDITY);
+    if (!("record" in lapsed) || !lapsed.record) throw new Error("review refused");
+    expect(lapsed.record.items.map((item) => item.metAt)).toEqual([null, null]);
   });
 
   it("accepts only a well formed stored record", () => {

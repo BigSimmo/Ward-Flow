@@ -354,7 +354,8 @@ export function WardReferralDetail({
                 { label: "Name", detail: `${referrer.name}, ${referrer.role}` },
                 { label: "Where", detail: referrer.location },
                 { label: "Phone", detail: referrer.phone },
-                { label: "Email", detail: referrer.email },
+                // Finding 44: the email is not required, so a blank one reads as not given.
+                { label: "Email", detail: referrer.email.trim() || "Not given" },
               ]}
             />
             <div className={styles.actions}>

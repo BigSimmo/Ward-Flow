@@ -85,6 +85,8 @@ export const WARD_FLOW_TYPED_TEXT_EVENT_TYPES: ReadonlySet<WardFlowEvent["type"]
   "BOOK_TRANSPORT",
   // CAD/tracking number is typed text, just as on BOOK_TRANSPORT.
   "RECORD_REPATRIATION",
+  // CAD to follow (27 Oct 2026): the CAD number added later is the same typed text.
+  "RECORD_TRANSPORT_CAD",
   "SET_ARRIVAL_DETAILS",
   "UPLOAD_PATIENT_FORM",
   "DISPATCH_BROADCAST_ALERT",
