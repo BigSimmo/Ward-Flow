@@ -286,7 +286,7 @@ it("restores legal form choices and time after refresh, and Clear removes the se
   const second = render(<LegalDraft save={() => false} />);
   expect(screen.getByLabelText("Time on form")).toHaveValue("00:00");
   expect(screen.getByLabelText("Movement")).toHaveValue(wardMovements[0]!.id);
-  expect(screen.getByText(/Draft restored from this session/)).toBeInTheDocument();
+  expect(screen.getByText(/Draft restored in this tab — use Clear to remove it./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
   act(() => vi.advanceTimersByTime(1000));
   expect(readSessionDraft(sessionDraftKey("standard/0", "legal-record", "new"))).toBeNull();

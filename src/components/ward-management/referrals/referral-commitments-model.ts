@@ -3,6 +3,8 @@ import type { Referral, ReferralAddressing, ReferralContactEntry } from "@/compo
 
 import type { ReferralCommitmentEntry, ReferralCommitmentStep } from "./referral-commitments";
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referral-commitments";
+import { isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
+
 import { openInformationNeeds } from "./referral-information-needs";
 import { referralClosedForFollowUp } from "./referral-owner-and-calls-model";
 
@@ -14,7 +16,8 @@ import { referralClosedForFollowUp } from "./referral-owner-and-calls-model";
 
 /** Still waiting on this copy's answer: queued, not withdrawn. */
 export function awaitingWardAnswer(addressing: ReferralAddressing): boolean {
-  return addressing.state === "queued" && addressing.withdrawnAt === undefined;
+  // Audit P031: the one waiting rule the rest of the app reads (`ward-referrals.ts`).
+  return isAwaitingAnswer(addressing);
 }
 
 /**
@@ -120,16 +123,27 @@ export type CommitmentItem = {
 /**
  * Every referral still waiting on a ward, one item per referral and ward, in recorded order. A copy
  * named for a ward is that ward's open request. A copy naming no ward joins a ward's list only once
- * a commitment about that ward is recorded on it. A resolved commitment leaves the list.
+ * a commitment about that ward is recorded on it, or, when `openToWards` is given, on every one of
+ * those wards (a copy naming no ward is open to every ward, as `wardCopyFor` reads it; audit P031).
+ * A resolved commitment leaves the list.
  */
-export function openCommitmentItems(referrals: readonly Referral[]): CommitmentItem[] {
+export function openCommitmentItems(
+  referrals: readonly Referral[],
+  openToWards?: readonly { id: string }[],
+): CommitmentItem[] {
   const items: CommitmentItem[] = [];
   for (const referral of referrals) {
     if (referralClosedForFollowUp(referral)) continue;
     for (const addressing of referral.destinations) {
       if (addressing.destination.kind !== "psychiatric_ward" || !awaitingWardAnswer(addressing)) continue;
       const named = addressing.destination.unitId;
-      const unitIds = [...new Set([...(named ? [named] : []), ...(addressing.commitments ?? []).map((e) => e.unitId)])];
+      const unitIds = [
+        ...new Set([
+          ...(named ? [named] : []),
+          ...(addressing.commitments ?? []).map((e) => e.unitId),
+          ...(named === undefined && openToWards ? openToWards.map((unit) => unit.id) : []),
+        ]),
+      ];
       for (const unitId of unitIds) {
         // A copy naming another ward never carries this ward's entries; skip a stray one.
         if (named !== undefined && named !== unitId) continue;
@@ -170,7 +184,7 @@ export function callSheetGroups(
   unitOrder: readonly { id: string }[],
 ): CallSheetGroup[] {
   const byUnit = new Map<string, CommitmentItem[]>();
-  for (const item of openCommitmentItems(referrals)) {
+  for (const item of openCommitmentItems(referrals, unitOrder)) {
     byUnit.set(item.unitId, [...(byUnit.get(item.unitId) ?? []), item]);
   }
   const order = [...unitOrder.map((unit) => unit.id), ...byUnit.keys()];

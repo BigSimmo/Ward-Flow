@@ -4,7 +4,7 @@ import { isOpen } from "../src/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import type { Movement, Referral } from "../src/components/ward-management/ward-model";
 import type { Admission } from "../src/components/ward-management/ward-admissions";
-import { patientCohort } from "../src/components/ward-management/ward-patients";
+import { cohortFitsAge, patientCohort } from "../src/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "../src/components/ward-management/ward-patient-resolver";
 import { edById, unitById } from "../src/components/ward-management/ward-sites";
 
@@ -223,7 +223,7 @@ describe("every seeded person links to a real patient (audit T8, expected red un
       const patient = resolveSubjectPatient(movement, state).patient;
       if (!patient) continue;
       const patientBand = patientCohort(patient.dateOfBirth, DEMONSTRATION_DAY);
-      if (movement.cohort !== patientBand) {
+      if (!cohortFitsAge(movement.cohort, patient.dateOfBirth, DEMONSTRATION_DAY)) {
         mismatches.push(`${movement.id} (record ${movement.cohort} vs patient ${patientBand})`);
       }
     }
@@ -231,7 +231,7 @@ describe("every seeded person links to a real patient (audit T8, expected red un
       const patient = resolveSubjectPatient(referral, state).patient;
       if (!patient) continue;
       const patientBand = patientCohort(patient.dateOfBirth, DEMONSTRATION_DAY);
-      if (referral.ageBand !== patientBand) {
+      if (!cohortFitsAge(referral.ageBand, patient.dateOfBirth, DEMONSTRATION_DAY)) {
         mismatches.push(`${referral.id} (record ${referral.ageBand} vs patient ${patientBand})`);
       }
     }

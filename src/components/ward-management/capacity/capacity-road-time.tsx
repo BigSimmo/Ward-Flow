@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, MapPin } from "lucide-react";
+import { SpelledCodes, codeName } from "@/components/ward-management/ward-abbreviations";
 import Link from "next/link";
 import { useId, useState } from "react";
 
@@ -73,12 +74,12 @@ export function ReadyByRoadTime({
           >
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
-                {d.siteCode} ED
+                {d.siteCode} ED{codeName(d.siteCode) ? ` (${codeName(d.siteCode)})` : ""}
               </option>
             ))}
           </Select>
           <span className={styles.pickerValue} aria-hidden="true">
-            {ed === undefined ? null : `${ed.siteCode} ED`}
+            {ed === undefined ? null : <SpelledCodes text={`${ed.siteCode} ED`} />}
             <Icon icon={ChevronDown} size={14} />
           </span>
         </span>
@@ -101,7 +102,9 @@ export function ReadyByRoadTime({
               >
                 <span className={styles.rank}>{index + 1}</span>
                 <span className={styles.text}>
-                  <span className={styles.unitName}>{row.unit.name}</span>
+                  <span className={styles.unitName}>
+                    <SpelledCodes text={row.unit.name} />
+                  </span>
                   <span className={styles.unitMeta}>
                     {row.ready} ready
                     {row.pendingPreparation ? `, ${row.pendingPreparation} still being made ready` : ""} · {route.km} km

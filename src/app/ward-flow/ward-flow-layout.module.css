@@ -391,6 +391,25 @@
   }
 }
 
+/*
+ * P040: on a short phone screen (a phone held sideways at narrow width, or 200% zoom) the pinned
+ * header plus the pinned notes under it left little room to scroll the page. Below 32rem of height
+ * only the header stays pinned; the notes holder scrolls away with the page. Kept after the base
+ * .bannerHolder rule so it wins the cascade. The scroll padding drops only the notes' room and keeps
+ * clearance for the route-level pinned view row (Ward views, Referrals switch: up to 6.5rem).
+ * Layout only: no wording changes.
+ */
+@media screen and (max-width: 48rem) and (max-height: 32rem) {
+  .bannerHolder {
+    position: static;
+  }
+
+  .shellContent,
+  .shellContent:has([data-testid="ward-offline-banner"]) {
+    scroll-padding-top: calc(var(--wf-header-height) + 6.5rem);
+  }
+}
+
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */
 @media print {
   /* The document's dark colour scheme also paints the paper canvas outside the routed content.

@@ -112,6 +112,26 @@ describe("useDirtyStateGuard", () => {
     expect(removeEventListenerSpy).toHaveBeenCalledWith("beforeunload", expect.any(Function));
   });
 
+  it("P158: skips only the browser unload prompt while unloadSafe says the work survives a reload", () => {
+    let safe = true;
+    const { rerender } = renderHook(
+      ({ unloadSafe }: { unloadSafe?: () => boolean }) => useDirtyStateGuard({ isDirty: true, unloadSafe }),
+      { initialProps: { unloadSafe: () => safe } as { unloadSafe?: () => boolean } },
+    );
+    const unload = () => {
+      const event = new Event("beforeunload", { cancelable: true }) as BeforeUnloadEvent;
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    };
+    expect(unload()).toBe(false);
+    // Asked at unload time, so a later change (an edit not yet kept) prompts again without a re-render.
+    safe = false;
+    expect(unload()).toBe(true);
+    // Other guard users pass no option: unchanged, always prompt while dirty.
+    rerender({ unloadSafe: undefined });
+    expect(unload()).toBe(true);
+  });
+
   it("removes a legacy stored draft without restoring typed text", () => {
     const onRestore = vi.fn();
     window.sessionStorage.setItem("wf-draft:test-form", "Draft note content");

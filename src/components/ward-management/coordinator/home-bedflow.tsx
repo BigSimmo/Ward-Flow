@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useMemo, useState } from "react";
 
 import {
@@ -139,7 +140,7 @@ export function HomeBedflow({
           <span className={styles.unitName}>
             <span className={styles.unitNameLine}>
               <span className={styles.unitNameText} title={unit.name}>
-                {unit.name}
+                <SpelledCodes text={unit.name} />
               </span>
             </span>
             <span className={styles.unitSub}>
@@ -191,7 +192,9 @@ export function HomeBedflow({
                 onClick={() => toggleGroup(group.service, open)}
               >
                 <Icon icon={open ? ChevronDown : ChevronRight} size={14} />
-                <span className={styles.groupName}>{group.service}</span>
+                <span className={styles.groupName}>
+                  <SpelledCodes text={group.service} />
+                </span>
                 <span className={styles.groupCount}>{group.units.length} wards</span>
                 <span className={styles.groupFigures}>
                   <span className={styles.mono}>{ready}</span> ready
@@ -217,7 +220,7 @@ export function HomeBedflow({
                 <li key={unit.id} className={styles.unitRow} data-testid={`ward-diagram-unplaced-unit-${unit.id}`}>
                   <span className={styles.unitName}>
                     <span className={styles.unitNameText} title={unit.name}>
-                      {unit.name}
+                      <SpelledCodes text={unit.name} />
                     </span>
                     <span className={styles.unitSub}>Health service not resolved</span>
                   </span>

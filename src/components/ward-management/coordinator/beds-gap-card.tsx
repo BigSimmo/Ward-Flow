@@ -56,6 +56,8 @@ export function BedsGapCard({
   const rows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
   const totals = useMemo(() => bedKindTotals(rows), [rows]);
   const totalWord = gapWord(totals.gap);
+  // P122: each Tomorrow tile names its bed type, the same words as the tile above it.
+  const needById = useMemo(() => new Map(rows.map((row) => [row.id, shortNeed(row.need)])), [rows]);
   // Forecasting build (Josh, 23 Oct 2026, screen 1): tomorrow per bed type, from the same records.
   const { bedReleases, plannedAdmissions } = useWardFlowSelect("bedReleases", "plannedAdmissions");
   const tomorrow = useMemo(
@@ -100,7 +102,7 @@ export function BedsGapCard({
           const word = gapWord(kind.likely);
           return (
             <li key={kind.id} className={styles.gapTile} data-short={kind.likely < 0 ? "true" : undefined}>
-              <span className={styles.gapNeed}>Tomorrow</span>
+              <span className={styles.gapNeed}>{needById.get(kind.id) ?? "Beds"} tomorrow</span>
               <span className={styles.gapValue}>
                 <StatusGlyph tone={word.tone} size={9} />
                 <GapFigure gap={kind.likely} />
