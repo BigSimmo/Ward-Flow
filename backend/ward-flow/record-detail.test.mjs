@@ -72,7 +72,7 @@ test("real PostgreSQL: the detail is sent only with a logged record opening", { 
         const answer = await store.logView(view, patient.id, "patient");
         assert.equal(answer.status, 200);
         assert.equal(answer.body.logged, true);
-        assert.equal(answer.body.patientId, patient.id);
+        assert.equal(answer.body.opened, patient.id);
         if (typeof answer.body.detail.address !== "string") continue;
         stored = { id: patient.id, detail: answer.body.detail };
         break;
@@ -89,7 +89,7 @@ test("real PostgreSQL: the detail is sent only with a logged record opening", { 
       const movement = board.payload.state.movements.find((candidate) => candidate.patientId === stored?.id);
       if (!movement) return;
       const answer = await store.logView(view, movement.id, "movement");
-      assert.equal(answer.body.patientId, stored?.id);
+      assert.equal(answer.body.opened, stored?.id);
       assert.deepEqual(answer.body.detail, stored?.detail);
     });
     await t.test("an account at its limit is sent nothing for a new record", async () => {

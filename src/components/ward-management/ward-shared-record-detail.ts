@@ -52,10 +52,11 @@ export class RecordDetailHold {
   /** Keeps a logged opening's detail. True when it was kept, so the board should be drawn again. */
   take(reply: unknown, askedUnder: string | undefined): boolean {
     if (askedUnder !== this.context || !reply || typeof reply !== "object") return false;
-    const { patientId, detail } = reply as { patientId?: unknown; detail?: unknown };
+    // `opened` is the person whose record the server logged as opened.
+    const { opened, detail } = reply as { opened?: unknown; detail?: unknown };
     const parsed = parseRecordDetail(detail);
-    if (typeof patientId !== "string" || !parsed) return false;
-    this.details = new Map(this.details).set(patientId, parsed);
+    if (typeof opened !== "string" || !parsed) return false;
+    this.details = new Map(this.details).set(opened, parsed);
     return true;
   }
   /** The view the held detail belongs to. */

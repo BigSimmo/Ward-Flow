@@ -2110,7 +2110,7 @@ export function createWorkspaceStore(
       const patient = state.patients.find((candidate) => candidate.id === opened);
       const sent = (logged) => ({
         status: 200,
-        body: { logged, ...(patient ? { patientId: patient.id, detail: recordDetailOf(patient) } : {}) },
+        body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
       });
       if (recent[0]?.repeated) return sent(false);
       return transaction(async (client, loggedAt) => {

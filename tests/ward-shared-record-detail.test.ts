@@ -63,7 +63,7 @@ describe("record detail from a logged opening", () => {
           asked.push(String(init?.body));
           return Response.json({
             logged: true,
-            patientId: withAddress.id,
+            opened: withAddress.id,
             detail: { address: "No. 7, Ashfield" },
           });
         }
