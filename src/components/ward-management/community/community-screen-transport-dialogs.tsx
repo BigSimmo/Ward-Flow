@@ -64,8 +64,9 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
   // The patient's name, as every other screen shows it. The movement id is never a person's name.
   const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
   return (
-    <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportBook}>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
+    // A stray tap on the backdrop does not close the booking, because closing clears every answer
+    // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape still do.
+    <div className={styles.modalBackdrop} role="presentation">
       <div
         ref={transportBookDialogRef}
         className={styles.modalDialog}
@@ -73,7 +74,6 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
         aria-modal="true"
         aria-labelledby={`ward-community-book-transport-title-${transportBookFor}`}
         data-testid={`ward-community-book-transport-dialog-${transportBookFor}`}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
           <h3 id={`ward-community-book-transport-title-${transportBookFor}`} className={styles.modalTitle}>

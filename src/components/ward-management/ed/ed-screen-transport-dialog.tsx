@@ -40,7 +40,7 @@ function EdTransportBooking({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenC
 
 export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenContext): ReactNode {
   const { movement, patientInfo, transportOpen, transportBlocked } = row;
-  const { transportBackdropRef, setTransportDialogNode, closeTransportDialog } = ctx;
+  const { transportBackdropRef, setTransportDialogNode } = ctx;
   /*
    * ⚠️ **A POPUP (DIALOG), NOT AN INLINE PANEL — owner's third ruling, 2026-09-17.**
    * `role="dialog"`/`aria-modal="true"`/`aria-labelledby` name and announce it,
@@ -55,16 +55,10 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
     ? createPortal(
         // Since ED page A2 this dialog opens over the patient's sheet, which
         // inerts everything outside itself; these markers keep the dialog live
-        // and stop the sheet taking its focus back.
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
-        <div
-          ref={transportBackdropRef}
-          className={styles.modalBackdrop}
-          onClick={closeTransportDialog}
-          data-sheet-inert-skip=""
-          data-sheet-portal=""
-        >
-          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
+        // and stop the sheet taking its focus back. A stray tap on the backdrop
+        // no longer closes it, because closing clears every answer typed in
+        // (form friction audit, 27 Oct 2026). Cancel and Escape still close it.
+        <div ref={transportBackdropRef} className={styles.modalBackdrop} data-sheet-inert-skip="" data-sheet-portal="">
           <div
             ref={setTransportDialogNode}
             className={styles.declineForm}
@@ -72,7 +66,6 @@ export function renderEdTransportDialog(row: EdBoardRowModel, ctx: EdScreenConte
             role="dialog"
             aria-modal="true"
             aria-labelledby={`ward-ed-book-transport-title-${movement.id}`}
-            onClick={(e) => e.stopPropagation()}
           >
             <h2 id={`ward-ed-book-transport-title-${movement.id}`} className={styles.declineLegend}>
               Log the transport booking made by phone for {patientInfo.displayName}

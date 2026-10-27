@@ -5,7 +5,7 @@
  * Nothing here blocks a step. A check that is not met is shown as a warning, and a person who goes
  * ahead records which checks were open and a coded reason (`TransportException`).
  */
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { cadNumberProblem, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { minuteOfDayFromClockText, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import {
@@ -226,13 +226,18 @@ export type TransportBookingAnswers = {
 /** What each unanswered booking question asks, in the order the popups show them. */
 const TRANSPORT_ANSWER_ASKS = {
   provider: "choose who is collecting the patient",
-  escort: "answer the escort question",
   cad: "enter the CAD transport number",
-  legalStatus: "state whether the transport is voluntary or involuntary",
   time: "enter the estimated time",
+  escort: "answer the escort question",
+  legalStatus: "state whether the transport is voluntary or involuntary",
 } as const;
 
 export type TransportAnswer = keyof typeof TRANSPORT_ANSWER_ASKS;
+
+/** Whether this draft asks for a CAD number: not for a ward escort or a family member. */
+export function transportNeedsCad(draft: Pick<TransportBookingAnswers, "provider">): boolean {
+  return providerNeedsCadNumber(draft.provider);
+}
 
 /**
  * The booking questions still unanswered, in the popup's order. Blocker mock-up (Josh approved 26
@@ -242,10 +247,10 @@ export type TransportAnswer = keyof typeof TRANSPORT_ANSWER_ASKS;
 export function transportAnswersMissing(draft: TransportBookingAnswers, now: Instant): TransportAnswer[] {
   const missing: TransportAnswer[] = [];
   if (draft.provider === undefined) missing.push("provider");
-  if (draft.escortRequired === undefined) missing.push("escort");
-  if (draft.cadNumber.trim().length === 0) missing.push("cad");
-  if (draft.transportLegalStatus === undefined) missing.push("legalStatus");
+  if (transportNeedsCad(draft) && draft.cadNumber.trim().length === 0) missing.push("cad");
   if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) missing.push("time");
+  if (draft.escortRequired === undefined) missing.push("escort");
+  if (draft.transportLegalStatus === undefined) missing.push("legalStatus");
   return missing;
 }
 
@@ -256,12 +261,12 @@ export function transportAnswersMissing(draft: TransportBookingAnswers, now: Ins
  */
 export function transportAnswersBlockedReason(draft: TransportBookingAnswers, now: Instant): string | undefined {
   const missing = transportAnswersMissing(draft, now).map((answer) => TRANSPORT_ANSWER_ASKS[answer]);
-  const cadProblem = cadNumberProblem(draft.cadNumber);
+  const cadProblem = transportNeedsCad(draft) ? cadNumberProblem(draft.cadNumber) : undefined;
   // A typed CAD number the rule refuses is a wrong answer, not a missing one, so it gets its own
-  // sentence rather than the "none is filled in for you" line.
+  // sentence rather than the list of answers still to give.
   const refused = draft.cadNumber.trim().length > 0 && cadProblem !== undefined ? cadNumberSentence(cadProblem) : "";
   if (missing.length === 0) return refused || undefined;
-  const unanswered = `Before booking, ${missing.join(", ")}. None is filled in for you: the record has to say that this team decided.`;
+  const unanswered = `Before booking, ${missing.join(", ")}.`;
   return refused ? `${refused} ${unanswered}` : unanswered;
 }
 

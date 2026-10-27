@@ -14,6 +14,10 @@
  * - Legal status is filled in from Legal now when the record holds one (`LEGAL_STATUS_FROM_LEGAL_NOW`).
  *   An answer that differs from Legal now asks for a reason, recorded as the booking's exception.
  * - The answers still missing are named, and one button moves to the first (blocker mock-up, 26 Oct).
+ *   Pressing Save early also moves to the first missing answer, rather than doing nothing.
+ * - A ward escort or a family member has no dispatch service, so no CAD number is asked for
+ *   (form friction audit, 27 Oct 2026). Questions follow the call: who, CAD, when, then escort and
+ *   legal status.
  * - A quoted time after the bed hold ends is warned, never blocked (audit A4-2).
  * - Deliberately not a `<form>`: Enter inside a field must not submit a half-answered booking.
  * - The host keeps the answers until its save is accepted, and passes `pending` and `error` back.
@@ -31,6 +35,7 @@ import {
   legalNowTransportStatus,
   transportAnswersBlockedReason,
   transportAnswersMissing,
+  transportNeedsCad,
   transportStatusClashes,
   type TransportAnswer,
   type TransportBookingAnswers,
@@ -86,7 +91,6 @@ export type TransportBookingPart =
   | "presets"
   | "hold"
   | "left"
-  | "needs"
   | "confirm"
   | "cancel"
   | "failure";
@@ -110,7 +114,6 @@ const DEFAULT_PART_NAMES: Record<TransportBookingPart, string> = {
   presets: "transport-eta-presets",
   hold: "transport-eta-hold",
   left: "book-transport-left",
-  needs: "book-transport-needs",
   confirm: "book-transport-confirm",
   cancel: "book-transport-cancel",
   failure: "book-transport-failure",
@@ -198,10 +201,11 @@ export function transportBookingSubmission(
 ): TransportBookingSubmission | undefined {
   const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = answers;
   const estimatedAt = instantFromEstimatedTimeInputs(estimatedTime, estimatedDay, now);
+  const needsCad = transportNeedsCad(answers);
   if (
     provider === undefined ||
     escortRequired === undefined ||
-    cadNumberProblem(cadNumber) !== undefined ||
+    (needsCad && cadNumberProblem(cadNumber) !== undefined) ||
     transportLegalStatus === undefined ||
     estimatedAt === undefined
   )
@@ -211,7 +215,7 @@ export function transportBookingSubmission(
   return {
     provider,
     escortRequired,
-    cadNumber: cadNumber.trim(),
+    cadNumber: needsCad ? cadNumber.trim() : "",
     transportLegalStatus,
     estimatedAt,
     ...(clash && legalReason !== "" ? { exception: { gaps: ["legal_status_differs"], reason: legalReason } } : {}),
@@ -273,7 +277,8 @@ export function TransportBookingForm({
   }, [legalNow, onAnswers]);
 
   const set = (patch: Partial<TransportBookingAnswers>) => onAnswers((current) => ({ ...current, ...patch }));
-  const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
+  const needsCad = transportNeedsCad(answers);
+  const cadProblem = needsCad && answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
   const missing = transportAnswersMissing(answers, now);
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
   const clash = record !== undefined && transportStatusClashes(record, answers.transportLegalStatus);
@@ -290,10 +295,14 @@ export function TransportBookingForm({
   const submission = transportBookingSubmission(answers, legalReason, record, now);
   const unavailable = blocked !== undefined || submission === undefined || pending;
 
-  const goToAnswer = (answer: TransportAnswer) => {
-    const field = document.querySelector<HTMLElement>(`[data-testid="${tid(ANSWER_PARTS[answer][1])}"]`);
+  const goToPart = (part: TransportBookingPart) => {
+    const field = document.querySelector<HTMLElement>(`[data-testid="${tid(part)}"]`);
     (field?.matches("fieldset") ? field.querySelector<HTMLElement>("input") : field)?.focus();
   };
+  const goToAnswer = (answer: TransportAnswer) => goToPart(ANSWER_PARTS[answer][1]);
+  // The answers still to give, with the reason it differs last: one list, beside Save.
+  const leftNames = reasonMissing ? [...missingNames, "reason it differs"] : missingNames;
+  const goToFirstLeft = () => (missing.length > 0 ? goToAnswer(missing[0]!) : goToPart("legal-reason"));
 
   return (
     <div className={styles.form} aria-busy={pending || undefined}>
@@ -319,6 +328,86 @@ export function TransportBookingForm({
         </Select>
       </Field>
 
+      {needsCad ? (
+        <Field
+          label="CAD transport number"
+          id={did("cad")}
+          error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
+          help="Read it off the call with the provider."
+        >
+          <TextInput
+            data-testid={tid("cad")}
+            data-missing={missing.includes("cad") ? "" : undefined}
+            className={styles.mono}
+            autoComplete="off"
+            placeholder="CAD number"
+            disabled={pending}
+            value={answers.cadNumber}
+            onChange={(event) => set({ cadNumber: event.target.value })}
+          />
+        </Field>
+      ) : null}
+
+      <div className={styles.timeRow}>
+        <div className={styles.timeCol}>
+          <Field label="Estimated time" id={did("time")}>
+            <TextInput
+              data-testid={tid("time")}
+              className={styles.mono}
+              inputMode="numeric"
+              placeholder="HH:MM, 24-hour"
+              autoComplete="off"
+              disabled={pending}
+              value={answers.estimatedTime}
+              onChange={(event) => set({ estimatedTime: event.target.value })}
+            />
+          </Field>
+          <div role="group" aria-label="Quick times" className={styles.presets} data-testid={tid("presets")}>
+            {ETA_PRESETS.map((preset) => {
+              const value = etaPresetAnswers(now, preset.offset);
+              const active =
+                answers.estimatedTime.trim() === value.estimatedTime && answers.estimatedDay === value.estimatedDay;
+              return (
+                <Button
+                  key={preset.label}
+                  size="sm"
+                  variant={active ? "pri" : "sec"}
+                  aria-pressed={active}
+                  disabled={pending}
+                  onClick={() => set(value)}
+                >
+                  {preset.label}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+        <fieldset className={styles.question} data-testid={tid("day")} disabled={pending}>
+          <legend className={styles.legend}>Today or tomorrow?</legend>
+          <span className={styles.choice}>
+            {(["today", "tomorrow"] as const).map((day) => (
+              <label key={day} className={styles.choiceItem}>
+                <input
+                  type="radio"
+                  name={did("day")}
+                  data-testid={tid("day", day)}
+                  value={day}
+                  checked={answers.estimatedDay === day}
+                  onChange={() => set({ estimatedDay: day })}
+                />
+                <span>{day === "today" ? "Today" : "Tomorrow"}</span>
+              </label>
+            ))}
+          </span>
+        </fieldset>
+      </div>
+      {holdEnd !== undefined ? (
+        <p className={styles.warn} data-testid={tid("hold")}>
+          <StatusGlyph tone="warning" size={9} />
+          Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
+        </p>
+      ) : null}
+
       <fieldset className={styles.question} data-testid={tid("escort")} disabled={pending}>
         <legend className={styles.legend}>Does {patientName} need an escort?</legend>
         <span className={styles.choice}>
@@ -337,28 +426,7 @@ export function TransportBookingForm({
             </label>
           ))}
         </span>
-        {answers.escortRequired === undefined ? (
-          <p className={styles.note}>Neither answer is selected. This is recorded as this team&apos;s answer.</p>
-        ) : null}
       </fieldset>
-
-      <Field
-        label="CAD transport number"
-        id={did("cad")}
-        error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
-        help={missing.includes("cad") ? "CAD number missing. Read it off the call with the provider." : undefined}
-      >
-        <TextInput
-          data-testid={tid("cad")}
-          data-missing={missing.includes("cad") ? "" : undefined}
-          className={styles.mono}
-          autoComplete="off"
-          placeholder="CAD number"
-          disabled={pending}
-          value={answers.cadNumber}
-          onChange={(event) => set({ cadNumber: event.target.value })}
-        />
-      </Field>
 
       <fieldset className={styles.question} data-testid={tid("legal")} disabled={pending}>
         <legend className={styles.legend}>Is the transport voluntary or involuntary?</legend>
@@ -421,71 +489,13 @@ export function TransportBookingForm({
         </Field>
       ) : null}
 
-      <div className={styles.timeRow}>
-        <Field label="Estimated time (24-hour, HH:MM)" id={did("time")}>
-          <TextInput
-            data-testid={tid("time")}
-            className={styles.mono}
-            inputMode="numeric"
-            placeholder="HH:MM"
-            autoComplete="off"
-            disabled={pending}
-            value={answers.estimatedTime}
-            onChange={(event) => set({ estimatedTime: event.target.value })}
-          />
-        </Field>
-        <fieldset className={styles.question} data-testid={tid("day")} disabled={pending}>
-          <legend className={styles.legend}>Today or tomorrow?</legend>
-          <span className={styles.choice}>
-            {(["today", "tomorrow"] as const).map((day) => (
-              <label key={day} className={styles.choiceItem}>
-                <input
-                  type="radio"
-                  name={did("day")}
-                  data-testid={tid("day", day)}
-                  value={day}
-                  checked={answers.estimatedDay === day}
-                  onChange={() => set({ estimatedDay: day })}
-                />
-                <span>{day === "today" ? "Today" : "Tomorrow"}</span>
-              </label>
-            ))}
-          </span>
-        </fieldset>
-      </div>
-      <div role="group" aria-label="Quick times" className={styles.presets} data-testid={tid("presets")}>
-        {ETA_PRESETS.map((preset) => {
-          const value = etaPresetAnswers(now, preset.offset);
-          const active =
-            answers.estimatedTime.trim() === value.estimatedTime && answers.estimatedDay === value.estimatedDay;
-          return (
-            <Button
-              key={preset.label}
-              size="sm"
-              variant={active ? "pri" : "sec"}
-              aria-pressed={active}
-              disabled={pending}
-              onClick={() => set(value)}
-            >
-              {preset.label}
-            </Button>
-          );
-        })}
-      </div>
-      {holdEnd !== undefined ? (
-        <p className={styles.warn} data-testid={tid("hold")}>
-          <StatusGlyph tone="warning" size={9} />
-          Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
-        </p>
-      ) : null}
-
-      {missing.length > 0 ? (
+      {leftNames.length > 0 ? (
         <p className={styles.left} data-testid={tid("left")}>
           <span>
-            {missing.length} {missing.length === 1 ? "answer" : "answers"} left: {missingNames.join(", ")}
+            {leftNames.length} {leftNames.length === 1 ? "answer" : "answers"} left: {leftNames.join(", ")}
           </span>
-          <button type="button" className={styles.leftFix} onClick={() => goToAnswer(missing[0]!)}>
-            Add {missingNames[0]}
+          <button type="button" className={styles.leftFix} onClick={goToFirstLeft}>
+            Add {leftNames[0]}
           </button>
         </p>
       ) : null}
@@ -498,7 +508,12 @@ export function TransportBookingForm({
           aria-describedby={blocked ? `${did("confirm")}-blocked` : undefined}
           title={blocked}
           onClick={() => {
-            if (unavailable || submission === undefined) return;
+            if (pending) return;
+            // Pressed early, Save moves to the first answer still to give instead of doing nothing.
+            if (unavailable || submission === undefined) {
+              if (blockedReason === undefined && leftNames.length > 0) goToFirstLeft();
+              return;
+            }
             onSubmit(submission);
           }}
         >
@@ -508,16 +523,6 @@ export function TransportBookingForm({
           <Button data-testid={tid("cancel")} disabled={pending} onClick={onCancel}>
             Cancel
           </Button>
-        ) : null}
-        {missing.length > 0 ? (
-          // The confirm names the full sentence to screen readers; this is the short visible copy.
-          <span aria-hidden="true" className={styles.note} data-testid={tid("needs")}>
-            {missing.length === 1 ? `Needs the ${missingNames[0]}` : `Needs ${missing.length} answers`}
-          </span>
-        ) : reasonMissing ? (
-          <span aria-hidden="true" className={styles.note} data-testid={tid("needs")}>
-            Needs the reason it differs
-          </span>
         ) : null}
         {blocked ? (
           <span id={`${did("confirm")}-blocked`} className="sr-only">
