@@ -874,7 +874,10 @@ test(
         assert.equal(kept.body.commandRevision, 3);
         const stale = await shared.command(actor, randomUUID(), 2, confirm, { revisionOnly: true });
         assert.equal(stale.status, 409);
-        assert.match(stale.body.error, /^Another desk changed this (bed|stay|movement|referral|alert|discharge|record) first\. Review the latest board before trying again\.$/);
+        assert.match(
+          stale.body.error,
+          /^Another desk changed this (bed|stay|movement|referral|alert|discharge|record) first\. Review the latest board before trying again\.$/,
+        );
         assert.equal(stale.body.code, "stale");
         assert.equal(stale.body.recordType, "record", "a ward's capacity is a record");
         assert.equal(stale.body.snapshot.revision, 3, "a stale command always carries the board");
@@ -2142,7 +2145,10 @@ test(
       const winner = await won.json();
       const loser = await lost.json();
       assert.equal(loser.outcome, "stale");
-      assert.match(loser.error, /^Another desk changed this (bed|stay|movement|referral|alert|discharge|record) first\. Review the latest board before trying again\.$/);
+      assert.match(
+        loser.error,
+        /^Another desk changed this (bed|stay|movement|referral|alert|discharge|record) first\. Review the latest board before trying again\.$/,
+      );
       assert.equal(loser.snapshot.revision, 6);
       assert.equal(urgencyOf(loser.snapshot, "WF-003"), urgencyOf(winner.snapshot, "WF-003"));
       // The person told about the clash reloads and saves again; this time it is kept.
