@@ -375,9 +375,9 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     renderedIn: STATISTICS_SCREEN,
     rendered: "What the model derives from the pair is a",
     claim:
-      "The ward-side readiness gap is DERIVED from the unit's own aggregate counts alone (`empty`, `allocatable`, " +
-      "`beds` and whether the ward is closed) — no per-bed or per-request field enters it, so it can name neither " +
-      "a bed nor a request.",
+      "The ward-side readiness gap is DERIVED from the unit's own aggregate counts (`empty`, `allocatable`, " +
+      "`beds` and whether the ward is closed) and how many beds the ward closed by number. It counts those " +
+      "marks and reads no bed or request id, so it can name neither a bed nor a request.",
     sourceFile: WARD_BED_AVAILABILITY,
     evidence: HELD_IS_DERIVED_FROM_TWO_AGGREGATES,
     falsifiedBy: {
