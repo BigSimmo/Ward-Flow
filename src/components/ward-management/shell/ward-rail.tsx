@@ -670,7 +670,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   }
 
   return (
-    <nav
+    <aside
       className={styles.rail}
       data-rail={earlyShape ? earlyShape.rail : shownOpen ? "open" : "closed"}
       data-tablet={earlyShape ? (earlyShape.tablet ?? undefined) : isTabletLandscape ? "landscape" : undefined}
@@ -1303,7 +1303,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           ) : null,
         )}
       </Sheet>
-    </nav>
+    </aside>
   );
 }
 
