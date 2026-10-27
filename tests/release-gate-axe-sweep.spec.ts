@@ -169,3 +169,67 @@ test("axe: a ward's bed drawer when open has no serious or critical violation", 
   await expect(page.getByTestId("bed-telemetry-drawer")).toBeVisible();
   await expectAccessible(page, testInfo, "ward bed drawer open");
 });
+
+/**
+ * NC-05 (design reassessment 20 Oct 2026, H-0168): everything above runs in the light theme. This
+ * pass runs again with the device asking for dark, on a spread of desks and the open sheets and
+ * menus, so a dark colour that fails contrast is caught too. The bed drawer is left to the light
+ * pass above, which opens it the way the Ward page does now.
+ */
+test.describe("dark theme", () => {
+  test.use({ colorScheme: "dark" });
+
+  const DARK_ROUTES = [
+    ["", "ward-coordinator"],
+    ["/community/midland", "ward-community-screen"],
+    ["/discharges", "ward-discharge-board"],
+    ["/ed/peel-ed", "ward-ed-screen"],
+    ["/referrals/new", "ward-referral-board-screen"],
+    ["/settings", "ward-settings-screen"],
+    ["/statistics", "ward-statistics-screen"],
+    ["/transport/officer", "ward-officer-screen"],
+    ["/ward/rph-adult-secure", "ward-unit-screen"],
+  ] as const;
+
+  async function openDark(page: Page, route: string, screenId: string) {
+    await openShell(page, route, screenId);
+    await expect(page.locator("html.dark"), "the device asks for dark, so the app must draw dark").toHaveCount(1);
+  }
+
+  for (const [route, screenId] of DARK_ROUTES) {
+    test(`axe dark: ${route || "/"} has no serious or critical violation`, async ({ page }, testInfo) => {
+      await openDark(page, route, screenId);
+      await expectAccessible(page, testInfo, `dark ${route || "/"}`);
+    });
+  }
+
+  test("axe dark: the header search palette with results open", async ({ page }, testInfo) => {
+    await openDark(page, "/wards", "ward-index");
+    const input = page.getByTestId("ward-global-search-input");
+    await input.click();
+    await input.fill("a");
+    const popup = page.getByTestId("ward-global-search-popup");
+    await expect(popup.getByRole("option").first()).not.toHaveAttribute("aria-disabled", "true");
+    await expectAccessible(page, testInfo, "dark header search open");
+  });
+
+  test("axe dark: the ED actions menu when open", async ({ page }, testInfo) => {
+    test.skip(isPhoneLayout(page), "The actions menu is the desktop ED board's");
+    await openDark(page, "/ed/fsh-ed", "ward-ed-screen");
+    await page.locator('[data-testid^="ward-ed-unfold-"]:visible').first().click();
+    await expect(page.getByRole("menu")).toBeVisible();
+    await expectAccessible(page, testInfo, "dark ED actions menu open");
+  });
+
+  test("axe dark: the Tools sheet, or the phone Menu sheet, when open", async ({ page }, testInfo) => {
+    await openDark(page, "/wards", "ward-index");
+    if (isPhoneLayout(page)) {
+      await page.getByTestId("ward-bar-phone-menu").click();
+      await expect(page.getByTestId("ward-phone-menu")).toBeVisible();
+    } else {
+      await page.getByTestId("ward-bar-tools-trigger").click();
+      await expect(page.getByRole("dialog", { name: "Tools" })).toBeVisible();
+    }
+    await expectAccessible(page, testInfo, "dark Tools or Menu open");
+  });
+});
