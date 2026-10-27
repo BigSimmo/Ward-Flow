@@ -5,7 +5,7 @@
  */
 
 /** Step names a command's timing log may carry; nothing else is ever logged with it. */
-export const TIMING_STEPS = Object.freeze([
+const TIMING_STEPS = Object.freeze([
   "lock",
   "apply",
   "archive",
