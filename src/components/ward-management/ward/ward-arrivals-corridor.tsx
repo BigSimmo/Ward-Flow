@@ -517,7 +517,7 @@ export function WardArrivalsCorridor({
                   {canCancel ? (
                     <p className={styles.cancelNote} data-testid="ward-cancel-transport-unavailable">
                       This ward cannot cancel a transport it did not book. Ask the sending emergency department, or the
-                      flow coordinator.
+                      bed coordinator.
                     </p>
                   ) : null}
                 </div>

@@ -730,7 +730,7 @@ export function WardBedDossierDrawer({
                 <dl className={styles.kv}>
                   <Row label="Candidate">No patient match is recorded for this bed.</Row>
                   <Row label="Allocation">
-                    The flow coordinator reviews eligibility and current capacity before recording a shared bed
+                    The bed coordinator reviews eligibility and current capacity before recording a shared bed
                     reservation.
                   </Row>
                   <Row label="Vital signs">{VITAL_SIGNS_NOTE}</Row>
