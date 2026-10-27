@@ -1,25 +1,5 @@
 [
   {
-    "id": "2026-10-26-pull-the-bed-home",
-    "date": "2026-10-26",
-    "line": "Home lists accepted referrals with no bed pulled, and Pull the bed now takes two taps in one sheet."
-  },
-  {
-    "id": "2026-10-26-pilot-measures-pulled",
-    "date": "2026-10-26",
-    "line": "Weekly report shows the four agreed pilot measures. Forms 3B and 3C read differently. Incoming beds say pulled."
-  },
-  {
-    "id": "2026-10-26-tour-skip-closes",
-    "date": "2026-10-26",
-    "line": "Skip tour now closes the tour and marks it as seen. You can open it again from Help."
-  },
-  {
-    "id": "2026-10-26-bed-move-and-extension-checks",
-    "date": "2026-10-26",
-    "line": "Moving someone from a locked to an open bed asks for a reason when needed. Extending a form needs the new expiry date."
-  },
-  {
     "id": "2026-10-26-departures-and-pulls-named",
     "date": "2026-10-26",
     "line": "Recording a departure asks where they went, with nothing chosen for you. Pulling a bed names who it was pulled for."
@@ -98,5 +78,25 @@
     "id": "2026-10-27-seven-travel-choices",
     "date": "2026-10-27",
     "line": "Every screen asking how a patient travels offers the same seven choices, with none picked for you."
+  },
+  {
+    "id": "2026-10-27-full-names-on-phones",
+    "date": "2026-10-27",
+    "line": "Phones now always show patients' full names. The Discreet names setting has gone."
+  },
+  {
+    "id": "2026-10-27-tv-signed-out",
+    "date": "2026-10-27",
+    "line": "A TV that is signed out now says so in full screen, and keeps its figures still while it is offline."
+  },
+  {
+    "id": "2026-10-27-referral-patient-search-keys",
+    "date": "2026-10-27",
+    "line": "The new referral's patient search now works with arrow keys and Enter, and says when nobody matches."
+  },
+  {
+    "id": "2026-10-27-accept-dialog-words",
+    "date": "2026-10-27",
+    "line": "The accept dialog now says Accept referral in principle and Confirm acceptance. Ward checks say Ward cohort."
   }
 ]
