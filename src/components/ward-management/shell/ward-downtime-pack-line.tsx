@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
@@ -55,6 +55,9 @@ export function WardDowntimePackLine() {
   const take = useTakeDowntimePack();
   const pathname = usePathname() ?? "";
   const online = useOnlineStatus();
+  // The time the opening pack was first due, kept across reruns while it waits for idle, so a shift
+  // change passed in that wait is still offered.
+  const openingDueAt = useRef<number | null>(null);
 
   const pack = useSyncExternalStore(
     subscribeDowntimePack,
@@ -74,7 +77,15 @@ export function WardDowntimePackLine() {
     if (pack === null) {
       // F-11: the opening pack is silent, so it waits until the page has finished starting rather
       // than adding to a phone's first load. Hourly and shift change packs below are taken at once.
+      openingDueAt.current ??= now;
+      const dueAt = openingDueAt.current;
       return whenIdle(() => {
+        openingDueAt.current = null;
+        const crossed = shiftChangeCrossed(dueAt, now);
+        if (crossed !== null) {
+          take({ shiftChangeAt: crossed });
+          return;
+        }
         take();
         const opening = lastDowntimePack(owner, worldGeneration);
         if (opening) markDowntimePackHandled(opening);

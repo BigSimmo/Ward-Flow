@@ -115,6 +115,22 @@ describe("WardDowntimePackLine (fix plan item 9)", () => {
     expect(screen.queryByTestId("ward-downtime-pack-line")).toBeNull();
   });
 
+  it("still offers a shift change passed while the opening pack waits (F-11)", () => {
+    let idle: (() => void) | undefined;
+    vi.stubGlobal("requestIdleCallback", (work: () => void) => {
+      idle = work;
+      return 1;
+    });
+    renderShell();
+    act(() => setClock(SHIFT_CHANGE));
+    expect(lastDowntimePack()).toBeNull();
+    act(() => idle?.());
+    expect(lastDowntimePack()?.shiftChangeAt).toBe(SHIFT_CHANGE);
+    expect(screen.getByTestId("ward-downtime-pack-line").textContent).toMatch(
+      /^Shift change downtime pack 15:00 ready/u,
+    );
+  });
+
   it("takes a pack on opening without asking for paper", () => {
     renderShell();
     expect(lastDowntimePack()?.generatedAt).toBe(NOW_ANCHOR);

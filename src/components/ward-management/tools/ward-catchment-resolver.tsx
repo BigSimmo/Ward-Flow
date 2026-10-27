@@ -11,8 +11,6 @@ import { getHealthServiceBadgeStyle, getHealthServiceDotStyle } from "@/componen
 import styles from "./ward-catchment-resolver.module.css";
 import { mapClinicToServiceAndHospital, type HealthServiceInfo } from "./ward-catchment-mapping";
 
-// Community still imports the mapping from here; new callers import `./ward-catchment-mapping`.
-export { mapClinicToServiceAndHospital };
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 export type CatchmentStatus = "Reviewed clinic match" | "Contested / split" | "Unreviewed" | "Not found";
