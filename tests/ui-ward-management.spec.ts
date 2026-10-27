@@ -386,7 +386,7 @@ test.describe("@mockup Ward Flow command view", () => {
      * files actually render — in BOTH directions, so a merge that converts a screen to a standalone
      * route fails there, by name, instead of surfacing here as a confusing red.
      *
-     * ⚠️ **THE HEADING COMES FROM `wardWorkspaceModeTitle`, NOT FROM THE `WARD_VIEWS` LABEL, AND THAT
+     * ⚠️ **THE HEADING COMES FROM `modeCopy[mode].title`, NOT FROM THE `WARD_VIEWS` LABEL, AND THAT
      * IS NOT INTERCHANGEABLE.** The retired `network` mode was labelled *"Network"* in the rail and
      * titled *"Network diagram"* on the page. Filtering on a rail label could look for text a screen
      * never renders — a trap this test would have walked into the first time it derived anything.
