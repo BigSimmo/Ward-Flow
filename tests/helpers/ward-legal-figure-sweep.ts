@@ -1146,6 +1146,10 @@ export function candidateEvents(
       return state.patients.map((patient) => ({ type, role, now, patientId: patient.id }));
     case "END_COMMUNITY_TREATMENT_ORDER":
       return state.patients.map((patient) => ({ type, role, now, patientId: patient.id }));
+    case "ARCHIVE_PATIENT":
+      // #816. One candidate per patient. The reducer keeps any record that care names, so only a
+      // record added in error (the sweep's own ADD_PATIENT) leaves, and it carries no legal figure.
+      return state.patients.map((patient) => ({ type, role, now, patientId: patient.id, reason: "test" }));
     case "WITHDRAW_REFERRAL":
       // One candidate per movement, unconditioned. The reducer's own guards decide which are
       // refused — a movement that has closed, one already accepted, one holding no live referral —
