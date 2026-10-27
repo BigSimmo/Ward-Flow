@@ -287,6 +287,53 @@ describe("Hero band under pinned header notes", () => {
   });
 });
 
+// Josh, 27 Oct 2026: the rounded floating card is retired. A hero that does not open the page is
+// still the band, square to the column edges; only the header stays light.
+describe("Hero below other content", () => {
+  it("is the band without the header join, never the old card", () => {
+    const scroller = document.createElement("div");
+    scroller.setAttribute("data-wf-scroller", "");
+    const bar = document.createElement("header");
+    bar.setAttribute("data-wf-bar", "");
+    const page = document.createElement("div");
+    scroller.append(bar, page);
+    document.body.append(scroller);
+    Object.defineProperty(bar, "offsetHeight", { configurable: true, value: 60 });
+    const rect = (top: number, height: number, left: number, right: number) =>
+      ({
+        top,
+        bottom: top + height,
+        left,
+        right,
+        width: right - left,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect;
+    // A banner above the hero puts it 140px under the header.
+    const spy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+      return this === scroller ? rect(0, 900, 0, 1016) : rect(200, 200, 16, 1000);
+    });
+    Object.defineProperty(scroller, "clientWidth", { configurable: true, value: 1016 });
+    installMatchMediaStub(true);
+    try {
+      render(<Hero title="Below a banner" testId="lower-hero" />, { container: page });
+      const hero = screen.getByTestId("lower-hero");
+      expect(hero).toHaveAttribute("data-band", "off");
+      expect(hero.style.getPropertyValue("--wf-band-left")).toBe("16px");
+      expect(hero.style.getPropertyValue("--wf-band-right")).toBe("16px");
+      expect(hero.style.getPropertyValue("--wf-band-top")).toBe("");
+    } finally {
+      spy.mockRestore();
+      installMatchMediaStub();
+      scroller.remove();
+    }
+    const css = readFileSync("src/components/wf/hero.module.css", "utf8");
+    expect(css).toMatch(/\.hero\[data-band="on"\],\s*\.hero\[data-band="off"\]\s*\{[^}]*border-radius:\s*0;/u);
+  });
+});
+
 describe("WardBar band state (desktop and tablet)", () => {
   let release: (() => void) | null = null;
   afterEach(() => {

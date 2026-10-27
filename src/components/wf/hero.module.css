@@ -594,8 +594,11 @@
  * header, which paints the band's top colour at rest, so the two read as one surface. Its text
  * lines up with the header title and the card edges below. The page rises over its foot with one
  * 22px round lip in the page canvas. On phone the hero runs edge to edge under the lean bar.
+ * `data-band="off"` (the page does not open on this hero) is the same band without the rise to the
+ * header: the old rounded floating card is retired (Josh, 27 Oct 2026).
  */
-.hero[data-band="on"] {
+.hero[data-band="on"],
+.hero[data-band="off"] {
   position: relative;
   margin-top: calc(-1 * var(--wf-band-top, 0px));
   margin-left: calc(-1 * var(--wf-band-left, 0px));
@@ -612,7 +615,8 @@
     linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
 }
 
-.hero[data-band="on"]::after {
+.hero[data-band="on"]::after,
+.hero[data-band="off"]::after {
   content: "";
   position: absolute;
   left: 0;
@@ -671,10 +675,12 @@
 
 @media print {
   .hero[data-band="on"],
+  .hero[data-band="off"],
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band]) {
     margin: 0;
   }
   .hero[data-band="on"]::after,
+  .hero[data-band="off"]::after,
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
     display: none;
   }
@@ -689,6 +695,14 @@
     padding-bottom: calc(18px + var(--wf-band-lip));
     padding-left: 16px;
     /* The page's first content sits 2px under the lip, as in the mockup (its column gap is 12px). */
+    margin-bottom: -10px;
+  }
+  /* A band that does not open the page keeps its normal top padding (nothing tucks under it), and
+   * the same phone sides and foot as the opening band. */
+  .hero[data-band="off"] {
+    padding-right: 16px;
+    padding-bottom: calc(18px + var(--wf-band-lip));
+    padding-left: 16px;
     margin-bottom: -10px;
   }
   /* The Live chip stays centred on the eyebrow line, which now starts 6px down. */

@@ -109,7 +109,10 @@ function sameBleed(a: Bleed, b: Bleed) {
 /**
  * Measures and applies the bleed for one hero. `enabled` is false for a quiet hero. The applied
  * values are written as CSS custom properties on the hero (`--wf-band-*`) plus `data-band="on"`,
- * which `hero.module.css` turns into negative margins, padding and the round lip.
+ * which `hero.module.css` turns into negative margins, padding and the round lip. A hero that does
+ * not open the page gets `data-band="off"` with only the side bleed: it is still drawn as the band,
+ * square to the column edges, but the header does not join it. The rounded floating card is gone
+ * (Josh, 27 Oct 2026); only a quiet hero is a card.
  */
 export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: boolean) {
   useLayoutEffect(() => {
@@ -161,7 +164,20 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       // banner, a breadcrumb, a filter row) means the page does not open on its hero.
       const gap = naturalTop - barHeight;
       if (gap < 0 || gap > WF_BAND_TOP_SLACK_PX) {
-        clear("off");
+        // Not the page's opening hero: the header stays light, but the hero still runs square to
+        // the column edges as the band, never the old rounded card (Josh, 27 Oct 2026).
+        if (release) {
+          release();
+          release = null;
+        }
+        const side: Bleed = { top: 0, left: Math.max(0, naturalLeft), right: Math.max(0, naturalRight) };
+        if (!sameBleed(side, applied) || hero.dataset.band !== "off") {
+          applied = side;
+          hero.style.removeProperty("--wf-band-top");
+          hero.style.setProperty("--wf-band-left", `${side.left}px`);
+          hero.style.setProperty("--wf-band-right", `${side.right}px`);
+          hero.dataset.band = "off";
+        }
         return;
       }
       const next: Bleed = {

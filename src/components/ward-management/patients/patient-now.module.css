@@ -2656,8 +2656,8 @@
     gap: var(--wf-s-2);
   }
 
-  /* The band (shared hero, data-band="on") keeps its own padding and its 22px lip room. */
-  .v6HeroWrap .v6Hero:not([data-band="on"]) {
+  /* The band (shared hero, data-band "on" or "off") keeps its own padding and its 22px lip room. */
+  .v6HeroWrap .v6Hero:not([data-band="on"], [data-band="off"]) {
     padding: var(--wf-s-3);
   }
 
