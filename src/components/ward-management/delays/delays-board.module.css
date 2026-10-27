@@ -2022,6 +2022,11 @@ button.gLaneL:hover {
     display: block !important;
   }
 
+  /* The Legal column's form chips are tooltip buttons; keep their text on paper. */
+  .legalChip {
+    display: inline-flex !important;
+  }
+
   .side {
     position: static;
   }
