@@ -58,6 +58,7 @@ import {
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { DeclineFailureNote, useAnswerToast, useAwaitingFocus, useDeclineFailure } from "./ward-answer-feedback";
 import {
   canSubmitDecline,
   canSubmitOverride,
@@ -166,7 +167,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
     },
   ];
-  const [toastMessage, setToastMessage] = useState<{ message: string; warning: boolean } | null>(null);
+  const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();
+  const decline = useDeclineFailure(triggerToast);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -182,16 +184,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     newestRejection?.attempted === "ACCEPT_IN_PRINCIPLE" || newestRejection?.attempted === "PULL_PATIENT"
       ? newestRejection
       : undefined;
-
-  // Walk-through WT-10: a refusal shows as a warning, never with the success tick.
-  const triggerToast = (message: string, tone: "success" | "warning" = "success") =>
-    setToastMessage({ message, warning: tone === "warning" });
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => setToastMessage(null), 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
 
   // Opening Decline moves focus to the first reason, which also scrolls the reasons into view.
   useEffect(() => {
@@ -236,6 +228,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             .sort((left, right) => left.openedAt - right.openedAt),
     [movements, unit],
   );
+  const { awaitingRef, markAccepted } = useAwaitingFocus(incoming);
   const acceptModalMovement = incoming.find((movement) => movement.id === acceptModalFor);
   const acceptModalOpen = acceptModalMovement !== undefined;
   useWardModalFocus(acceptModalOpen, modalRef, () => {
@@ -372,6 +365,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     setDeclineNudge(false);
     setPriorRejectionCount(rejections.length);
     setAnsweredHereId(movementId);
+    decline.clear();
     declinePendingRef.current = true;
     setDeclinePending(true);
     try {
@@ -384,17 +378,14 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
         setDeclineOpenFor(undefined);
         setDeclineReason(undefined);
-        triggerToast("Referral declined.");
+        toastDeclined(declineReason);
       } else {
         setAnsweredHereId(undefined);
-        triggerToast(
-          outcome?.message ?? "Decline was not confirmed. Your reason is kept; review the board before trying again.",
-          "warning",
-        );
+        decline.fail(movementId, outcome?.message);
       }
     } catch {
       setAnsweredHereId(undefined);
-      triggerToast("Decline was not confirmed. Your reason is kept; review the board before trying again.", "warning");
+      decline.fail(movementId);
     } finally {
       declinePendingRef.current = false;
       setDeclinePending(false);
@@ -402,6 +393,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   }
 
   function handleAccept(movementId: string, withExtendedHold = false) {
+    markAccepted(0);
     setPriorRejectionCount(rejections.length);
     setAnsweredHereId(movementId);
     const unitIdHere = currentUnit.id;
@@ -731,6 +723,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         <div className={styles.answerGrid}>
           {/* Left Column: SBAR Clinical Referral Panel */}
           <section
+            ref={awaitingRef}
             aria-label="Awaiting your answer"
             className={activeMovement ? styles.answerSplit : styles.panel}
             data-empty={incoming.length === 0}
@@ -1088,6 +1081,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           not recorded: {wardSafeRejectionReason(lastActionRejection.reason)}
                         </p>
                       ) : null}
+
+                      <DeclineFailureNote failure={decline.failure} movementId={activeMovement.id} />
 
                       {/* Override Reason Form */}
                       {lastActionRejection &&
