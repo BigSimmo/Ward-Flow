@@ -14,6 +14,7 @@ import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 import { WardHelpAsk } from "./ward-help-ask";
+import { WardHelpSearch } from "./ward-help-search";
 import {
   ADMIN_SETTINGS_HELP,
   filterGlossary,
@@ -163,6 +164,8 @@ export function WardHelpSheet({
           The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
         </p>
       </section>
+
+      <WardHelpSearch role={role} home={deskHome ?? home} />
 
       {ask !== undefined ? (
         <WardHelpAsk role={role} home={deskHome ?? home} initialQuery={ask} onClose={onClose} />
