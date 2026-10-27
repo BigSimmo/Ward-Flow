@@ -22,6 +22,7 @@ import { RecordDetailHold } from "./ward-shared-record-detail";
 import * as conflict from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
+import type { PendingCommand } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
@@ -143,17 +144,6 @@ const NO_ROLE = "No Ward Flow role is assigned to this account";
 export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
-type PendingCommand = {
-  dataMode: "prototype";
-  classification: "synthetic";
-  commandId: string;
-  expectedRevision: number;
-  /** Records the popups have seen at a later revision than `expectedRevision`, by token. */
-  seen?: Record<string, number>;
-  event: WardFlowEvent;
-  /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
-  reply?: "revision";
-};
 
 /** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
 const FRESH_TOKEN = new Error("Ask again with a fresh token");
