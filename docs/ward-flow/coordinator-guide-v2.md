@@ -1,4 +1,4 @@
-# Ward Flow: a guide for the bed flow coordinator
+# Ward Flow: a guide for the bed coordinator
 
 **Audience:** coordinators exploring the synthetic prototype. **Status:** maintained guide with dated evidence.
 **Owner:** Documentation. Navigation in section 2 was checked against source at
@@ -9,7 +9,7 @@ by the signed-in role and place. Other sections retain their stated evidence dat
 <details>
 <summary>Historical screen-check scope — 26 September 2026</summary>
 
-A plain-English guide for the bed flow coordinator, written from the app's own wording on the
+A plain-English guide for the bed coordinator, written from the app's own wording on the
 ward line of 26 September 2026. Everything in the app is made-up demo data. The app is called Ward
 Flow.
 

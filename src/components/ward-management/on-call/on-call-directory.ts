@@ -456,7 +456,7 @@ export function buildOnCallDirectory(sites: readonly Site[] = wardSites): Direct
       svc(
         `${key}-bfc`,
         "bedFlow",
-        "Bed flow coordinator",
+        "Bed coordinator",
         "Placement and transfers",
         coordinatorWindow
           ? [line("Bed flow office", [OFFICE[0], coordinatorWindow[0]]), line("On-call mobile", coordinatorWindow)]
@@ -951,7 +951,7 @@ const ROLE_ORDER: [ContactKind | "other", string][] = [
   ["edLiaison", "ED mental health liaison"],
   ["registrar", "Psychiatry registrar on call"],
   ["consultant", "Consultant psychiatrist on call"],
-  ["bedFlow", "Bed flow coordinators"],
+  ["bedFlow", "Bed coordinators"],
   ["afterHours", "After-hours nurse managers"],
   ["nurseInCharge", "Wards, nurse in charge"],
   ["referralInbox", "Ward referral inboxes"],
