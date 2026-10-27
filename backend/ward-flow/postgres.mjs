@@ -22,6 +22,7 @@ import {
 import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
 import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
+import { forecastHistoryStore } from "./forecast-history.mjs";
 
 /**
  * One run of `task` at a time. A call while one is out joins it and asks for one more pass, so
@@ -1693,6 +1694,17 @@ export function createWorkspaceStore(
       return { notModified: false, snapshot: await read(actorId, view) };
     },
     viewer,
+    // Proposal 013 (migration 16): each desk's shared forecast snapshots and miss reasons.
+    ...forecastHistoryStore({
+      pool,
+      workspaceId,
+      schemaVersion,
+      worldGeneration: async () => {
+        const stored = await readWorld(pool);
+        return stored && engine.validWorld(stored.payload) ? stored.payload.state.worldGeneration : null;
+      },
+      forgetVersionOnMissing,
+    }),
     /**
      * History's archived records (migration 14): the newest `ARCHIVE_READ_LIMIT` of this world
      * generation, newest closed first, narrowed by the desk's place exactly as its live workspace is

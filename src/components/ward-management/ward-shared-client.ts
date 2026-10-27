@@ -20,6 +20,8 @@ import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-re
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
+import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
+export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
 // 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
@@ -93,27 +95,6 @@ export type SharedView = {
   receiptScope?: string;
   recovery?: string;
   recovering?: boolean;
-};
-/** A role or cover as the server lists it. Times are minutes from the server's now. */
-export type SharedMembership = {
-  id: string;
-  actorId: string;
-  role: string;
-  scope: unknown;
-  kind: "role" | "cover";
-  grantedBy: string;
-  approved: boolean;
-  approvedBy: string | null;
-  minutes: { granted: number | null; expires: number | null; lastUsed: number | null };
-};
-/** A request for access as the server lists it. */
-export type SharedAccessRequest = {
-  id: string;
-  actorId: string;
-  role: string;
-  scope: unknown;
-  decision: "approved" | "declined" | null;
-  minutes: { requested: number | null };
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
@@ -1405,6 +1386,12 @@ export class SharedWorkspaceClient {
     if (!response.ok)
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
+  }
+  /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
+  async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
+    const { response, value } = await this.request("/v1/workspace/forecast-history", body);
+    if (!response.ok) throw new Error("Forecast history could not be read");
+    return value;
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */
   async listCovers(): Promise<SharedMembership[]> {

@@ -87,6 +87,11 @@ export const MIGRATIONS = Object.freeze([
     file: "015-list-and-tv-views.sql",
     sha256: "6705ed94c5ee6d242c9756849ad05865e12fa5093152bb8c70751b5247ef402e",
   },
+  {
+    version: 16,
+    file: "016-forecast-history.sql",
+    sha256: "5668c4567ba7e86c8d09e18de0d3c15bcc56f5a7e3f2b82ed9019089a23d22bc",
+  },
 ]);
 
 export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
@@ -94,7 +99,7 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
 /**
  * The oldest schema the running backend accepts. Row-level security (6), the prototype-only check
  * (7), role access (8), cover with requests (9), records saved one by one (10) and the record access
- * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 15:
+ * log with sign-outs (11) are applied to a live database separately, so the backend runs on 5 to 16:
  * it can deploy before those migrations, and keeps running if their infra/rollback-*.sql scripts take
  * the database back. Before 8 only the WARD_COORDINATOR_USER_IDS accounts can sign in. Before 9 there
  * is no cover, no request for access, no "not used" switch-off and no phone alert by role. Before 10
@@ -102,7 +107,8 @@ export const LATEST_MIGRATION = MIGRATIONS[MIGRATIONS.length - 1].version;
  * revision. Before 11 opening a record is not logged and a sign-out does not end the sign-in's token
  * on this server. Migration 12 adds indexes only, so nothing behaves differently before it. Before
  * 13 opening a referral's full detail is not logged. Before 14 closed records are never archived, so
- * the live workspace keeps growing towards its 8 MB limit.
+ * the live workspace keeps growing towards its 8 MB limit. Before 15 list and TV reads are not
+ * logged. Before 16 there is no shared forecast history, so each browser keeps its own.
  */
 export const MINIMUM_RUNTIME_MIGRATION = 5;
 
@@ -126,6 +132,9 @@ export const ARCHIVE_MIGRATION = 14;
 
 /** The first schema whose record access log takes a whole-list or TV read (migration 15, H-0731). */
 export const LIST_VIEW_MIGRATION = 15;
+
+/** The first schema with the shared forecast history: snapshots and miss reasons (migration 16). */
+export const FORECAST_HISTORY_MIGRATION = 16;
 
 /** Reads one migration's SQL and refuses it when the file no longer matches its recorded checksum. */
 export async function readMigration(migration) {

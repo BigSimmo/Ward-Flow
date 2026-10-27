@@ -6,9 +6,10 @@
 // no recorded reason is counted as "unexplained".
 //
 // 🔒 **KEPT BESIDE THE TRACK RECORD IT EXPLAINS.** The daily snapshots live in this browser's
-// localStorage per person, scenario and reseed (`use-forecast-model.ts`) until the shared table is
-// applied with Josh's go, so their reasons live there too, under the same key parts. A reason holds a
-// day number, a list value, a role and a time: no typed text and nothing about a patient.
+// localStorage per person, scenario and reseed (`use-forecast-model.ts`), and are shared by the desk
+// once the server has migration 16 (proposal 013), so their reasons live with them, under the same
+// key parts. A reason holds a day number, a list value, a role and a time: no typed text and nothing
+// about a patient.
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { Instant } from "@/components/ward-management/ward-clock";

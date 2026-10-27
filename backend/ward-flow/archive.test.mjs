@@ -170,7 +170,11 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
-        for (const file of ["./infra/rollback-015-list-and-tv-views.sql", "./infra/rollback-014-archived-records.sql"])
+        for (const file of [
+          "./infra/rollback-016-forecast-history.sql",
+          "./infra/rollback-015-list-and-tv-views.sql",
+          "./infra/rollback-014-archived-records.sql",
+        ])
           await client.query(await readFile(new URL(file, import.meta.url), "utf8"));
         await client.query("COMMIT");
       } catch (error) {
