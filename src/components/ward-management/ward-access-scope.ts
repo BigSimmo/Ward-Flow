@@ -27,7 +27,8 @@ import { communityTeamSlug } from "@/components/ward-management/community/commun
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { withWardReadmission } from "@/components/ward-management/ward-readmission-copy";
 import type { Instant } from "@/components/ward-management/ward-clock";
-import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
+import { TYPED_TEXT_NOT_KEPT } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { STAGE_TRANSITION_BLOCKERS } from "@/components/ward-management/ward-flow-reducer";
 import type { BedRelease, LeaveBed, Movement, Notice, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
@@ -630,6 +631,37 @@ export function countsOnlyLeaveBed(leave: LeaveBed): LeaveBed {
   return {
     ...countFields(leave, ["id", "unitId", "admissionId", "expectedReturn", "confirmedAt", "kind", "openWarningAt"]),
     confirmedBy: "",
+  };
+}
+
+/**
+ * A booking as forecast input only (Josh, 27 Oct 2026): the ward, dates, legal status and age group
+ * the bed forecasts read, never who is coming. The person is the device copy's placeholder, so the
+ * row still passes the stored-state check, which needs a patient or initials.
+ */
+export function countsOnlyPlannedAdmission(booking: PlannedAdmission): PlannedAdmission {
+  return {
+    ...countFields(booking, [
+      "id",
+      "reason",
+      "unitId",
+      "expectedArrivalAt",
+      "expectedStayDays",
+      "legalStatus",
+      "ageBand",
+      "sex",
+      "state",
+      "bookedAt",
+      "changedAt",
+      "changeCount",
+      "cancelledAt",
+      "cancelReason",
+      "convertedAt",
+      "admissionId",
+    ]),
+    patientId: null,
+    initials: TYPED_TEXT_NOT_KEPT,
+    bookedBy: "",
   };
 }
 

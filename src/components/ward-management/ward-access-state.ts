@@ -36,6 +36,7 @@ import {
   communityTeamKey,
   countsOnlyBedRelease,
   countsOnlyLeaveBed,
+  countsOnlyPlannedAdmission,
   scopeBroadcastAlerts,
   scopeWorkspace,
   seenThroughBreakGlass,
@@ -50,6 +51,7 @@ import {
   type PlaceLookup,
   type WardAccess,
 } from "@/components/ward-management/ward-role-access";
+import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { siteByCode } from "./ward-sites";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
@@ -71,6 +73,16 @@ const keep =
   <K extends keyof WardFlowState>(key: K) =>
   (context: Context): WardFlowState[K] =>
     context.state[key];
+
+/** The desks that may book a planned admission (`BOOK_PLANNED_ADMISSION`), and so see whom they booked. */
+function bookingDesk(role: WardAccess["role"]): boolean {
+  return (EVENT_ROLE.BOOK_PLANNED_ADMISSION as readonly string[]).includes(role);
+}
+
+/** The bookings for wards in the desk's scope. */
+function ownBookings(context: Context): WardFlowState["plannedAdmissions"] {
+  return context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId));
+}
 
 /** An inbox map keeps only the rows about the desk's own movements, stays and bookings. */
 const inboxRows =
@@ -214,7 +226,7 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     withBookedPatients(
       context.scoped.patients,
       context.state.patients,
-      context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
+      bookingDesk(context.access.role) ? ownBookings(context) : [],
     ),
   admissions: (context) => context.scoped.admissions,
   notices: (context) => context.scoped.notices,
@@ -266,8 +278,14 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
       : [],
+  // Josh, 27 Oct 2026: every desk that books, and the executive as counts, gets the bookings for its
+  // own wards, so its Capacity forecast counts the same arrivals the coordinator's does.
   plannedAdmissions: (context) =>
-    context.coordinator ? context.state.plannedAdmissions.filter((booking) => context.unitIn(booking.unitId)) : [],
+    bookingDesk(context.access.role)
+      ? ownBookings(context)
+      : context.access.role === "executive"
+        ? ownBookings(context).map(countsOnlyPlannedAdmission)
+        : [],
   supportNotifications: (context) =>
     supportNotificationsForDesk(context.state.supportNotifications, {
       coordinator: context.coordinator,
@@ -316,7 +334,9 @@ export function scopeWardFlowState(
   const inboxSubjectIds = new Set<string>([
     ...scoped.movements.map((movement) => movement.id),
     ...admissionIds,
-    ...(coordinator ? state.plannedAdmissions.filter((booking) => unitIn(booking.unitId)).map((b) => b.id) : []),
+    ...(bookingDesk(access.role)
+      ? state.plannedAdmissions.filter((booking) => unitIn(booking.unitId)).map((b) => b.id)
+      : []),
   ]);
   const partial = {
     state,

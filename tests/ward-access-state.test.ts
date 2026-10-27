@@ -329,10 +329,45 @@ describe("a coordinator's own bookings", () => {
     const scoped = scopeWardFlowState(world, coordinator, options).state;
     expect(scoped.plannedAdmissions.map((kept) => kept.id)).toContain("PA-SCOPE-TEST");
     expect(scoped.patients.map((patient) => patient.id)).toContain(outsider.id);
-    // A ward desk is sent no bookings, so it learns nobody from them.
-    expect(scopeWardFlowState(world, ward, options).state.patients.map((patient) => patient.id)).not.toContain(
-      outsider.id,
-    );
+    // Josh, 27 Oct 2026: the ward the person is booked into is sent the booking and the person.
+    const wardDesk = scopeWardFlowState(world, ward, options).state;
+    expect(wardDesk.plannedAdmissions.map((kept) => kept.id)).toContain("PA-SCOPE-TEST");
+    expect(wardDesk.patients.map((patient) => patient.id)).toContain(outsider.id);
+  });
+});
+
+describe("planned bookings for every desk that reads the bed forecast (Josh, 27 Oct 2026)", () => {
+  const booking = { ...state.plannedAdmissions[0], id: "PA-EVERY-DESK", unitId: ownUnit, state: "booked" as const };
+  const world = { ...state, plannedAdmissions: [...state.plannedAdmissions, booking] };
+  const site = places.unitSiteCode(ownUnit)!;
+
+  it("sends a bed manager the bookings for its own site", () => {
+    const bedManager: WardAccess = { role: "bed_manager", scope: { kind: "site", siteCode: site } };
+    const scoped = scopeWardFlowState(world, bedManager, options).state;
+    expect(scoped.plannedAdmissions.map((kept) => kept.id)).toContain("PA-EVERY-DESK");
+    expect(scoped.plannedAdmissions.every((kept) => places.unitSiteCode(kept.unitId) === site)).toBe(true);
+    expect(validOnTheWire(scoped)).toBe(true);
+  });
+
+  it("sends the executive every booking as counts, naming nobody", () => {
+    const named = { ...booking, id: "PA-NAMED", patientId: state.patients[0].id, initials: null, gender: "Male" as const };
+    const scoped = scopeWardFlowState(
+      { ...world, plannedAdmissions: [...world.plannedAdmissions, named] },
+      { role: "executive", scope: { kind: "statewide" } },
+      options,
+    ).state;
+    const sent = scoped.plannedAdmissions.find((kept) => kept.id === "PA-NAMED")!;
+    expect(sent).toMatchObject({ unitId: ownUnit, legalStatus: booking.legalStatus, ageBand: booking.ageBand });
+    expect(sent.patientId).toBeNull();
+    expect(sent.initials).not.toMatch(/^[A-Z]{1,3}$/u);
+    expect(sent).not.toHaveProperty("gender");
+    expect(sent.bookedBy).toBe("");
+    expect(validOnTheWire(scoped)).toBe(true);
+  });
+
+  it("sends no bookings to a desk that neither books nor reads Capacity", () => {
+    const ed: WardAccess = { role: "ed", scope: { kind: "ed", edId: state.movements[0]!.originEdId ?? "none" } };
+    expect(scopeWardFlowState(world, ed, options).state.plannedAdmissions).toEqual([]);
   });
 });
 

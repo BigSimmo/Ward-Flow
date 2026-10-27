@@ -2,8 +2,8 @@
 //
 // The planned admissions panel on the Capacity screen (stream D): the short list of bookings,
 // the agenda, and booking, cancelling and recording an arrival through the real provider.
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -11,6 +11,8 @@ import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/pl
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /** Converts the seeded initials-only booking, then names the stay it became through both screen resolvers. */
 function ConvertedStayNames() {
@@ -230,5 +232,40 @@ describe("planned admissions panel", () => {
     expect(screen.getByTestId("provider-name")).toHaveTextContent("Initials RK");
     expect(screen.getByTestId("hook-name")).toHaveTextContent("Initials RK");
     expect(document.body.textContent).not.toMatch(/Name not recorded/);
+  });
+});
+
+// Josh, 27 Oct 2026: every desk that reads Capacity sees the bookings, offered only the steps its role takes.
+describe("planned admissions panel for a desk that does not book", () => {
+  afterEach(() => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      resetWardAccessStoreForTests();
+    });
+  });
+
+  it("shows the executive the bookings with nobody named and no Book, Change, Cancel or Arrived", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "executive", scope: { kind: "statewide" } });
+    });
+    renderPanel();
+    expect(screen.queryByTestId("ward-planned-book")).toBeNull();
+    const list = screen.getByRole("list", { name: "Booked planned admissions" });
+    const rows = within(list).getAllByRole("listitem");
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row).toHaveTextContent("Name not shown to this desk");
+      expect(within(row).queryByRole("button")).toBeNull();
+    }
+  });
+
+  it("keeps Book for a bed manager, who may book", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } });
+    });
+    renderPanel();
+    expect(screen.getByTestId("ward-planned-book")).toBeInTheDocument();
   });
 });
