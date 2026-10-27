@@ -75,6 +75,9 @@ describe("the access table", () => {
 
   it("never gives the executive or access admin a patient page", () => {
     expect(ROLE_SCREENS.executive.patient).toBeUndefined();
+    // Josh, 27 Oct 2026: Capacity and Statistics as counts only.
+    expect(ROLE_SCREENS.executive.capacity).toBe("counts");
+    expect(ROLE_SCREENS.executive.statistics).toBe("counts");
     expect(ROLE_SCREENS.admin.patient).toBeUndefined();
     expect(ROLE_SCREENS.admin.search).toBeUndefined();
   });

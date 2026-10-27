@@ -82,10 +82,9 @@ export function documentationProblems(
     add(!draft.contactPhone.trim(), "phone", "Enter a contact phone number");
   }
   if (clearanceOnly) return problems;
-  add(!draft.triage, "triage", "Answer whether triage and RAMP are completed");
+  // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No.
   add(!chartAnswered(draft, "medication"), "medication-upload", "Attach the medication chart or mark it to follow");
   add(!chartAnswered(draft, "observation"), "observation-upload", "Attach the observation chart or mark it to follow");
-  add(!draft.additional, "additional", "Answer whether there is anything else to attach");
   add(
     draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"),
     "other-upload",
@@ -97,10 +96,8 @@ export function documentationProblems(
 export function documentationError(draft: DocumentationDraft): string | null {
   const clearance = clearanceError(draft);
   if (clearance) return clearance;
-  if (!draft.triage) return "Answer whether triage and RAMP are completed.";
   if (!chartAnswered(draft, "medication") || !chartAnswered(draft, "observation"))
     return "Attach the medication and observation charts, or mark them to follow.";
-  if (!draft.additional) return "Answer whether there is anything else to attach.";
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other"))
     return "Attach the additional document or choose No.";
   return null;
@@ -111,17 +108,20 @@ function YesNo({
   value,
   onChange,
   firstId,
+  required = true,
 }: {
   label: string;
   value: string;
   onChange: (value: "yes" | "no") => void;
   /** Put on the Yes option, for an error summary link. */
   firstId?: string;
+  /** False for a question sent as No when left unanswered. */
+  required?: boolean;
 }) {
   const id = useId();
   return (
     <fieldset className={styles.answerGroup}>
-      <legend className={styles.required}>{label}</legend>
+      <legend className={required ? styles.required : undefined}>{label}</legend>
       <div className={styles.answerOptions}>
         {(["yes", "no"] as const).map((answer) => (
           <label key={answer} data-selected={answer === value}>
@@ -437,6 +437,7 @@ export function DocumentationPanel({
             <YesNo
               label="Triage and RAMP completed"
               firstId={`${id}-triage`}
+              required={false}
               value={draft.triage}
               onChange={(triage) => onChange({ ...draft, triage })}
             />
@@ -469,6 +470,7 @@ export function DocumentationPanel({
             <YesNo
               label="Anything else to attach?"
               firstId={`${id}-additional`}
+              required={false}
               value={draft.additional}
               onChange={(additional) =>
                 onChange({

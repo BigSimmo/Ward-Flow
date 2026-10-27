@@ -765,7 +765,7 @@ export function CoordinatorScreen() {
   return (
     <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
-        <h1 className="sr-only">Ward Flow coordinator</h1>
+        <h1 className="sr-only">Bed coordinator</h1>
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero

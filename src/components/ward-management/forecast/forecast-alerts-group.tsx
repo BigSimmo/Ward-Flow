@@ -20,10 +20,13 @@ export function ForecastAlertsGroup({
   now,
   className,
   head,
+  readOnly = false,
 }: {
   now: Instant;
   className?: string;
   head: (count: number) => ReactNode;
+  /** A bed manager's view: the coordinator's lines, and no link to an ED screen they cannot open. */
+  readOnly?: boolean;
 }) {
   const alerts = useForecastAlerts(now);
   if (alerts.length === 0) return null;
@@ -32,10 +35,14 @@ export function ForecastAlertsGroup({
       {head(alerts.length)}
       <ul className={styles.alertList}>
         {alerts.map((alert) => (
-          <ForecastAlertRow key={alertKey(alert)} alert={alert} now={now} />
+          <ForecastAlertRow key={alertKey(alert)} alert={alert} now={now} readOnly={readOnly} />
         ))}
       </ul>
-      <p className={styles.alertCaption}>Forecast alerts are counts against your lines in Settings, Forecast alerts.</p>
+      <p className={styles.alertCaption}>
+        {readOnly
+          ? "Forecast alerts are counts against the coordinator's lines in Settings, Forecast alerts."
+          : "Forecast alerts are counts against your lines in Settings, Forecast alerts."}
+      </p>
     </section>
   );
 }
@@ -46,23 +53,30 @@ function alertKey(alert: ForecastAlert): string {
   return "worse";
 }
 
-function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }) {
-  const row = (title: string, body: string, href: string, action: string) => (
+/** W-10 (fresh audit 26 Oct 2026): every alert line names its unit, so "3" is never read as hours. */
+function bedsWord(count: number): string {
+  return `${count} ${count === 1 ? "bed" : "beds"}`;
+}
+
+function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now: Instant; readOnly: boolean }) {
+  const row = (title: string, body: string, href: string | null, action: string) => (
     <li className={styles.alertRow} data-testid={`ward-alerts-forecast-${alertKey(alert)}`}>
       <span>
         <span className={styles.alertTitle}>{title}</span>
         <span className={styles.sub}>{body}</span>
       </span>
-      <Link href={href} className={buttonClass({ variant: "sec", size: "sm" })}>
-        {action}
-      </Link>
+      {href === null ? null : (
+        <Link href={href} className={buttonClass({ variant: "sec", size: "sm" })}>
+          {action}
+        </Link>
+      )}
     </li>
   );
   switch (alert.kind) {
     case "kind_short":
       return row(
         `${BED_KIND_LABEL[alert.id]} short tomorrow`,
-        `Likely ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${alert.threshold} or more short (Settings).`,
+        `Likely ${kindRangeWord(alert.likely)}, at worst ${kindRangeWord(alert.low)}. Alert set at ${bedsWord(alert.threshold)} or more short (Settings).`,
         "/ward-flow/capacity",
         "See forecast",
       );
@@ -71,14 +85,14 @@ function ForecastAlertRow({ alert, now }: { alert: ForecastAlert; now: Instant }
         `May pass the ED access target at ${forecastEdName(alert.edId)}`,
         `${alert.people} ${alert.people === 1 ? "person passes" : "people pass"} the access target before a suitable bed is due, first in ${splitDuration(alert.firstMinutesLeft)}.${
           alert.alreadyOver > 0 ? ` ${alert.alreadyOver} already past it.` : ""
-        } Alert set at ${alert.threshold % 60 === 0 ? `${alert.threshold / 60} hours` : splitDuration(alert.threshold)} before the target (Settings).`,
-        edHref(alert.edId),
+        } Alert set at ${alert.threshold % 60 === 0 ? `${alert.threshold / 60} ${alert.threshold === 60 ? "hour" : "hours"}` : splitDuration(alert.threshold)} before the target (Settings).`,
+        readOnly ? null : edHref(alert.edId),
         "See who",
       );
     case "forecast_worse":
       return row(
         "Forecast got worse",
-        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Alert set at a drop of ${alert.threshold} or more beds (Settings).`,
+        `Tomorrow moved from ${kindRangeWord(alert.from)} to ${kindRangeWord(alert.to)} since you looked at ${formatInstantWithDay(alert.since, now)}. Alert set at a drop of ${bedsWord(alert.threshold)} or more (Settings).`,
         "/ward-flow/capacity",
         "See forecast",
       );

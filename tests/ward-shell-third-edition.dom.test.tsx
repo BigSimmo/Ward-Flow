@@ -146,7 +146,7 @@ describe("assertion 1 — owner-selected rail destinations", () => {
       within(menu)
         .getAllByTestId("ward-rail-link")
         .map((link) => link.getAttribute("aria-label")?.split(",")[0]),
-    ).toEqual(["My list", "Capacity", "Movements", "Referrals", "Handover"]);
+    ).toEqual(["Home", "Capacity", "Movements", "Waiting", "All EDs", "Referrals", "Handover"]);
     // A5: the open rail's countdown card opens Handover, so the menu's own item is its CSS twin,
     // hidden while the card shows.
     expect(within(menu).getByRole("link", { name: "Handover" }).closest("li")).toHaveAttribute(
@@ -159,8 +159,8 @@ describe("assertion 1 — owner-selected rail destinations", () => {
     // (22 until the Network screen was retired on 19 Oct 2026, and 22 again with Seclusion on 21 Oct 2026.)
     expect(links).toHaveLength(22);
     const groups = [
-      ["Today", ["Waiting", "Bed meeting TV"]],
-      ["Where", ["Places", "All EDs", "All wards", "Community", "Transport"]],
+      ["Today", ["Bed meeting TV"]],
+      ["Where", ["Places", "All wards", "Community", "Transport"]],
       ["Work", ["Patients", "New referral", "Discharges"]],
       [
         "Reports and reference",

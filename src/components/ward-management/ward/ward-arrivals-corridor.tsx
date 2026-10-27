@@ -28,7 +28,7 @@ import { restrictionNotice, eligibilityWarning } from "@/components/ward-managem
 import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
-  PULL_PATIENT: "Pull a bed",
+  PULL_PATIENT: "Pull the bed",
   PATIENT_ARRIVED: "Confirm arrival",
 };
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -355,7 +355,7 @@ export function WardArrivalsCorridor({
                       {movement.stage === "pulled" && movement.pullExpiresAt !== undefined
                         ? `Bed pull ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}`
                         : deliveredAwaitingWard(movement) && movement.transport?.arrivedAt !== undefined
-                          ? `Delivered at ${formatInstantWithDay(movement.transport.arrivedAt, now)}, confirm arrival`
+                          ? `Arrived at ward at ${formatInstantWithDay(movement.transport.arrivedAt, now)}, confirm arrival`
                           : movement.transport?.collectedAt !== undefined
                             ? `Collected from ED at ${formatInstantWithDay(movement.transport.collectedAt, now)}`
                             : "Transport moving according to state protocol"}
@@ -390,7 +390,7 @@ export function WardArrivalsCorridor({
                               }
                         }
                       >
-                        Pull a bed
+                        Pull the bed
                       </Button>
                       {blocked ? (
                         <span id={`ward-pull-unavailable-${movement.id}`} className="sr-only">
@@ -517,7 +517,7 @@ export function WardArrivalsCorridor({
                   {canCancel ? (
                     <p className={styles.cancelNote} data-testid="ward-cancel-transport-unavailable">
                       This ward cannot cancel a transport it did not book. Ask the sending emergency department, or the
-                      flow coordinator.
+                      bed coordinator.
                     </p>
                   ) : null}
                 </div>

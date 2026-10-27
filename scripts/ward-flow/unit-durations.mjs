@@ -204,6 +204,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       writeFileSync(output, json);
     }
     console.log(json);
+    // The report above runs past what a tail of the job log keeps, so end with the balancing record
+    // on one line: copy it into unit-durations.json "seconds" to rebalance the shards.
+    console.log(`[unit-timing] seconds ${JSON.stringify(report.seconds)}`);
     console.error(
       `[unit-timing] ${report.freshness.missing.length}/${report.freshness.populationCount} (${(100 * report.freshness.unmeasuredFraction).toFixed(1)}%) files lack balancing measurements; ${report.freshness.sourceIdentityUnknown.length} recorded files lack verified source identity.`,
     );

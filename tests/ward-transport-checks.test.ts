@@ -245,9 +245,9 @@ describe("transport booking answers still missing", () => {
   } as const;
 
   it("lists every unanswered question in the popup's order, and the blocked sentence is unchanged", () => {
-    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "escort", "cad", "legalStatus", "time"]);
+    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "cad", "time", "escort", "legalStatus"]);
     expect(transportAnswersBlockedReason(blank, NOW_ANCHOR)).toBe(
-      "Before booking, choose who is collecting the patient, answer the escort question, enter the CAD transport number, state whether the transport is voluntary or involuntary, enter the estimated time. None is filled in for you: the record has to say that this team decided.",
+      "Before booking, choose who is collecting the patient, enter the CAD transport number, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
   });
 

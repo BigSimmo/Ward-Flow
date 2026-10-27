@@ -403,9 +403,17 @@ export function EdPresentation({
         ref={dialog}
         className={styles.dialog}
         aria-labelledby={`${id}-title`}
-        onCancel={() => trigger.current?.focus()}
+        onCancel={(event) => {
+          // Typed text is never thrown away by Escape: only Cancel or Close discards it.
+          if (draft !== value) {
+            event.preventDefault();
+            return;
+          }
+          trigger.current?.focus();
+        }}
         onClick={(event) => {
-          if (event.target === event.currentTarget) {
+          // A click outside closes only an unchanged draft, so typed text is not lost by a stray tap.
+          if (event.target === event.currentTarget && draft === value) {
             const rect = event.currentTarget.getBoundingClientRect();
             if (
               event.clientX < rect.left ||

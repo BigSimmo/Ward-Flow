@@ -9,6 +9,7 @@ import { legalFormName, SELECTABLE_LEGAL_FORMS } from "../ward-legal-forms";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import type { LegalStatus } from "../ward-model";
 import { legalStatusMismatchWarning } from "../ward-eligibility";
+import { patientIdentityLine } from "../ward-patient-resolver";
 import styles from "./ward.module.css";
 import {
   INTERMITTENT_INTERVAL_MINUTES,
@@ -111,7 +112,7 @@ export function WardAcceptedReferralPlacementForm({
         }),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
-        const started = "Placement started. Open Ward flow, Admissions, then choose Pull a bed.";
+        const started = "Placement started. Open Ward flow, Admissions, then choose Pull the bed.";
         onMessage(failure ?? (mismatch ? `${started} ${mismatch}` : started));
         if (!failure) {
           setPlacementDraft(null);
@@ -130,6 +131,10 @@ export function WardAcceptedReferralPlacementForm({
           <p>{resolvePatientIdentity(entry).displayName}</p>
           {placementDraft?.referralId === entry.id ? (
             <form onSubmit={startAcceptedPlacement} className={styles.placementForm}>
+              {/* NB-04: the confirm carries the second identifier, as the departure confirm does. */}
+              <p className={styles.cardMeta} data-testid="placement-identity">
+                For {patientIdentityLine(resolvePatientIdentity(entry))}
+              </p>
               <label>
                 Legal status
                 <select

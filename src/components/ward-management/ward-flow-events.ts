@@ -635,10 +635,9 @@ export type WardFlowEvent =
    * The person being added has never been referred, never moved and never arrived - which is the
    * whole reason this event exists rather than a patient falling out of one of those. A record
    * created by arrival is correct on every screen showing admitted people and absent at exactly the
-   * moment the flow describes.
-   *
-   * Carries identity because identity lives on `Patient` alone (PD-1, 2026-08-30), never a referral,
-   * movement or unit. WT-05: optional recorded `sex` is asked here once, checked like `gender`.
+   * moment the flow describes. Identity lives on `Patient` alone (PD-1, 2026-08-30). WT-05: optional
+   * `sex` is checked like `gender`. H-0372: optional `demoToday` (YYYY-MM-DD) is the caller's demo
+   * day, which can only tighten the reducer's future birth date check.
    *
    * `gender` ADDED, owner ruling 2026-09-09/2026-09-10 — OPTIONAL, unlike the four identity fields
    * above. Most callers of this event do not know a new patient's gender yet, and omitting it is the
@@ -661,6 +660,7 @@ export type WardFlowEvent =
       givenName: string;
       familyName: string;
       dateOfBirth: string;
+      demoToday?: string;
       gender?: Gender;
       sex?: string;
       suburb?: string;

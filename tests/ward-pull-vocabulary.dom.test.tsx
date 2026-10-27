@@ -109,10 +109,10 @@ function ArrivalDriverHarness({ movementId, unitId }: { movementId: string; unit
 }
 
 describe("the ward screen says pull, never hold, about an incoming patient", () => {
-  it("offers 'Pull a bed' on a movement that is accepted and still awaiting one", () => {
+  it("offers 'Pull the bed' on a movement that is accepted and still awaiting one", () => {
     renderWard("rph-adult-secure");
     const card = screen.getByTestId("ward-accepted-WF-003");
-    expect(within(card).getByRole("button", { name: "Pull a bed" })).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Pull the bed" })).toBeInTheDocument();
     expect(card.textContent ?? "").not.toMatch(/hold/i);
   });
 
@@ -459,7 +459,7 @@ describe("the coordinator's mode workspaces say pull", () => {
    * exercise exists to stop: a green statement about text no coordinator can see.
    *
    * **The clinical property behind it is not lost, and that was checked rather than assumed.** The
-   * ward's own pull control is guarded in this same file by *"offers 'Pull a bed' on a movement
+   * ward's own pull control is guarded in this same file by *"offers 'Pull the bed' on a movement
    * that is accepted and still awaiting one"*, against the live `WardScreen` — the screen where
    * `ACCEPT_IN_PRINCIPLE` and `PULL_PATIENT` are actually dispatched, as
    * `ward-management-modes.tsx`'s own comment on `roleTaskLabel` says.

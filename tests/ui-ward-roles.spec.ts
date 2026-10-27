@@ -1330,7 +1330,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     await openAllArrivals(page);
     const accepted = page.getByTestId("ward-accepted-WF-315");
     await expect(accepted).toBeVisible();
-    await accepted.getByRole("button", { name: "Pull a bed" }).click();
+    await accepted.getByRole("button", { name: "Pull the bed" }).click();
 
     // --- Step 5 (recommended): Coordinator — confirm the acceptance is visible from another
     // role. The shared `focusMovementId` (ward-flow-provider.tsx) re-selects WF-315 on this
@@ -1566,7 +1566,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // so its eligibility checks are Dabakarn's own.
     await page
       .getByRole("navigation", { name: "Ward Flow views" })
-      .getByRole("link", { name: /^My list\b/u })
+      .getByRole("link", { name: /^Home\b/u })
       .click();
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await pickQueueRow(page.getByRole("region", { name: "Priority queue" }), "WF-003");

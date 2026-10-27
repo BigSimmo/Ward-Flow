@@ -45,7 +45,13 @@ const BANNED: readonly Banned[] = [
   },
   { id: "reserved time", pattern: /\breserved time\b/i, instead: "Pull time limit" },
   { id: "ready vacant", pattern: /\bready vacant\b/i, instead: "Ready" },
-  { id: "the waitlist", pattern: /\b(?:the|a) waitlist\b/i, instead: "the waiting list" },
+  // "Waitlist" as a noun or label, not only "the waitlist" (H-0847). Capitalised anywhere, or
+  // lowercase next to a space; code values such as "waitlist" or `ward-waitlist-…` never count.
+  {
+    id: "the waitlist",
+    pattern: /(?<![-_\w])Waitlists?(?![-_\w])|(?<=\s)waitlists?(?![-_\w])|(?<![-_\w])waitlists?(?=\s)/,
+    instead: "the waiting list",
+  },
   // Wording audit, 26 Oct 2026 (D-85 and plain words).
   { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Beds held up by a blocker" },
   { id: "was held until", pattern: /\bwas held until\b/i, instead: "the pull time limit passed at" },
@@ -67,7 +73,11 @@ const BANNED: readonly Banned[] = [
 /** Exact counts of banned phrases left in files other work owns on 24 Oct 2026. Lower only. */
 const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
   // A statistics claim naming the `averageWaitlistWaitMinutes` field, not a patient-facing label.
-  "src/components/ward-management/statistics/statistics-claims-other-surfaces.ts": { "the waitlist": 1 },
+  "src/components/ward-management/statistics/statistics-claims-other-surfaces.ts": { "the waitlist": 2 },
+  // Source evidence quoted word for word from ward-model.ts, not a screen label (H-0847, 27 Oct 2026).
+  "src/components/ward-management/statistics/statistics-claims-shared.ts": { "the waitlist": 1 },
+  // "Waitlist" as a verb in a refusal, which the word list allows; another branch owns the file.
+  "src/components/ward-management/ward-flow-referral-answer-events.ts": { "the waitlist": 1 },
 };
 
 const SOURCE_ROOT = "src";

@@ -70,245 +70,261 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
     unitId,
     ...(isCoordinator || actingUnitId === undefined ? {} : { actingUnitId }),
   };
+  // H-0893 (Josh, 27 Oct 2026): referrals still waiting for this ward's answer stay on top, and
+  // the answered ones fold into one "Show N answered" line, so the ward itself is not pushed down.
+  const [showAnswered, setShowAnswered] = useState(false);
+  const answeredListId = useId();
   useMarkReferralsOpened(entries, unitId, actingUnitId);
   if (!entries.length) return null;
+  const isWaiting = (entry: (typeof entries)[number]) => entry.state === "queued" && entry.withdrawnAt === undefined;
+  const waiting = entries.filter(isWaiting);
+  const answered = entries.filter((entry) => !isWaiting(entry));
+  const renderEntry = (entry: (typeof entries)[number]) => {
+    const patient = resolvePatientIdentity({ patientId: entry.patientId });
+    const live = entry.state === "queued" && entry.withdrawnAt === undefined;
+    const coordinatorAccepts = wardTransferNeedsCoordinator(entry, unitId, units);
+    // The inbox entry is ward-scoped and carries no earlier coordinator placement record, so a
+    // gender or sex other than female or male is treated as still needing one here.
+    const needsGenderPlacement = genderReviewNeeded(entry.destination.gender, entry.destination.sex);
+    // Why Accept is greyed for this route, if it is. The coordinator is never refused.
+    const acceptRefusal = isCoordinator
+      ? undefined
+      : (roleRefusal ??
+        (coordinatorAccepts
+          ? "Coordinator accepts transfers from another hospital"
+          : needsGenderPlacement
+            ? GENDER_PLACEMENT_REFUSAL
+            : undefined));
+    // Audit 2 E-07: say when this ward's Ready beds are already promised. Refuses nothing.
+    const promised =
+      live && thisUnit
+        ? readyBedsAllPromised({ movements, acceptedReferralIds }, thisUnit, { referralId: entry.id })
+        : undefined;
+    const genderReason = genderReasons[entry.id] ?? "";
+    const genderTicked = genderChecked[entry.id] === true;
+    const acceptReasonId = `${reasonId}-accept-${entry.id}`;
+    const declineReasonId = `${reasonId}-decline-${entry.id}`;
+    return (
+      <article className={styles.refCard} key={entry.id}>
+        <h3 className={styles.refCardTitle}>
+          {referralInboxName(entry, patient.displayName)} · {patient.umrn} · {entry.id}
+        </h3>
+        <p className={styles.refCardSubtitle} data-state={entry.withdrawnAt === undefined ? entry.state : "withdrawn"}>
+          {entry.withdrawnAt !== undefined
+            ? "Withdrawn by referrer"
+            : entry.waitlistedAt !== undefined && live
+              ? "On waiting list"
+              : entry.state === "cancelled"
+                ? "Cancelled — accepted elsewhere"
+                : entry.state === "queued"
+                  ? "Awaiting review"
+                  : entry.state === "accepted"
+                    ? "Accepted"
+                    : `Declined · ${entry.declineReason ? DECLINE_REASON_LABELS[entry.declineReason as ReferralDeclineReason] : "Reason not recorded"}`}
+        </p>
+        {/* #836: a blank Patient story is named as that field, and points to the reason when there is one. */}
+        <p className={styles.patientStory} data-testid="ward-referral-inbox-story">
+          {entry.history.trim() ||
+            (entry.intake?.reasonForReferral?.trim()
+              ? "Patient story not recorded. The reason for referral is below."
+              : "Patient story not recorded")}
+        </p>
+        <ReferralIntakeSummary intake={entry.intake} />
+        {live && (
+          <div className={styles.answerOptions}>
+            {isCoordinator && needsGenderPlacement ? (
+              <>
+                <p className={styles.refCardSubtitle}>Check with the ward first. A single room is preferred.</p>
+                <label className={styles.flowField}>
+                  Placement reason
+                  <select
+                    className={styles.fieldSelect}
+                    value={genderReason}
+                    onChange={(event) => {
+                      const chosen = event.target.value;
+                      setGenderReasons((current) => ({
+                        ...current,
+                        [entry.id]: GENDER_PLACEMENT_REASONS.includes(chosen as GenderPlacementReason)
+                          ? (chosen as GenderPlacementReason)
+                          : "",
+                      }));
+                    }}
+                  >
+                    <option value="">Choose a reason</option>
+                    {GENDER_PLACEMENT_REASONS.map((reason) => (
+                      <option key={reason} value={reason}>
+                        {reason}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className={styles.flowField}>
+                  <input
+                    type="checkbox"
+                    checked={genderTicked}
+                    onChange={(event) =>
+                      setGenderChecked((current) => ({ ...current, [entry.id]: event.target.checked }))
+                    }
+                  />
+                  I have checked this placement with the ward
+                </label>
+              </>
+            ) : null}
+            <button
+              type="button"
+              className={styles.patientChipBtn}
+              aria-disabled={acceptRefusal !== undefined ? "true" : undefined}
+              aria-describedby={acceptRefusal ? acceptReasonId : undefined}
+              onClick={(e) => {
+                if (acceptRefusal) {
+                  ignoreUnavailableActivation(e);
+                  return;
+                }
+                if (isCoordinator && needsGenderPlacement && (genderReason === "" || !genderTicked)) {
+                  setLocalNote({ id: entry.id, text: "Choose a placement reason and tick the ward check first." });
+                  return;
+                }
+                setLocalNote(null);
+                setAttempt({ id: entry.id, count: rejections.length });
+                const completion = dispatch({
+                  type: "ACCEPT_REFERRAL",
+                  ...decisionBase,
+                  referralId: entry.id,
+                  ...(isCoordinator && needsGenderPlacement && genderReason !== ""
+                    ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
+                    : {}),
+                });
+                watchDecision(entry.id, "Referral accepted", completion);
+              }}
+            >
+              Accept referral
+            </button>
+            {acceptRefusal ? <DisabledReason id={acceptReasonId}>{acceptRefusal}</DisabledReason> : null}
+            {promised ? (
+              <p
+                className={styles.flowError}
+                role="status"
+                data-testid={`ward-referral-inbox-ready-promised-${entry.id}`}
+              >
+                {readyBedsPromisedSentence(unitName, promised)}
+              </p>
+            ) : null}
+            {localNote?.id === entry.id ? (
+              <p className={styles.flowError} role="status">
+                {localNote.text}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className={styles.patientChipBtn}
+              aria-disabled={roleRefusal !== undefined ? "true" : undefined}
+              aria-describedby={roleRefusal ? declineReasonId : undefined}
+              onClick={(e) => {
+                if (roleRefusal) {
+                  ignoreUnavailableActivation(e);
+                  return;
+                }
+                setAttempt({ id: entry.id, count: rejections.length });
+                const completion = dispatch({
+                  type: "DECLINE_REFERRAL",
+                  ...decisionBase,
+                  referralId: entry.id,
+                  reason: "no_suitable_bed",
+                  waitlist: true,
+                });
+                watchDecision(entry.id, "Referral put on the waiting list", completion);
+              }}
+            >
+              Waiting list
+            </button>
+            <label className={styles.flowField}>
+              Decline reason
+              <select
+                className={styles.fieldSelect}
+                value={reasons[entry.id] ?? ""}
+                onChange={(event) =>
+                  setReasons((current) => ({
+                    ...current,
+                    [entry.id]: event.target.value as ReferralDeclineReason | "",
+                  }))
+                }
+              >
+                <option value="">Choose a reason</option>
+                {REFERRAL_DECLINE_REASONS.map((reason) => (
+                  <option key={reason} value={reason}>
+                    {DECLINE_REASON_LABELS[reason]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(() => {
+              const declineRefusal = roleRefusal ?? (!reasons[entry.id] ? "Choose a decline reason" : undefined);
+              return (
+                <>
+                  <button
+                    type="button"
+                    className={styles.patientChipBtn}
+                    aria-disabled={declineRefusal !== undefined ? "true" : undefined}
+                    aria-describedby={declineRefusal ? declineReasonId : undefined}
+                    onClick={(e) => {
+                      const reason = reasons[entry.id];
+                      if (!reason || roleRefusal) {
+                        ignoreUnavailableActivation(e);
+                        return;
+                      }
+                      setAttempt({ id: entry.id, count: rejections.length });
+                      const completion = dispatch({
+                        type: "DECLINE_REFERRAL",
+                        ...decisionBase,
+                        referralId: entry.id,
+                        reason,
+                      });
+                      watchDecision(entry.id, "Referral declined", completion);
+                    }}
+                  >
+                    Decline referral
+                  </button>
+                  {declineRefusal ? <DisabledReason id={declineReasonId}>{declineRefusal}</DisabledReason> : null}
+                </>
+              );
+            })()}
+          </div>
+        )}
+        {live ? (
+          <WardInformationNeedsPicker entry={entry} unitId={unitId} actingUnitId={actingUnitId} refusal={roleRefusal} />
+        ) : null}
+        {/* Closing-the-loop package A: the ward acknowledges and promises an answer by a time. */}
+        {live ? (
+          <WardCommitmentControls entry={entry} unitId={unitId} actingUnitId={actingUnitId} refusal={roleRefusal} />
+        ) : null}
+      </article>
+    );
+  };
   return (
     <section className={styles.refCard} aria-label="Ward referral inbox">
-      <h2 className={styles.refCardTitle}>Referral inbox · {entries.length}</h2>
+      <h2 className={styles.refCardTitle}>Referral inbox · {waiting.length} waiting</h2>
       {lastError && (
         <p className={styles.flowError} role="alert">
           {lastError}
         </p>
       )}
-      {entries.map((entry) => {
-        const patient = resolvePatientIdentity({ patientId: entry.patientId });
-        const live = entry.state === "queued" && entry.withdrawnAt === undefined;
-        const coordinatorAccepts = wardTransferNeedsCoordinator(entry, unitId, units);
-        // The inbox entry is ward-scoped and carries no earlier coordinator placement record, so a
-        // gender or sex other than female or male is treated as still needing one here.
-        const needsGenderPlacement = genderReviewNeeded(entry.destination.gender, entry.destination.sex);
-        // Why Accept is greyed for this route, if it is. The coordinator is never refused.
-        const acceptRefusal = isCoordinator
-          ? undefined
-          : (roleRefusal ??
-            (coordinatorAccepts
-              ? "Coordinator accepts transfers from another hospital"
-              : needsGenderPlacement
-                ? GENDER_PLACEMENT_REFUSAL
-                : undefined));
-        // Audit 2 E-07: say when this ward's Ready beds are already promised. Refuses nothing.
-        const promised =
-          live && thisUnit
-            ? readyBedsAllPromised({ movements, acceptedReferralIds }, thisUnit, { referralId: entry.id })
-            : undefined;
-        const genderReason = genderReasons[entry.id] ?? "";
-        const genderTicked = genderChecked[entry.id] === true;
-        const acceptReasonId = `${reasonId}-accept-${entry.id}`;
-        const declineReasonId = `${reasonId}-decline-${entry.id}`;
-        return (
-          <article className={styles.refCard} key={entry.id}>
-            <h3 className={styles.refCardTitle}>
-              {referralInboxName(entry, patient.displayName)} · {patient.umrn} · {entry.id}
-            </h3>
-            <p
-              className={styles.refCardSubtitle}
-              data-state={entry.withdrawnAt === undefined ? entry.state : "withdrawn"}
-            >
-              {entry.withdrawnAt !== undefined
-                ? "Withdrawn by referrer"
-                : entry.waitlistedAt !== undefined && live
-                  ? "On waiting list"
-                  : entry.state === "cancelled"
-                    ? "Cancelled — accepted elsewhere"
-                    : entry.state === "queued"
-                      ? "Awaiting review"
-                      : entry.state === "accepted"
-                        ? "Accepted"
-                        : `Declined · ${entry.declineReason ? DECLINE_REASON_LABELS[entry.declineReason as ReferralDeclineReason] : "Reason not recorded"}`}
-            </p>
-            {/* #836: a blank Patient story is named as that field, and points to the reason when there is one. */}
-            <p className={styles.patientStory} data-testid="ward-referral-inbox-story">
-              {entry.history.trim() ||
-                (entry.intake?.reasonForReferral?.trim()
-                  ? "Patient story not recorded. The reason for referral is below."
-                  : "Patient story not recorded")}
-            </p>
-            <ReferralIntakeSummary intake={entry.intake} />
-            {live && (
-              <div className={styles.answerOptions}>
-                {isCoordinator && needsGenderPlacement ? (
-                  <>
-                    <p className={styles.refCardSubtitle}>Check with the ward first. A single room is preferred.</p>
-                    <label className={styles.flowField}>
-                      Placement reason
-                      <select
-                        className={styles.fieldSelect}
-                        value={genderReason}
-                        onChange={(event) => {
-                          const chosen = event.target.value;
-                          setGenderReasons((current) => ({
-                            ...current,
-                            [entry.id]: GENDER_PLACEMENT_REASONS.includes(chosen as GenderPlacementReason)
-                              ? (chosen as GenderPlacementReason)
-                              : "",
-                          }));
-                        }}
-                      >
-                        <option value="">Choose a reason</option>
-                        {GENDER_PLACEMENT_REASONS.map((reason) => (
-                          <option key={reason} value={reason}>
-                            {reason}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className={styles.flowField}>
-                      <input
-                        type="checkbox"
-                        checked={genderTicked}
-                        onChange={(event) =>
-                          setGenderChecked((current) => ({ ...current, [entry.id]: event.target.checked }))
-                        }
-                      />
-                      I have checked this placement with the ward
-                    </label>
-                  </>
-                ) : null}
-                <button
-                  type="button"
-                  className={styles.patientChipBtn}
-                  aria-disabled={acceptRefusal !== undefined ? "true" : undefined}
-                  aria-describedby={acceptRefusal ? acceptReasonId : undefined}
-                  onClick={(e) => {
-                    if (acceptRefusal) {
-                      ignoreUnavailableActivation(e);
-                      return;
-                    }
-                    if (isCoordinator && needsGenderPlacement && (genderReason === "" || !genderTicked)) {
-                      setLocalNote({ id: entry.id, text: "Choose a placement reason and tick the ward check first." });
-                      return;
-                    }
-                    setLocalNote(null);
-                    setAttempt({ id: entry.id, count: rejections.length });
-                    const completion = dispatch({
-                      type: "ACCEPT_REFERRAL",
-                      ...decisionBase,
-                      referralId: entry.id,
-                      ...(isCoordinator && needsGenderPlacement && genderReason !== ""
-                        ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
-                        : {}),
-                    });
-                    watchDecision(entry.id, "Referral accepted", completion);
-                  }}
-                >
-                  Accept referral
-                </button>
-                {acceptRefusal ? <DisabledReason id={acceptReasonId}>{acceptRefusal}</DisabledReason> : null}
-                {promised ? (
-                  <p
-                    className={styles.flowError}
-                    role="status"
-                    data-testid={`ward-referral-inbox-ready-promised-${entry.id}`}
-                  >
-                    {readyBedsPromisedSentence(unitName, promised)}
-                  </p>
-                ) : null}
-                {localNote?.id === entry.id ? (
-                  <p className={styles.flowError} role="status">
-                    {localNote.text}
-                  </p>
-                ) : null}
-                <button
-                  type="button"
-                  className={styles.patientChipBtn}
-                  aria-disabled={roleRefusal !== undefined ? "true" : undefined}
-                  aria-describedby={roleRefusal ? declineReasonId : undefined}
-                  onClick={(e) => {
-                    if (roleRefusal) {
-                      ignoreUnavailableActivation(e);
-                      return;
-                    }
-                    setAttempt({ id: entry.id, count: rejections.length });
-                    const completion = dispatch({
-                      type: "DECLINE_REFERRAL",
-                      ...decisionBase,
-                      referralId: entry.id,
-                      reason: "no_suitable_bed",
-                      waitlist: true,
-                    });
-                    watchDecision(entry.id, "Referral put on the waiting list", completion);
-                  }}
-                >
-                  Waitlist
-                </button>
-                <label className={styles.flowField}>
-                  Decline reason
-                  <select
-                    className={styles.fieldSelect}
-                    value={reasons[entry.id] ?? ""}
-                    onChange={(event) =>
-                      setReasons((current) => ({
-                        ...current,
-                        [entry.id]: event.target.value as ReferralDeclineReason | "",
-                      }))
-                    }
-                  >
-                    <option value="">Choose a reason</option>
-                    {REFERRAL_DECLINE_REASONS.map((reason) => (
-                      <option key={reason} value={reason}>
-                        {DECLINE_REASON_LABELS[reason]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {(() => {
-                  const declineRefusal = roleRefusal ?? (!reasons[entry.id] ? "Choose a decline reason" : undefined);
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        className={styles.patientChipBtn}
-                        aria-disabled={declineRefusal !== undefined ? "true" : undefined}
-                        aria-describedby={declineRefusal ? declineReasonId : undefined}
-                        onClick={(e) => {
-                          const reason = reasons[entry.id];
-                          if (!reason || roleRefusal) {
-                            ignoreUnavailableActivation(e);
-                            return;
-                          }
-                          setAttempt({ id: entry.id, count: rejections.length });
-                          const completion = dispatch({
-                            type: "DECLINE_REFERRAL",
-                            ...decisionBase,
-                            referralId: entry.id,
-                            reason,
-                          });
-                          watchDecision(entry.id, "Referral declined", completion);
-                        }}
-                      >
-                        Decline referral
-                      </button>
-                      {declineRefusal ? <DisabledReason id={declineReasonId}>{declineRefusal}</DisabledReason> : null}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-            {live ? (
-              <WardInformationNeedsPicker
-                entry={entry}
-                unitId={unitId}
-                actingUnitId={actingUnitId}
-                refusal={roleRefusal}
-              />
-            ) : null}
-            {/* Closing-the-loop package A: the ward acknowledges and promises an answer by a time. */}
-            {live ? (
-              <WardCommitmentControls entry={entry} unitId={unitId} actingUnitId={actingUnitId} refusal={roleRefusal} />
-            ) : null}
-          </article>
-        );
-      })}
+      {waiting.map(renderEntry)}
+      {answered.length > 0 && (
+        <button
+          type="button"
+          className={styles.patientChipBtn}
+          aria-expanded={showAnswered}
+          aria-controls={answeredListId}
+          onClick={() => setShowAnswered((shown) => !shown)}
+        >
+          {showAnswered ? `Hide ${answered.length} answered` : `Show ${answered.length} answered`}
+        </button>
+      )}
+      {answered.length > 0 && (
+        <div id={answeredListId} hidden={!showAnswered}>
+          {showAnswered ? answered.map(renderEntry) : null}
+        </div>
+      )}
     </section>
   );
 }

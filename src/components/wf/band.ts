@@ -22,6 +22,9 @@ import { useLayoutEffect, useSyncExternalStore, type RefObject } from "react";
  * usual 16px page insets (desktop and tablet only; phone is unchanged). The measure then writes
  * `data-band="on"` with the real insets, or `data-band="off"` when the page does not open on it.
  *
+ * The pinned notes under the header (`data-wf-bar-notes`) count as part of the header: the hero
+ * bands from under them, and while the header is ink they take the band's top colour too.
+ *
  * The header stays in flow above the page and paints the band's top colour at rest, so the band
  * reads as one surface from the top of the window. The hero never rises above the page's own
  * box: the desktop `.shell` clips vertical overflow (`tests/ward-shell-fill.test.ts`), and a
@@ -82,10 +85,21 @@ function scrollAreaOf(element: HTMLElement): HTMLElement | null {
   return element.closest<HTMLElement>("[data-wf-scroller]");
 }
 
-/** The header sits first in the work column. Its height is what the hero pads under. */
+/** The pinned notes under the header (offline, broadcast, downtime, demo saving, access). */
+function barNotesIn(scroller: HTMLElement): HTMLElement | null {
+  return scroller.querySelector<HTMLElement>("[data-wf-bar-notes]");
+}
+
+/**
+ * The header sits first in the work column, with its pinned notes under it. Their heights are what
+ * the hero pads under. The notes count as part of the header (Josh, 27 Oct 2026): counted as page
+ * content, any note (an access banner on some desks, the demo saving note once text was typed)
+ * pushed the hero past the slack and turned it back into the old floating card.
+ */
 function barHeightIn(scroller: HTMLElement): number {
   const bar = scroller.querySelector<HTMLElement>("[data-wf-bar]");
-  return bar ? bar.offsetHeight : 0;
+  const notes = barNotesIn(scroller);
+  return (bar ? bar.offsetHeight : 0) + (notes ? notes.offsetHeight : 0);
 }
 
 function sameBleed(a: Bleed, b: Bleed) {
@@ -95,7 +109,10 @@ function sameBleed(a: Bleed, b: Bleed) {
 /**
  * Measures and applies the bleed for one hero. `enabled` is false for a quiet hero. The applied
  * values are written as CSS custom properties on the hero (`--wf-band-*`) plus `data-band="on"`,
- * which `hero.module.css` turns into negative margins, padding and the round lip.
+ * which `hero.module.css` turns into negative margins, padding and the round lip. A hero that does
+ * not open the page gets `data-band="off"` with only the side bleed: it is still drawn as the band,
+ * square to the column edges, but the header does not join it. The rounded floating card is gone
+ * (Josh, 27 Oct 2026); only a quiet hero is a card.
  */
 export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: boolean) {
   useLayoutEffect(() => {
@@ -147,7 +164,20 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
       // banner, a breadcrumb, a filter row) means the page does not open on its hero.
       const gap = naturalTop - barHeight;
       if (gap < 0 || gap > WF_BAND_TOP_SLACK_PX) {
-        clear("off");
+        // Not the page's opening hero: the header stays light, but the hero still runs square to
+        // the column edges as the band, never the old rounded card (Josh, 27 Oct 2026).
+        if (release) {
+          release();
+          release = null;
+        }
+        const side: Bleed = { top: 0, left: Math.max(0, naturalLeft), right: Math.max(0, naturalRight) };
+        if (!sameBleed(side, applied) || hero.dataset.band !== "off") {
+          applied = side;
+          hero.style.removeProperty("--wf-band-top");
+          hero.style.setProperty("--wf-band-left", `${side.left}px`);
+          hero.style.setProperty("--wf-band-right", `${side.right}px`);
+          hero.dataset.band = "off";
+        }
         return;
       }
       const next: Bleed = {
@@ -173,6 +203,9 @@ export function useWfBandBleed(ref: RefObject<HTMLElement | null>, enabled: bool
     const observer = typeof ResizeObserver === "function" ? new ResizeObserver(schedule) : null;
     observer?.observe(scroller);
     observer?.observe(hero);
+    // A note arriving or leaving moves the hero without resizing either of those.
+    const notes = barNotesIn(scroller);
+    if (notes) observer?.observe(notes);
     query.addEventListener("change", schedule);
     window.addEventListener("resize", schedule);
     return () => {

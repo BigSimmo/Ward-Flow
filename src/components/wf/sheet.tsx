@@ -22,6 +22,7 @@ import {
   overlayOpener,
   popSheet,
   pushSheet,
+  SHEET_AUTOFOCUS_SELECTOR,
   startSheetOpenFocus,
   updateSheetRoot,
   type SheetFocusController,
@@ -280,7 +281,7 @@ export function Sheet({
       // resort: focus always enters the sheet (v9 section 8).
       resolveTarget: () =>
         initialFocusRef?.current ??
-        panelRef.current?.querySelector<HTMLElement>('[data-sheet-autofocus="true"]') ??
+        panelRef.current?.querySelector<HTMLElement>(SHEET_AUTOFOCUS_SELECTOR) ??
         usableCloseButton(closeRef.current) ??
         panelRef.current,
     });

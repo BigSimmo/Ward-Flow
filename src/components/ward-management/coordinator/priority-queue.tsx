@@ -190,7 +190,7 @@ export function PriorityQueue({
   const turnaroundLabel = (preference: TurnaroundPriority | undefined) => {
     const live = turnaroundState && liveTurnaroundPreference(turnaroundState, preference, now, cldEnabled);
     return live
-      ? `Turnaround Candidate: Bed clearing via ${live.source === "cld" ? "Criteria-Led Discharge" : "confirmed departure"}`
+      ? `Turnaround candidate: bed clearing via ${live.source === "cld" ? "criteria-led discharge" : "confirmed departure"}`
       : null;
   };
   const [showAllRows, setShowAllRows] = useState(false);
@@ -260,7 +260,7 @@ export function PriorityQueue({
             className={styles.noShrink}
           >
             {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). */}
-            Form due
+            Form due (as written)
           </FilterChip>
         ) : null}
       </div>

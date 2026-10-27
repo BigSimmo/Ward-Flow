@@ -73,7 +73,6 @@ type WardScreenTopBarProps = {
   notificationTriggerRef: RefObject<HTMLButtonElement | null>;
   tabHome: ReactElement;
   tabDecisions: ReactElement;
-  tabBoard: ReactElement;
   bedQuery: string;
   setBedQuery: Dispatch<SetStateAction<string>>;
   activeTab: "attn" | "board" | "coming" | "out" | "beds" | "return";
@@ -119,7 +118,6 @@ export function WardScreenTopBar({
   notificationTriggerRef,
   tabHome,
   tabDecisions,
-  tabBoard,
   bedQuery,
   setBedQuery,
   activeTab,
@@ -273,19 +271,8 @@ export function WardScreenTopBar({
             aria-label="Ward views"
             onKeyDown={moveBetweenWardTabs}
           >
-            {isPhone ? (
-              <>
-                {tabHome}
-                {tabDecisions}
-                {tabBoard}
-              </>
-            ) : (
-              <>
-                {tabHome}
-                {tabBoard}
-                {tabDecisions}
-              </>
-            )}
+            {tabHome}
+            {tabDecisions}
           </ul>
           {isPhone ? null : (
             <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">

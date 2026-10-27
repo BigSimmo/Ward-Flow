@@ -3884,6 +3884,13 @@
     font-size: var(--wf-fs-13);
   }
 
+  /* The department list's own 12px size is more specific than plain .tabBtn, so without this only
+     the hovered and selected tabs took 13px and a tab widened under the pointer, nudging its
+     neighbours sideways. Every state now shares one size. */
+  .departmentListTabs .tabBtn {
+    font-size: var(--wf-fs-13);
+  }
+
   .tabBtn[aria-selected="true"] {
     border-bottom-color: var(--wf-ink-1);
   }

@@ -49,7 +49,7 @@ export const WARD_FLOW_ROLE_LABELS: Record<WardFlowRole, string> = {
   coordinator: "Bed coordinator",
   ed: "ED clinician",
   ward: "Ward manager",
-  officer: "Authorised officer",
+  officer: "Transport officer",
   demo: "Demonstration control",
   community: "Community service",
   bed_manager: "Bed manager",

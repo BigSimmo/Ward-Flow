@@ -100,7 +100,7 @@ describe("a desk switch on its way", () => {
   it("leaves another closed page closed while a switch is on its way", () => {
     switchToExecutive();
     cleanup();
-    nav.pathname = "/ward-flow/capacity";
+    nav.pathname = "/ward-flow/movements";
     render(app(false));
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
   });
@@ -108,7 +108,7 @@ describe("a desk switch on its way", () => {
   it("shows the closed screen if the new home has not arrived after the wait", () => {
     vi.useFakeTimers();
     // A closed page other than Home: Home itself sends the desk on to its own home (DR-06).
-    nav.pathname = "/ward-flow/capacity";
+    nav.pathname = "/ward-flow/movements";
     switchToExecutive();
     expect(screen.getByText("Opening the Executive desk")).toBeInTheDocument();
     act(() => vi.advanceTimersByTime(DESK_SWITCH_WAIT_MS));

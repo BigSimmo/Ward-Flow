@@ -13,7 +13,7 @@ always answers 200 while the server runs, and reports `database` as `ok` or `una
 reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
 
 ## How the UI connects
@@ -125,7 +125,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->015-list-and-tv-views<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -205,7 +205,16 @@ These source files do not establish a current hosted connection or deployment.
     `X-Ward-Screen: tv` header the bed meeting TV board sends. Such rows name no single record, so
     their `patient_id` is `*`. `infra/rollback-015-list-and-tv-views.sql` takes a database back to
     14, and refuses once a list or TV read has been logged. Reapply runtime grants after 15.
-    The backend accepts versions 5 to 15.
+  - `016-forecast-history.sql`: the shared forecast history (proposal 013, forecast integration,
+    Josh, 27 Oct 2026). `forecast_snapshots` keeps one snapshot a demo day (today's ready gap and
+    tomorrow's low, likely and high counts) and `forecast_miss_reasons` the reason chosen for a
+    missed day, from a closed list. Both are kept per desk (a SHA-256 of its role and place) and
+    world generation, so every device and colleague at the desk sees one Statistics track record.
+    Counts and closed-list values only: no patient detail and no typed text. Read and written
+    through `GET` and `POST /v1/workspace/forecast-history`; before 16 that route answers
+    `shared: false` and each browser keeps its own history. `infra/rollback-016-forecast-history.sql`
+    drops both tables. Reapply runtime grants after 16.
+    The backend accepts versions 5 to 16.
 - `WARD_COORDINATOR_UNTIL` (optional, `YYYY-MM-DD`, at most a year ahead) ends the
   `WARD_COORDINATOR_USER_IDS` bootstrap coordinators at the end of that Perth day, without a
   restart (H-0057). Unset, they keep working and the shared server warns at startup.

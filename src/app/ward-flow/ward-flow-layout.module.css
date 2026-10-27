@@ -335,6 +335,21 @@
   display: none;
 }
 
+/* H-0111: on a first load whose stored desk is not the coordinator's, the server's page is the
+   coordinator's, so the page area stays hidden until the app has drawn the desk's own page
+   (ward-desk-early.ts). The header, rail and loading note still show. If the code never runs, the
+   page shows after 8 seconds rather than staying blank. */
+:global(html[data-wf-desk-pending]) .shellContent > :global([data-ward-ground]) {
+  visibility: hidden;
+  animation: deskPendingGiveUp 0s 8s forwards;
+}
+
+@keyframes deskPendingGiveUp {
+  to {
+    visibility: visible;
+  }
+}
+
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */
 .bannerHolder {
   position: sticky;
@@ -356,6 +371,24 @@
 /* With no note to show the holder stays empty and keeps no foot. */
 .bannerHolder:empty {
   padding-bottom: 0;
+}
+
+/* Over a hero band (header at rest in ink) the notes sit on the band's top colour, so header, notes
+   and hero read as one surface and the page keeps its band (wf/band.ts, Josh 27 Oct 2026). Once the
+   page scrolls the header turns light and the holder goes back to the page ground. */
+.shellContent:has([data-wf-bar][data-band="ink"]) > .bannerHolder:not(:empty) {
+  background: var(--wf-hero-1);
+}
+
+/* It changes colour with the header, at the header's own pace (ward-bar.module.css). */
+.bannerHolder {
+  transition: background-color var(--wf-t-enter) var(--wf-ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bannerHolder {
+    transition: none;
+  }
 }
 
 /* Printing must paginate the complete workspace rather than its viewport-height scroll window. */

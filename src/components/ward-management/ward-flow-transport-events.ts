@@ -8,7 +8,7 @@ import {
   STOP_TRANSPORT_REASONS,
   TRANSPORT_WHEREABOUTS,
 } from "@/components/ward-management/ward-change-reasons";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { cadNumberProblem, providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { adjustSexMix, eligibility, mixSexOf } from "@/components/ward-management/ward-eligibility";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
@@ -241,7 +241,7 @@ export function reduceTransportEvent(
         return reject(
           state,
           event,
-          `cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still holds a bed — a person must release the bed first`,
+          `cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still has a bed pulled — a person must release the bed first`,
         );
       }
       /**
@@ -421,7 +421,7 @@ export function reduceTransportEvent(
             a.id !== source?.id,
         )
       ) {
-        return reject(state, event, "This patient already holds another bed or occupies another ward.");
+        return reject(state, event, "This patient already has another bed pulled or occupies another ward.");
       }
       const linkedAdmission =
         movement.admissionId === undefined ? undefined : findAdmission(state, movement.admissionId);
@@ -434,7 +434,7 @@ export function reduceTransportEvent(
             !(linkedAdmission.movementId === null && !linkedAdmission.id.startsWith("AD-ARR-"))) ||
           (patientId !== undefined && linkedAdmission.patientId !== patientId))
       ) {
-        return reject(state, event, "Arrival needs this movement's matching held admission at its accepted ward.");
+        return reject(state, event, "Arrival needs this movement's matching pulled bed at its accepted ward.");
       }
       const { referralArm: heldReferral, bedNumber: reservedBed } = movementBedReservation(
         movement,
@@ -661,11 +661,16 @@ export function reduceTransportEvent(
       }
       // Owner's third ruling: this logs a booking already made by phone, and the three facts from
       // that call are required, never defaulted.
-      if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
+      // A ward escort or a family member has no dispatch service, so no number exists to log.
+      const needsCad = providerNeedsCadNumber(event.provider);
+      if (needsCad && (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0)) {
         return reject(state, event, `BOOK_TRANSPORT cadNumber must be answered, and it has no default`);
       }
       // HAZ-03 (#430): a placeholder or free text is not a dispatch number. Same rule as the forms.
-      const cadProblem = cadNumberProblem(event.cadNumber);
+      const cadProblem =
+        typeof event.cadNumber === "string" && (needsCad || event.cadNumber.trim().length > 0)
+          ? cadNumberProblem(event.cadNumber)
+          : undefined;
       if (cadProblem !== undefined) {
         return reject(state, event, `BOOK_TRANSPORT cadNumber refused: ${cadProblem}`);
       }
@@ -781,7 +786,9 @@ export function reduceTransportEvent(
           escortRequired: event.escortRequired,
           // Owner's third ruling, 2026-09-17: the phone-logged facts, required and stored exactly
           // as answered — see each field's own doc comment on `TransportJob` (`ward-model.ts`).
-          cadNumber: event.cadNumber,
+          ...(typeof event.cadNumber === "string" && event.cadNumber.trim().length > 0
+            ? { cadNumber: event.cadNumber }
+            : {}),
           transportLegalStatus: event.transportLegalStatus,
           estimatedAt: event.estimatedAt,
           ...(bookingException ? { exceptions: [bookingException] } : {}),

@@ -59,7 +59,7 @@ const setting = (id: string, tab: string): TourTarget => ({
 export const HOW_TOS: readonly HowTo[] = [
   {
     id: "pull-bed",
-    title: "Pull a bed for a patient",
+    title: "Pull the bed for a patient",
     keywords: "reserve keep book bed accepted placement",
     answer:
       "Once a ward accepts, open the movement and press Pull the bed. The bed is kept for the patient within the pull time limit. A person always chooses the bed; nothing is placed automatically.",
@@ -68,12 +68,12 @@ export const HOW_TOS: readonly HowTo[] = [
     showMe: [
       {
         target: [
-          { sel: '#main-content a[href^="/ward-flow/movements/"]', text: "Pull bed" },
+          { sel: '#main-content a[href^="/ward-flow/movements/"]', text: "Pull the bed" },
           // On a phone the list is grouped by stage, so the Accepted group stands in for the button.
           { sel: '[data-testid="movements-group-toggle-accepted_awaiting_bed"]' },
         ],
         title: "Find a movement ready for a pull",
-        body: "Rows where a ward has accepted show Pull bed. Open one to see the bed, transport and legal form together.",
+        body: "Rows where a ward has accepted show Pull the bed. Open one to see the bed, transport and legal form together.",
       },
       {
         title: "Press Pull the bed",
@@ -91,9 +91,9 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "home",
     showMe: [
       {
-        target: { sel: "#main-content button", text: "Release bed" },
+        target: { sel: "#main-content button", text: "Release pulled bed" },
         title: "Pulls past their limit are in Act now",
-        body: "Release bed opens the movement at the release step. You decide whether to release it or keep it.",
+        body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
       },
     ],
   },
@@ -254,16 +254,16 @@ export const HOW_TOS: readonly HowTo[] = [
   {
     id: "bed-board",
     title: "See every bed on the ward",
-    keywords: "bed board list beds occupied ready closed leave",
+    keywords: "bed board list beds occupied ready closed leave place move",
     answer:
-      "Open Bed board on your ward's home. Each bed shows who is in it or whether it is ready, pulled, closed or held for a patient on leave.",
+      "Every bed on your ward's home shows who is in each bed or whether it is ready, pulled, closed or held for a patient on leave. Use Place or move to put someone waiting in a bed or move someone to another bed.",
     desks: ["ward"],
     go: "home",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-tab-board"]' },
-        title: "Bed board",
-        body: "Every bed with its state. Open a bed for the patient in it.",
+        target: { sel: '[data-testid="ward-open-bed-board"]' },
+        title: "Place or move",
+        body: "Opens the bed board to place someone waiting or move someone between beds. Open a bed for the patient in it.",
       },
     ],
   },

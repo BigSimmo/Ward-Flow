@@ -66,6 +66,7 @@ import {
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "./ward-home-tab";
 import { declineTargetLeftNote } from "./decline-target-left";
+import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -74,7 +75,7 @@ const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's
 
 const WARD_ACTION_REJECTION_LABELS: Record<string, string> = {
   ACCEPT_IN_PRINCIPLE: "Accept in principle",
-  PULL_PATIENT: "Pull a bed",
+  PULL_PATIENT: "Pull the bed",
   PATIENT_ARRIVED: "Confirm arrival",
 };
 
@@ -1619,108 +1620,30 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           Josh 20 Oct): the census cells are counts, not numbered beds, so no bed number is sent and
           the dialog says so rather than imply an allocation. */}
       {acceptModalMovement ? (
-        <div
-          className={styles.modalOverlay}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="accept-modal-title"
-          ref={modalRef}
-        >
-          <div className={styles.modalDialog}>
-            <div className={styles.modalHead}>
-              <h3 id="accept-modal-title" className={styles.modalTitle}>
-                Accept referral in principle
-              </h3>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnSm}`}
-                onClick={() => {
-                  setAcceptModalFor(undefined);
-                  setHoldChoice(undefined);
-                  (openerRef.current ?? triggerRef.current)?.focus();
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="ward-answer-allocating-movement">
-                  Patient
-                </label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  id="ward-answer-allocating-movement"
-                  // Josh, 22 Oct 2026: the ward sees the name before it accepts. The tier and referral
-                  // time still tell two waiting requests apart (D-39).
-                  value={`${resolvePatientIdentity(acceptModalMovement).displayName} (${acceptModalMovement.cohort}), Tier ${acceptModalMovement.urgency}${acceptModalMovement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(acceptModalMovement.referredAt, now)}`}`}
-                  readOnly
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="ward-answer-target-unit">
-                  Target Unit
-                </label>
-                <input
-                  type="text"
-                  className={styles.formInput}
-                  id="ward-answer-target-unit"
-                  value={unit.name}
-                  readOnly
-                />
-              </div>
-              <p className={styles.formNote} data-testid="ward-answer-no-bed-named">
-                Accepting does not allocate a bed. No bed number is recorded.
-              </p>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel} htmlFor="hold-duration-select">
-                  Pull time limit
-                </label>
-                <select
-                  id="hold-duration-select"
-                  className={styles.formSelect}
-                  value={extendedHoldFor(acceptModalMovement.id) ? "extended" : "standard"}
-                  onChange={(e) => chooseHold(acceptModalMovement.id, e.target.value === "extended")}
-                >
-                  {holdChoices.map((choice) => (
-                    <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
-                      {choice.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className={styles.modalFoot}>
-              <button
-                type="button"
-                className={styles.btn}
-                onClick={() => {
-                  setAcceptModalFor(undefined);
-                  setHoldChoice(undefined);
-                  (openerRef.current ?? triggerRef.current)?.focus();
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className={`${styles.btn} ${styles.btnGood}`}
-                onClick={() => {
-                  const opener = openerRef.current;
-                  handleAccept(acceptModalMovement.id, extendedHoldFor(acceptModalMovement.id));
-                  if (opener && document.body.contains(opener) && !opener.hasAttribute("disabled")) {
-                    opener.focus();
-                  } else {
-                    triggerRef.current?.focus();
-                  }
-                }}
-              >
-                Confirm acceptance
-              </button>
-            </div>
-          </div>
-        </div>
+        <WardAcceptDialog
+          movement={acceptModalMovement}
+          patientName={resolvePatientIdentity(acceptModalMovement).displayName}
+          unitName={unit.name}
+          now={now}
+          extended={extendedHoldFor(acceptModalMovement.id)}
+          holdChoices={holdChoices}
+          dialogRef={modalRef}
+          onChooseHold={(extended) => chooseHold(acceptModalMovement.id, extended)}
+          onCancel={() => {
+            setAcceptModalFor(undefined);
+            setHoldChoice(undefined);
+            (openerRef.current ?? triggerRef.current)?.focus();
+          }}
+          onConfirm={() => {
+            const opener = openerRef.current;
+            handleAccept(acceptModalMovement.id, extendedHoldFor(acceptModalMovement.id));
+            if (opener && document.body.contains(opener) && !opener.hasAttribute("disabled")) {
+              opener.focus();
+            } else {
+              triggerRef.current?.focus();
+            }
+          }}
+        />
       ) : null}
 
       {/* Action Toast */}

@@ -37,10 +37,10 @@ export type JourneyStage = {
 
 const IN_TRANSIT = ["pulled", "handover_ready", "moving"] as const satisfies readonly MovementStage[];
 
-/** One word each, so the breakdown fits a seventh of the row; the full stage words are `stageCopy`'s. */
+/** Short words, so the breakdown fits a seventh of the row; the stage words are `stageCopy`'s (H-0807). */
 const TRANSIT_LABELS: Record<(typeof IN_TRANSIT)[number], string> = {
   pulled: stageCopy.pulled.shortLabel,
-  handover_ready: "Handover",
+  handover_ready: stageCopy.handover_ready.label,
   moving: stageCopy.moving.shortLabel,
 };
 

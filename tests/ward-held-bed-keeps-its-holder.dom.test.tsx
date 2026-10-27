@@ -80,7 +80,7 @@ describe("a held bed keeps its holder (audit 1, CS-01)", () => {
         </ToastProvider>
       </WardFlowProvider>,
     );
-    fireEvent.click(document.querySelector<HTMLElement>("#tabBtn-board")!);
+    fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const heldName = screen.getByTestId("held-name").textContent ?? "";
     const candidateName = screen.getByTestId("candidate-name").textContent ?? "";
     expect(heldName, "the demo ward holds a bed pulled for a named referral").not.toBe("");

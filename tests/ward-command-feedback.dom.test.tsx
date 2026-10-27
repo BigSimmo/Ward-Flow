@@ -295,6 +295,7 @@ function pendingChecklistSave() {
   );
   fireEvent.click(screen.getByRole("button", { name: "Record Carer" }));
   const form = screen.getByRole("form", { name: "Record Carer" });
+  fireEvent.click(within(form).getByRole("radio", { name: "Told" }));
   fireEvent.change(within(form).getByLabelText("Who was told"), { target: { value: "Synthetic first draft" } });
   fireEvent.click(within(form).getByRole("button", { name: "Save" }));
   expect(dispatch).toHaveBeenCalledTimes(1);
@@ -321,6 +322,7 @@ describe("support notification editing lifetime", () => {
         fireEvent.click(screen.getByRole("button", { name: `Record ${party}` }));
       }
       const current = screen.getByRole("form", { name: `Record ${party}` });
+      fireEvent.click(within(current).getByRole("radio", { name: "Told" }));
       fireEvent.change(within(current).getByLabelText("Who was told"), {
         target: { value: "Synthetic current draft" },
       });

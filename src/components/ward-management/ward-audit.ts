@@ -957,7 +957,8 @@ export function appendAudit(
   if (!captured) return after;
   captured.id = `audit-${sequence}`;
   captured.sequence = sequence;
-  return { ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, structuredClone(captured)] };
+  // captureAuditEvent already returns a deep copy that nothing else holds, so it is stored as is.
+  return { ...after, auditSequence: sequence, auditEvents: [...after.auditEvents, captured] };
 }
 
 export function readAuditEvents(state: WardFlowState, actor: WardRecordActor): RecordRead<readonly AuditEvent[]> {

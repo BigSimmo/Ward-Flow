@@ -7,7 +7,7 @@ import {
   ClipboardList,
   Inbox,
   LayoutGrid,
-  LayoutDashboard,
+  House,
   DoorClosed,
   List,
   ListFilter,
@@ -37,7 +37,8 @@ import type { WardMode, WardNavId } from "./ward-nav";
  * than per surface — the rail's icon and the panel's icon can never drift apart.
  */
 export const WARD_VIEW_ICONS: Record<WardMode, LucideIcon> = {
-  command: LayoutDashboard,
+  // A house, as on the phone menu, so Home reads as Home on the icon rail (Josh, 27 Oct 2026).
+  command: House,
   delays: ListFilter,
   capacity: BedSingle,
   movements: Route,

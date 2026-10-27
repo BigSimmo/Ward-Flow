@@ -125,23 +125,42 @@ describe("Governance: the server band sits where the measure will put it", () =>
   });
 });
 
-describe("phone Home: the hero paints as the band before it is measured", () => {
-  it("uses the Home page's phone insets and the phone band's own spacing", () => {
-    const home = strip(readFileSync("src/components/ward-management/coordinator/home.module.css", "utf8"));
-    const serverBand =
-      /:global\(\[data-wf-scroller\]\)\s*\.homeHero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/u.exec(
-        home,
-      )?.[1];
-    // The Home body pads 12px on top and 16px at the sides on a phone; the measure pulls the band
-    // out by exactly that, so the server band does the same (layout shift 0.18 to 0.001, 390px).
-    expect(home).toMatch(/\.body\s*\{\s*padding:\s*var\(--wf-s-3\)\s+var\(--wf-s-4\);/u);
-    expect(serverBand).toMatch(/margin:\s*calc\(-1 \* var\(--wf-s-3\)\)\s+calc\(-1 \* var\(--wf-s-4\)\)\s+-10px;/u);
-    // The same padding as the phone `.hero[data-band="on"]` rule in hero.module.css.
-    expect(serverBand).toMatch(/padding:\s*6px var\(--wf-s-4\) calc\(18px \+ var\(--wf-band-lip\)\);/u);
+describe("phone: the hero paints as the band before it is measured", () => {
+  // Header audit (27 Oct 2026): every phone band hero, not only Home's, paints as the phone band
+  // before the measure lands, so it no longer widens and shrinks by about 40px on load.
+  function phoneServerBand(css: string) {
+    // The desktop and tablet server band comes first, the phone one after it.
+    const bands = [
+      ...css.matchAll(
+        /:global\(\[data-wf-scroller\]\)\s*\.hero\[data-wf-hero="band"\]:not\(\[data-band\]\)\s*\{([^}]*)\}/gu,
+      ),
+    ];
+    return bands.find((band) => band[1].includes("--wf-band-phone-top"))?.[1];
+  }
+
+  it("uses the phone insets and the phone band's own spacing", () => {
     const hero = strip(readFileSync("src/components/wf/hero.module.css", "utf8"));
+    const serverBand = phoneServerBand(hero);
+    expect(serverBand).toMatch(/--wf-band-top:\s*var\(--wf-band-phone-top,\s*var\(--wf-s-3\)\)/u);
+    expect(serverBand).toMatch(/--wf-band-left:\s*var\(--wf-band-phone-x,\s*var\(--wf-s-3\)\)/u);
+    expect(serverBand).toMatch(/--wf-band-right:\s*var\(--wf-band-phone-x,\s*var\(--wf-s-3\)\)/u);
+    expect(serverBand).toMatch(/margin-bottom:\s*-10px;/u);
+    // The same padding as the phone `.hero[data-band="on"]` rule.
+    expect(serverBand).toMatch(/padding:\s*6px 16px calc\(18px \+ var\(--wf-band-lip\)\);/u);
     expect(hero).toMatch(
       /padding-top:\s*6px;\s*padding-right:\s*16px;\s*padding-bottom:\s*calc\(18px \+ var\(--wf-band-lip\)\);/u,
     );
+  });
+
+  it("takes Home's 16px sides from its body padding", () => {
+    const home = strip(readFileSync("src/components/ward-management/coordinator/home.module.css", "utf8"));
+    // The Home body pads 12px on top and 16px at the sides on a phone; the measure pulls the band
+    // out by exactly that, so the server band does the same (layout shift 0.18 to 0.001, 390px).
+    expect(home).toMatch(
+      /\.body\s*\{\s*padding:\s*var\(--wf-s-3\)\s+var\(--wf-s-4\);\s*--wf-band-phone-x:\s*var\(--wf-s-4\);/u,
+    );
+    // One copy of the server band only.
+    expect(home).not.toMatch(/\.homeHero\[data-wf-hero="band"\]:not\(\[data-band\]\)/u);
   });
 });
 

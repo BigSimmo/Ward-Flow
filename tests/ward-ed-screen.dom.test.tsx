@@ -137,6 +137,12 @@ function fillRequiredReferralFieldsExcept(skipTestId: string) {
     if (field.testId === skipTestId) continue;
     fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
   }
+  // Cohort and urgency are filled in from the fixture referral's own facts (age band, urgency), so
+  // those two are cleared to stand for a referral that did not hold them. Every other field is
+  // still left exactly as `DEFAULT_DRAFT` seeds it.
+  if (skipTestId === "ward-ed-referral-cohort" || skipTestId === "ward-ed-referral-urgency") {
+    fireEvent.change(screen.getByTestId(skipTestId), { target: { value: "" } });
+  }
   if (skipTestId !== "ward-ed-referral-observation") {
     fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
   }
@@ -745,6 +751,16 @@ describe("the legal-status change reason starts unchosen", () => {
     fireEvent.change(status, { target: { value: "Voluntary" } });
     expect(submit.getAttribute("aria-disabled"), "still unavailable after a status and reason were chosen").toBeNull();
   });
+
+  it("shows the status now and prints why Save is unavailable, not only to a screen reader", () => {
+    const id = openFirstLegalStatusForm();
+    expect(screen.getByTestId(`ward-change-legal-status-now-${id}`)).toHaveTextContent(/^Now: \S/u);
+    const reason = document.getElementById(`ward-change-legal-status-blocked-${id}`)!;
+    expect(reason).not.toHaveClass("sr-only");
+    expect(reason).toHaveTextContent(/\S/u);
+    const submit = screen.getByTestId(`ward-change-legal-status-${id}`).querySelector('button[type="submit"]');
+    expect(submit).toHaveAttribute("aria-describedby", reason.id);
+  });
 });
 
 /**
@@ -1114,6 +1130,8 @@ describe("direct CMHT referral pathway from ED screen", () => {
     const teamSelect = screen.getByTestId("ward-ed-cmht-select-WF-001") as HTMLSelectElement;
     const confirmBtn = screen.getByTestId("ward-ed-cmht-confirm-WF-001");
     expect(confirmBtn).toHaveAttribute("aria-disabled", "true");
+    // The reason is printed beside the greyed button, not only to a screen reader.
+    expect(document.getElementById("ward-ed-cmht-reason-WF-001")).not.toHaveClass("sr-only");
 
     // Choose the first available team option
     expect(teamSelect.options.length).toBeGreaterThan(1);
@@ -1218,7 +1236,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
 
     const flag = screen.getByTestId(`ward-ed-examination-revoked-flag-${revokedId}`);
-    expect(flag).toHaveTextContent("The examination was revoked and this movement still holds a bed.");
+    expect(flag).toHaveTextContent("The examination was revoked and this movement still has a bed pulled.");
 
     // A second, freshly pulled movement with NO examination must not show the flag — the
     // anti-vacuity half: a flag that always renders would pass the assertion above for the

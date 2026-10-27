@@ -378,8 +378,8 @@ export function DowntimePackScreen() {
       {!pack.offline
         ? `Stale · taken ${durMinutes(ageMinutes)} ago`
         : syncedAt === null
-          ? "Stale · no sync recorded"
-          : `Stale · synced ${durMinutes(ageMinutes)} ago`}
+          ? "Stale · no update recorded"
+          : `Stale · last updated ${durMinutes(ageMinutes)} ago`}
     </span>
   ) : null;
 

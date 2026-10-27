@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
+import { PLANNED_ADMISSION_REASONS } from "@/components/ward-management/ward-admissions";
 import { OVERRIDE_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -25,6 +26,8 @@ function openInvoluntaryBooking(unitId: string) {
   fireEvent.click(screen.getByTestId("ward-planned-book"));
   fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
   fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "cd" } });
+  // The reason list opens blank (WT-13), so the first listed reason is chosen here.
+  fireEvent.change(screen.getByTestId("ward-planned-reason"), { target: { value: PLANNED_ADMISSION_REASONS[0] } });
   fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: unitId } });
   fireEvent.change(screen.getByTestId("ward-planned-legal"), { target: { value: "Involuntary inpatient" } });
 }

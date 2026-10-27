@@ -506,7 +506,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "next",
           { sel: '[data-testid^="ward-officer-next-"]' },
           "Record the next step",
-          "Next is the one step to record now, such as En route or Delivered.",
+          "Next is the one step to record now, such as En route or Arrived at ward.",
         ),
         step(
           "Your daily work",
@@ -964,8 +964,17 @@ export type TourCanDo = {
 };
 
 /** Screen groups for the desks the access table limits to screens rather than actions. */
-const SCREEN_GROUPS: readonly { label: string; screens: readonly WardScreenId[] }[] = [
-  { label: "Capacity, Wards and ward boards", screens: ["capacity", "wards", "ward", "board"] },
+const SCREEN_GROUPS: readonly {
+  label: string;
+  screens: readonly WardScreenId[];
+  /** The name for a desk that opens only one of the group's screens, such as the executive's Capacity. */
+  alone?: Partial<Record<WardScreenId, string>>;
+}[] = [
+  {
+    label: "Capacity, Wards and ward boards",
+    screens: ["capacity", "wards", "ward", "board"],
+    alone: { capacity: "Capacity" },
+  },
   { label: "Movements and Waiting", screens: ["movements", "delays"] },
   { label: "Discharges and the bed meeting", screens: ["discharges", "bed-meeting"] },
   { label: "Seclusion and restraint", screens: ["seclusion"] },
@@ -997,9 +1006,11 @@ const SCREEN_ASKS: Partial<Record<TourRole, TourCanDo["ask"]>> = {
 export function tourCanDo(role: TourRole): TourCanDo {
   if (role === "bed_manager" || role === "executive" || role === "admin") {
     const table = ROLE_SCREENS[role];
-    const can = SCREEN_GROUPS.flatMap(({ label, screens }) => {
-      const grants = screens.map((screen) => table[screen]).filter((grant) => grant !== undefined);
+    const can = SCREEN_GROUPS.flatMap(({ label: groupLabel, screens, alone }) => {
+      const granted = screens.filter((screen) => table[screen] !== undefined);
+      const grants = granted.map((screen) => table[screen]);
       if (grants.length === 0) return [];
+      const label = (granted.length === 1 ? alone?.[granted[0]] : undefined) ?? groupLabel;
       if (grants.includes("counts")) return [`${label}, as counts with no patient names`];
       if (role === "bed_manager" && grants.every((grant) => grant === "own") && label !== SCREEN_GROUPS.at(-1)?.label) {
         return [`${label}, your site`];

@@ -9,6 +9,13 @@
 
 "use client";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
+import {
+  blockerReadinessState,
+  formReadinessState,
+  transportNeedSentence,
+  transportReadinessLine,
+  transportReadinessState,
+} from "./movement-cockpit-readiness";
 import { SupportNotificationChecklist } from "./support-notification-checklist";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 
@@ -45,8 +52,6 @@ import type { WardFlowEventType } from "@/components/ward-management/ward-role-p
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
-  clockState,
-  type DueSoonThresholds,
   formatInstantWithDay,
   formatRemaining,
   type Instant,
@@ -59,7 +64,6 @@ import {
   MOVEMENT_STAGES,
   STEP_BACK_REASONS,
   stepBackReasonLabels,
-  type LegalForm,
   type Movement,
   type MovementId,
   type MovementStage,
@@ -92,8 +96,6 @@ import {
   orphanedTransport,
   restrictionNotice,
   stageCopy,
-  transportNeedState,
-  transportStatusLabel,
 } from "@/components/ward-management/ward-derivations";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
@@ -117,7 +119,7 @@ import { isConstantObservation, observationSummary } from "@/components/ward-man
 const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent first.";
 const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
 const CANCEL_TRANSPORT_NOT_YOURS =
-  "This ward did not book the job, so ask the flow coordinator or the referring emergency department to cancel it.";
+  "This ward did not book the job, so ask the bed coordinator or the referring emergency department to cancel it.";
 const WITHDRAW_REASON_UNCHOSEN = "Choose why the acceptance is being withdrawn first.";
 const STEP_BACK_UNCHOSEN = "Choose both the target stage and the reason first.";
 
@@ -1430,10 +1432,10 @@ export function MovementWorkspaceCockpit({
                 </p>
                 <p className={styles.actionSay}>
                   {movement.transport?.bookedBy?.role === "ward" && movement.transport.bookedBy.unitId
-                    ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
+                    ? `A transport job can be cancelled by the bed coordinator, by the referring emergency department, or by ${unitName(movement.transport.bookedBy.unitId)}, which booked it. No other ward — including the ward receiving this patient — can cancel it themselves.`
                     : movement.transport?.bookedBy?.role === "community" && movement.transport.bookedBy.placeId
-                      ? `A transport job can be cancelled by the flow coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
-                      : "A transport job can be cancelled by the flow coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
+                      ? `A transport job can be cancelled by the bed coordinator, by the referring emergency department, or by ${communityTeamById(movement.transport.bookedBy.placeId)?.name ?? "the community team"}, which booked it.`
+                      : "A transport job can be cancelled by the bed coordinator or by the referring emergency department. Anyone else, including a ward with no recorded booking, cannot cancel it themselves — they have to ask one of those two."}
                 </p>
                 <div className={styles.controlRow}>
                   <label className="sr-only" htmlFor="ward-console-cancel-transport-reason">
@@ -1975,74 +1977,4 @@ export function MovementWorkspaceCockpit({
       </div>
     );
   }
-}
-
-function formReadinessState(legalForm: LegalForm | undefined, now: Instant, thresholds: DueSoonThresholds): string {
-  if (!legalForm) return "Not ready — no legal form recorded.";
-  if (legalForm.dueAt === undefined) return "Recorded, with no deadline on it.";
-  const state = clockState(legalForm.dueAt, now, thresholds);
-  if (state === "breached") return "Recorded, and its deadline has passed. Needs attention says by how much.";
-  if (state === "critical" || state === "due") {
-    return "Recorded, and its deadline is close. Needs attention says how close.";
-  }
-  return "Recorded, and its deadline is still ahead.";
-}
-
-function transportReadinessState(movement: Movement, open: boolean): string {
-  if (!open && movement.transport === undefined) return "Nothing was arranged before this movement closed.";
-  if (movement.transport) return "A transport job exists.";
-  if (transportNeedState(movement) === "not_needed") return "None is needed, and somebody recorded that.";
-  if (transportNeedState(movement) === "needed") return "Needed, and no job has been raised for it yet.";
-  return "Nothing recorded either way — neither a job nor an answer about whether one is wanted.";
-}
-
-function blockerReadinessState(movement: Movement, open: boolean, blockerIsActive: boolean): string {
-  if (!open) {
-    if (blockerIsActive) {
-      return "A note was recorded before this movement closed. Nothing is holding it up now, because nothing is moving.";
-    }
-    if (movement.blocker === "None — cleared") {
-      return "Somebody recorded a blocker and cleared it before this movement closed.";
-    }
-    if (movement.blocker === "None — in transit") {
-      return "Nothing was holding this up: the patient was in transit when it closed.";
-    }
-    if (movement.blocker === "None — handover complete") {
-      return "Nothing was holding this up: handover was complete.";
-    }
-    if (movement.blocker === "None — the movement did not proceed") {
-      return "Nothing was holding this up: the movement did not proceed.";
-    }
-    return "Nothing was recorded as holding this up.";
-  }
-  if (blockerIsActive) return "Somebody has recorded, by hand, something that is holding this up.";
-  if (movement.blocker === "None — cleared") {
-    return "Somebody recorded a blocker and then cleared it. Nothing is holding this up now.";
-  }
-  if (movement.blocker === "None — in transit") return "Nothing is holding this up: the patient is in transit.";
-  if (movement.blocker === "None — handover complete") return "Nothing is holding this up: handover is complete.";
-  if (movement.blocker === "None — the movement did not proceed") {
-    return "Nothing is holding this up: the movement did not proceed.";
-  }
-  return "Nobody has recorded anything as holding this up.";
-}
-
-function transportNeedSentence(movement: Movement, now: Instant): string {
-  const state = transportNeedState(movement);
-  if (state === "needed") {
-    return `Yes — recorded as needed${movement.transportNeed ? ` at ${formatInstantWithDay(movement.transportNeed.at, now)}` : ""}.`;
-  }
-  if (state === "not_needed")
-    return "No — somebody recorded that this patient needs no transport. That is an answer, not a gap.";
-  return "Nobody has recorded an answer either way. This is not the same as deciding transport is not needed.";
-}
-
-function transportReadinessLine(movement: Movement, open: boolean): string {
-  if (!open && movement.closure && movement.transport === undefined) {
-    return "No transport was arranged before this movement closed";
-  }
-  if (movement.transport) return transportStatusLabel(movement.transport);
-  if (transportNeedState(movement) === "not_needed") return "No job has been raised, and none is wanted.";
-  if (transportNeedState(movement) === "needed") return "No job has been raised for it yet.";
-  return "No job has been raised.";
 }

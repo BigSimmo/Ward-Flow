@@ -74,7 +74,7 @@ describe("the one transport booking form", () => {
     expect(screen.getByTestId(id("cad"))).toHaveValue("");
     expect(screen.getByTestId(id("time"))).toHaveValue("");
     expect(screen.getByTestId(id("left"))).toHaveTextContent(
-      "4 answers left: provider, escort answer, CAD number, estimated time",
+      "4 answers left: provider, CAD number, estimated time, escort answer",
     );
   });
 
@@ -110,7 +110,8 @@ describe("the one transport booking form", () => {
     fireEvent.click(screen.getByTestId(id("legal", "voluntary")));
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByTestId(id("needs"))).toHaveTextContent("Needs the reason it differs");
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("1 answer left: reason it differs");
+    expect(screen.getByTestId(id("legal-reason"))).toHaveFocus();
     fireEvent.change(screen.getByTestId(id("legal-reason")), { target: { value: "paper_sighted" } });
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith(
@@ -158,7 +159,7 @@ describe("the one transport booking form", () => {
 
   it("the submission rule matches the form", () => {
     const answers: TransportBookingAnswers = {
-      provider: "Ward escort",
+      provider: "Patient transport service",
       escortRequired: true,
       cadNumber: " CAD-1 ",
       transportLegalStatus: "voluntary",
@@ -171,5 +172,41 @@ describe("the one transport booking form", () => {
       estimatedAt: 4 * MINUTES_PER_DAY + 9 * 60 + 30,
       exception: { reason: "urgent_to_follow" },
     });
+  });
+
+  it("keeps the CAD box for a ward escort or a family member, but books without one", () => {
+    const onSubmit = vi.fn();
+    render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);
+    fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ward escort" } });
+    expect(screen.getByTestId(id("cad"))).toHaveValue("");
+    fireEvent.click(screen.getByTestId(id("escort", "yes")));
+    fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+    expect(screen.queryByTestId(id("left"))).toBeNull();
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ward escort", cadNumber: "" }));
+  });
+
+  it("keeps a CAD number typed for a family member, and still refuses a placeholder", () => {
+    const onSubmit = vi.fn();
+    render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);
+    fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Family or carer" } });
+    fireEvent.click(screen.getByTestId(id("escort", "no")));
+    fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
+    fireEvent.change(screen.getByTestId(id("cad")), { target: { value: "TBC" } });
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByTestId(id("cad")), { target: { value: " CAD-77 " } });
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ provider: "Family or carer", cadNumber: "CAD-77" }),
+    );
+  });
+
+  it("Save pressed early moves to the first answer still to give", () => {
+    const onSubmit = vi.fn();
+    render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(screen.getByTestId(id("provider"))).toHaveFocus();
   });
 });

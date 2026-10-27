@@ -123,7 +123,11 @@ export function reducePlacementEvent(
             a.id !== source?.id,
         )
       ) {
-        return reject(state, event, "This patient already holds a bed or occupies a ward; use a recorded transfer.");
+        return reject(
+          state,
+          event,
+          "This patient already has a bed pulled or occupies a ward; use a recorded transfer.",
+        );
       }
       if (movement.admissionId !== undefined) {
         const held = state.admissions.find((admission) => admission.id === movement.admissionId);
@@ -131,7 +135,7 @@ export function reducePlacementEvent(
           return reject(
             state,
             event,
-            `movement ${movement.id} points at admission ${movement.admissionId}, which is not a bed held at ${event.unitId}; it cannot be restored or pulled again`,
+            `movement ${movement.id} points at admission ${movement.admissionId}, which is not a bed pulled at ${event.unitId}; it cannot be restored or pulled again`,
           );
         }
         const restoreUnit = findUnit(state, event.unitId);
@@ -363,7 +367,7 @@ export function reducePlacementEvent(
         observation: movement.observation,
         // Carried with the level, so the first change on this admission still needs the editing
         // token (Audit F2, Option A) rather than reading as a record with no history.
-        ...(movement.observationChanges === undefined ? {} : { observationChanges: movement.observationChanges }),
+        ...(movement.observationChanges === undefined ? {} : { observationChanges: [...movement.observationChanges] }),
         // A high-acuity place, copied from the movement, where the referring clinician marked it
         // (owner ruling). Never derived from the observation level.
         highAcuity: movement.highAcuity,
@@ -495,7 +499,7 @@ export function reducePlacementEvent(
         return reject(state, event, `RELEASE_PULL reason must be chosen from RELEASE_PULL_REASONS`);
       }
       if (!movement.acceptedUnitId) {
-        return reject(state, event, `movement ${movement.id} has no accepted unit holding a bed`);
+        return reject(state, event, `movement ${movement.id} has no accepted unit with a bed pulled`);
       }
       const unit = findUnit(state, movement.acceptedUnitId);
       if (!unit) return reject(state, event, `no unit found for id ${movement.acceptedUnitId}`);
@@ -563,7 +567,7 @@ export function reducePlacementEvent(
         return reject(
           state,
           event,
-          `movement ${movement.id} was not stopped by STOP_TRANSPORT and has no examination-revoked hold, so there is no held bed to release this way`,
+          `movement ${movement.id} was not stopped by STOP_TRANSPORT and has no examination-revoked hold, so there is no pulled bed to release this way`,
         );
       }
       // A stopped journey or revoked-exam hold holds a bed until explicitly released.
@@ -573,7 +577,7 @@ export function reducePlacementEvent(
         movement.blocker === STAGE_TRANSITION_BLOCKERS.transportStoppedAwaitingRelease ||
         movement.blocker === STAGE_TRANSITION_BLOCKERS.examinationRevokedAwaitingRelease;
       if (!heldBedOutstanding) {
-        return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
+        return reject(state, event, `movement ${movement.id} has no bed pulled — it may already have been released`);
       }
       // Claim-not-proof, as RELEASE_PULL and CANCEL_TRANSPORT. A coordinator or ed caller may act
       // regardless.
@@ -581,7 +585,7 @@ export function reducePlacementEvent(
         return reject(
           state,
           event,
-          `RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
+          `RELEASE_HELD_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}`,
         );
       }
       const withoutHeldBed = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
@@ -630,13 +634,13 @@ export function reducePlacementEvent(
       // A diverted journey stays open until this release closes it, so the closure is the
       // released marker; a seeded journey with no `admissionId` still holds its bed by stage.
       if (movement.closure !== undefined || !movementHoldsBedByStage(movement)) {
-        return reject(state, event, `movement ${movement.id} holds no bed — it may already have been released`);
+        return reject(state, event, `movement ${movement.id} has no bed pulled — it may already have been released`);
       }
       if (event.role === "ward" && event.actingUnitId !== movement.acceptedUnitId) {
         return reject(
           state,
           event,
-          `RELEASE_DIVERTED_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is held at ${movement.acceptedUnitId}`,
+          `RELEASE_DIVERTED_BED was raised acting as unit ${event.actingUnitId} but movement ${movement.id}'s bed is pulled at ${movement.acceptedUnitId}`,
         );
       }
       const withoutHeldBed = withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, event.now), movement);
@@ -721,7 +725,7 @@ export function reducePlacementEvent(
         return reject(
           state,
           event,
-          `cannot step movement ${movement.id} back before ${stageCopy.pulled.label}: its bed is held by its stage alone, so the hold would be lost. Step back no further than ${stageCopy.pulled.label}, or release the bed`,
+          `cannot step movement ${movement.id} back before ${stageCopy.pulled.label}: its bed is pulled by its stage alone, so the pull would be lost. Step back no further than ${stageCopy.pulled.label}, or release the bed`,
         );
       }
       // Touch nothing else (F3, ruling E: "does not release the bed / does not cancel the

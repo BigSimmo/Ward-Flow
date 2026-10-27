@@ -287,7 +287,12 @@
   background: var(--wf-hover);
 }
 
+/* The whole row is the target (the ::after below); A1K-06 (WCAG 2.5.8) also keeps the name itself
+   at least 24 px tall. */
 .teamRowLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   text-decoration: none;

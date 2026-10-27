@@ -99,8 +99,8 @@ describe("WardNotificationCenter DOM Component", () => {
     // Shows buzzes for Ward Alpha
     expect(screen.getByText("Please review pending discharges immediately")).toBeInTheDocument();
     expect(screen.getByText("Capacity refresh requested")).toBeInTheDocument();
-    // Role displayed as State Bed Flow Coordinator
-    expect(screen.getAllByText("State Bed Flow Coordinator")).toHaveLength(2);
+    // Role displayed as Bed coordinator
+    expect(screen.getAllByText("Bed coordinator")).toHaveLength(2);
     // Urgent is said on the urgent buzz's own row, and that row comes first
     const rows = screen.getAllByRole("listitem");
     expect(rows[0]).toHaveTextContent("Please review pending discharges immediately");

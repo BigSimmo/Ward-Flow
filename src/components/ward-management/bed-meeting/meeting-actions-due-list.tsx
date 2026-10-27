@@ -6,7 +6,6 @@ import { Button, Card, CardBody, CardHead, StatusGlyph } from "@/components/wf";
 
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useWardFlowClock } from "../ward-flow-provider";
-import { useWardRaise } from "../ward-flow-raise";
 import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import { DONE_PAUSE_MS } from "../ward-operational-defaults";
 import {
@@ -16,6 +15,7 @@ import {
   type BedMeetingSubject,
 } from "./bed-meeting-actions";
 import styles from "./meeting-actions-due.module.css";
+import type { MarkBedMeetingActionDone } from "./use-bed-meeting-done";
 
 /**
  * The open bed meeting actions `MeetingActionsDue` found for this desk, each with a Mark done
@@ -26,12 +26,13 @@ export function DueActions({
   subject,
   desk,
   actions,
+  onMarkDone,
 }: {
   subject: BedMeetingSubject;
   desk: BedMeetingActionOwner | "bed_manager";
   actions: readonly BedMeetingAction[];
+  onMarkDone: MarkBedMeetingActionDone;
 }) {
-  const raise = useWardRaise(desk);
   const now = useWardFlowClock();
   // A double click must close one action only: the list shifts up as one closes, so a second click
   // would land on the next action (Audit 7 NB-02). One Mark done per short pause.
@@ -70,11 +71,11 @@ export function DueActions({
                   // The second click of a double click is never a fresh Mark done.
                   if (event.detail > 1 || !claimDone()) return;
                   markDone(index);
-                  raise("COMPLETE_BED_MEETING_ACTION", {
+                  onMarkDone(
                     subject,
-                    action: action.kind,
-                    ...(desk === "ward" || desk === "bed_manager" ? { actingUnitId: action.ownerUnitId } : {}),
-                  });
+                    action.kind,
+                    desk === "ward" || desk === "bed_manager" ? action.ownerUnitId : undefined,
+                  );
                 }}
                 aria-label={`Mark done: ${bedMeetingActionLabel(action.kind)}`}
                 data-testid="meeting-action-mark-done"

@@ -84,7 +84,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
           <div className={styles.suburbResultPanel}>
             <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>One team covers {found.suburb}.</p>
-              <span className={`${styles.statusPillBadge} ${styles.good}`}>Single Team Catchment</span>
+              <span className={`${styles.statusPillBadge} ${styles.good}`}>Single team catchment</span>
             </div>
             <ul className={styles.suburbReadings}>
               {found.answers.map((answer) => (
@@ -101,7 +101,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
           <div className={styles.suburbResultPanel}>
             <div className={styles.suburbVerdictRow}>
               <p className={styles.suburbVerdict}>{found.suburb} has an answer, and the row it came from is marked.</p>
-              <span className={`${styles.statusPillBadge} ${styles.warn}`}>Marked Row</span>
+              <span className={`${styles.statusPillBadge} ${styles.warn}`}>Marked row</span>
             </div>
             <ul className={styles.suburbReadings}>
               {found.answers.map((answer) => (
@@ -125,7 +125,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
                 {found.suburb} has two readings that disagree
                 {found.withinOneDocument ? ", in the same document" : ""}.
               </p>
-              <span className={`${styles.statusPillBadge} ${styles.danger}`}>Contested Readings</span>
+              <span className={`${styles.statusPillBadge} ${styles.danger}`}>Contested readings</span>
             </div>
             <ul className={styles.suburbReadings}>
               {found.answers.map((answer, index) => (
@@ -149,7 +149,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
             <div className={styles.suburbVerdictRow}>
               {/* 🔴 NOT "unknown". The place is real and the mapping is missing — something to FILL IN. */}
               <p className={styles.suburbVerdict}>No team is recorded for {found.suburb ?? found.query}.</p>
-              <span className={`${styles.statusPillBadge} ${styles.warn}`}>No Clinic Recorded</span>
+              <span className={`${styles.statusPillBadge} ${styles.warn}`}>No clinic recorded</span>
             </div>
             <p className={styles.suburbNote}>{found.note}</p>
             {/* ⚠️ **WHAT TO DO, NOT WHAT THE NOTE ALREADY SAID.** An earlier draft restated the source
@@ -168,7 +168,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
             <div className={styles.suburbVerdictRow}>
               {/* 🔴 NOT "unknown" either, and not the same as the case above — something to CHECK. */}
               <p className={styles.suburbVerdict}>{found.query} is not in the source table.</p>
-              <span className={`${styles.statusPillBadge} ${styles.danger}`}>Not In Catchment Table</span>
+              <span className={`${styles.statusPillBadge} ${styles.danger}`}>Not in catchment table</span>
             </div>
             <p className={styles.suburbNote}>{found.note}</p>
             <p className={styles.suburbNote}>
@@ -217,7 +217,7 @@ export function SuburbTeamPanel() {
             </p>
           </div>
         </div>
-        <span className={styles.badgePill}>Community Catchment Directory</span>
+        <span className={styles.badgePill}>Community catchment directory</span>
       </div>
 
       <p className={styles.suburbQualifier} data-testid="ward-suburb-team-qualifier">

@@ -230,7 +230,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
 
       const card = screen.getByTestId("ward-shortlist-transit-card");
       expect(card).toBeInTheDocument();
-      expect(card).toHaveTextContent(/Inbound Transit & Arrival Telemetry/i);
+      expect(card).toHaveTextContent(/Transport and arrival/i);
       expect(screen.getByTestId("ward-shortlist-transit-accepting-ward")).toHaveTextContent(allUnits()[0]?.name ?? "");
       expect(screen.getByTestId("ward-shortlist-transit-mode")).toHaveTextContent("St John Ambulance");
       expect(screen.getByTestId("ward-shortlist-transit-tracking")).toHaveTextContent("SJA-7788");

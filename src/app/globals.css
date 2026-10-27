@@ -2016,3 +2016,21 @@ html.theme-transitioning *:after {
     outline-offset: -3px;
   }
 }
+
+/* Mouse wheel on desktop (Josh, 27 Oct 2026: "my mouse is not scrolling down" on some pages).
+   Many desktop pages give a side panel or list its own scroll with `overscroll-behavior: contain`.
+   Chromium then swallows every wheel turn over that panel once it is at its end, and over a panel
+   with nothing to scroll the wheel did nothing at all, so the page looked stuck. Measured at
+   1440x900 on Hub, Alerts, Waiting, ED, Referrals, Out of area, Search, Statistics, Wards and
+   Community. With a mouse, a panel still scrolls first and the wheel then carries on to the page,
+   as on any web page. Phones and touch screens keep the containment (no fine pointer). Popups,
+   menus and dialogs keep theirs too; an open sheet already holds the page still. */
+@media (hover: hover) and (pointer: fine) {
+  [data-wf-scroller]
+    :not(
+      :is([role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"], [popover]),
+      :is([role="dialog"], [aria-modal="true"], [role="menu"], [role="listbox"], [popover]) *
+    ) {
+    overscroll-behavior-y: auto !important;
+  }
+}

@@ -292,10 +292,10 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
                                 setActiveDrawer("pxDrawer");
                               }}
                             >
-                              View dossier
+                              View record
                             </button>
                           ) : (
-                            <span className={styles.footnote}>No dossier without a person on file.</span>
+                            <span className={styles.footnote}>No record without a person on file.</span>
                           )}
                         </td>
                       </tr>

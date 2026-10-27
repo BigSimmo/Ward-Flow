@@ -8,7 +8,7 @@ import {
   packRequired,
 } from "@/components/ward-management/officer/officer-forms-pack";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -96,5 +96,40 @@ describe("transport forms pack", () => {
     expect(radios.map((radio) => radio.textContent)).toEqual(["Form 1A", "Form 1B", "Form 3D"]);
     fireEvent.keyDown(within(dialog).getByRole("radiogroup"), { key: "ArrowRight" });
     expect(radios.filter((radio) => radio.getAttribute("aria-checked") === "true")).toHaveLength(1);
+  });
+
+  it("says why Add to pack waits, and keeps the dialog open with the refusal when the upload is refused", async () => {
+    function Refusing() {
+      const flow = useWardFlow();
+      return (
+        <WardFlowOverride
+          value={{
+            ...flow,
+            dispatch: () => ({ commandId: "c-refused", status: "refused", message: "Synthetic upload refused" }),
+          }}
+        >
+          <OfficerScreen />
+        </WardFlowOverride>
+      );
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Refusing />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-officer-select-WF-005"));
+    const pack = screen.getByTestId("ward-officer-forms-pack-WF-005");
+    fireEvent.click(within(pack).getByRole("button", { name: /^Upload transport order/ }));
+    const dialog = screen.getByRole("dialog", { name: /Upload Form 4A/ });
+    // Form-friction 230: the reason prints under the button, not only in a tooltip.
+    expect(within(dialog).getByText("Choose a file first.")).toBeVisible();
+    const file = new File(["x"], "form-4a.pdf", { type: "application/pdf" });
+    fireEvent.change(within(dialog).getByLabelText("Form file"), { target: { files: [file] } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add to pack" }));
+    // Form-friction 231: a refused upload does not close the dialog silently.
+    expect(await within(dialog).findByTestId("ward-officer-pack-upload-error")).toHaveTextContent(
+      "Synthetic upload refused",
+    );
+    expect(screen.getByRole("dialog", { name: /Upload Form 4A/ })).toBeInTheDocument();
   });
 });

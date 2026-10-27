@@ -154,4 +154,27 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
       "the button must disappear once this referral already has a linked movement",
     ).toHaveLength(0);
   });
+
+  it("fills cohort and urgency from the referral, leaves legal status blank, and Close discards the draft", () => {
+    renderEdScreen();
+    fireEvent.click(screen.getByRole("button", { name: "receive referral" }));
+    fireEvent.click(screen.getByRole("button", { name: "mark arrived" }));
+    fireEvent.click(screen.getAllByTestId(/^ward-ed-inbox-raise-/)[0]!);
+
+    const value = (testId: string) => (screen.getByTestId(testId) as HTMLSelectElement).value;
+    expect(value("ward-ed-referral-cohort")).toBe("Adult");
+    expect(value("ward-ed-referral-urgency")).toBe("2");
+    // Never filled in for the clinician.
+    expect(value("ward-ed-referral-legal-status")).toBe("");
+    expect(value("ward-ed-referral-security")).toBe("");
+
+    // Still editable, and an answer given here does not survive Close.
+    fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Secure" } });
+    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-status"), { target: { value: "Voluntary" } });
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    fireEvent.click(screen.getAllByTestId(/^ward-ed-inbox-raise-/)[0]!);
+    expect(value("ward-ed-referral-security")).toBe("");
+    expect(value("ward-ed-referral-legal-status")).toBe("");
+    expect(value("ward-ed-referral-cohort")).toBe("Adult");
+  });
 });

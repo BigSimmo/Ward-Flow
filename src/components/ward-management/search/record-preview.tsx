@@ -39,9 +39,9 @@ function settingLabel(setting: string): string {
   return setting === "transit"
     ? "In-Transit"
     : setting === "ed"
-      ? "Emergency Dept"
+      ? "Emergency department"
       : setting === "inpatient"
-        ? "Inpatient Ward"
+        ? "Inpatient ward"
         : "Location not recorded";
 }
 
@@ -365,7 +365,7 @@ export function RecordPreview({
       if (isComm) {
         presenceStatus = "community";
         bannerTitle = "NOT IN HOSPITAL · COMMUNITY OUTPATIENT";
-        bannerTag = "Community Case";
+        bannerTag = "Community case";
         disposition = "Community management";
         targetWard = "Not admitted";
         currentStage = "Outpatient";
@@ -374,7 +374,7 @@ export function RecordPreview({
       } else {
         presenceStatus = "live";
         bannerTitle = "On this board now";
-        bannerTag = "Emergency Dept";
+        bannerTag = "Emergency department";
         waitTimeHours = Math.max(0, (now - referral.raisedAt) / 60);
         disposition = "Unplaced";
         targetWard = "Pending allocation";
@@ -467,7 +467,7 @@ export function RecordPreview({
                 <span className={styles.statItemValue}>{statutory.req}</span>
               </div>
               <div className={styles.statItem}>
-                <span className={styles.statItemLabel}>Hospital Wait Time</span>
+                <span className={styles.statItemLabel}>Hospital wait time</span>
                 <span className={`${styles.statItemValue} ${styles.statItemValueStrong}`}>
                   {waitTimeHours > 0 ? `${waitTimeHours.toFixed(1)}h` : "None (Not admitted)"}{" "}
                   {isBreaching ? `(waiting ${LONG_WAIT_TEXT})` : ""}
@@ -476,12 +476,12 @@ export function RecordPreview({
             </div>
           </div>
 
-          {/* 4. Placement & Movement Trajectory */}
+          {/* 4. Placement & movement trajectory */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Placement & Movement Trajectory</span>
+            <span className={styles.sectionTitle}>Placement & movement trajectory</span>
             <div className={styles.trajectoryGrid}>
               <div className={styles.trajBox}>
-                <span className={styles.trajLabel}>Originating Site</span>
+                <span className={styles.trajLabel}>Originating site</span>
                 <span className={styles.trajValue}>{originSite}</span>
               </div>
               <div className={styles.trajBox}>
@@ -489,11 +489,11 @@ export function RecordPreview({
                 <span className={`${styles.trajValue} ${styles.strong}`}>{targetWard}</span>
               </div>
               <div className={styles.trajBox}>
-                <span className={styles.trajLabel}>Current Stage</span>
+                <span className={styles.trajLabel}>Current stage</span>
                 <span className={styles.trajValue}>{currentStage}</span>
               </div>
               <div className={styles.trajBox}>
-                <span className={styles.trajLabel}>Conveyance & Escort</span>
+                <span className={styles.trajLabel}>Conveyance & escort</span>
                 <span className={styles.trajValue}>
                   {transportStatus}
                   {nurseEscort ? " · Nurse escort" : ""}
@@ -563,27 +563,27 @@ export function RecordPreview({
             </section>
           </div>
 
-          {/* 5. Clinical Presentation & Care Summary */}
+          {/* 5. Clinical presentation & care summary */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Clinical Presentation & Care Summary</span>
+            <span className={styles.sectionTitle}>Clinical presentation & care summary</span>
             <div className={styles.clinicalNoteCard}>{NO_CLINICAL_NOTE}</div>
           </div>
 
-          {/* Previous Presentations & History (Image 4) */}
+          {/* Previous presentations & history (Image 4) */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Previous Presentations & History</span>
+            <span className={styles.sectionTitle}>Previous presentations & history</span>
             <div className={styles.historyCard}>
               <div className={styles.historyGrid}>
                 <div className={styles.historyItem}>
-                  <span className={styles.historyLabel}>Prior Admissions (12m)</span>
+                  <span className={styles.historyLabel}>Prior admissions (12m)</span>
                   <span className={styles.historyVal}>{history.priorAdmissions}</span>
                 </div>
                 <div className={styles.historyItem}>
-                  <span className={styles.historyLabel}>Last Discharge</span>
+                  <span className={styles.historyLabel}>Last discharge</span>
                   <span className={styles.historyVal}>{history.lastDischarge}</span>
                 </div>
                 <div className={styles.historyItem}>
-                  <span className={styles.historyLabel}>Community Key Worker</span>
+                  <span className={styles.historyLabel}>Community key worker</span>
                   <span className={styles.historyVal}>{history.communityKeyWorker}</span>
                 </div>
                 <div className={styles.historyItem}>
@@ -594,9 +594,9 @@ export function RecordPreview({
             </div>
           </div>
 
-          {/* 6. Clinical Audit Milestones (Connected Vertical Timeline) */}
+          {/* 6. Clinical Audit milestones (Connected Vertical Timeline) */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Audit Milestones</span>
+            <span className={styles.sectionTitle}>Audit milestones</span>
             {/* Only the time the record itself opened. Two further entries at fixed times ("10:42
                 Operational state verified by Bed Coordinator", "08:15 Transport logistics update") and
                 a fixed 06:30 on this one used to be typed in (25 September 2026 audit, A5). */}
@@ -634,7 +634,7 @@ export function RecordPreview({
               <>
                 {linkedMovement ? (
                   <Link href={movementHref(linkedMovement.id)} className={styles.btnPrimary}>
-                    <span>View Movement</span>
+                    <span>View movement</span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
@@ -645,7 +645,7 @@ export function RecordPreview({
                     className={styles.btnPrimary}
                     data-testid="ward-patient-preview-request-bed"
                   >
-                    <span>Request Bed</span>
+                    <span>Request bed</span>
                   </Link>
                 )}
                 <button
@@ -654,7 +654,7 @@ export function RecordPreview({
                   title="Bed allocation is not recorded from this preview."
                   onClick={() => setActionNotice("Bed allocation is not recorded from this preview.")}
                 >
-                  Bed Allocation
+                  Bed allocation
                 </button>
                 {linkedMovement ? (
                   <Link
@@ -662,7 +662,7 @@ export function RecordPreview({
                     className={styles.btnSecondary}
                     data-testid="ward-patient-preview-transport-order"
                   >
-                    Transport Order
+                    Transport order
                   </Link>
                 ) : (
                   <button
@@ -673,7 +673,7 @@ export function RecordPreview({
                       setActionNotice("Transport is not recorded yet — open a movement to book transport.")
                     }
                   >
-                    Transport Order
+                    Transport order
                   </button>
                 )}
               </>
@@ -684,7 +684,7 @@ export function RecordPreview({
                   className={styles.btnPrimary}
                   data-testid="ward-patient-preview-create-referral"
                 >
-                  Create Referral
+                  Create referral
                 </Link>
                 <button
                   type="button"
@@ -692,7 +692,7 @@ export function RecordPreview({
                   title="Past admission history is not recorded in this prototype."
                   onClick={() => setActionNotice("Past admission history is not recorded yet.")}
                 >
-                  Past Admissions
+                  Past admissions
                 </button>
                 <button
                   type="button"
@@ -700,7 +700,7 @@ export function RecordPreview({
                   title="Contact logging is not recorded from this preview."
                   onClick={() => setActionNotice("Contact with the team is not recorded yet.")}
                 >
-                  Contact Team
+                  Contact team
                 </button>
               </>
             )}
@@ -728,7 +728,7 @@ export function RecordPreview({
         : isComm
           ? "NOT IN HOSPITAL · COMMUNITY REFERRAL"
           : "QUEUED REFERRAL · AWAITING ACCEPTANCE";
-    const bannerTag = isComm ? "Community Referral" : "Acute Referral";
+    const bannerTag = isComm ? "Community referral" : "Acute referral";
     const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : "Unidentified referral";
     const subjectSubtitle = linkedPatient
       ? `${linkedPatient.umrn} · ${ageText(linkedPatient, activeDate)} · ${linkedPatient.sex ?? "Sex unrecorded"} · DOB ${linkedPatient.dateOfBirth}`
@@ -763,15 +763,15 @@ export function RecordPreview({
           {/* 2. Quick Clinical Metrics Strip */}
           <div className={styles.quickMetricsStrip}>
             <div className={styles.quickMetricCard}>
-              <span className={styles.metricLabel}>Origin Site</span>
+              <span className={styles.metricLabel}>Origin site</span>
               <span className={styles.metricVal}>{referral.originSiteCode}</span>
             </div>
             <div className={styles.quickMetricCard}>
-              <span className={styles.metricLabel}>Home Region</span>
+              <span className={styles.metricLabel}>Home region</span>
               <span className={styles.metricVal}>{referral.homeRegion}</span>
             </div>
             <div className={styles.quickMetricCard}>
-              <span className={styles.metricLabel}>Age Cohort</span>
+              <span className={styles.metricLabel}>Age cohort</span>
               <span className={styles.metricVal}>{referral.ageBand}</span>
             </div>
             <div className={styles.quickMetricCard}>
@@ -780,9 +780,9 @@ export function RecordPreview({
             </div>
           </div>
 
-          {/* 3. Destinations Addressed */}
+          {/* 3. Destinations addressed */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Destinations Addressed</span>
+            <span className={styles.sectionTitle}>Destinations addressed</span>
             <p className={styles.statutoryReq}>{summary.declineNote}</p>
             <ul className={styles.timeline}>
               {referral.destinations.map((dest, idx) => {
@@ -797,9 +797,9 @@ export function RecordPreview({
             </ul>
           </div>
 
-          {/* 4. Linked Person Tie */}
+          {/* 4. Linked person Tie */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Linked Person</span>
+            <span className={styles.sectionTitle}>Linked person</span>
             {linkedPatient ? (
               <p className={styles.tieLink}>
                 <Link href={patientHref(linkedPatient.id)}>
@@ -812,10 +812,10 @@ export function RecordPreview({
             )}
           </div>
 
-          {/* 5. Linked Movement Tie */}
+          {/* 5. Linked movement Tie */}
           {linkedMovement && (
             <div className={styles.dossierSection}>
-              <span className={styles.sectionTitle}>Linked Movement</span>
+              <span className={styles.sectionTitle}>Linked movement</span>
               {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
               <p className={styles.tieLink}>
                 <Link href={movementHref(linkedMovement.id)}>{subjectName}</Link> — open movement record
@@ -823,21 +823,21 @@ export function RecordPreview({
             </div>
           )}
 
-          {/* Previous Presentations & History (Image 4) */}
+          {/* Previous presentations & history (Image 4) */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Previous Presentations & History</span>
+            <span className={styles.sectionTitle}>Previous presentations & history</span>
             <div className={styles.historyCard}>
               <div className={styles.historyGrid}>
                 <div className={styles.historyItem}>
-                  <span className={styles.historyLabel}>Prior Admissions (12m)</span>
+                  <span className={styles.historyLabel}>Prior admissions (12m)</span>
                   <span className={styles.historyVal}>{deriveClinicalHistory(linkedPatient).priorAdmissions}</span>
                 </div>
                 <div className={styles.historyItem}>
-                  <span className={styles.historyLabel}>Last Discharge</span>
+                  <span className={styles.historyLabel}>Last discharge</span>
                   <span className={styles.historyVal}>{deriveClinicalHistory(linkedPatient).lastDischarge}</span>
                 </div>
                 <div className={styles.historyItem}>
-                  <span className={styles.historyLabel}>Community Key Worker</span>
+                  <span className={styles.historyLabel}>Community key worker</span>
                   <span className={styles.historyVal}>{deriveClinicalHistory(linkedPatient).communityKeyWorker}</span>
                 </div>
                 <div className={styles.historyItem}>
@@ -848,9 +848,9 @@ export function RecordPreview({
             </div>
           </div>
 
-          {/* Audit Milestones (Connected Vertical Timeline) */}
+          {/* Audit milestones (Connected Vertical Timeline) */}
           <div className={styles.dossierSection}>
-            <span className={styles.sectionTitle}>Audit Milestones</span>
+            <span className={styles.sectionTitle}>Audit milestones</span>
             {/* Only the time the referral was raised; see the matching note in the person preview. */}
             <div className={styles.milestoneTimeline}>
               <div className={styles.timelineNode}>
@@ -868,7 +868,7 @@ export function RecordPreview({
           {/* 6. Coordinator Action Bar */}
           <div className={styles.dossierActionBar}>
             <Link href="/ward-flow/referrals" className={styles.btnPrimary}>
-              <span>Intake Board</span>
+              <span>Intake board</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -974,7 +974,7 @@ export function RecordPreview({
               <span className={styles.statItemValue}>{statutory.req}</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statItemLabel}>Hospital Wait Time</span>
+              <span className={styles.statItemLabel}>Hospital wait time</span>
               <span className={`${styles.statItemValue} ${styles.statItemValueStrong}`}>
                 {waitTimeHours > 0 ? `${waitTimeHours.toFixed(1)}h` : "None (Not admitted)"}{" "}
                 {isBreaching ? `(waiting ${LONG_WAIT_TEXT})` : ""}
@@ -983,12 +983,12 @@ export function RecordPreview({
           </div>
         </div>
 
-        {/* 4. Placement & Movement Trajectory */}
+        {/* 4. Placement & movement trajectory */}
         <div className={styles.dossierSection}>
-          <span className={styles.sectionTitle}>Placement & Movement Trajectory</span>
+          <span className={styles.sectionTitle}>Placement & movement trajectory</span>
           <div className={styles.trajectoryGrid}>
             <div className={styles.trajBox}>
-              <span className={styles.trajLabel}>Originating Site</span>
+              <span className={styles.trajLabel}>Originating site</span>
               <span className={styles.trajValue}>{originSite}</span>
             </div>
             <div className={styles.trajBox}>
@@ -996,11 +996,11 @@ export function RecordPreview({
               <span className={`${styles.trajValue} ${styles.strong}`}>{targetWard}</span>
             </div>
             <div className={styles.trajBox}>
-              <span className={styles.trajLabel}>Current Stage</span>
+              <span className={styles.trajLabel}>Current stage</span>
               <span className={styles.trajValue}>{currentStage}</span>
             </div>
             <div className={styles.trajBox}>
-              <span className={styles.trajLabel}>Conveyance & Escort</span>
+              <span className={styles.trajLabel}>Conveyance & escort</span>
               <span className={styles.trajValue}>
                 {transportStatus}
                 {nurseEscort ? " · Nurse escort" : ""}
@@ -1033,27 +1033,27 @@ export function RecordPreview({
           </section>
         </div>
 
-        {/* 5. Clinical Presentation & Care Summary */}
+        {/* 5. Clinical presentation & care summary */}
         <div className={styles.dossierSection}>
-          <span className={styles.sectionTitle}>Clinical Presentation & Care Summary</span>
+          <span className={styles.sectionTitle}>Clinical presentation & care summary</span>
           <div className={styles.clinicalNoteCard}>{NO_CLINICAL_NOTE}</div>
         </div>
 
-        {/* Previous Presentations & History (Image 4) */}
+        {/* Previous presentations & history (Image 4) */}
         <div className={styles.dossierSection}>
-          <span className={styles.sectionTitle}>Previous Presentations & History</span>
+          <span className={styles.sectionTitle}>Previous presentations & history</span>
           <div className={styles.historyCard}>
             <div className={styles.historyGrid}>
               <div className={styles.historyItem}>
-                <span className={styles.historyLabel}>Prior Admissions (12m)</span>
+                <span className={styles.historyLabel}>Prior admissions (12m)</span>
                 <span className={styles.historyVal}>{history.priorAdmissions}</span>
               </div>
               <div className={styles.historyItem}>
-                <span className={styles.historyLabel}>Last Discharge</span>
+                <span className={styles.historyLabel}>Last discharge</span>
                 <span className={styles.historyVal}>{history.lastDischarge}</span>
               </div>
               <div className={styles.historyItem}>
-                <span className={styles.historyLabel}>Community Key Worker</span>
+                <span className={styles.historyLabel}>Community key worker</span>
                 <span className={styles.historyVal}>{history.communityKeyWorker}</span>
               </div>
               <div className={styles.historyItem}>
@@ -1064,9 +1064,9 @@ export function RecordPreview({
           </div>
         </div>
 
-        {/* 6. Clinical Audit Milestones (Connected Vertical Timeline) */}
+        {/* 6. Clinical Audit milestones (Connected Vertical Timeline) */}
         <div className={styles.dossierSection}>
-          <span className={styles.sectionTitle}>Audit Milestones</span>
+          <span className={styles.sectionTitle}>Audit milestones</span>
           {/* Only the time the movement opened; see the matching note in the person preview. */}
           <div className={styles.milestoneTimeline}>
             <div className={styles.timelineNode}>
@@ -1097,7 +1097,7 @@ export function RecordPreview({
         {/* 7. Coordinator Action Bar */}
         <div className={styles.dossierActionBar}>
           <Link href={movementHref(movement.id)} className={styles.btnPrimary}>
-            <span>View Movement</span>
+            <span>View movement</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <polyline points="9 18 15 12 9 6" />
             </svg>
@@ -1108,14 +1108,14 @@ export function RecordPreview({
             title="Bed allocation is not recorded from this preview."
             onClick={() => setActionNotice("Bed allocation is not recorded from this preview.")}
           >
-            Bed Allocation
+            Bed allocation
           </button>
           <Link
             href={movementHref(movement.id)}
             className={styles.btnSecondary}
             data-testid="ward-patient-preview-movement-transport"
           >
-            Transport Order
+            Transport order
           </Link>
         </div>
       </div>

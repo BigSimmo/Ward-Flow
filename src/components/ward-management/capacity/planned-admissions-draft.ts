@@ -21,13 +21,14 @@ export type PlannedAdmissionDraft = {
   sex: RecordedSex;
   /** Picked for an initials-only booking; absent is not recorded. A linked patient's is the record's. */
   gender?: ReferralGender;
-  reason: PlannedAdmissionReason;
+  /** Blank ("") until chosen: a new booking opens with no reason, ward or legal status picked. */
+  reason: PlannedAdmissionReason | "";
   unitId: string;
   /** Days from today. Negative only when an overdue booking is being changed. */
   dayOffset: number;
   time: string;
   stayDays: string;
-  legalStatus: LegalStatus;
+  legalStatus: LegalStatus | "";
   /** Recorded for an initials-only booking; derived from the record for a linked patient. */
   ageBand: Cohort;
   /**
@@ -44,10 +45,10 @@ export type PlannedAdmissionDraft = {
  * reducer would refuse.
  */
 export function authorisationReasonNeeded(
-  legalStatus: LegalStatus,
+  legalStatus: LegalStatus | "",
   unit: Pick<Unit, "authorised"> | undefined,
 ): boolean {
-  return unit !== undefined && requiresAuthorisedDestination(legalStatus) && !unit.authorised;
+  return unit !== undefined && legalStatus !== "" && requiresAuthorisedDestination(legalStatus) && !unit.authorised;
 }
 
 /** Merges an edit into the open draft; with no draft open there is nothing to change. */

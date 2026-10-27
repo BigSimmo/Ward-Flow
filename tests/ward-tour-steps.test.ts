@@ -107,6 +107,7 @@ describe("what the desk can do", () => {
 
   it("lists only the screens the access table opens for the other desks", () => {
     expect(tourCanDo("executive").can).toEqual([
+      "Capacity, as counts with no patient names",
       "Statistics, as counts with no patient names",
       "Settings for your own account",
     ]);

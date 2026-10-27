@@ -641,7 +641,7 @@ describe("review follow-up: who may be booked and converted", () => {
       (admission) => admission.patientId !== null && admission.state === "occupied",
     )!.patientId!;
     const refused = book(seed, { initials: null, patientId: holder });
-    expect(lastRejection(refused)).toBe("This patient already holds a bed or occupies a ward.");
+    expect(lastRejection(refused)).toBe("This patient already has a bed pulled or occupies a ward.");
     expect(refused.plannedAdmissions).toBe(seed.plannedAdmissions);
   });
 

@@ -117,18 +117,18 @@ describe("Ward-Flow push destination", () => {
     }
   });
 
-  it("requires explicit direct-main confirmation even with optional guards skipped", (ctx) => {
+  it("blocks direct main pushes with no override, even with optional guards skipped", (ctx) => {
     ctx.skip(!HAS_WARD_FLOW_HISTORY, NEEDS_WARD_FLOW_HISTORY);
     const mainInput = `refs/heads/main ${head} refs/heads/main ${head}\n`;
     expect(directMainPushVerdict(mainInput, {} as unknown as NodeJS.ProcessEnv).ok).toBe(false);
     expect(run("https://github.com/BigSimmo/Ward-Flow.git", mainInput).status).toBe(1);
     expect(
       directMainPushVerdict(mainInput, { ...process.env, CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" }).ok,
-    ).toBe(true);
-    const pushConfirmed = run("https://github.com/BigSimmo/Ward-Flow.git", mainInput, {
+    ).toBe(false);
+    const pushWithOldVariable = run("https://github.com/BigSimmo/Ward-Flow.git", mainInput, {
       CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
     });
-    expect(pushConfirmed.status, `${pushConfirmed.stderr}\n${pushConfirmed.stdout}`).toBe(0);
+    expect(pushWithOldVariable.status, `${pushWithOldVariable.stderr}\n${pushWithOldVariable.stdout}`).toBe(1);
   });
 
   it("guards deletion of refs/heads/main as well", () => {

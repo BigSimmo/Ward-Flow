@@ -38,6 +38,12 @@ describe.each(["Australia/Sydney", "America/New_York"])("planned booking form on
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-planned-book"));
+    // WT-13: the patient, reason, ward and legal status open blank and are chosen.
+    for (const id of ["ward-planned-patient", "ward-planned-reason", "ward-planned-unit", "ward-planned-legal"]) {
+      const select = screen.getByTestId(id) as HTMLSelectElement;
+      const first = Array.from(select.options).find((option) => option.value !== "" && !option.disabled)!;
+      fireEvent.change(select, { target: { value: first.value } });
+    }
     fireEvent.change(screen.getByTestId("ward-planned-day"), { target: { value: String(offset) } });
     fireEvent.change(screen.getByTestId("ward-planned-time"), { target: { value: time } });
     fireEvent.click(screen.getByTestId("ward-planned-submit"));

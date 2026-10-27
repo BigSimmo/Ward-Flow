@@ -92,6 +92,12 @@ The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, *
 | **MHAS**          | Mental Health Advocacy Service.                                                      |
 | **GP**            | General practitioner.                                                                |
 | **BPSD**          | Behavioural and psychological symptoms of dementia.                                  |
+| **AWST**          | Australian Western Standard Time, Perth time. Every time in Ward Flow is in AWST.    |
+| **CAMHS**         | Child and Adolescent Mental Health Service.                                          |
+| **HDU**           | High dependency unit: a ward area for patients who need closer care.                 |
+| **KPI**           | Key performance indicator, such as the national seven-day follow-up measure.         |
+| **MHERL**         | Mental Health Emergency Response Line, the WA crisis phone line.                     |
+| **PIR**           | Post-incident review. The PIR chronology lists one patient's events in time order.   |
 | Sign in, sign out | Never log in or log out.                                                             |
 
 **Bed coordinator** is the coordinator's name on every screen (Josh, 26 October 2026, A19). Do not say

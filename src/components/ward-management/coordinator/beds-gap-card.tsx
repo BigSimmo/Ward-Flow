@@ -33,6 +33,13 @@ function GapFigure({ gap }: { gap: number }) {
   );
 }
 
+/**
+ * Written out rather than imported from `beds-forecast-panel.tsx`, so Home's first load does not pull
+ * in the panel's code (phone budget). `tests/ward-forecast-share.dom.test.tsx` checks it still
+ * matches `CAPACITY_FORECAST_HREF`.
+ */
+export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
+
 export function BedsGapCard({
   movements,
   units,
@@ -113,7 +120,12 @@ export function BedsGapCard({
           <b className={styles.mono}>{formatGap(totals.gap)}</b> across all four: {totals.waiting} waiting for{" "}
           {totals.bedsThatFit} beds of the right kind. Tomorrow likely{" "}
           <b className={styles.mono}>{gapRangeWord(tomorrow.total.likely)}</b>, range {gapRangeWord(tomorrow.total.low)}{" "}
-          to {gapRangeWord(tomorrow.total.high)}.
+          to {gapRangeWord(tomorrow.total.high)}.{" "}
+          {/* Forecast integration (Josh, 27 Oct 2026): straight to the full forecast on Capacity. */}
+          <Link href={HOME_FORECAST_HREF} className={styles.headLink} data-testid="home-beds-gap-forecast-link">
+            See tomorrow&apos;s forecast
+            <ChevronRight size={14} aria-hidden="true" />
+          </Link>
         </span>
       </p>
     </Card>

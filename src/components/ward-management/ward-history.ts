@@ -141,7 +141,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   END_COMMUNITY_TREATMENT_ORDER: { category: "patient", plainWording: "Community treatment order ended" },
   REQUEST_CAPACITY_REFRESH: { category: "neither", plainWording: "Ward capacity update requested" },
   EVALUATE_LEAVE_BED_WARNINGS: { category: "bed", plainWording: "Leave bed warning thresholds evaluated" },
-  CONFIRM_MORNING_ROLLUP: { category: "bed", plainWording: "Morning ward rollup confirmed" },
+  CONFIRM_MORNING_ROLLUP: { category: "bed", plainWording: "Morning bed numbers confirmed" },
   SEND_WARD_BUZZ: { category: "neither", plainWording: "Direct ward capacity inquiry sent" },
 
   // 2.6 Transport

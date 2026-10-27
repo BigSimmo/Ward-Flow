@@ -34,7 +34,8 @@
 
 /* v10 phone band: the hero runs square from edge to edge under the lean bar, then the page rises
    over its foot with the 22px round lip (the same rules as the shared Hero's band). */
-.phHero[data-band="on"] {
+.phHero[data-band="on"],
+.phHero[data-band="off"] {
   position: relative;
   margin-top: calc(-1 * var(--wf-band-top, 0px));
   margin-left: calc(-1 * var(--wf-band-left, 0px));
@@ -47,7 +48,8 @@
   box-shadow: none;
 }
 
-.phHero[data-band="on"]::after {
+.phHero[data-band="on"]::after,
+.phHero[data-band="off"]::after {
   position: absolute;
   right: 0;
   bottom: -1px;

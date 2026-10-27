@@ -16,6 +16,7 @@ import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
 import { verifyRuntimeRole } from "./portable-postgres.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { dropTestDatabase } from "./drop-test-database.test-support.mjs";
+import { withoutRecordDetail } from "./record-detail.mjs";
 
 const url = process.env.WARD_TEST_DATABASE_URL;
 if (url && !["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
@@ -159,8 +160,8 @@ test(
         "an account at its limit does not block a different account or invisible-record refusal",
         async () => {
           const colleague = { ...view, actorId: randomUUID() };
-          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: true });
-          assert.deepEqual((await store.logView(colleague, patientId, "patient")).body, { logged: false });
+          assert.equal((await store.logView(colleague, patientId, "patient")).body.logged, true);
+          assert.equal((await store.logView(colleague, patientId, "patient")).body.logged, false);
           assert.equal((await store.logView(colleague, "PT-SYN-INVISIBLE", "patient")).status, 404);
         },
       );
@@ -955,10 +956,18 @@ test(
       const { rows: tables } = await owner.query(
         "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
       );
-      assert.equal(tables.length, 14);
+      assert.equal(tables.length, 16);
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
+      // Migration 16: forecast snapshots are only added and read; a miss reason may be replaced.
+      await runtime.query("SELECT 1 FROM ward_flow.forecast_snapshots WHERE false");
+      await runtime.query("UPDATE ward_flow.forecast_miss_reasons SET reason='other' WHERE false");
+      await assert.rejects(runtime.query("DELETE FROM ward_flow.forecast_snapshots WHERE false"), /permission denied/);
+      await assert.rejects(
+        runtime.query("UPDATE ward_flow.forecast_snapshots SET ready_gap_now=0 WHERE false"),
+        /permission denied/,
+      );
       const store = createWorkspaceStore(runtime, { workspaceId: randomUUID(), engine, demoEvents: true });
       await store.ready();
       await store.read(actor);
@@ -1080,10 +1089,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-012-foreign-key-indexes.sql"), /not at migration 12/);
       await assert.rejects(rollBack("./infra/rollback-013-referral-record-views.sql"), /not at migration 13/);
       await assert.rejects(rollBack("./infra/rollback-014-archived-records.sql"), /not at migration 14/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 15);
+      await assert.rejects(rollBack("./infra/rollback-015-list-and-tv-views.sql"), /not at migration 15/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 16);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-016-forecast-history.sql", 15],
         ["./infra/rollback-015-list-and-tv-views.sql", 14],
         ["./infra/rollback-014-archived-records.sql", 13],
         ["./infra/rollback-013-referral-record-views.sql", 12],
@@ -1110,7 +1121,8 @@ test(
         if (version === 9) {
           // Every record is back in the workspace row, exactly as it was, and the rows table is gone.
           const { rows } = await owner.query("SELECT payload FROM ward_flow.workspaces");
-          assert.deepEqual(rows[0].payload, beforeRecordsRollback);
+          // H-0731: a read sends the workspace without the record detail.
+          assert.deepEqual(withoutRecordDetail(rows[0].payload), beforeRecordsRollback);
           assert.equal((await owner.query("SELECT to_regclass('ward_flow.workspace_records') AS t")).rows[0].t, null);
           // The cached version still says 10; the read finds the table gone and reads the version again.
           assert.deepEqual((await store.read(actor)).payload, beforeRecordsRollback);
@@ -1323,7 +1335,8 @@ test(
     // Its own database: the rollbacks below refuse once any test has logged a list read (015).
     const owner = new Pool({ connectionString: url, max: 1 });
     const database = `wardflow_roles_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    // Set whenever this test runs: `skip: !url` above.
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     await owner.query(`CREATE DATABASE ${database}`);
     const pool = new Pool({ connectionString: target.href, max: 4 });
@@ -1576,6 +1589,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-015-list-and-tv-views.sql", import.meta.url), "utf8"),
         );
@@ -2021,9 +2037,9 @@ test(
       const [patientId, otherPatientId] = initial.payload.state.patients.map((patient) => patient.id);
       const opened = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
       assert.equal(opened.status, 200);
-      assert.deepEqual(await opened.json(), { logged: true });
+      assert.equal((await opened.json()).logged, true);
       const repeated = await request(`${first}/record-access`, credential, { patientId, surface: "patient" });
-      assert.deepEqual(await repeated.json(), { logged: false });
+      assert.equal((await repeated.json()).logged, false);
       assert.equal(
         (await request(`${first}/record-access`, credential, { patientId: "not a record id", surface: "patient" }))
           .status,
@@ -2058,7 +2074,7 @@ test(
         patientId: referred,
         surface: "referral",
       });
-      assert.deepEqual(await referralOpened.json(), { logged: true });
+      assert.equal((await referralOpened.json()).logged, true);
       const leaving = token(actor);
       assert.equal((await request(first, leaving)).status, 200);
       const signedOut = await request(`${first}/sign-out`, leaving, {});
@@ -2968,7 +2984,8 @@ test(
     // Its own database: a logged list read makes rollback 015 refuse, which other tests run.
     const admin = new Pool({ connectionString: url, max: 1 });
     const database = `wardflow_list_${randomUUID().replaceAll("-", "")}`;
-    const target = new URL(url);
+    // Set whenever this test runs: `skip: !url` above.
+    const target = new URL(/** @type {string} */ (url));
     target.pathname = `/${database}`;
     await admin.query(`CREATE DATABASE ${database}`);
     const pool = new Pool({ connectionString: target.href, max: 4 });

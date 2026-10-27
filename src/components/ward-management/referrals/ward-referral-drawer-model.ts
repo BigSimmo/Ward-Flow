@@ -439,13 +439,8 @@ export function countOf(count: number, destination: DrawerCategory): string {
   return `${count} ${count === 1 ? place : places.toLowerCase() === "eds" ? "EDs" : places.toLowerCase()}`;
 }
 
-export const RISK_FLAG_LABELS: Record<keyof MockPatientProfile["riskFlags"], string> = {
-  aggression: "Aggression",
-  absconding: "Absent without leave",
-  medical: "Acute medical",
-  vulnerable: "Vulnerable adult",
-  suicide: "Suicide or self-harm",
-};
+// H-0821: one risk flag list for every screen.
+export { RISK_FLAG_LABELS } from "./referral-risk-flags";
 
 export const DESTINATION_LABELS: Record<DrawerCategory, string> = {
   ward: "Ward bed",
@@ -472,17 +467,15 @@ export function documentationNeeded(draft: DocumentationDraft): number {
     if (!draft.contactName.trim()) needed += 1;
     if (!draft.contactPhone.trim()) needed += 1;
   }
-  if (!draft.triage) needed += 1;
   if (!chartAnswered(draft, "medication")) needed += 1;
   if (!chartAnswered(draft, "observation")) needed += 1;
-  if (!draft.additional) needed += 1;
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other")) needed += 1;
   return needed;
 }
 
 /** Every answer the Documents step asks for, the denominator `documentationNeeded` counts against. */
 export function documentationItems(draft: DocumentationDraft): number {
-  return 5 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
+  return 3 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
 }
 
 /** The contact fields asked at Send (`contactFieldErrors` checks each one), counted as items. */

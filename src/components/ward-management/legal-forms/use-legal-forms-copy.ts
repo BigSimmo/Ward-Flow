@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useOptionalToast } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -15,7 +15,15 @@ export function useLegalFormsCopy() {
   const [copied, setCopied] = useState<string | null>(null);
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const copyAttemptRef = useRef(0);
+  const copiedTimerRef = useRef<number | null>(null);
   const toast = useOptionalToast();
+  // The "Copied" timer must not fire after the screen has gone.
+  useEffect(
+    () => () => {
+      if (copiedTimerRef.current !== null) window.clearTimeout(copiedTimerRef.current);
+    },
+    [],
+  );
   const copyText = async (key: string, text: string) => {
     const attempt = ++copyAttemptRef.current;
     setCopied(null);
@@ -24,7 +32,9 @@ export function useLegalFormsCopy() {
       await copyTextToClipboard(text);
       if (copyAttemptRef.current !== attempt) return;
       setCopied(key);
-      window.setTimeout(() => {
+      if (copiedTimerRef.current !== null) window.clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = window.setTimeout(() => {
+        copiedTimerRef.current = null;
         if (copyAttemptRef.current === attempt) setCopied(null);
       }, 2000);
     } catch {

@@ -56,8 +56,8 @@ describe("saved print provenance", () => {
     const text = document.querySelector('[id="handoverModal"]')?.textContent;
     expect(text).toContain(stamp);
     expect(text).toContain("Synthetic figures, not a record of any real day");
-    expect(text).toContain("Active Caseload");
-    expect(text).toContain("Waiting Referrals");
+    expect(text).toContain("active caseload");
+    expect(text).toContain("waiting referrals");
   });
 
   it("includes the year and AWST in the existing discharge print scope", () => {

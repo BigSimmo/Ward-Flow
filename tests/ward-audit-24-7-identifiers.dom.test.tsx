@@ -244,7 +244,7 @@ describe("community crisis card is labelled synthetic (CT-21)", () => {
   it("names the three-count print for what it holds", () => {
     renderModal("handover");
     const dialog = document.getElementById("handoverModal")!;
-    expect(dialog).toHaveTextContent("Print Catchment Counts");
+    expect(dialog).toHaveTextContent("Print catchment counts");
     expect(dialog).toHaveTextContent("Synthetic Team · Catchment counts");
     expect(dialog).not.toHaveTextContent("MDT Summary");
   });

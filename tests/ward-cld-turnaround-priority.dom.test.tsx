@@ -17,8 +17,8 @@ vi.mock("@/components/ward-management/shell/ward-feature-flag-store", () => ({
 }));
 
 const now = NOW_ANCHOR;
-const cldBadge = "Turnaround Candidate: Bed clearing via Criteria-Led Discharge";
-const departureBadge = "Turnaround Candidate: Bed clearing via confirmed departure";
+const cldBadge = "Turnaround candidate: bed clearing via criteria-led discharge";
+const departureBadge = "Turnaround candidate: bed clearing via confirmed departure";
 
 function fixture() {
   const state = seedWardFlowState();
@@ -144,7 +144,7 @@ describe("human turnaround preference control", () => {
   it("records only one referral preference on explicit click, then explains the duplicate", () => {
     const f = fixture();
     const events = renderFixture(f);
-    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(button).not.toHaveAttribute("aria-disabled", "true");
     expect(events).not.toHaveBeenCalled();
     fireEvent.click(button);
@@ -158,7 +158,7 @@ describe("human turnaround preference control", () => {
         source: "cld",
       },
     ]);
-    const recorded = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const recorded = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(recorded).toHaveAttribute("aria-disabled", "true");
     expect(recorded).toHaveAccessibleDescription("Turnaround preference already recorded for this unit.");
     fireEvent.click(recorded);
@@ -169,7 +169,7 @@ describe("human turnaround preference control", () => {
     const f = fixture();
     const events = renderFixture(f, { phone: true });
     expect(screen.getByTestId("ward-referral-match-panel")).toHaveAttribute("data-phone", "true");
-    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(button).not.toHaveAttribute("aria-disabled", "true");
     expect(events).not.toHaveBeenCalled();
     fireEvent.click(button);
@@ -181,16 +181,16 @@ describe("human turnaround preference control", () => {
       unitId: f.unitId,
       source: "cld",
     });
-    expect(screen.getByRole("button", { name: "Flag Turnaround Priority" })).toHaveAccessibleDescription(
+    expect(screen.getByRole("button", { name: "Flag turnaround priority" })).toHaveAccessibleDescription(
       "Turnaround preference already recorded for this unit.",
     );
-    expect(screen.getByText(/Turnaround preference recorded for Criteria-Led Discharge/)).toBeVisible();
+    expect(screen.getByText(/Turnaround preference recorded for criteria led discharge/)).toBeVisible();
   });
 
   it("shows turnaround refusals on the phone sheet without claiming success", () => {
     const f = fixture();
     renderFixture(f, { phone: true, reject: true });
-    fireEvent.click(screen.getByRole("button", { name: "Flag Turnaround Priority" }));
+    fireEvent.click(screen.getByRole("button", { name: "Flag turnaround priority" }));
     expect(screen.getByTestId("ward-turnaround-rejection")).toHaveTextContent(
       "Synthetic readiness changed; review the unit.",
     );
@@ -201,7 +201,7 @@ describe("human turnaround preference control", () => {
     const f = fixture();
     f.movement.referralId = f.referral.id;
     const events = renderFixture(f);
-    fireEvent.click(screen.getByRole("button", { name: "Flag Turnaround Priority" }));
+    fireEvent.click(screen.getByRole("button", { name: "Flag turnaround priority" }));
     expect(events.mock.calls.map(([event]) => event)).toEqual([
       {
         type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY",
@@ -220,7 +220,7 @@ describe("human turnaround preference control", () => {
     // The intake says Adult; the linked movement's recorded cohort still controls receiving gates.
     f.movement.cohort = "Youth";
     const events = renderFixture(f, { phone });
-    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAccessibleDescription(/cohort|adult|youth/i);
     fireEvent.click(button);
@@ -234,7 +234,7 @@ describe("human turnaround preference control", () => {
     if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
     Object.assign(arm, { withdrawnAt: now });
     const events = renderFixture(f, { phone });
-    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(button).toHaveAccessibleDescription(
       "Turnaround preference requires an open request for this receiving unit.",
     );
@@ -257,7 +257,7 @@ describe("human turnaround preference control", () => {
       state: "queued",
     });
     const events = renderFixture(f, { phone });
-    const button = screen.queryByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.queryByRole("button", { name: "Flag turnaround priority" });
     if (closed === "declined") {
       // A decided ward arm leaves only the ED presentation review, which has no bed-staging action.
       expect(button).not.toBeInTheDocument();
@@ -275,7 +275,7 @@ describe("human turnaround preference control", () => {
     const f = fixture();
     expect(f.referral.destinations[0]!.destination).not.toHaveProperty("unitId");
     const events = renderFixture(f, { phone });
-    fireEvent.click(screen.getByRole("button", { name: "Flag Turnaround Priority" }));
+    fireEvent.click(screen.getByRole("button", { name: "Flag turnaround priority" }));
     expect(events).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
         type: "FLAG_REFERRAL_TURNAROUND_PRIORITY",
@@ -283,7 +283,7 @@ describe("human turnaround preference control", () => {
         unitId: f.unitId,
       }),
     );
-    expect(screen.getByRole("button", { name: "Flag Turnaround Priority" })).toHaveAccessibleDescription(
+    expect(screen.getByRole("button", { name: "Flag turnaround priority" })).toHaveAccessibleDescription(
       "Turnaround preference already recorded for this unit.",
     );
   });
@@ -301,7 +301,7 @@ describe("human turnaround preference control", () => {
     expect(candidate).toHaveAttribute("data-kind", "nobed");
     expect(within(candidate).getByText("No locked bed free now")).toBeVisible();
     expect(within(candidate).queryByText("Count not current")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Flag Turnaround Priority" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("button", { name: "Flag turnaround priority" })).not.toHaveAttribute("aria-disabled");
   });
 
   it("allows a confirmed, unblocked occupied-bed departure with CLD disabled", () => {
@@ -317,7 +317,7 @@ describe("human turnaround preference control", () => {
       },
     ];
     const events = renderFixture(f);
-    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(button).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(button);
     expect(events).toHaveBeenCalledTimes(1);
@@ -333,7 +333,7 @@ describe("human turnaround preference control", () => {
     if (arm.destination.kind !== "psychiatric_ward") throw new Error("Expected synthetic ward fixture");
     arm.destination.secureBedNeeded = true;
     const events = renderFixture(f);
-    const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+    const button = screen.getByRole("button", { name: "Flag turnaround priority" });
     expect(button).not.toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("button", { name: /^Accept for/ })).toBeNull();
     fireEvent.click(button);
@@ -352,7 +352,7 @@ describe("human turnaround preference control", () => {
       f.state.units[0]!.authorised = false;
     }
     renderFixture(f);
-    expect(screen.queryByRole("button", { name: "Flag Turnaround Priority" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Flag turnaround priority" })).toBeNull();
   });
 
   it.each(["no criteria", "expired criteria", "CLD disabled", "placed movement"])(
@@ -368,7 +368,7 @@ describe("human turnaround preference control", () => {
         f.movement.acceptedUnitId = f.unitId;
       }
       const events = renderFixture(f);
-      const button = screen.getByRole("button", { name: "Flag Turnaround Priority" });
+      const button = screen.getByRole("button", { name: "Flag turnaround priority" });
       expect(button).toHaveAttribute("aria-disabled", "true");
       expect(button).toHaveAccessibleDescription(
         reason === "placed movement"
@@ -392,7 +392,7 @@ describe("human turnaround preference control", () => {
       },
     ];
     renderFixture(f, { reject: true });
-    fireEvent.click(screen.getByRole("button", { name: "Flag Turnaround Priority" }));
+    fireEvent.click(screen.getByRole("button", { name: "Flag turnaround priority" }));
     expect(screen.getByTestId("ward-turnaround-rejection")).toHaveTextContent(
       "Synthetic readiness changed; review the unit.",
     );

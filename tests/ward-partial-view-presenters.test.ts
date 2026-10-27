@@ -97,7 +97,7 @@ describe("response-only sender presentation", () => {
     expect(JSON.stringify(rows)).toBe(before);
   });
 
-  it("preserves longest-wait-first and urgency-tie ordering for mixed record and summary rows", () => {
+  it("preserves longest-wait-first and id-tie ordering for mixed record and summary rows (H-0330)", () => {
     const rows = [
       { ...referral, id: "RF-SYNTHETIC-RECENT", raisedAt: 200, urgency: 1 as const },
       { ...referral, id: "RF-SYNTHETIC-OLD", raisedAt: 100, urgency: 3 as const },

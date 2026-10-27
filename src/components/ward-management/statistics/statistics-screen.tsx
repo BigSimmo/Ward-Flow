@@ -199,6 +199,19 @@ function SortTh<K extends string>({
   );
 }
 
+/** H-0187: every site code in the ward table, spelt out once under it. */
+function SiteCodeKey({ sites }: { sites: readonly { code: string; name: string }[] }) {
+  const named = [...new Map(sites.map((site) => [site.code, site.name])).entries()].toSorted(([a], [b]) =>
+    a.localeCompare(b),
+  );
+  if (named.length === 0) return null;
+  return (
+    <p className={`${styles.sub} ${styles.muted}`} data-testid="ward-statistics-site-key">
+      Site codes: {named.map(([code, name]) => `${code} ${name}`).join(" · ")}
+    </p>
+  );
+}
+
 export function StatisticsScreen({
   admissions,
   referrals,
@@ -530,7 +543,13 @@ export function StatisticsScreen({
           section="hub"
           navTestId="ward-statistics-index"
           eyebrow={`Statistics · whole network · as at ${formatInstant(now)}`}
-          title={`${availableNow} ${availableNow === 1 ? "bed" : "beds"} ready now`}
+          // H-0887: the page heading names the page, not only the count.
+          title={
+            <>
+              <span className={styles.srOnly}>Statistics:</span> {availableNow} {availableNow === 1 ? "bed" : "beds"}{" "}
+              ready now
+            </>
+          }
           now={now}
           paused={live.paused}
           onTogglePause={live.togglePause}
@@ -810,6 +829,7 @@ export function StatisticsScreen({
                               {w.name}
                               <span className={styles.code} title={w.hospital}>
                                 {w.site}
+                                <span className={styles.srOnly}>, {w.hospital}</span>
                               </span>
                               {w.ready === 0 && w.occupancyRate === 1 ? (
                                 <Badge variant="plain" tone="neutral" size="sm">
@@ -841,6 +861,7 @@ export function StatisticsScreen({
                     </tbody>
                   </table>
                 </div>
+                <SiteCodeKey sites={visibleWards.map((w) => ({ code: w.site, name: w.hospital }))} />
                 <CardFoot
                   meta={
                     filteredAndSortedWards.length > PRESSURE_ROWS ? (

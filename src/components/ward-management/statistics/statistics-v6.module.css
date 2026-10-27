@@ -503,7 +503,11 @@
   font-weight: 500;
 }
 
+/* A1K-06 (WCAG 2.5.8): at least 24 px tall on desktop; touch screens get the full row below. */
 .footLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
   font-weight: 600;
   color: var(--wf-accent-ink);
   text-decoration: none;
@@ -527,8 +531,12 @@
   margin-top: var(--wf-s-1);
 }
 
-/* Row link inside a table: reads as the row's name, underlines on hover. */
+/* Row link inside a table: reads as the row's name, underlines on hover. A1K-06 (WCAG 2.5.8): at
+   least 24 px tall on desktop; a touch tablet gets the full row below (STATS-12). */
 .rowLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
   color: var(--wf-ink-1);
   font-weight: 500;
   text-decoration: none;

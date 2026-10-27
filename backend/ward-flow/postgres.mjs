@@ -21,6 +21,8 @@ import {
 } from "./config.mjs";
 import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
+import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
+import { forecastHistoryStore } from "./forecast-history.mjs";
 
 /**
  * One run of `task` at a time. A call while one is out joins it and asks for one more pass, so
@@ -249,7 +251,8 @@ export function createWorkspaceStore(
   function scopedParts(row, at, view, senderView, stamp) {
     const build = () => ({
       partial: senderView ? engine.partialViewForWorld(row.payload, view.access, at, view.grants) : undefined,
-      payload: view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload,
+      // H-0731: no desk is sent the detail no list shows; `logView` sends it for one opened record.
+      payload: withoutRecordDetail(view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload),
     });
     if (typeof stamp !== "string") return build();
     const now = engine.worldNow(row.payload, at);
@@ -1691,6 +1694,17 @@ export function createWorkspaceStore(
       return { notModified: false, snapshot: await read(actorId, view) };
     },
     viewer,
+    // Proposal 013 (migration 16): each desk's shared forecast snapshots and miss reasons.
+    ...forecastHistoryStore({
+      pool,
+      workspaceId,
+      schemaVersion,
+      worldGeneration: async () => {
+        const stored = await readWorld(pool);
+        return stored && engine.validWorld(stored.payload) ? stored.payload.state.worldGeneration : null;
+      },
+      forgetVersionOnMissing,
+    }),
     /**
      * History's archived records (migration 14): the newest `ARCHIVE_READ_LIMIT` of this world
      * generation, newest closed first, narrowed by the desk's place exactly as its live workspace is
@@ -2063,6 +2077,10 @@ export function createWorkspaceStore(
      * cannot write openings of records it never had, and one account logs at most
      * VIEW_RATE_LIMIT a minute. The table refuses every change and removal (migration 11), which
      * is why nothing goes in unchecked. Before 11 nothing is kept.
+     *
+     * H-0731: the reply then carries that patient's detail (`record-detail.mjs`), which no board
+     * holds, so a desk is only sent it for an opening the server has logged, now or in the last
+     * minute. Nothing is sent when the opening could not be logged.
      */
     async logView(view, patientId, surface) {
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
@@ -2084,7 +2102,7 @@ export function createWorkspaceStore(
           forgetVersionOnMissing(error);
           throw error;
         });
-      if (recent[0]?.repeated || recent[0]?.limited) return { status: 200, body: { logged: false } };
+      if (recent[0]?.limited && !recent[0]?.repeated) return { status: 200, body: { logged: false } };
       const stored = await readWorld(pool, "payload");
       if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
       const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
@@ -2097,6 +2115,16 @@ export function createWorkspaceStore(
               state.movements.some((movement) => movement.patientId === patientId)
             : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
       if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
+      // A movement page names its journey; the detail is its patient's.
+      const opened = state.patients.some((patient) => patient.id === patientId)
+        ? patientId
+        : state.movements.find((movement) => movement.id === patientId)?.patientId;
+      const patient = state.patients.find((candidate) => candidate.id === opened);
+      const sent = (logged) => ({
+        status: 200,
+        body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
+      });
+      if (recent[0]?.repeated) return sent(false);
       return transaction(async (client, loggedAt) => {
         // Serialize each account's check and insert. A separate lock statement gives the
         // following INSERT a fresh snapshot after an earlier opening commits.
@@ -2125,7 +2153,13 @@ export function createWorkspaceStore(
             forgetVersionOnMissing(error);
             throw error;
           });
-        return { status: 200, body: { logged: rowCount > 0 } };
+        // A repeat that committed meanwhile was logged within the minute too; the rate limit was not.
+        if (rowCount > 0) return sent(true);
+        const { rows: again } = await client.query(
+          "SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3 AND surface=$4 AND viewed_at > $5",
+          [workspaceId, view.actorId, patientId, surface, new Date(loggedAt.getTime() - VIEW_REPEAT_MS)],
+        );
+        return again.length ? sent(false) : { status: 200, body: { logged: false } };
       });
     },
     /**
@@ -2332,7 +2366,9 @@ export function createWorkspaceStore(
         event = { ...event, sendingTeamName: view.access.scope.teamName };
       }
       const supplied = event;
-      event = engine.storableCommand(event);
+      const storable = engine.storableCommand(event);
+      // H-0694, H-0179: a whole-network desk is recorded under its own role, never the screen's.
+      event = view?.access ? engine.deskCommand(view.access, storable) : storable;
       // Audit E-06: a guard refusal is a refusal with its reason, like any other, not a bad request.
       const privacyRefusal = engine.privacyRefusal(event);
       if (!privacyRefusal && !engine.validCommand(event)) throw new Error("invalid-command");
@@ -2345,6 +2381,8 @@ export function createWorkspaceStore(
       // Audit F-01: a receipt written before file content was dropped was fingerprinted with it, so
       // an older tab retrying that same command still matches its receipt.
       const legacyFingerprint = supplied === event ? fingerprint : fingerprintOf(supplied);
+      // A receipt written before the desk role was stamped holds the stored, unstamped command.
+      const unstampedFingerprint = storable === event ? fingerprint : fingerprintOf(storable);
       let queued = false;
       /** The archive count this save leaves, kept for later reads once the save commits (PS-11). */
       let archiveSettled = null;
@@ -2359,7 +2397,7 @@ export function createWorkspaceStore(
         if (previous.rowCount) {
           row.archived = await archivedCount(client, row.payload, row.revision);
           const receipt = previous.rows[0];
-          if (receipt.fingerprint !== fingerprint && receipt.fingerprint !== legacyFingerprint)
+          if (![fingerprint, legacyFingerprint, unstampedFingerprint].includes(receipt.fingerprint))
             return {
               status: 422,
               body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },

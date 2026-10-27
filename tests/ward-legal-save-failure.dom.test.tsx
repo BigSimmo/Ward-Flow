@@ -25,6 +25,8 @@ it("warns on a rejected legal-save completion while keeping the editable draft a
   );
   fireEvent.click(screen.getAllByRole("button", { name: "Record a form" })[0]!);
   const sheet = screen.getByTestId("ward-legal-record");
+  const type = within(sheet).getByLabelText("Form type") as HTMLSelectElement;
+  fireEvent.change(type, { target: { value: Array.from(type.options).find((option) => option.value !== "")!.value } });
   fireEvent.change(within(sheet).getByLabelText("Movement"), { target: { value: movement.id } });
   fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "10:00" } });
   const save = screen.getByTestId("ward-legal-forms-register-confirm");
@@ -36,9 +38,10 @@ it("warns on a rejected legal-save completion while keeping the editable draft a
       expect.objectContaining({ movementId: movement.id }),
     ),
   );
-  expect(
-    await screen.findByText("Save is not confirmed. Check the board. If your change is not there, make it again."),
-  ).toBeVisible();
+  const notConfirmed = "Save is not confirmed. Check the board. If your change is not there, make it again.";
+  // Form-friction 204: the answer is said inside the sheet, not only on a toast behind it.
+  expect(await within(sheet).findByTestId("ward-legal-forms-record-refusal")).toHaveTextContent(notConfirmed);
+  expect(within(sheet).getByRole("alert")).toHaveTextContent(notConfirmed);
   expect(sheet).toBeVisible();
   const time = within(sheet).getByLabelText("Time on form");
   expect(time).toHaveValue("10:00");

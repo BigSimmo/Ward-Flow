@@ -41,7 +41,7 @@ function renderWardWithPull(): HTMLElement {
   for (const unit of allUnits()) {
     renderWard(unit.id);
     const pull = screen
-      .queryAllByRole("button", { name: "Pull a bed" })
+      .queryAllByRole("button", { name: "Pull the bed" })
       .find((button) => button.dataset.testid?.startsWith("ward-pull-") && !button.hasAttribute("aria-disabled"));
     if (pull) return pull;
     cleanup();

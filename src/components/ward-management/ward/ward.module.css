@@ -2227,6 +2227,22 @@
     0 8px 16px -12px color-mix(in srgb, var(--ink) 45%, transparent);
 }
 
+/* The label reserves its bold width, so choosing a tab never nudges its neighbour sideways. */
+.tabLabel {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.tabLabel::after {
+  content: attr(data-label);
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
 .tabBadge {
   font-family: var(--mono, monospace);
   font-size: var(--t-0, 12px);
@@ -3818,8 +3834,11 @@
     background: var(--wf-surface-2);
   }
 
+  /* Every state shares one size. The selected pill used to take 44px from the older underline
+     rules above until hovered, then dropped to 32px, so it shrank under the pointer. */
   .tabBtn,
-  .tabBtn:hover {
+  .tabBtn:hover,
+  .tabBtn[aria-selected="true"] {
     min-height: 32px;
     padding: 0 var(--wf-s-3);
     border: 1px solid transparent;

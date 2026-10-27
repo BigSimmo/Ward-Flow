@@ -4,6 +4,7 @@
 // out of `officer-screen.tsx`; each helper is called during `OfficerScreen`'s render with the screen
 // state it reads, passed as `OfficerJobDetailContext`.
 
+import { providerNeedsCadNumber } from "@/components/ward-management/ward-cad-number";
 import { Check, Lock } from "lucide-react";
 
 import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
@@ -53,16 +54,7 @@ import {
 } from "./officer-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
-import type { ReferralIntakeDetails } from "@/components/ward-management/referrals/referral-submission";
-
-/** The referral drawer's own risk wording (`RISK_FLAG_LABELS`), kept here so the phone bundle stays small. */
-const RISK_FLAG_WORDS: Record<ReferralIntakeDetails["riskFlags"][number], string> = {
-  aggression: "Aggression",
-  absconding: "Absent without leave",
-  medical: "Acute medical",
-  vulnerable: "Vulnerable adult",
-  suicide: "Suicide or self-harm",
-};
+import { RISK_FLAG_LABELS } from "@/components/ward-management/referrals/referral-risk-flags";
 
 /** The `OfficerScreen` state and handlers the job panel's helpers read, passed in on every render. */
 export type OfficerJobDetailContext = {
@@ -292,7 +284,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         </div>
         <div>
           <dt>CAD</dt>
-          <dd className={styles.mono}>{transport.cadNumber ?? "Not recorded"}</dd>
+          <dd className={styles.mono}>
+            {transport.cadNumber ?? (providerNeedsCadNumber(transport.provider) ? "Not recorded" : "Not needed")}
+          </dd>
         </div>
       </dl>
       {roadRoute ? <p className={styles.muted}>{REFERENCE_DISTANCE_CAVEAT}</p> : null}
@@ -444,7 +438,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           {movement.collectionRiskFlags?.length ? (
             <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
               <dt>Risk flags</dt>
-              <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_WORDS[flag]).join(", ")}</dd>
+              <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
             </div>
           ) : null}
           <div>

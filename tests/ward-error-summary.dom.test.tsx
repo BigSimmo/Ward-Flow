@@ -120,8 +120,10 @@ describe("Record a form: error summary", () => {
     expect(within(sheet).queryByRole("group", { name: /to fix before saving/u })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("ward-legal-forms-register-confirm"));
-    const heading = within(sheet).getByRole("heading", { name: "2 things to fix before saving" });
+    // The form type opens blank (MHA forms are never prefilled), so it is one of the answers to give.
+    const heading = within(sheet).getByRole("heading", { name: "3 things to fix before saving" });
     expect(heading).toHaveFocus();
+    expect(within(sheet).getByRole("link", { name: "Choose a form type" })).toBeInTheDocument();
     const movement = within(sheet).getByLabelText("Movement") as HTMLSelectElement;
     expect(movement).toHaveAttribute("aria-invalid", "true");
     expect(within(sheet).getByLabelText("Time on form")).toHaveAttribute("aria-invalid", "true");
@@ -132,7 +134,7 @@ describe("Record a form: error summary", () => {
     expect(movement).toHaveFocus();
     const option = Array.from(movement.options).find((entry) => entry.value !== "")!;
     fireEvent.change(movement, { target: { value: option.value } });
-    expect(within(sheet).getByRole("heading", { name: "1 thing to fix before saving" })).toBeInTheDocument();
+    expect(within(sheet).getByRole("heading", { name: "2 things to fix before saving" })).toBeInTheDocument();
     expect(movement).not.toHaveAttribute("aria-invalid");
   });
 });
@@ -159,13 +161,15 @@ describe("Referral patient step: error summary", () => {
 
 describe("documentationProblems", () => {
   it("lists every missing answer in panel order, clearance only for the community short form", () => {
+    // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No.
     expect(documentationProblems(EMPTY_DOCUMENTATION, "d").map((problem) => problem.id)).toEqual([
       "d-medical",
-      "d-triage",
       "d-medication-upload",
       "d-observation-upload",
-      "d-additional",
     ]);
+    expect(
+      documentationProblems({ ...EMPTY_DOCUMENTATION, medical: "yes", toFollow: ["medication", "observation"] }, "d"),
+    ).toEqual([]);
     expect(
       documentationProblems({ ...EMPTY_DOCUMENTATION, medical: "no" }, "d", true).map((problem) => problem.text),
     ).toEqual(["Enter the expected clearance time", "Enter a contact name", "Enter a contact phone number"]);
@@ -204,7 +208,7 @@ describe("Referral later steps: error summary", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Next, /u }));
     await waitFor(() => expect(step("Clearance")).toHaveAttribute("aria-pressed", "true"));
     fireEvent.click(screen.getByRole("button", { name: /^Next, /u }));
-    const heading = await screen.findByRole("heading", { name: "5 things to fix before the next step" });
+    const heading = await screen.findByRole("heading", { name: "3 things to fix before the next step" });
     expect(currentPanel().id).toMatch(/-documentation$/u);
     await waitFor(() => expect(heading).toHaveFocus());
     fireEvent.click(screen.getByRole("link", { name: "Answer whether the patient has been medically cleared" }));

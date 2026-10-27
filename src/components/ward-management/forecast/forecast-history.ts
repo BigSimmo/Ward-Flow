@@ -5,8 +5,8 @@
 // compared with the range forecast for it the day before. Nothing is scored by a model: a day is
 // either inside the range or not, and the miss is a count of beds.
 //
-// 🔒 **COUNTS AND A DEMO DAY ONLY.** Kept in the browser's localStorage per scenario until the
-// shared table (backend/ward-flow/proposals/013-forecast-snapshots.sql) is applied with Josh's go.
+// 🔒 **COUNTS AND A DEMO DAY ONLY.** Kept in the browser's localStorage per scenario, and shared by
+// the desk once the server has migration 16 (proposal 013, forecast-shared-history.ts).
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 
 export const FORECAST_HISTORY_STORAGE_KEY = "ward-flow-forecast-history";

@@ -1245,6 +1245,33 @@ describe("waiting for your answer — the team's own queue, and how it decides (
     expect(screen.getByTestId(`ward-community-waiting-${toTeam.id}`)).toBeTruthy();
   });
 
+  it("shows the referral's own intake legal status before the person's record", () => {
+    const [toTeam] = referralsNaming([ACCEPTED_TEAM.name], "Perth Metropolitan");
+    const withIntake = {
+      ...toTeam,
+      intake: {
+        catchment: { teamName: ACCEPTED_TEAM.name, confirmed: true },
+        reasonForReferral: "Synthetic referral for assessment",
+        legalStatus: "Inpatient treatment order",
+        riskFlags: [],
+        medicalClearance: { cleared: true },
+        triageAndRampCompleted: false,
+        additionalDocuments: false,
+        charts: [],
+        referrer: {
+          name: "Demo Sender",
+          phone: "0400000000",
+          email: "demo@example.com",
+          role: "Nurse",
+          location: "Clinic",
+        },
+      },
+    } as Referral;
+    renderTeam(ACCEPTED_TEAM.id, [], [withIntake]);
+
+    expect(screen.getByTestId(`ward-community-waiting-${toTeam.id}`)).toHaveTextContent("Inpatient treatment order");
+  });
+
   it("excludes a referral once this team's addressing has been answered", () => {
     let state = seedWardFlowState();
     const raised = raiseTeamReferral(state, ACCEPTED_TEAM.name, NOW_ANCHOR - 2 * MINUTES_PER_DAY);
@@ -1281,6 +1308,10 @@ describe("waiting for your answer — the team's own queue, and how it decides (
     // declining" rule `referral-match.tsx`'s own ward and ED controls hold to.
     expect(within(reasonSelect).getByText("Outside the team's catchment area")).toBeTruthy();
     expect(confirmBtn.getAttribute("aria-disabled")).toBe("true");
+    // The reason is printed beside the greyed button, not only to a screen reader.
+    const blocked = document.getElementById(`ward-community-decline-blocked-${toTeam.id}`);
+    expect(blocked).not.toHaveClass("sr-only");
+    expect(confirmBtn).toHaveAttribute("aria-describedby", blocked?.id);
 
     fireEvent.change(reasonSelect, { target: { value: "outside_the_teams_catchment" } });
     expect(confirmBtn.getAttribute("aria-disabled")).toBeNull();
