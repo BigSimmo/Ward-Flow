@@ -1,93 +1,8 @@
 [
   {
-    "id": "2026-10-27-closing-ward-keeps-reason",
+    "id": "2026-10-27-alerts-yours-on-phone",
     "date": "2026-10-27",
-    "line": "Closing a ward keeps your reason and time if the save is refused, and reopening a ward now asks you to confirm."
-  },
-  {
-    "id": "2026-10-27-activity-every-desk-computer",
-    "date": "2026-10-27",
-    "line": "The Activity feed now shows recent actions from every computer at your desk, not just this one."
-  },
-  {
-    "id": "2026-10-27-capacity-locked-beds-in-total",
-    "date": "2026-10-27",
-    "line": "Capacity now counts locked beds within the total and labels each figure the same way on every screen."
-  },
-  {
-    "id": "2026-10-27-referral-panel-whats-left",
-    "date": "2026-10-27",
-    "line": "The referral form's side panel now shows what's left to fill in before you can send."
-  },
-  {
-    "id": "2026-10-27-update-bed-choose-ward",
-    "date": "2026-10-27",
-    "line": "Update a bed now lets you choose a ward, then opens that ward's page."
-  },
-  {
-    "id": "2026-10-27-bed-map-opens-bed-board",
-    "date": "2026-10-27",
-    "line": "Bed map squares on Capacity now open that ward's bed board."
-  },
-  {
-    "id": "2026-10-27-acknowledge-visible-confirm-undo",
-    "date": "2026-10-27",
-    "line": "Acknowledge visible now asks you to confirm, then lets you undo for a few seconds."
-  },
-  {
-    "id": "2026-10-27-plan-next-return-longest-past",
-    "date": "2026-10-27",
-    "line": "Plan next return now opens the patient longest past discharge with no plan."
-  },
-  {
-    "id": "2026-10-27-seclusion-room-confirm",
-    "date": "2026-10-27",
-    "line": "Marking a seclusion room available or out of service now asks you to confirm first."
-  },
-  {
-    "id": "2026-10-27-movements-wait-labels",
-    "date": "2026-10-27",
-    "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
-  },
-  {
-    "id": "2026-10-27-demo-chip-ward-clock",
-    "date": "2026-10-27",
-    "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
-  },
-  {
-    "id": "2026-10-27-form-code-titles",
-    "date": "2026-10-27",
-    "line": "Statutory form codes now show their title, such as Form 4A (Transport order), in more places."
-  },
-  {
-    "id": "2026-10-27-help-search-box",
-    "date": "2026-10-27",
-    "line": "Help now has a search box: type what you need to find guides, shortcuts and settings."
-  },
-  {
-    "id": "2026-10-27-help-colour-code-guide",
-    "date": "2026-10-27",
-    "line": "Help now has a colour code guide under Reference in the Glossary tab, showing what each colour and shape means."
-  },
-  {
-    "id": "2026-10-27-register-refer-open-patient",
-    "date": "2026-10-27",
-    "line": "After you register and refer a patient, the message now has an Open patient button."
-  },
-  {
-    "id": "2026-10-27-tomorrow-tiles-bed-type",
-    "date": "2026-10-27",
-    "line": "Tomorrow tiles now say which bed type they count, and All EDs shows how many EDs match."
-  },
-  {
-    "id": "2026-10-27-transport-heading-screen-name",
-    "date": "2026-10-27",
-    "line": "The Transport page heading is now the screen name, Transport, instead of a count."
-  },
-  {
-    "id": "2026-10-27-place-move-pulled-explained",
-    "date": "2026-10-27",
-    "line": "Place or move now explains what Pulled means, with a link to the Help glossary."
+    "line": "On a phone, the Alerts page calls your own alerts Yours, the same as on a computer."
   },
   {
     "id": "2026-10-27-stay-tile-day-number",
@@ -95,8 +10,93 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-home-back-on-rail",
+    "id": "2026-10-27-place-move-pulled-explained",
     "date": "2026-10-27",
-    "line": "Home is back at the top of the side menu on a computer, with a house icon."
+    "line": "Place or move now explains what Pulled means, with a link to the Help glossary."
+  },
+  {
+    "id": "2026-10-27-transport-heading-screen-name",
+    "date": "2026-10-27",
+    "line": "The Transport page heading is now the screen name, Transport, instead of a count."
+  },
+  {
+    "id": "2026-10-27-tomorrow-tiles-bed-type",
+    "date": "2026-10-27",
+    "line": "Tomorrow tiles now say which bed type they count, and All EDs shows how many EDs match."
+  },
+  {
+    "id": "2026-10-27-register-refer-open-patient",
+    "date": "2026-10-27",
+    "line": "After you register and refer a patient, the message now has an Open patient button."
+  },
+  {
+    "id": "2026-10-27-help-colour-code-guide",
+    "date": "2026-10-27",
+    "line": "Help now has a colour code guide under Reference in the Glossary tab, showing what each colour and shape means."
+  },
+  {
+    "id": "2026-10-27-help-search-box",
+    "date": "2026-10-27",
+    "line": "Help now has a search box: type what you need to find guides, shortcuts and settings."
+  },
+  {
+    "id": "2026-10-27-form-code-titles",
+    "date": "2026-10-27",
+    "line": "Statutory form codes now show their title, such as Form 4A (Transport order), in more places."
+  },
+  {
+    "id": "2026-10-27-demo-chip-ward-clock",
+    "date": "2026-10-27",
+    "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
+  },
+  {
+    "id": "2026-10-27-movements-wait-labels",
+    "date": "2026-10-27",
+    "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
+  },
+  {
+    "id": "2026-10-27-seclusion-room-confirm",
+    "date": "2026-10-27",
+    "line": "Marking a seclusion room available or out of service now asks you to confirm first."
+  },
+  {
+    "id": "2026-10-27-plan-next-return-longest-past",
+    "date": "2026-10-27",
+    "line": "Plan next return now opens the patient longest past discharge with no plan."
+  },
+  {
+    "id": "2026-10-27-acknowledge-visible-confirm-undo",
+    "date": "2026-10-27",
+    "line": "Acknowledge visible now asks you to confirm, then lets you undo for a few seconds."
+  },
+  {
+    "id": "2026-10-27-bed-map-opens-bed-board",
+    "date": "2026-10-27",
+    "line": "Bed map squares on Capacity now open that ward's bed board."
+  },
+  {
+    "id": "2026-10-27-update-bed-choose-ward",
+    "date": "2026-10-27",
+    "line": "Update a bed now lets you choose a ward, then opens that ward's page."
+  },
+  {
+    "id": "2026-10-27-referral-panel-whats-left",
+    "date": "2026-10-27",
+    "line": "The referral form's side panel now shows what's left to fill in before you can send."
+  },
+  {
+    "id": "2026-10-27-capacity-locked-beds-in-total",
+    "date": "2026-10-27",
+    "line": "Capacity now counts locked beds within the total and labels each figure the same way on every screen."
+  },
+  {
+    "id": "2026-10-27-activity-every-desk-computer",
+    "date": "2026-10-27",
+    "line": "The Activity feed now shows recent actions from every computer at your desk, not just this one."
+  },
+  {
+    "id": "2026-10-27-closing-ward-keeps-reason",
+    "date": "2026-10-27",
+    "line": "Closing a ward keeps your reason and time if the save is refused, and reopening a ward now asks you to confirm."
   }
 ]
