@@ -157,9 +157,13 @@ describe("PatientSearchPage", () => {
     const seedForName = seedWardFlowState();
     const matchedMovement = seedForName.movements.find((m) => m.id === "WF-003");
     if (!matchedMovement) throw new Error("fixture WF-003 is required by this test and is missing");
-    const { displayName } = resolveSubjectPatient(matchedMovement, seedForName);
+    const { formalName, displayName } = resolveSubjectPatient(matchedMovement, seedForName);
 
-    expect(within(results).getByText(displayName)).toBeInTheDocument();
+    // P139: every name in the finder reads surname first ("Zircon, Marcus"), never given name first.
+    expect(formalName).toMatch(/^[^,]+, /);
+    expect(within(results).getByText(formalName)).toBeInTheDocument();
+    expect(within(results).queryByText(displayName)).not.toBeInTheDocument();
+    expect(within(results).getByRole("button", { name: `Preview ${formalName}` })).toBeInTheDocument();
     expect(within(results).queryByText("WF-003")).not.toBeInTheDocument();
 
     const link = within(results).getByRole("link", { name: "Open" });
