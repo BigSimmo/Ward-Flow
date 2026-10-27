@@ -361,6 +361,7 @@ export function reducePlacementEvent(
         // The observation level the ward is staffing this bed at, copied from the movement where a
         // person recorded it at intake. See `Admission.observation`.
         observation: movement.observation,
+        ...(movement.observationChanges ? { observationChanges: [...movement.observationChanges] } : {}),
         // A high-acuity place, copied from the movement, where the referring clinician marked it
         // (owner ruling). Never derived from the observation level.
         highAcuity: movement.highAcuity,

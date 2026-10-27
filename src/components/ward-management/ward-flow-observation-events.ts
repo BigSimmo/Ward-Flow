@@ -95,6 +95,9 @@ export function reduceObservationLevelEvent(
   if (event.expected === undefined && (target?.observationChanges?.length ?? 0) > 0) {
     return reject(state, event, "Observation changed. Reopen it.");
   }
+  if (movement && admission && !sameObservation(movement.observation, admission.observation)) {
+    return reject(state, event, "Observation changed. Reopen it.");
+  }
   if (
     event.expected !== undefined &&
     (!target ||
@@ -103,8 +106,7 @@ export function reduceObservationLevelEvent(
         target.id,
         target.observation,
         target.observationChanges?.length ?? 0,
-      ) !== event.expected ||
-      (movement && admission && !sameObservation(movement.observation, admission.observation)))
+      ) !== event.expected)
   ) {
     return reject(state, event, "Observation changed. Reopen it.");
   }

@@ -643,12 +643,12 @@ export function commandScopeRefusal(
   // handover, only on a journey it sent: the person's journey to it is the receiving ward's to
   // answer, not to amend (D-80).
   if (
-    ((access.role === "ward" || access.role === "community") &&
-      (command.type === "CHANGE_URGENCY" ||
-        command.type === "CHANGE_LEGAL_STATUS" ||
-        command.type === "RECORD_LEGAL_FORM_RECEIVED" ||
-        command.type === "CORRECT_LEGAL_FORM_RECEIPT")) ||
-    (access.role === "community" && command.type === "HANDOVER_READY")
+    (access.role === "ward" || access.role === "community") &&
+    (command.type === "CHANGE_URGENCY" ||
+      command.type === "CHANGE_LEGAL_STATUS" ||
+      command.type === "RECORD_LEGAL_FORM_RECEIVED" ||
+      command.type === "CORRECT_LEGAL_FORM_RECEIPT" ||
+      command.type === "HANDOVER_READY")
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     if (movement && !journeySentByDesk(state, movement, access, places)) return outside;
