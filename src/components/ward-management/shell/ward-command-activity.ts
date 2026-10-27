@@ -17,6 +17,10 @@ import type {
   Unit,
 } from "@/components/ward-management/ward-model";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
+import { refusalReasonText, refusedActionText } from "@/components/ward-management/ward-refusal-words";
+
+/** A reason that starts a sentence starts with a capital. */
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 import { edPressure, type EdPressure } from "@/components/ward-management/ward-pressure";
 import {
   resolveSubjectPatient,
@@ -186,7 +190,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
       id: `rejection:${rejection.id}`,
       // A journey number becomes the patient's UMRN below. Any other record (a referral, stay, bed
       // release or leave bed) has no line of its own here, so its number is left off (D-39).
-      text: `${rejection.movementId.startsWith("WF-") ? `${rejection.movementId}: ` : ""}${rejection.attempted} was refused. ${withoutRecordNumbers(rejection.reason)}`,
+      text: `${rejection.movementId.startsWith("WF-") ? `${rejection.movementId}: ` : ""}${refusedActionText(rejection.attempted)} was refused. ${sentence(refusalReasonText(withoutRecordNumbers(rejection.reason)))}`,
       tone: "danger",
       category: "other",
     });
