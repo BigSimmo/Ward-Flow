@@ -9,8 +9,8 @@
  *   0. Destination identity: accept only the canonical Ward-Flow GitHub remote.
  *      This check has no environment override and runs before all other checks.
  *      Also require canonical origin fetch/push URLs and Ward Flow ancestry.
- *   0a. Direct main push: require explicit confirmation even when optional
- *       format, static and CI guards are skipped.
+ *   0a. Direct main push: always blocked, with no environment override. Main
+ *       changes only through a reviewed pull request.
  *
  *   1. Auto-merge force-push guard (all PR branches)
  *      Per-PR auto-merge state is user-owned. An ordinary fast-forward push to a PR
@@ -175,15 +175,15 @@ export function wardFlowCheckoutVerdict(cwd = PROJECT_ROOT, env = process.env) {
  * @param {Record<string, string | undefined>} [env]
  */
 export function directMainPushVerdict(stdinText, env = process.env) {
+  void env;
   const targetsMain = stdinText.split(/\r?\n/).some((line) => line.trim().split(/\s+/)[2] === "refs/heads/main");
-  const confirmed = env.CONFIRM_PUSH_TO_MAIN === "I_CONFIRM_PUSH_TO_MAIN";
-  return targetsMain && !confirmed
+  return targetsMain
     ? {
         name: "direct-main-push",
         ok: false,
         message:
-          'Direct pushes to refs/heads/main require CONFIRM_PUSH_TO_MAIN="I_CONFIRM_PUSH_TO_MAIN". ' +
-          "Use a reviewed pull request for normal changes.",
+          "Direct pushes to refs/heads/main are blocked, with no override. " +
+          "Push a feature branch and open a pull request.",
       }
     : { name: "direct-main-push", ok: true };
 }
@@ -455,13 +455,6 @@ export function wardFlowPushVerdict({
 
   // Case 1: Pushing Ward Flow to origin/main (catastrophic fold to production)
   if (targetsMain && isWardFlowOperation) {
-    if (env.CONFIRM_WARD_FLOW_PUSH_TO_MAIN === "I_CONFIRM_FOLD_TO_ORIGIN_MAIN") {
-      return {
-        block: false,
-        reason: "confirmed-by-env",
-        warning: "CRITICAL: Pushing Ward Flow to origin/main confirmed via CONFIRM_WARD_FLOW_PUSH_TO_MAIN override.",
-      };
-    }
     return {
       block: true,
       reason: "ward-flow-push-to-main",
@@ -485,24 +478,13 @@ export function wardFlowPushVerdict({
         (derivesFromWardLine
           ? `The pushed commits sit on the local Ward Flow line (${WARD_LINE_BRANCH}), which no remote has.\n\n`
           : "") +
-        `To proceed only under explicit operator override authorization, you MUST run:\n` +
-        `  CONFIRM_WARD_FLOW_PUSH_TO_MAIN="I_CONFIRM_FOLD_TO_ORIGIN_MAIN" git push ...\n` +
+        `There is no override. Push a feature branch and open a pull request.\n` +
         `================================================================================`,
     };
   }
 
   // Case 2: Direct push to origin/main (bypasses PR review & auto-deploys)
   if (targetsMain && !isWardFlowOperation) {
-    if (
-      env.CONFIRM_PUSH_TO_MAIN === "I_CONFIRM_PUSH_TO_MAIN" ||
-      env.CONFIRM_WARD_FLOW_PUSH_TO_MAIN === "I_CONFIRM_FOLD_TO_ORIGIN_MAIN"
-    ) {
-      return {
-        block: false,
-        reason: "confirmed-by-env",
-        warning: "Direct push to origin/main confirmed via override env var.",
-      };
-    }
     return {
       block: true,
       reason: "push-to-main-direct",
@@ -512,19 +494,15 @@ export function wardFlowPushVerdict({
         `================================================================================\n` +
         `Direct pushes to origin/main bypass pull request validation.\n` +
         `In BigSimmo/Ward-Flow, changes must be reviewed and pass CI via pull request.\n\n` +
-        `Push your changes to a feature branch and open a pull request instead.\n\n` +
-        `To bypass this safety boundary for an intentional direct push to main, supply:\n` +
-        `  CONFIRM_PUSH_TO_MAIN="I_CONFIRM_PUSH_TO_MAIN" git push ...\n` +
+        `Push your changes to a feature branch and open a pull request instead.\n` +
+        `There is no override.\n` +
         `================================================================================`,
     };
   }
 
   // Case 3: Pushing Ward Flow to remote non-main branch
   if (!targetsMain && isWardFlowOperation) {
-    if (
-      env.CONFIRM_WARD_FLOW_PUSH_TO_MAIN === "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" ||
-      env.CONFIRM_WARD_FLOW_REMOTE === "I_CONFIRM_WARD_FLOW_REMOTE"
-    ) {
+    if (env.CONFIRM_WARD_FLOW_REMOTE === "I_CONFIRM_WARD_FLOW_REMOTE") {
       return {
         block: false,
         reason: "confirmed-by-env",
@@ -1930,8 +1908,8 @@ function selfTest() {
       pushedBranches: ["main"],
       changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
       env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
-    }).block === false,
-    "confirmed ward push to main is unblocked with override",
+    }).block === true,
+    "ward push to main stays blocked even with the old fold variable",
   );
   assert(
     wardFlowPushVerdict({
@@ -1946,8 +1924,8 @@ function selfTest() {
       pushedBranches: ["main"],
       changedFiles: ["src/lib/search.ts"],
       env: { CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" },
-    }).block === false,
-    "confirmed direct non-ward push to main is allowed",
+    }).block === true,
+    "direct non-ward push to main stays blocked even with the old confirmation variable",
   );
   assert(
     wardFlowPushVerdict({

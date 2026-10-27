@@ -211,10 +211,11 @@ describe("maintained document CI scope", () => {
       WARD_PLAN_DOC_CONTRACTS: "true",
       WARD_PLAN_RULES_INDEX: "true",
       WARD_PLAN_ORGANISATION: "true",
+      WARD_PLAN_LEGAL_SWEEP: "true",
     };
     const good = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], { env, encoding: "utf8" });
     expect(good.status).toBe(0);
-    for (const flag of ["OWNER_INDEX", "DOC_CONTRACTS", "BACKEND", "BUILD", "FRONTEND_STATIC"]) {
+    for (const flag of ["OWNER_INDEX", "DOC_CONTRACTS", "BACKEND", "BUILD", "FRONTEND_STATIC", "LEGAL_SWEEP"]) {
       const wrong = spawnSync(process.execPath, ["scripts/ward-ci-public/verify-plan.mjs"], {
         env: { ...env, [`WARD_PLAN_${flag}`]: "false" },
         encoding: "utf8",

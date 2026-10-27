@@ -1003,6 +1003,20 @@
     transform 0.2s ease;
 }
 
+/* H-1010: a warning toast stays until closed, so it carries a Close button on the dark pill. */
+.toastClose {
+  flex: 0 0 auto;
+  min-height: 2.75rem;
+  margin-left: 0.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid currentcolor;
+  border-radius: var(--r2);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
 .notice {
   display: block;
   border-radius: var(--r2);

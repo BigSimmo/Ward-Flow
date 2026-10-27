@@ -3005,7 +3005,17 @@ test(
       // As in the shared API, the workspace is read before its sending is logged.
       await store.read(view.actorId);
       assert.equal(await store.logList(view, "list"), true);
+      // #839: a repeat this process already logged is answered without the database.
+      const connect = pool.connect;
+      let connections = 0;
+      pool.connect = /** @type {any} */ ((...args) => (connections++, Reflect.apply(connect, pool, args)));
       assert.equal(await store.logList(view, "list"), false, "a repeat inside 15 minutes adds nothing");
+      assert.equal(connections, 0, "the repeat sends nothing to the database");
+      pool.connect = connect;
+      // Another server process that has not logged it asks the database, which still refuses it.
+      const other = createWorkspaceStore(pool, { workspaceId, engine, clock: () => new Date(at) });
+      await other.ready();
+      assert.equal(await other.logList(view, "list"), false, "the database keeps one row per window");
       assert.equal(await store.logList(view, "tv"), true, "the TV board is its own screen");
       assert.equal(await store.logList(view, "patient"), false, "only list and tv are list reads");
       assert.equal(await store.logList({ ...view, version: 14 }, "list"), false, "before 15 nothing is kept");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import type { WardSharedConnection } from "./ward-shared-access";
@@ -50,6 +50,27 @@ function useRecoveryHost(show: boolean): HTMLElement | null {
   return show && root?.contains(host) ? host : null;
 }
 
+/**
+ * Publish this strip's height as --wf-data-bar-height, so the shell (sized to the window less that
+ * variable) shortens to fit rather than pushing its bottom edge, the rail's account card, off screen.
+ */
+function useBarHeight(ref: RefObject<HTMLElement | null>, shown: boolean) {
+  useLayoutEffect(() => {
+    const bar = ref.current;
+    if (!bar || !shown) return;
+    const root = document.documentElement;
+    const publish = () =>
+      root.style.setProperty("--wf-data-bar-height", `${Math.ceil(bar.getBoundingClientRect().height)}px`);
+    publish();
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(publish);
+    observer?.observe(bar);
+    return () => {
+      observer?.disconnect();
+      root.style.removeProperty("--wf-data-bar-height");
+    };
+  }, [ref, shown]);
+}
+
 export function WardSharedSaveStatus({
   connection,
   deskLabel,
@@ -64,6 +85,12 @@ export function WardSharedSaveStatus({
   const host = useRecoveryHost(showRecovery);
   const saving = connection.status === "saving";
   const recoveryRef = useRef<HTMLElement>(null);
+  // Josh, 27 Oct 2026 ("it is pointless"): the strip shows only when something needs action, a lost
+  // connection or a save not yet confirmed. Otherwise its words stay a screen-reader status, and
+  // Sign out lives in the rail and the phone menu (`WardAccountActions`).
+  const problem = connection.status === "unavailable" || !!save?.unconfirmedSave;
+  const barRef = useRef<HTMLDivElement>(null);
+  useBarHeight(barRef, problem);
   // Retry disappears while the save runs. Park focus on the persistent status, still inside the sheet.
   const retry = () => {
     recoveryRef.current?.focus({ preventScroll: true });
@@ -85,25 +112,33 @@ export function WardSharedSaveStatus({
   );
   return (
     <>
-      <div role="status" aria-live={host ? "off" : "polite"} aria-hidden={host ? true : undefined} inert={!!host}>
-        {message}
-        {detail}
-        {connection.canSwitch && connection.switchRole && (
-          <button type="button" onClick={connection.switchRole}>
-            Switch role
-          </button>
+      <div
+        ref={barRef}
+        className={problem ? styles.bar : styles.quiet}
+        data-state={connection.status}
+        data-testid="ward-shared-status-bar"
+        role="status"
+        aria-live={host ? "off" : "polite"}
+        aria-hidden={host ? true : undefined}
+        inert={!!host}
+      >
+        <span className={styles.message}>
+          {message}
+          {connection.error && <span> {connection.error}</span>}
+        </span>
+        {save?.unconfirmedSave && <p>{RELOAD_WARNING}</p>}
+        {problem && (
+          <span className={styles.end}>
+            {connection.status === "unavailable" && (
+              <button type="button" className={styles.action} onClick={connection.retry}>
+                Retry
+              </button>
+            )}
+            <button type="button" className={styles.action} onClick={connection.signOut}>
+              Sign out
+            </button>
+          </span>
         )}
-        {connection.status === "unavailable" && (
-          <button type="button" onClick={connection.retry}>
-            Retry
-          </button>
-        )}
-        {connection.accountEmail && (
-          <span data-testid="ward-signed-in-as"> Signed in as {connection.accountEmail}.</span>
-        )}
-        <button type="button" onClick={connection.signOut}>
-          Sign out
-        </button>
       </div>
       {host &&
         createPortal(

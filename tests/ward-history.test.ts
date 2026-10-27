@@ -52,7 +52,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // H-0150 adds UNDO_BED_MEETING_ACTION.
       // H-0978 / WS-15 (26 Oct 2026) adds SET_BED_CLOSED.
       // CAD to follow (Josh, 27 Oct 2026) adds RECORD_TRANSPORT_CAD.
-      expect(allEventTypes.length).toBe(164);
+      // #816 (27 Oct 2026) adds ARCHIVE_PATIENT.
+      expect(allEventTypes.length).toBe(165);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

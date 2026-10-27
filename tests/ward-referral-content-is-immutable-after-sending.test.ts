@@ -204,7 +204,8 @@ function readEventKinds(): string[] {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { readFileSync } = require("node:fs") as typeof import("node:fs");
   // 21 Oct 2026: two members of the union are declared beside their reducer cases.
-  const source = ["ward-flow-events.ts", "ward-flow-release-notice-events.ts"]
+  // 27 Oct 2026: the inbox events moved to their own file (H-0283).
+  const source = ["ward-flow-events.ts", "ward-flow-release-notice-events.ts", "ward-inbox-events.ts"]
     .map((file) => readFileSync(`src/components/ward-management/${file}`, "utf8"))
     .join("\n");
   const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "");

@@ -43,6 +43,7 @@ import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-draw
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { WardMyWards } from "./ward-my-wards";
+import { WardAccountActions } from "./ward-account-actions";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import styles from "./ward-rail.module.css";
 import { readWardRailEarlyShape } from "./ward-rail-early";
@@ -1087,6 +1088,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             <span>Settings</span>
           </Link>
         </div>
+        {/* Sign out (shared board only) has its own row: Josh, 27 Oct 2026, the strip above the app
+            that held it is hidden. */}
+        <WardAccountActions className={styles.utilityLink} wrapClassName={styles.utilityLinks} />
 
         <div className={styles.userCardWrap}>
           {/* B6 (Josh, 19 Oct 2026): one switcher. The person opens Go to a desk, which sets both the

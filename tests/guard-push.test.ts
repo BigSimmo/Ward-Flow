@@ -944,7 +944,7 @@ describe("Ward Flow / origin:main push guard", () => {
     expect(isMainBranch("feature/main-sync")).toBe(false);
   });
 
-  it("blocks any push of Ward Flow files to origin/main unless explicitly confirmed", () => {
+  it("blocks any push of Ward Flow files to origin/main, with no override", () => {
     const blocked = wardFlowPushVerdict({
       pushedBranches: ["main"],
       changedFiles: ["src/components/ward-management/patients/add-patient.tsx"],
@@ -953,18 +953,18 @@ describe("Ward Flow / origin:main push guard", () => {
     expect(blocked.block).toBe(true);
     expect(blocked.reason).toBe("ward-flow-push-to-main");
     expect(blocked.message).toContain("WARD FLOW CANNOT BE FOLDED OR PUSHED TO ORIGIN/MAIN");
-    expect(blocked.message).toContain('CONFIRM_WARD_FLOW_PUSH_TO_MAIN="I_CONFIRM_FOLD_TO_ORIGIN_MAIN"');
+    expect(blocked.message).toContain("There is no override");
+    expect(blocked.message).not.toContain("CONFIRM_WARD_FLOW_PUSH_TO_MAIN");
 
-    const unblocked = wardFlowPushVerdict({
+    const stillBlocked = wardFlowPushVerdict({
       pushedBranches: ["main"],
       changedFiles: ["src/components/ward-management/patients/add-patient.tsx"],
       env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
     });
-    expect(unblocked.block).toBe(false);
-    expect(unblocked.warning).toContain("CONFIRM_WARD_FLOW_PUSH_TO_MAIN");
+    expect(stillBlocked.block).toBe(true);
   });
 
-  it("blocks direct push of non-ward files to origin/main without explicit confirmation", () => {
+  it("blocks direct push of non-ward files to origin/main, with no override", () => {
     const blocked = wardFlowPushVerdict({
       pushedBranches: ["main"],
       changedFiles: ["src/lib/clinical-guidance.ts"],
@@ -973,14 +973,18 @@ describe("Ward Flow / origin:main push guard", () => {
     expect(blocked.block).toBe(true);
     expect(blocked.reason).toBe("push-to-main-direct");
     expect(blocked.message).toContain("DIRECT PUSH TO ORIGIN/MAIN IS BLOCKED");
-    expect(blocked.message).toContain('CONFIRM_PUSH_TO_MAIN="I_CONFIRM_PUSH_TO_MAIN"');
+    expect(blocked.message).toContain("There is no override");
+    expect(blocked.message).not.toContain("CONFIRM_PUSH_TO_MAIN");
 
-    const unblocked = wardFlowPushVerdict({
+    const stillBlocked = wardFlowPushVerdict({
       pushedBranches: ["main"],
       changedFiles: ["src/lib/clinical-guidance.ts"],
-      env: { CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN" },
+      env: {
+        CONFIRM_PUSH_TO_MAIN: "I_CONFIRM_PUSH_TO_MAIN",
+        CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN",
+      },
     });
-    expect(unblocked.block).toBe(false);
+    expect(stillBlocked.block).toBe(true);
   });
 
   it("blocks pushing Ward Flow files to remote feature branches without confirmation", () => {
@@ -1122,35 +1126,27 @@ describe("Ward Flow push guard — remote-ref and current-branch detection paths
     expect(unblocked.block).toBe(false);
   });
 
-  // Documents CURRENT behaviour only (owner has not ruled on whether this coupling is
-  // wanted — see scripts/guard-push.mjs guard-0 header and CONTEXT in the brief that
-  // added this test). wardFlowPushVerdict's Case 2 and Case 3 branches each accept
-  // EITHER their own CONFIRM_* value OR the Case-1 value
-  // (CONFIRM_WARD_FLOW_PUSH_TO_MAIN=I_CONFIRM_FOLD_TO_ORIGIN_MAIN). That means a single
-  // override meant for "fold Ward Flow to origin/main" also unlocks an unrelated direct
-  // push to main (Case 2) and an unrelated Ward Flow push to a feature branch (Case 3).
-  // If a future owner decision narrows this, update/remove this test alongside that
-  // change — do not let it silently start asserting the opposite of what it names.
-  it("documents current behaviour: the Case-1 override value also unlocks Case 2 and Case 3", () => {
-    // Case 2: a direct, non-ward push to origin/main — unlocked by the Case-1 value.
+  // Josh approved tightening the push guard to match the no-bypass rule (27 Oct 2026).
+  // The old fold-to-main value no longer unlocks anything else: a direct push to main
+  // has no override, and a Ward Flow feature-branch push accepts only its own value.
+  it("the old fold-to-main value no longer unlocks a main push or a feature-branch push", () => {
     const case2 = wardFlowPushVerdict({
       pushedBranches: ["main"],
       changedFiles: ["src/lib/search.ts"],
       currentBranch: "codex/generic-fix",
       env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
     });
-    expect(case2.block).toBe(false);
-    expect(case2.reason).toBe("confirmed-by-env");
+    expect(case2.block).toBe(true);
+    expect(case2.reason).toBe("push-to-main-direct");
 
-    // Case 3: a Ward Flow push to a remote non-main branch — unlocked by the Case-1 value.
     const case3 = wardFlowPushVerdict({
       pushedBranches: ["codex/feature-test"],
       changedFiles: ["src/components/ward-management/search/patient-search.tsx"],
       currentBranch: "codex/feature-test",
       env: { CONFIRM_WARD_FLOW_PUSH_TO_MAIN: "I_CONFIRM_FOLD_TO_ORIGIN_MAIN" },
     });
-    expect(case3.block).toBe(false);
-    expect(case3.reason).toBe("confirmed-by-env");
+    expect(case3.block).toBe(true);
+    expect(case3.reason).toBe("ward-flow-push-to-remote");
   });
 });
 

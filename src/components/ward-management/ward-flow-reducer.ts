@@ -1,4 +1,29 @@
 import { reducerSlices } from "./ward-flow-reducer-slice-registry";
+import {
+  findMovement,
+  findUnit,
+  findBedRelease,
+  replaceBedRelease,
+  withAdmissionDischargeDecision,
+  findAdmission,
+  replaceAdmission,
+  withStayBlocker,
+  findLeaveBed,
+  findReferral,
+  replaceReferral,
+  replaceMovement,
+  replaceUnit,
+} from "./ward-flow-state-records";
+export {
+  findAdmission,
+  findMovement,
+  findReferral,
+  findUnit,
+  replaceAdmission,
+  replaceMovement,
+  replaceReferral,
+  replaceUnit,
+};
 // Closing-the-loop (package E): return requested vs home service agreed.
 import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
 import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
@@ -50,7 +75,6 @@ import { reduceObservationLevelEvent } from "./ward-flow-observation-events";
 import type { UndoEventHelpers } from "./ward-flow-undo-events";
 import type { InboxOwnershipEntry, InboxSnoozeEntry } from "./ward-inbox-snooze";
 import {
-  type BedReleaseBlocker,
   URGENT_MARK_REASONS,
   GENDER_NO_LONGER_SUITS_REFUSAL,
   GENDER_NO_LONGER_SUITS_NON_BINARY_REFUSAL,
@@ -856,122 +880,6 @@ function referralAcceptanceRefusal(
   return { refusal: null, overrideApplied: true };
 }
 
-export function findMovement(state: WardFlowState, movementId: string): Movement | undefined {
-  return state.movements.find((candidate) => candidate.id === movementId);
-}
-
-export function findUnit(state: WardFlowState, unitId: string): Unit | undefined {
-  return state.units.find((candidate) => candidate.id === unitId);
-}
-
-function findBedRelease(state: WardFlowState, releaseId: string): BedRelease | undefined {
-  return state.bedReleases.find((candidate) => candidate.id === releaseId);
-}
-
-/** Replaces one bed release in the array by id, leaving every other element untouched. */
-function replaceBedRelease(state: WardFlowState, releaseId: string, next: BedRelease): WardFlowState {
-  return {
-    ...state,
-    bedReleases: state.bedReleases.map((candidate) => (candidate.id === releaseId ? next : candidate)),
-  };
-}
-
-/**
- * Keeps the stay's own discharge decision in step with its bed release. Screens that read the stay
- * (the bed board's shift list, the patient card, the discharge board) read
- * `Admission.dischargeConfirmedAt`; the ward's Confirm and Revert act on the release. Without this,
- * one discharge carried two answers (release gate, 15 Oct 2026).
- *
- * Only the ward is named as the confirmer: "Ward manager" is the one label `DISCHARGE_ROLE_LABELS`
- * holds, so a coordinator's confirmation records the time with the role left unrecorded rather
- * than naming the wrong person. The change moves the stay's discharge revision, so an edit made
- * against the record as it stood before is refused as stale.
- */
-function withAdmissionDischargeDecision(
-  state: WardFlowState,
-  admissionId: string,
-  at: Instant | null,
-  role: WardFlowRole,
-): WardFlowState {
-  const admission = findAdmission(state, admissionId);
-  if (!admission) return state;
-  // A stay already confirmed keeps its own confirmation time: the release agrees with it, so
-  // restamping would rewrite when the discharge was decided. A revert still clears it, because the
-  // ward has said the discharge is no longer decided.
-  if (at !== null && admission.dischargeConfirmedAt !== null) return state;
-  if (at === null && admission.dischargeConfirmedAt === null) return state;
-  const withStay = replaceAdmission(state, admissionId, {
-    ...admission,
-    dischargeConfirmedAt: at,
-    dischargeConfirmedBy: at !== null && role === "ward" ? "Ward manager" : null,
-  });
-  return {
-    ...withStay,
-    dischargeRevisions: {
-      ...withStay.dischargeRevisions,
-      [admissionId]: (state.dischargeRevisions[admissionId] ?? 0) + 1,
-    },
-  };
-}
-
-export function findAdmission(state: WardFlowState, admissionId: string): Admission | undefined {
-  return state.admissions.find((candidate) => candidate.id === admissionId);
-}
-
-/** Replaces one admission in the array by id, leaving every other element untouched — the same
- *  discipline `replaceBedRelease` and `replaceUnit` already use. */
-export function replaceAdmission(state: WardFlowState, admissionId: string, next: Admission): WardFlowState {
-  return {
-    ...state,
-    admissions: state.admissions.map((candidate) => (candidate.id === admissionId ? next : candidate)),
-    dischargeRevisions: state.admissions.some(
-      (candidate) => candidate.id === admissionId && candidate.state !== next.state,
-    )
-      ? { ...state.dischargeRevisions, [admissionId]: (state.dischargeRevisions[admissionId] ?? 0) + 1 }
-      : state.dischargeRevisions,
-  };
-}
-
-/**
- * One discharge blocker, two records: the release's own `blocker` and the stay's `blockReason`.
- * Whenever a release-level event changes the first, the linked stay follows, so a blocker set on one
- * screen is never left behind on the handover, stranded list or statistics by another screen's clear.
- */
-function withStayBlocker(state: WardFlowState, admissionId: string, blocker: BedReleaseBlocker | null): WardFlowState {
-  const stay = findAdmission(state, admissionId);
-  if (!stay || stay.blockReason === blocker) return state;
-  return replaceAdmission(state, stay.id, { ...stay, blockReason: blocker });
-}
-
-function findLeaveBed(state: WardFlowState, leaveBedId: string): LeaveBed | undefined {
-  return state.leaveBeds.find((candidate) => candidate.id === leaveBedId);
-}
-
-export function findReferral(state: WardFlowState, referralId: string): Referral | undefined {
-  return state.referrals.find((candidate) => candidate.id === referralId);
-}
-
-/** Replaces one referral in the array by id, leaving every other element untouched — the same
- *  shape as `replaceBedRelease`/`replaceMovement` below. */
-export function replaceReferral(state: WardFlowState, referralId: string, next: Referral): WardFlowState {
-  return {
-    ...state,
-    referrals: state.referrals.map((candidate) => (candidate.id === referralId ? next : candidate)),
-  };
-}
-
-/** Replaces one movement in the array by id, leaving every other element untouched. */
-export function replaceMovement(state: WardFlowState, movementId: string, next: Movement): WardFlowState {
-  return {
-    ...state,
-    movements: state.movements.map((candidate) => (candidate.id === movementId ? next : candidate)),
-  };
-}
-
-export function replaceUnit(state: WardFlowState, unitId: string, next: Unit): WardFlowState {
-  return { ...state, units: state.units.map((candidate) => (candidate.id === unitId ? next : candidate)) };
-}
-
 /** A recorded sending ward is the only exception to the one-current-stay placement rule. */
 export function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
   if (movement.sourceAdmissionId) return findAdmission(state, movement.sourceAdmissionId);
@@ -1452,14 +1360,11 @@ export function heldBedRefusal(
       other.acceptedUnitId === unit.id &&
       other.heldBedNumber === bedNumber,
   );
+  // The referral's own accepted arm is checked before the scan of every movement; both are pure, so
+  // the order only saves time (most referrals hold no bed here).
   const heldByReferral = state.referrals.some(
     (referral) =>
       referral.id !== exceptReferralId &&
-      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
-      !state.movements.some(
-        (movement) =>
-          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
-      ) &&
       referral.destinations.some(
         (arm) =>
           arm.state === "accepted" &&
@@ -1467,6 +1372,11 @@ export function heldBedRefusal(
           arm.destination.kind === "psychiatric_ward" &&
           // A referral sent to any ward names its ward only once accepted (`acceptedUnitId`).
           (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id,
+      ) &&
+      // A patient who has arrived on THIS ward no longer needs the bed held; an arrival elsewhere does.
+      !state.movements.some(
+        (movement) =>
+          movement.referralId === referral.id && movement.stage === "arrived" && movement.acceptedUnitId === unit.id,
       ),
   );
   return heldByMovement || heldByReferral ? `Bed ${bedNumber} on ${unit.name} is already pulled for someone` : null;
@@ -1816,12 +1726,13 @@ export function reduceClinicalEvent(
     case "EVALUATE_LEAVE_BED_WARNINGS":
       return reducerSlices().reduceBedEvent(state, event, decision, BED_EVENT_HELPERS);
 
+    case "ADD_PATIENT":
+      return reducerSlices().reducePatientRegistration(state, event, reject);
+    case "ARCHIVE_PATIENT":
+      return reducerSlices().reducePatientArchive(state, event, reject, decision);
     // A reset re-anchors onto the demo's current now rather than handing back a fixture authored at
     // NOW_ANCHOR, so predictions are not already lapsed. `event.now` includes `clockOffsetMinutes`,
     // which a reset clears; subtracting it keeps the visible clock from jumping.
-    case "ADD_PATIENT":
-      return reducerSlices().reducePatientRegistration(state, event, reject);
-
     case "RESET_SCENARIO":
       // Puts the loaded scenario back to its start. A scenario outside `WARD_SCENARIOS` (a damaged
       // restore) falls back to the standard night rather than seeding something unknown.

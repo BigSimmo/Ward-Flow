@@ -17,8 +17,8 @@ vi.mock("@/components/ward-management/shell/ward-feature-flag-store", () => ({
 }));
 
 const now = NOW_ANCHOR;
-const cldBadge = "Turnaround Candidate: Bed clearing via Criteria-Led Discharge";
-const departureBadge = "Turnaround Candidate: Bed clearing via confirmed departure";
+const cldBadge = "Turnaround candidate: bed clearing via criteria-led discharge";
+const departureBadge = "Turnaround candidate: bed clearing via confirmed departure";
 
 function fixture() {
   const state = seedWardFlowState();

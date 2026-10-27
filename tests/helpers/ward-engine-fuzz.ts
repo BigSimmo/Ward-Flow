@@ -105,6 +105,7 @@ import { DISCHARGE_CRITERIA } from "@/components/ward-management/ward-discharge-
 import { INBOX_CATEGORIES, inboxItemCompletionState } from "@/components/ward-management/ward-inbox-reducer";
 import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooze";
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
+import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import { GENDERS } from "@/components/ward-management/ward-patients";
 import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
 import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
@@ -1553,7 +1554,9 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     movementEvent(
       "RECORD_COUNTRY_EXTENSION",
-      (movement) => movement.legalForm?.code === "1A",
+      // Aimed at the gate itself (a current country Form 1A), so a shift in the random run cannot
+      // push the rare acceptance past the coverage window.
+      countryExtensionEligible,
       (_state, random, movement) => ({
         paperExpiresAt: (movement.legalForm?.dueAt ?? currentNow) + int(random, 30, 4000),
       }),
@@ -1571,6 +1574,14 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const patient = prefer(random, state.patients, (candidate) => Boolean(candidate.communityTreatmentOrder));
       return { type: "END_COMMUNITY_TREATMENT_ORDER", patientId: patient?.id ?? MISSING_ID };
+    },
+  ],
+  // #816: archive a record added in error. Mostly a newly added one, which nothing names yet.
+  [
+    1,
+    (state, random) => {
+      const patient = prefer(random, state.patients, (candidate) => candidate.id.startsWith("PT-A"));
+      return { type: "ARCHIVE_PATIENT", patientId: patient?.id ?? MISSING_ID, reason: "test" };
     },
   ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.

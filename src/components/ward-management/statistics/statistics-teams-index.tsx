@@ -27,7 +27,7 @@ import {
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import type { HealthService } from "@/components/ward-management/ward-model";
-import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-resolver";
+import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
 
 import { countAxisMax } from "./statistics-axis";
 import { communityFigures } from "./statistics-community-figures";

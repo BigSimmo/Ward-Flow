@@ -109,7 +109,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
 
             <div className={styles.pulledDetailsGrid}>
               <div className={styles.pulledDetailItem}>
-                <span className={styles.pulledDetailLabel}>Arrival Mode</span>
+                <span className={styles.pulledDetailLabel}>Arrival mode</span>
                 <span className={styles.pulledDetailValue}>
                   {hasArrivalPlan && liveMovement?.arrivalDetails?.mode
                     ? ARRIVAL_MODE_LABELS[liveMovement.arrivalDetails.mode]

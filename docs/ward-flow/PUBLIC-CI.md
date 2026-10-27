@@ -77,8 +77,19 @@ milliseconds when `WARD_TEST_PROFILE_DIR` is set. No source text or event payloa
 Refresh committed duration records only from reviewed comparable measurements; synthetic test
 fixtures and local durations do not establish hosted savings.
 
+The legal-figure dueAt sweep (`tests/ward-legal-figure-guard-sweep-*.test.ts`) is about a third of
+all unit time. Josh's ruling (27 October 2026): a pull request runs it only when it changes something
+the sweep runs. `scripts/ward-ci-public/legal-sweep-scope.mjs` follows the sweep's imports from the
+PR's own tree, and also counts the package manifests, `.nvmrc`, Vitest and TypeScript config,
+`tests/setup/`, the workflow, the expected-reds manifest and the gate scripts that make this decision.
+Deletions, renames and any planner error run the sweep. The plan writes `legal_sweep=false` only for
+a readable pull request diff, `verify-plan.mjs` re-derives it, and the shards leave the sweep out
+(`WARD_GATE_SKIP_LEGAL_SWEEP=1`) only on that explicit `false`. Main pushes, the nightly run and
+manual runs always run it, and a pull request run without it cannot stand in for main in the reuse
+check below.
+
 CI no longer runs a related-test pass in static checks: the unit shards run every file on every PR,
-so it only repeated work (about 3.7 minutes a push on 27 October 2026). `npm run test:related` keeps
+so it only repeated work (a mean of 1.1 minutes a push over 68 runs, up to 5.8, on 27 October 2026). `npm run test:related` keeps
 the same selection for local iteration. It follows literal imports, re-exports and CommonJS requires through
 `src`, `scripts`, `tests` and `backend/ward-flow`. Both focused entry points share this selector.
 Declared source-reading guards, including the appearance-key scan across all `src/`, are retained
@@ -134,10 +145,10 @@ journey failure. Local pruning keeps the newest five managed report directories 
 
 ## Main pushes and nightly runs
 
-The main reuse proof in `main-reuse.mjs` is unchanged. It verifies through git and the GitHub API that
+The main reuse proof in `main-reuse.mjs` verifies through git and the GitHub API that
 the pushed tree equals the head of the one merged PR that produced it, that this head contained the
-previous main, and that a successful run on that head actually ran every required unit shard,
-browser group, coverage thresholds and production build. Any missing proof or API/git error runs
+previous main, and that a successful run on that head actually ran every required unit shard
+(with the legal-figure sweep in it), browser group, coverage thresholds and production build. Any missing proof or API/git error runs
 fresh checks. On verified reuse the unit, coverage, browser-build, journey-group and production-build
 jobs must be skipped, rather than failed or cancelled. Static checks, backend/shared proof and secret
 scanning still execute. The release gate executes afresh, building locally because no prepared

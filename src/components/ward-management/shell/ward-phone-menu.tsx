@@ -634,6 +634,9 @@ export function WardPhoneMenu({
               referrals,
               supportNotifications,
               plannedAdmissions,
+              // The bar's shape exactly, so this reuses the bar's task list instead of building its own
+              // on every page load (F-11). The wording setting changes no act-now row.
+              stuckHandoverMinutes: configuration.transportBookedTargetMinutes,
             },
             flowNow,
           ).length

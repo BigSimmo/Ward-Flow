@@ -64,7 +64,6 @@ export function tourGreeting(role: TourRole): string {
   return role === "admin" ? TOUR_ROLE_LABELS.admin : DESK_PERSONAS[role].greeting;
 }
 
-const BANNER: TourTarget = { sel: '[data-testid="ward-access-banner"]' };
 const PERSONA: TourTarget = { sel: '[data-testid="ward-rail-persona-trigger"]' };
 const ROLE_MENU: TourTarget = { sel: '[data-testid="ward-rail-role-menu"]' };
 const RAIL_HELP: TourTarget = { sel: '[data-testid="ward-rail-help"]' };
@@ -259,7 +258,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see your own ward's patients and the referrals sent to it.`,
         ),
@@ -346,7 +345,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see the people on your board and the referrals you have sent.`,
         ),
@@ -410,7 +409,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see the people referred to your team and the referrals you send.`,
         ),
@@ -476,7 +475,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see the transport jobs assigned to you.`,
         ),
@@ -528,7 +527,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see your site's wards, movements and waits.`,
         ),
@@ -582,7 +581,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "for the whole state")} You see figures as counts, never patient names.`,
         ),
@@ -620,7 +619,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "for the whole state")} You review overrides, refused actions and who opened which record.`,
         ),
@@ -667,7 +666,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
     step(
       "Your desk",
       "welcome",
-      role === "coordinator" ? HERO : BANNER,
+      role === "coordinator" ? HERO : undefined,
       `Welcome, ${tourGreeting(role)}`,
       `${signedInAs(role, f, scope)} ${extra}`,
     );
@@ -964,8 +963,17 @@ export type TourCanDo = {
 };
 
 /** Screen groups for the desks the access table limits to screens rather than actions. */
-const SCREEN_GROUPS: readonly { label: string; screens: readonly WardScreenId[] }[] = [
-  { label: "Capacity, Wards and ward boards", screens: ["capacity", "wards", "ward", "board"] },
+const SCREEN_GROUPS: readonly {
+  label: string;
+  screens: readonly WardScreenId[];
+  /** The name for a desk that opens only one of the group's screens, such as the executive's Capacity. */
+  alone?: Partial<Record<WardScreenId, string>>;
+}[] = [
+  {
+    label: "Capacity, Wards and ward boards",
+    screens: ["capacity", "wards", "ward", "board"],
+    alone: { capacity: "Capacity" },
+  },
   { label: "Movements and Waiting", screens: ["movements", "delays"] },
   { label: "Discharges and the bed meeting", screens: ["discharges", "bed-meeting"] },
   { label: "Seclusion and restraint", screens: ["seclusion"] },
@@ -997,9 +1005,11 @@ const SCREEN_ASKS: Partial<Record<TourRole, TourCanDo["ask"]>> = {
 export function tourCanDo(role: TourRole): TourCanDo {
   if (role === "bed_manager" || role === "executive" || role === "admin") {
     const table = ROLE_SCREENS[role];
-    const can = SCREEN_GROUPS.flatMap(({ label, screens }) => {
-      const grants = screens.map((screen) => table[screen]).filter((grant) => grant !== undefined);
+    const can = SCREEN_GROUPS.flatMap(({ label: groupLabel, screens, alone }) => {
+      const granted = screens.filter((screen) => table[screen] !== undefined);
+      const grants = granted.map((screen) => table[screen]);
       if (grants.length === 0) return [];
+      const label = (granted.length === 1 ? alone?.[granted[0]] : undefined) ?? groupLabel;
       if (grants.includes("counts")) return [`${label}, as counts with no patient names`];
       if (role === "bed_manager" && grants.every((grant) => grant === "own") && label !== SCREEN_GROUPS.at(-1)?.label) {
         return [`${label}, your site`];

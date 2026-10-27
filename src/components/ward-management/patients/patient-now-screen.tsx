@@ -99,6 +99,7 @@ import { type ContactRow } from "./patient-now-cards";
 import { movementHasBedHold } from "@/components/ward-management/ward-movement-bed-hold";
 import { type PatientNowRecord, STAGES, clock, dur, fillTemplate } from "./patient-now-records";
 import styles from "./patient-now.module.css";
+import { PatientArchivePanel } from "./patient-archive-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
@@ -1408,6 +1409,7 @@ export function PatientNowScreen({
           </PhoneSheet>
         </>
       ) : null}
+      {livePatient ? <PatientArchivePanel patientId={livePatient.id} displayName={displayName} /> : null}
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );

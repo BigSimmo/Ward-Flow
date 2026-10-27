@@ -387,6 +387,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // A ward adds one in its own name from Add patient and its New referral sheet (role access plan
   // v2, D-80), registered to its own ward, rather than borrowing the ED or community role.
   ADD_PATIENT: ["ed", "community", "ward", "coordinator"],
+  // #816 (Josh, 26 Oct 2026): archive only, and only the coordinator.
+  ARCHIVE_PATIENT: ["coordinator"],
   /**
    * Owner ruling FD-25: a WARD answers a referral addressed to it. The coordinator keeps the role
    * too — it overrides, and an override nobody can exercise is not an override.
