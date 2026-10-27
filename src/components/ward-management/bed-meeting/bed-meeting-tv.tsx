@@ -18,7 +18,7 @@ import type { BedKindGap, BedKindId } from "@/components/ward-management/capacit
 import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { splitDuration } from "@/components/ward-management/ward-clock";
 import {
   useDueSoonThresholds,
   useWardFlowClock,
@@ -50,7 +50,6 @@ import {
   wardTvSheet,
   type EdTvSheet,
   type MeetingTvExtras,
-  type TvBedCountAge,
   type TvJourneyRow,
   type WardTvSheet,
 } from "./tv-derivations";
@@ -58,6 +57,8 @@ import { ForecastBriefPanel } from "@/components/ward-management/forecast/foreca
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { TvLockControl, useTvLock } from "./tv-lock";
+import { TvFooterText, TvLeaveLink } from "./tv-leave-link";
+import { bedCountText } from "./tv-bed-count-text";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -247,8 +248,7 @@ function shiftName(now: number): string {
 function Footer({ scope, scenario, now }: { scope: string; scenario: string; now: number }) {
   return (
     <p className={styles.footer}>
-      {scope} · {shiftName(now)} · Scenario: {scenario} · Synthetic prototype, {asAtStamp(now).dayNote}. Read only. Not
-      approved for clinical use.
+      {TvFooterText({ scope, shift: shiftName(now), scenario, dayNote: asAtStamp(now).dayNote })}
     </p>
   );
 }
@@ -344,20 +344,6 @@ function gapText(gap: number): string {
  */
 function preparingSentence(pendingPreparation: number): string {
   return pendingPreparation > 0 ? `. ${pendingPreparation} still being made ready` : "";
-}
-
-/**
- * CS-10 (Audit 1, Josh 20 Oct 2026): the ready figure's age, by Capacity's own freshness rule
- * (`bedCountAge`). A meeting allocates against it, so a late count says so rather than looking current.
- */
-function bedCountText({ wards, notConfirmed, oldestAt }: TvBedCountAge, now: number): string {
-  if (oldestAt === undefined) return "";
-  const at = formatInstantWithDay(oldestAt, now);
-  if (notConfirmed > 0)
-    return wards === 1
-      ? `Not confirmed since ${at}`
-      : `${notConfirmed} ${notConfirmed === 1 ? "ward" : "wards"} not confirmed since ${at}`;
-  return wards === 1 ? `Confirmed ${at}` : `Oldest count confirmed ${at}`;
 }
 
 function BedsThatFit({ gaps, tomorrow }: { gaps: BedKindGap[]; tomorrow?: readonly KindForecast[] }) {
@@ -1033,6 +1019,7 @@ function ScreenPicker({ current }: { current: string }) {
           {meetings.map((meeting) => (
             <Link
               key={meeting.key}
+              replace
               href={bedMeetingTvHref({ service: meeting.key })}
               onClick={close}
               aria-current={current === `service:${meeting.key}` ? "page" : undefined}
@@ -1046,6 +1033,7 @@ function ScreenPicker({ current }: { current: string }) {
           {eds.map((ed) => (
             <Link
               key={ed.id}
+              replace
               href={bedMeetingTvHref({ ed: ed.id })}
               onClick={close}
               aria-current={current === `ed:${ed.id}` ? "page" : undefined}
@@ -1059,6 +1047,7 @@ function ScreenPicker({ current }: { current: string }) {
           {wards.map((unit) => (
             <Link
               key={unit.id}
+              replace
               href={bedMeetingTvHref({ ward: unit.id })}
               onClick={close}
               aria-current={current === `ward:${unit.id}` ? "page" : undefined}
@@ -1295,11 +1284,7 @@ export function BedMeetingTvScreen({ service: serviceParam, ward, ed }: BedMeeti
             </button>
           ) : null}
           <TvLockControl href={selfHref} className={styles.action} shared={shared?.enabled === true} />
-          {tvLocked ? null : (
-            <Link href={WARD_CAPACITY_HREF} className={styles.action}>
-              Leave TV view
-            </Link>
-          )}
+          {tvLocked ? null : <TvLeaveLink className={styles.action} />}
         </div>
       </header>
       {view.kind === "network" ? (
