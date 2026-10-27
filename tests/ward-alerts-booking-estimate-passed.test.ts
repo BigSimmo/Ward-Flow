@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { alertActionFor, alertKindOf } from "@/components/ward-management/alerts/alerts-model";
+import { alertActionFor, alertKindLabel, alertKindOf } from "@/components/ward-management/alerts/alerts-model";
 import { buildActionInbox } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -34,5 +34,11 @@ describe("Alerts raise a passed booking estimate after 10 minutes (P068)", () =>
     expect(row?.movementId).toBe(base.id);
     expect(alertKindOf(row!.id)).toBe("transport");
     expect(alertActionFor(row!, {} as Parameters<typeof alertActionFor>[1]).label).toBe("Chase transport");
+  });
+
+  it("names its own condition in History, apart from 'Transport not yet left'", () => {
+    const [row] = passedRows(withBookingEstimate(13));
+    expect(alertKindLabel(row!.id)).toBe("Booking estimate passed");
+    expect(alertKindLabel("transport-WF-001")).not.toBe("Booking estimate passed");
   });
 });

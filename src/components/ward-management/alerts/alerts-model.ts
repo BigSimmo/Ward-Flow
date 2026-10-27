@@ -153,6 +153,19 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   duplicate: "More than one active bed request",
 };
 
+/**
+ * The condition's short name for one row. The passed booking estimate shares the "transport" kind
+ * (and so its "Chase transport" action) but names its own condition: it also applies once the
+ * transport has left, so "Transport not yet left" would be wrong (P068, Josh's wording).
+ */
+export function alertKindLabel(id: string): string | undefined {
+  const kind = alertKindOf(id);
+  if (kind === undefined) return undefined;
+  return id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)
+    ? "Booking estimate passed"
+    : ALERT_KIND_LABELS[kind];
+}
+
 /** Remove the legacy movement reference from presentation, preserving the recorded detail. */
 export function alertDetail(item: InboxItem): string {
   const prefix = `${item.movementId} · `;

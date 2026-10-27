@@ -90,6 +90,7 @@ describe("clinical values file", () => {
       bedCountFresh: 60,
       downtimePackStale: 60,
       preparingBedStale: 61,
+      bookingEstimatePassed: 10,
       lateArrivalGrace: 60,
       silentWardFirstReminder: 120,
       silentWardSecondReminder: 240,

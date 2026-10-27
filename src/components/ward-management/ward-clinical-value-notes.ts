@@ -112,6 +112,9 @@ const CLINICAL_VALUE_NOTES = {
   preparingBedStale: {
     source: "D-63 (16 Oct 2026), more than an hour, local workflow choice",
   },
+  bookingEstimatePassed: {
+    source: "Josh, 27 Oct 2026, 10:02 PM AWST, chat approval of 10 minutes (P068); synthetic until signed",
+  },
   lateArrivalGrace: {
     source: "D-22 (26 Sep 2026), labelled default",
   },

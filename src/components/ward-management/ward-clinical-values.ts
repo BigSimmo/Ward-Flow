@@ -281,6 +281,14 @@ export const CLINICAL_VALUES = {
     value: 1 * MINUTES_PER_HOUR + 1,
     unit: "minutes",
   },
+  bookingEstimatePassed: {
+    // Synthetic: Josh approved the 10 minutes in chat on 27 Oct 2026 (P068); nobody has signed it.
+    status: "synthetic",
+    name: "Transport booking estimate raised in Alerts once passed by",
+    group: "Alerts and holds",
+    value: 10,
+    unit: "minutes",
+  },
 
   // ---- Arrivals and answers ------------------------------------------------------------------
   lateArrivalGrace: {

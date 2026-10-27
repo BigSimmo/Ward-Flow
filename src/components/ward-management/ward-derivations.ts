@@ -579,7 +579,7 @@ export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificat
 };
 
 /** P068: minutes past the booking estimate before Alerts raise it (Josh, 27 Oct 2026, 10:02 PM AWST). */
-const BOOKING_ESTIMATE_PASSED_AFTER_MINUTES = 10;
+const BOOKING_ESTIMATE_PASSED_AFTER_MINUTES = CLINICAL_VALUES.bookingEstimatePassed.value;
 
 export function buildActionInbox(
   movements: Movement[],
