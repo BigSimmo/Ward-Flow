@@ -672,10 +672,7 @@ function WardSharedWorkspaceContent({
   return (
     <>
       <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
-      <WardSharedSaveStatus
-        connection={connection}
-        deskLabel={access ? sharedDeskLabel(access) : "Coordinator"}
-      />
+      <WardSharedSaveStatus connection={connection} deskLabel={access ? sharedDeskLabel(access) : "Coordinator"} />
       {connection.recovery && <span role="alert"> {connection.recovery}</span>}
       <FocusKeepingInert
         key={JSON.stringify([
