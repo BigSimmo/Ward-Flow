@@ -261,7 +261,7 @@
   font-weight: 600;
 }
 
-/* Beds ready statewide: four counts, each opens Places. */
+/* Beds ready statewide: the total, three cohort counts that add up to it, then locked as a part. */
 .beds {
   display: flex;
   flex-direction: column;
@@ -287,6 +287,13 @@
   font-size: var(--wf-fs-12);
   text-decoration: none;
   white-space: nowrap;
+}
+
+/* P101: locked is a part of the cohort cells, so it sits apart from them. */
+.bedCellPart {
+  margin-left: var(--wf-s-2);
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  border-radius: 0 var(--wf-r-md) var(--wf-r-md) 0;
 }
 
 .bedCell b {

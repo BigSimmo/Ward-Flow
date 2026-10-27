@@ -70,6 +70,7 @@ import { replaceSearchParams, useLocationSearch } from "@/components/ward-manage
 import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
+import { DelaysInTransitNote } from "@/components/ward-management/delays/delays-in-transit-note";
 import { WAITING_VIEWS } from "./waiting-href";
 import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel, windowText } from "./waiting-views";
 import styles from "./delays-board.module.css";
@@ -975,6 +976,7 @@ export function DelaysBoard({
                 : undefined,
               "delays-stat-over8",
             )}
+            <DelaysInTransitNote split={split} className={styles.footNote} />
             {heroStat(
               over24,
               `Over ${H24}`,
