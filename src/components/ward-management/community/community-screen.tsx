@@ -32,6 +32,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import {
   useCommunityScopedReferrals,
   useCommunitySentReferrals,
@@ -353,7 +354,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
    * refused step or Undo says why.
    */
   const toast = useOptionalToast();
-  const { run: runDecision, offer: offerDecision } = useUndoableStep({
+  const {
+    run: runDecision,
+    runRecorded: runRecordedDecision,
+    offer: offerDecision,
+  } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -384,6 +389,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   }, [isPhone]);
   const [phoneReferralId, setPhoneReferralId] = useState<string | null>(null);
   const [phoneDeclining, setPhoneDeclining] = useState(false);
+  const declineSave = useWardFormSave(`community-decline:${declineOpenFor ?? phoneReferralId ?? ""}`);
   const [phoneDepartureId, setPhoneDepartureId] = useState<string | null>(null);
   const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(false);
   const [switchQuery, setSwitchQuery] = useState("");
@@ -500,6 +506,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   function handleToggleDecline(referralId: string) {
     setDeclineOpenFor((current) => (current === referralId ? undefined : referralId));
     setDeclineDraft(undefined);
+    declineSave.forget();
   }
 
   /**
@@ -510,28 +517,49 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
    * bypasses the disabled control.
    */
   const handleConfirmDecline = useCallback(
-    (referralId: string) => {
-      if (declineDraft === undefined) return;
+    (referralId: string, onDeclined?: () => void) => {
+      if (declineDraft === undefined || declineSave.pending) return;
       if (
         !declineTargetIsOpen(referralId, declineOpenFor, { declining: phoneDeclining, referralId: phoneReferralId })
       ) {
         return;
       }
-      runDecision(
-        {
-          type: "DECLINE_REFERRAL",
-          role: "community",
-          now,
-          referralId,
-          destinationKind: "community_team",
-          reason: declineDraft,
+      // H-0117 (audit SM2-03): the reason stays chosen until the decline is accepted.
+      declineSave.submit(
+        () => {
+          let completion: ReturnType<typeof dispatch> | undefined;
+          runRecordedDecision(
+            () =>
+              (completion = dispatch({
+                type: "DECLINE_REFERRAL",
+                role: "community",
+                now,
+                referralId,
+                destinationKind: "community_team",
+                reason: declineDraft,
+              })),
+            decisionStep(referralId, "declined"),
+          );
+          return completion;
         },
-        decisionStep(referralId, "declined"),
+        () => {
+          setDeclineOpenFor(undefined);
+          setDeclineDraft(undefined);
+          onDeclined?.();
+        },
       );
-      setDeclineOpenFor(undefined);
-      setDeclineDraft(undefined);
     },
-    [declineDraft, declineOpenFor, phoneDeclining, phoneReferralId, decisionStep, now, runDecision],
+    [
+      declineDraft,
+      declineOpenFor,
+      declineSave,
+      phoneDeclining,
+      phoneReferralId,
+      decisionStep,
+      dispatch,
+      now,
+      runRecordedDecision,
+    ],
   );
 
   /**
@@ -908,6 +936,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     setPhoneReferralId(null);
     setPhoneDeclining(false);
     setDeclineDraft(undefined);
+    declineSave.forget();
   };
 
   return {
@@ -970,6 +999,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     runDecision,
     offerDecision,
     decisionStep,
+    declineSave,
     switchOpen,
     setSwitchOpen,
     isPhone,
