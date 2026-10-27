@@ -138,7 +138,7 @@ export function bookingOfInboxId(
 }
 
 /** Short name for a condition, used in History and the Today chart. */
-export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
+const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   awol: "Absent without leave on an order",
   legal: "Form due time passed",
   declines: "Every ward asked declined",
