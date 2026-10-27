@@ -248,8 +248,6 @@ test("a workflow refusal from the server's engine reaches the screen as the engi
   await panel.locator('[data-testid^="ward-shortlist-candidate-"][data-eligible="true"]').first().click();
   await panel.getByTestId("ward-shortlist-override-toggle").click();
   await panel.getByLabel(/Reason for overriding/u).selectOption("The bed information is known to be out of date");
-  await panel.getByTestId("ward-shortlist-override-second-sign-off").check();
-  await panel.getByTestId("ward-shortlist-override-sign-off-name").fill("JS");
   await panel.getByRole("button", { name: "Record override" }).click();
 
   // The reducer's reason for this refusal, then the shared board's "Nothing was changed.", rather
