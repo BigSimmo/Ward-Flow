@@ -11,16 +11,14 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
-
-/** P069: Josh approved "with 10 s Undo" (Oct 27, 2026, 10:02 PM AWST). */
-export const ARRIVED_AT_WARD_UNDO_MS = 10_000;
+import { ARRIVED_AT_WARD_UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * True only where `PATIENT_ARRIVED` would be accepted straight from a pulled bed: a person recorded
  * no transport is needed and no live transport job exists (ward-flow-transport-events.ts). Josh,
  * Oct 27, 2026, 11:36 PM AWST: "P069: show the action only for no-transport pulls, no engine change".
  */
-export function arrivedAtWardOffered(movement: Movement): boolean {
+function arrivedAtWardOffered(movement: Movement): boolean {
   if (movement.closure || !movement.acceptedUnitId) return false;
   if (movement.stage !== "pulled" && movement.stage !== "handover_ready") return false;
   const liveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
@@ -77,7 +75,7 @@ function ArrivedAtWardControl({
             {
               success: `${displayName} arrived at ${ward}`,
               undo: (at) => ({ type: "UNDO_TRANSPORT_STEP", role: "coordinator", now: at, movementId: movement.id }),
-              toastMs: ARRIVED_AT_WARD_UNDO_MS,
+              toastMs: ARRIVED_AT_WARD_UNDO_TOAST_MS,
             },
             { completion: outcome },
           );
