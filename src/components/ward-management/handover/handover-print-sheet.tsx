@@ -576,11 +576,17 @@ export function HandoverPrintSheet({
     };
   };
 
+  // H-0350: one ResizeObserver for the sheet's life. Each render only re-observes when the measured
+  // nodes change, instead of tearing the observer down and building a new one every render.
+  const readMeasurementsRef = useRef(readMeasurements);
+  const measureRef = useRef<{ observer: ResizeObserver | null; schedule: () => void; observed: Element[] } | null>(
+    null,
+  );
   useEffect(() => {
     let active = true;
-    let frame: number;
+    let frame = 0;
     const update = () => {
-      const next = readMeasurements();
+      const next = readMeasurementsRef.current();
       if (active && next) setMeasurements((old) => (JSON.stringify(old) === JSON.stringify(next) ? old : next));
     };
     const schedule = () => {
@@ -588,10 +594,7 @@ export function HandoverPrintSheet({
       frame = requestAnimationFrame(update);
     };
     const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(schedule);
-    stackRef.current
-      ?.querySelectorAll("article > *, [data-paper-item], [data-extra-entry]")
-      .forEach((node) => observer?.observe(node));
-    schedule();
+    measureRef.current = { observer, schedule, observed: [] };
     void document.fonts?.ready.then(() => {
       if (active) schedule();
     });
@@ -599,7 +602,30 @@ export function HandoverPrintSheet({
       active = false;
       cancelAnimationFrame(frame);
       observer?.disconnect();
+      measureRef.current = null;
     };
+  }, []);
+  useEffect(() => {
+    readMeasurementsRef.current = readMeasurements;
+    const measure = measureRef.current;
+    if (!measure) return;
+    const nodes = Array.from(
+      stackRef.current?.querySelectorAll("article > *, [data-paper-item], [data-extra-entry]") ?? [],
+    );
+    // Without a ResizeObserver nothing reports a reflow, so measure after every render instead.
+    if (
+      measure.observer &&
+      nodes.length === measure.observed.length &&
+      nodes.every((node, index) => node === measure.observed[index])
+    ) {
+      return;
+    }
+    const kept = new Set(nodes);
+    const had = new Set(measure.observed);
+    for (const node of measure.observed) if (!kept.has(node)) measure.observer?.unobserve(node);
+    for (const node of nodes) if (!had.has(node)) measure.observer?.observe(node);
+    measure.observed = nodes;
+    measure.schedule();
   });
 
   /* Audit 24-7 (CT-11): a browser print (Ctrl+P) must stamp the rows it prints, not an older Print-button time. */

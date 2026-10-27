@@ -21,6 +21,7 @@
 // rail.
 import { spawn, execFileSync } from "node:child_process";
 import { resolveAuditTarget } from "./local-audit-target.mjs";
+import { wardFlowLogsRoot } from "./logs-root.mjs";
 import { createRequire } from "node:module";
 import fs from "node:fs";
 import net from "node:net";
@@ -31,7 +32,7 @@ const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const sharp = require("sharp");
 
-const LOGS = process.env.WARD_FLOW_LOGS ?? "D:/Repos/ward-flow-logs";
+const LOGS = wardFlowLogsRoot();
 const LINE = "origin/main";
 const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const args = process.argv.slice(2);

@@ -83,3 +83,37 @@ it.each([
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   expect(screen.getByText("Invalid configuration file format.")).toBeVisible();
 });
+
+it("says when the rules file cannot be read and clears the picker (H-0351)", () => {
+  const { container } = render(
+    <ToastProvider>
+      <WardFlowProvider>
+        <SettingsScreen />
+      </WardFlowProvider>
+    </ToastProvider>,
+  );
+  vi.stubGlobal(
+    "FileReader",
+    class {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      readAsText() {
+        this.onerror?.();
+      }
+    },
+  );
+  const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+  const cleared = vi.fn();
+  Object.defineProperty(input, "value", {
+    configurable: true,
+    get: () => "",
+    set: (value: string) => {
+      if (value === "") cleared();
+    },
+  });
+  fireEvent.change(input, {
+    target: { files: [new File(["synthetic configuration"], "rules.json", { type: "application/json" })] },
+  });
+  expect(screen.getByText("This rules file could not be read. Select it again.")).toBeVisible();
+  expect(cleared).toHaveBeenCalled();
+});

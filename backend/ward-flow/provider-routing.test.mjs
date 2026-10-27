@@ -16,6 +16,7 @@ import { VerifierUnavailableError } from "./auth.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
 import { STATEWIDE_VIEW, bootstrapViewer } from "./viewer.test-support.mjs";
 
+/** @returns {Record<string, string | undefined>} */
 function environment(databaseProvider, authProvider) {
   const databaseUrl =
     databaseProvider === "supabase"
@@ -246,7 +247,7 @@ test("the sign-in check reads which accounts hold a role from the shared workspa
   const config = readConfig(environment("postgres", "supabase"));
   const nurse = randomUUID();
   /** @type {() => Promise<unknown>} */
-  let roleHolders;
+  let roleHolders = async () => assert.fail("the authenticator was not given a role-holder reader");
   await createBackend(config, {
     database: {
       postgres: async () => ({ createPool: async () => ({ end: async () => {} }), verifyPool: async () => {} }),

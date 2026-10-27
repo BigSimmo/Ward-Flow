@@ -14,6 +14,7 @@ import { roleLimitReason } from "@/components/ward-management/ward-role-permissi
 import {
   UNDO_STEP_TYPES,
   stepUndoFor,
+  undoRecordSeqFor,
   undoStepSubjectId,
   type UndoStepType,
 } from "@/components/ward-management/ward-undo";
@@ -55,11 +56,11 @@ type Pending = {
   sayAfterLeaving?: boolean;
 };
 
-type RecordWatch = { undoType: UndoStepType; subjectId: string; priorSeq?: number; seq?: number };
+type RecordWatch = { undoType: string; subjectId: string; priorSeq?: number; seq?: number };
 
-/** The step record's number once the state shows a record newer than the one before the step. */
+/** The record's number once the state shows a record newer than the one before the step. */
 function newRecordSeq(records: Parameters<typeof stepUndoFor>[0], watch: RecordWatch): number | undefined {
-  const seq = stepUndoFor(records, watch.undoType, watch.subjectId)?.seq;
+  const seq = undoRecordSeqFor(records, watch.undoType, watch.subjectId);
   return seq !== undefined && seq !== watch.priorSeq ? seq : undefined;
 }
 
@@ -181,7 +182,7 @@ export function useUndoableStep({
       const undoType = offered.type;
       // The record this toast is for, so its Undo is refused once a newer step replaces it.
       const watch: RecordWatch = {
-        undoType: undoType as UndoStepType,
+        undoType,
         subjectId: undoStepSubjectId(offered),
         priorSeq: pending.priorSeq,
       };
@@ -319,17 +320,13 @@ export function useUndoableStep({
     /** Dispatches `event` now, then offers Undo once the engine has accepted it. */
     run(event: WardFlowEvent, step: UndoableStep) {
       const offered = step.undo?.(nowRef.current);
-      const priorSeq = offered
-        ? stepUndoFor(undoRecords, offered.type as UndoStepType, undoStepSubjectId(offered))?.seq
-        : undefined;
+      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, undoStepSubjectId(offered)) : undefined;
       submit(event, { prior: rejectionCountRef.current, ...step, priorSeq });
     },
     /** Records through a provider helper while keeping the command's completion and Undo guard. */
     runRecorded(record: () => ReturnType<WardCommandDispatch>, step: UndoableStep) {
       const offered = step.undo?.(nowRef.current);
-      const priorSeq = offered
-        ? stepUndoFor(undoRecords, offered.type as UndoStepType, undoStepSubjectId(offered))?.seq
-        : undefined;
+      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, undoStepSubjectId(offered)) : undefined;
       submit(offered!, { prior: rejectionCountRef.current, ...step, priorSeq }, record);
     },
     /** Offers Undo for a step another component on the page has already recorded. */

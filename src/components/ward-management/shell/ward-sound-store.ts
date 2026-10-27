@@ -79,28 +79,36 @@ export function playSyntheticUrgentChime(): void {
 }
 
 export function getAudioBuzzPreference(): boolean {
-  if (audioBuzzInMemoryFallback !== undefined) {
-    return audioBuzzInMemoryFallback;
-  }
+  // H-0306: storage is the source of truth so another tab's toggle (a storage
+  // event) is seen; the memory copy is only used when storage throws. A choice
+  // whose write failed (storage full) is kept until a later write succeeds.
+  if (audioBuzzInMemoryFallback !== undefined) return audioBuzzInMemoryFallback;
   try {
-    if (typeof window === "undefined" || !window.localStorage) return true;
+    if (typeof window === "undefined" || !window.localStorage) {
+      return audioBuzzInMemoryFallback ?? true;
+    }
     const stored = window.localStorage.getItem(AUDIO_BUZZ_STORAGE_KEY);
     if (stored === null) return true;
     return stored === "true";
   } catch {
-    return true;
+    return audioBuzzInMemoryFallback ?? true;
   }
 }
 
 export function setAudioBuzzPreference(enabled: boolean): void {
-  audioBuzzInMemoryFallback = enabled;
   try {
     if (typeof window !== "undefined" && window.localStorage) {
       window.localStorage.setItem(AUDIO_BUZZ_STORAGE_KEY, String(enabled));
-      window.dispatchEvent(new Event(AUDIO_BUZZ_CHANGE_EVENT));
+      audioBuzzInMemoryFallback = undefined;
+    } else {
+      audioBuzzInMemoryFallback = enabled;
     }
   } catch {
     // Graceful fallback for restricted environments
+    audioBuzzInMemoryFallback = enabled;
+  }
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUDIO_BUZZ_CHANGE_EVENT));
   }
 }
 

@@ -21,8 +21,9 @@ import { runOwnedChild } from "../owned-child.mjs";
 import { copyFileSync, existsSync, mkdirSync, renameSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { wardFlowLogsRoot } from "./logs-root.mjs";
 
-const CACHE_DIR = process.env.WARD_TSC_CACHE_DIR ?? "D:/Repos/ward-flow-logs/tsc-cache";
+const CACHE_DIR = process.env.WARD_TSC_CACHE_DIR ?? path.join(wardFlowLogsRoot(), "tsc-cache");
 const root = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
 const admission = acquireHeavyRunLock({ projectRoot: root, mode: "shared", command: "gate-tsc" });
 try {

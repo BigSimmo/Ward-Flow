@@ -29,6 +29,7 @@ import { usePrintableDisclosures } from "@/components/ward-management/use-printa
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
 import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { allDeclines, allOverrides, type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
@@ -1123,7 +1124,11 @@ export function CoordinatorScreen() {
                     icon={Copy}
                     className={styles.sinceSheetFoot}
                     onClick={() => {
-                      void copyTextToClipboard(sinceHandoverText(lastLook.changes, now)).catch(() => undefined);
+                      // H-0346: say whether the copy happened, in the Handover page's words.
+                      void copyTextToClipboard(sinceHandoverText(lastLook.changes, now)).then(
+                        () => announceToWardShell("Changes copied as handover text."),
+                        () => announceToWardShell("Copy was blocked by the browser."),
+                      );
                     }}
                   >
                     Copy as handover text

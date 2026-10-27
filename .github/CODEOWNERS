@@ -1,0 +1,3 @@
+# Code owners (H-0373). Ward Flow is a one-owner synthetic-data prototype, so one owner reviews
+# everything. Name a second owner per path here once governance names one (Part B).
+* @BigSimmo

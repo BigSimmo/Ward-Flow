@@ -207,7 +207,7 @@ test(
       const address = server.address();
       if (!address || typeof address === "string") throw new Error("Owned HTTP listener has no TCP address");
       const base = `http://127.0.0.1:${address.port}/v1/workspace`;
-      const request = (workingAs, body = undefined) =>
+      const request = (workingAs, /** @type {unknown} */ body = undefined) =>
         fetch(body ? `${base}/commands` : base, {
           method: body ? "POST" : "GET",
           headers: {
@@ -317,7 +317,10 @@ test(
     } finally {
       if (server) {
         server.closeAllConnections();
-        await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+        const owned = server;
+        await /** @type {Promise<void>} */ (
+          new Promise((resolve, reject) => owned.close((error) => (error ? reject(error) : resolve())))
+        );
       }
       await pool.end();
     }

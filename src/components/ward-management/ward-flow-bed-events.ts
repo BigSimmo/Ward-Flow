@@ -1,7 +1,7 @@
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
-import { withUndoRecord } from "./ward-undo";
+import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
 import { numberedBedKind } from "./ward-bed-designation";
 import { bedMoveNeedsOpenBedReason, openBedMoveRefusal } from "./ward-bed-move-reason";
 import { bedIsOccupied, type Admission } from "@/components/ward-management/ward-admissions";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { isUploadedFileType, uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
 import type { BedEventHelpers, WardFlowState } from "./ward-flow-reducer";
+import { nextBedReleaseId } from "./ward-runtime-ids";
 
 /**
  * A ward's own beds and stays: bed moves, capacity, bed release and preparation, leave, discharge
@@ -194,6 +195,8 @@ export function reduceBedEvent(
           admissionId: admission.id,
           unitId: admission.unitId,
           at: event.now,
+          // H-0246: names this move, so an older toast's Undo cannot take back a newer one.
+          seq: nextStepUndoSeq(state.undoRecords, state.auditSequence),
           role: event.role,
           beforeBed: admission.bedNumber ?? null,
           ...(linkedMovement ? { beforeMovementBed: linkedMovement.heldBedNumber ?? null } : {}),
@@ -442,9 +445,9 @@ export function reduceBedEvent(
       // `confirmedAt` separately records when the ward reported the release's stage.
       const flaggingRole = recordedByLabel(event.role, flaggedUnit.name);
       const release: BedRelease = {
-        // "WR-9NN": the "9" prefix marks a runtime id. Safe to derive from `bedReleases.length`:
-        // nothing ever removes a release.
-        id: `WR-9${String(state.bedReleases.length).padStart(2, "0")}`,
+        // "WR-9NN": the "9" prefix marks a runtime id. Not the length alone: an Undo of a departure
+        // removes the release it recorded, so the next id must pass every live one (ENG-01, H-0334).
+        id: nextBedReleaseId(state.bedReleases),
         unitId: flaggedUnit.id,
         admissionId: flaggedAdmission.id,
         state: "expected",

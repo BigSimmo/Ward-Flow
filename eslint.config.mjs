@@ -243,6 +243,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // The backend's generated engine bundle (backend/ward-flow/build-engine.mjs); its source is linted in src/.
+    "backend/ward-flow/dist/**",
     "out/**",
     "build/**",
     "coverage/**",

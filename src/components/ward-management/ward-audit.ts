@@ -364,6 +364,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION":
       return "undo";
     case "PLACE_IN_BED":
     case "UNDO_PLACE_IN_BED":
@@ -434,6 +435,29 @@ export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditS
     const review = uniqueRecord(state.auditReviews, event.reviewId);
     const entry = review ? governanceAuditEntry(state, review.eventId) : undefined;
     if (entry) return { kind: "audit-event", eventId: entry.id };
+  } else if (event.type === "UNDO_BED_MEETING_ACTION" && typeof event.subject === "object" && event.subject !== null) {
+    // H-0150: the Undo names its stay or bed request through `subject`, not a top-level id.
+    if (event.subject.kind === "movement") {
+      const movement = uniqueRecord(state.movements, event.subject.id);
+      if (movement)
+        return {
+          kind: "movement",
+          movementId: movement.id,
+          patientId: patientReference(
+            state,
+            uniqueRecord(state.referrals, movement.referralId)?.patientId ?? movement.patientId,
+          ),
+        };
+    } else if (event.subject.kind === "admission") {
+      const admission = uniqueRecord(state.admissions, event.subject.id);
+      if (admission && uniqueRecord(state.units, admission.unitId))
+        return {
+          kind: "admission",
+          admissionId: admission.id,
+          unitId: admission.unitId,
+          patientId: patientReference(state, admission.patientId),
+        };
+    }
   } else if (event.type === "SET_CONFIGURATION") {
     return { kind: "configuration" };
   } else if (
@@ -604,7 +628,8 @@ export function captureAuditEvent(
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
-    case "UNDO_ABSENT_WITHOUT_LEAVE": {
+    case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION": {
       const record = UNDO_STEP_TYPES.includes(event.type)
         ? stepUndoFor(before.undoRecords, event.type, undoStepSubjectId(event))
         : undefined;

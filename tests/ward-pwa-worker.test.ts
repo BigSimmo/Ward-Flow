@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
@@ -25,6 +26,15 @@ type Rule = "navigate" | "immutable" | "asset" | null;
 
 const ORIGIN = "https://ward.example";
 const WORKER_SOURCE = readFileSync(join(process.cwd(), "public/ward-flow-push-sw.js"), "utf8");
+const OFFLINE_PAGE = readFileSync(join(process.cwd(), "public/ward-flow-offline.html"), "utf8");
+const CURRENT_CACHE = `ward-flow-static-${/const CACHE_VERSION = "([^"]+)";/.exec(WORKER_SOURCE)?.[1]}-${
+  /const OFFLINE_PAGE_REVISION = "([0-9a-f]+)";/.exec(WORKER_SOURCE)?.[1]
+}`;
+
+/** H-0308: the worker's offline page revision, recomputed from the shipped page. */
+function offlinePageRevision(html: string) {
+  return createHash("sha256").update(html.replace(/\r\n/g, "\n")).digest("hex").slice(0, 12);
+}
 
 function loadWorker() {
   const listeners: Record<string, (event: unknown) => void> = {};
@@ -197,6 +207,14 @@ describe("worker lifecycle", () => {
     );
   });
 
+  it("names its cache after the current offline page, so a changed page reaches installed devices (H-0308)", () => {
+    const revision = /const OFFLINE_PAGE_REVISION = "([0-9a-f]+)";/.exec(WORKER_SOURCE)?.[1];
+    // If this fails, the offline page changed: set OFFLINE_PAGE_REVISION to the expected value.
+    expect(revision).toBe(offlinePageRevision(OFFLINE_PAGE));
+    expect(offlinePageRevision(`${OFFLINE_PAGE}<!-- edited -->`)).not.toBe(revision);
+    expect(WORKER_SOURCE).toContain("const STATIC_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}-${OFFLINE_PAGE_REVISION}`;");
+  });
+
   it("enables navigation preload and removes older Ward Flow caches only", async () => {
     const deleted: string[] = [];
     let preload = false;
@@ -204,7 +222,13 @@ describe("worker lifecycle", () => {
     runInNewContext(WORKER_SOURCE, {
       URL,
       caches: {
-        keys: async () => ["ward-flow-static-v0", "ward-flow-static-v1", "ward-flow-static-v2", "someone-elses-cache"],
+        keys: async () => [
+          "ward-flow-static-v0",
+          "ward-flow-static-v1",
+          "ward-flow-static-v2",
+          CURRENT_CACHE,
+          "someone-elses-cache",
+        ],
         delete: async (name: string) => deleted.push(name),
       },
       self: {
@@ -225,7 +249,7 @@ describe("worker lifecycle", () => {
     let work: Promise<unknown> = Promise.resolve();
     listeners.activate({ waitUntil: (promise: Promise<unknown>) => (work = promise) });
     await work;
-    expect(deleted).toEqual(["ward-flow-static-v0", "ward-flow-static-v1"]);
+    expect(deleted).toEqual(["ward-flow-static-v0", "ward-flow-static-v1", "ward-flow-static-v2"]);
     expect(preload).toBe(true);
   });
 

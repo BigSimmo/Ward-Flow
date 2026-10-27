@@ -158,7 +158,7 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
     question by default, and nobody may clear one just to go green) from `backlog` (ours to fix,
     and fixing it is the correct way to clear it).
 - **`scripts/run-vitest.mjs`** (188 lines) is the general-purpose Vitest wrapper used everywhere
-  else in the repo (including, per `CLAUDE.md`, `node scripts/run-vitest.mjs <affected-files>` for
+  else in the repo (including, per `CLAUDE.md`, `node scripts/run-vitest.mjs run <test-files>` for
   focused iteration). It does not itself pick "changed files plus up to three importers" — that
   selection is the caller's job (see `npm run test:focused`, `scripts/test-focused.mjs`, which is
   documented in the sibling scripts-and-tooling map). What this wrapper adds over calling Vitest
