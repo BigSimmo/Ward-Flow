@@ -1033,6 +1033,7 @@ function ScreenPicker({ current }: { current: string }) {
           {meetings.map((meeting) => (
             <Link
               key={meeting.key}
+              replace
               href={bedMeetingTvHref({ service: meeting.key })}
               onClick={close}
               aria-current={current === `service:${meeting.key}` ? "page" : undefined}
@@ -1046,6 +1047,7 @@ function ScreenPicker({ current }: { current: string }) {
           {eds.map((ed) => (
             <Link
               key={ed.id}
+              replace
               href={bedMeetingTvHref({ ed: ed.id })}
               onClick={close}
               aria-current={current === `ed:${ed.id}` ? "page" : undefined}
@@ -1059,6 +1061,7 @@ function ScreenPicker({ current }: { current: string }) {
           {wards.map((unit) => (
             <Link
               key={unit.id}
+              replace
               href={bedMeetingTvHref({ ward: unit.id })}
               onClick={close}
               aria-current={current === `ward:${unit.id}` ? "page" : undefined}
