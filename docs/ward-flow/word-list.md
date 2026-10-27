@@ -28,6 +28,17 @@ word in the in-app Help glossary is on this list.
 | Closed               | A bed out of service that cannot be given to anyone.                                                         |                                                                                            |
 | **Held up**          | A discharge or move that is delayed. Not a bed state.                                                        |                                                                                            |
 
+## Easily confused
+
+Words that sound alike but mean different things. Each line only restates the meanings above.
+
+- Pulled, Held bed and Held up: a pulled bed is kept for an incoming patient; a held bed is kept for
+  its own patient on leave or away; held up is a delay, not a bed state (D-81, D-85).
+- Accepted and Pulled: accepted means a unit has agreed in principle and no bed is pulled yet;
+  pulled means a bed is now kept for that patient.
+- Ready and Confirmed beds: ready is one bed the ward has confirmed is clean and staffed; confirmed
+  beds are the ward's bed figures with the time it confirmed them.
+
 ## A patient's journey
 
 The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, **Handover ready**, **Moving**,
