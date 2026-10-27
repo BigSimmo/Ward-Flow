@@ -19,6 +19,7 @@ import {
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
+import { changedFirstText, namedConflict, queuedNotSentText, sameConflictRecord } from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
@@ -327,6 +328,13 @@ export class SharedWorkspaceClient {
   private cancelQueued(message = saveProblem("queuedCancelled")) {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
+    this.syncUnloadWarning();
+  }
+  /** P058: a conflict cancels only the queued actions on its own record; the rest still go. */
+  private cancelQueuedOn(event: WardFlowEvent, value: unknown) {
+    const hit = this.queue.filter((queued) => sameConflictRecord(event, queued.event));
+    this.queue = this.queue.filter((queued) => !hit.includes(queued));
+    for (const queued of hit) this.settle(queued.commandId, "cancelled", queuedNotSentText(hit.length, value));
     this.syncUnloadWarning();
   }
   /** `sentMessage` is for a command already sent: the server may have applied it, so never say "not saved". */
@@ -1181,7 +1189,9 @@ export class SharedWorkspaceClient {
           return;
         }
         if (!response.ok) {
-          this.cancelQueued();
+          const scoped = response.status === 409 && namedConflict(value);
+          if (scoped) this.cancelQueuedOn(command.event, value);
+          else this.cancelQueued();
           if (response.status === 409) {
             // The person has now been told. Popups still open are checked against the board from
             // here on, so trying again after reviewing it works.
@@ -1193,7 +1203,9 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? saveProblem("changedMeanwhile")
+                ? scoped
+                  ? changedFirstText(value)
+                  : saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"
@@ -1208,6 +1220,7 @@ export class SharedWorkspaceClient {
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
+          if (scoped && this.queue.length) continue;
           break;
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
