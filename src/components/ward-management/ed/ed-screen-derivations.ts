@@ -25,7 +25,7 @@ import {
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdNeedsItem } from "./ed-needs-you";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { resolveSubjectPatient, UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
@@ -252,6 +252,13 @@ export function deriveEdScreen({
   // and the filter above stays as it is. It leaves this list when a journey starts from it, when
   // the person is already on the board, or when no ward is still considering it.
   const siteCode = edById(thisEdId)?.siteCode;
+  // D-14: the board's people are matched by the resolver's UMRN, never by reading the patient link.
+  const resolveState = { patients: registryPatients, referrals, movements };
+  const boardUmrns = new Set(
+    patients
+      .map((movement) => resolveSubjectPatient(movement, resolveState).umrn)
+      .filter((umrn) => umrn !== UMRN_NOT_RECORDED),
+  );
   const sentForBed = referrals
     .filter(
       (referral) =>
@@ -266,12 +273,13 @@ export function deriveEdScreen({
         ) &&
         !movements.some(
           (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
-        ) &&
-        !(referral.patientId !== undefined && patients.some((movement) => movement.patientId === referral.patientId)),
+        ),
     )
-    .map((referral) => ({
+    .map((referral) => ({ referral, person: resolveSubjectPatient(referral, resolveState) }))
+    .filter(({ person }) => !boardUmrns.has(person.umrn))
+    .map(({ referral, person }) => ({
       id: referral.id,
-      person: resolveSubjectPatient(referral, { patients: registryPatients, referrals, movements }),
+      person,
       sentAt: referral.raisedAt,
       waitedMinutes: Math.max(now - referral.raisedAt, 0),
       wards: referral.destinations.flatMap(({ destination, state, withdrawnAt }) =>
