@@ -290,7 +290,15 @@ test.describe("layout shift", () => {
   }
 
   async function phonePage(browser: Browser, baseURL: string | undefined) {
-    const context = await browser.newContext({ ...devices["Pixel 7"], baseURL, viewport: { width: 390, height: 844 } });
+    // A context opened by hand gets none of the project's settings, so it takes the release gate's
+    // reduced motion and blocked service workers here, the same as the desktop measurement.
+    const context = await browser.newContext({
+      ...devices["Pixel 7"],
+      baseURL,
+      reducedMotion: "reduce",
+      serviceWorkers: "block",
+      viewport: { width: 390, height: 844 },
+    });
     return { context, page: await context.newPage() };
   }
 
