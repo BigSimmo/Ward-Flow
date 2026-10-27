@@ -95,8 +95,9 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     expect(seen).toHaveAttribute("aria-disabled", "true");
     const take = screen.queryByRole("button", { name: /^Take / });
     if (take) fireEvent.click(take);
-    const yours = screen.getByRole("button", { name: /^Yours: / });
-    expect(yours).toHaveTextContent("Yours");
+    // P019: the owner is offered Release in place of the greyed "Yours".
+    const yours = screen.getByRole("button", { name: /^Release (?!pulled bed)/ });
+    expect(yours).toHaveTextContent("Release");
   });
 
   it("renders every named condition, including the ones with nothing to show", () => {
