@@ -839,27 +839,18 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
 
         <div className="sr-only">
           <p data-testid="community-index-about">Every community team a referral can name in this prototype</p>
+          {/* H-0829 (WL-37): short sentences only. Each still carries the claim its tests pin. */}
           <p data-testid="community-index-provenance">
             These teams are listed alphabetically because the record holds a team&apos;s name and nothing else to group
-            by. The catchment table this list is derived from does link each team to a set of suburbs, but that link is
-            not carried on the team itself, so any grouping on this page would be one this prototype invented rather
-            than one a team&apos;s own record supports.
+            by. Any grouping here would be one this prototype invented.
           </p>
           <p data-testid="community-index-restraint">
-            This is a way in, not a caseload. Each row shows a team&apos;s name, its health service and how many
-            catchment suburbs name it, and links to the team — no counts of people, no discharges and nothing about who
-            a team is following up. A team&apos;s own page answers those questions for that team.
+            This is a way in, not a caseload. Rows show no counts of people, no discharges and no follow-up. Open a team
+            for its own page.
           </p>
           <p data-testid="community-index-marker-explanation">
-            Some names below carry a marker reading <strong>reads like others</strong>, because the source document
-            spells one team more than one way, or holds two different teams under names close enough to confuse.{" "}
-            <strong>The marker never means two entries are the same service</strong> — nothing on this page merges,
-            corrects or de-duplicates a name, and each stays its own entry with its own page. The reverse is just as
-            true and easy to miss: a name with <strong>no</strong> marker is <strong>not a guarantee</strong> it appears
-            only once in this list. The check compares <strong>spellings</strong>, so two names for one service are
-            invisible to it whenever they are not spelled alike — an abbreviation, or a service renamed rather than
-            misspelt. Recognising those takes a person who knows the services, and where somebody has confirmed that two
-            names are the same service, that is recorded as their decision and never inferred here.
+            A reads like others marker means a name is spelt like another. It never means they are the same service. No
+            marker is not a guarantee a name appears only once.
           </p>
         </div>
         <WardPrototypeFooter
@@ -871,8 +862,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 vocabulary, not a roster of WA services.
               </span>
               <span className="sr-only">
-                Every team listed here comes from one extracted source document; no team has agreed to be represented,
-                and nothing here has been checked against a real service.
+                Every team listed here comes from one extracted source document, and no team has agreed to be
+                represented. Nothing has been checked against a real service.
               </span>
             </>
           }

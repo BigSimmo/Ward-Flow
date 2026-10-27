@@ -21,7 +21,7 @@ import { communityTeamSlug } from "@/components/ward-management/community/commun
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
-import { supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
+import { plannedAdmissionsForDesk, supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
 import {
   coordinatorRecordScope,
   countsOnlyBedRelease,
@@ -328,11 +328,15 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
     const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
     const byUnit = <T extends { unitId: string }>(items: readonly T[]): T[] =>
       items.filter((item) => unitIn(item.unitId));
+    // The server copy's rule, so a desk's screens and forecast read the same bookings either way.
+    const plannedAdmissions = coordinator
+      ? context.plannedAdmissions
+      : plannedAdmissionsForDesk(context.plannedAdmissions ?? [], access.role, unitIn);
     const resolveIndex = {
       patients: scoped.patients,
       referrals: scoped.referrals,
       movements: scoped.movements,
-      plannedAdmissions: coordinator ? context.plannedAdmissions : [],
+      plannedAdmissions,
     };
     const { breakGlassPatientIds, ...rest } = scoped;
     // Break glass is read only: an event about a person seen only through it is refused here, before
@@ -481,7 +485,7 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
         undoRecords: wholeNetwork ? context.undoRecords : [],
         saveScenarioFile: wholeNetwork ? context.saveScenarioFile : undefined,
         repatriations: coordinator ? context.repatriations : [],
-        plannedAdmissions: coordinator ? context.plannedAdmissions : [],
+        plannedAdmissions,
         supportNotifications: supportNotificationsForDesk(context.supportNotifications, {
           coordinator,
           wholeNetwork,

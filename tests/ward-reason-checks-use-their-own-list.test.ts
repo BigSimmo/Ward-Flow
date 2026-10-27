@@ -57,6 +57,13 @@ const REDUCERS = [
   "src/components/ward-management/ward-flow-bed-meeting-events.ts",
 ] as const;
 const EVENTS = "src/components/ward-management/ward-flow-events.ts";
+// 27 Oct 2026: the inbox events, SNOOZE_INBOX_ITEM's reason among them, moved here (H-0283).
+const INBOX_EVENTS = "src/components/ward-management/ward-inbox-events.ts";
+
+/** The event union's source, read from both files that declare it. */
+function eventsSource(): string {
+  return [EVENTS, INBOX_EVENTS].map((file) => readFileSync(file, "utf8")).join("\n");
+}
 
 /**
  * The one runtime list each reason TYPE is spelled by. This is the only hand-written thing here,
@@ -132,7 +139,7 @@ function reasonChecks(): Array<{ event: string; list: string }> {
 
 /** The reason TYPE each event declares, read from the event union itself. */
 function reasonTypeOf(eventName: string): string | undefined {
-  const source = stripComments(readFileSync(EVENTS, "utf8"));
+  const source = stripComments(eventsSource());
   const start = source.indexOf(`type: "${eventName}";`);
   if (start < 0) return undefined;
   /*
@@ -234,7 +241,7 @@ describe("reason membership checks", () => {
      *
      * Derived from the events file, so a sixth reason-carrying event ships red until it has one.
      */
-    const source = stripComments(readFileSync(EVENTS, "utf8"));
+    const source = stripComments(eventsSource());
     const carryReason = [...source.matchAll(/type: "([A-Z][A-Z0-9_]*)";/gu)]
       .map((match) => match[1])
       .filter((name) => reasonTypeOf(name) !== undefined);

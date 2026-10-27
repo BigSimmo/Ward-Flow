@@ -58,6 +58,8 @@ import {
 } from "@/components/ward-management/ward-patients";
 import { healthServiceAcronym, unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { WardPanel } from "@/components/ward-management/ward-panel";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import { plannedAdmissionAgenda } from "./planned-admissions";
 import {
   applyDraftPatch,
@@ -144,6 +146,13 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
     "shared",
   );
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
+  // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
+  // may take. The executive reads them as counts, with nobody named.
+  const role = useRouteRole();
+  const canBook = dispatchPermission(role, "BOOK_PLANNED_ADMISSION").allowed;
+  const canChange = dispatchPermission(role, "CHANGE_PLANNED_ADMISSION").allowed;
+  const canCancel = dispatchPermission(role, "CANCEL_PLANNED_ADMISSION").allowed;
+  const canConvert = dispatchPermission(role, "CONVERT_PLANNED_ADMISSION").allowed;
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -207,6 +216,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   }
 
   function whoText(planned: PlannedAdmission): string {
+    if (role === "executive") return "Name not shown to this desk";
     if (planned.patientId) return patientOf({ patientId: planned.patientId }).displayName;
     return planned.initials === null ? "Initials not recorded" : plannedInitialsLabel(planned.initials);
   }
@@ -449,10 +459,12 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
       count={`${booked} booked`}
       testId="ward-capacity-planned-admissions"
       headerAction={
-        <Button variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
-          <CalendarPlus size={16} aria-hidden="true" />
-          Book
-        </Button>
+        canBook ? (
+          <Button variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
+            <CalendarPlus size={16} aria-hidden="true" />
+            Book
+          </Button>
+        ) : undefined
       }
     >
       <div className={styles.body}>
@@ -482,35 +494,43 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                       </span>
                     ) : null}
                   </span>
-                  <span className={styles.actions}>
-                    <Button
-                      size="sm"
-                      variant="sec"
-                      onClick={() => {
-                        recordArrival(planned);
-                      }}
-                    >
-                      Arrived
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        openChange(planned);
-                      }}
-                    >
-                      Change
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        openCancel(planned);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </span>
+                  {canConvert || canChange || canCancel ? (
+                    <span className={styles.actions}>
+                      {canConvert ? (
+                        <Button
+                          size="sm"
+                          variant="sec"
+                          onClick={() => {
+                            recordArrival(planned);
+                          }}
+                        >
+                          Arrived
+                        </Button>
+                      ) : null}
+                      {canChange ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            openChange(planned);
+                          }}
+                        >
+                          Change
+                        </Button>
+                      ) : null}
+                      {canCancel ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            openCancel(planned);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      ) : null}
+                    </span>
+                  ) : null}
                 </li>
               );
             })}
