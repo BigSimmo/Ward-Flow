@@ -9,10 +9,9 @@
     "npm": "11.x"
   },
   "browserslist": [
-    "chrome 111",
-    "edge 111",
-    "firefox 111",
-    "safari 16.4"
+    "last 2 chrome versions",
+    "last 2 edge versions",
+    "last 2 safari versions"
   ],
   "scripts": {
     "dev": "node scripts/dev-free-port.mjs",
