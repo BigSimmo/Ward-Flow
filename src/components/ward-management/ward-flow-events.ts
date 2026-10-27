@@ -2381,9 +2381,7 @@ export type WardFlowEvent =
       kind?: "directive" | "bed_call";
     }
   | {
-      /**
-       * Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit.
-       */
+      /** Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit. */
       type: "ACKNOWLEDGE_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;
@@ -2391,9 +2389,7 @@ export type WardFlowEvent =
       unitId: string;
     }
   | {
-      /**
-       * Stand down an active broadcast directive once network pressure resolves.
-       */
+      /** Stand down an active broadcast directive once network pressure resolves. */
       type: "STAND_DOWN_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;
