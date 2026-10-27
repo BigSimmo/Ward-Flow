@@ -143,6 +143,7 @@
     "tests/ward-patient-identity-from-the-record.dom.test.tsx",
     "tests/ward-patient-link-default-deny.test.ts",
     "tests/ward-policy-scope.test.ts",
+    "tests/ward-print-hides-overlays.test.ts",
     "tests/ward-prototype-disclosure.test.ts",
     "tests/ward-provenance-sentences-carry-their-own-marker.test.ts",
     "tests/ward-public-ci-setup.test.ts",
