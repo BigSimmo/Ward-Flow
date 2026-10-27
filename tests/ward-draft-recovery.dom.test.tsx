@@ -149,11 +149,12 @@ describe("synthetic form integration", () => {
     window.sessionStorage.setItem(key, cached);
     draw();
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic refresh draft");
-    expect(screen.getByRole("status")).toHaveTextContent("Draft restored from this session");
+    expect(screen.getByRole("status")).toHaveTextContent("Draft restored in this tab —");
+    expect(screen.queryByText(/Draft restored from this session/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Clear$/ }));
     act(() => vi.advanceTimersByTime(1000));
     expect(readSessionDraft(key)).toBeNull();
-    expect(screen.queryByText(/Draft restored from this session/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Draft restored in this tab/)).not.toBeInTheDocument();
   });
   it.each([{ destType: "unknown" }, { unidentified: 42 }, { contact: { name: "" } }])(
     "discards a malformed persisted form without a reopen crash or false restore notice %#",
@@ -176,7 +177,7 @@ describe("synthetic form integration", () => {
       window.sessionStorage.setItem(key, JSON.stringify(envelope));
       const next = draw();
       expect(screen.getByRole("complementary", { name: "Referrals" })).toBeInTheDocument();
-      expect(screen.queryByText(/Draft restored from this session/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Draft restored in this tab/)).not.toBeInTheDocument();
       expect(window.sessionStorage.getItem(key)).toBeNull();
       next.unmount();
       draw();
@@ -285,7 +286,7 @@ it("restores legal form choices and time after refresh, and Clear removes the se
   const second = render(<LegalDraft save={() => false} />);
   expect(screen.getByLabelText("Time on form")).toHaveValue("00:00");
   expect(screen.getByLabelText("Movement")).toHaveValue(wardMovements[0]!.id);
-  expect(screen.getByText(/Draft restored from this session/)).toBeInTheDocument();
+  expect(screen.getByText(/Draft restored in this tab — use Clear to remove it./)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
   act(() => vi.advanceTimersByTime(1000));
   expect(readSessionDraft(sessionDraftKey("standard/0", "legal-record", "new"))).toBeNull();

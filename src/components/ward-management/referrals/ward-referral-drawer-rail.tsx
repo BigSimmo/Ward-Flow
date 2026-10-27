@@ -8,6 +8,7 @@ import styles from "./ward-referral-drawer.module.css";
 import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
 import { DisabledReason, StatusGlyph } from "@/components/wf";
 import { sectionLabel } from "./ward-referral-drawer-model";
+import { drawerRailHeading } from "./referral-drawer-foot-status";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
@@ -90,7 +91,7 @@ export function ReferralSummaryRail({
         <>
           <section className={styles.railCard}>
             <div className={styles.railHead}>
-              <h3 className={styles.cardTitle}>Ready to send</h3>
+              <h3 className={styles.cardTitle}>{drawerRailHeading(itemsLeft)}</h3>
               {kept || draftKeptAt !== null ? (
                 <button
                   type="button"
@@ -108,7 +109,7 @@ export function ReferralSummaryRail({
             {draftKeptAt !== null ? (
               <p className={styles.draftStatus} data-testid="ward-referral-draft-status">
                 <StatusGlyph tone="success" size={8} />
-                Draft kept · {referralDraftAgeText(draftKeptAt, draftNowMs)}
+                Draft kept in this tab · {referralDraftAgeText(draftKeptAt, draftNowMs)}
               </p>
             ) : null}
             {/* UX audit 21 Oct 2026: the drawer stated one count five ways. The footer keeps the count

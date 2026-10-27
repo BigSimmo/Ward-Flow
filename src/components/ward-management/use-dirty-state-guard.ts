@@ -26,6 +26,11 @@ export interface DirtyStateGuardOptions {
    * any other mounted guard still prompts. Pass a stable function.
    */
   skipAnchor?: (anchor: HTMLAnchorElement) => boolean;
+  /**
+   * P158: asked when the page unloads; true means a reload restores this work exactly, so only the
+   * browser's own prompt is skipped. Link and history guards are unchanged. Omit it to always prompt.
+   */
+  unloadSafe?: () => boolean;
 }
 
 const DEFAULT_LEAVE_MESSAGE = "You have unsaved changes. Are you sure you want to leave?";
@@ -222,7 +227,7 @@ installHistoryTracking();
 /** Navigation protection for every form; D-67 recovery requires an explicitly opted-in storage key. */
 export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   const normalized: DirtyStateGuardOptions = typeof options === "boolean" ? { isDirty: options } : options;
-  const { key, storageKey, isDirty, value, onRestore, confirmMessage, skipAnchor } = normalized;
+  const { key, storageKey, isDirty, value, onRestore, confirmMessage, skipAnchor, unloadSafe } = normalized;
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftSaved, setDraftSaved] = useState(true);
   // Bind ownership when this form opts in (or gets a genuinely new account/session key).
@@ -305,9 +310,15 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
     // would cancel suppression of an already scheduled compensating history traversal.
   }, [isDirty, value, confirmMessage]);
 
+  const unloadSafeRef = useRef(unloadSafe);
+  useEffect(() => {
+    unloadSafeRef.current = unloadSafe;
+  });
+
   useEffect(() => {
     if (!isDirty) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (unloadSafeRef.current?.()) return;
       event.preventDefault();
       event.returnValue = "";
     };

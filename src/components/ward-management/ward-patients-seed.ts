@@ -1555,8 +1555,8 @@ export type GeneratedSeedPatientInput = {
   genderRecorded?: boolean;
 };
 
-/** Whole-year age band per cohort, matching `patientCohort`'s own boundaries (`ward-patients.ts`):
- *  Youth under 25, Older adult 65 or over, Adult between. */
+/** Whole-year age band per cohort that `cohortFitsAge` accepts (`ward-patients.ts`): Youth up to 24
+ *  (a youth service may accept 18 to 24), Older adult 65 or over, Adult between. */
 const COHORT_AGE_RANGE: Record<GeneratedSeedPatientCohort, { readonly min: number; readonly span: number }> = {
   Youth: { min: 16, span: 9 }, // 16–24
   Adult: { min: 25, span: 40 }, // 25–64

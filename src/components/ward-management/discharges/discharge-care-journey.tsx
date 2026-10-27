@@ -1,6 +1,7 @@
 "use client";
 
 import { downloadBlob } from "@/components/ward-management/ward-download";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-derivations";
 import { useState, type FormEvent, type ReactNode } from "react";
 import {
@@ -34,12 +35,12 @@ const CHOICE_LABELS: Readonly<Record<string, string>> = {
   handover: "Handed over",
   arrived: "Arrived",
   revocation: "Revocation",
-  "4A": "Form 4A",
-  "5A": "Form 5A",
-  "5B": "Form 5B",
 };
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-const choiceLabel = (value: string) => sentence(CHOICE_LABELS[value] ?? words(value));
+/** H-0842: a form code reads with its register title ("Form 4A (Transport order)" style, from the register), never the bare code. */
+const FORM_CODES = new Set(["4A", "5A", "5B", "7D"]);
+const choiceLabel = (value: string) =>
+  FORM_CODES.has(value) ? legalFormName({ code: value }) : sentence(CHOICE_LABELS[value] ?? words(value));
 /** A stored list value (status, outcome, mode, class) in sentence case, as the select offers it. */
 const plain = (value: string) => sentence(words(value));
 /** Fresh audit W-4: the appointment's internal version number reads as how often it was booked. */

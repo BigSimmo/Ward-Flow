@@ -120,6 +120,21 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+      // P179: patient, report and movement pages send no referrer, so a record id
+      // in their address never leaves in a Referer header. Must stay after "/(.*)":
+      // Next lets the later rule win for the same header.
+      {
+        source: "/ward-flow/people/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      {
+        source: "/ward-flow/reports/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
+      {
+        source: "/ward-flow/movements/:path*",
+        headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
+      },
       {
         // Static design-review assets under public/mockups remain intentionally
         // retrievable, but must not appear in search results. Next applies

@@ -98,10 +98,10 @@ describe("referral slide-out, option B", () => {
     expect([...transport.options].slice(1).map((option) => option.value)).toEqual([...TRAVEL_MODES]);
   });
 
-  it("shows a Ready to send summary beside the form", () => {
+  it("shows a Before you send summary beside the form", () => {
     renderDrawer();
     const rail = screen.getByTestId("ward-referral-summary-rail");
-    expect(within(rail).getByRole("heading", { name: "Ready to send" })).toBeInTheDocument();
+    expect(within(rail).getByRole("heading", { name: "Before you send" })).toBeInTheDocument();
     expect(within(rail).getByText("Refer to")).toBeInTheDocument();
     // L1 (review 12 Oct 2026): one count. UX audit 21 Oct 2026: the footer carries it, and its items
     // left are the steps' needed items.
@@ -536,7 +536,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
     expect(readKeptReferralDraft()).not.toBeNull();
-    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept · just now");
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab · just now");
     expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
     expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     setItem.mockRestore();
@@ -579,7 +579,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
     expect(readKeptReferralDraft()).not.toBeNull();
-    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept");
+    expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab");
   });
 
   it("drops the kept copy when the draft is edited back to how it opened", () => {

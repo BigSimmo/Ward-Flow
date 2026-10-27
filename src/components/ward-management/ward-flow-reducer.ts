@@ -439,6 +439,9 @@ export type RepatriationRecord = {
   cadNumber: string;
   transportLegalStatus: TransportLegalStatus;
   estimatedAt: Instant;
+  /** #177 (Josh, 27 Oct 2026): an involuntary return's Form 4C and escort answers. Absent when blank. */
+  form4CReceived?: boolean;
+  escortRequired?: boolean;
 };
 
 /** Shift handover sign-off. Role and time only. */

@@ -254,7 +254,13 @@ function SignInDoor({
               )
             }
           />
-          <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} disabled={busy || !form || !online}>
+          <button
+            // P191: after a blocked saved sign-in, Try again retries it in place, with no reload.
+            type={serviceBusy && form?.retry ? "button" : "submit"}
+            onClick={serviceBusy && form?.retry ? () => form.retry?.() : undefined}
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={busy || !form || !online}
+          >
             {!online ? (
               <>
                 <Spinner dim />

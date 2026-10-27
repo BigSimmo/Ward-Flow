@@ -40,6 +40,9 @@ import {
 } from "./movements-screen-helpers";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 
+/** The ED wait cue's words on a Movements row (P099): wait time, never a form deadline. */
+const WAIT_FLAG_WORDS = { soon: "Long wait", over: "Over target" };
+
 export function HighlightStat({
   label,
   value,
@@ -256,8 +259,9 @@ export function StageRow({
 
   const waitedMinutes = Math.max(clockEnd - movement.openedAt, 0);
   if (progressText && !movement.acceptedUnitId && !leg) routeSub = progressText;
-  // "Due soon" from the named ED severe-pressure default, "Overdue" past the configured ED access
-  // target. No tier-specific window is invented here.
+  // ED wait cue, not a form deadline (P099, Josh 27 Oct 2026): "Long wait" from the named ED
+  // severe-pressure default, "Over target" past the configured ED access target. No tier-specific
+  // window is invented here.
   const waitThresholds = { dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES, overdue: accessTargetMinutes };
   const waitTone: "danger" | "warning" | undefined = closure
     ? undefined
@@ -269,9 +273,9 @@ export function StageRow({
   const waitWord = closure
     ? "in journey before it ended"
     : waitTone === "danger"
-      ? "Overdue"
+      ? WAIT_FLAG_WORDS.over
       : waitTone === "warning"
-        ? "Due soon"
+        ? WAIT_FLAG_WORDS.soon
         : "waited";
   const barrierText = closure ? closure.reason : (blocker ?? stageCopy[movement.stage].label);
   const barrierTone: WfTone = closure
@@ -414,6 +418,7 @@ export function StageRow({
               : { dueSoon: waitThresholds.dueSoon * MS_PER_MINUTE, overdue: waitThresholds.overdue * MS_PER_MINUTE }
           }
           hideFlagWord
+          flagWords={WAIT_FLAG_WORDS}
           hideDirection
         />
         {/* Task 6 (2026-09-16): the meter reads the configured ED access target, never 24h. */}

@@ -15,6 +15,7 @@ import {
 } from "@/components/ward-management/ward-clock";
 import type { HealthService, Notice } from "@/components/ward-management/ward-model";
 
+import { useCanOpenHref } from "./ward-access";
 import { edHref } from "./ward-facade";
 import type { WardActivityContent, WardReconciliationCheck } from "./ward-shell-types";
 import type { CommandActivity, WardActivityEventTone } from "./ward-command-activity";
@@ -88,6 +89,8 @@ export function WardBarActivityBody({
   // inside WardBar, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
+  // B3 P170: a row links to its record only where this desk may open it.
+  const canOpenHref = useCanOpenHref();
   return (
     <>
       {/* Phone (v10 Activity sheet): a plain list. The tally, search and category chips stay on
@@ -269,7 +272,17 @@ export function WardBarActivityBody({
                   >
                     <time className={styles.feedTime}>{change.time}</time>
                     <StatusGlyph tone={ACTIVITY_GLYPH[tone]} size={9} className={styles.feedGlyph} />
-                    <span className={styles.feedText}>{change.text}</span>
+                    {change.href && canOpenHref(change.href) ? (
+                      <Link
+                        href={change.href}
+                        className={styles.feedText}
+                        onClick={() => closePopover("activity", false)}
+                      >
+                        {change.text}
+                      </Link>
+                    ) : (
+                      <span className={styles.feedText}>{change.text}</span>
+                    )}
                     <span className={styles.eventLabel} data-tone={tone}>
                       {ACTIVITY_TONE_WORD[tone]}
                     </span>
