@@ -3,8 +3,16 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, type ComponentProps, type ComponentType, type ReactNode, type RefObject } from "react";
-import { BedSingle, CircleHelp, Inbox, Clock3, Plus, Search, Settings, UserPlus, Wrench } from "lucide-react";
+import {
+  useContext,
+  useEffect,
+  useState,
+  type ComponentProps,
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+} from "react";
+import { BedSingle, CircleHelp, Inbox, Clock3, LogOut, Plus, Search, Settings, UserPlus, Wrench } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { Sheet } from "@/components/wf/sheet";
@@ -17,6 +25,7 @@ import { preloadWhenIdle } from "../preload-when-idle";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 
 import { useWardDataMode } from "../ward-shared-access";
+import { SharedSessionContext } from "./ward-shared-session-context";
 import { settingsHref, unitHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuAction } from "./ward-rail-entries";
@@ -220,6 +229,7 @@ function MoreSection({ onDrawer, onClose }: { onDrawer: (id: DrawerId) => void; 
         </li>
         <HelpRow onClose={onClose} />
         <DataModeRow onClose={onClose} />
+        <SignOutRow />
       </ul>
       <p className={styles.note}>
         <Dot tone="neutral" />
@@ -275,6 +285,24 @@ function DataModeRow({ onClose }: { onClose: () => void }) {
         }}
       >
         Hospital records (unavailable)
+      </button>
+    </li>
+  );
+}
+
+/** Sign out of the shared board, with the account it signs out of. Nothing in the local demo. */
+function SignOutRow() {
+  const session = useContext(SharedSessionContext);
+  if (!session) return null;
+  return (
+    <li>
+      <button
+        type="button"
+        className={styles.row}
+        data-testid="ward-phone-menu-sign-out"
+        onClick={() => session.signOut()}
+      >
+        <RowBody icon={LogOut} label="Sign out" meta={session.accountEmail} />
       </button>
     </li>
   );

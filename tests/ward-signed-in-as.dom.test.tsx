@@ -2,23 +2,22 @@ import { render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 
 import { WardAskForAccess, WardRolePicker } from "@/components/ward-management/ward-shared-role-gate";
-import { WardSharedSaveStatus } from "@/components/ward-management/ward-shared-save-status";
-import type { WardSharedConnection } from "@/components/ward-management/ward-shared-access";
+import { WardAccountActions } from "@/components/ward-management/shell/ward-account-actions";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 
 // #791: a person with more than one account can see which one this tab is signed in to.
 const email = "synthetic.nurse@example.test";
 
-it("names the signed-in account beside Sign out on the shared status line", () => {
+it("names the signed-in account on the rail's Sign out", () => {
   render(
-    <WardSharedSaveStatus
-      deskLabel="Coordinator"
-      connection={
-        { status: "ready", accountEmail: email, retry: () => {}, signOut: () => {} } as unknown as WardSharedConnection
-      }
-    />,
+    <SharedSessionContext.Provider value={{ signOut: () => {}, logRecordView: () => {}, accountEmail: email }}>
+      <WardAccountActions className="link" />
+    </SharedSessionContext.Provider>,
   );
-  expect(screen.getByTestId("ward-signed-in-as")).toHaveTextContent(`Signed in as ${email}.`);
-  expect(screen.getByRole("button", { name: "Sign out" })).toBeVisible();
+  expect(screen.getByRole("button", { name: `Sign out ${email}` })).toHaveAttribute(
+    "title",
+    `Signed in as ${email}. Sign out`,
+  );
 });
 
 it("names the account on the no-role and role picker screens, and says nothing without one", () => {

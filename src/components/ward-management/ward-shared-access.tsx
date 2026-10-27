@@ -440,15 +440,19 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
     latest.current = connection;
   });
   const sessionOpen = connection.enabled && connection.signedIn;
+  const accountEmail = connection.accountEmail ?? undefined;
+  const canSwitchRole = !!(connection.canSwitch && connection.switchRole);
   const session = useMemo<SharedSession | null>(
     () =>
       sessionOpen
         ? {
             signOut: (reason) => latest.current.signOut(reason),
             logRecordView: (patientId, surface) => latest.current.logRecordView?.(patientId, surface),
+            accountEmail,
+            switchRole: canSwitchRole ? () => latest.current.switchRole?.() : undefined,
           }
         : null,
-    [sessionOpen],
+    [sessionOpen, accountEmail, canSwitchRole],
   );
   const actorId = typeof connection.actorId === "string" ? connection.actorId : null;
   const sharedAccess = useMemo(
