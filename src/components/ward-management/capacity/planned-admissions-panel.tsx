@@ -54,6 +54,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-identity-dialog";
 import {
+  cohortFitsAge,
   patientCohort,
   patientDisplayName,
   type Patient,
@@ -337,9 +338,16 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         const patient = patients.find((candidate) => candidate.id === draft.patientId);
         sex = recordedSexOf(patient?.sex);
         // The age group comes from the record's date of birth on the expected arrival's calendar
-        // date; the reducer checks it against the same date.
-        if (patient && dayZero instanceof Date)
-          ageBand = patientCohort(patient.dateOfBirth, calendarDateOf(expectedArrivalAt, dayZero));
+        // date; the reducer checks it against the same date. An 18 to 24 year old booked onto a
+        // Youth ward keeps Youth, since youth services may take them.
+        if (patient && dayZero instanceof Date) {
+          const arrivalDay = calendarDateOf(expectedArrivalAt, dayZero);
+          const wardCohort = units.find((unit) => unit.id === draft.unitId)?.cohort;
+          ageBand =
+            wardCohort && cohortFitsAge(wardCohort, patient.dateOfBirth, arrivalDay)
+              ? wardCohort
+              : patientCohort(patient.dateOfBirth, arrivalDay);
+        }
       }
       dispatch({
         type: "BOOK_PLANNED_ADMISSION",
