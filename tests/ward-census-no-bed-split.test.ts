@@ -39,7 +39,15 @@ describe('Patients splits "No bed yet" by whether a ward has been asked', () => 
     expect(asked.length, "the seed has a bed request waiting for a ward's answer").toBeGreaterThan(0);
     for (const row of notAsked) expect(byId.get(row.key)!.referredUnitIds).toHaveLength(0);
     for (const row of asked) {
-      expect(byId.get(row.key)!.referredUnitIds.length).toBeGreaterThan(0);
+      // A ward that declined or was withdrawn leaves `referredUnitIds` but still counts as asked.
+      const m = byId.get(row.key)!;
+      const everAsked =
+        m.referredUnitIds.length > 0 ||
+        m.referredAt !== undefined ||
+        m.declines.length > 0 ||
+        (m.withdrawnReferrals?.length ?? 0) > 0 ||
+        (m.waitlistedUnitIds?.length ?? 0) > 0;
+      expect(everAsked).toBe(true);
       expect(byId.get(row.key)!.acceptedUnitId).toBeUndefined();
     }
   });

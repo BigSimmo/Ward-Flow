@@ -278,6 +278,14 @@ export function buildCensus(state: {
     const form = movement.legalForm;
     const declines = movement.declines?.length ?? 0;
     const asked = movement.referredUnitIds.length;
+    // P027 (Josh, 27 Oct 2026, 11:03 PM): a decline or withdrawal takes the ward off
+    // `referredUnitIds`, so "ever asked" also reads what those answers leave behind.
+    const everAsked =
+      asked > 0 ||
+      movement.referredAt !== undefined ||
+      declines > 0 ||
+      (movement.withdrawnReferrals?.length ?? 0) > 0 ||
+      (movement.waitlistedUnitIds?.length ?? 0) > 0;
     const timeline: CensusTimelineEntry[] = [
       { at: movement.openedAt, glyph: "wait", text: `Movement opened at ${edText}` },
     ];
@@ -290,7 +298,7 @@ export function buildCensus(state: {
     rows.push({
       key: movement.id,
       kind: "movement",
-      group: moving ? "move" : accepted ? "found" : asked === 0 ? "ask" : "wait",
+      group: moving ? "move" : accepted ? "found" : everAsked ? "wait" : "ask",
       tier: tierOf(movement.urgency),
       ...who,
       service: movementOriginService(movement),
