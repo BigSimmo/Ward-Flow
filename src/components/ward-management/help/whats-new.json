@@ -1,30 +1,5 @@
 [
   {
-    "id": "2026-10-26-not-recorded-wording",
-    "date": "2026-10-26",
-    "line": "Where nothing is recorded the screens say so, and the referral summary labels what came from the referral letter."
-  },
-  {
-    "id": "2026-10-26-names-and-umrn",
-    "date": "2026-10-26",
-    "line": "Phone ED rows show the UMRN beside the name. The practice hospital feed names each person and a confirm can be undone."
-  },
-  {
-    "id": "2026-10-26-handover-forecast-double-tap",
-    "date": "2026-10-26",
-    "line": "Handover keeps your shift past midnight, the forecast covers long weekends, and an ED accept needs two separate taps."
-  },
-  {
-    "id": "2026-10-26-arrival-check-and-refusal-warnings",
-    "date": "2026-10-26",
-    "line": "Confirm arrival now asks you to check the name and UMRN first. A refusal shows as a warning, never a tick."
-  },
-  {
-    "id": "2026-10-27-sign-in-says-ward-flow",
-    "date": "2026-10-27",
-    "line": "Sign-in screens now say Ward Flow for every role, and explain why some desks are not listed."
-  },
-  {
     "id": "2026-10-27-desk-actions",
     "date": "2026-10-27",
     "line": "Broadcast alert is greyed out for desks that cannot send one, and admins cannot remove their own admin role."
@@ -98,5 +73,30 @@
     "id": "2026-10-27-accept-dialog-patient-field",
     "date": "2026-10-27",
     "line": "The accept dialog now labels its read-only field Patient, as it never allocates a bed."
+  },
+  {
+    "id": "2026-10-27-referral-prefill",
+    "date": "2026-10-27",
+    "line": "The referral form now fills medical clearance, your contact details, home region and catchment from the record."
+  },
+  {
+    "id": "2026-10-27-open-ed-journey-warning",
+    "date": "2026-10-27",
+    "line": "Referring someone already on an open ED journey elsewhere now warns you before Send."
+  },
+  {
+    "id": "2026-10-27-ed-transport-booked",
+    "date": "2026-10-27",
+    "line": "Once a bed is pulled, the ED row's main button is Transport booked."
+  },
+  {
+    "id": "2026-10-27-home-release-pulled-bed",
+    "date": "2026-10-27",
+    "line": "Home can release a pulled bed in place, with a reason and undo."
+  },
+  {
+    "id": "2026-10-27-referral-board-keys",
+    "date": "2026-10-27",
+    "line": "Referral board: A accepts and D declines the open referral."
   }
 ]
