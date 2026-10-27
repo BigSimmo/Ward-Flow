@@ -18,6 +18,10 @@ export type SharedSession = {
    * the server's reply is taken: true when it sent the record's detail (H-0731) and it is shown.
    */
   logRecordView: (patientId: string, surface: RecordViewSurface) => Promise<boolean> | void;
+  /** #791: the signed-in account's email, beside Sign out in the rail and the phone menu. */
+  accountEmail?: string;
+  /** Work as another of this account's roles; absent when the account has only one. */
+  switchRole?: () => void;
 };
 
 export const SharedSessionContext = createContext<SharedSession | null>(null);

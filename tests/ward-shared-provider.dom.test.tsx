@@ -7,6 +7,7 @@ import {
 } from "../src/components/ward-management/ward-shared-access";
 import { WardFlowProvider, useWardFlow } from "../src/components/ward-management/ward-flow-provider";
 import { WardDemoMenu } from "../src/components/ward-management/shell/ward-demo-menu";
+import { WardAccountActions } from "../src/components/ward-management/shell/ward-account-actions";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
@@ -402,9 +403,11 @@ describe("shared provider boundary", () => {
   it("takes the desk from the server's role, and offers a switch only after a choice", () => {
     const access = { role: "ed", scope: { kind: "ed", edId: allEmergencyDepartments()[0]!.id } };
     fake.connection = { ...fake.connection!, access, workingAs: "3f1c9a52-8d4e-4b7a-9c2d-1e5f6a7b8c9d" };
+    // Switch role sits in the rail (`WardAccountActions`) since the strip went quiet (27 Oct 2026).
     const tree = () => (
       <WardFlowProvider>
         <Probe />
+        <WardAccountActions className="link" />
       </WardFlowProvider>
     );
     const { rerender } = render(tree());

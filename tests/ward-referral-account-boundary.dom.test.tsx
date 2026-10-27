@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@t
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
+import { WardAccountActions } from "@/components/ward-management/shell/ward-account-actions";
 import { resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
@@ -125,6 +126,7 @@ async function openSharedComposer() {
     <WardFlowProvider>
       <WardAccessScope>
         <Composer />
+        <WardAccountActions className="link" />
       </WardAccessScope>
     </WardFlowProvider>,
   );
@@ -140,7 +142,7 @@ function typeStory() {
 }
 
 async function signInAsNextPerson() {
-  fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+  fireEvent.click(screen.getByRole("button", { name: /^Sign out/u }));
   expect(screen.queryByLabelText(/Reason for referral/)).toBeNull();
   expect(identity.signedOut).toBe(1);
   // Check before B connects: its adoption must not hide an outgoing unmount re-save.

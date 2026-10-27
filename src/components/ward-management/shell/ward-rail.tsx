@@ -43,6 +43,7 @@ import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-draw
 import { handoverHref, settingsHref } from "./ward-facade";
 import { announceToWardShell } from "./ward-live-region";
 import { WardMyWards } from "./ward-my-wards";
+import { WardAccountActions } from "./ward-account-actions";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import styles from "./ward-rail.module.css";
 import { readWardRailEarlyShape } from "./ward-rail-early";
@@ -1086,6 +1087,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             <Settings aria-hidden="true" strokeWidth={1.75} />
             <span>Settings</span>
           </Link>
+          <WardAccountActions className={styles.utilityLink} />
         </div>
 
         <div className={styles.userCardWrap}>

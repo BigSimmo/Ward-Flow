@@ -45,10 +45,20 @@
   outline-offset: 3px;
 }
 
+/* The quiet state: no strip on screen, the status still read out (Josh, 27 Oct 2026). */
+.quiet {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /*
- * The account strip above the app on the shared board (Josh, 27 Oct 2026: it showed as bare,
- * unstyled text with no gap before Sign out). One slim row in the shell's own tokens: which desk
- * this is on the left, the account and its actions on the right. Its height is published as
+ * The strip above the app on the shared board, shown only when a lost connection or an unconfirmed
+ * save needs action. One slim row in the shell's own tokens: what is wrong on the left, Retry and
+ * Sign out on the right. Its height is published as
  * --wf-data-bar-height, so the shell below shortens to fit instead of pushing the rail's account
  * card off the bottom of the window.
  */
@@ -93,10 +103,6 @@
   margin-inline-start: auto;
 }
 
-.account {
-  color: var(--wf-ink-3);
-}
-
 .action {
   min-height: var(--wf-target, 28px);
   padding: 0 var(--wf-s-2);
@@ -128,16 +134,6 @@
   .message {
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* No room for the email beside the desk on a phone; screen readers still hear it. */
-  .account {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
     white-space: nowrap;
   }
 
