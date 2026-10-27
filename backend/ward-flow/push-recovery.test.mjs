@@ -87,6 +87,7 @@ test("command receipts retain their opaque completion across revision-only repli
       clock: () => new Date("2026-10-19T10:00:00Z"),
       engine: {
         storableCommand: (event) => event,
+        deskCommand: (_access, event) => event,
         validCommand: () => true,
         privacyRefusal: () => null,
         demoOnlyCommand: () => false,

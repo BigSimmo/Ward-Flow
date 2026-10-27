@@ -2332,7 +2332,9 @@ export function createWorkspaceStore(
         event = { ...event, sendingTeamName: view.access.scope.teamName };
       }
       const supplied = event;
-      event = engine.storableCommand(event);
+      const storable = engine.storableCommand(event);
+      // H-0694, H-0179: a whole-network desk is recorded under its own role, never the screen's.
+      event = view?.access ? engine.deskCommand(view.access, storable) : storable;
       // Audit E-06: a guard refusal is a refusal with its reason, like any other, not a bad request.
       const privacyRefusal = engine.privacyRefusal(event);
       if (!privacyRefusal && !engine.validCommand(event)) throw new Error("invalid-command");
@@ -2345,6 +2347,8 @@ export function createWorkspaceStore(
       // Audit F-01: a receipt written before file content was dropped was fingerprinted with it, so
       // an older tab retrying that same command still matches its receipt.
       const legacyFingerprint = supplied === event ? fingerprint : fingerprintOf(supplied);
+      // A receipt written before the desk role was stamped holds the stored, unstamped command.
+      const unstampedFingerprint = storable === event ? fingerprint : fingerprintOf(storable);
       let queued = false;
       /** The archive count this save leaves, kept for later reads once the save commits (PS-11). */
       let archiveSettled = null;
@@ -2359,7 +2363,7 @@ export function createWorkspaceStore(
         if (previous.rowCount) {
           row.archived = await archivedCount(client, row.payload, row.revision);
           const receipt = previous.rows[0];
-          if (receipt.fingerprint !== fingerprint && receipt.fingerprint !== legacyFingerprint)
+          if (![fingerprint, legacyFingerprint, unstampedFingerprint].includes(receipt.fingerprint))
             return {
               status: 422,
               body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },
