@@ -185,4 +185,26 @@ describe("ward bed drawer history", () => {
     expect(drawer()).toBeNull();
     expect(window.sessionStorage.getItem("wardflow:census-bed-opener-target")).toBeNull();
   });
+
+  it("closes the drawer normally when sessionStorage is blocked (H-0367)", () => {
+    routing.available = true;
+    renderWard();
+    openViaUrl("1");
+    blockSessionStorage();
+    expect(() => fireEvent.click(screen.getByRole("button", { name: "Close bed drawer" }))).not.toThrow();
+    expect(routing.back).not.toHaveBeenCalled();
+    expect(drawer()).toBeNull();
+  });
 });
+
+/** Makes only sessionStorage throw, as a browser with blocked site data does. */
+function blockSessionStorage() {
+  for (const method of ["getItem", "setItem", "removeItem"] as const) {
+    const original = Storage.prototype[method];
+    const blocked = function (this: Storage, ...args: string[]) {
+      if (this === window.sessionStorage) throw new DOMException("Blocked", "SecurityError");
+      return (original as (...a: string[]) => unknown).apply(this, args);
+    };
+    vi.spyOn(Storage.prototype, method).mockImplementation(blocked as never);
+  }
+}

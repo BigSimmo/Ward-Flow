@@ -11,6 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
+import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { LAST_LOOK_STORAGE_KEY, takeLastLookSnapshot } from "@/components/ward-management/coordinator/since-last-look";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { bedsReadySummary, type MeetingRow } from "@/components/ward-management/referrals/referral-board-parts";
@@ -110,6 +111,7 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
 
     render(
       <WardFlowProvider initialNow={NOW}>
+        <WardLiveRegion />
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
@@ -119,6 +121,10 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
     const text = await copied();
     expectSafeCopy(text);
     expect(text.split("\n")[1]).toMatch(/^Since you looked: /);
+    // H-0346: the copy is announced, in the Handover page's words.
+    await waitFor(() =>
+      expect(screen.getByTestId("ward-live-region").textContent).toContain("Changes copied as handover text."),
+    );
   });
 
   describe("Referral board sheets", () => {

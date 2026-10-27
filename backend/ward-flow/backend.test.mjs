@@ -275,7 +275,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
     const server = /** @type {FakeServer} */ (new EventEmitter());
     const order = [];
     /** @type {(error?: Error) => void} */
-    let finishClose;
+    let finishClose = () => assert.fail("server.close was not called");
     server.close = t.mock.fn((callback) => {
       order.push("server");
       finishClose = callback;

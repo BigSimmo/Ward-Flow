@@ -77,7 +77,10 @@ test("BE-04: trusted proxy entries that are not * or a literal IP are ignored wi
   assert.deepEqual(read(), { addresses: [], events: [] });
 });
 
-/** A fake pool at migration 5 whose grant script can be made to fail. */
+/**
+ * A fake pool at migration 5 whose grant script can be made to fail.
+ * @param {{ grantFailure?: Error | null, rollbackFailure?: Error | null }} [options]
+ */
 function fakePool({ grantFailure = null, rollbackFailure = null } = {}) {
   const queries = [];
   const releases = [];

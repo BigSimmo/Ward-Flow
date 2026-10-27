@@ -19,6 +19,9 @@ The gate arbiter and receipt store this playbook describes were retired on 18 Oc
 reporting it blocked. Historical CI and browser-deferral examples below grant
 no authority to skip a Ward gate. Use observed, equivalent evidence for the actual inputs before
 claiming reuse; a declared workflow alone proves no run. Preserve every required gate and assertion.
+Paths below that no longer exist in this repository: `scripts/gate-arbiter.mjs`,
+`scripts/gate-receipts.mjs`, `scripts/ci-change-scope.mjs`, `check-bundle-budget.mjs`,
+`docs/process-hardening.md` and `docs/archive/ward-flow-complete-ledger.md`. Treat them as removed.
 
 > **The one rule.** Speed here comes from **not buying the same verdict twice**, and from **not
 > starting work that is already done**. It never comes from checking less. If a suggestion below
@@ -136,10 +139,10 @@ signature, so an identical re-run on unchanged content exits immediately.
 ### 3.1 Narrow first, and know when narrowing is refused
 
 ```bash
-npm run test:focused -- --files <paths>        # source-only iteration
+npm run test:focused -- --files <a>,<b>        # source-only iteration; one comma-separated value
 npm run test:focused -- --dry-run              # shows what it would run
 node scripts/run-vitest.mjs run tests/a.test.ts tests/b.test.ts   # explicit files, proper lease
-npm run verify:pr-local -- --dry-run --files <paths>              # what a PR would select
+npm run verify:pr-local -- --dry-run --files <a>,<b>              # what a PR would select
 npm run verify:phone-chrome -- --dry-run
 ```
 

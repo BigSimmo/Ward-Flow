@@ -21,6 +21,11 @@ function stripUmrnFromLine(line: string): string {
       // A synthetic record number (`UMnnnnnn`), with any "UMRN" label and the separator before it;
       // also "UMRN not recorded".
       .replace(/\s*[,;·]?\s*(?:UMRN\s*:?\s*(?:UM\d{6}|not recorded)|\bUM\d{6})\b/gi, "")
+      // H-0332: an inline date of birth, such as "Name, DOB: 14/03/1988, Ward 3".
+      .replace(
+        /\s*[,;·]?\s*\b(?:DOB|Date of birth)\s*:?\s*(?:\d{1,4}[/.-]\d{1,2}[/.-]\d{1,4}|\d{1,2} [A-Za-z]{3,9},? \d{4}|[A-Za-z]{3,9} \d{1,2},? \d{4}|not recorded)\b/gi,
+        "",
+      )
       // Tidy what that leaves: "Name ()", "Identify:, legal", "- , name" and "Name .".
       .replace(/\s*\(\s*\)/g, "")
       .replace(/:\s*[,;·]\s*/g, ": ")
@@ -29,12 +34,15 @@ function stripUmrnFromLine(line: string): string {
   );
 }
 
-/** Strips record numbers from text bound for the clipboard. Lines that held only a UMRN or date of birth go. */
+/**
+ * Strips record numbers and inline dates of birth from text bound for the clipboard. Lines that held
+ * only a UMRN or date of birth go.
+ */
 export function withoutCopiedIdentifiers(text: string): string {
   return text
     .split("\n")
     .filter((line) => !IDENTIFIER_LINE.test(line))
-    .map((line) => (/UM\d{6}|UMRN/i.test(line) ? stripUmrnFromLine(line) : line))
+    .map((line) => (/UM\d{6}|UMRN|\bDOB\b|Date of birth/i.test(line) ? stripUmrnFromLine(line) : line))
     .join("\n");
 }
 

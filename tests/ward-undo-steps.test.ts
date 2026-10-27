@@ -52,6 +52,7 @@ function undoEventFor(event: WardFlowEvent, role: WardFlowRole, now = NOW + 1, a
     ...(fields.referralId ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId ? { actingUnitId } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
   } as WardFlowEvent;
 }
 
@@ -63,6 +64,7 @@ const PREREQUISITES: Partial<Record<WardFlowEvent["type"], readonly WardFlowEven
   HANDOVER_READY: ["BOOK_TRANSPORT"],
   TRANSPORT_ACCEPTED: ["BOOK_TRANSPORT", "HANDOVER_READY"],
   PATIENT_COLLECTED: ["TRANSPORT_EN_ROUTE"],
+  COMPLETE_BED_MEETING_ACTION: ["RECORD_BED_MEETING_ACTION"],
 };
 
 /** Accept a step, take it back as `role`, and expect the world exactly as before the step. */

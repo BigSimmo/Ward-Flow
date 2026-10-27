@@ -33,9 +33,14 @@ const PUSH_BODIES = [
 // Must match WARD_PWA_OPEN_MESSAGE in shell/ward-pwa-registration.tsx.
 const OPEN_MESSAGE = "ward-flow-open";
 
-// Bump the version when the precache list or the caching rules change: activate deletes the rest.
+// Bump CACHE_VERSION when the precache list or the caching rules change; activate deletes the rest.
+// OFFLINE_PAGE_REVISION is the first 12 hex digits of the SHA-256 of public/ward-flow-offline.html
+// (LF line endings), so a changed offline page gets a new cache on installed devices (H-0308).
+// tests/ward-pwa-worker.test.ts recomputes it and fails when the page changes without it.
 const CACHE_PREFIX = "ward-flow-static-";
-const STATIC_CACHE = `${CACHE_PREFIX}v2`;
+const CACHE_VERSION = "v2";
+const OFFLINE_PAGE_REVISION = "8f9a3a72427e";
+const STATIC_CACHE = `${CACHE_PREFIX}${CACHE_VERSION}-${OFFLINE_PAGE_REVISION}`;
 const OFFLINE_URL = "/ward-flow-offline.html";
 // Best effort: a missing icon must not stop the worker installing, or phone alerts would stop too.
 const PRECACHE_OPTIONAL = ["/icon.svg", "/icons/icon-192", "/icons/maskable-192"];

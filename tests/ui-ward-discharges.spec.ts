@@ -239,17 +239,20 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // --- Step 2: the person leaves, recorded on the ward board. Leaving completes this person's
     // release and is the one step here that frees a real bed. ---
     await goBackToWard(page);
-    // The ward page no longer links to the bed board. A same-origin anchor click is intercepted
-    // by the app router, so the layout provider — and this journey's bed releases — stay mounted.
-    await page.evaluate((unitId) => {
-      const anchor = document.createElement("a");
-      anchor.href = `/ward-flow/board/${unitId}`;
-      document.body.appendChild(anchor);
-      anchor.click();
-    }, UNIT_ID);
-    // The click only starts the navigation; the staged-content count below means nothing until the
-    // board's own address is in place and the document has finished loading.
-    await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`, { waitUntil: "load" });
+    // The ward page no longer links to the bed board, so open it the way a coordinator does and the
+    // release gate does: the ward's profile on the Wards index, then its "Stays and discharges" link.
+    // Both are the app's own links, so the provider and this journey's bed releases stay mounted.
+    // This used to click a plain anchor planted in the page, which is a full page load: the board
+    // drew the seed, then restored step 1's save a moment later and redrew every screen (CS3-17),
+    // closing the bed record this step had just opened. It failed that way every time in a cloud
+    // rerun on 27 Oct 2026.
+    const unitName = seedWardFlowState().units.find((unit) => unit.id === UNIT_ID)?.name;
+    expect(unitName, `fixture assumption: ${UNIT_ID} is a seeded unit`).toBeDefined();
+    await clickRailLink(page, "/ward-flow/wards");
+    await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
+    await page.getByRole("link", { name: "Stays and discharges", exact: true }).click();
+    await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),
       "React's streamed content is still staged, so the whole screen is duplicated in the document",

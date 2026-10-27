@@ -2,10 +2,15 @@ import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { useState } from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+const download = vi.hoisted(() => ({ blob: vi.fn<(blob: Blob, filename: string) => void>() }));
+vi.mock("@/components/ward-management/ward-download", () => ({ downloadBlob: download.blob }));
+
 import { DischargeCareJourney } from "@/components/ward-management/discharges/discharge-care-journey";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { emptyCareJourney, type CareJourney } from "@/components/ward-management/ward-care-journey";
 function Workspace({ role = "coordinator", unlinked = false }: { role?: "coordinator" | "ward"; unlinked?: boolean }) {
   const { admissions, openDischargeRecord, readDischargeRecord, dayZero, dispatch, rejections } = useWardFlow();
   const [handle, setHandle] = useState<ReturnType<typeof openDischargeRecord> | null>(null);
@@ -137,5 +142,56 @@ describe("D-30 transfer acceptance controls", () => {
     expect(screen.getByRole("region", { name: "Care journey" })).toHaveTextContent(
       "Only the central bed coordinator accepts a transfer",
     );
+  });
+});
+
+describe("coding review handoff download (H-0356)", () => {
+  function CodedWorkspace() {
+    const { admissions, openDischargeRecord, readDischargeRecord } = useWardFlow();
+    const [handle, setHandle] = useState<ReturnType<typeof openDischargeRecord> | null>(null);
+    const admission = admissions.find((a) => a.state === "occupied" && a.patientId)!;
+    const actor = { role: "coordinator" } as const;
+    const read = readDischargeRecord(actor, admission.id, handle);
+    // Synthetic departed stay coded 60 (left against advice), which separationHandoff accepts.
+    const coding = {
+      kind: "coding",
+      receivingClass: "not_applicable",
+      separationCode: "60",
+      dischargedFromLeave: false,
+      recordedAt: NOW_ANCHOR,
+      recordedBy: "coordinator",
+    } as unknown as NonNullable<CareJourney["coding"]>;
+    return (
+      <>
+        <button onClick={() => setHandle(openDischargeRecord(actor, admission.id))}>Open care record</button>
+        {read.status === "allowed" && (
+          <DischargeCareJourney
+            record={{
+              ...read.value,
+              admissionState: "departed",
+              leftAt: NOW_ANCHOR,
+              leavingDestination: "left-against-advice",
+              careJourney: { ...emptyCareJourney(), coding },
+            }}
+            actor={actor}
+          />
+        )}
+      </>
+    );
+  }
+
+  it("names the file synthetic and marks the file itself synthetic", async () => {
+    download.blob.mockReset();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CodedWorkspace />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open care record" }));
+    fireEvent.click(screen.getByRole("button", { name: "Download coding review handoff" }));
+    expect(download.blob).toHaveBeenCalledTimes(1);
+    const [blob, filename] = download.blob.mock.calls[0]!;
+    expect(filename).toMatch(/synthetic/);
+    expect(JSON.parse(await blob.text())).toMatchObject({ synthetic: true, kind: "separation-review" });
   });
 });

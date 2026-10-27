@@ -10,6 +10,7 @@ import type {
 import type { Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { LegalFormExpiryCorrectionReason, UploadedFileType } from "./ward-model-vocabulary";
+import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
   ReferralContactOutcome,
@@ -2363,10 +2364,7 @@ export type WardFlowEvent =
       now: Instant;
     }
   | {
-      /**
-       * Record that a team was contacted. This is the contact itself, not a sent message.
-       * Stores the team, the time, and the caller's role.
-       */
+      /** Record that a team was contacted: the contact itself, not a sent message. Stores team, time and role. */
       type: "RECORD_CLINICAL_CONTACT";
       role: WardFlowRole;
       now: Instant;
@@ -2392,9 +2390,7 @@ export type WardFlowEvent =
       kind?: "directive" | "bed_call";
     }
   | {
-      /**
-       * Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit.
-       */
+      /** Acknowledge receipt of an active statewide broadcast alert for a specific ward/unit. */
       type: "ACKNOWLEDGE_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;
@@ -2402,9 +2398,7 @@ export type WardFlowEvent =
       unitId: string;
     }
   | {
-      /**
-       * Stand down an active broadcast directive once network pressure resolves.
-       */
+      /** Stand down an active broadcast directive once network pressure resolves. */
       type: "STAND_DOWN_BROADCAST_ALERT";
       role: WardFlowRole;
       now: Instant;
@@ -2581,6 +2575,8 @@ export type WardFlowEvent =
       type: "UNDO_REFERRAL_DECISION";
       role: WardFlowRole;
       now: Instant;
+      /** The record number of the step this Undo is for; a newer one on the same subject refuses it. */
+      recordSeq?: number;
       referralId: string;
       /** A ward undoing its own decision names itself; refused when it is not the unit that answered. */
       actingUnitId?: string;
@@ -2611,6 +2607,8 @@ export type WardFlowEvent =
       type: "UNDO_PLACE_IN_BED";
       role: WardFlowRole;
       now: Instant;
+      /** The record number of the step this Undo is for; a newer one on the same subject refuses it. */
+      recordSeq?: number;
       admissionId: string;
       actingUnitId?: string;
     }
@@ -2720,7 +2718,8 @@ export type WardFlowEvent =
       admissionId: string;
       /** A ward undoing its own record names itself. */
       actingUnitId?: string;
-    };
+    }
+  | UndoBedMeetingActionEvent;
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */
 export const REPATRIATION_MODES = ["road", "flight"] as const;

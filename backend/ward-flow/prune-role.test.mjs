@@ -51,7 +51,7 @@ test(
       await receipt(old, 8);
       await receipt(recent, 6);
 
-      const login = new URL(url);
+      const login = new URL(/** @type {string} */ (url));
       login.username = "wardflow_pruner";
       login.password = password;
       pruner = new Pool({ connectionString: login.toString(), max: 1 });

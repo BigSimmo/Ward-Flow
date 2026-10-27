@@ -175,6 +175,7 @@ test("Supabase being down for the keys still lets a legacy check through, and ne
 
 test("expired published keys are not used after a failed refresh", async () => {
   let at = Date.now();
+  /** @type {typeof published | null} */
   let keys = published;
   const calls = [];
   const verify = createSupabaseAuthenticator(config, {
@@ -421,7 +422,7 @@ test("a stalled role read never holds a sign-in check past the verifier's deadli
   let reads = 0;
   const subject = randomUUID();
   /** @type {(holders: string[]) => void} */
-  let finishFirst;
+  let finishFirst = () => assert.fail("the first role-holder read never started");
   const verify = createSupabaseAuthenticator(config, {
     now: () => at,
     timeoutMs: 20,

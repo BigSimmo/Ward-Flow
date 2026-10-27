@@ -474,7 +474,9 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
               return;
             }
             const blob = new Blob([JSON.stringify(handoff, null, 2)], { type: "application/json" });
-            downloadBlob(blob, "separation-review.json");
+            // H-0356: the file name says synthetic, like every other Ward Flow download; the file's
+            // own `synthetic: true` and notice come from separationHandoff.
+            downloadBlob(blob, "ward-flow-synthetic-separation-review.json");
           }}
         >
           Download coding review handoff

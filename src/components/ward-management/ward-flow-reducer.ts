@@ -161,6 +161,7 @@ import { type SupportNotificationRecord } from "@/components/ward-management/war
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
 import { subjectId } from "./ward-flow-subject-id";
+import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
 /**
@@ -1194,8 +1195,10 @@ export function makeNotice(
  * directly, since no public dispatch can construct such a notice.
  */
 export function appendNotices(state: WardFlowState, notices: readonly Notice[]): WardFlowState {
-  const notifiable = notices.filter((notice) => notice.to.role !== "demo");
-  if (notifiable.length === 0) return state;
+  const wanted = notices.filter((notice) => notice.to.role !== "demo");
+  if (wanted.length === 0) return state;
+  // ENG-01 (H-0334): an id an earlier Undo left clashing is renumbered; see `withFreshIds`.
+  const notifiable = withFreshIds(state.notices, wanted);
   return { ...state, notices: [...state.notices, ...notifiable] };
 }
 
@@ -1301,7 +1304,7 @@ export function departAdmission(
     // A departure nobody flagged still vacates a bed: record its release, already discharged, to
     // carry "Being made ready". Same id scheme as FLAG_BED_RELEASE.
     const vacated: BedRelease = {
-      id: `WR-9${String(withPerson.bedReleases.length).padStart(2, "0")}`,
+      id: nextBedReleaseId(withPerson.bedReleases),
       unitId: unit.id,
       admissionId: admission.id,
       state: "discharged",
@@ -1532,6 +1535,8 @@ function withReferralDecisionUndo(state: WardFlowState, next: WardFlowState, eve
       before,
       after,
       noticeIds: next.notices.slice(state.notices.length).map((notice) => notice.id),
+      // H-0246: names this decision, so an older toast's Undo cannot take back a newer one.
+      seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
     }),
   };
 }
@@ -1548,6 +1553,7 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
+  UNDO_BED_MEETING_ACTION: "There is no bed meeting action marked done here to undo",
 };
 
 /**
@@ -1788,6 +1794,7 @@ export function reduceClinicalEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_MEETING_ACTION":
       return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":

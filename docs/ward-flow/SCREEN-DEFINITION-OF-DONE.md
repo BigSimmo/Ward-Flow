@@ -139,7 +139,7 @@ call it finished. If you cannot tick a box, the screen is not done — say so, d
 
 ## ⑤ The usual gates
 
-- [ ] **Focused tests pass:** `node scripts/run-vitest.mjs <files>` running only the test files
+- [ ] **Focused tests pass:** `node scripts/run-vitest.mjs run <test-files>` running only the test files
       created or edited, plus up to 3 directly importing test files (Owner speed rule, 17 September 2026).
       Styling and layout edits alone must **never** trigger the full ward suite.
 - [ ] `npx tsc -p tsconfig.typecheck.json --noEmit`

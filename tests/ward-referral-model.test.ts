@@ -735,6 +735,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_TRANSPORT_STEP: false,
     UNDO_DEPARTURE: false,
     UNDO_ABSENT_WITHOUT_LEAVE: false,
+    // H-0150: takes back marking a bed meeting action done; refuses nobody.
+    UNDO_BED_MEETING_ACTION: false,
   };
 
   /**

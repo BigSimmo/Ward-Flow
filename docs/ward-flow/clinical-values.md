@@ -33,7 +33,7 @@ governance sign-off before real patient use (D-54).
   register, not from this list.
 - `tests/ward-clinical-values.test.ts` fails if a threshold is typed as a number elsewhere in the ward
   code, or if the table below drifts from the source file. Do not edit the table by hand. Run
-  `UPDATE_CLINICAL_VALUES_DOC=1 npx vitest run tests/ward-clinical-values.test.ts` to rewrite it.
+  `UPDATE_CLINICAL_VALUES_DOC=1 node scripts/run-vitest.mjs run tests/ward-clinical-values.test.ts` to rewrite it.
 
 <!-- prettier-ignore-start -->
 <!-- clinical-values:start -->
