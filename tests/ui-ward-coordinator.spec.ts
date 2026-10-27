@@ -1108,7 +1108,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await refusedTab.click();
     const refused = page.getByRole("tabpanel", { name: "Refused" });
     await expect(refused).toContainText(/refus/i);
-    await expect(refused).toContainText("REFER_TO_UNITS");
+    // H-0839: the refused action is named in words, never by its event code.
+    await expect(refused).toContainText("Refer to units");
+    await expect(refused).not.toContainText("REFER_TO_UNITS");
     // ⚠️ O-16.8: the refusal now names the stage by its coordinator-facing label rather than
     // interpolating the raw identifier, so the identifier is deliberately no longer asserted
     // here — it is no longer on screen, which is the point of the ruling.
