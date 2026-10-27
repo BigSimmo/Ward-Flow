@@ -1,7 +1,6 @@
-// Top 25 item 2 (owner ruling 15 Oct 2026): at most the referral cap of wards
-// asked at once, and other requests withdrawn when one ward accepts. The cap is a safety check, so
-// with a chosen reason the extra ward is asked and the reason is kept in the audit trail. Without a
-// reason the engine refuses exactly as before (the flag-off path).
+// Top 25 item 2 (owner ruling 15 Oct 2026): other requests are withdrawn when one ward accepts,
+// and a chosen reason for asking past the referral cap is kept in the audit trail. Finding 188
+// (Josh, 27 Oct 2026): the cap is a warning everywhere, so a ward past it is asked without a reason.
 
 import { describe, expect, it } from "vitest";
 
@@ -33,12 +32,12 @@ function movement(state: WardFlowState) {
   return found;
 }
 
-describe("referral cap warns and asks for a reason (Top 25 item 2)", () => {
+describe("referral cap warns and keeps a chosen reason (Top 25 item 2, finding 188)", () => {
   it("the seeded cap is three wards", () => {
     expect(seeded().configuration.parallelReferralCap).toBe(3);
   });
 
-  it("refuses a fourth ward with no reason, as before", () => {
+  it("asks a fourth ward with no reason, since the cap is a warning (finding 188)", () => {
     const s0 = seeded();
     const s1 = wardFlowReducer(s0, {
       type: "REFER_TO_UNITS",
@@ -47,8 +46,9 @@ describe("referral cap warns and asks for a reason (Top 25 item 2)", () => {
       movementId: MOVEMENT_ID,
       unitIds: UNITS,
     });
-    expect(s1.rejections.length).toBe(s0.rejections.length + 1);
-    expect(movement(s1).referredUnitIds).toEqual([]);
+    expect(s1.rejections.length).toBe(s0.rejections.length);
+    expect(movement(s1).referredUnitIds).toEqual(UNITS);
+    expect((s1.auditEvents.at(-1)?.details as { overCapReason?: string }).overCapReason).toBeUndefined();
   });
 
   it("asks a fourth ward when a reason is chosen and keeps the reason in the audit trail", () => {

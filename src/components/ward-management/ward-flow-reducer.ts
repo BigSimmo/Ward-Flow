@@ -2025,6 +2025,7 @@ export function reduceClinicalEvent(
     case "STOP_TRANSPORT":
     case "SET_ARRIVAL_DETAILS":
     case "EVALUATE_ARRIVAL_LATENESS":
+    case "RECORD_TRANSPORT_CAD":
       return reducerSlices().reduceTransportEvent(state, event, decision, TRANSPORT_EVENT_HELPERS);
 
     /**

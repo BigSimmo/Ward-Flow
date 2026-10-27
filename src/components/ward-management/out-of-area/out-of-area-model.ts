@@ -105,6 +105,13 @@ export type RepatDraft = {
   transportLegalStatus: TransportLegalStatus | undefined;
   estimatedTime: string;
   estimatedDay: "today" | "tomorrow";
+  /**
+   * #177 (Josh, 27 Oct 2026): for an involuntary return, whether Form 4C is in hand and whether an
+   * escort is needed for the journey. Both open blank and are answered by a person. Unanswered is a
+   * warning on the plan, never a missing answer, and neither is derived.
+   */
+  form4CReceived: boolean | undefined;
+  escortRequired: boolean | undefined;
 };
 
 export const BLANK_REPAT_DRAFT: RepatDraft = {
@@ -116,6 +123,8 @@ export const BLANK_REPAT_DRAFT: RepatDraft = {
   transportLegalStatus: undefined,
   estimatedTime: "",
   estimatedDay: "today",
+  form4CReceived: undefined,
+  escortRequired: undefined,
 };
 
 /** The three steps of the plan, and the answers each holds. */

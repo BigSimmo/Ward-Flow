@@ -258,14 +258,19 @@ describe("BOOK_TRANSPORT", () => {
    * required and never defaulted, the identical discipline `escortRequired` already holds to.
    */
   describe("the three phone-logged facts are required and never defaulted", () => {
-    it("refuses a missing CAD number", () => {
-      const state = book({ cadNumber: undefined });
-      expect(state.rejections.length).toBe(1);
-      expect(state.rejections[0]!.reason).toContain("cadNumber");
+    // CAD to follow (Josh, 27 Oct 2026): a missing or blank CAD number books and stores nothing,
+    // never a filled-in value. `tests/ward-transport-cad-to-follow.test.ts` covers the later number.
+    it.each([undefined, "   "])("books CAD %j as to follow, storing no number", (cadNumber) => {
+      const { movementId } = heldBedMovement();
+      const state = book({ cadNumber });
+      expect(state.rejections.length).toBe(0);
+      const job = state.movements.find((movement) => movement.id === movementId)?.transport;
+      expect(job).toBeDefined();
+      expect(job?.cadNumber).toBeUndefined();
     });
 
-    it("refuses a blank CAD number", () => {
-      const state = book({ cadNumber: "   " });
+    it("refuses a CAD number that is not text", () => {
+      const state = book({ cadNumber: 1234 as never });
       expect(state.rejections.length).toBe(1);
       expect(state.rejections[0]!.reason).toContain("cadNumber");
     });

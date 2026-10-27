@@ -51,7 +51,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // Audit 24-1 decision 4 (24 Oct 2026) removes RELEASE_BED; old records keep their wording.
       // H-0150 adds UNDO_BED_MEETING_ACTION.
       // H-0978 / WS-15 (26 Oct 2026) adds SET_BED_CLOSED.
-      expect(allEventTypes.length).toBe(163);
+      // CAD to follow (Josh, 27 Oct 2026) adds RECORD_TRANSPORT_CAD.
+      expect(allEventTypes.length).toBe(164);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];

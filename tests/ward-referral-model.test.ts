@@ -593,6 +593,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RELEASE_PULL: false,
     // Books a transport job; refuses nothing and names no subject.
     BOOK_TRANSPORT: false,
+    // Adds a CAD number to a job booked with "CAD to follow"; refuses nothing.
+    RECORD_TRANSPORT_CAD: false,
     CANCEL_TRANSPORT: false,
     // WLQ-38 (owner, 2026-09-15): the referrer or the coordinator stopping a collected journey.
     // Same shape as CANCEL_TRANSPORT and RELEASE_PULL above: it unwinds an earlier reservation of

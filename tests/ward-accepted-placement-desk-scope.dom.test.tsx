@@ -116,3 +116,19 @@ describe("accepted referral placement asks the Intermittent interval", () => {
     expect(screen.queryByRole("combobox", { name: "Check every" })).not.toBeInTheDocument();
   });
 });
+
+describe("accepted referral placement warns on a form that does not fit (finding 78)", () => {
+  it("warns on a form for a voluntary patient, and leaves Confirm available", () => {
+    renderPlacement(undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Start placement" }));
+    fireEvent.change(screen.getByRole("combobox", { name: "Legal status" }), { target: { value: "Voluntary" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Legal form" }), { target: { value: "1A" } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Observation level" }), { target: { value: "general" } });
+    expect(screen.getByTestId("ward-accepted-placement-form-mismatch")).toHaveTextContent(
+      "Check the legal form: Form 1A is chosen, but the legal status is Voluntary. You can still start the placement.",
+    );
+    expect(screen.getByRole("button", { name: "Confirm and start placement" })).toBeEnabled();
+    fireEvent.change(screen.getByRole("combobox", { name: "Legal form" }), { target: { value: "none" } });
+    expect(screen.queryByTestId("ward-accepted-placement-form-mismatch")).not.toBeInTheDocument();
+  });
+});

@@ -13,7 +13,8 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { referralAgeBand } from "./referral-age-band";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -224,6 +225,8 @@ export function useWardReferralDrawerState({
   const [selectedRecipient, setSelectedRecipient] = useState(kept?.selectedRecipient ?? "");
   const [communityPurpose, setCommunityPurpose] = useState(kept?.communityPurpose ?? ("" as const));
   const [ageBand, setAgeBand] = useState<Cohort | "">(kept?.ageBand ?? "");
+  // Finding 36: the soft note for an adult from 18 to 24, set with the prefilled band.
+  const [ageBandNote, setAgeBandNote] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [guardOpen, setGuardOpen] = useState(false);
@@ -289,6 +292,10 @@ export function useWardReferralDrawerState({
         fromRecord.catchmentFromRecord(patientRecord, catchmentTeam, recordedRegion)),
   );
   const [catchmentEditing, setCatchmentEditing] = useState(false);
+  // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" answers the catchment for a ward or ED
+  // referral (the team stays blank and the letter says so). A community team referral still needs it.
+  const [catchmentNotKnown, setCatchmentNotKnown] = useState(kept?.catchmentNotKnown ?? false);
+  const catchmentAnswered = catchmentNotKnown || (catchmentConfirmed && !!catchmentTeam.trim());
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? recordedRegion ?? "");
   const [activeSection, setActiveSection] = useState<DrawerSection>(
     (kept?.destType === "community" && kept.activeSection === "documentation" ? "referral" : kept?.activeSection) ??
@@ -377,6 +384,7 @@ export function useWardReferralDrawerState({
     catchmentTeam,
     catchmentService,
     catchmentConfirmed,
+    ...(catchmentNotKnown ? { catchmentNotKnown } : {}),
     homeRegion,
     sourceKind,
     originSiteCode,
@@ -567,7 +575,6 @@ export function useWardReferralDrawerState({
     setActivePatientKey(key);
     setAddedInFormKey(addedInForm ? key : null);
     setNotOnWard(undefined);
-    setAgeBand("");
     setUnidentified(null);
     setNewPatientOpen(false);
     setSearchQuery("");
@@ -583,6 +590,7 @@ export function useWardReferralDrawerState({
     setCatchmentTeam(team);
     setCatchmentService("");
     setCatchmentEditing(false);
+    setCatchmentNotKnown(false);
     const originSite = edById(matchedMovement?.originEdId ?? "")?.siteCode;
     if (originSite && !deskOriginSite) {
       setSourceKind("ed");
@@ -593,6 +601,11 @@ export function useWardReferralDrawerState({
       : key.startsWith(PATIENT_KEY_PREFIX)
         ? patients.find((patient) => patient.id === key.slice(PATIENT_KEY_PREFIX.length))
         : undefined;
+    // Finding 36 (Josh, 27 Oct 2026): the age band opens on the band the record's date of birth gives
+    // on the demo day, still editable. With no usable date of birth it opens blank, as before.
+    const band = dayZero instanceof Date ? referralAgeBand(record?.dateOfBirth, calendarDateOf(now, dayZero)) : null;
+    setAgeBand(band?.band ?? "");
+    setAgeBandNote(band?.note ?? null);
     const region = fromRecord.recordedHomeRegion(record?.id, matchedMovement, recordState);
     setHomeRegion(region ?? "");
     setCatchmentConfirmed(fromRecord.catchmentFromRecord(record, team, region));
@@ -757,7 +770,9 @@ export function useWardReferralDrawerState({
     if (sendingWard && notOnSendingWard && !notOnWardReason)
       return `This person is not in a bed on ${sendingWard.name}. Choose why the ward is referring them.`;
     if (!effectiveCohort) return "Choose the age band.";
-    if (!catchmentConfirmed || !catchmentTeam.trim()) return "Confirm the patient's catchment before continuing.";
+    if (!catchmentAnswered) return "Confirm the patient's catchment before continuing.";
+    if (catchmentNotKnown && destType === "community")
+      return "A community team referral needs the catchment team. Choose the team, or send to a ward or ED.";
     if (!homeRegion) return "Choose the patient's home region.";
     return null;
   }
@@ -796,7 +811,7 @@ export function useWardReferralDrawerState({
     patient: [
       (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && (!!heldBedUnitId || !notOnWardReason)),
       !effectiveCohort,
-      !catchmentConfirmed || !catchmentTeam.trim(),
+      !catchmentAnswered || (catchmentNotKnown && destType === "community"),
       !homeRegion,
     ].filter(Boolean).length,
     referral:
@@ -906,7 +921,9 @@ export function useWardReferralDrawerState({
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
     const intake: ReferralIntakeDetails = {
-      catchment: { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
+      catchment: catchmentNotKnown
+        ? { teamName: "", confirmed: true, notKnown: true }
+        : { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
       reasonForReferral: referralReason,
       legalStatus,
       riskFlags: REFERRAL_RISK_FLAGS.filter((flag) => riskFlags[flag]),
@@ -1047,8 +1064,8 @@ export function useWardReferralDrawerState({
     },
     {
       label: "Catchment",
-      value: catchmentConfirmed ? catchmentTeam : "To confirm",
-      state: catchmentConfirmed ? "done" : "needed",
+      value: catchmentNotKnown ? "Catchment not known" : catchmentConfirmed ? catchmentTeam : "To confirm",
+      state: catchmentAnswered ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
     ...(community ? [communityPurposeRow(communityPurpose)] : []),
@@ -1151,7 +1168,7 @@ export function useWardReferralDrawerState({
   function phStepHint(id: DrawerSection): string {
     if (id === "patient") {
       return patientRecord
-        ? `${currentPatient.name} · ${catchmentConfirmed && catchmentTeam.trim() ? catchmentTeam : "catchment to confirm"}`
+        ? `${currentPatient.name} · ${catchmentNotKnown ? "catchment not known" : catchmentConfirmed && catchmentTeam.trim() ? catchmentTeam : "catchment to confirm"}`
         : "Find a patient by name or UMRN";
     }
     if (id === "referral") {
@@ -1246,6 +1263,7 @@ export function useWardReferralDrawerState({
     setCommunityPurpose,
     ageBand,
     setAgeBand,
+    ageBandNote,
     previewOpen,
     setPreviewOpen,
     summaryOpen,
@@ -1306,6 +1324,8 @@ export function useWardReferralDrawerState({
     setCatchmentService,
     catchmentConfirmed,
     setCatchmentConfirmed,
+    catchmentNotKnown,
+    setCatchmentNotKnown,
     catchmentEditing,
     setCatchmentEditing,
     homeRegion,
@@ -1317,6 +1337,7 @@ export function useWardReferralDrawerState({
     liveOriginSite,
     sourceKind,
     setSourceKind,
+    deskOriginSite,
     originSiteCode,
     setOriginSiteCode,
     sendingTeam,

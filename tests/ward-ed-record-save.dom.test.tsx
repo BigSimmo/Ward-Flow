@@ -346,11 +346,20 @@ describe("ED correction lifecycle", () => {
     expect(view.draft()).toEqual(before);
     expect(view.state().disabled).toBe(false);
   });
-  it("does not dispatch missing required selections on any correction", () => {
+  // Finding 15 (Josh, 27 Oct 2026): an urgency change needs no reason, so it is sent without one.
+  it("sends an urgency change with no reason chosen", () => {
     const dispatch = vi.fn<WardCommandDispatch>();
     const view = openSave("urgency", dispatch);
     act(() => view.result.current.panels.setUrgencyDraft({ urgency: 2, reason: undefined }));
     view.submit();
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    expect(dispatch.mock.calls[0]?.[0]).toMatchObject({ type: "CHANGE_URGENCY", urgency: 2 });
+    expect(dispatch.mock.calls[0]?.[0]).not.toHaveProperty("reason");
+  });
+
+  it("does not dispatch missing required selections on any correction", () => {
+    const dispatch = vi.fn<WardCommandDispatch>();
+    const view = openSave("urgency", dispatch);
     act(() => {
       view.result.current.submitLegalStatusChange(
         { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>,

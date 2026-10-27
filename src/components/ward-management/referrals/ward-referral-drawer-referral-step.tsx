@@ -124,6 +124,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     activeSection,
     sourceKind,
     setSourceKind,
+    deskOriginSite,
     originSiteCode,
     setOriginSiteCode,
     sendingTeam,
@@ -242,7 +243,8 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                       onClick={() => {
                         if (kind === sourceKind) return;
                         setSourceKind(kind);
-                        setOriginSiteCode("");
+                        // Finding 46: back on Emergency, an ED desk's own department comes back.
+                        setOriginSiteCode(kind === "ed" ? (deskOriginSite ?? "") : "");
                       }}
                     >
                       {kind === "community" ? "Community" : "Emergency"}

@@ -68,7 +68,6 @@ describe("Top 25 item 3: next ward after a refusal", () => {
         units={seeded.units}
         now={now}
         chosenUnitIds={[]}
-        slotsLeft={3}
         onChoose={onChoose}
       />,
     );

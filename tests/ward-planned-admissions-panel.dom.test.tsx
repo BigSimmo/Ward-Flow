@@ -100,6 +100,7 @@ describe("planned admissions panel", () => {
     fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
     fireEvent.click(screen.getByTestId("ward-planned-submit"));
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
     expect(screen.getByTestId("ward-planned-refusal")).toHaveTextContent(/gender_designation/);
     expect(screen.getByTestId("ward-planned-PA-01")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/PA-/);
@@ -125,6 +126,7 @@ describe("planned admissions panel", () => {
     fireEvent.change(screen.getByTestId("ward-planned-unit"), { target: { value: "fsh-adult-secure" } });
     fireEvent.click(screen.getByTestId("ward-planned-submit"));
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-01")).getByRole("button", { name: "Arrived" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
     expect(screen.queryByTestId("ward-planned-refusal")).toBeNull();
     expect(screen.queryByTestId("ward-planned-PA-01")).toBeNull();
   });
@@ -172,6 +174,12 @@ describe("planned admissions panel", () => {
     expect(screen.queryByTestId("ward-planned-PA-SEED-01")).toBeNull();
 
     fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
+    // Finding 185: the arrival identity check comes first, as on a movement. Cancel changes nothing.
+    expect(screen.getByTestId("ward-planned-arrival-identity-check")).toHaveTextContent(/^Check: /u);
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    expect(screen.getByTestId("ward-planned-PA-SEED-03")).toBeInTheDocument();
+    fireEvent.click(within(screen.getByTestId("ward-planned-PA-SEED-03")).getByRole("button", { name: "Arrived" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm arrival" }));
     expect(screen.queryByTestId("ward-planned-PA-SEED-03")).toBeNull();
     expect(screen.getAllByRole("listitem")).toHaveLength(1);
   });

@@ -465,6 +465,14 @@ export function PatientNowScreen({
     setShowTransportForm(true);
   }
 
+  // A ward books, and adds a CAD number that was to follow, as the sending ward.
+  const transportActingUnitId =
+    routeRole === "ward" && liveMovement
+      ? ((liveMovement.referralId
+          ? referrals.find((referral) => referral.id === liveMovement.referralId)?.originUnitId
+          : undefined) ?? admissions.find((admission) => admission.id === liveMovement.sourceAdmissionId)?.unitId)
+      : undefined;
+
   function saveTransportBooking(booking: TransportBookingSubmission) {
     if (transportSave.pending || !liveMovement || !gate("BOOK_TRANSPORT").allowed) return;
     setBookingRejectionStart(rejections.length);
@@ -475,17 +483,7 @@ export function PatientNowScreen({
           role: routeRole,
           now,
           movementId: liveMovement.id,
-          ...(routeRole === "ward"
-            ? (() => {
-                const originUnitId = liveMovement.referralId
-                  ? referrals.find((referral) => referral.id === liveMovement.referralId)?.originUnitId
-                  : undefined;
-                const sourceUnitId =
-                  originUnitId ??
-                  admissions.find((admission) => admission.id === liveMovement.sourceAdmissionId)?.unitId;
-                return sourceUnitId ? { actingUnitId: sourceUnitId } : {};
-              })()
-            : {}),
+          ...(transportActingUnitId ? { actingUnitId: transportActingUnitId } : {}),
           ...booking,
         }),
       () => setShowTransportForm(false),
@@ -922,6 +920,8 @@ export function PatientNowScreen({
     displayProvider,
     displayName,
     gate,
+    routeRole,
+    transportActingUnitId,
     isTransportBooked,
     liveMovement,
     mode,

@@ -229,3 +229,25 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* #101 (Josh, 27 Oct 2026): the leave authority tick for a patient on an order, and its warning. */
+.authorised {
+  display: flex;
+  flex: 1 1 100%;
+  gap: var(--wf-s-2);
+  align-items: center;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.authorisedWarn {
+  display: inline-flex;
+  flex: 1 1 100%;
+  gap: var(--wf-s-1);
+  align-items: center;
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
