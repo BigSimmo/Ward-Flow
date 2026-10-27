@@ -5,16 +5,7 @@
  */
 
 /** Step names a command's timing log may carry; nothing else is ever logged with it. */
-const TIMING_STEPS = Object.freeze([
-  "lock",
-  "apply",
-  "archive",
-  "save",
-  "push",
-  "commit",
-  "deliver",
-  "archiveAfter",
-]);
+const TIMING_STEPS = Object.freeze(["lock", "apply", "archive", "save", "push", "commit", "deliver", "archiveAfter"]);
 
 /**
  * A stopwatch for one command. `fields()` returns whole milliseconds per step, the action name
