@@ -27,6 +27,8 @@ describe("phone Home Checking strip", () => {
     const details = summary.closest("details");
     expect(details).not.toBeNull();
     expect(details).not.toHaveAttribute("open");
+    // The hero foot does not wrap, so the summary carries the class that lets it wrap on a narrow phone.
+    expect(details?.className).toMatch(/checkingPhone/);
     expect(details).toContainElement(screen.getByTestId("wf-checking-foot"));
   });
 });

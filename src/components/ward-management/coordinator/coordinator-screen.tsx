@@ -945,7 +945,7 @@ export function CoordinatorScreen() {
             foot={
               isPhone ? (
                 // P109 (27 Oct 2026): a phone keeps the Checking strip, collapsed, so stale counts still show.
-                <details>
+                <details className={styles.checkingPhone}>
                   <summary>
                     Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"},{" "}
                     {wardsNotReporting} {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
