@@ -104,6 +104,13 @@
   line-height: 1.5;
 }
 
+/* A colour code row: the tone's own glyph in front of its meaning. */
+.legendEntry > dt {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
 /* A quiet dot in front of each point, aligned to the first line. */
 .point {
   flex: none;

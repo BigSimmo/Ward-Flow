@@ -204,11 +204,17 @@ describe("tour player", () => {
   });
 });
 
+/** P188: the tour is offered first; this presses "Start the tour" on the card. */
+async function startFromOffer() {
+  fireEvent.click(await screen.findByRole("button", { name: "Start the tour" }));
+}
+
 describe("tour auto-start", () => {
   it("starts once on the desk's home, while the tour has not been seen", async () => {
     const onStart = vi.fn();
     const { rerender } = render(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(1);
     rerender(<WardTourAutoStart onStart={onStart} />);
     expect(onStart).toHaveBeenCalledTimes(1);
   });
@@ -222,7 +228,8 @@ describe("tour auto-start", () => {
         <WardWhatsNew />
       </>,
     );
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(1);
     unmount();
     // A reload: the desk's tour is still unseen, but this desk already had it on this device.
     render(<WardTourAutoStart onStart={onStart} />);
@@ -262,6 +269,7 @@ describe("tour auto-start", () => {
       route.pathname = "/ward-flow/statistics";
       rerender(<WardTourAutoStart onStart={onStart} />);
       act(() => vi.advanceTimersByTime(2000));
+      fireEvent.click(screen.getByRole("button", { name: "Start the tour" }));
       expect(onStart).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
@@ -274,7 +282,8 @@ describe("tour auto-start", () => {
     tourFacts.deskHome = "/ward-flow/settings";
     route.pathname = "/ward-flow/settings";
     render(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
   it("closes on Escape pressed anywhere, not only inside the card", () => {

@@ -37,12 +37,13 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
     movementIds.add(movement.id);
   }
   for (const row of state.repatriations) {
+    if (!row || typeof row !== "object" || Object.getPrototypeOf(row) !== Object.prototype) return false;
+    // #177 (Josh, 27 Oct 2026): an involuntary return may also carry its Form 4C and escort answers.
+    const answers = (["form4CReceived", "escortRequired"] as const).filter((key) => Object.hasOwn(row, key));
     if (
-      !row ||
-      typeof row !== "object" ||
-      Object.getPrototypeOf(row) !== Object.prototype ||
+      answers.some((key) => typeof row[key] !== "boolean") ||
       // A plan agreed after it was first logged also carries `agreedAt` and `agreedBy`.
-      Object.keys(row).length !== (Object.hasOwn(row, "agreedAt") ? 12 : 10) ||
+      Object.keys(row).length !== (Object.hasOwn(row, "agreedAt") ? 12 : 10) + answers.length ||
       (Object.hasOwn(row, "agreedAt") &&
         (!Number.isFinite(row.agreedAt) || !Object.hasOwn(WARD_FLOW_ROLE_LABELS, row.agreedBy as string))) ||
       typeof row.admissionId !== "string" ||

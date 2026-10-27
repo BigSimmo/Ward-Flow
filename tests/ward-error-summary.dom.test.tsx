@@ -161,12 +161,9 @@ describe("Referral patient step: error summary", () => {
 
 describe("documentationProblems", () => {
   it("lists every missing answer in panel order, clearance only for the community short form", () => {
-    // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No.
-    expect(documentationProblems(EMPTY_DOCUMENTATION, "d").map((problem) => problem.id)).toEqual([
-      "d-medical",
-      "d-medication-upload",
-      "d-observation-upload",
-    ]);
+    // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No. The two
+    // charts never block either: one not attached is sent as to follow (finding 42).
+    expect(documentationProblems(EMPTY_DOCUMENTATION, "d").map((problem) => problem.id)).toEqual(["d-medical"]);
     expect(
       documentationProblems({ ...EMPTY_DOCUMENTATION, medical: "yes", toFollow: ["medication", "observation"] }, "d"),
     ).toEqual([]);
@@ -208,15 +205,14 @@ describe("Referral later steps: error summary", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Next, /u }));
     await waitFor(() => expect(step("Clearance")).toHaveAttribute("aria-pressed", "true"));
     fireEvent.click(screen.getByRole("button", { name: /^Next, /u }));
-    const heading = await screen.findByRole("heading", { name: "3 things to fix before the next step" });
+    const heading = await screen.findByRole("heading", { name: "1 thing to fix before the next step" });
     expect(currentPanel().id).toMatch(/-documentation$/u);
     await waitFor(() => expect(heading).toHaveFocus());
     fireEvent.click(screen.getByRole("link", { name: "Answer whether the patient has been medically cleared" }));
     expect(screen.getByRole("group", { name: "Has the patient been medically cleared?" })).toContainElement(
       document.activeElement as HTMLElement,
     );
-    fireEvent.click(screen.getByRole("link", { name: "Attach the medication chart or mark it to follow" }));
-    expect(document.activeElement).toHaveTextContent("Upload");
+    expect(screen.queryByRole("link", { name: /medication chart/u })).not.toBeInTheDocument();
   });
 
   it("leads a refused community Referral step with its short-form questions", async () => {

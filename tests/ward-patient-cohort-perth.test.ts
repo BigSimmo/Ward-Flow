@@ -7,7 +7,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe.each(["Australia/Perth", "Australia/Sydney", "America/New_York"])("Perth cohorts on a %s browser", (zone) => {
   it.each([
-    ["2001-10-17", 24, "Youth", "Adult"],
+    ["2008-10-17", 17, "Youth", "Adult"],
     ["1961-10-17", 64, "Adult", "Older adult"],
   ] as const)("changes cohort on the Perth birthday for DOB %s", (dob, age, before, birthday) => {
     vi.stubEnv("TZ", zone);
