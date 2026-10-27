@@ -1473,6 +1473,14 @@ export class SharedWorkspaceClient {
     if (this.pending) await this.drain();
     else await this.refresh();
   };
+  /**
+   * P172 (Josh, 28 Oct 2026): the person reads the outcome of an uncertain save and dismisses it.
+   * Never while the receipt is still being checked, since that message says changes are disabled.
+   */
+  dismissRecovery = () => {
+    if (this.disposed || this.view.recovering || this.view.recovery === undefined) return;
+    this.publish({ recovery: undefined });
+  };
   dispose() {
     this.disposed = true;
     this.stopWatchingSheets();

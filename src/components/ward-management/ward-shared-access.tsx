@@ -105,6 +105,8 @@ export type WardSharedConnection = SharedView & {
   /** What the sign-in screen says after a deliberate sign-out, such as the shared computer reminder. */
   farewell?: string | null;
   retry: () => void;
+  /** P172: clears the outcome of an uncertain save once read. Not offered while the receipt is being checked. */
+  dismissRecovery?: () => void;
   dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
@@ -674,7 +676,17 @@ function WardSharedWorkspaceContent({
         connection={connection}
         deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
       />
-      {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+      {connection.recovery && (
+        <span role="alert">
+          {" "}
+          {connection.recovery}
+          {!connection.recovering && connection.dismissRecovery && (
+            <button type="button" className={styles.dismissRecovery} onClick={connection.dismissRecovery}>
+              Dismiss
+            </button>
+          )}
+        </span>
+      )}
       <FocusKeepingInert
         key={JSON.stringify([
           connection.actorId,
