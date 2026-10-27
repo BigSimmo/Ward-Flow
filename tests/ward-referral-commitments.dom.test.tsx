@@ -28,7 +28,7 @@ describe("Coordinated call sheet (closing-the-loop package A)", () => {
     const youth = screen.getByTestId("ward-call-sheet-bty-youth");
     expect(youth).toHaveTextContent("Last contact");
     expect(youth).toHaveTextContent("Call back later");
-    expect(youth).toHaveTextContent("1 referral");
+    expect(youth).toHaveTextContent("4 referrals");
     expect(screen.getByTestId("ward-call-sheet-item-bty-youth-RF-001")).toHaveTextContent("Promise overdue");
     expect(screen.getByTestId("ward-call-sheet-item-bty-youth-RF-001-chases")).toHaveTextContent("Asked 3 times");
     expect(screen.getByTestId("ward-call-sheet-fsh-older-adult")).toBeInTheDocument();

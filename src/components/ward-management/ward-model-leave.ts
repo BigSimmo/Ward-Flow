@@ -43,6 +43,11 @@ export type LeaveBed = {
    * `openWarningAt` so screens can warn; a person still opens the bed (`END_LEAVE_BED`).
    */
   kind?: "off_ward" | "medical_trip";
+  /**
+   * #101 (Josh, 27 Oct 2026): the ward's answer to "Leave authorised by the treating psychiatrist",
+   * asked only for a patient on an order. Absent when it was not asked. A record, never a gate.
+   */
+  psychiatristAuthorised?: boolean;
   /** When the 24-hour "consider opening" warning was raised. Absent until then. */
   openWarningAt?: Instant;
   /**

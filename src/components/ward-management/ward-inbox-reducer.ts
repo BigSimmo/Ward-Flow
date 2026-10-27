@@ -278,6 +278,7 @@ function inboxRowSince(state: WardFlowState, inboxItemId: string): Instant | und
  * - COMPLETE_INBOX_ITEM
  * - REOPEN_INBOX_ITEM
  * - TAKE_INBOX_ITEM_OWNERSHIP, SNOOZE_INBOX_ITEM, UNSNOOZE_INBOX_ITEM (stream A, 9 Oct 2026)
+ * - RELEASE_INBOX_ITEM_OWNERSHIP (P019, 27 Oct 2026)
  */
 export function reduceInboxEvent(
   state: WardFlowState,
@@ -415,6 +416,19 @@ export function reduceInboxEvent(
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const entry: InboxOwnershipEntry = { at: event.now, by };
+      return { ...state, inboxOwnership: { ...state.inboxOwnership, [inboxItemId]: [...history, entry] } };
+    }
+
+    case "RELEASE_INBOX_ITEM_OWNERSHIP": {
+      const inboxItemId = event.inboxItemId.trim();
+      const by = WARD_FLOW_ROLE_LABELS[event.role];
+      const history = state.inboxOwnership[inboxItemId] ?? [];
+      if (currentInboxOwner(history, inboxRowSince(state, inboxItemId))?.by !== by) {
+        return reject(state, event, `inbox row ${inboxItemId} is not owned by ${by}, so there is nothing to release`);
+      }
+      decision.outcome = "accepted";
+      decision.reasonCode = "none";
+      const entry: InboxOwnershipEntry = { at: event.now, by, kind: "released" };
       return { ...state, inboxOwnership: { ...state.inboxOwnership, [inboxItemId]: [...history, entry] } };
     }
 

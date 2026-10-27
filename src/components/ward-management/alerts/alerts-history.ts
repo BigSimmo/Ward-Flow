@@ -90,7 +90,7 @@ export function alertsHistory({
         id: `own-${id}-${index}`,
         at: entry.at,
         tone: "success",
-        title: "Taken",
+        title: entry.kind === "released" ? "Released" : "Taken",
         sub: about(id),
         by: entry.by,
         action: true,

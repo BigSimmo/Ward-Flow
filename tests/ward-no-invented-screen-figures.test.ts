@@ -215,6 +215,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^settings\/operator-switcher-modal\.tsx$/,
     name: /^DESK_SWITCH_WAIT_MS$/,
   },
+  {
+    id: "activity-audit-read-pace",
+    why: "The Activity feed's server audit (P056, 27 Oct 2026): how often an open shell reads the desk's audit again, so another computer's change appears; network pacing, never shown, not a limit.",
+    file: /^shell\/ward-desk-audit\.ts$/,
+    name: /^ACTIVITY_AUDIT_REFRESH_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

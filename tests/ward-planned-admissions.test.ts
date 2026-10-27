@@ -584,6 +584,31 @@ describe("review follow-up: a linked patient's age group comes from the record",
     expect(newest(recorded)).toMatchObject({ patientId: youth.id, ageBand: "Youth" });
   });
 
+  it("accepts an 18 to 24 year old booked as Youth or Adult, since youth services may take them", () => {
+    const seed = seedWardFlowState();
+    const busy = new Set(
+      [
+        ...seed.admissions.filter((admission) => admission.state === "occupied" || admission.state === "pulled"),
+        ...seed.plannedAdmissions,
+      ].map((record) => record.patientId),
+    );
+    const free = seed.patients.find((patient) => !busy.has(patient.id))!;
+    // Today (CALENDAR_DATE) is 9 Oct 2026: aged 20.
+    const aged20 = { ...free, dateOfBirth: "2006-01-14" };
+    const state: WardFlowState = {
+      ...seed,
+      patients: seed.patients.map((patient) => (patient.id === free.id ? aged20 : patient)),
+    };
+    for (const ageBand of ["Youth", "Adult"] as const) {
+      const booked = book(state, { initials: null, patientId: free.id, ageBand });
+      expect(booked.rejections).toEqual([]);
+      expect(newest(booked)).toMatchObject({ patientId: free.id, ageBand });
+    }
+    expect(lastRejection(book(state, { initials: null, patientId: free.id, ageBand: "Older adult" }))).toBe(
+      "On the expected arrival date this patient's recorded date of birth gives the Adult age group, not Older adult.",
+    );
+  });
+
   it("checks the age group on the arrival date, so a 25th birthday inside the window counts", () => {
     const seed = seedWardFlowState();
     const busy = new Set(

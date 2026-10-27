@@ -4,6 +4,7 @@
 // the referrals awaiting a decision, in one card, built from the real Alerts row components.
 
 import { useRef, useState, type ReactNode } from "react";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -151,7 +152,10 @@ function HomeRow({
         )}
         <span className={styles.hrowLine}>
           <strong className={styles.hrowName}>{name}</strong> <span className={styles.mono}>{umrn}</span>
-          <span className={styles.hrowWhere}>{` · ${where}`}</span>
+          <span className={styles.hrowWhere}>
+            {" · "}
+            <SpelledCodes text={where} />
+          </span>
         </span>
         {extra ? <span className={styles.hrowExtra}>{extra}</span> : null}
       </span>

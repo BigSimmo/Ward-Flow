@@ -420,6 +420,7 @@ describe("who may raise which event", () => {
     REOPEN_INBOX_ITEM: ["coordinator"],
     // Stream A, 9 Oct 2026: owning or snoozing a row sits on the same coordinator floor as acknowledging it.
     TAKE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
+    RELEASE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
     SNOOZE_INBOX_ITEM: ["coordinator"],
     UNSNOOZE_INBOX_ITEM: ["coordinator"],
     // 2026-09-07. The ED psychiatry team records that a referred person is physically in the

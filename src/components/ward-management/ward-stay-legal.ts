@@ -1,5 +1,6 @@
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { classifyLegalStatus, legalStatusIsOnOrder } from "@/components/ward-management/ward-legal-status";
@@ -44,7 +45,7 @@ export function isOnOrder(status: string | undefined): boolean {
 }
 
 /**
- * The short legal word for a stay's second line: "Form 6A" when a form is recorded and the person
+ * The short legal word for a stay's second line: "Form 6A" with its register title when a form is recorded and the person
  * is on an order, else the recorded status in its shortest words, or undefined when nothing is
  * recorded. The word comes from `classifyLegalStatus`, not from `isOnOrder`: that yes/no is
  * fail-safe for the absence steps and would call a CTO, a referral or "Not recorded"
@@ -56,7 +57,8 @@ export function stayLegalShort(admission: Admission, source: StayLegalSource): s
   if (status === undefined || kind === "not_recorded") return undefined;
   if (kind === "voluntary") return "Voluntary";
   const code = stayMovement(admission, source)?.legalForm?.code;
-  if (code) return `Form ${code}`;
+  // H-0842: the form reads with its register title, never the bare code.
+  if (code) return legalFormName({ code });
   if (kind === "cto") return "CTO";
   if (kind === "referred") return "Referred for exam";
   if (kind === "detained")
