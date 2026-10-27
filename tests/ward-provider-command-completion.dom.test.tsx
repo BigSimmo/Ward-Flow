@@ -245,3 +245,80 @@ it("settles a pre-adoption command before a scenario file, which now loads on de
     `${NOW_ANCHOR + 90}:${imported.worldGeneration + 1}`,
   );
 });
+
+describe("recordWardDeparture acting role and unreadable records", () => {
+  type Ctx = ReturnType<typeof useWardFlow>;
+  function grab() {
+    const held: { ctx?: Ctx } = {};
+    function Grab() {
+      held.ctx = useWardFlow();
+      return null;
+    }
+    return { held, Grab };
+  }
+  /** A linked stay: the seed holds no occupied stay without a patient. */
+  function occupied(ctx: Ctx) {
+    return ctx.admissions.find((row) => row.state === "occupied" && row.patientId !== null);
+  }
+
+  it("records the departure as the coordinator when asked", () => {
+    const { held, Grab } = grab();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Grab />
+      </WardFlowProvider>,
+    );
+    const admission = occupied(held.ctx!)!;
+    let outcome: unknown;
+    act(() => {
+      outcome = held.ctx!.recordWardDeparture(
+        admission.id,
+        admission.unitId,
+        "discharged-to-the-community",
+        "coordinator",
+      );
+    });
+    expect(outcome).toMatchObject({ status: "accepted" });
+    expect(held.ctx!.admissions.find((row) => row.id === admission.id)?.state).toBe("departed");
+    // The Undo record names who recorded it, so the departure is attributed to the coordinator.
+    expect(held.ctx!.undoRecords?.at(-1)).toMatchObject({ action: expect.stringMatching(/^RECORD_/u), role: "coordinator" });
+  });
+
+  it("still records as the ward when no role is passed", () => {
+    const { held, Grab } = grab();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Grab />
+      </WardFlowProvider>,
+    );
+    const admission = occupied(held.ctx!)!;
+    act(() => {
+      held.ctx!.recordWardDeparture(admission.id, admission.unitId, "discharged-to-the-community");
+    });
+    expect(held.ctx!.undoRecords?.at(-1)).toMatchObject({ role: "ward" });
+  });
+
+  it("refuses with a plain reason, and records nothing, when the stay cannot be read", () => {
+    const { held, Grab } = grab();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Grab />
+      </WardFlowProvider>,
+    );
+    const before = held.ctx!;
+    const admission = occupied(before)!;
+    let outcome: { status?: string; message?: string } | undefined;
+    act(() => {
+      outcome = held.ctx!.recordWardDeparture(
+        "ADM-does-not-exist",
+        admission.unitId,
+        "discharged-to-the-community",
+      ) as typeof outcome;
+    });
+    expect(outcome?.status).toBe("refused");
+    expect(outcome?.message).toMatch(/not open to your desk, or no longer exists\. Nothing was changed\./u);
+    // Nothing was dispatched: no stand-in patient id reached the reducer, and no row changed.
+    expect(held.ctx!.admissions).toBe(before.admissions);
+    expect(held.ctx!.rejections).toHaveLength(before.rejections.length);
+  });
+});

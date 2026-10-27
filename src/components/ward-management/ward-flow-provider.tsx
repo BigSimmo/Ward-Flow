@@ -44,6 +44,7 @@ import {
   type RecordRead,
   type WardRecordActor,
 } from "./ward-discharge-records";
+import { PROTECTED_REFUSAL_REASONS } from "./ward-flow-protected-record-events";
 import {
   readAuditEvents,
   readAuditReviews,
@@ -135,10 +136,17 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   worldGeneration: number;
   /** True once the saved session has been read (or declined). Before then the world is the seed. */
   sessionAdopted: boolean;
+  /**
+   * Records a departure as the ward (the default) or, when the Discharges sheet is held by the
+   * coordinator, as the coordinator. Both may record it (`ward-flow-event-roles.ts`); the site bed
+   * manager may not, so no other role is accepted. A stay that cannot be read is refused here, with
+   * its reason, and nothing is dispatched.
+   */
   recordWardDeparture(
     admissionId: string,
     actingUnitId: string,
     leavingDestination: LeavingDestination,
+    actingRole?: "ward" | "coordinator",
   ): ReturnType<WardCommandDispatch>;
   readDischargeRecords(actor: WardRecordActor, unitId?: string): RecordRead<readonly DischargeRecord[]>;
   openDischargeRecord(actor: WardRecordActor, admissionId: string): DischargeOpenHandle;
@@ -1145,29 +1153,40 @@ function WardFlowWorld({
   const stateBound = useMemo(
     () =>
       ({
-        recordWardDeparture: (admissionId, actingUnitId, leavingDestination) => {
-          const read = selectDischargeRecord(state, { role: "ward", actingUnitId }, admissionId);
+        recordWardDeparture: (admissionId, actingUnitId, leavingDestination, actingRole = "ward") => {
+          const read = selectDischargeRecord(
+            state,
+            actingRole === "coordinator" ? { role: "coordinator" } : { role: "ward", actingUnitId },
+            admissionId,
+          );
           if (read.status === "allowed" && read.value.identity.kind === "legacy-anonymous") {
             return dispatch({
               type: "RECORD_LEAVING",
-              role: "ward",
+              role: actingRole,
               now: nowRef.current,
               admissionId,
               actingUnitId,
               leavingDestination,
             });
           }
+          // A stay that cannot be read, or whose patient link cannot be checked, is not recorded
+          // under a stand-in patient id: say why, and change nothing.
+          if (read.status !== "allowed" || read.value.identity.kind !== "linked") {
+            return {
+              commandId: `local-${++commandsRef.current.sequence}`,
+              status: "refused",
+              message:
+                PROTECTED_REFUSAL_REASONS[read.status === "allowed" ? "identity-link" : "missing-or-inaccessible"],
+            };
+          }
           return dispatch({
             type: "RECORD_PATIENT_DISCHARGE",
-            role: "ward",
+            role: actingRole,
             now: nowRef.current,
             admissionId,
             actingUnitId,
             leavingDestination,
-            patientId:
-              read.status === "allowed" && read.value.identity.kind === "linked"
-                ? read.value.identity.patient.id
-                : "PT-unresolved",
+            patientId: read.value.identity.patient.id,
             expectedGeneration: state.worldGeneration,
             expectedRevision: state.dischargeRevisions[admissionId] ?? 0,
           });

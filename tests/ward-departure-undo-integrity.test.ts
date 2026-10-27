@@ -222,4 +222,32 @@ describe("departure Undo checks later bed ownership", () => {
     expect(restored.admissions.find((row) => row.id === a.id)?.state).toBe("occupied");
     expect(restored.movements.find((row) => row.id === movementId)?.stage).toBe("pulled");
   });
+
+  it("lets the coordinator who recorded a departure take it back, and keeps the ward from undoing it", () => {
+    const { state: seeded, a } = departure();
+    const base = undo(seeded, a.id);
+    expect(base.admissions.find((row) => row.id === a.id)?.state).toBe("occupied");
+    let state = seedWardFlowStateAt(0);
+    const [first] = state.admissions.filter((row) => row.unitId === UNIT && row.state === "occupied");
+    state = send(state, {
+      type: "RECORD_LEAVING",
+      role: "coordinator",
+      now: NOW,
+      admissionId: first!.id,
+      actingUnitId: UNIT,
+      leavingDestination: "discharged-to-the-community",
+    });
+    expect(state.undoRecords?.at(-1)).toMatchObject({ role: "coordinator" });
+    const byWard = undo(state, first!.id);
+    expect(byWard.rejections.length).toBe(state.rejections.length + 1);
+    expect(byWard.admissions === state.admissions).toBe(true);
+    const byCoordinator = wardFlowReducer(state, {
+      type: "UNDO_DEPARTURE",
+      role: "coordinator",
+      now: NOW,
+      admissionId: first!.id,
+    });
+    expect(byCoordinator.rejections).toEqual(state.rejections);
+    expect(byCoordinator.admissions.find((row) => row.id === first!.id)?.state).toBe("occupied");
+  });
 });
