@@ -1,4 +1,5 @@
 // @ts-check
+import { archiveAfterCommit, commandTimer } from "./after-commit.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import {
   ACCESS_COVER_MIGRATION,
@@ -187,6 +188,7 @@ export function storedAuditChanges(changes) {
  * @param log Structured diagnostics: closed event names and push.mjs `errorFields` only.
  * @param deliveryWaitMs How long a command response waits for phone delivery before returning;
  *   delivery carries on in the background after that.
+ * @param slowCommandMs P011: a command at least this slow logs its step timings (no patient data).
  * @param retryAfterMs How long a claimed delivery waits before another attempt may claim it: the
  *   gap between retries, and how long an interrupted delivery waits for the sweep.
  * @param demoEvents Whether the demonstration controls (advance clock, reset or set scenario) may
@@ -210,6 +212,7 @@ export function createWorkspaceStore(
       alertEveryMs: WORKSPACE_ALERT_EVERY_MS,
     },
     deliveryWaitMs = 1500,
+    slowCommandMs = 500,
     retryAfterMs = 60_000,
     demoEvents = false,
   },
@@ -814,6 +817,24 @@ export function createWorkspaceStore(
    * @type {{ generation: number, revision: number, count: number } | null}
    */
   let archivedKnown = null;
+  /**
+   * P011: the routine archive of a committed save, in its own short transaction. It moves records
+   * only while the workspace is still at that save's revision, and saves the smaller world as the
+   * next revision; otherwise it does nothing and the next eligible save archives instead.
+   */
+  async function archiveCommitted(actorId, view, revision) {
+    return transaction(async (client, at) => {
+      const row = await lock(client, actorId, at, view);
+      if (!row.core || Number(row.revision) !== revision) return false;
+      const next = revision + 1;
+      const { world } = await archiveOld(client, row.payload, next, at, view, actorId);
+      if (world === row.payload) return false;
+      row.revision = next;
+      row.payload = world;
+      await saveWorld(client, row, world, next, at);
+      return true;
+    });
+  }
   function cachedArchiveCount(world, revision) {
     if (known.version < ARCHIVE_MIGRATION || !archivedKnown) return undefined;
     return archivedKnown.generation === world?.state?.worldGeneration && archivedKnown.revision === Number(revision)
@@ -2425,10 +2446,16 @@ export function createWorkspaceStore(
       let queued = false;
       /** The archive count this save leaves, kept for later reads once the save commits (PS-11). */
       let archiveSettled = null;
+      /** P011: a routine archive this save found due, run once it has committed. */
+      let archiveDue = null;
+      const commandTiming = commandTimer();
       const response = await transaction(async (client, at) => {
         queued = false;
         archiveSettled = null;
+        archiveDue = null;
+        commandTiming.skip();
         const row = await lock(client, actorId, at, view);
+        commandTiming.lap("lock");
         const previous = await client.query(
           "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
           [workspaceId, actorId, commandId],
@@ -2575,6 +2602,7 @@ export function createWorkspaceStore(
                 visible: /** @type {any} */ (visible),
               });
             }
+            commandTiming.lap("apply");
             row.revision = priorRevision + 1;
             row.payload = applied.world;
             // Josh, 25 Oct 2026: closed records older than 30 days leave the live workspace, looked
@@ -2589,22 +2617,29 @@ export function createWorkspaceStore(
               (row.revision % ARCHIVE_EVERY_REVISIONS === 0 || pressed) &&
               (await schemaVersion()) >= ARCHIVE_MIGRATION
             ) {
-              const archiving = await archiveOld(
-                client,
-                row.payload,
-                row.revision,
-                at,
-                view,
-                actorId,
-                pressed ? sizeLimits.pressureAfterMinutes : undefined,
-              );
+              // P011 (Josh, 10:12 PM AWST): a routine archive waits until this save has committed;
+              // one forced by size still runs here, so this save itself stays under the limit.
+              if (!pressed) archiveDue = { revision: row.revision };
+              const archiving = !pressed
+                ? { world: row.payload, inserted: 0 }
+                : await archiveOld(
+                    client,
+                    row.payload,
+                    row.revision,
+                    at,
+                    view,
+                    actorId,
+                    pressed ? sizeLimits.pressureAfterMinutes : undefined,
+                  );
               archivedRows = archiving.inserted;
               if (archiving.world !== row.payload) {
                 row.payload = archiving.world;
                 bytes = worldBytes(row.payload);
               }
             }
+            commandTiming.lap("archive");
             await saveWorld(client, row, row.payload, row.revision, at, bytes);
+            commandTiming.lap("save");
             if (push) {
               // Phone push must never cost the coordinator their change: an evaluation error rolls
               // back to here, is logged, and the command still commits.
@@ -2617,6 +2652,7 @@ export function createWorkspaceStore(
                 queued = false;
                 log({ event: "ward_backend_push_evaluation_failure", ...errorFields(error) });
               }
+              commandTiming.lap("push");
             }
           }
         }
@@ -2671,6 +2707,7 @@ export function createWorkspaceStore(
           body: { ...result, ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at, view) }) },
         };
       });
+      commandTiming.lap("commit");
       if (queued) {
         // Wait briefly so a quick delivery finishes in this invocation, but never hold the save
         // response on a slow push service. Delivery continues; what it does not finish stays
@@ -2683,9 +2720,22 @@ export function createWorkspaceStore(
           }),
         ]);
         clearTimeout(timer);
+        commandTiming.lap("deliver");
       }
       // Committed: later reads at this revision can use the count without asking the database.
       if (archiveSettled && known.version >= ARCHIVE_MIGRATION) archivedKnown = archiveSettled;
+      // P011: never undoes the committed save; a failure is logged and the next eligible save retries.
+      const archived = await archiveAfterCommit({
+        due: archiveDue,
+        log,
+        errorFields,
+        run: (revision) => archiveCommitted(actorId, view, revision),
+      });
+      if (archived === "archived") archivedKnown = null;
+      if (archived !== "none") commandTiming.lap("archiveAfter");
+      // P011 slice A: only a slow command is logged, with step timings and no patient data.
+      const timing = commandTiming.fields(event.type, response.status);
+      if (timing.totalMs >= slowCommandMs) log(timing);
       return response;
     },
   };
