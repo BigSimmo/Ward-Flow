@@ -40,24 +40,29 @@ const config = {
       include: [...COVERAGE_INCLUDE_GLOBS],
       exclude: [...COVERAGE_EXCLUDE_GLOBS],
       thresholds: {
-        // Whole-repository floors sit below the 2026-08-13 current-main measurement
-        // (54.41/51.51/56.37/55.79) but close the previous no-global-floor gap.
-        statements: 52,
-        branches: 49,
-        functions: 54,
-        lines: 53,
-        // Broad regression floor. Re-ratcheted 2026-07-29: the previous values
-        // (48/38/43/50) had drifted 14-17pp below measured coverage
-        // (63.99/55.29/57.6/66.19), so a change could delete a large amount of
-        // coverage and still pass. Each floor now sits ~2pp under measured — enough
-        // headroom for a PR that ships an uncovered surface, not enough to hide a
-        // regression. Re-measure with `npm run test:coverage` and raise these when
-        // the gap grows past ~5pp again; never lower them to make a red gate green.
+        // Re-ratcheted 27 Oct 2026 (CQ-09, H-0911). A full local `--coverage` run on main at
+        // afed6b17 (1,638 test files) measured 82.43/79.18/83.15/83.91 for the whole inventory,
+        // 88.81/82.46/85.99/90.65 for the core glob and 95.26/93.61/97.95/97.09 for the engine. Each
+        // floor sits about 2 points under: enough headroom for a PR that ships an uncovered surface,
+        // not enough to hide a regression. Re-measure with `npm run test:coverage` and raise these
+        // when the gap grows past about 5 points; never lower them to make a red gate green.
+        statements: 80,
+        branches: 77,
+        functions: 81,
+        lines: 81,
         "src/{lib/**/*.ts,app/**/route.ts,components/**/*.{ts,tsx}}": {
-          statements: 62,
-          branches: 53,
-          functions: 55,
-          lines: 64,
+          statements: 86,
+          branches: 80,
+          functions: 84,
+          lines: 88,
+        },
+        // The engine the backend bundles (backend/ward-flow/engine.ts): the reducer, its slices, the
+        // events and the rules they apply. It had no floor of its own.
+        "src/components/ward-management/ward-flow-*.ts": {
+          statements: 93,
+          branches: 91,
+          functions: 95,
+          lines: 95,
         },
       },
     },
