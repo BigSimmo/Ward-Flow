@@ -64,7 +64,6 @@ export function tourGreeting(role: TourRole): string {
   return role === "admin" ? TOUR_ROLE_LABELS.admin : DESK_PERSONAS[role].greeting;
 }
 
-const BANNER: TourTarget = { sel: '[data-testid="ward-access-banner"]' };
 const PERSONA: TourTarget = { sel: '[data-testid="ward-rail-persona-trigger"]' };
 const ROLE_MENU: TourTarget = { sel: '[data-testid="ward-rail-role-menu"]' };
 const RAIL_HELP: TourTarget = { sel: '[data-testid="ward-rail-help"]' };
@@ -259,7 +258,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see your own ward's patients and the referrals sent to it.`,
         ),
@@ -346,7 +345,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see the people on your board and the referrals you have sent.`,
         ),
@@ -410,7 +409,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see the people referred to your team and the referrals you send.`,
         ),
@@ -476,7 +475,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see the transport jobs assigned to you.`,
         ),
@@ -528,7 +527,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "")} You see your site's wards, movements and waits.`,
         ),
@@ -582,7 +581,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "for the whole state")} You see figures as counts, never patient names.`,
         ),
@@ -620,7 +619,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "welcome",
-          BANNER,
+          undefined,
           `Welcome, ${tourGreeting(role)}`,
           `${signedInAs(role, f, "for the whole state")} You review overrides, refused actions and who opened which record.`,
         ),
@@ -667,7 +666,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
     step(
       "Your desk",
       "welcome",
-      role === "coordinator" ? HERO : BANNER,
+      role === "coordinator" ? HERO : undefined,
       `Welcome, ${tourGreeting(role)}`,
       `${signedInAs(role, f, scope)} ${extra}`,
     );
