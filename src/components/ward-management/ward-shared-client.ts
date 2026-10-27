@@ -1475,7 +1475,7 @@ export class SharedWorkspaceClient {
   };
   /**
    * P172 (Josh, 28 Oct 2026): the person reads the outcome of an uncertain save and dismisses it.
-   * Never while the receipt is still being checked, since that message says changes are disabled.
+   * Never while the receipt is still being checked, since that message tells the person the board is locked until the receipt is read.
    */
   dismissRecovery = (shown?: string) => {
     if (this.disposed || this.view.recovering || this.view.recovery === undefined) return;
