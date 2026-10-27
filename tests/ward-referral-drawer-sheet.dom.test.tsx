@@ -73,6 +73,17 @@ describe("referral slide-out, option B", () => {
     expect(referTo().queryByRole("button", { name: /police/i })).not.toBeInTheDocument();
   });
 
+  it("clears Catchment not known when the referral moves to Community, which hides it", () => {
+    renderDrawer();
+    const chip = () => within(screen.getByTestId("ward-referral-catchment-not-known")).getByRole("checkbox");
+    fireEvent.click(chip());
+    expect(chip()).toBeChecked();
+    fireEvent.click(referTo().getByRole("button", { name: "Community" }));
+    expect(screen.queryByTestId("ward-referral-catchment-not-known")).not.toBeInTheDocument();
+    fireEvent.click(referTo().getByRole("button", { name: "Ward" }));
+    expect(chip()).not.toBeChecked();
+  });
+
   it("opens on the destination a link asks for", () => {
     renderDrawer({ initialDestination: "community" });
     expect(referTo().getByRole("button", { name: "Community" })).toHaveAttribute("aria-pressed", "true");

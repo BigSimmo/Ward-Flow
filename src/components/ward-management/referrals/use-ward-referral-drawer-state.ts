@@ -1128,6 +1128,8 @@ export function useWardReferralDrawerState({
     setSelectedUnitIds([]);
     setSelectedRecipient("");
     setCommunityPurpose("");
+    // Community hides "Catchment not known", so an earlier tick must not stay behind it unclearable.
+    if (kind === "community") setCatchmentNotKnown(false);
     setConfirmationOpen(false);
     setFlowError(null);
     announceToWardShell(`Referring to ${DESTINATIONS[kind].phrase}.`);

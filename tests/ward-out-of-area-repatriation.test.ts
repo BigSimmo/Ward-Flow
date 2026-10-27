@@ -21,8 +21,6 @@ const COMPLETE_SEND_DRAFT: RepatDraft = {
   transportLegalStatus: "voluntary",
   estimatedTime: "23:30",
   estimatedDay: "tomorrow",
-  form4CReceived: undefined,
-  escortRequired: undefined,
 };
 
 describe("out-of-area repatriation — return plan gate and reducer transitions", () => {
