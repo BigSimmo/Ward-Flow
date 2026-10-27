@@ -223,7 +223,11 @@ test("ward, ED and site desks read only changes made inside their place, with th
       view: { version: LATEST_MIGRATION, access: { role: "ward", scope } },
       minimumVersion: 1,
     });
-    return page.events.map((event) => auditRows.find((row) => row.sequence === event.sequence).name);
+    return page.events.map((event) => {
+      const row = auditRows.find((candidate) => candidate.sequence === event.sequence);
+      assert.ok(row, `the desk was sent an event (${event.sequence}) that is not one of the rows the test seeded`);
+      return row.name;
+    });
   };
   assert.deepEqual(await read(senders.rph), ["rph"]);
   assert.deepEqual(await read(senders.both), ["rph", "scgh", "both"]);
