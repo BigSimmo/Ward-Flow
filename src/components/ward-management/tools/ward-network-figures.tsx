@@ -16,6 +16,8 @@ import { isOpen } from "../ward-derivations";
 import { edById, edShortName } from "../ward-sites";
 import { StatusGlyph } from "@/components/wf";
 import styles from "./ward-network-figures.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+import { releasedCountText } from "../statistics/statistics-small-numbers";
 
 const root = "/ward-flow";
 
@@ -25,6 +27,98 @@ const root = "/ward-flow";
  * look across the service; first under Look up since the Service now strip went (19 Oct 2026).
  */
 export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {}) {
+  return useExecutiveStatisticsControl().executive ? (
+    <ExecutiveNetworkFigures onNavigate={onNavigate} />
+  ) : (
+    <OperationalNetworkFigures onNavigate={onNavigate} />
+  );
+}
+type FigureGroup = {
+  id: string;
+  label: string;
+  short: string;
+  meta: string;
+  figures: { label: string; value: string; sub?: string; key?: string; flagged?: boolean }[];
+};
+function ExecutiveNetworkFigures({ onNavigate }: { onNavigate?: () => void }) {
+  const report = useExecutiveStatistics();
+  if (!report) return <p role="status">Figures are unavailable until this report is ready.</p>;
+  const beds = report.network.beds;
+  const groups: FigureGroup[] = [
+    {
+      id: "capacity",
+      label: "Beds and capacity",
+      short: "Beds",
+      meta: `${report.wards.length} wards`,
+      figures: [
+        { label: "Total beds", value: String(beds.total) },
+        { label: "Occupied", value: String(beds.occupied) },
+        { label: "Ready", value: String(beds.ready) },
+        { label: "Open for placement", value: String(report.capacity.openNow) },
+        { label: "Pending preparation", value: String(report.capacity.pendingPreparation) },
+        { label: "Pulled beds", value: String(beds.pulled) },
+        { label: "Closed", value: String(beds.closed) },
+        { label: "On leave", value: String(beds.onLeave) },
+      ],
+    },
+    {
+      id: "flow",
+      label: "Flow and discharges",
+      short: "Flow",
+      meta: "today",
+      figures: [
+        {
+          label: "Open movements",
+          value: String(releasedCountText(report.network.people.stillOpen)),
+          sub: "Active placements",
+        },
+        {
+          label: "From ED",
+          value: "Not shown",
+          sub: "This breakdown is unavailable for this desk",
+        },
+        {
+          label: "Admissions today",
+          value: String(releasedCountText(report.network.people.admissionsArrivedToday)),
+          sub: "Recorded arrivals",
+        },
+        {
+          label: "Discharges today",
+          value: String(releasedCountText(report.network.people.admissionsEndedToday)),
+          sub: "Recorded departures",
+        },
+        ...[
+          CAPACITY_FIGURE_LABELS.confirmedToday,
+          CAPACITY_FIGURE_LABELS.expectedToday,
+          CAPACITY_FIGURE_LABELS.blockedToday,
+        ].map((label) => ({
+          label,
+          value: "Not shown",
+          sub: "Individual release figures are unavailable for this desk",
+        })),
+      ],
+    },
+    {
+      id: "deadlines",
+      label: "Waits and recorded limits",
+      short: "Waits",
+      meta: "live",
+      figures: [
+        { label: "Waiting in ED", value: String(releasedCountText(report.network.people.waitingInEd)) },
+        { label: "Over 24 hours", value: String(releasedCountText(report.edIndex.over24)) },
+      ],
+    },
+  ];
+  return (
+    <NetworkFiguresView
+      groups={groups}
+      now={report.network.asAt.now}
+      scopeLabel={report.network.scope.kind === "service" ? report.network.scope.service : "Whole network"}
+      onNavigate={onNavigate}
+    />
+  );
+}
+function OperationalNetworkFigures({ onNavigate }: { onNavigate?: () => void }) {
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
     "units",
     "admissions",
@@ -35,7 +129,6 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
   const now = useWardFlowClock();
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
-  const [category, setCategory] = useState("all");
   const capacity = units.map((unit) => capacityBreakdown(unit, bedReleases, leaveBeds, now));
   const total = units.reduce((sum, unit) => sum + unit.beds, 0);
   const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds);
@@ -163,11 +256,25 @@ export function NetworkFigures({ onNavigate }: { onNavigate?: () => void } = {})
       figures: deadlines,
     },
   ];
+  return <NetworkFiguresView groups={groups} now={now} scopeLabel="Whole network" onNavigate={onNavigate} />;
+}
+function NetworkFiguresView({
+  groups,
+  now,
+  scopeLabel,
+  onNavigate,
+}: {
+  groups: FigureGroup[];
+  now: number;
+  scopeLabel: string;
+  onNavigate?: () => void;
+}) {
+  const [category, setCategory] = useState("all");
   const figureCount = groups.reduce((sum, group) => sum + group.figures.length, 0);
   return (
     <div className={styles.workspace} data-testid="ward-stats-drawer-content">
       <div className={styles.meta}>
-        <span className={styles.liveDot} aria-hidden="true" /> Whole network{" "}
+        <span className={styles.liveDot} aria-hidden="true" /> {scopeLabel}{" "}
         <span>Synthetic · {formatInstant(now)}</span>
       </div>
       <div className={styles.filters} role="group" aria-label="Figure categories">

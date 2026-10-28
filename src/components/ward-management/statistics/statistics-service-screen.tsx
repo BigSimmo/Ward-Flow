@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { BedDouble, ChevronDown, Clock, LayoutList, MapPin, Network, Plane } from "lucide-react";
 
@@ -61,9 +61,160 @@ import {
   PhoneSheetRow,
   phoneBodyStyles as phone,
 } from "./statistics-phone-parts";
-import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  type StatisticsCount,
+  PeopleNotListed,
+  withheldBar,
+} from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
+
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+type ReadyRow = { unit: { id: string; name: string; cohort: string }; capacity: { available: number } };
+type ServiceModel = {
+  service: HealthService;
+  choices: readonly HealthService[];
+  serviceSites: { name: string }[];
+  wardCount: number;
+  edCount: number;
+  totalReady: number;
+  totalBedBase: number;
+  occupancyPct: number;
+  zeroReadyWards: number;
+  pendingPreparation: number;
+  totalOpenNow: number;
+  raised: StatisticsCount;
+  placedWithinService: StatisticsCount;
+  placedElsewhereCount: StatisticsCount;
+  notYetAcceptedAtWard: StatisticsCount;
+  placedAtUnresolvedWard: StatisticsCount;
+  placedElsewhereByService: Map<HealthService, StatisticsCount>;
+  outOfAreaCount: StatisticsCount;
+  outOfAreaNotBanded: StatisticsCount;
+  bandCounts: Map<string, StatisticsCount>;
+  readyRows: ReadyRow[];
+  edWaiting: StatisticsCount;
+  longEdWait: boolean;
+  countsOnly: boolean;
+  now: number;
+  paused: boolean;
+  togglePause: (() => void) | null;
+};
+type ServiceSlots = { phone: ReactNode; capacity: ReactNode; swarm: ReactNode; ledger: ReactNode };
+const positive = (count: StatisticsCount) => exactStatisticsCount(count) !== 0;
+export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
+  const access = useEffectiveWardAccess(),
+    control = useExecutiveStatisticsControl();
+  return control.executive || access.role === "executive" ? (
+    <ExecutiveServiceScreen serviceId={serviceId} />
+  ) : (
+    <OperationalServiceScreen serviceId={serviceId} />
+  );
+}
+function ExecutiveServiceScreen({ serviceId }: { serviceId: string }) {
+  const data = useExecutiveStatistics(),
+    control = useExecutiveStatisticsControl();
+  const selected = data?.services.find((service) => service.service === serviceId);
+  if (!data || !selected || !data.openableServiceIds.includes(selected.service))
+    return <ExecutiveStatisticsUnavailable />;
+  const service = selected.service;
+  const wards = data.wards.filter((ward) => ward.service === service);
+  const eds = data.emergencyDepartments.filter((ed) => ed.service === service);
+  const readyRows = wards.map((ward) => ({
+    unit: { id: ward.id, name: ward.name, cohort: ward.cohort },
+    capacity: { available: ward.capacityReady },
+  }));
+  const pendingPreparation = wards.reduce((sum, ward) => sum + ward.pendingPreparation, 0);
+  const model: ServiceModel = {
+    service,
+    choices: data.openableServiceIds,
+    serviceSites: data.catalogue.sites.filter((site) => site.service === service),
+    wardCount: wards.length,
+    edCount: eds.length,
+    totalReady: readyRows.reduce((sum, row) => sum + row.capacity.available, 0),
+    totalBedBase: selected.beds.total,
+    occupancyPct: selected.beds.total ? Math.round((selected.beds.inUse / selected.beds.total) * 100) : 0,
+    zeroReadyWards: readyRows.filter((row) => row.capacity.available === 0).length,
+    pendingPreparation,
+    totalOpenNow: selected.openNow,
+    raised: selected.referrals.raised,
+    placedWithinService: selected.referrals.placedWithinService,
+    placedElsewhereCount: selected.referrals.placedElsewhere,
+    notYetAcceptedAtWard: selected.referrals.notYetAcceptedAtWard,
+    placedAtUnresolvedWard: selected.referrals.placedAtUnresolvedWard,
+    placedElsewhereByService: new Map(
+      selected.referrals.placedElsewhereByService.map((row) => [row.service, row.count]),
+    ),
+    outOfAreaCount: selected.farFromHome.total,
+    outOfAreaNotBanded: selected.farFromHome.notBanded,
+    bandCounts: new Map(selected.farFromHome.bands.map((row, index) => [OUT_OF_AREA_BANDS[index]!, row.count])),
+    readyRows,
+    edWaiting: selected.waiting,
+    longEdWait: positive(selected.over24h),
+    countsOnly: true,
+    now: data.network.asAt.now,
+    paused: control.paused,
+    togglePause: control.togglePause,
+  };
+  return (
+    <ServiceView
+      model={model}
+      slots={{
+        phone: (
+          <ServicePhone
+            states={wards.map((ward) => ({
+              unit: { id: ward.id, name: ward.name, beds: ward.beds.total },
+              states: ward.beds,
+            }))}
+            pendingPreparation={pendingPreparation}
+            eds={eds.map((ed) => ({
+              id: ed.id,
+              name: shortDepartmentName(ed.name),
+              openable: data.openableEmergencyDepartmentIds.includes(ed.id),
+              figures: {
+                onTheList: ed.onTheList,
+                unplaced: ed.unplaced,
+                medianWaitMinutes: ed.medianWaitMinutes,
+                longestWaitMinutes: ed.longestWaitMinutes,
+              },
+            }))}
+            edWaiting={statisticsCountText(selected.waiting)}
+            outOfAreaCount={selected.farFromHome.total}
+            bedDays={selected.farFromHome.bedDays}
+            outOfAreaList={<PeopleNotListed testId="ward-statistics-service-phone-out-of-area-not-listed" />}
+            countsOnly
+          />
+        ),
+        capacity: (
+          <StatisticsCapacityChart
+            aggregate={data}
+            serviceId={service}
+            asAt={formatSheetMoment(data.network.asAt.now, new Date(data.network.asAt.dayZero), {
+              includeYearAndZone: true,
+            })}
+            initialGroup="ward"
+            scopeLabel={"in " + service}
+            title="Ward capacity"
+          />
+        ),
+        swarm: eds.length ? (
+          <PeopleNotListed testId="ward-statistics-service-ed-swarm-not-listed" />
+        ) : (
+          <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
+        ),
+        ledger: (
+          <CardBody>
+            <PeopleNotListed testId="ward-statistics-service-repatriation-not-listed" />
+          </CardBody>
+        ),
+      }}
+    />
+  );
+}
 
 const OUT_OF_AREA_HREF = "/ward-flow/out-of-area";
 
@@ -107,13 +258,12 @@ function referralOriginService(referral: Referral): HealthService | undefined {
  * ⚠️ **NO TREND.** The drawing's seven-day occupancy line needs a history the record does not keep
  * (owner, 25 Sept 2026: a made-up trend is not drawn), so it is left out rather than invented.
  */
-export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
+function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
   const { sites } = useWardNetwork();
   const live = useStatisticsLive();
-  const { countsOnly, small, parts } = useStatisticsCounts();
+  const { countsOnly, small } = useStatisticsCounts();
   const { units: liveUnits, admissions, referrals, bedReleases, leaveBeds, movements, dayZero } = live.state;
   const now = live.now;
-  const isPhone = useIsPhone();
 
   const section = statisticsSectionById("service");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
@@ -262,9 +412,128 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
     placedElsewhereByService,
   } = referralDemand;
   const { outOfAreaEntries, outOfAreaNotBanded, bandCounts } = outOfAreaSummary;
-  // Executive: the bands add up to the far-from-home count beside them, so they hide together.
-  const bandsShown = parts(OUT_OF_AREA_BANDS.map((band) => bandCounts.get(band) ?? 0));
-
+  return (
+    <ServiceView
+      model={{
+        service,
+        choices: wardServiceOrder,
+        serviceSites,
+        wardCount: serviceUnits.length,
+        edCount: serviceEds.length,
+        totalReady,
+        totalBedBase,
+        occupancyPct,
+        zeroReadyWards,
+        pendingPreparation,
+        totalOpenNow,
+        raised: ownReferrals.length,
+        placedWithinService,
+        placedElsewhereCount,
+        notYetAcceptedAtWard,
+        placedAtUnresolvedWard,
+        placedElsewhereByService,
+        outOfAreaCount: outOfAreaEntries.length,
+        outOfAreaNotBanded,
+        bandCounts,
+        readyRows,
+        edWaiting,
+        longEdWait: edSwarmRows.some((row) => row.entries.some((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES)),
+        countsOnly,
+        now,
+        paused: live.paused,
+        togglePause: live.togglePause,
+      }}
+      slots={{
+        phone: (
+          <ServicePhone
+            states={serviceUnits.map((unit) => ({ unit, states: bedStates(unit, admissions, bedReleases, leaveBeds) }))}
+            pendingPreparation={pendingPreparation}
+            eds={serviceEds.map((department) => ({
+              id: department.id,
+              name: shortDepartmentName(department.name),
+              figures: (() => {
+                const figures = edWaitFigures(movements, department.id, now);
+                return {
+                  onTheList: figures.onTheList,
+                  unplaced: figures.unplaced,
+                  medianWaitMinutes: waitMedian(figures.waitingMovements.map((wait) => wait.waitMinutes)),
+                  longestWaitMinutes: figures.longestWait?.waitMinutes ?? null,
+                };
+              })(),
+            }))}
+            edWaiting={small(edWaiting)}
+            outOfAreaCount={outOfAreaEntries.length}
+            bedDays={
+              outOfAreaEntries.reduce((total, entry) => total + Math.max(0, entry.sinceArrival), 0) / MINUTES_PER_DAY
+            }
+            outOfAreaList={<OperationalPhoneOutOfArea entries={outOfAreaEntries} />}
+            countsOnly={countsOnly}
+          />
+        ),
+        capacity: (
+          <StatisticsCapacityChart
+            asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
+            units={serviceUnits}
+            bedReleases={bedReleases}
+            admissions={admissions}
+            leaveBeds={leaveBeds}
+            initialGroup="ward"
+            scopeLabel={`in ${service}`}
+            title="Ward capacity"
+          />
+        ),
+        swarm:
+          edSwarmRows.length === 0 ? (
+            <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
+          ) : countsOnly ? (
+            <PeopleNotListed testId="ward-statistics-service-ed-swarm-not-listed" />
+          ) : (
+            <StatisticsEdSwarm
+              rows={edSwarmRows}
+              labelWidth={180}
+              label={`Each open ED journey from ${service}, by time since opening`}
+              testId="ward-statistics-service-ed-swarm"
+            />
+          ),
+        ledger: <OperationalOutOfAreaTable entries={outOfAreaEntries} />,
+      }}
+    />
+  );
+}
+function ServiceView({ model, slots }: { model: ServiceModel; slots: ServiceSlots }) {
+  const {
+    service,
+    choices,
+    serviceSites,
+    wardCount,
+    edCount,
+    totalReady,
+    totalBedBase,
+    occupancyPct,
+    zeroReadyWards,
+    pendingPreparation,
+    totalOpenNow,
+    raised,
+    placedWithinService,
+    placedElsewhereCount,
+    notYetAcceptedAtWard,
+    placedAtUnresolvedWard,
+    placedElsewhereByService,
+    outOfAreaCount,
+    outOfAreaNotBanded,
+    bandCounts,
+    readyRows,
+    edWaiting,
+    longEdWait,
+    countsOnly,
+    now,
+    paused,
+    togglePause,
+  } = model;
+  const isPhone = useIsPhone();
+  const section = statisticsSectionById("service")!;
+  const small = statisticsCountText;
+  const bandsShown = OUT_OF_AREA_BANDS.map((band) => small(bandCounts.get(band) ?? { kind: "withheld" }));
   return (
     <StatisticsPage
       section={section}
@@ -274,9 +543,9 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       title={service}
       titleAction={
         <>
-          <ChangeService current={service} />
+          <ChangeService current={service} choices={choices} />
           <UnitStepper
-            items={wardServiceOrder.map((candidate) => ({
+            items={choices.map((candidate) => ({
               id: candidate,
               href: serviceStatisticsHref(candidate),
               label: candidate,
@@ -308,15 +577,15 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             <span>{serviceSites.length}</span>
             {", "}
             <span>Wards</span>
-            <span>{serviceUnits.length}</span>
+            <span>{wardCount}</span>
             {", "}
-            <span>{serviceEds.length} emergency departments</span>
+            <span>{edCount} emergency departments</span>
           </SrOnly>
         </span>
       }
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause ?? undefined}
       exportFigures={{
         stem: service.toLowerCase().replaceAll(/[^a-z0-9]+/gu, "-"),
         scope: service,
@@ -325,27 +594,19 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
           ["Occupancy percent (occupied or pulled)", occupancyPct],
           ["Ready", totalReady],
           ["Being made ready", pendingPreparation],
-          ["Wards", serviceUnits.length],
-          ["EDs", serviceEds.length],
-          ["Out of area", small(outOfAreaEntries.length)],
+          ["Wards", wardCount],
+          ["EDs", edCount],
+          ["Out of area", small(outOfAreaCount)],
         ],
       }}
       phone={{
         eyebrow: `Health service · ${serviceSites.length} ${serviceSites.length === 1 ? "hospital" : "hospitals"}`,
-        sub: `${occupancyPct}% in use · ${serviceUnits.length} ${serviceUnits.length === 1 ? "ward" : "wards"}`,
+        sub: `${occupancyPct}% in use · ${wardCount} ${wardCount === 1 ? "ward" : "wards"}`,
         stats: (
           <>
             <HeroStat value={totalBedBase} label="Beds" />
             <HeroStat value={totalReady} label="Ready" />
-            <HeroStat
-              value={small(edWaiting)}
-              label="Open ED journeys"
-              tone={
-                edSwarmRows.some((row) => row.entries.some((entry) => entry.waitMinutes >= LONG_WAIT_MINUTES))
-                  ? "warning"
-                  : undefined
-              }
-            />
+            <HeroStat value={small(edWaiting)} label="Open ED journeys" tone={longEdWait ? "warning" : undefined} />
           </>
         ),
       }}
@@ -363,14 +624,14 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             value={<span data-testid="ward-statistics-service-exec-ready-beds">{totalReady}</span>}
             label={pendingPreparation > 0 ? `Ready, ${pendingPreparation} being made ready` : "Ready"}
           />
-          <HeroStat value={serviceUnits.length} label="Wards" />
+          <HeroStat value={wardCount} label="Wards" />
           {/* Five figures at most (v10). The ED count is on the ED waits card's head ("N waiting in
               M EDs"), so the hero leaves it out; the export still carries it. */}
           <HeroStat
-            value={<span data-testid="ward-statistics-service-exec-ooa">{small(outOfAreaEntries.length)}</span>}
+            value={<span data-testid="ward-statistics-service-exec-ooa">{small(outOfAreaCount)}</span>}
             label={
               <span className={styles.flagged}>
-                {outOfAreaEntries.length > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                {positive(outOfAreaCount) ? <StatusGlyph tone="warning" size={9} /> : null}
                 Out of area
               </span>
             }
@@ -379,35 +640,15 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
       }
     >
       {isPhone ? (
-        <ServicePhone
-          states={serviceUnits.map((unit) => ({ unit, states: bedStates(unit, admissions, bedReleases, leaveBeds) }))}
-          pendingPreparation={pendingPreparation}
-          eds={serviceEds.map((department) => ({
-            id: department.id,
-            name: shortDepartmentName(department.name),
-            figures: edWaitFigures(movements, department.id, now),
-          }))}
-          edWaiting={small(edWaiting)}
-          outOfArea={outOfAreaEntries}
-          countsOnly={countsOnly}
-        />
+        slots.phone
       ) : (
         <>
           <FlushRow layout="lead2" id="capacity">
-            <StatisticsCapacityChart
-              asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
-              units={serviceUnits}
-              bedReleases={bedReleases}
-              admissions={admissions}
-              leaveBeds={leaveBeds}
-              initialGroup="ward"
-              scopeLabel={`in ${service}`}
-              title="Ward capacity"
-            />
+            {slots.capacity}
             <Follow className={detail.followBody}>
               <Placement
                 service={service}
-                raised={ownReferrals.length}
+                raised={raised}
                 within={placedWithinService}
                 elsewhere={placedElsewhereCount}
                 notYet={notYetAcceptedAtWard}
@@ -443,7 +684,7 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                   <dl className={styles.figures}>
                     <div className={styles.figure}>
                       <dd className={styles.figureValue} data-testid="ward-statistics-service-out-of-area-value">
-                        {small(outOfAreaEntries.length)}
+                        {small(outOfAreaCount)}
                       </dd>
                       <dt className={styles.figureLabel}>Far from home</dt>
                     </div>
@@ -462,14 +703,15 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
                     axis
                     max={countAxisMax(
                       OUT_OF_AREA_BANDS.map(
-                        (band, index) => withheldBar(bandCounts.get(band) ?? 0, bandsShown[index]!).value,
+                        (band, index) =>
+                          withheldBar(exactStatisticsCount(bandCounts.get(band) ?? 0) ?? 0, bandsShown[index]!).value,
                       ),
                     )}
                     labelWidth="13rem"
                     rows={OUT_OF_AREA_BANDS.map((band, index) => ({
                       id: band,
                       label: TRAVEL_BAND_LABELS[band],
-                      ...withheldBar(bandCounts.get(band) ?? 0, bandsShown[index]!),
+                      ...withheldBar(exactStatisticsCount(bandCounts.get(band) ?? 0) ?? 0, bandsShown[index]!),
                       display: String(bandsShown[index]),
                     }))}
                   />
@@ -493,23 +735,10 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             className={detail.anchor}
             icon={Clock}
             title="ED journeys"
-            aside={`${small(edWaiting)} open journeys from ${serviceEds.length} ${serviceEds.length === 1 ? "ED" : "EDs"}`}
+            aside={`${small(edWaiting)} open journeys from ${edCount} ${edCount === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-service-ed-waits"
           >
-            <CardBody className={detail.swarmBody}>
-              {edSwarmRows.length === 0 ? (
-                <p className={styles.muted}>No emergency department is recorded at a {service} hospital.</p>
-              ) : countsOnly ? (
-                <PeopleNotListed testId="ward-statistics-service-ed-swarm-not-listed" />
-              ) : (
-                <StatisticsEdSwarm
-                  rows={edSwarmRows}
-                  labelWidth={180}
-                  label={`Each open ED journey from ${service}, by time since opening`}
-                  testId="ward-statistics-service-ed-swarm"
-                />
-              )}
-            </CardBody>
+            <CardBody className={detail.swarmBody}>{slots.swarm}</CardBody>
           </StatCard>
 
           <StatCard
@@ -520,60 +749,13 @@ export function StatisticsServiceScreen({ serviceId }: { serviceId: string }) {
             aside="In this service's beds"
             data-testid="ward-statistics-service-repatriation"
           >
-            {countsOnly ? (
-              <CardBody>
-                <PeopleNotListed testId="ward-statistics-service-repatriation-not-listed" />
-              </CardBody>
-            ) : (
-              <div
-                className={styles.tableWrap}
-                tabIndex={0}
-                role="region"
-                aria-label="Service ward comparison, scrollable table"
-              >
-                <table className={`${tableClasses.table} ${styles.table}`}>
-                  <caption className={styles.srOnly}>Admissions in this service far from home</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Admission</th>
-                      <th scope="col">Home</th>
-                      <th scope="col">Travel</th>
-                      <th scope="col" className={styles.num}>
-                        Since arrival
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {outOfAreaEntries.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className={styles.muted}>
-                          Nobody in this service&apos;s beds is far from home
-                        </td>
-                      </tr>
-                    ) : null}
-                    {outOfAreaEntries.map((entry) => (
-                      <tr key={entry.admission.id}>
-                        <th scope="row">
-                          <span className={detail.primary}>{entry.admission.id}</span>
-                          <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
-                            {entry.unit.name}
-                          </Link>
-                        </th>
-                        <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
-                          {entry.admission.homeRegion ?? "Not recorded"}
-                        </td>
-                        <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
-                        <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {slots.ledger}
             <CardFoot meta="Repatriation is arranged on the out-of-area board">
-              <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
-                Open out of area
-              </Link>
+              {countsOnly ? null : (
+                <Link href={OUT_OF_AREA_HREF} className={styles.footLink}>
+                  Open out of area
+                </Link>
+              )}
             </CardFoot>
           </StatCard>
 
@@ -605,20 +787,38 @@ function ServicePhone({
   pendingPreparation,
   eds,
   edWaiting,
-  outOfArea,
+  outOfAreaCount,
+  bedDays,
+  outOfAreaList,
   countsOnly,
 }: {
-  states: { unit: Unit; states: ReturnType<typeof bedStates> }[];
+  states: {
+    unit: Pick<Unit, "id" | "name" | "beds">;
+    states: Pick<ReturnType<typeof bedStates>, "occupied" | "pulled" | "closed" | "ready">;
+  }[];
   pendingPreparation: number;
-  eds: { id: string; name: string; figures: ReturnType<typeof edWaitFigures> }[];
+  eds: {
+    id: string;
+    name: string;
+    openable?: boolean;
+    figures: {
+      onTheList: StatisticsCount;
+      unplaced: StatisticsCount;
+      medianWaitMinutes: number | null;
+      longestWaitMinutes: number | null;
+    };
+  }[];
   /** Worded as "fewer than 5" for an executive, like the hero. */
   edWaiting: number | string;
-  outOfArea: ReturnType<typeof outOfAreaLedger>["entries"];
+  outOfAreaCount: StatisticsCount;
+  bedDays: number;
+  outOfAreaList: ReactNode;
   /** The executive desk: the people far from home are counted, not listed. */
   countsOnly: boolean;
 }) {
-  const { small, parts } = useStatisticsCounts();
-  const outOfAreaShown = small(outOfArea.length);
+  const small = statisticsCountText;
+  const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
+  const outOfAreaShown = small(outOfAreaCount);
   const sum = (pick: (entry: (typeof states)[number]) => number) =>
     states.reduce((total, entry) => total + pick(entry), 0);
   const wards = states
@@ -631,7 +831,7 @@ function ServicePhone({
     .sort((a, b) => b.rate - a.rate || a.unit.name.localeCompare(b.unit.name));
   // On the executive desk a department worded as fewer than 5 sorts as nought, so the order cannot
   // rank the hidden ones (review on PR #354).
-  const sortValue = (count: number) => {
+  const sortValue = (count: StatisticsCount) => {
     const shown = small(count);
     return typeof shown === "number" ? shown : 0;
   };
@@ -640,7 +840,6 @@ function ServicePhone({
   );
   // Executive: the departments add up to the "waiting" total above them, so they hide together.
   const waitingShown = parts(busiest.map((entry) => entry.figures.onTheList));
-  const bedDays = outOfArea.reduce((total, entry) => total + Math.max(0, entry.sinceArrival), 0) / MINUTES_PER_DAY;
   // Bed days add up each person's stay, so beside a worded count they would give the people back.
   const bedDaysText = typeof outOfAreaShown === "string" ? "bed days not shown" : `${bedDays.toFixed(1)} bed days`;
   return (
@@ -684,20 +883,20 @@ function ServicePhone({
         ) : (
           <PhoneList label="Emergency departments, busiest first">
             {busiest.map((entry, index) => {
-              const median = waitMedian(entry.figures.waitingMovements.map((wait) => wait.waitMinutes));
+              const median = entry.figures.medianWaitMinutes;
               return (
                 <PhoneListRow
                   key={entry.id}
                   as="li"
                   name={entry.name}
                   meta={
-                    entry.figures.onTheList === 0
+                    exactStatisticsCount(entry.figures.onTheList) === 0
                       ? "No one waiting"
                       : `${small(entry.figures.unplaced)} no ward yet · median ${median === null ? "none" : durMinutes(Math.round(median))}`
                   }
                   value={waitingShown[index]}
-                  time={`longest ${entry.figures.longestWait ? durMinutes(entry.figures.longestWait.waitMinutes) : "none"}`}
-                  href={edStatisticsHref(entry.id)}
+                  time={`longest ${entry.figures.longestWaitMinutes !== null ? durMinutes(entry.figures.longestWaitMinutes) : "none"}`}
+                  href={entry.openable === false ? undefined : edStatisticsHref(entry.id)}
                 />
               );
             })}
@@ -710,40 +909,29 @@ function ServicePhone({
         sub={`${outOfAreaShown} ${outOfAreaShown === 1 ? "person" : "people"} out of area · ${bedDaysText}`}
         testId="ward-statistics-service-phone-out-of-area"
       >
-        {outOfArea.length === 0 ? (
+        {exactStatisticsCount(outOfAreaCount) === 0 ? (
           <p className={phone.note}>Nobody in this service&apos;s beds is far from home.</p>
         ) : countsOnly ? (
           <PeopleNotListed testId="ward-statistics-service-phone-out-of-area-not-listed" />
         ) : (
-          <PhoneList label="Far from home">
-            {outOfArea.map((entry) => {
-              return (
-                <PhoneListRow
-                  key={entry.admission.id}
-                  as="li"
-                  name={entry.admission.id}
-                  meta={`${entry.unit.name} · ${TRAVEL_BAND_LABELS[entry.band]}`}
-                  value={durMinutes(Math.max(0, entry.sinceArrival))}
-                  time="since arrival"
-                />
-              );
-            })}
-          </PhoneList>
+          outOfAreaList
         )}
-        <Link href={OUT_OF_AREA_HREF} className={buttonClass({ variant: "sec" })}>
-          Open out of area
-        </Link>
+        {countsOnly ? null : (
+          <Link href={OUT_OF_AREA_HREF} className={buttonClass({ variant: "sec" })}>
+            Open out of area
+          </Link>
+        )}
       </PhoneSheetRow>
     </PhoneBody>
   );
 }
 
-function ChangeService({ current }: { current: HealthService }) {
+function ChangeService({ current, choices }: { current: HealthService; choices: readonly HealthService[] }) {
   const router = useOptionalRouter();
   return (
     <Menu
       label="Change service"
-      items={wardServiceOrder.map((candidate) => ({
+      items={choices.map((candidate) => ({
         id: candidate,
         label: candidate,
         disabled: candidate === current,
@@ -889,15 +1077,16 @@ function Placement({
   byService,
 }: {
   service: HealthService;
-  raised: number;
-  within: number;
-  elsewhere: number;
-  notYet: number;
-  unresolved: number;
-  byService: Map<HealthService, number>;
+  raised: StatisticsCount;
+  within: StatisticsCount;
+  elsewhere: StatisticsCount;
+  notYet: StatisticsCount;
+  unresolved: StatisticsCount;
+  byService: Map<HealthService, StatisticsCount>;
 }) {
   const [view, setView] = useState<"chart" | "data">("chart");
-  const { small, parts } = useStatisticsCounts();
+  const small = statisticsCountText;
+  const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   // Executive: every part adds up to Raised, so the parts hide together. Elsewhere is the sum of the
   // services, so it hides too when one of them is hidden.
   const elsewhereCounts = [...byService];
@@ -976,12 +1165,12 @@ function Placement({
           <BarList
             label="Referrals raised here, by the service whose ward accepted"
             axis
-            max={countAxisMax(rows.map((row) => withheldBar(row.value, row.shown).value))}
+            max={countAxisMax(rows.map((row) => withheldBar(exactStatisticsCount(row.value) ?? 0, row.shown).value))}
             labelWidth="8rem"
             rows={rows.map((row) => ({
               id: row.id,
               label: row.label,
-              ...withheldBar(row.value, row.shown),
+              ...withheldBar(exactStatisticsCount(row.value) ?? 0, row.shown),
               display: String(row.shown),
             }))}
           />
@@ -1006,7 +1195,11 @@ function Placement({
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <th scope="row">{row.label}</th>
-                    <td className={row.value === 0 ? `${styles.num} ${styles.muted}` : styles.num}>{row.shown}</td>
+                    <td
+                      className={exactStatisticsCount(row.value) === 0 ? `${styles.num} ${styles.muted}` : styles.num}
+                    >
+                      {row.shown}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1023,7 +1216,7 @@ function Placement({
             </li>
           ))}
         </ul>
-        {unresolved > 0 ? (
+        {positive(unresolved) ? (
           <p className={detail.note} data-testid="ward-statistics-service-placement-unresolved">
             <span data-testid="ward-statistics-service-placement-unresolved-count">{unresolvedShown}</span>{" "}
             {unresolvedShown === 1 ? "referral names" : "referrals name"} an accepting ward this prototype cannot place
@@ -1033,5 +1226,72 @@ function Placement({
       </CardBody>
       <CardFoot meta="An acceptance is not an arrival" />
     </StatCard>
+  );
+}
+
+function OperationalOutOfAreaTable({
+  entries: outOfAreaEntries,
+}: {
+  entries: ReturnType<typeof outOfAreaLedger>["entries"];
+}) {
+  return (
+    <div className={styles.tableWrap} tabIndex={0} role="region" aria-label="Service ward comparison, scrollable table">
+      <table className={`${tableClasses.table} ${styles.table}`}>
+        <caption className={styles.srOnly}>Admissions in this service far from home</caption>
+        <thead>
+          <tr>
+            <th scope="col">Admission</th>
+            <th scope="col">Home</th>
+            <th scope="col">Travel</th>
+            <th scope="col" className={styles.num}>
+              Since arrival
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {outOfAreaEntries.length === 0 ? (
+            <tr>
+              <td colSpan={4} className={styles.muted}>
+                Nobody in this service&apos;s beds is far from home
+              </td>
+            </tr>
+          ) : null}
+          {outOfAreaEntries.map((entry) => (
+            <tr key={entry.admission.id}>
+              <th scope="row">
+                <span className={detail.primary}>{entry.admission.id}</span>
+                <Link className={detail.secondary} href={wardStatisticsHref(entry.unit.id)}>
+                  {entry.unit.name}
+                </Link>
+              </th>
+              <td className={entry.admission.homeRegion === null ? styles.muted : undefined}>
+                {entry.admission.homeRegion ?? "Not recorded"}
+              </td>
+              <td>{TRAVEL_BAND_LABELS[entry.band]}</td>
+              <td className={styles.num}>{durMinutes(Math.max(0, entry.sinceArrival))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function OperationalPhoneOutOfArea({ entries }: { entries: ReturnType<typeof outOfAreaLedger>["entries"] }) {
+  return (
+    <PhoneList label="Far from home">
+      {entries.map((entry) => {
+        return (
+          <PhoneListRow
+            key={entry.admission.id}
+            as="li"
+            name={entry.admission.id}
+            meta={`${entry.unit.name} · ${TRAVEL_BAND_LABELS[entry.band]}`}
+            value={durMinutes(Math.max(0, entry.sinceArrival))}
+            time="since arrival"
+          />
+        );
+      })}
+    </PhoneList>
   );
 }

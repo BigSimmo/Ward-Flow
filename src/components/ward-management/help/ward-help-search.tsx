@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
@@ -36,6 +37,7 @@ function suggested(role: WardTourRole): readonly HelpSearchResult[] {
  * written to storage, a URL or a log (D-11, D-18).
  */
 export function WardHelpSearch({ role, home }: { role: WardTourRole; home: string | undefined }) {
+  const router = useRouter();
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
   const showMeOn = useWardFeatureFlag("help-ask");
@@ -89,7 +91,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
     const href = mine ? howToHref(result.go, role, home) : undefined;
     if (href) {
       close(false);
-      window.location.assign(href);
+      router.push(href);
     }
   }
 

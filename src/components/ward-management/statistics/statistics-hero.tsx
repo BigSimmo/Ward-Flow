@@ -13,6 +13,9 @@ import { StatisticsNav, StatisticsSamplesSwitch, type StatisticsNavSection } fro
 import { downloadCsv, statisticsExportLines, type StatisticsExport } from "./statistics-csv";
 import styles from "./statistics-hero.module.css";
 import phoneStyles from "./statistics-phone.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { ExecutiveStatisticsUnavailable } from "./statistics-small-numbers";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 /** The v10 phone eyebrow's section word ("Statistics · Compare"). */
 const PHONE_SECTION_WORD: Partial<Record<StatisticsNavSection, string>> = {
@@ -71,7 +74,36 @@ export type StatisticsPhoneHero = {
  * The one hero band on every statistics page: eyebrow, title and counts on the first row, the
  * section track with the Live chip and the Samples switch on the second.
  */
-export function StatisticsHero({
+export function StatisticsHero(props: Omit<Parameters<typeof StatisticsHeroView>[0], "frame">) {
+  const control = useExecutiveStatisticsControl();
+  const data = useExecutiveStatistics();
+  const access = useEffectiveWardAccess();
+  if (control.executive || access.role === "executive") {
+    if (!data) return <ExecutiveStatisticsUnavailable />;
+    return (
+      <StatisticsHeroView
+        {...props}
+        now={data.network.asAt.now}
+        paused={control.paused}
+        onTogglePause={control.togglePause ?? undefined}
+        frame={{
+          wardCount: data.wards.length,
+          dayZero: new Date(data.network.asAt.dayZero),
+          liveNow: data.network.asAt.now,
+        }}
+      />
+    );
+  }
+  return <OperationalStatisticsHero {...props} />;
+}
+
+function OperationalStatisticsHero(props: Omit<Parameters<typeof StatisticsHeroView>[0], "frame">) {
+  const { units, dayZero } = useWardFlowSelect("units", "dayZero");
+  const liveNow = useWardFlowClock();
+  return <StatisticsHeroView {...props} frame={{ wardCount: units.length, dayZero, liveNow }} />;
+}
+
+function StatisticsHeroView({
   section,
   slug,
   eyebrow,
@@ -86,6 +118,7 @@ export function StatisticsHero({
   chips,
   exportFigures,
   phone,
+  frame,
 }: {
   section: StatisticsNavSection;
   /** The unit, service or team the page shows, so its own tab links back to it. */
@@ -97,7 +130,7 @@ export function StatisticsHero({
   stats?: ReactNode;
   now?: Instant;
   paused: boolean;
-  onTogglePause: () => void;
+  onTogglePause?: () => void;
   navTestId?: string;
   /** Page tools on the band (print, the matching index), before the time range. */
   tools?: ReactNode;
@@ -110,10 +143,9 @@ export function StatisticsHero({
   exportFigures?: StatisticsExport;
   /** Phone only (v10 phone): a sentence title, its subtitle, a leading ring and up to three figures. */
   phone?: StatisticsPhoneHero;
+  frame: { wardCount: number; dayZero: Date; liveNow: Instant };
 }) {
-  const { units, dayZero } = useWardFlowSelect("units", "dayZero");
-  const wardCount = units.length;
-  const liveNow = useWardFlowClock();
+  const { wardCount, dayZero, liveNow } = frame;
   const now = nowProp ?? liveNow;
   const isPhone = useIsPhone();
   // With chips (Summary) Export sits in the title row's action slot; with hero figures it leads
@@ -267,7 +299,7 @@ export function StatisticsPage({
   stats?: ReactNode;
   now: Instant;
   paused: boolean;
-  onTogglePause: () => void;
+  onTogglePause?: () => void;
   /** The eyebrow's lead word when the title already names the section. Defaults to the section label. */
   eyebrowLabel?: string;
   /** What the page is about (a ward's hospital and kind), in place of the clock. */

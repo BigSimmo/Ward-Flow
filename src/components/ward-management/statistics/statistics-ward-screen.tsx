@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   BedDouble,
@@ -38,7 +38,12 @@ import {
 } from "@/components/wf";
 import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
-import { figureText, isUnmeasured } from "@/components/ward-management/statistics/statistics-absence";
+import {
+  cannotBeFormed,
+  measured,
+  figureText,
+  isUnmeasured,
+} from "@/components/ward-management/statistics/statistics-absence";
 import { dischargeDateCoverage } from "@/components/ward-management/statistics/statistics-ward-discharge-dates";
 import { readyNotYetGone, type ReadyNotYetGone } from "@/components/ward-management/statistics/statistics-ward-ready";
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
@@ -74,9 +79,140 @@ import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
 import { useOptionalRouter } from "./statistics-nav";
 import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
-import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  sumStatisticsCounts,
+  type StatisticsCount,
+  PeopleNotListed,
+  withheldBar,
+} from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
 import ward from "./statistics-ward.module.css";
+
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import type { WardDetailModel, WardMetadata, ReadyView } from "./statistics-wards-index";
+
+type WardSlots = { phone: ReactNode; bedMap: ReactNode; stay: ReactNode; roster: ReactNode };
+const exact = exactStatisticsCount;
+const positive = (count: StatisticsCount) => exact(count) !== 0;
+const share = (numerator: StatisticsCount, denominator: StatisticsCount) => {
+  const n = exact(numerator),
+    d = exact(denominator);
+  return n === null || d === null
+    ? cannotBeFormed("not shown")
+    : d === 0
+      ? cannotBeFormed("no patients on this ward to divide by")
+      : measured(Math.round((n / d) * 1000) / 10);
+};
+export function StatisticsWardScreen(props: { unitId: string; units?: Unit[]; admissions?: Admission[] }) {
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  return control.executive || access.role === "executive" ? (
+    <ExecutiveWardScreen unitId={props.unitId} />
+  ) : (
+    <OperationalWardScreen {...props} />
+  );
+}
+function ExecutiveWardScreen({ unitId }: { unitId: string }) {
+  const data = useExecutiveStatistics();
+  const control = useExecutiveStatisticsControl();
+  const item = data?.wards.find((ward) => ward.id === unitId);
+  if (!data || !item) return <ExecutiveStatisticsUnavailable />;
+  const unit = {
+    id: item.id,
+    name: item.name,
+    siteCode: item.siteCode,
+    beds: item.beds.total,
+    cohort: item.cohort,
+    lockedBeds: item.lockedBeds,
+    authorised: item.authorised,
+  };
+  const ready =
+    item.readyToLeave.state === "measured" && item.readyToLeave.total !== null
+      ? {
+          tallies: item.readyToLeave.byReason,
+          total: item.readyToLeave.total,
+          population: item.current,
+          vocabularySize: item.readyToLeave.byReason.length,
+          shareOfWard: share(item.readyToLeave.total, item.current),
+        }
+      : null;
+  const population = sumStatisticsCounts([item.dischargeDates.withDate, item.dischargeDates.withoutDate]);
+  const aggregate = { counts: item.bedMapCounts, unplacedRecords: item.unplacedBedMapRecords };
+  const model: WardDetailModel = {
+    unit,
+    openUnits: data.wards.map((ward) => ({
+      id: ward.id,
+      name: ward.name,
+      siteCode: ward.siteCode,
+      beds: ward.beds.total,
+      cohort: ward.cohort,
+      lockedBeds: ward.lockedBeds,
+      authorised: ward.authorised,
+    })),
+    site: data.catalogue.sites.find((site) => site.code === item.siteCode),
+    statistics: item.statistics,
+    capacity: { available: item.capacityReady },
+    pendingPreparation: item.pendingPreparation,
+    openBeds: item.openNow,
+    emptyBeds: item.empty,
+    allocatableBeds: item.allocatable,
+    wardOccupancy: { occupied: item.beds.occupied, inUse: item.beds.inUse, pulled: item.beds.pulled },
+    occupancyPct: item.beds.total > 0 ? Math.round((item.beds.inUse / item.beds.total) * 100) : 0,
+    referrals: item.referrals,
+    ready,
+    blockedByReasonError: ready === null ? "Statistics are unavailable for this desk." : null,
+    dischargeDates: {
+      recorded: item.dischargeDates.withDate,
+      notRecorded: item.dischargeDates.withoutDate,
+      population,
+      shareRecorded: share(item.dischargeDates.withDate, population),
+    },
+    dueByDay: item.dueByDay,
+    dueThisWeek: item.dueThisWeek,
+    oldestPulled: item.oldestPulledMinutes,
+    now: data.network.asAt.now,
+    dayZero: new Date(data.network.asAt.dayZero),
+    canOpen: () => true,
+    paused: control.paused,
+    togglePause: control.togglePause,
+    countsOnly: true,
+  };
+  return (
+    <WardDetailView
+      model={model}
+      slots={{
+        phone: (
+          <PhoneBody testId="ward-statistics-ward-phone">
+            <div className={phone.bedCard} data-testid="ward-statistics-ward-phone-beds">
+              <StatisticsBedMap aggregate={aggregate} wardName={item.name} />
+              <StatisticsBedMapLegend counts={aggregate.counts} />
+            </div>
+            <PeopleNotListed testId="ward-statistics-ward-phone-not-listed" />
+          </PhoneBody>
+        ),
+        bedMap: (
+          <>
+            <StatisticsBedMapLegend counts={aggregate.counts} />
+            <StatisticsBedMap aggregate={aggregate} wardName={item.name} />
+          </>
+        ),
+        stay: (
+          <StayCard
+            bands={item.stayBands.map((band) => ({ band: { id: band.id, label: band.label }, count: band.count }))}
+            unrecorded={item.unrecordedStay}
+            averageStay={item.statistics.averageLengthOfStayDays}
+            longStays={item.statistics.longStays}
+          />
+        ),
+        roster: <PeopleNotListed testId="ward-statistics-ward-roster-not-listed" />,
+      }}
+    />
+  );
+}
 
 /**
  * ONE WARD IN DETAIL — the per-ward statistics page.
@@ -96,7 +232,7 @@ import ward from "./statistics-ward.module.css";
  * **The unit comes from the provider's live `units`**, never from `unitById()`, which is what
  * `tests/ward-flow-single-source.test.ts` requires of every screen.
  */
-export function StatisticsWardScreen({
+function OperationalWardScreen({
   unitId,
   units: unitsOverride,
   admissions: admissionsOverride,
@@ -106,11 +242,10 @@ export function StatisticsWardScreen({
   admissions?: Admission[];
 }) {
   const live = useStatisticsLive();
-  const { countsOnly, small, parts } = useStatisticsCounts();
+  const { countsOnly } = useStatisticsCounts();
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases, leaveBeds } = live.state;
   const now = live.now;
   const { dayZero } = live.state;
-  const isPhone = useIsPhone();
   const units = unitsOverride ?? liveUnits;
   const admissions = admissionsOverride ?? liveAdmissions;
   const unit = useMemo(() => units.find((candidate) => candidate.id === unitId), [units, unitId]);
@@ -223,9 +358,91 @@ export function StatisticsWardScreen({
     );
   }
 
-  const { ready, blockedByReasonError } = readyResult;
+  return (
+    <WardDetailView
+      model={{
+        unit,
+        canOpen,
+        openUnits,
+        site,
+        statistics,
+        capacity,
+        pendingPreparation,
+        openBeds,
+        emptyBeds: unit.empty.value,
+        allocatableBeds: unit.allocatable.value,
+        wardOccupancy,
+        occupancyPct,
+        referrals,
+        ...readyResult,
+        dischargeDates,
+        dueByDay,
+        dueThisWeek,
+        oldestPulled,
+        now,
+        dayZero,
+        paused: live.paused,
+        togglePause: live.togglePause,
+        countsOnly,
+      }}
+      slots={{
+        phone: (
+          <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+        ),
+        bedMap: (
+          <>
+            <StatisticsBedMapLegend counts={bedMap.counts} />
+            <StatisticsBedMap map={bedMap} wardName={unit.name} />
+          </>
+        ),
+        stay: (
+          <StayCard
+            bands={STAY_BANDS.map((band) => ({
+              band,
+              count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
+            }))}
+            unrecorded={current.filter((admission) => stayBand(admission, now) === null).length}
+            averageStay={statistics.averageLengthOfStayDays}
+            longStays={statistics.longStays}
+          />
+        ),
+        roster: <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />,
+      }}
+    />
+  );
+}
+function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardSlots }) {
+  const {
+    unit,
+    openUnits,
+    site,
+    statistics,
+    capacity,
+    pendingPreparation,
+    openBeds,
+    emptyBeds,
+    allocatableBeds,
+    wardOccupancy,
+    occupancyPct,
+    referrals,
+    ready,
+    blockedByReasonError,
+    dischargeDates,
+    dueByDay,
+    dueThisWeek,
+    oldestPulled,
+    now,
+    dayZero,
+    paused,
+    togglePause,
+    countsOnly,
+    canOpen,
+  } = model;
+  const section = statisticsSectionById("units")!;
+  const isPhone = useIsPhone();
+  const small = statisticsCountText;
+  const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
-
   const cohortLabel = unit.cohort === "Adult" ? (unit.lockedBeds > 0 ? "Adult secure" : "Adult open") : unit.cohort;
   const averageStay = statistics.averageLengthOfStayDays;
 
@@ -287,8 +504,8 @@ export function StatisticsWardScreen({
         </span>
       }
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause ?? undefined}
       exportFigures={{
         stem: unit.id,
         scope: unit.name,
@@ -340,7 +557,7 @@ export function StatisticsWardScreen({
       }
     >
       {isPhone ? (
-        <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+        slots.phone
       ) : (
         <>
           {/* Direction A: the bed map and its two charts beside the bed figures. Each column's last card
@@ -354,13 +571,10 @@ export function StatisticsWardScreen({
                 id="ward-bed-map"
                 data-testid="ward-statistics-ward-bed-map-card"
               >
-                <CardBody className={styles.bodyStack}>
-                  <StatisticsBedMapLegend counts={bedMap.counts} />
-                  <StatisticsBedMap map={bedMap} wardName={unit.name} />
-                </CardBody>
+                <CardBody className={styles.bodyStack}>{slots.bedMap}</CardBody>
               </StatCard>
               <FlushRow layout="halves" className={ward.chartRow}>
-                <StayCard current={current} now={now} averageStay={averageStay} longStays={statistics.longStays} />
+                {slots.stay}
                 <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
                   <CardBody className={styles.bodyStack}>
                     <p className={ward.headFigure}>Next 7 days</p>
@@ -369,7 +583,7 @@ export function StatisticsWardScreen({
                       columns={dueByDay.map((day) => ({
                         id: String(day.offset),
                         label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
-                        ...withheldBar(day.count, dueShown[day.offset] ?? day.count),
+                        ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
                       }))}
                     />
                   </CardBody>
@@ -392,14 +606,14 @@ export function StatisticsWardScreen({
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Empty</dt>
                       <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
-                        {unit.empty.value}
+                        {emptyBeds}
                       </dd>
                     </div>
                     <div className={styles.tile}>
                       <dt className={styles.tileLabel}>Allocatable</dt>
                       <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
-                        {unit.allocatable.value}
-                        {unit.allocatable.value === 0 && <small>no free bed</small>}
+                        {allocatableBeds}
+                        {allocatableBeds === 0 && <small>no free bed</small>}
                       </dd>
                     </div>
                     <div className={styles.tile}>
@@ -447,7 +661,7 @@ export function StatisticsWardScreen({
                         {undatedShown}
                       </dd>
                       <dt className={styles.figureLabel}>
-                        {dischargeDates.notRecorded > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                        {positive(dischargeDates.notRecorded) ? <StatusGlyph tone="warning" size={9} /> : null}
                         No date
                       </dt>
                     </div>
@@ -477,7 +691,7 @@ export function StatisticsWardScreen({
                   </dl>
                   <div data-testid="ward-stat-discharge-outcomes">
                     <SrOnly>
-                      {outcomes.consideredCount === 0 ? (
+                      {exact(outcomes.consideredCount) === 0 ? (
                         <>No resolved discharge dates.</>
                       ) : (
                         <>
@@ -485,7 +699,7 @@ export function StatisticsWardScreen({
                           since left, {said(metShown)} met and {said(missedShown)} missed.
                         </>
                       )}{" "}
-                      {outcomes.moved === 0 ? (
+                      {exact(outcomes.moved) === 0 ? (
                         <>No admission on this ward has had its discharge date revised.</>
                       ) : (
                         <>
@@ -499,7 +713,7 @@ export function StatisticsWardScreen({
                       <div className={styles.tile}>
                         <span className={styles.tileLabel}>Dates met</span>
                         <span className={styles.tileValue}>
-                          {outcomes.consideredCount === 0
+                          {exact(outcomes.consideredCount) === 0
                             ? "none yet"
                             : `${metShown} of ${small(outcomes.consideredCount)}`}
                         </span>
@@ -558,7 +772,7 @@ export function StatisticsWardScreen({
                     can appear in both accepted and declined counts, so the three do not add up.
                   </SrOnly>
                 </section>
-                {statistics.averageEmptyBedMinutes !== null || statistics.emptyBedIncoherentCount > 0 ? (
+                {statistics.averageEmptyBedMinutes !== null || positive(statistics.emptyBedIncoherentCount) ? (
                   <div data-testid="ward-statistics-ward-admissions-discharges">
                     <h3 className={ward.subHead}>Pull to arrival</h3>
                     <div className={styles.tiles}>
@@ -598,7 +812,7 @@ export function StatisticsWardScreen({
                         <SrOnly>
                           {excludedShown === 1 ? "admission on this ward records" : "admissions on this ward record"} an
                           arrival earlier than the bed was given away.
-                          {statistics.emptyBedIncoherentCount > 0
+                          {positive(statistics.emptyBedIncoherentCount)
                             ? ` That cannot be true, so ${excludedShown === 1 ? "it is" : "they are"} excluded from the average and counted here instead.`
                             : ""}
                         </SrOnly>
@@ -620,7 +834,7 @@ export function StatisticsWardScreen({
               </CardBody>
             </StatCard>
           ) : (
-            <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+            slots.roster
           )}
         </>
       )}
@@ -791,7 +1005,7 @@ function stayDaysOf(admission: Admission, now: number): number | null {
   return Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
 }
 
-function ChangeWard({ units, currentId }: { units: Unit[]; currentId: string }) {
+function ChangeWard({ units, currentId }: { units: WardMetadata[]; currentId: string }) {
   const router = useOptionalRouter();
   return (
     <Menu
@@ -818,28 +1032,22 @@ function ChangeWard({ units, currentId }: { units: Unit[]; currentId: string }) 
 }
 
 function StayCard({
-  current,
-  now,
+  bands,
+  unrecorded,
   averageStay,
   longStays,
 }: {
-  current: Admission[];
-  now: number;
+  bands: { band: { id: string; label: string }; count: StatisticsCount }[];
+  unrecorded: StatisticsCount;
   averageStay: number | null;
-  longStays: number;
+  longStays: StatisticsCount;
 }) {
-  const bands = STAY_BANDS.map((band) => ({
-    band,
-    count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
-  }));
-  const unrecorded = current.filter((admission) => stayBand(admission, now) === null).length;
   const [view, setView] = useState<"chart" | "data">("chart");
   // The bands and the unrecorded add up to the ward's admissions, so they are hidden together.
-  const { countsOnly, parts } = useStatisticsCounts();
+  const parts = (counts: StatisticsCount[]) => counts.map((count) => statisticsCountText(count));
   const shown = parts([...bands.map((entry) => entry.count), unrecorded]);
-  const shownOf = (index: number) => shown[index] ?? bands[index]?.count ?? unrecorded;
-  const longIndex = bands.findIndex((entry) => entry.band.id === "over-3-months");
-  const longShown = countsOnly && longIndex >= 0 ? shownOf(longIndex) : longStays;
+  const shownOf = (index: number) => shown[index] ?? statisticsCountText(bands[index]?.count ?? unrecorded);
+  const longShown = statisticsCountText(longStays);
   return (
     <StatCard
       icon={Clock}
@@ -876,7 +1084,7 @@ function StayCard({
             rows={bands.map(({ band, count }, index) => ({
               id: band.id,
               label: band.label,
-              ...withheldBar(count, shownOf(index)),
+              ...withheldBar(exact(count) ?? 0, shownOf(index)),
               display: String(shownOf(index)),
             }))}
           />
@@ -901,7 +1109,9 @@ function StayCard({
                 {bands.map(({ band, count }, index) => (
                   <tr key={band.id}>
                     <th scope="row">{band.label}</th>
-                    <td className={count === 0 ? `${styles.num} ${styles.muted}` : styles.num}>{shownOf(index)}</td>
+                    <td className={exact(count) === 0 ? `${styles.num} ${styles.muted}` : styles.num}>
+                      {shownOf(index)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -909,7 +1119,7 @@ function StayCard({
           </div>
         )}
         <p className={styles.srOnly} data-testid="ward-stat-long-stays">
-          {longStays === 0 ? (
+          {exact(longStays) === 0 ? (
             <>None. No admission on this ward has passed three months.</>
           ) : (
             <>
@@ -918,7 +1128,7 @@ function StayCard({
             </>
           )}
         </p>
-        {unrecorded > 0 ? (
+        {positive(unrecorded) ? (
           <p className={ward.note}>
             {said(shownOf(bands.length), "admission has", "admissions have")} no recorded stay
           </p>
@@ -933,20 +1143,21 @@ function Barriers({
   error,
   headlineTotal,
 }: {
-  ready: ReadyNotYetGone | null;
+  ready: ReadyView | null;
   error: string | null;
-  headlineTotal: number;
+  headlineTotal: StatisticsCount;
 }) {
   const [show, setShow] = useState<"blocked" | "all">("blocked");
   // The reasons add up to the blocked total beside them, so they are hidden together.
-  const { small, parts } = useStatisticsCounts();
+  const small = statisticsCountText;
+  const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const tallyShown = parts(ready === null ? [] : ready.tallies.map((tally) => tally.count));
   const shownFor = (reason: string) => {
     const index = ready === null ? -1 : ready.tallies.findIndex((tally) => tally.reason === reason);
-    return tallyShown[index] ?? ready?.tallies[index]?.count ?? 0;
+    return tallyShown[index] ?? small(ready?.tallies[index]?.count ?? 0);
   };
   const total = small(headlineTotal);
-  const rows = ready === null ? [] : ready.tallies.filter((tally) => show === "all" || tally.count > 0);
+  const rows = ready === null ? [] : ready.tallies.filter((tally) => show === "all" || positive(tally.count));
   return (
     <StatCard
       icon={ListOrdered}
@@ -974,7 +1185,7 @@ function Barriers({
         >
           <p className={styles.srOnly} data-testid="ward-stat-ready-blocked">
             <span>Clinically ready, not yet gone</span>{" "}
-            {headlineTotal === 0 ? (
+            {exact(headlineTotal) === 0 ? (
               <>0. No admission on this ward that has not departed carries a blocker.</>
             ) : (
               <>
@@ -990,14 +1201,14 @@ function Barriers({
           >
             {ready === null ? (
               <span>Share of the ward unavailable</span>
-            ) : typeof total === "string" ? (
+            ) : typeof total === "string" || typeof small(ready.population) === "string" ? (
               // A share beside the ward's population would give the worded count away.
               <>
                 <b>{total}</b> ready, not gone, share {SMALL_NUMBER_NOT_SHOWN}
               </>
             ) : ready.shareOfWard.kind === "measured" ? (
               <>
-                <b>{headlineTotal}</b> ready, not gone, <b>{figureText(ready.shareOfWard)}%</b> of the{" "}
+                <b>{small(headlineTotal)}</b> ready, not gone, <b>{figureText(ready.shareOfWard)}%</b> of the{" "}
                 {said(small(ready.population), "patient", "patients")} here
               </>
             ) : (
@@ -1028,7 +1239,7 @@ function Barriers({
                     rows={rows.map((tally) => ({
                       id: tally.reason,
                       label: tally.reason.replaceAll("_", " "),
-                      ...withheldBar(tally.count, shownFor(tally.reason)),
+                      ...withheldBar(exact(tally.count) ?? 0, shownFor(tally.reason)),
                       display: String(shownFor(tally.reason)),
                     }))}
                   />

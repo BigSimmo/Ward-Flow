@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { CalendarClock, ChevronDown, FileText, LayoutList, PhoneCall, Search, Users } from "lucide-react";
 
@@ -40,8 +40,15 @@ import {
   STATISTICS_TEAMS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 
-import { figureText, isUnmeasured, type StatisticsFigure } from "./statistics-absence";
-import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
+import { figureText as operationalFigureText, type StatisticsFigure } from "./statistics-absence";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  type StatisticsCount,
+  PeopleNotListed,
+  withheldBar,
+} from "./statistics-small-numbers";
 import { countAxisMax } from "./statistics-axis";
 import { communityFigures, type CommunityFigures } from "./statistics-community-figures";
 import { downloadCsv } from "./statistics-csv";
@@ -53,6 +60,132 @@ import { useOptionalRouter } from "./statistics-nav";
 import { PhoneBody, PhoneFacts, PhoneGroup, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
+
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+
+type CountFigure = { kind: "measured"; value: StatisticsCount } | Exclude<StatisticsFigure, { kind: "measured" }>;
+type CountFigures = Record<keyof CommunityFigures, CountFigure>;
+type CommunityModel = {
+  team: CommunityTeam;
+  openTeams: CommunityTeam[];
+  allTeams: { team: CommunityTeam; figures: CountFigures }[];
+  figures: CountFigures;
+  noDischargeDate: CountFigure;
+  dueOutWeek: CountFigure;
+  pastDate: CountFigure;
+  followUpArranged: CountFigure;
+  notArranged: CountFigure;
+  unseenCount: StatisticsCount;
+  admissionCount: StatisticsCount;
+  wholeNetwork: boolean;
+  countsOnly: boolean;
+  executive: boolean;
+  now: number;
+  dayZero: Date;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  scopeLabel?: string;
+};
+type CommunitySlots = { phone: ReactNode; followUp: ReactNode; dueOut: ReactNode };
+const small = (count: StatisticsCount) => statisticsCountText(count);
+const figureText = (figure: CountFigure) =>
+  figure.kind === "measured" ? String(small(figure.value)) : operationalFigureText(figure);
+const isUnmeasured = (figure: CountFigure) => figure.kind !== "measured";
+const countText = (figure: CountFigure) => (figure.kind === "measured" ? small(figure.value) : figureText(figure));
+const measuredValue = (figure: CountFigure) => (figure.kind === "measured" ? figure.value : null);
+const positive = (count: StatisticsCount | null) => count !== null && exactStatisticsCount(count) !== 0;
+type Availability = ExecutiveReportingFoundation["teams"][number]["figures"]["admitted"];
+const publicFigure = (figure: Availability): CountFigure =>
+  figure.kind === "measured" ? { kind: "measured", value: figure.count } : figure;
+const publicFigures = (figures: ExecutiveReportingFoundation["teams"][number]["figures"]): CountFigures => ({
+  admitted: publicFigure(figures.admitted),
+  expected: publicFigure(figures.expected),
+  discharged: publicFigure(figures.discharged),
+  other: publicFigure(figures.other),
+});
+export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
+  const control = useExecutiveStatisticsControl(),
+    access = useEffectiveWardAccess();
+  return control.executive || access.role === "executive" ? (
+    <ExecutiveCommunityScreen teamId={teamId} />
+  ) : (
+    <OperationalCommunityScreen teamId={teamId} />
+  );
+}
+function ExecutiveCommunityScreen({ teamId }: { teamId: string }) {
+  const data = useExecutiveStatistics(),
+    control = useExecutiveStatisticsControl();
+  const selected = data?.teams.find((team) => team.id === teamId);
+  const team = communityTeamById(teamId);
+  if (!data || !selected || !team || !data.openableCommunityTeamIds.includes(teamId))
+    return <ExecutiveStatisticsUnavailable />;
+  const allowed = new Set(data.openableCommunityTeamIds);
+  const openTeams = COMMUNITY_TEAM_PAGES.filter((candidate) => candidate.id === teamId || allowed.has(candidate.id));
+  const model: CommunityModel = {
+    team,
+    openTeams,
+    allTeams: openTeams.flatMap((candidate) => {
+      const row = data.teams.find((row) => row.id === candidate.id);
+      return row ? [{ team: candidate, figures: publicFigures(row.figures) }] : [];
+    }),
+    figures: publicFigures(selected.figures),
+    noDischargeDate: publicFigure(selected.noDischargeDate),
+    dueOutWeek: publicFigure(selected.dueOutWeek),
+    pastDate: publicFigure(selected.pastDate),
+    followUpArranged: publicFigure(selected.followUpArranged),
+    notArranged: publicFigure(selected.followUpNotArranged),
+    unseenCount: data.community.unlinkedAdmissions,
+    admissionCount: data.community.admissionsRecorded,
+    wholeNetwork: true,
+    countsOnly: true,
+    executive: true,
+    now: data.network.asAt.now,
+    dayZero: new Date(data.network.asAt.dayZero),
+    paused: control.paused,
+    togglePause: control.togglePause,
+    scopeLabel: data.network.scope.kind === "service" ? data.network.scope.service : undefined,
+  };
+  return (
+    <CommunityView
+      model={model}
+      slots={{
+        phone: (
+          <TeamPhone
+            people={null}
+            peopleCount={countText(model.figures.admitted)}
+            peopleMeasured={!isUnmeasured(model.figures.admitted)}
+            unitName={(id) => data.wards.find((ward) => ward.id === id)?.name ?? id}
+            now={model.now}
+            dayZero={model.dayZero}
+            inBedText={figureText(model.figures.admitted)}
+            inBedMeasured={!isUnmeasured(model.figures.admitted)}
+            followUp={
+              model.figures.discharged.kind !== "measured"
+                ? { text: figureText(model.figures.discharged) }
+                : {
+                    discharged: countText(model.figures.discharged),
+                    arranged: countText(model.followUpArranged),
+                    notArranged: countText(model.notArranged),
+                    flagged: positive(measuredValue(model.notArranged)),
+                  }
+            }
+            dueOutText={countText(model.dueOutWeek)}
+            pastDate={measuredValue(model.pastDate)}
+            pastDateText={countText(model.pastDate)}
+          />
+        ),
+        followUp: <PeopleNotListed testId="ward-statistics-community-follow-up-not-listed" />,
+        dueOut: (
+          <CardBody>
+            <PeopleNotListed testId="ward-statistics-community-due-out-not-listed" />
+          </CardBody>
+        ),
+      }}
+    />
+  );
+}
 
 /**
  * ONE COMMUNITY TEAM, IN FIGURES — and deliberately NOT a second copy of its operational page.
@@ -77,14 +210,13 @@ import detail from "./statistics-detail.module.css";
  * **Left out of the drawing:** the handover Sent/Not sent column and its Ask action, and the "seen
  * within 7 days" follow-up figure. The record keeps neither a handover message nor a contact date.
  */
-export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
+function OperationalCommunityScreen({ teamId }: { teamId: string }) {
   const live = useStatisticsLive();
   const { countsOnly, small, parts } = useStatisticsCounts();
   const canOpen = useCanOpenHref();
   const { admissions, referrals, units } = live.state;
   const now = live.now;
   const { dayZero } = live.state;
-  const isPhone = useIsPhone();
 
   const section = statisticsSectionById("community");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'community' section");
@@ -156,35 +288,196 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       admission.expectedDischargeAt >= now &&
       admission.expectedDischargeAt < now + 7 * MINUTES_PER_DAY,
   ).length;
-  const measuredValue = (figure: StatisticsFigure) => (figure.kind === "measured" ? figure.value : null);
+  const dueOutText = figures.expected.kind === "measured" ? small(dueOutWeek) : figureText(figures.expected);
+  const pastDateText = figures.expected.kind === "measured" ? small(pastDate) : figureText(figures.expected);
+  return (
+    <CommunityView
+      model={{
+        team,
+        openTeams,
+        allTeams,
+        figures,
+        noDischargeDate:
+          figures.admitted.kind === "measured" && figures.expected.kind === "measured"
+            ? { kind: "measured", value: figures.admitted.value - figures.expected.value }
+            : figures.expected,
+        dueOutWeek: figures.expected.kind === "measured" ? { kind: "measured", value: dueOutWeek } : figures.expected,
+        pastDate: figures.expected.kind === "measured" ? { kind: "measured", value: pastDate } : figures.expected,
+        followUpArranged:
+          figures.discharged.kind === "measured"
+            ? { kind: "measured", value: lists.dischargedIntoTheArea.length - notArranged.length }
+            : figures.discharged,
+        notArranged:
+          figures.discharged.kind === "measured" ? { kind: "measured", value: notArranged.length } : figures.discharged,
+        unseenCount: unseen.length,
+        admissionCount: admissions.length,
+        wholeNetwork,
+        countsOnly,
+        executive: false,
+        now,
+        dayZero,
+        paused: live.paused,
+        togglePause: live.togglePause,
+      }}
+      slots={{
+        phone: (
+          <TeamPhone
+            people={countsOnly ? null : lists.currentlyAdmitted}
+            peopleCount={countText(figures.admitted)}
+            peopleMeasured={figures.admitted.kind === "measured"}
+            unitName={unitName}
+            now={now}
+            dayZero={dayZero}
+            inBedText={figureText(figures.admitted)}
+            inBedMeasured={figures.admitted.kind === "measured"}
+            followUp={(() => {
+              if (figures.discharged.kind !== "measured") return { text: figureText(figures.discharged) };
+              // Arranged and not arranged add up to the discharged count beside them, so they hide together.
+              const [arranged, notYet] = parts([
+                lists.dischargedIntoTheArea.length - notArranged.length,
+                notArranged.length,
+              ]);
+              return {
+                discharged: small(lists.dischargedIntoTheArea.length),
+                arranged: arranged!,
+                notArranged: notYet!,
+                flagged: notArranged.length > 0,
+              };
+            })()}
+            dueOutText={dueOutText}
+            pastDate={pastDate}
+            pastDateText={pastDateText}
+          />
+        ),
+        followUp: countsOnly ? (
+          <PeopleNotListed testId="ward-statistics-community-follow-up-not-listed" />
+        ) : lists.dischargedIntoTheArea.length === 0 ? (
+          <p className={styles.muted}>
+            {figures.discharged.kind === "measured"
+              ? "Nobody has been discharged into this area"
+              : figureText(figures.discharged)}
+          </p>
+        ) : (
+          <ul className={detail.crossList}>
+            {lists.dischargedIntoTheArea.map((admission) => (
+              <li key={admission.id} className={detail.crossRow}>
+                <span>
+                  <span className={detail.primary}>{admission.id}</span>
+                  <span className={detail.secondary}>
+                    {unitName(admission.unitId)}
+                    {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
+                  </span>
+                </span>
+                <span className={styles.flagged}>
+                  {admission.followUp?.state === "arranged" ? (
+                    <>
+                      <StatusGlyph tone="success" size={9} />
+                      Arranged
+                    </>
+                  ) : (
+                    <>
+                      <StatusGlyph tone="warning" size={9} />
+                      {admission.followUp ? "Not arranged" : "Not recorded"}
+                    </>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ),
+        dueOut: countsOnly ? (
+          <CardBody>
+            <PeopleNotListed testId="ward-statistics-community-due-out-not-listed" />
+          </CardBody>
+        ) : (
+          <div className={styles.tableWrap}>
+            <table className={`${tableClasses.table} ${styles.table}`}>
+              <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Admission</th>
+                  <th scope="col">Ward</th>
+                  <th scope="col">Discharge</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dueOut.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className={styles.muted}>
+                      {figures.expected.kind === "measured"
+                        ? "Nobody in a bed has a discharge date written down"
+                        : figureText(figures.expected)}
+                    </td>
+                  </tr>
+                ) : null}
+                {dueOut.map((admission) => (
+                  <tr key={admission.id}>
+                    <th scope="row">
+                      <span className={detail.primary}>{admission.id}</span>
+                    </th>
+                    <td>{unitName(admission.unitId)}</td>
+                    <td>
+                      {admission.expectedDischargeAt === null ? (
+                        <span className={styles.muted}>No date</span>
+                      ) : (
+                        <span className={styles.flagged}>
+                          {isPastDate(admission.expectedDischargeAt, now) ? (
+                            <StatusGlyph tone="warning" size={9} />
+                          ) : null}
+                          {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
+                          <span className={styles.muted}>
+                            {fromToday(admission.expectedDischargeAt, now)}
+                            {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
+                          </span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ),
+      }}
+    />
+  );
+}
+function CommunityView({ model, slots }: { model: CommunityModel; slots: CommunitySlots }) {
+  const {
+    team,
+    openTeams,
+    allTeams,
+    figures,
+    noDischargeDate,
+    dueOutWeek,
+    notArranged,
+    unseenCount,
+    admissionCount,
+    wholeNetwork,
+    countsOnly,
+    executive,
+    now,
+    dayZero,
+    paused,
+    togglePause,
+    scopeLabel,
+  } = model;
+  const section = statisticsSectionById("community")!;
+  const isPhone = useIsPhone();
   const inBedCount = measuredValue(figures.admitted);
-  const withDateCount = measuredValue(figures.expected);
-  // The two parts add up to the bed count, so they are hidden together, or a hidden one could be
-  // worked back from the total (reviews on PR #345 and #354).
-  const phoneParts = (() => {
-    if (inBedCount === null || withDateCount === null) {
-      return { withDate: figureText(figures.expected), noDate: figureText(figures.expected) };
-    }
-    const [withDate, noDate] = parts([withDateCount, inBedCount - withDateCount]);
-    return { withDate: withDate!, noDate: noDate! };
-  })();
-
-  const figureRows: { key: keyof CommunityFigures; label: string; figure: StatisticsFigure }[] = [
+  const phoneParts = { withDate: countText(figures.expected), noDate: countText(noDischargeDate) };
+  const figureRows: { key: keyof CommunityFigures; label: string; figure: CountFigure }[] = [
     { key: "admitted", label: "In a bed, or with one pulled", figure: figures.admitted },
     { key: "expected", label: "With a discharge date", figure: figures.expected },
     { key: "discharged", label: "Discharged into the area", figure: figures.discharged },
     { key: "other", label: "Left the ward another way", figure: figures.other },
   ];
-  const measuredMax = Math.max(1, ...figureRows.map((row) => (row.figure.kind === "measured" ? row.figure.value : 0)));
-  // The due out and past date counts read the "with a discharge date" list, so when that figure is
-  // not measured they take its words, never a nought counted from an empty list.
-  const dueOutText = figures.expected.kind === "measured" ? small(dueOutWeek) : figureText(figures.expected);
-  const pastDateText = figures.expected.kind === "measured" ? small(pastDate) : figureText(figures.expected);
-  const countText = (figure: StatisticsFigure) =>
-    figure.kind === "measured" ? small(figure.value) : figureText(figure);
-  const notArrangedText =
-    figures.discharged.kind === "measured" ? small(notArranged.length) : figureText(figures.discharged);
-
+  const measuredMax = Math.max(
+    1,
+    ...figureRows.map((row) => (row.figure.kind === "measured" ? (exactStatisticsCount(row.figure.value) ?? 0) : 0)),
+  );
+  const dueOutText = countText(dueOutWeek);
+  const notArrangedText = countText(notArranged);
   return (
     <StatisticsPage
       section={section}
@@ -220,10 +513,14 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
         ) : undefined
       }
       eyebrowLabel="Community team"
-      eyebrowDetail={<span>{COMMUNITY_TEAM_PAGES.length} teams in the network</span>}
+      eyebrowDetail={
+        <span>
+          {COMMUNITY_TEAM_PAGES.length} teams in the network{scopeLabel ? " · " + scopeLabel : ""}
+        </span>
+      }
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause ?? undefined}
       exportFigures={{
         stem: team.id,
         scope: team.name,
@@ -271,7 +568,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             value={notArrangedText}
             label={
               <span className={styles.flagged}>
-                {figures.discharged.kind === "measured" && notArranged.length > 0 ? (
+                {figures.discharged.kind === "measured" && positive(measuredValue(notArranged)) ? (
                   <StatusGlyph tone="warning" size={9} />
                 ) : null}
                 No follow-up yet
@@ -282,33 +579,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
       }
     >
       {isPhone ? (
-        <TeamPhone
-          people={countsOnly ? null : lists.currentlyAdmitted}
-          peopleCount={countText(figures.admitted)}
-          peopleMeasured={figures.admitted.kind === "measured"}
-          unitName={unitName}
-          now={now}
-          dayZero={dayZero}
-          inBedText={figureText(figures.admitted)}
-          inBedMeasured={figures.admitted.kind === "measured"}
-          followUp={(() => {
-            if (figures.discharged.kind !== "measured") return { text: figureText(figures.discharged) };
-            // Arranged and not arranged add up to the discharged count beside them, so they hide together.
-            const [arranged, notYet] = parts([
-              lists.dischargedIntoTheArea.length - notArranged.length,
-              notArranged.length,
-            ]);
-            return {
-              discharged: small(lists.dischargedIntoTheArea.length),
-              arranged: arranged!,
-              notArranged: notYet!,
-              flagged: notArranged.length > 0,
-            };
-          })()}
-          dueOutText={dueOutText}
-          pastDate={pastDate}
-          pastDateText={pastDateText}
-        />
+        slots.phone
       ) : (
         <>
           <FlushRow layout="lead2">
@@ -316,6 +587,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
               <TeamComparison
                 current={team}
                 rows={allTeams}
+                countsOnly={countsOnly}
                 asAt={formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
               />
             </Follow>
@@ -350,10 +622,10 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                           <th scope="row">{row.label}</th>
                           <td className={detail.meterCell}>
                             {row.figure.kind === "measured" &&
-                            row.figure.value > 0 &&
+                            (exactStatisticsCount(row.figure.value) ?? 0) > 0 &&
                             typeof small(row.figure.value) === "number" ? (
                               <Meter
-                                value={row.figure.value}
+                                value={exactStatisticsCount(row.figure.value) ?? 0}
                                 max={measuredMax}
                                 fill="data-1"
                                 label={row.label}
@@ -400,74 +672,41 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
                   </p>
                 </SrOnly>
                 <CardFoot meta="Discharge dates are a subset of people in a bed or with one pulled">
-                  <Link
-                    href={communityTeamHref(team)}
-                    className={buttonClass({ variant: "sec", size: "sm" })}
-                    data-testid="ward-statistics-community-operational-link"
-                  >
-                    Open caseload
-                  </Link>
+                  {executive ? null : (
+                    <Link
+                      href={communityTeamHref(team)}
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      data-testid="ward-statistics-community-operational-link"
+                    >
+                      Open caseload
+                    </Link>
+                  )}
                 </CardFoot>
               </StatCard>
 
               <StatCard id="follow-up" icon={PhoneCall} title="Follow-up" aside="Discharged here">
-                <CardBody className={styles.bodyStack}>
-                  {countsOnly ? (
-                    <PeopleNotListed testId="ward-statistics-community-follow-up-not-listed" />
-                  ) : lists.dischargedIntoTheArea.length === 0 ? (
-                    <p className={styles.muted}>
-                      {figures.discharged.kind === "measured"
-                        ? "Nobody has been discharged into this area"
-                        : figureText(figures.discharged)}
-                    </p>
-                  ) : (
-                    <ul className={detail.crossList}>
-                      {lists.dischargedIntoTheArea.map((admission) => (
-                        <li key={admission.id} className={detail.crossRow}>
-                          <span>
-                            <span className={detail.primary}>{admission.id}</span>
-                            <span className={detail.secondary}>
-                              {unitName(admission.unitId)}
-                              {admission.leftAt === null ? "" : `, left ${dateOf(admission.leftAt, dayZero)}`}
-                            </span>
-                          </span>
-                          <span className={styles.flagged}>
-                            {admission.followUp?.state === "arranged" ? (
-                              <>
-                                <StatusGlyph tone="success" size={9} />
-                                Arranged
-                              </>
-                            ) : (
-                              <>
-                                <StatusGlyph tone="warning" size={9} />
-                                {admission.followUp ? "Not arranged" : "Not recorded"}
-                              </>
-                            )}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </CardBody>
+                <CardBody className={styles.bodyStack}>{slots.followUp}</CardBody>
                 <CardFoot
                   meta={
                     wholeNetwork
-                      ? `${small(unseen.length)} of ${small(admissions.length)} admissions have no community team`
+                      ? `${small(unseenCount)} of ${small(admissionCount)} admissions have no community team`
                       : undefined
                   }
                 >
                   {wholeNetwork ? (
                     <span data-testid="ward-statistics-community-unseen" className={styles.srOnly}>
-                      {small(unseen.length)} of {small(admissions.length)} admissions without a community team
+                      {small(unseenCount)} of {small(admissionCount)} admissions without a community team
                     </span>
                   ) : null}
-                  <Link
-                    href={communityTeamHref(team)}
-                    className={styles.footLink}
-                    data-testid="ward-statistics-community-coverage-link"
-                  >
-                    Open {team.name}
-                  </Link>
+                  {executive ? null : (
+                    <Link
+                      href={communityTeamHref(team)}
+                      className={styles.footLink}
+                      data-testid="ward-statistics-community-coverage-link"
+                    >
+                      Open {team.name}
+                    </Link>
+                  )}
                 </CardFoot>
               </StatCard>
             </FlushStack>
@@ -480,59 +719,7 @@ export function StatisticsCommunityScreen({ teamId }: { teamId: string }) {
             title="Due out to this team"
             aside="With a discharge date"
           >
-            {countsOnly ? (
-              <CardBody>
-                <PeopleNotListed testId="ward-statistics-community-due-out-not-listed" />
-              </CardBody>
-            ) : (
-              <div className={styles.tableWrap}>
-                <table className={`${tableClasses.table} ${styles.table}`}>
-                  <caption className={styles.srOnly}>Admissions referred to {team.name} with a discharge date</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Admission</th>
-                      <th scope="col">Ward</th>
-                      <th scope="col">Discharge</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dueOut.length === 0 ? (
-                      <tr>
-                        <td colSpan={3} className={styles.muted}>
-                          {figures.expected.kind === "measured"
-                            ? "Nobody in a bed has a discharge date written down"
-                            : figureText(figures.expected)}
-                        </td>
-                      </tr>
-                    ) : null}
-                    {dueOut.map((admission) => (
-                      <tr key={admission.id}>
-                        <th scope="row">
-                          <span className={detail.primary}>{admission.id}</span>
-                        </th>
-                        <td>{unitName(admission.unitId)}</td>
-                        <td>
-                          {admission.expectedDischargeAt === null ? (
-                            <span className={styles.muted}>No date</span>
-                          ) : (
-                            <span className={styles.flagged}>
-                              {isPastDate(admission.expectedDischargeAt, now) ? (
-                                <StatusGlyph tone="warning" size={9} />
-                              ) : null}
-                              {dateOf(admission.expectedDischargeAt, dayZero)}{" "}
-                              <span className={styles.muted}>
-                                {fromToday(admission.expectedDischargeAt, now)}
-                                {isPastDate(admission.expectedDischargeAt, now) ? ", past date" : ""}
-                              </span>
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {slots.dueOut}
           </StatCard>
         </>
       )}
@@ -573,7 +760,7 @@ function TeamPhone({
     | { discharged: number | string; arranged: number | string; notArranged: number | string; flagged: boolean }
     | { text: string };
   dueOutText: number | string;
-  pastDate: number;
+  pastDate: StatisticsCount | null;
   pastDateText: number | string;
 }) {
   const sorted = [...(people ?? [])].sort(
@@ -666,7 +853,7 @@ function TeamPhone({
               id: "past",
               label: (
                 <>
-                  {pastDate > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                  {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
                   Past date
                 </>
               ),
@@ -725,40 +912,47 @@ function TeamComparison({
   current,
   rows,
   asAt,
+  countsOnly,
 }: {
   current: CommunityTeam;
-  rows: { team: CommunityTeam; figures: CommunityFigures }[];
+  rows: { team: CommunityTeam; figures: CountFigures }[];
   asAt: string;
+  countsOnly: boolean;
 }) {
   const [view, setView] = useState<"chart" | "data">("chart");
   const [measure, setMeasure] = useState<Measure>("admitted");
   const [sort, setSort] = useState<"highest" | "name">("highest");
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
-  const { countsOnly, small } = useStatisticsCounts();
   const needle = query.trim().toLowerCase();
   const matching = rows.filter((row) => !needle || row.team.name.toLowerCase().includes(needle));
   const measured = matching.filter((row) => row.figures[measure].kind === "measured");
-  const valueOf = (row: { figures: CommunityFigures }) => {
+  const valueOf = (row: { figures: CountFigures }) => {
     const figure = row.figures[measure];
     return figure.kind === "measured" ? figure.value : 0;
   };
-  const shownOf = (row: { figures: CommunityFigures }) => small(valueOf(row));
-  // On the executive desk a worded team sorts as nought, so the bar order cannot rank the hidden ones.
-  const sortValue = (row: { figures: CommunityFigures }) => {
-    const shownValue = shownOf(row);
-    return typeof shownValue === "number" ? shownValue : 0;
-  };
-  const cellText = (figure: StatisticsFigure) =>
-    figure.kind === "measured" ? small(figure.value) : figureText(figure);
+  const shownOf = (row: { figures: CountFigures }) => small(valueOf(row));
+  // Protected counts sort after exact counts, alphabetically, without a hidden numeric rank.
+  const sortValue = (row: { figures: CountFigures }) => exactStatisticsCount(valueOf(row));
+  const cellText = (figure: CountFigure) => (figure.kind === "measured" ? small(figure.value) : figureText(figure));
   const sorted = [...measured].sort((a, b) =>
     sort === "name"
       ? a.team.name.localeCompare(b.team.name)
-      : sortValue(b) - sortValue(a) || a.team.name.localeCompare(b.team.name),
+      : (() => {
+          const x = sortValue(a),
+            y = sortValue(b);
+          return x === null
+            ? y === null
+              ? a.team.name.localeCompare(b.team.name)
+              : 1
+            : y === null
+              ? -1
+              : y - x || a.team.name.localeCompare(b.team.name);
+        })(),
   );
   // A team with nobody on this measure folds into the footer count until Show all (UX audit 21 Oct
   // 2026): the top twelve used to be one bar and eleven noughts.
-  const withSome = sorted.filter((row) => valueOf(row) > 0);
+  const withSome = sorted.filter((row) => positive(valueOf(row)));
   const zeroTeams = sorted.length - withSome.length;
   const shown = showAll || needle ? sorted : withSome.slice(0, TOP);
   const unlinked = matching.length - measured.length;
@@ -766,7 +960,7 @@ function TeamComparison({
   const mean =
     measured.length === 0 || countsOnly
       ? undefined
-      : measured.reduce((sum, row) => sum + valueOf(row), 0) / measured.length;
+      : measured.reduce((sum, row) => sum + (exactStatisticsCount(valueOf(row)) ?? 0), 0) / measured.length;
   const chart = MEASURES.find((entry) => entry.id === measure)!;
 
   function exportCsv() {
@@ -844,7 +1038,7 @@ function TeamComparison({
             <BarList
               label={chart.chart}
               axis
-              max={countAxisMax(shown.map(sortValue))}
+              max={countAxisMax(shown.map((row) => sortValue(row) ?? 0))}
               mean={mean}
               meanLabel="Mean per team"
               labelWidth="12rem"
@@ -852,7 +1046,7 @@ function TeamComparison({
                 id: row.team.id,
                 label: row.team.name,
                 sub: row.team.id === current.id ? "this team" : undefined,
-                ...withheldBar(valueOf(row), shownOf(row)),
+                ...withheldBar(exactStatisticsCount(valueOf(row)) ?? 0, shownOf(row)),
                 display: String(shownOf(row)),
               }))}
             />

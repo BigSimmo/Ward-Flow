@@ -554,7 +554,8 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   stemming, including transposed letters. The clinical-question guard checks the original question;
   questions stay in component state and never become stored values or navigation parameters.
   Search consumes Escape before closing its modal layer, so the same key cannot close the Help
-  sheet underneath; focus returns to that sheet's search field.
+  sheet underneath; focus returns to that sheet's search field. Internal destinations use the client
+  router, preserving memory-only workspace text while opening the result.
   The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
   guidance, reusing their approved source content. Exact indexed words survive typo correction.
   `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,

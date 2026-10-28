@@ -3,6 +3,7 @@ import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { EventLogEntry } from "./ward-event-log";
 import type { BoundWardPartialView } from "./ward-partial-view-contract";
+import type { ExecutiveAggregateSnapshot } from "./ward-shared-executive-snapshot";
 
 // The shared client's public types, kept apart so ward-shared-client.ts stays under the line limit.
 export type SharedSnapshot = {
@@ -30,6 +31,10 @@ type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-author
 export type SharedRoleChoice = { workingAs: string; role: string; scope: unknown };
 export type SharedView = {
   snapshot: SharedSnapshot | null;
+  /** Aggregate-only reports never enter the operational payload/archive/command path. */
+  executiveSnapshot?: ExecutiveAggregateSnapshot | null;
+  /** Local display lifetime, changed when the accepted actor/access/variant is replaced or cleared. */
+  viewEpoch?: number;
   receivedAt: number;
   status: SharedStatus;
   error: string | null;

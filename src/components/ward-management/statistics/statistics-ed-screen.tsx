@@ -2,7 +2,7 @@
 
 import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-derivations";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users } from "lucide-react";
 
@@ -47,7 +47,16 @@ import { LONG_WAIT_MINUTES, VERY_LONG_WAIT_MINUTES } from "@/components/ward-man
 import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
 import { StatisticsEdSwarm } from "./statistics-ed-swarm";
-import { PeopleNotListed, withheldBar } from "./statistics-small-numbers";
+import {
+  PeopleNotListed,
+  withheldBar,
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
 import { FlushRow, FlushStack, Follow } from "./statistics-layout";
@@ -66,11 +75,10 @@ import ed from "./statistics-ed-third-edition.module.css";
  *
  * ⚠️ **A WARD AND AN EMERGENCY DEPARTMENT ARE NOT ONE LIST WITH A FLAG.** A department has no beds,
  * so nothing here is a bed measure. The department comes from `allEmergencyDepartments()` via
- * `edById`; `movements` come from the provider, because who is on the list changes as it runs.
+ * `edById`; operational rows come from the provider and executive figures from the released report.
  *
- * ⚠️ **EVERY WAIT FIGURE IS CALLED FROM `statistics-ed-waits.ts`, NEVER RECOMPUTED HERE**, and every
- * department in the comparison goes through the same function this page reads itself with, so the
- * table and the page cannot disagree about one department.
+ * Wait selectors are shared with the aggregate projector. The common view accepts public place
+ * references and scalar measures only; individual rows belong to the operational wrapper.
  *
  * ⚠️ **"DUE PASSED" IS NARROWER THAN IT SOUNDS.** `legalForm.dueAt` is authored only for a transport
  * or transfer order, so that column can never report a missed Mental Health Act deadline, and the
@@ -82,7 +90,7 @@ import ed from "./statistics-ed-third-edition.module.css";
  * **Left out of the drawing:** the "Flag to bed desk" action (the app has none) and the "each
  * minute" live chip (the page clock is the provider's and is shown in the hero).
  */
-export function StatisticsEdScreen({
+function OperationalStatisticsEdScreen({
   edId,
   movements: movementsOverride,
 }: {
@@ -91,11 +99,10 @@ export function StatisticsEdScreen({
   movements?: Movement[];
 }) {
   const live = useStatisticsLive();
-  // The executive desk sees counts only: small counts worded, lists of people left out.
-  const { countsOnly, small, parts } = useStatisticsCounts();
+  // Only operational desks reach this provider-backed branch.
+  const { countsOnly, small } = useStatisticsCounts();
   const canOpen = useCanOpenHref();
   const { movements: liveMovements, units } = live.state;
-  const isPhone = useIsPhone();
   const now = live.now;
   const movements = movementsOverride ?? liveMovements;
   const department = edById(edId);
@@ -135,14 +142,11 @@ export function StatisticsEdScreen({
     );
   }
 
-  const site = siteByCode(department.siteCode);
   const { onTheList, urgent, unplaced, waitingMovements, over24h, over48h, longestWait, allDepartmentMovements } =
     edWaitFigures(movements, department.id, now);
   const bands = edWaitBands(movements, department.id, now);
   const edJourneys = edJourneySummaries(movements, now).find((summary) => summary.ed.id === department.id)!;
-  const [stillInEdShown, inTransitShown] = parts([edJourneys.stillInEd, edJourneys.inTransit]);
-  // The bands add up to the Waiting figure in the hero, so a hidden band hides a second one with it.
-  const bandShown = parts(bands.map((band) => band.count));
+
   // Statistics shows AD- admission numbers only, no names or UMRN (Josh, 13 Oct 2026), and never a
   // WF- journey id (D-39). A person waiting in ED has no admission yet, so the row names their
   // recorded urgency tier, not eight rows of "Not yet admitted" (UX audit 21 Oct 2026), and links to
@@ -192,19 +196,248 @@ export function StatisticsEdScreen({
   const noFreeBedDeclineCount = allDepartmentMovements
     .flatMap((movement) => movement.declines)
     .filter((decline) => decline.reason === "no_suitable_bed").length;
-  const notSuitableDeclineCount = declinesReadout.ok
-    ? declinesReadout.value.totalCount - noFreeBedDeclineCount
-    : undefined;
-  const noFreeBedShown = small(noFreeBedDeclineCount);
-  const notSuitableShown = notSuitableDeclineCount === undefined ? undefined : small(notSuitableDeclineCount);
+  const notSuitableDeclineCount =
+    declinesReadout.ok && declinesReadout.value.totalCount >= noFreeBedDeclineCount
+      ? declinesReadout.value.totalCount - noFreeBedDeclineCount
+      : null;
 
   const longHours = LONG_WAIT_MINUTES / 60;
-  const veryLongHours = VERY_LONG_WAIT_MINUTES / 60;
   const nextToCross = waitingMovements
     .filter((entry) => entry.waitMinutes < LONG_WAIT_MINUTES)
     .sort((a, b) => b.waitMinutes - a.waitMinutes)
     .slice(0, 3);
 
+  return (
+    <EdPresentation
+      model={{
+        department,
+        departments,
+        comparison: comparison.map(({ department: each, figures, breached }) => ({
+          department: each,
+          figures: {
+            onTheList: figures.onTheList,
+            over24h: figures.over24h,
+            longestWaitMinutes: figures.longestWait?.waitMinutes ?? null,
+          },
+          breached,
+        })),
+        now,
+        paused: live.paused,
+        togglePause: live.togglePause,
+        executive: false,
+        canOpenAllEds: canOpen(STATISTICS_EDS_HREF),
+        canOpenCompare: canOpen(STATISTICS_COMPARE_HREF),
+        onTheList,
+        urgent,
+        unplaced,
+        over24h,
+        longestWaitMinutes: longestWait?.waitMinutes ?? null,
+        median,
+        stillInEd: edJourneys.stillInEd,
+        inTransit: edJourneys.inTransit,
+        bands,
+        noFreeBedDeclineCount,
+        notSuitableDeclineCount,
+        declineStatement: !declinesReadout.ok
+          ? declinesReadout.statement
+          : notSuitableDeclineCount === null
+            ? inconsistentDeclines
+            : undefined,
+      }}
+      personPhone={
+        <EdPhone
+          waiting={waitingMovements}
+          nameOf={nameOf}
+          wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward accepted"}
+          next={nextToCross[0] ?? null}
+        />
+      }
+      personWaiting={
+        <Waits
+          waiting={waitingMovements}
+          nameOf={nameOf}
+          over24h={over24h}
+          over48h={over48h}
+          onTheList={onTheList}
+          waitingText={small(onTheList)}
+          countsOnly={countsOnly}
+          longestName={longestWait ? nameOf(longestWait.movement) : ""}
+          longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
+        />
+      }
+      personNext={
+        <>
+          {countsOnly ? (
+            <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />
+          ) : nextToCross.length === 0 ? (
+            <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
+          ) : (
+            <ul className={detail.crossList}>
+              {nextToCross.map(({ movement, waitMinutes }) => (
+                <li key={movement.id} className={detail.crossRow}>
+                  <span>
+                    <Link href={movementHref(movement.id)} className={detail.crossName}>
+                      {nameOf(movement)}
+                    </Link>
+                    <span className={detail.secondary}>{durMinutes(waitMinutes)} waiting</span>
+                  </span>
+                  <span className={detail.crossDue}>
+                    <b>in {durMinutes(LONG_WAIT_MINUTES - waitMinutes)}</b>
+                    <span className={detail.secondary}>to {longHours}h</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      }
+      personSwarm={
+        <>
+          {countsOnly ? (
+            <PeopleNotListed testId="ward-statistics-ed-everyone-not-listed" />
+          ) : (
+            <>
+              <StatisticsEdSwarm
+                rows={swarmRows}
+                labelWidth={176}
+                label={`Each open ED journey, by time since opening, ${department.name} first`}
+              />
+              <p className={detail.note}>
+                {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h lines
+                are your defaults, not legal limits.
+              </p>
+            </>
+          )}
+        </>
+      }
+    />
+  );
+}
+
+type PublicEd = Pick<EmergencyDepartment, "id" | "name" | "siteCode">;
+type EdComparison = {
+  department: PublicEd;
+  figures: { onTheList: StatisticsCount; over24h: StatisticsCount; longestWaitMinutes: number | null };
+  breached: StatisticsCount;
+};
+type EdPresentationModel = {
+  department: PublicEd;
+  departments: readonly PublicEd[];
+  comparison: EdComparison[];
+  now: number;
+  paused: boolean;
+  togglePause?: () => void;
+  executive: boolean;
+  canOpenAllEds: boolean;
+  canOpenCompare: boolean;
+  onTheList: StatisticsCount;
+  urgent: StatisticsCount;
+  unplaced: StatisticsCount;
+  over24h: StatisticsCount;
+  longestWaitMinutes: number | null;
+  median: number | null;
+  stillInEd: StatisticsCount;
+  inTransit: StatisticsCount;
+  bands: readonly { label: string; count: StatisticsCount }[];
+  noFreeBedDeclineCount: StatisticsCount;
+  notSuitableDeclineCount: StatisticsCount | null;
+  declineStatement?: string;
+};
+const inconsistentDeclines =
+  "The other-reasons subtotal is unknown because these answer groups do not form a consistent breakdown.";
+
+export function StatisticsEdScreen(props: { edId: string; movements?: Movement[] }) {
+  const control = useExecutiveStatisticsControl();
+  const data = useExecutiveStatistics();
+  const access = useEffectiveWardAccess();
+  if (control.executive || access.role === "executive") {
+    const current = data?.emergencyDepartments.find((item) => item.id === props.edId);
+    if (!data || !current || !data.openableEmergencyDepartmentIds.includes(props.edId))
+      return <ExecutiveStatisticsUnavailable />;
+    return (
+      <EdPresentation
+        model={{
+          department: current,
+          departments: data.emergencyDepartments.filter((item) =>
+            data.openableEmergencyDepartmentIds.includes(item.id),
+          ),
+          comparison: data.emergencyDepartments.map((item) => ({
+            department: item,
+            figures: { onTheList: item.onTheList, over24h: item.over24h, longestWaitMinutes: item.longestWaitMinutes },
+            breached: item.legalClockBreachedCount,
+          })),
+          now: data.network.asAt.now,
+          paused: control.paused,
+          togglePause: control.togglePause ?? undefined,
+          executive: true,
+          canOpenAllEds: true,
+          canOpenCompare: true,
+          onTheList: current.onTheList,
+          urgent: current.urgent,
+          unplaced: current.unplaced,
+          over24h: current.over24h,
+          longestWaitMinutes: current.longestWaitMinutes,
+          median: current.medianWaitMinutes,
+          stillInEd: current.stillInEd,
+          inTransit: current.inTransit,
+          bands: current.bands,
+          noFreeBedDeclineCount: current.declines.noFreeBed,
+          notSuitableDeclineCount: current.declines.notSuitable,
+          declineStatement: current.declines.notSuitable === null ? inconsistentDeclines : undefined,
+        }}
+      />
+    );
+  }
+  return <OperationalStatisticsEdScreen {...props} />;
+}
+
+function EdPresentation({
+  model,
+  personPhone,
+  personWaiting,
+  personNext,
+  personSwarm,
+}: {
+  model: EdPresentationModel;
+  personPhone?: ReactNode;
+  personWaiting?: ReactNode;
+  personNext?: ReactNode;
+  personSwarm?: ReactNode;
+}) {
+  const {
+    department,
+    departments,
+    comparison,
+    now,
+    paused,
+    togglePause,
+    onTheList,
+    urgent,
+    unplaced,
+    over24h,
+    longestWaitMinutes,
+    median,
+    bands,
+    noFreeBedDeclineCount,
+    notSuitableDeclineCount,
+    declineStatement,
+  } = model;
+  const accessCounts = useStatisticsCounts();
+  const countsOnly = model.executive || accessCounts.countsOnly;
+  const small = (count: StatisticsCount) => statisticsCountText(count, accessCounts.small);
+  const [stillInEdShown, inTransitShown] = model.executive
+    ? [small(model.stillInEd), small(model.inTransit)]
+    : accessCounts.parts([model.stillInEd as number, model.inTransit as number]);
+  const bandShown = model.executive
+    ? bands.map((band) => small(band.count))
+    : accessCounts.parts(bands.map((band) => band.count as number));
+  const noFreeBedShown = small(noFreeBedDeclineCount);
+  const notSuitableShown = notSuitableDeclineCount === null ? undefined : small(notSuitableDeclineCount);
+  const isPhone = useIsPhone();
+  const site = siteByCode(department.siteCode);
+  const section = statisticsSectionById("units")!;
+  const longHours = LONG_WAIT_MINUTES / 60;
+  const veryLongHours = VERY_LONG_WAIT_MINUTES / 60;
   return (
     <StatisticsPage
       section={section}
@@ -226,7 +459,7 @@ export function StatisticsEdScreen({
       }
       tools={
         <>
-          {canOpen(STATISTICS_EDS_HREF) ? (
+          {model.canOpenAllEds ? (
             <HeroTool
               href={STATISTICS_EDS_HREF}
               icon={<ListOrdered size={14} aria-hidden="true" />}
@@ -235,7 +468,7 @@ export function StatisticsEdScreen({
               All EDs
             </HeroTool>
           ) : null}
-          {canOpen(STATISTICS_COMPARE_HREF) ? (
+          {model.canOpenCompare ? (
             <HeroTool
               href={STATISTICS_COMPARE_HREF}
               icon={<Scale size={14} aria-hidden="true" />}
@@ -249,8 +482,8 @@ export function StatisticsEdScreen({
       eyebrowLabel="Emergency department"
       eyebrowDetail={<span data-testid="ward-statistics-ed-site">{site ? site.name : "Hospital not recorded"}</span>}
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause}
       exportFigures={{
         stem: department.id,
         scope: department.name,
@@ -258,7 +491,7 @@ export function StatisticsEdScreen({
           ["Open ED journeys", small(onTheList)],
           ["Still in ED", stillInEdShown],
           ["In transit or recorded departure", inTransitShown],
-          ["Longest wait", longestWait ? splitDuration(longestWait.waitMinutes) : "none"],
+          ["Longest wait", longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"],
           ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
           ["Urgent", small(urgent)],
           [`Over ${longHours}h`, small(over24h)],
@@ -276,12 +509,12 @@ export function StatisticsEdScreen({
               label="Open ED journeys"
             />
             <HeroStat
-              value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
+              value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
               label="Longest"
               tone={
-                longestWait && longestWait.waitMinutes >= VERY_LONG_WAIT_MINUTES
+                longestWaitMinutes !== null && longestWaitMinutes >= VERY_LONG_WAIT_MINUTES
                   ? "danger"
-                  : longestWait && longestWait.waitMinutes >= LONG_WAIT_MINUTES
+                  : longestWaitMinutes !== null && longestWaitMinutes >= LONG_WAIT_MINUTES
                     ? "warning"
                     : undefined
               }
@@ -297,12 +530,12 @@ export function StatisticsEdScreen({
             label="Open ED journeys"
           />
           <HeroStat
-            value={longestWait ? splitDuration(longestWait.waitMinutes) : "none"}
+            value={longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"}
             label={
               <span className={styles.flagged}>
-                {longestWait && longestWait.waitMinutes >= VERY_LONG_WAIT_MINUTES ? (
+                {longestWaitMinutes !== null && longestWaitMinutes >= VERY_LONG_WAIT_MINUTES ? (
                   <StatusGlyph tone="danger" size={9} />
-                ) : longestWait && longestWait.waitMinutes >= LONG_WAIT_MINUTES ? (
+                ) : longestWaitMinutes !== null && longestWaitMinutes >= LONG_WAIT_MINUTES ? (
                   <StatusGlyph tone="warning" size={9} />
                 ) : null}
                 Longest
@@ -326,55 +559,25 @@ export function StatisticsEdScreen({
           <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />
         </PhoneBody>
       ) : isPhone ? (
-        <EdPhone
-          waiting={waitingMovements}
-          nameOf={nameOf}
-          wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? "Ward accepted"}
-          next={nextToCross[0] ?? null}
-        />
+        personPhone
       ) : (
         <>
           {/* Direction A: the cards on the right set the row's height; the wait list follows it and
           scrolls inside, so both columns end on the same line however many people are waiting. */}
           <FlushRow layout="lead2">
             <Follow>
-              <Waits
-                waiting={waitingMovements}
-                nameOf={nameOf}
-                over24h={over24h}
-                over48h={over48h}
-                onTheList={onTheList}
-                waitingText={small(onTheList)}
-                countsOnly={countsOnly}
-                longestName={longestWait ? nameOf(longestWait.movement) : ""}
-                longestText={longestWait ? splitDuration(longestWait.waitMinutes) : ""}
-              />
+              {personWaiting ?? (
+                <StatCard icon={Clock} title="Open ED journeys" id="ed-waiting" data-testid="ward-statistics-ed-wait">
+                  <CardBody>
+                    <PeopleNotListed testId="ward-statistics-ed-wait-not-listed" />
+                  </CardBody>
+                </StatCard>
+              )}
             </Follow>
             <FlushStack>
               <StatCard icon={AlertTriangle} title={`Next to cross ${longHours}h`} aside="Count down" id="ed-next">
                 <CardBody className={styles.bodyStack}>
-                  {countsOnly ? (
-                    <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />
-                  ) : nextToCross.length === 0 ? (
-                    <p className={styles.muted}>Nobody is waiting under {longHours}h</p>
-                  ) : (
-                    <ul className={detail.crossList}>
-                      {nextToCross.map(({ movement, waitMinutes }) => (
-                        <li key={movement.id} className={detail.crossRow}>
-                          <span>
-                            <Link href={movementHref(movement.id)} className={detail.crossName}>
-                              {nameOf(movement)}
-                            </Link>
-                            <span className={detail.secondary}>{durMinutes(waitMinutes)} waiting</span>
-                          </span>
-                          <span className={detail.crossDue}>
-                            <b>in {durMinutes(LONG_WAIT_MINUTES - waitMinutes)}</b>
-                            <span className={detail.secondary}>to {longHours}h</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  {personNext ?? <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />}
                 </CardBody>
               </StatCard>
               <StatCard
@@ -391,7 +594,7 @@ export function StatisticsEdScreen({
                     columns={bands.map((band, index) => ({
                       id: band.label,
                       label: bandShortLabel(index),
-                      ...withheldBar(band.count, bandShown[index]!),
+                      ...withheldBar(exactStatisticsCount(band.count) ?? 0, bandShown[index]!),
                     }))}
                   />
                   <ul className={styles.srOnly}>
@@ -421,7 +624,7 @@ export function StatisticsEdScreen({
                         <span className={styles.tileLabel}>
                           <StatusGlyph tone="closed" size={9} /> Declined, other
                         </span>
-                        <span className={styles.tileValue}>{notSuitableShown ?? "none"}</span>
+                        <span className={styles.tileValue}>{notSuitableShown ?? "unknown"}</span>
                       </div>
                     </div>
                     <SrOnly>
@@ -429,16 +632,16 @@ export function StatisticsEdScreen({
                         {noFreeBedShown} {noFreeBedShown === 1 ? "decline names" : "declines name"} a ward that had no
                         suitable bed.
                       </p>
-                      {declinesReadout.ok ? (
+                      {notSuitableDeclineCount !== null ? (
                         <p data-testid="ward-stat-ed-declined-not-suitable">
                           {notSuitableShown} {notSuitableShown === 1 ? "decline gave" : "declines gave"} a reason other
                           than having no suitable bed.
                         </p>
                       ) : null}
                     </SrOnly>
-                    {declinesReadout.ok ? null : (
+                    {notSuitableDeclineCount !== null ? null : (
                       <p className={detail.note} data-testid="ward-stat-ed-declined-not-suitable-unavailable">
-                        {declinesReadout.statement}
+                        {declineStatement}
                       </p>
                     )}
                   </div>
@@ -456,25 +659,11 @@ export function StatisticsEdScreen({
           >
             <CardBody className={styles.bodyStack}>
               {/* One mark per person is a list of people, so the executive desk gets the note instead. */}
-              {countsOnly ? (
-                <PeopleNotListed testId="ward-statistics-ed-everyone-not-listed" />
-              ) : (
-                <>
-                  <StatisticsEdSwarm
-                    rows={swarmRows}
-                    labelWidth={176}
-                    label={`Each open ED journey, by time since opening, ${department.name} first`}
-                  />
-                  <p className={detail.note}>
-                    {department.name} is the first row. {LONG_WAIT_MINUTES / 60}h and {VERY_LONG_WAIT_MINUTES / 60}h
-                    lines are your defaults, not legal limits.
-                  </p>
-                </>
-              )}
+              {personSwarm ?? <PeopleNotListed testId="ward-statistics-ed-everyone-not-listed" />}
             </CardBody>
           </StatCard>
 
-          {departments.length > 1 ? (
+          {comparison.length > 1 ? (
             <StatCard
               icon={Scale}
               title="Across departments"
@@ -514,7 +703,7 @@ export function StatisticsEdScreen({
                         >
                           <th scope="row">
                             <span className={styles.codeLead}>{each.siteCode}</span>
-                            {here ? (
+                            {here || !departments.some((item) => item.id === each.id) ? (
                               each.name
                             ) : (
                               <Link href={edStatisticsHref(each.id)} className={styles.rowLink}>
@@ -530,10 +719,14 @@ export function StatisticsEdScreen({
                             {small(figures.onTheList)}
                           </td>
                           <td
-                            className={figures.longestWait ? styles.num : `${styles.num} ${styles.muted}`}
+                            className={
+                              figures.longestWaitMinutes !== null ? styles.num : `${styles.num} ${styles.muted}`
+                            }
                             data-testid={`ward-stat-ed-comparison-longest-${each.id}`}
                           >
-                            {figures.longestWait ? splitDuration(figures.longestWait.waitMinutes) : "none waiting"}
+                            {figures.longestWaitMinutes !== null
+                              ? splitDuration(figures.longestWaitMinutes)
+                              : "none waiting"}
                           </td>
                           <td
                             className={breached === 0 ? `${styles.num} ${styles.muted}` : styles.num}
@@ -712,13 +905,7 @@ function bandShortLabel(index: number): string {
   return next ? `${from}-${next.fromMinutes / 60}h` : `${from}h+`;
 }
 
-function ChangeDepartment({
-  departments,
-  currentId,
-}: {
-  departments: readonly EmergencyDepartment[];
-  currentId: string;
-}) {
+function ChangeDepartment({ departments, currentId }: { departments: readonly PublicEd[]; currentId: string }) {
   const router = useOptionalRouter();
   return (
     <Menu

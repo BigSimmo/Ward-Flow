@@ -5,6 +5,232 @@ import * as engine from "./dist/engine.mjs";
 import { createWorkspaceStore } from "./postgres.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 
+// Production store and reporting engine; the double only schedules the locked SQL reads.
+/** @param {{ archived?: any[], count?: number, deadline?: number, project?: (...args: any[]) => any }} [options] */
+function executiveBoundary({
+  archived = [],
+  count = archived.length,
+  deadline,
+  project = engine.executiveReport,
+} = {}) {
+  let time = at.getTime();
+  let expiry = deadline ?? time + 3_600_000;
+  let revision = 7;
+  let projections = 0;
+  let archiveReads = 0;
+  let locked = false;
+  let receipt;
+  let world = engine.seedWorld(at);
+  const access = { role: "executive", scope: { kind: "service", service: "North Metro" } };
+  const membershipId = "55555555-5555-4555-8555-555555555555";
+  const view = { actorId, membershipId, access, version: 14, grants: [], accessUntil: expiry };
+  const query = async (sql, values = []) => {
+    if (sql === "BEGIN") return { rows: [] };
+    if (sql === "COMMIT" || sql === "ROLLBACK") {
+      locked = false;
+      return { rows: [] };
+    }
+    if (sql.startsWith("SELECT max(version)")) return { rows: [{ version: 14 }] };
+    if (sql.includes("FROM ward_flow.workspaces") && sql.includes("FOR ")) {
+      locked = true;
+      return {
+        rows: [{ data_mode: "prototype", revision, payload: structuredClone(world), cache_updated_at: new Date(at) }],
+      };
+    }
+    if (sql.includes("FROM ward_flow.workspace_records")) return { rows: [] };
+    if (sql.startsWith("SELECT id, role, scope")) {
+      assert.equal(locked, true);
+      return {
+        rows: [
+          { id: membershipId, ...access, kind: "role", last_used_at: new Date(time), expires_at: new Date(expiry) },
+        ],
+      };
+    }
+    if (sql.startsWith("SELECT patient_id, opened_at, until")) return { rows: [] };
+    if (sql.startsWith("SAVEPOINT") || sql.startsWith("RELEASE SAVEPOINT")) return { rows: [] };
+    if (sql.startsWith("SELECT count(*)::integer AS archived")) return { rows: [{ archived: count }] };
+    if (sql.startsWith("SELECT collection, record_id, closed_at, body FROM ward_flow.archived_records")) {
+      assert.equal(locked, true, "Archive hydration uses the locked transaction connection");
+      assert.deepEqual(values, [workspaceId, world.state.worldGeneration]);
+      assert.match(sql, /ORDER BY closed_at DESC, collection, record_id LIMIT 5000$/);
+      archiveReads++;
+      return { rows: structuredClone(archived) };
+    }
+    if (sql.startsWith("SELECT fingerprint, status, result"))
+      return { rows: receipt ? [receipt] : [], rowCount: receipt ? 1 : 0 };
+    if (sql.startsWith("INSERT INTO ward_flow.commands")) {
+      receipt = { fingerprint: values[3], status: values[4], result: values[5] };
+      return { rows: [] };
+    }
+    if (sql.startsWith("SELECT status, result")) return { rows: receipt ? [receipt] : [] };
+    if (sql.startsWith("INSERT INTO ward_flow.audit")) return { rows: [] };
+    assert.fail(`Unexpected executive boundary SQL: ${sql.slice(0, 100)}`);
+  };
+  const store = createWorkspaceStore(
+    { query, connect: async () => ({ query, release() {} }) },
+    {
+      workspaceId,
+      engine: {
+        ...engine,
+        executiveReport(...args) {
+          projections++;
+          return project(...args);
+        },
+      },
+      clock: () => new Date(time),
+      // A slow runner must not add a command timing line (P011) to a log that fails on any line.
+      slowCommandMs: 60_000,
+      log: () => assert.fail("Unexpected diagnostic"),
+    },
+  );
+  return {
+    store,
+    view,
+    access,
+    world,
+    counts: () => ({ projections, archiveReads }),
+    advance: (minutes) => {
+      time += minutes * 60_000;
+    },
+    expire: (value) => {
+      expiry = value;
+    },
+    replace: (next) => {
+      world = next;
+      revision++;
+    },
+  };
+}
+
+function assertExecutiveSnapshot(snapshot) {
+  assert.deepEqual(
+    Object.keys(snapshot).sort(),
+    ["kind", "dataMode", "actorId", "revision", "accessContext", "accessUntil", "now", "report", "demoControls"].sort(),
+  );
+  assert.equal(snapshot.kind, "executive-aggregate");
+  assert.equal(snapshot.actorId, actorId);
+  assert.match(snapshot.accessContext, /^[a-f0-9]{64}$/);
+  assert.equal(Number.isFinite(snapshot.accessUntil), true);
+  assert.equal(snapshot.now, snapshot.report.network.asAt.now);
+  assert.equal(snapshot.demoControls, false);
+}
+
+test("executive locked read and unchanged poll deliver only the complete aggregate, caching the report by committed inputs", async () => {
+  const boundary = executiveBoundary();
+  const first = await boundary.store.read(actorId, boundary.view);
+  assertExecutiveSnapshot(first);
+  const started = performance.now();
+  const poll = await boundary.store.poll(actorId, first.revision, boundary.view, first.accessContext);
+  const elapsed = performance.now() - started;
+  assert.equal(poll.notModified, false);
+  assertExecutiveSnapshot(poll.snapshot);
+  assert.equal(poll.snapshot.report, first.report);
+  assert.deepEqual(boundary.counts(), { projections: 1, archiveReads: 1 });
+  console.log(`Executive cache-hit locked poll: ${elapsed.toFixed(1)} ms`);
+  assert.equal(JSON.stringify(first).includes(boundary.world.state.patients[0].id), false);
+  boundary.advance(1);
+  const later = await boundary.store.poll(actorId, first.revision, boundary.view, first.accessContext);
+  assertExecutiveSnapshot(later.snapshot);
+  assert.equal(later.snapshot.now, first.now + 1);
+  assert.equal(boundary.counts().projections, 2);
+});
+
+test("executive archive hydration precedes service scope, prefers live ids and rejects incomplete retention", async () => {
+  const world = engine.seedWorld(at);
+  const live = world.state.movements[0];
+  const alert = {
+    id: "SYN-ARCHIVED-ALERT",
+    title: "Synthetic archive test",
+    message: "Synthetic archive test",
+    severity: "advisory",
+    category: "capacity_gridlock",
+    targetScope: "all",
+    targetScopeLabel: "All wards",
+    durationMinutes: 60,
+    dispatchedAt: 0,
+    expiresAt: 60,
+    dispatchedByRole: "coordinator",
+    dispatchedByName: "Synthetic desk",
+    status: "stood_down",
+    stoodDownAt: 0,
+    acknowledgedUnits: [],
+  };
+  const boundary = executiveBoundary({
+    archived: [
+      {
+        collection: "movements",
+        record_id: live.id,
+        closed_at: 0,
+        body: { ...live, patientId: "invalid-duplicate-must-not-win" },
+      },
+      { collection: "broadcastAlerts", record_id: alert.id, closed_at: 0, body: alert },
+    ],
+    project(full, access, time) {
+      assert.equal(full.state.movements.filter((row) => row.id === live.id).length, 1);
+      assert.equal(full.state.movements.find((row) => row.id === live.id).patientId, live.patientId);
+      assert.ok(
+        full.state.broadcastAlerts.some((row) => row.id === alert.id),
+        "Retained global archive is hydrated before the reporting projector scopes it",
+      );
+      assert.deepEqual(access.scope, { kind: "service", service: "North Metro" });
+      return engine.executiveReport(full, access, time);
+    },
+  });
+  assertExecutiveSnapshot(await boundary.store.read(actorId, boundary.view));
+  for (const options of [
+    { count: 5001 },
+    { count: 1 },
+    { archived: [{ collection: "patients", record_id: "unknown", closed_at: 0, body: { id: "unknown" } }] },
+  ]) {
+    const invalid = executiveBoundary(options);
+    await assert.rejects(invalid.store.read(actorId, invalid.view), /Executive reporting is unavailable/);
+    assert.equal(invalid.counts().projections, 0);
+  }
+});
+
+test("executive membership lifetime is finite and rechecked after expensive projection", async () => {
+  for (const deadline of [Infinity, NaN, at.getTime() - 1]) {
+    const boundary = executiveBoundary({ deadline });
+    await assert.rejects(boundary.store.read(actorId, boundary.view), /role-ended/);
+    assert.equal(boundary.counts().projections, 0);
+  }
+  let boundary;
+  boundary = executiveBoundary({
+    project(...args) {
+      const report = engine.executiveReport(...args);
+      boundary.advance(61);
+      return report;
+    },
+  });
+  await assert.rejects(boundary.store.read(actorId, boundary.view), /role-ended/);
+  await assert.rejects(boundary.store.archive(boundary.view), /does not include record access/);
+  assert.equal((await boundary.store.logView(boundary.view, "synthetic-record", "patient")).status, 403);
+});
+
+test("executive command denial, replay and mismatched-command conflict all use the aggregate boundary", async () => {
+  const boundary = executiveBoundary();
+  await boundary.store.read(actorId, boundary.view);
+  const event = { type: "ADVANCE_CLOCK", role: "demo", minutes: 1 };
+  const first = await boundary.store.command(actorId, "executive-refusal", 7, event, { view: boundary.view });
+  assert.equal(first.status, 422);
+  assertExecutiveSnapshot(first.body.snapshot);
+  const replay = await boundary.store.command(actorId, "executive-refusal", 7, event, { view: boundary.view });
+  assert.equal(replay.body.replayed, true);
+  assertExecutiveSnapshot(replay.body.snapshot);
+  const conflict = await boundary.store.command(actorId, "executive-refusal", 6, event, { view: boundary.view });
+  assert.equal(conflict.status, 422);
+  assertExecutiveSnapshot(conflict.body.snapshot);
+  const receipt = await boundary.store.receipt(actorId, "executive-refusal");
+  assert.ok(receipt);
+  assert.deepEqual(Object.keys(receipt).sort(), ["commandRevision", "outcome"]);
+  assert.equal(JSON.stringify([first, replay, conflict, receipt]).includes(boundary.world.state.patients[0].id), false);
+  assert.deepEqual(
+    boundary.counts(),
+    { projections: 4, archiveReads: 4 },
+    "Uncommitted transaction replies never enter the report cache",
+  );
+});
+
 const at = new Date("2026-10-25T04:00:00Z");
 const actorId = "11111111-1111-4111-8111-111111111111";
 const workspaceId = "22222222-2222-4222-8222-222222222222";
@@ -271,11 +497,10 @@ test("settled and withdrawn sender summaries retain their actual decision times 
   }
 });
 
-test("snapshot sibling is absent for ED, executive, coordinator and an unbound store read", async () => {
+test("snapshot sibling is absent for ED, coordinator and an unbound store read; executive requires a membership", async () => {
   const { world } = fixture();
   for (const access of [
     { role: "ed", scope: { kind: "ed", edId: "jhc-ed" } },
-    { role: "executive", scope: { kind: "statewide" } },
     { role: "coordinator", scope: { kind: "statewide" } },
   ]) {
     const snapshot = await readSnapshot(world, access);
@@ -284,6 +509,7 @@ test("snapshot sibling is absent for ED, executive, coordinator and an unbound s
   }
   const { access } = fixture();
   assert.equal(Object.hasOwn(await readSnapshot(world, access, [], { actorId: undefined }), "partialView"), false);
+  await assert.rejects(readSnapshot(world, { role: "executive", scope: { kind: "statewide" } }), /role-ended/);
 });
 
 test("ward grant summaries expose restriction only and use the actual absolute grant lifetime", async () => {

@@ -134,11 +134,37 @@ function ownReferredUnits(movement: Movement, unitIn: (unitId: string) => boolea
       });
   }
   if (movement.waitlistedUnitIds) copy.waitlistedUnitIds = movement.waitlistedUnitIds.filter(unitIn);
+  const answers = [
+    ...movement.declines,
+    ...movement.unwinds.filter((entry) => entry.kind === "acceptance_withdrawn" && entry.unitId !== undefined),
+  ];
+  const hiddenAnswers = answers.filter((answer) => answer.unitId !== undefined && !unitIn(answer.unitId));
+  // An answer duplicated into chronology retains its destination's privacy, including its time.
+  // Explicit provenance distinguishes simultaneous identical own/foreign answers. Legacy entries
+  // have only the answer's time/reason tuple; an ambiguous match is withheld conservatively.
+  copy.stageChanges = movement.stageChanges.filter((change) =>
+    change.unitId !== undefined
+      ? unitIn(change.unitId)
+      : !hiddenAnswers.some(
+          (answer) => change.reason !== undefined && answer.at === change.at && answer.reason === change.reason,
+        ),
+  );
   if (sent) {
     // The sender's truthful escalation progress is a response sibling. Neither a contact nor a
     // reason copied into the chronology may reveal a foreign request through this record.
     delete copy.escalation;
-    copy.stageChanges = movement.stageChanges.map((change) => {
+    copy.stageChanges = copy.stageChanges.map((change) => {
+      if (
+        change.unitId !== undefined ||
+        answers.some(
+          (answer) =>
+            answer.unitId !== undefined &&
+            unitIn(answer.unitId) &&
+            answer.at === change.at &&
+            answer.reason === change.reason,
+        )
+      )
+        return change;
       const chronology = { ...change };
       delete chronology.reason;
       return chronology;
@@ -308,6 +334,24 @@ function senderReferralCopy(referral: Referral, ownLine: (addressing: Addressing
   });
   const copy = trimReferral({ ...referral, destinations }, () => true, true)!;
   return withoutHiddenReassessmentCopies(referral, copy, hidden);
+}
+
+/** A destination-ending closure must not disclose a team absent from this desk's referral copy.
+ * The producer records the actual follow-up referral, which can differ from movement.referralId.
+ * Without that provenance, legacy free text cannot safely identify its permitted destination. */
+function destinationClosureCopy(movement: Movement, source: readonly Referral[], shown: readonly Referral[]): Movement {
+  const closure = movement.closure;
+  if (!closure || movement.edOutcome !== "for_community_follow_up") return movement;
+  const referral = closure.referralId === undefined ? undefined : source.find((row) => row.id === closure.referralId);
+  const visible = referral === undefined ? undefined : shown.find((row) => row.id === referral.id);
+  const teams = referral?.destinations.filter((line) => line.destination.kind === "community_team") ?? [];
+  // A referral with several community arms does not identify which arm supplied free text.
+  // Preserve it only when every possible source arm is present on the permitted copy.
+  const permitted = teams.length > 0 && teams.every((line) => visible?.destinations.includes(line));
+  if (permitted) return movement;
+  const projected = { ...closure, reason: "" };
+  delete projected.referralId;
+  return { ...movement, closure: projected };
 }
 
 /**
@@ -1208,6 +1252,10 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
       if (trimmed) referrals.push(trimmed);
     }
   }
+
+  // Apply after grant expansion too, so a grant cannot restore hidden destination text/IDs.
+  if (access.role === "ward" || access.role === "bed_manager")
+    movements = movements.map((movement) => destinationClosureCopy(movement, workspace.referrals, referrals));
 
   // Apply after grant expansion as well: community and count-only executive snapshots never
   // carry typed criterion text. Both keep the same criterion count and tick times.

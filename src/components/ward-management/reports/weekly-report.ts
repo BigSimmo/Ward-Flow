@@ -72,7 +72,7 @@ export function edWaitEnd(movement: Movement, now: Instant): Instant | null {
   return edInpatientWaitEnd(movement, now);
 }
 
-export type ReasonCount = { reason: string; count: number };
+type ReasonCount = { reason: string; count: number };
 
 export type WeeklyReport = {
   week: ReportWeek;

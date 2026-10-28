@@ -493,6 +493,9 @@ export type MovementClosure = {
   at: Instant;
   outcome: "arrived" | "did_not_proceed";
   reason: string;
+  /** Actual created/reused referral behind a destination-bearing closure reason. It may differ
+   * from the movement's original referral, and is withheld when that destination is hidden. */
+  referralId?: string;
 };
 
 type MovementBase = MovementRoot & LegalFormExpiryMetadata;

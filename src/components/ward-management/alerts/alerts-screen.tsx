@@ -141,13 +141,12 @@ export function AlertsScreen() {
 function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
+  const deskRole = access.role === "admin" ? "executive" : access.role;
   const coordDesk = access.role === "coordinator";
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
   // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
   const broadcastDisabledReason =
-    access.role === "coordinator" || access.role === "bed_manager"
-      ? undefined
-      : "Only the coordinator or a bed manager can broadcast.";
+    coordDesk || access.role === "bed_manager" ? undefined : "Only the coordinator or a bed manager can broadcast.";
 
   const state = useWardFlowSelect(
     "movements",
@@ -182,7 +181,7 @@ function AlertsWorkspace() {
   } = state;
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
-  const raise = useWardRaise("coordinator");
+  const raise = useWardRaise(deskRole);
   const live = usePageLive();
   const now = live.now;
   // Phone layout: the selected alert opens in a sheet instead of the side panel.
@@ -737,7 +736,7 @@ function AlertsWorkspace() {
     setTab("broadcast");
     dispatch({
       type: "DISPATCH_BROADCAST_ALERT",
-      role: "coordinator",
+      role: deskRole,
       now: clockNow,
       title: broadcastTitle,
       message: broadcastMessage,
@@ -746,7 +745,7 @@ function AlertsWorkspace() {
       targetScope: broadcastScope,
       targetScopeLabel,
       durationMinutes: broadcastDurationMinutes,
-      dispatchedByName: "State Mental Health Bed Desk Coordinator",
+      dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
       kind: broadcastType === "bed_call" ? "bed_call" : "directive",
     });
   };
@@ -764,10 +763,10 @@ function AlertsWorkspace() {
     });
     dispatch({
       type: "STAND_DOWN_BROADCAST_ALERT",
-      role: "coordinator",
+      role: deskRole,
       now: clockNow,
       alertId,
-      stoodDownByRole: "coordinator",
+      stoodDownByRole: deskRole,
     });
   };
 

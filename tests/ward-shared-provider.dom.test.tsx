@@ -5,7 +5,11 @@ import {
   useWardDataMode,
   type WardSharedConnection,
 } from "../src/components/ward-management/ward-shared-access";
-import { WardFlowProvider, useWardFlow } from "../src/components/ward-management/ward-flow-provider";
+import {
+  WardFlowProvider,
+  useWardFlow,
+  WARD_FLOW_DEMO_STORAGE_KEY,
+} from "../src/components/ward-management/ward-flow-provider";
 import { WardDemoMenu } from "../src/components/ward-management/shell/ward-demo-menu";
 import { WardAccountActions } from "../src/components/ward-management/shell/ward-account-actions";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
@@ -80,6 +84,8 @@ function connection(): WardSharedConnection {
   return {
     enabled: true,
     signedIn: true,
+    actorId: "synthetic-shared-account",
+    access: { role: "coordinator", scope: { kind: "statewide" } },
     status: "ready",
     error: null,
     eventLog: [],
@@ -100,6 +106,8 @@ function connection(): WardSharedConnection {
 }
 beforeEach(() => {
   fake.connection = connection();
+  // Each test starts at the default desk, so an earlier test's desk is not re-adopted (and saved) here.
+  resetWardAccessStoreForTests();
   vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
 });
 afterEach(() => {
@@ -450,7 +458,7 @@ describe("shared provider boundary", () => {
     );
     expect(screen.getByText("Coordinator · shared synthetic workspace")).toBeInTheDocument();
     expect(screen.getByText("45")).toBeInTheDocument();
-    expect(read).not.toHaveBeenCalled();
+    expect(read).not.toHaveBeenCalledWith(WARD_FLOW_DEMO_STORAGE_KEY);
     expect(write).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Advance" }));

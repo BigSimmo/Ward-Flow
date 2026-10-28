@@ -20,6 +20,10 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
+import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 
 /**
  * Executive Statistics on one ward (role access plan, Josh's yes 15 Oct 2026): below the headline,
@@ -55,7 +59,35 @@ const THREE = ["ADM-exec-a", "ADM-exec-b", "ADM-exec-c"].map(
     }) as unknown as Admission,
 );
 
+let executive = false;
+/**
+ * An executive account gets the released aggregate report, never the operational world, so its
+ * page is rendered from the report projected out of the same three admissions.
+ */
 function renderWard() {
+  if (executive) {
+    const state = { ...seedWardFlowStateAt(0), admissions: THREE };
+    const data = projectExecutiveReportingFoundation(
+      state,
+      { role: "executive", scope: { kind: "statewide" } },
+      {
+        now: NOW_ANCHOR,
+        dayZero: "2026-10-24T00:00:00.000Z",
+        startedAt: "2026-10-24T00:00:00.000Z",
+        places: wardPlaceLookup(state.units),
+      },
+    );
+    const binding = { actorId: "synthetic-ward-report", accessContext: "d".repeat(64), epoch: 0, revision: 1 };
+    return render(
+      <ExecutiveStatisticsProvider
+        binding={binding}
+        snapshot={{ binding, receivedAt: 100, expiresAt: 200, data }}
+        now={150}
+      >
+        <StatisticsWardScreen unitId={UNIT!.id} />
+      </ExecutiveStatisticsProvider>,
+    );
+  }
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <StatisticsWardScreen unitId={UNIT!.id} units={[UNIT!]} admissions={THREE} />
@@ -64,6 +96,7 @@ function renderWard() {
 }
 
 function asExecutive() {
+  executive = true;
   act(() => {
     setWardFeatureFlagOnDevice("role-access", true);
     setWardAccess({ role: "executive", scope: { kind: "statewide" } });
@@ -71,6 +104,7 @@ function asExecutive() {
 }
 
 afterEach(() => {
+  executive = false;
   vi.unstubAllGlobals();
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
@@ -90,8 +124,10 @@ describe("ward statistics on the executive desk", () => {
     const reasonCounts = screen
       .getAllByTestId(/^ward-stat-blocked-by-reason-.+-count$/)
       .map((element) => element.textContent);
-    expect(reasonCounts).toContain("fewer than 5");
+    // The complete release words a small count or withholds it; it is never the exact number.
+    expect(reasonCounts.some((count) => count === "fewer than 5" || count === "not shown")).toBe(true);
     expect(reasonCounts).not.toContain("1");
+    expect(reasonCounts).not.toContain("2");
 
     expect(screen.getByTestId("ward-statistics-ward-roster-not-listed")).toHaveTextContent(
       "Counts only on this desk, so people are not listed.",

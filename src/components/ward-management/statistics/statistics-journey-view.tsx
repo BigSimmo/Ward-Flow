@@ -2,6 +2,7 @@
 
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useMemo, useState, type CSSProperties } from "react";
+import Link from "next/link";
 import { BedDouble, Clock, Columns3, Route } from "lucide-react";
 
 import { Button, CardBody, Legend, SrOnly, StatusGlyph, cx, type WfTone } from "@/components/wf";
@@ -22,6 +23,16 @@ import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statis
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
 import styles from "./statistics-journey-view.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import type { ExecutiveReportingFoundation, ReleasedCount } from "./executive-statistics-contract";
+import {
+  ExecutiveStatisticsUnavailable,
+  PeopleNotListed,
+  exactStatisticsCount,
+  statisticsCountText,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 export type JourneyStageId = "waiting" | "referred" | "accepted" | "moving" | "ward" | "planned" | "discharged";
 
@@ -33,6 +44,11 @@ export type JourneyStage = {
   tone: WfTone;
   count: number;
   breakdown: ReadonlyArray<{ label: string; value: string | number; tone?: WfTone }>;
+};
+
+type PresentedJourneyStage = Omit<JourneyStage, "count" | "breakdown"> & {
+  count: StatisticsCount | string;
+  breakdown: ReadonlyArray<{ label: string; value: string | StatisticsCount; tone?: WfTone }>;
 };
 
 const IN_TRANSIT = ["pulled", "handover_ready", "moving"] as const satisfies readonly MovementStage[];
@@ -221,18 +237,26 @@ const NODE_MIN = 28;
 /** The bed bar's axis ticks, in per cent. */
 const AXIS_PERCENTS = [0, 50, 100] as const;
 
+const journeyFigureText = (value: string | StatisticsCount) =>
+  typeof value === "string" ? value : statisticsCountText(value);
+const journeyExactValue = (value: string | StatisticsCount) =>
+  typeof value === "string" ? null : exactStatisticsCount(value);
+
 function JourneyRibbon({
   stages,
   selected,
   onSelect,
 }: {
-  stages: readonly JourneyStage[];
+  stages: readonly PresentedJourneyStage[];
   selected: JourneyStageId | null;
   onSelect: (id: JourneyStageId) => void;
 }) {
-  const max = Math.max(1, ...stages.map((stage) => stage.count));
+  const max = Math.max(1, ...stages.map((stage) => journeyExactValue(stage.count) ?? 0));
   const gap = (VIEW_W - stages.length * NODE_W) / Math.max(1, stages.length - 1);
-  const height = (count: number) => Math.max(NODE_MIN, Math.sqrt(count / max) * NODE_MAX);
+  const height = (count: string | StatisticsCount) => {
+    const exact = journeyExactValue(count);
+    return exact === null ? NODE_MIN : Math.max(NODE_MIN, Math.sqrt(exact / max) * NODE_MAX);
+  };
   const x = (index: number) => index * (NODE_W + gap);
   const pct = (units: number) => `${(units / VIEW_W) * 100}%`;
 
@@ -274,7 +298,7 @@ function JourneyRibbon({
                   type="button"
                   className={cx(styles.node, on && styles.nodeOn)}
                   aria-pressed={on}
-                  aria-label={`${stage.label}: ${stage.count}, ${stage.caption.toLowerCase()}. Show this stage below.`}
+                  aria-label={`${stage.label}: ${journeyFigureText(stage.count)}, ${stage.caption.toLowerCase()}. Show this stage below.`}
                   data-testid={`ward-statistics-journey-node-${stage.id}`}
                   onClick={() => onSelect(stage.id)}
                   style={
@@ -285,7 +309,7 @@ function JourneyRibbon({
                     } as CSSProperties
                   }
                 >
-                  <span className={styles.nodeCount}>{stage.count}</span>
+                  <span className={styles.nodeCount}>{journeyFigureText(stage.count)}</span>
                   <span className={styles.nodeBox} aria-hidden="true" />
                   <span className={styles.nodeLabel}>
                     <StatusGlyph tone={stage.tone} size={9} />
@@ -312,7 +336,25 @@ type HospitalRow = {
   occupied: number;
 };
 
-export function StatisticsJourneyView({
+type JourneyViewProps = {
+  onShowBoard: () => void;
+  live?: { state: ReturnType<typeof useStatisticsLive>["state"]; now: Instant };
+};
+
+export function StatisticsJourneyView(props: JourneyViewProps) {
+  const control = useExecutiveStatisticsControl();
+  const data = useExecutiveStatistics();
+  const access = useEffectiveWardAccess();
+  if (control.executive || access.role === "executive")
+    return data ? (
+      <ExecutiveJourneyView data={data} onShowBoard={props.onShowBoard} />
+    ) : (
+      <ExecutiveStatisticsUnavailable />
+    );
+  return <OperationalJourneyView {...props} />;
+}
+
+function OperationalJourneyView({
   onShowBoard,
   live: liveProp,
 }: {
@@ -324,7 +366,6 @@ export function StatisticsJourneyView({
   const live = liveProp ?? ownLive;
   const { units, admissions, bedReleases, leaveBeds, movements } = live.state;
   const now = live.now;
-  const [selected, setSelected] = useState<JourneyStageId | null>(null);
 
   const stages = useMemo(
     () => journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now }),
@@ -381,6 +422,72 @@ export function StatisticsJourneyView({
   const totalReady = hospitals.reduce((sum, row) => sum + row.ready, 0);
   const totalPreparing = units.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0);
 
+  return (
+    <JourneyPresentation
+      {...{ onShowBoard, stages, hospitals, waitingRows, totalWaiting, totalReady, totalPreparing }}
+    />
+  );
+}
+
+function ExecutiveJourneyView({ data, onShowBoard }: { data: ExecutiveReportingFoundation; onShowBoard: () => void }) {
+  const figure = (value: ExecutiveReportingFoundation["journey"][number]["figure"]): StatisticsCount | string =>
+    value.kind === "count" ? value.count : value.kind === "bed" ? value.value : value.text;
+  const stages: PresentedJourneyStage[] = data.journey.map((stage) => ({
+    ...stage,
+    count: figure(stage.figure),
+    breakdown: stage.breakdown.map((part) => ({ label: part.label, value: figure(part.figure) })),
+  }));
+  const hospitals: HospitalRow[] = data.sites
+    .filter((site) => site.beds.ready > 0)
+    .map((site) => ({
+      code: site.code,
+      name: shortSiteName(site.name),
+      wards: site.wardIds.length,
+      beds: site.beds.total,
+      ready: site.beds.ready,
+      pulled: site.beds.pulled,
+      closed: site.beds.closed,
+      occupied: site.beds.occupied,
+    }))
+    .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
+  const waitingSummary = data.emergencyDepartments.map((ed) => ({
+    id: ed.id,
+    name: ed.name,
+    href: data.openableEmergencyDepartmentIds.includes(ed.id) ? edStatisticsHref(ed.id) : null,
+    count: ed.onTheList,
+  }));
+  return (
+    <JourneyPresentation
+      {...{ onShowBoard, stages, hospitals, waitingSummary }}
+      waitingRows={[]}
+      totalWaiting={data.network.people.waitingInEd}
+      totalReady={data.network.beds.ready}
+      totalPreparing={data.network.beds.beingMadeReady}
+    />
+  );
+}
+
+function JourneyPresentation({
+  onShowBoard,
+  stages,
+  hospitals,
+  waitingRows,
+  waitingSummary,
+  totalWaiting,
+  totalReady,
+  totalPreparing,
+}: {
+  onShowBoard: () => void;
+  stages: readonly PresentedJourneyStage[];
+  hospitals: readonly HospitalRow[];
+  waitingRows: readonly EdSwarmRow[];
+  waitingSummary?: readonly { id: string; name: string; href: string | null; count: ReleasedCount }[];
+  totalWaiting: StatisticsCount;
+  totalReady: number;
+  totalPreparing: number;
+}) {
+  const [selected, setSelected] = useState<JourneyStageId | null>(null);
+
   function select(id: JourneyStageId) {
     const next = selected === id ? null : id;
     setSelected(next);
@@ -424,7 +531,7 @@ export function StatisticsJourneyView({
                     {stage.label}
                   </h3>
                   <p className={styles.stageFigure} data-testid={`ward-statistics-journey-stage-${stage.id}-count`}>
-                    {stage.count}
+                    {journeyFigureText(stage.count)}
                   </p>
                   <p className={styles.stageCaption}>{stage.caption}</p>
                 </div>
@@ -434,7 +541,7 @@ export function StatisticsJourneyView({
                       <dt>{item.label}</dt>
                       <dd>
                         {item.tone ? <StatusGlyph tone={item.tone} size={9} /> : null}
-                        {item.value}
+                        {journeyFigureText(item.value)}
                       </dd>
                     </div>
                   ))}
@@ -543,11 +650,30 @@ export function StatisticsJourneyView({
             id="journey-waiting"
             icon={Clock}
             title="Open ED journeys"
-            meta={`${totalWaiting} open journeys from ${waitingRows.length} ${waitingRows.length === 1 ? "ED" : "EDs"}`}
+            meta={`${statisticsCountText(totalWaiting)} open journeys from ${waitingSummary?.length ?? waitingRows.length} ${(waitingSummary?.length ?? waitingRows.length) === 1 ? "ED" : "EDs"}`}
             data-testid="ward-statistics-journey-waiting"
           >
             <CardBody>
-              {waitingRows.length === 0 ? (
+              {waitingSummary ? (
+                <>
+                  <PeopleNotListed />
+                  <ul>
+                    {waitingSummary.map((row) => (
+                      <li key={row.id}>
+                        {row.href ? (
+                          <Link href={row.href}>
+                            {row.name}: {statisticsCountText(row.count)}
+                          </Link>
+                        ) : (
+                          <span>
+                            {row.name}: {statisticsCountText(row.count)}
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : waitingRows.length === 0 ? (
                 <p className={styles.empty}>No open ED journeys are recorded.</p>
               ) : (
                 <StatisticsEdSwarm
@@ -557,7 +683,11 @@ export function StatisticsJourneyView({
                   label="Each open ED journey, by originating department and time since opening"
                 />
               )}
-              <SrOnly>Each row opens that ED&apos;s statistics.</SrOnly>
+              <SrOnly>
+                {waitingSummary
+                  ? "Rows link to ED statistics where this desk can open them."
+                  : "Each row opens that ED's statistics."}
+              </SrOnly>
             </CardBody>
           </StatCard>
         </Follow>

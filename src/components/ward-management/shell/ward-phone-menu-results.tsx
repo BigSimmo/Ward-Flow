@@ -15,6 +15,7 @@ import {
   patientResultTitle,
   SearchResultIcon,
   smartSearchGroups,
+  permittedSearchResult,
   type SearchResultGroup,
   type SearchResultItem,
 } from "@/components/ward-management/ward-global-search";
@@ -22,6 +23,7 @@ import {
 import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import type { RailEntry } from "./ward-rail-entries";
+import { useCanOpenHref } from "./ward-access";
 
 /*
  * The phone menu's search results, split out of `ward-phone-menu.tsx` (16 October 2026) so the
@@ -40,6 +42,7 @@ const MENU_RESULTS_FULL = 40;
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
 function useMenuSearch(query: string, entries: RailEntry[]) {
+  const canOpenHref = useCanOpenHref();
   const { movements, patients, units, referrals, plannedAdmissions, admissions, leaveBeds, dayZero, configuration } =
     useWardFlowSelect(
       "movements",
@@ -94,7 +97,9 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
           );
     const viewHrefs = new Set(results.views.map((view) => view.href));
     const lower = needle.toLowerCase();
-    const pages = entries.filter((entry) => entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href));
+    const pages = entries.filter(
+      (entry) => canOpenHref(entry.href) && (entry.label.toLowerCase().includes(lower) || viewHrefs.has(entry.href)),
+    );
     // A screen already listed as a page drops out, including an alias titled the same (Escalation
     // is "Delays" and redirects there).
     const pageHrefs = new Set(pages.map((entry) => entry.href));
@@ -112,6 +117,10 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
                 }
               : group,
           )
+          .map((group) => ({
+            ...group,
+            items: group.items.flatMap((item) => permittedSearchResult(item, canOpenHref)),
+          }))
           .filter((group) => group.items.length > 0);
     const truncatedGroups =
       answer && answer.total > answer.rows.length ? [...results.truncatedGroups, "answers"] : results.truncatedGroups;
@@ -130,6 +139,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
     dayZero,
     configuration,
     now,
+    canOpenHref,
   ]);
 }
 

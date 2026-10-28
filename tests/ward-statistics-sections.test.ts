@@ -785,16 +785,19 @@ describe("the statistics route page's prop-passing prohibition names every overr
 
   it("StatisticsScreen really does take four optional override props, not three", () => {
     const screenSource = readFileSync(SCREEN_FILE, "utf8");
-    const signature = screenSource.slice(
-      screenSource.indexOf("export function StatisticsScreen"),
-      screenSource.indexOf("= {}) {") + "= {}) {".length,
-    );
-    // Each prop name must appear exactly once in both the destructuring and the inline type, so
-    // this is a count over the whole signature slice rather than a single occurrence check.
-    for (const prop of ["admissions", "referrals", "bedReleases", "movements"]) {
-      const occurrences = (signature.match(new RegExp(`\\b${prop}\\b`, "g")) ?? []).length;
-      expect(occurrences, `${prop} does not appear twice (destructured and typed) in the signature`).toBe(2);
-    }
+    // StatisticsScreen takes its overrides as one named prop type (the executive split hands the
+    // same props on to the operational screen), so the count is read from that type.
+    expect(screenSource).toContain("export function StatisticsScreen(props: StatisticsInputs = {}) {");
+    const typeStart = screenSource.indexOf("type StatisticsInputs = {");
+    expect(typeStart, "StatisticsInputs type not found").toBeGreaterThan(-1);
+    const propType = screenSource.slice(typeStart, screenSource.indexOf("};", typeStart) + 2);
+    const props = [...propType.matchAll(/^\s+(\w+)\?:/gm)].map((match) => match[1]);
+    expect(props, "StatisticsInputs does not list exactly the four optional overrides").toEqual([
+      "admissions",
+      "referrals",
+      "bedReleases",
+      "movements",
+    ]);
   });
 
   it("no longer says 'all three' or omits movements from the named props", () => {
