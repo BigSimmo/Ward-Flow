@@ -133,7 +133,8 @@ export function openDrawerForShortcut(event: KeyboardEvent): boolean {
 
 /** True when a keystroke belongs to a field, so the page shortcuts leave it alone. */
 export function isTypingTarget(target: EventTarget | null): boolean {
-  const tag = target instanceof HTMLElement ? target.tagName : "";
-  if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return true;
-  return target instanceof HTMLElement && target.isContentEditable;
+  if (!(target instanceof HTMLElement)) return false;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable) return true;
+  // Custom fields (role textbox, combobox, searchbox) count too, including a focused part inside one.
+  return target.closest('[role="textbox"], [role="combobox"], [role="searchbox"]') !== null;
 }

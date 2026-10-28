@@ -77,7 +77,7 @@ export function highlightTest(highlight: CensusHighlight | null): (row: CensusRo
 }
 
 export function countGroups(rows: readonly CensusRow[]): Record<CensusGroup, number> {
-  const counts: Record<CensusGroup, number> = { wait: 0, found: 0, move: 0, ward: 0, off: 0 };
+  const counts: Record<CensusGroup, number> = { ask: 0, wait: 0, found: 0, move: 0, ward: 0, off: 0 };
   for (const row of rows) counts[row.group] += 1;
   return counts;
 }

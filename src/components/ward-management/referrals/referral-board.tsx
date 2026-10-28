@@ -2,6 +2,7 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-shared-figures";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -173,25 +174,29 @@ const REFERRAL_ACCEPT_CONTROL =
 const REFERRAL_DECLINE_CONTROL =
   '[data-testid="ward-referral-match-decline-open"], [data-testid="ward-referral-match-decline-reason-emergency_department"], [data-testid="ward-referral-match-decline-reason-community_team"]';
 
-/** The hero's five highlight chips (v10: five at most). Refused once sits in the queue toolbar. */
+/**
+ * The hero's highlight chips. Refused once sits in the queue toolbar. P154 (Josh, 27 October 2026,
+ * option A): phone and desktop read the same type chips, Ward bed · ED · More than one · Community.
+ */
 const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, string])[] = [
   ["overdue", "Overdue"],
   ["tier1", "Tier 1"],
   ["ward", "Ward bed"],
   ["ed", "ED"],
+  ["both", "More than one"],
   ["community", "Community"],
 ];
 
 /**
- * Audit round 2 (A2-13): the phone's type chips count each referral once. A referral that asks
- * for more than one kind of place sits under Both, not under each kind, so the chips sum to the
- * hero's "awaiting decision" count. Desktop pills keep their "asks for" meaning.
+ * Audit round 2 (A2-13): the type chips count each referral once. A referral that asks for more
+ * than one kind of place sits under More than one, not under each kind, so the chips sum to the
+ * hero's "awaiting decision" count. P154: desktop pills use the same rule as the phone chips.
  */
 function askedKinds(referral: Referral): Set<string> {
   return new Set(openArms(referral).map((arm) => arm.destination.kind));
 }
 
-function phoneTypeTest(key: "ward" | "ed" | "both" | "community", referral: Referral): boolean {
+function typeTest(key: "ward" | "ed" | "both" | "community", referral: Referral): boolean {
   const kinds = askedKinds(referral);
   if (key === "both") return kinds.size > 1;
   if (kinds.size !== 1) return false;
@@ -199,23 +204,15 @@ function phoneTypeTest(key: "ward" | "ed" | "both" | "community", referral: Refe
   return kinds.has(kind);
 }
 
-function highlightTest(key: HighlightKey, referral: Referral, now: Instant, phone = false): boolean {
-  if (phone && (key === "ward" || key === "ed" || key === "both" || key === "community")) {
-    return phoneTypeTest(key, referral);
+function highlightTest(key: HighlightKey, referral: Referral, now: Instant): boolean {
+  if (key === "ward" || key === "ed" || key === "both" || key === "community") {
+    return typeTest(key, referral);
   }
   switch (key) {
     case "overdue":
       return isOverdue(referral, now);
     case "tier1":
       return referral.urgency === 1;
-    case "ward":
-      return openArms(referral).some((arm) => arm.destination.kind === "psychiatric_ward");
-    case "ed":
-      return openArms(referral).some((arm) => arm.destination.kind === "emergency_department");
-    case "community":
-      return openArms(referral).some((arm) => arm.destination.kind === "community_team");
-    case "both":
-      return askedKinds(referral).size > 1;
     case "refused":
       return declinedAddressings(referral).length > 0;
   }
@@ -390,8 +387,7 @@ export function ReferralBoard({
   const searching = searchQuery.trim() !== "";
   const shownQueued = searching ? queued.filter(matchesSearch) : queued;
   const anyHighlight = highlight !== null;
-  const isHighlighted = (referral: Referral) =>
-    highlight !== null && highlightTest(highlight, referral, now, phoneLayout);
+  const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
   const highlightedCount = anyHighlight ? shownQueued.filter(isHighlighted).length : 0;
   /*
    * Audit round 2 (A2-14): on the phone a chip FILTERS. Dimming greyed the overdue row's act-now
@@ -717,13 +713,8 @@ export function ReferralBoard({
               <ReferralPhoneChips
                 chips={(["ward", "ed", "both", "community", "refused"] as const).map((key) => ({
                   key,
-                  label:
-                    key === "refused"
-                      ? "Refused once"
-                      : key === "both"
-                        ? "Both"
-                        : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
-                  count: queued.filter((r) => highlightTest(key, r, now, true)).length,
+                  label: key === "refused" ? "Refused once" : HIGHLIGHT_LABELS.find(([k]) => k === key)![1],
+                  count: queued.filter((r) => highlightTest(key, r, now)).length,
                 }))}
                 highlight={highlight}
                 onHighlight={(key) => {
@@ -745,7 +736,7 @@ export function ReferralBoard({
             <Sheet
               open={phoneSheet !== null}
               onClose={() => setPhoneSheet(null)}
-              title={phoneSheet === "beds" ? "Beds ready statewide" : "Waiting time against due times"}
+              title={phoneSheet === "beds" ? BEDS_READY_SCOPED_TITLE : "Waiting time against due times"}
               description={DUE_TIMES_NOTE}
             >
               <div className={p.sheetHero}>

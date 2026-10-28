@@ -108,7 +108,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
         <ReferralDrawerHead s={s} />
         {s.draftRestored ? (
           <p role="status">
-            Draft restored from this session —{" "}
+            Draft restored in this tab —{" "}
             <Button variant="ghost" size="sm" onClick={s.clearRecoveredDraft}>
               Clear
             </Button>
@@ -146,6 +146,8 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
                 {previewOpen ? <ReferralLetterPreview s={s} /> : null}
                 {confirmationOpen && !previewOpen && <ReferralConfirmation s={s} />}
 
+                {/* P151: one legend for the asterisk on required labels. */}
+                <p className={styles.fieldHint}>* Required</p>
                 <ReferralPatientStep s={s} alreadyOpen={alreadyOpen} alreadyOpenHref={alreadyOpenHref} />
 
                 <ReferralDetailsStep s={s} />

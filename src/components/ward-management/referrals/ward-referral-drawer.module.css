@@ -1076,7 +1076,7 @@
 .required::after {
   margin-left: 2px;
   color: var(--wf-ink-2);
-  content: "*";
+  content: "*" / "";
 }
 
 .fieldHint {

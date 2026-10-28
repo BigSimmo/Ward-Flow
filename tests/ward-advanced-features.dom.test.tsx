@@ -129,10 +129,10 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       expect(screen.getByRole("dialog", { name: /Update Arrival Time/i })).toBeDefined();
 
       // WT-13: the travel mode opens blank, so it is chosen first.
-      fireEvent.change(screen.getByLabelText("Arrival mode"), { target: { value: "rfds" } });
+      fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "rfds" } });
 
       // Enter tracking number
-      const trackingInput = screen.getByLabelText(/Transport CAD \/ Tracking Number/i);
+      const trackingInput = screen.getByLabelText("CAD or tracking number");
       fireEvent.change(trackingInput, { target: { value: "RFDS-9912" } });
 
       // Click +2 hours preset
@@ -169,6 +169,9 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       fireEvent.change(within(dialog).getByLabelText("Select a file to record its details"), {
         target: { files: [new File(["synthetic"], "synthetic-transfer.pdf", { type: "application/pdf" })] },
       });
+      // The document type opens blank: with a file but no type, Record stays unavailable.
+      expect(submitBtn).toHaveAttribute("aria-disabled", "true");
+      fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "Form 4A Transport order" } });
       expect(submitBtn).not.toHaveAttribute("aria-disabled", "true");
       fireEvent.click(submitBtn);
 

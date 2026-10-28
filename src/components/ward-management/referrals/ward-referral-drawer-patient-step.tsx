@@ -511,7 +511,7 @@ export function ReferralPatientStep({
                 label="Describe the person"
                 htmlFor={`${sectionId}-unidentified`}
                 required
-                hint="no name on file"
+                hint="name if known, or a description"
                 error={patientShowErrors && !unidentified.trim() ? "Describe the person" : null}
                 wide
               >
@@ -522,10 +522,23 @@ export function ReferralPatientStep({
                   value={unidentified}
                   maxLength={120}
                   autoComplete="off"
-                  placeholder="For example, man about 30, brought in by police"
+                  placeholder='For example, "J. Smith (unconfirmed)" or man about 30, brought in by police'
                   onChange={(e) => setUnidentified(e.target.value)}
                 />
               </Field>
+              <div className={styles.confirmRow}>
+                <button
+                  type="button"
+                  className={styles.btn}
+                  onClick={() => {
+                    setUnidentified(null);
+                    setIsSearchOpen(true);
+                    requestAnimationFrame(() => searchInputRef.current?.focus());
+                  }}
+                >
+                  Find a patient instead
+                </button>
+              </div>
             </div>
           )}
 

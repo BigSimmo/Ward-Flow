@@ -62,6 +62,7 @@ import {
   inDaysAwayGroup,
   departureDayLabel,
   leavesToday,
+  involuntaryReturnAnswers,
   missingAnswers,
   returnStatus,
   shiftLabel,
@@ -296,8 +297,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return offset !== null && offset < 0;
     })
     .sort((a, b) => (offsetOf(a) ?? 0) - (offsetOf(b) ?? 0));
-  const nextUp =
-    readyEntries.find((entry) => statusOf(entry) === "none") ?? sorted.find((entry) => statusOf(entry) === "none");
+  // P192 (Josh, 27 Oct 2026, option A): the unplanned patient longest past discharge, as the tooltip says,
+  // whatever the table order; with nobody past discharge, the earliest date due (no date last).
+  const nextUp = entries
+    .filter((entry) => statusOf(entry) === "none")
+    .sort((a, b) => (offsetOf(a) ?? Infinity) - (offsetOf(b) ?? Infinity))[0];
 
   /* ---- selection ---- */
   const selectPlacement = (id: string, origin?: HTMLElement) => {
@@ -403,6 +407,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
         estimatedAt,
+        ...involuntaryReturnAnswers(draft),
       },
       {
         success: `${recorded}${movementFeedback}`,
@@ -453,6 +458,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
         estimatedAt,
+        ...involuntaryReturnAnswers(draft),
       },
       {
         success: sentNotice,
@@ -489,6 +495,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         transportLegalStatus: existing.transportLegalStatus,
         // The recorded departure estimate stands; agreeing the return never moves it.
         estimatedAt: existing.estimatedAt,
+        // #177: the plan's Form 4C and escort answers stand too.
+        ...(existing.form4CReceived === undefined ? {} : { form4CReceived: existing.form4CReceived }),
+        ...(existing.escortRequired === undefined ? {} : { escortRequired: existing.escortRequired }),
       },
       {
         success: agreedNotice,
@@ -836,7 +845,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 }
                 onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
               >
-                Plan next return
+                {nextUp ? `Plan next return ${patientOf(nextUp).displayName}` : "Plan next return"}
               </Button>
               <Button
                 variant="onHero"

@@ -75,3 +75,10 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+/* P006: the card is screen chrome; it must not print over Downtime pack, Handover or Discharges. */
+@media print {
+  .card {
+    display: none !important;
+  }
+}
