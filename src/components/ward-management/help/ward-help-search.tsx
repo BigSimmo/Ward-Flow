@@ -16,6 +16,11 @@ import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult }
 import type { WardTourRole } from "./ward-help-store";
 import styles from "./ward-help-search.module.css";
 
+/** Native fragment navigation keeps the mounted workspace and notifies Settings. */
+function openHelpTab(tab: string) {
+  if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+}
+
 function roleLabel(role: WardTourRole): string {
   return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
 }
@@ -100,7 +105,9 @@ export function WardHelpSearch({
     if (href) {
       close(false);
       onNavigate?.();
-      router.push(href);
+      const [path, tab] = href.split("#");
+      if (path === window.location.pathname && tab) openHelpTab(tab);
+      else router.push(href);
     }
   }
 

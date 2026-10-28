@@ -555,7 +555,9 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   questions stay in component state and never become stored values or navigation parameters.
   Search consumes Escape before closing its modal layer, so the same key cannot close the Help
   sheet underneath; focus returns to that sheet's search field. Internal destinations use the client
-  router, preserving memory-only workspace text while opening the result.
+  router, preserving memory-only workspace text while opening the result. Another tab on the current Settings
+  page uses its native hash-change path. Transfer-safety decisions receive the existing clinical
+  reply instead of transport how-tos.
   The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
   guidance, reusing their approved source content. Exact indexed words survive typo correction.
   `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
