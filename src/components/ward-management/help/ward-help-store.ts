@@ -16,6 +16,8 @@ import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-manag
 /** A desk with its own tour: the chrome roles and the access admin. */
 export type WardTourRole = WardChromeRole | "admin";
 
+const tourRoles = new Set<string>([...Object.keys(CHROME_ROLE_LABELS), "admin"]);
+
 /** The desk whose tour applies: the shell's role, or the access admin, whom the chrome shows as executive. */
 export function useTourRole(): WardTourRole {
   const role = useShellPersonaRole();
@@ -39,8 +41,7 @@ function readRaw(): string {
 
 /** The desks whose tour was seen or dismissed, from the stored comma-separated list. */
 export function parseTourSeen(raw: string): readonly WardTourRole[] {
-  const known = new Set<string>([...Object.keys(CHROME_ROLE_LABELS), "admin"]);
-  return raw.split(",").filter((id): id is WardTourRole => known.has(id));
+  return raw.split(",").filter((id): id is WardTourRole => tourRoles.has(id));
 }
 
 function subscribeTourSeen(onChange: () => void) {
@@ -93,12 +94,11 @@ type SavedTourStep = { readonly at: number; readonly id?: string };
 const TOUR_STEP_ID = /^[a-z0-9-]{1,40}$/u;
 
 function parseSavedSteps(raw: string): ReadonlyMap<WardTourRole, SavedTourStep> {
-  const known = new Set<string>([...Object.keys(CHROME_ROLE_LABELS), "admin"]);
   const steps = new Map<WardTourRole, SavedTourStep>();
   for (const pair of raw.split(",")) {
     const [role, value, id] = pair.split(":");
     const step = Number(value);
-    if (!role || !known.has(role) || !Number.isInteger(step) || step < 0) continue;
+    if (!role || !tourRoles.has(role) || !Number.isInteger(step) || step < 0) continue;
     steps.set(role as WardTourRole, id !== undefined && TOUR_STEP_ID.test(id) ? { at: step, id } : { at: step });
   }
   return steps;

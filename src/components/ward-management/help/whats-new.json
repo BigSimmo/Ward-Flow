@@ -95,8 +95,8 @@
     "line": "A coordinator can now record that a person has left, from the Discharges sheet."
   },
   {
-    "id": "2026-10-28-role-workflow-tours",
+    "id": "2026-10-28-tours",
     "date": "2026-10-28",
-    "line": "Tours now offer daily workflows and recovery guidance for every desk, with topics you can pause and resume."
+    "line": "Each desk now has more tour topics."
   }
 ]
