@@ -48,9 +48,11 @@ import {
 } from "../src/components/ward-management/shell/ward-access-store";
 import {
   WardAccessGate,
+  WardIdleLock,
   WardPrintAttribution,
   useCanOpenHref,
 } from "../src/components/ward-management/shell/ward-access";
+import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical-values";
 import { useWardFlow } from "../src/components/ward-management/ward-flow-provider";
 import {
   useExecutiveStatistics,
@@ -168,6 +170,26 @@ describe("workspace host actual authority before operational construction", () =
     view.rerender(host(connection({ access: { role: "executive", scope: { kind: "statewide" } } }), <AccessProbe />));
     expect(seen.length).toBeGreaterThan(1);
     expect(new Set(seen).size).toBe(1);
+  });
+  it("still locks an unattended desk while equal refreshes keep arriving", () => {
+    const idleMs = CLINICAL_VALUES.idleLock.value * 60_000;
+    const until = deviceNow + 4 * idleMs;
+    // An equal access each time, with its keys in either order, as a refresh may send.
+    let flip = false;
+    const refresh = () =>
+      connection({
+        access: ((flip = !flip)
+          ? { scope: { kind: "statewide" }, role: "executive" }
+          : { role: "executive", scope: { kind: "statewide" } }) as WardSharedConnection["access"],
+        accessUntil: until,
+        executiveSnapshot: { ...structuredClone(aggregate), accessUntil: until },
+      });
+    const view = render(host(refresh(), <WardIdleLock />));
+    for (let elapsed = 0; elapsed < idleMs + 2_000; elapsed += 3_000) {
+      act(() => vi.advanceTimersByTime(3_000));
+      view.rerender(host(refresh(), <WardIdleLock />));
+    }
+    expect(screen.getByRole("dialog", { name: /after \d+ minutes without use/u })).toBeInTheDocument();
   });
   it("uses only the aggregate for an actual executive even when the local feature flag is off", () => {
     render(host(connection()));
