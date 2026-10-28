@@ -163,7 +163,7 @@ function WardHelpSheetView({
       footerClassName={barStyles.drawerFooter}
     >
       <div className={styles.searchDock}>
-        <WardHelpSearch role={role} home={deskHome ?? home} />
+        <WardHelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} />
       </div>
 
       {ask?.trim() ? (
