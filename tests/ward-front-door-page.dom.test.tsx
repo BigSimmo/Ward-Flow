@@ -220,3 +220,42 @@ describe("the idle cards", () => {
     expect(unlock).toHaveBeenCalledOnce();
   });
 });
+
+describe("the keyboard on a phone", () => {
+  // A stand-in for the iPhone's visible area: the keyboard shortens it and the phone pans it.
+  function fakeViewport(height: number) {
+    const viewport = Object.assign(new EventTarget(), { height, offsetTop: 0, scale: 1 });
+    vi.stubGlobal("visualViewport", viewport);
+    return viewport;
+  }
+  const nextFrame = () => act(async () => void (await new Promise((done) => requestAnimationFrame(done))));
+
+  it("brings the page back to the top when the phone pans too far for the folded layout", async () => {
+    const viewport = fakeViewport(500);
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const { container } = render(<FrontDoorPage next="/" mode="demo-code" tv={false} />);
+    const code = screen.getByLabelText("Demo code");
+    const door = container.firstElementChild as HTMLElement;
+    vi.spyOn(code, "getBoundingClientRect").mockReturnValue({ bottom: -180 } as DOMRect); // 480 scrolled, so 300 from the top
+    code.focus();
+    door.scrollTop = 480;
+    viewport.offsetTop = 130;
+    viewport.dispatchEvent(new Event("scroll"));
+    await nextFrame();
+    expect(door.scrollTop).toBe(0);
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+  });
+
+  it("leaves the phone's own pan alone when the field would sit under the keyboard", async () => {
+    const viewport = fakeViewport(500);
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    render(<FrontDoorPage next="/" mode="demo-code" tv={false} />);
+    const code = screen.getByLabelText("Demo code");
+    vi.spyOn(code, "getBoundingClientRect").mockReturnValue({ bottom: 600 } as DOMRect);
+    code.focus();
+    viewport.offsetTop = 130;
+    viewport.dispatchEvent(new Event("scroll"));
+    await nextFrame();
+    expect(scrollTo).not.toHaveBeenCalled();
+  });
+});
