@@ -555,12 +555,14 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   questions stay in component state and never become stored values or navigation parameters.
   Search consumes Escape before closing its modal layer, so the same key cannot close the Help
   sheet underneath; focus returns to that sheet's search field. Internal destinations use the client
-  router, preserving memory-only workspace text while opening the result.
+  router, preserving memory-only workspace text while opening the result. Navigation closes the
+  parent Help sheet; another tab on the current Settings page uses its native hash-change path.
   The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
   guidance, reusing their approved source content. Exact indexed words survive typo correction.
   `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
   suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
   it offers up to three closest how-tos; another desk's topics retain their read-only presentation.
+  Transfer-safety decisions receive the existing clinical reply instead of transport how-tos.
   Ask results, fallback suggestions and the clinical reply share a polite live region.
   Ask accepts an explicit public `termsSource` without reading the operational network hook,
   retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.

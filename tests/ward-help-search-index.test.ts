@@ -71,6 +71,9 @@ describe("searchHelp", () => {
       "what dose of medication should I give",
       "should I admit this patient",
       "diagnosis for psychosis",
+      "Is this patient safe to transfer?",
+      "Is it safe to transfer this patient?",
+      "Should we transfer this patient?",
     ]) {
       expect(isClinicalQuestion(q)).toBe(true);
       expect(searchHelp(q, "ward").kind).toBe("clinical");
@@ -82,6 +85,8 @@ describe("searchHelp", () => {
 
   it("keeps app words that sound clinical searchable", () => {
     expect(isClinicalQuestion("at risk")).toBe(false);
+    expect(isClinicalQuestion("How do I record a safe transfer?")).toBe(false);
+    expect(searchHelp("book transport", "officer").kind).toBe("results");
     expect(isClinicalQuestion("legal status")).toBe(false);
     expect(isClinicalQuestion("Tentative diagnosis")).toBe(false);
     expect(isClinicalQuestion("How do I record a tentative diagnosis?")).toBe(false);

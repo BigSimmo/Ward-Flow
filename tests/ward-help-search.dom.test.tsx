@@ -42,6 +42,25 @@ describe("WardHelpSearch", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("changes a Settings tab through the native hash event when already on Settings", async () => {
+    const before = window.location.href;
+    const changed = vi.fn();
+    window.history.replaceState(null, "", "/ward-flow/settings#rules");
+    window.addEventListener("hashchange", changed);
+    router.push.mockClear();
+    try {
+      const input = openSearch();
+      fireEvent.change(input, { target: { value: "dark mode" } });
+      fireEvent.click(screen.getByTestId("ward-help-search-result-howto:theme"));
+      await waitFor(() => expect(changed).toHaveBeenCalled());
+      expect(window.location.hash).toBe("#display");
+      expect(router.push).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("hashchange", changed);
+      window.history.replaceState(null, "", before);
+    }
+  });
+
   it.each(["pointer", "Enter"])("opens Show me through the option using %s", (method) => {
     flags.helpAsk = true;
     const show = vi.fn();

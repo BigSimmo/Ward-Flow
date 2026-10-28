@@ -190,7 +190,7 @@ function WardHelpSheetView({
         </p>
       </section>
 
-      <WardHelpSearch role={role} home={deskHome ?? home} />
+      <WardHelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} />
 
       {ask !== undefined ? (
         <WardHelpAsk

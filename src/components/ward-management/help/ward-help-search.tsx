@@ -16,6 +16,11 @@ import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult }
 import type { WardTourRole } from "./ward-help-store";
 import styles from "./ward-help-search.module.css";
 
+/** Native fragment navigation keeps the mounted workspace and notifies Settings. */
+function openHelpTab(tab: string) {
+  if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+}
+
 function roleLabel(role: WardTourRole): string {
   return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
 }
@@ -36,7 +41,15 @@ function suggested(role: WardTourRole): readonly HelpSearchResult[] {
  * Help. Results come from `searchHelp` only; typed words stay in this component's state and are never
  * written to storage, a URL or a log (D-11, D-18).
  */
-export function WardHelpSearch({ role, home }: { role: WardTourRole; home: string | undefined }) {
+export function WardHelpSearch({
+  role,
+  home,
+  onNavigate,
+}: {
+  role: WardTourRole;
+  home: string | undefined;
+  onNavigate?: () => void;
+}) {
   const router = useRouter();
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
@@ -91,7 +104,10 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
     const href = mine ? howToHref(result.go, role, home) : undefined;
     if (href) {
       close(false);
-      router.push(href);
+      onNavigate?.();
+      const [path, tab] = href.split("#");
+      if (path === window.location.pathname && tab) openHelpTab(tab);
+      else router.push(href);
     }
   }
 

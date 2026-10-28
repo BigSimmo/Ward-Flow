@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 /** Help search (variant A) in the Help sheet: the field opens the centred search box. */
@@ -30,6 +30,21 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (importOrigin
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 
 describe("Help sheet search field", () => {
+  it("closes the parent Help sheet when a search result opens its destination", () => {
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return open ? (
+        <WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={() => setOpen(false)} />
+      ) : null;
+    }
+    render(<Host />);
+    fireEvent.click(screen.getByTestId("ward-help-search-field"));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "dark mode" } });
+    fireEvent.click(screen.getByTestId("ward-help-search-result-setting:theme"));
+    expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Search Help" })).toBeNull();
+  });
+
   it("Escape closes only search and returns focus to the Help sheet", async () => {
     const onClose = vi.fn();
     render(<WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={onClose} />);

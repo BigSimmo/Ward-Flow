@@ -48,21 +48,23 @@ describe("Ask help in the Help sheet", () => {
     expect(screen.getByText("Synthetic public glossary definition.")).toBeTruthy();
   });
 
-  it.each(["what dose should I give", "should I discharge transport", "medication dark mode"])(
-    "shows only the approved reply for a clinical question: %s",
-    (query) => {
-      renderSheet(query);
-      const reply = screen.getByTestId("ward-help-ask-clinical");
-      expect(reply.textContent).toBe(CLINICAL_REPLY);
-      expect(reply.closest('[aria-live="polite"]')).toBeTruthy();
-      const ask = within(screen.getByTestId("ward-help-ask"));
-      expect(ask.queryAllByTestId(/^ward-help-ask-answer-/)).toHaveLength(0);
-      expect(ask.queryByTestId("ward-help-ask-setting")).toBeNull();
-      expect(ask.queryByText("Words")).toBeNull();
-      expect(ask.queryByTestId("ward-help-ask-closest")).toBeNull();
-      expect(ask.queryByTestId("ward-help-ask-stuck")).toBeNull();
-    },
-  );
+  it.each([
+    "what dose should I give",
+    "should I discharge transport",
+    "medication dark mode",
+    "Is this patient safe to transfer?",
+  ])("shows only the approved reply for a clinical question: %s", (query) => {
+    renderSheet(query);
+    const reply = screen.getByTestId("ward-help-ask-clinical");
+    expect(reply.textContent).toBe(CLINICAL_REPLY);
+    expect(reply.closest('[aria-live="polite"]')).toBeTruthy();
+    const ask = within(screen.getByTestId("ward-help-ask"));
+    expect(ask.queryAllByTestId(/^ward-help-ask-answer-/)).toHaveLength(0);
+    expect(ask.queryByTestId("ward-help-ask-setting")).toBeNull();
+    expect(ask.queryByText("Words")).toBeNull();
+    expect(ask.queryByTestId("ward-help-ask-closest")).toBeNull();
+    expect(ask.queryByTestId("ward-help-ask-stuck")).toBeNull();
+  });
 
   it("offers at most three closest topics in the live region and opens their answers", () => {
     renderSheet("bed giraffe elephant");
