@@ -8,8 +8,8 @@ import {
   readCheatSheets,
   writeCheatSheets,
 } from "../scripts/build-help-cheat-sheets.mjs";
-import { printHelpGuides } from "../src/components/ward-management/help-content/ward-help-print";
-import { DESK_GUIDES } from "../src/components/ward-management/help/ward-help-guide";
+import { printHelpGuides } from "@/components/ward-management/help-content/ward-help-print";
+import { DESK_GUIDES } from "@/components/ward-management/help/ward-help-guide";
 
 const sheets = printHelpGuides();
 describe("printable Help guides from the app's content", () => {

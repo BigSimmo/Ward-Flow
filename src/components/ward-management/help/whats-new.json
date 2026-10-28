@@ -95,8 +95,8 @@
     "line": "A coordinator can now record that a person has left, from the Discharges sheet."
   },
   {
-    "id": "2026-10-28-help-search-completion",
+    "id": "2026-10-28-help-expansion",
     "date": "2026-10-28",
-    "line": "Help now handles spelling slips, offers closest topics and searches roles, colours and save guidance."
+    "line": "Help adds spelling fixes, grouped words, accessibility, first-visit hints and printable desk guides."
   }
 ]

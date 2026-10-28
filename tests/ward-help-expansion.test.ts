@@ -1,16 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { GLOSSARY, glossaryForSites } from "../src/components/ward-management/help/ward-help-content";
+import { GLOSSARY, glossaryForSites } from "@/components/ward-management/help/ward-help-content";
 import {
   CONFUSABLE_TERMS,
   glossaryGroup,
   relatedTerms,
-} from "../src/components/ward-management/help-content/ward-help-glossary";
-import {
-  ACCESSIBILITY_HELP,
-  COMMON_QUESTIONS,
-} from "../src/components/ward-management/help-content/ward-help-reference";
-import { searchHelp } from "../src/components/ward-management/help/ward-help-search-index";
+} from "@/components/ward-management/help-content/ward-help-glossary";
+import { ACCESSIBILITY_HELP, COMMON_QUESTIONS } from "@/components/ward-management/help-content/ward-help-reference";
+import { searchHelp } from "@/components/ward-management/help/ward-help-search-index";
 
 describe("Help expansion source parity", () => {
   it("retains meanings, classifies generated forms and active site codes, and has no missing related term", () => {

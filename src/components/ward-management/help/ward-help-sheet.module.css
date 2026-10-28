@@ -689,3 +689,14 @@
   outline: 2px solid var(--wf-ink-1);
   outline-offset: 2px;
 }
+
+/* Preserve the selected label when the browser substitutes its forced-colour palette. */
+@media (forced-colors: active) {
+  .views > button[aria-pressed="true"] {
+    forced-color-adjust: none;
+    background: Highlight;
+    color: HighlightText;
+    border-color: Highlight;
+    box-shadow: none;
+  }
+}
