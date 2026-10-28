@@ -609,3 +609,83 @@
     background: CanvasText;
   }
 }
+
+/* Keep the primary Help search available without duplicating the Ask field. */
+.searchDock {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: var(--wf-s-2);
+  background: var(--wf-surface);
+  border-radius: var(--wf-r-md);
+}
+.reference,
+.referenceSection {
+  min-width: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+.reference > summary,
+.referenceSection > summary {
+  min-height: 44px;
+  padding: var(--wf-s-3);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+.reference > summary > span {
+  display: block;
+  margin-top: var(--wf-s-1);
+  margin-left: var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-2);
+}
+.reference[open] > .stack,
+.referenceSection[open] > .stack {
+  padding: var(--wf-s-3);
+}
+.referenceSection > p,
+.referenceSection > dl,
+.referenceSection > ul,
+.referenceSection > a,
+.referenceSection > .related {
+  margin: var(--wf-s-3);
+}
+.groupFilter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+.groupFilter select {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  max-width: 100%;
+  padding: var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+}
+.related {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: baseline;
+  margin-top: var(--wf-s-2);
+}
+.related button {
+  min-height: 44px;
+}
+.reference summary:focus-visible,
+.referenceSection summary:focus-visible,
+.groupFilter select:focus-visible {
+  outline: 2px solid var(--wf-ink-1);
+  outline-offset: 2px;
+}

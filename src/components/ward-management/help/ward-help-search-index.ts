@@ -12,6 +12,8 @@ import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, type GlossaryTerm } from "./
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { correctedQuestionWords, HOW_TOS, questionWords } from "./ward-help-howto";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
+import { ACCESSIBILITY_HELP, COMMON_QUESTIONS, INTERACTIONS_HELP } from "../help-content/ward-help-reference";
+import { SAVE_HELP_TERMS } from "../help-content/ward-help-glossary";
 import { ROLE_REFERENCE } from "./ward-help-roles";
 import type { WardTourRole } from "./ward-help-store";
 
@@ -113,7 +115,7 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
       ),
     );
   }
-  for (const term of glossary)
+  for (const term of [...glossary, ...SAVE_HELP_TERMS])
     entries.push(
       entry(
         { key: `term:${term.term}`, group: "Glossary", title: term.term, detail: term.meaning },
@@ -182,6 +184,22 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
       WHEN_IT_IS_DOWN.join(" "),
     ),
   );
+  for (const item of [...ACCESSIBILITY_HELP, ...INTERACTIONS_HELP])
+    entries.push(
+      entry(
+        { key: `accessibility:${item.title}`, group: "Guides", title: item.title, detail: item.text },
+        `${item.title} accessibility`,
+        item.text,
+      ),
+    );
+  for (const item of COMMON_QUESTIONS)
+    entries.push(
+      entry(
+        { key: `faq:${item.question}`, group: "Guides", title: item.question, detail: item.answer },
+        item.question,
+        item.answer,
+      ),
+    );
   return entries;
 }
 

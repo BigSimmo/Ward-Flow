@@ -565,6 +565,13 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.
   Search listbox options have one action each, shared by pointer and Enter; Open/Show me labels
   are plain text within the option rather than nested interactive controls.
+  `help-content/` supplies the compact Reference group, accessible grouped glossary and quiet
+  first-visit hints. Definitions remain in the existing Help sources; related-term links and group
+  filters never save typed words. Hints are lazy, wait for the tour and other overlays, and retain
+  only whitelisted role/topic ids in `ward_flow_choice_help_hints_seen`. The shared print-data
+  adapter feeds `scripts/build-help-cheat-sheets.mjs`; `public/help/` holds nine generated A4 guides.
+  Regeneration is checked in `ward-help-cheat-sheets.test.ts`. Executive Help retains its separate
+  aggregate-host glossary and never obtains site terms through the operational network hook.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never

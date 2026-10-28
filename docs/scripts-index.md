@@ -88,10 +88,10 @@ script here.
 
 ## Documents and generated indexes
 
-`node scripts/build-help-cheat-sheets.mjs --output <draft-directory>` prepares nine draft
-Markdown and A4 print guides from the existing desk-guide documents. It writes only to the
-explicit output directory, keeps its output marked as draft and does not alter in-app Help.
-The held Help integration and adoption of the shared app content source remain separate work.
+`node scripts/build-help-cheat-sheets.mjs --output public/help` generates nine Markdown and
+A4 print guides from the same typed content as in-app Help. Add `--check` to detect drift without
+writing. The builder preserves unowned documents and hand-edited output. Help links to the HTML
+guides; they load only when opened and add no script to a phone page.
 
 `npm run docs:check-links` (`check-maintained-doc-links.mjs`, `ward-flow/check-doc-links.mjs`),
 `npm run docs:check-scripts` (`check-docs-script-refs.mjs`), `npm run docs:facts` and
