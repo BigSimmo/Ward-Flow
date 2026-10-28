@@ -19,11 +19,26 @@ import {
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
+import {
+  bindWorkspaceReply,
+  refusesRecordPath,
+  roleChoices,
+  sentBindingFor,
+  verifyResponseBinding,
+  viewLifetimeChanged,
+  type SentBinding,
+} from "./ward-shared-role-binding";
 export type { ExecutiveAggregateSnapshot, SharedWorkspaceSnapshot } from "./ward-shared-executive-snapshot";
 import * as conflict from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
-import type { PendingCommand } from "./ward-shared-pending-command";
+import {
+  markOwnSave,
+  sheetBasis,
+  type PendingCommand,
+  type QueuedCommand,
+  type SheetSeen,
+} from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
@@ -45,13 +60,7 @@ function loadSharedStateCheck(): Promise<void> {
   });
 }
 
-import type {
-  SharedSnapshot,
-  SharedRoleChoice,
-  SharedView,
-  SharedChangeResult,
-  WardCommandOutcome,
-} from "./ward-shared-client-types";
+import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
 export type {
   SharedSnapshot,
   SharedRoleChoice,
@@ -62,20 +71,6 @@ export type {
 } from "./ward-shared-client-types";
 /** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
 type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
-type QueuedCommand = {
-  event: WardFlowEvent;
-  commandId: string;
-  confirmed: boolean;
-  worldEpoch: number;
-  /** The popups open when this was asked for (audit CS-19); it is checked against what they showed. */
-  sheets?: readonly object[];
-};
-/**
- * What an open popup has shown (audit CS-19): the revision this tab held when it opened, and the
- * records (by the server's opaque tokens) it has since seen at a later revision through this tab's
- * own saves from it.
- */
-type SheetSeen = { revision: number; records: Map<string, number> };
 export const WARD_COMMAND_RECOVERY_KEY = "wardflow:pending-command-v1";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
@@ -333,6 +328,16 @@ export class SharedWorkspaceClient {
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
   }
+  private bindingHost() {
+    return {
+      view: () => this.view,
+      publish: (update: Partial<SharedView>) => this.publish(update),
+      endRole: () => {
+        this.cancelForRoleChange();
+        this.clearRecovery();
+      },
+    };
+  }
   private workingAs() {
     return this.workingAsOverride === undefined ? (this.options.workingAs?.get() ?? null) : this.workingAsOverride;
   }
@@ -368,40 +373,14 @@ export class SharedWorkspaceClient {
     const sheets = commandSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
     return sheets.length ? sheets : undefined;
   }
-  /**
-   * What a command from these popups is checked against: the oldest revision they showed, and each
-   * record all of them have seen later, at the oldest of those. `undefined` when none is noted.
-   */
+  /** What a command from these popups is checked against (`sheetBasis`). */
   private basis(sheets: readonly object[] | undefined) {
-    const seen = (sheets ?? []).flatMap((sheet) => this.sheetSeen.get(sheet) ?? []);
-    if (!seen.length) return undefined;
-    const revision = Math.min(...seen.map((entry) => entry.revision));
-    const records: Record<string, number> = {};
-    for (const token of seen[0].records.keys()) {
-      const at = Math.min(...seen.map((entry) => entry.records.get(token) ?? entry.revision));
-      if (at > revision) records[token] = at;
-    }
-    return { revision, records };
+    return sheetBasis(this.sheetSeen, sheets);
   }
-  /**
-   * This tab's own save is not a change made while the person was looking, so popups and queued
-   * commands based on the revision it was checked against move on with it. Only when nothing came
-   * in between: otherwise another desk's save sits in the gap, and a later save from the same popup
-   * is still checked against it.
-   */
+  /** This tab's own save moves its popups' basis on with it (`markOwnSave`). */
   private ownSaveLanded(from: number, to: number | undefined, sheets?: readonly object[], covered?: unknown) {
-    if (to === undefined) return;
-    const tracked = new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
-    if (to === from + 1)
-      for (const sheet of tracked) {
-        const seen = this.sheetSeen.get(sheet);
-        if (seen?.revision === from) seen.revision = to;
-      }
-    // Otherwise the server still names the records it checked against what these popups showed:
-    // nobody else changed those since, so the popups have now seen them at this save.
-    if (!Array.isArray(covered)) return;
-    for (const sheet of sheets ?? [])
-      for (const token of covered) if (typeof token === "string") this.sheetSeen.get(sheet)?.records.set(token, to);
+    const tracked = () => new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
+    markOwnSave(this.sheetSeen, tracked, from, to, sheets, covered);
   }
   /**
    * History's archived records for this desk and world generation, as the server last sent them.
@@ -556,18 +535,7 @@ export class SharedWorkspaceClient {
       this.archiveEpoch++;
     }
     if (update.snapshot) update = { ...update, executiveSnapshot: null };
-    const before = this.view.executiveSnapshot ?? this.view.snapshot;
-    const after =
-      "executiveSnapshot" in update || "snapshot" in update
-        ? (update.executiveSnapshot ?? update.snapshot ?? null)
-        : before;
-    const changedLifetime =
-      before !== after &&
-      (!before ||
-        !after ||
-        "kind" in before !== "kind" in after ||
-        before.accessContext !== after.accessContext ||
-        ("actorId" in before && "actorId" in after && before.actorId !== after.actorId));
+    const changedLifetime = viewLifetimeChanged(this.view, update);
     this.syncUnloadWarning();
     this.view = {
       ...this.view,
@@ -697,14 +665,7 @@ export class SharedWorkspaceClient {
     body: PendingCommand | Record<string, unknown> | undefined,
     retried: boolean,
   ) {
-    const executiveDesk =
-      this.view.executiveSnapshot || (this.view.access as { role?: unknown } | undefined)?.role === "executive";
-    if (
-      executiveDesk &&
-      (path.startsWith("/v1/workspace/archive") ||
-        path === "/v1/workspace/record-access" ||
-        path === "/v1/workspace/commands")
-    )
+    if (refusesRecordPath(this.view, path))
       throw new Error("Record operations are unavailable for aggregate reporting.");
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
@@ -753,7 +714,7 @@ export class SharedWorkspaceClient {
     if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
     const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
-    let sentBinding: { access: string; context: string; epoch: number; grant: number } | undefined;
+    let sentBinding: SentBinding | undefined;
     const send = async (as: string | null) => {
       // A token wait may outlive the ready board. Check at the actual access-write boundary too.
       if (
@@ -768,23 +729,9 @@ export class SharedWorkspaceClient {
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
-      const context = this.view.snapshot?.accessContext;
-      if (
-        body &&
-        this.options.authenticatedActorId &&
-        authenticatedActor === this.view.actorId &&
-        this.view.access &&
-        (this.view.access as { role?: unknown }).role !== "executive" &&
-        !this.view.executiveSnapshot &&
-        typeof context === "string" &&
-        /^[a-f0-9]{64}$/.test(context)
-      )
-        sentBinding = {
-          access: JSON.stringify(this.view.access),
-          context,
-          epoch: this.roleEpoch,
-          grant: this.grantGeneration,
-        };
+      if (body && this.options.authenticatedActorId)
+        sentBinding =
+          sentBindingFor(this.view, authenticatedActor, this.roleEpoch, this.grantGeneration) ?? sentBinding;
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -891,92 +838,29 @@ export class SharedWorkspaceClient {
     }
     // The server holds more than one role for this account and needs to be told which.
     if (response.status === 409 && value?.code === "choose-role") {
-      const choices: SharedRoleChoice[] = Array.isArray(value.choices)
-        ? value.choices
-            .filter(
-              (choice: unknown): choice is SharedRoleChoice =>
-                !!choice &&
-                typeof (choice as SharedRoleChoice).workingAs === "string" &&
-                typeof (choice as SharedRoleChoice).role === "string",
-            )
-            // The server sends up to 20 roles, plus the bootstrap statewide desk.
-            .slice(0, 21)
-            .map((choice: SharedRoleChoice) => ({
-              workingAs: choice.workingAs,
-              role: choice.role,
-              scope: choice.scope,
-            }))
-        : [];
+      const choices = roleChoices(value.choices);
       throw gate({ status: "choose-role", choices });
     }
     if (value === null) throw new Error("Workspace unavailable");
     if (this.options.authenticatedActorId && (workspaceRead || value.snapshot || path === "/v1/workspace/commands")) {
-      const { parseStoredAccess } = await import("./shell/ward-access-store");
-      current();
-      const access = parseStoredAccess(JSON.stringify(value.access), { shared: true });
-      const aggregate = value.snapshot?.kind === "executive-aggregate";
-      const explicitAuthority = Object.hasOwn(value, "actorId") || Object.hasOwn(value, "access");
-      const boundWrite =
-        !!body &&
-        sentBinding &&
-        sentBinding.epoch === this.roleEpoch &&
-        sentBinding.grant === this.grantGeneration &&
-        authenticatedActor === this.view.actorId &&
-        sentBinding.access === JSON.stringify(this.view.access) &&
-        sentBinding.context === this.view.snapshot?.accessContext &&
-        (!Number.isFinite(this.view.accessUntil) || this.view.accessUntil! > Date.now()) &&
-        (!Number.isFinite(value.accessUntil) || value.accessUntil > Date.now()) &&
-        (!Number.isFinite(value.snapshot?.accessUntil) || value.snapshot.accessUntil > Date.now()) &&
-        !this.view.executiveSnapshot &&
-        !aggregate &&
-        (!value.snapshot || sentBinding.context === value.snapshot.accessContext) &&
-        (!explicitAuthority ||
-          (value.actorId === authenticatedActor && !!access && JSON.stringify(access) === sentBinding.access));
-      const validRead =
-        !body &&
-        !!access &&
-        value.actorId === authenticatedActor &&
-        (!Number.isFinite(value.accessUntil) || value.accessUntil > Date.now()) &&
-        (!Number.isFinite(value.snapshot?.accessUntil) || value.snapshot.accessUntil > Date.now()) &&
-        (access.role === "executive" ? workspaceRead && aggregate : !aggregate);
-      if (!(body ? boundWrite : validRead)) {
-        // The HTTP answer remains definitive for this command alone. Its display/undo/covered
-        // data belongs to an unverified binding, so clear it and reconcile with a validated GET.
-        if (path === "/v1/workspace/commands" && body && "commandId" in body && response.status < 500) {
-          this.cancelQueued();
-          this.clearRecovery();
-          this.roleEpoch++;
-          this.roleLifetime.abort();
-          this.roleLifetime = new AbortController();
-          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
-          return {
-            response,
-            value: { responseBindingChanged: true, commandRevision: value.commandRevision },
-          };
-        }
-        if (path === "/v1/workspace/break-glass" && body && response.ok) {
-          // Opening a record deliberately changes the grant context. Older servers send no
-          // outer authority here; confirm that new view with GET before publishing any rows.
-          this.cancelQueued();
-          if (!this.pending) this.clearRecovery();
-          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
-          return { response, value: { responseBindingChanged: true } };
-        }
-        this.cancelForRoleChange();
-        this.clearRecovery();
-        this.publish({
-          snapshot: null,
-          eventLog: [],
-          access: undefined,
-          actorId: null,
-        });
-        throw new Error("The working view changed; reconnect before viewing records.");
-      }
-      if (aggregate && this.view.snapshot) {
-        this.cancelForRoleChange();
-        this.clearRecovery();
-        this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
-      }
+      const rebound = await verifyResponseBinding(
+        {
+          ...this.bindingHost(),
+          current,
+          cancelQueued: () => this.cancelQueued(),
+          clearRecovery: () => this.clearRecovery(),
+          hasPending: () => !!this.pending,
+          newRoleEpoch: () => {
+            this.roleEpoch++;
+            this.roleLifetime.abort();
+            this.roleLifetime = new AbortController();
+          },
+          roleEpoch: () => this.roleEpoch,
+          grantGeneration: () => this.grantGeneration,
+        },
+        { path, body, response, value, sentBinding, authenticatedActor, workspaceRead },
+      );
+      if (rebound) return rebound;
     }
     return { response, value };
   }
@@ -1008,127 +892,24 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
-      const incomingContext = value.snapshot?.accessContext;
-      const incomingAggregate = value.snapshot?.kind === "executive-aggregate";
-      const incomingExecutive = value.access?.role === "executive";
-      if (
-        current &&
-        value.notModified !== true &&
-        (Boolean(this.view.executiveSnapshot) !== incomingAggregate ||
-          (incomingExecutive && !this.view.executiveSnapshot) ||
-          (Boolean(this.options.authenticatedActorId || incomingAggregate || this.view.executiveSnapshot) &&
-            incomingContext !== current.accessContext))
-      ) {
-        // Clear an ended binding in this call stack, before either lazy validator can yield.
-        this.cancelForRoleChange();
-        this.clearRecovery();
-        this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "loading" });
-      }
-      let actualAccess = value.access;
-      if (this.options.authenticatedActorId) {
-        if (
-          !authenticatedActor ||
-          authenticatedActor !== this.options.authenticatedActorId() ||
-          value.actorId !== authenticatedActor ||
-          !value.access
-        ) {
-          this.cancelForRoleChange();
-          this.clearRecovery();
-          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null });
-          throw new Error("Current account and role must be confirmed");
-        }
-        const { parseStoredAccess } = await import("./shell/ward-access-store");
-        if (
-          this.disposed ||
-          roleSignal.aborted ||
-          generation !== this.viewGeneration ||
-          grantGeneration !== this.grantGeneration ||
-          epoch !== this.roleEpoch
-        )
-          return;
-        actualAccess = parseStoredAccess(JSON.stringify(value.access), { shared: true });
-        if (!actualAccess || authenticatedActor !== this.options.authenticatedActorId()) {
-          this.cancelForRoleChange();
-          this.clearRecovery();
-          this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null });
-          throw new Error("Current account and role must be confirmed");
-        }
-      }
-      const aggregate = value?.snapshot?.kind === "executive-aggregate";
-      const executive = actualAccess?.role === "executive";
-      if (aggregate || executive || this.view.executiveSnapshot) {
-        // A changed role cannot keep operational rows while the lazy schema loads. Unknown or
-        // malformed executive replies clear both holders; they never select an old-server board.
-        const invalid = () => {
-          this.cancelForRoleChange();
-          this.clearRecovery();
-          this.publish({ snapshot: null, eventLog: [], access: actualAccess, actorId: value.actorId ?? null });
-          throw new Error("Incompatible executive reporting data");
-        };
-        if (aggregate || executive) {
-          if (this.view.snapshot) {
-            this.cancelForRoleChange();
-            this.clearRecovery();
-            this.publish({
-              snapshot: null,
-              eventLog: [],
-              access: actualAccess,
-              actorId: value.actorId ?? null,
-              status: "loading",
-            });
-          }
-          const { bindExecutiveAggregateSnapshot } = await import("./ward-shared-executive-snapshot");
-          if (
+      const bound = await bindWorkspaceReply(
+        {
+          ...this.bindingHost(),
+          stale: () =>
             this.disposed ||
             roleSignal.aborted ||
             generation !== this.viewGeneration ||
             grantGeneration !== this.grantGeneration ||
-            epoch !== this.roleEpoch
-          )
-            return;
-          const accepted = bindExecutiveAggregateSnapshot(
-            value.snapshot,
-            { ...value, access: actualAccess },
-            this.options.authenticatedActorId?.(),
-            Date.now(),
-          );
-          if (!accepted || value.notModified === true) return invalid();
-          const held = this.view.executiveSnapshot;
-          if (
-            held &&
-            accepted.accessContext === held.accessContext &&
-            accepted.actorId === held.actorId &&
-            accepted.revision < held.revision
-          )
-            return;
-          this.cancelForRoleChange();
-          this.clearRecovery();
-          forgetDowntimePack();
-          this.publish({
-            snapshot: null,
-            executiveSnapshot: accepted,
-            receivedAt: Date.now(),
-            status: "ready",
-            error: null,
-            access: { role: "executive", scope: { ...accepted.report.network.scope } },
-            actorId: accepted.actorId,
-            accessUntil: accepted.accessUntil,
-            workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
-            canSwitch: !!this.workingAs(),
-            choices: undefined,
-            canRequest: undefined,
-            eventLog: [],
-            receiptScope: undefined,
-            recovery: undefined,
-          });
-          this.fullReadAt = Date.now();
-          return;
-        }
-        // A genuine replacement operational desk may proceed, but an executive clock-only
-        // response cannot refresh authority or rewrite a report's as-at time.
-        if (value.notModified === true) return invalid();
-        this.publish({ snapshot: null, eventLog: [], access: actualAccess, actorId: value.actorId ?? null });
-      }
+            epoch !== this.roleEpoch,
+          canSwitch: () => !!this.workingAs(),
+          fullRead: () => {
+            this.fullReadAt = Date.now();
+          },
+        },
+        { current, value, authenticatedActor, authenticatedActorId: this.options.authenticatedActorId },
+      );
+      if (!bound) return;
+      const actualAccess = bound.access;
       if (Number.isFinite(value.accessUntil) && value.accessUntil <= Date.now())
         throw new Error("Access verification expired");
       if (value?.notModified === true) {
