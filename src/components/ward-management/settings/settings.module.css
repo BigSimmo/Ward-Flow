@@ -396,14 +396,15 @@
   gap: 4px;
 }
 
+/* P089: the minus and plus reach the 44px touch target on every screen, not only phones. */
 .ruleStepper > span:first-child {
   width: 100%;
-  height: 32px;
+  height: var(--wf-touch);
   border-radius: var(--wf-r-pill);
 }
 
 .ruleStepper > span:first-child > button {
-  width: 32px;
+  width: var(--wf-touch);
 }
 
 .ruleStepper > span:first-child > [role="spinbutton"] {
