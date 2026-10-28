@@ -23,7 +23,8 @@ function subscribeHeld(listener: () => void) {
   };
 }
 function readHeld() {
-  const next = new Set([...heldBatches.values()].filter((batch) => batch.isCurrent()).flatMap((batch) => batch.ids));
+  for (const [id, batch] of heldBatches) if (!batch.isCurrent()) heldBatches.delete(id);
+  const next = new Set([...heldBatches.values()].flatMap((batch) => batch.ids));
   if (next.size !== heldRows.size || [...next].some((id) => !heldRows.has(id))) heldRows = next;
   return heldRows;
 }
