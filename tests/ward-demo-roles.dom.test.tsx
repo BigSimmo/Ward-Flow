@@ -29,7 +29,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
 
 const navigation = vi.hoisted(() => ({ path: "/ward-flow", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -221,6 +221,26 @@ describe("Roles within the existing Demo selector", () => {
     expect(screen.queryByRole("group", { name: "Demo role" })).toBeNull();
     expect(readWardAccessSnapshot().access.role).toBe("coordinator");
     expect(navigation.push).not.toHaveBeenCalled();
+  });
+
+  it("names the held desk from its access scope, not the next-role candidate", () => {
+    const sites = STANDARD_WARD_SITES.filter((site) => site.units.length > 0 && site.emergencyDepartment);
+    const site = sites[sites.length - 1]!;
+    const ward = site.units[site.units.length - 1]!;
+    const ed = site.emergencyDepartment!;
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } });
+    });
+    renderPanel();
+    const summary = () => screen.getByText(/^Current role:/);
+    expect(summary()).toHaveTextContent(`Current role: ${ACCESS_ROLE_LABELS.ward}. Demo ward: ${ward.name}.`);
+    act(() => setWardAccess({ role: "ed", scope: { kind: "ed", edId: ed.id } }));
+    expect(summary()).toHaveTextContent(`Demo ED: ${ed.name}.`);
+    act(() => setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: site.code } }));
+    expect(summary()).toHaveTextContent(`Demo site: ${site.name}.`);
+    act(() => setWardAccess({ role: "community", scope: { kind: "team", teamName: "Synthetic test team" } }));
+    expect(summary()).toHaveTextContent("Demo team: Synthetic test team.");
   });
 
   it("offers a coordinator fallback for a restored local desk without return history", () => {

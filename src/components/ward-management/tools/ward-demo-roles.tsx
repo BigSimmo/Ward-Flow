@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { COMMUNITY_TEAM_PAGES, communityHubLists, communityTeamSlug } from "../community/community-derivations";
 import { useUnscopedWardFlow } from "../shell/ward-access-context";
 import { markDeskSwitch, setWardAccess, useWardAccessSnapshot } from "../shell/ward-access-store";
+import { accessPlaceLabel } from "../shell/ward-access-labels";
 import { useWardFeatureFlags } from "../shell/ward-feature-flag-store";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
 import { SharedSessionContext } from "../shell/ward-shared-session-context";
@@ -88,6 +89,28 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
     admin: { role: "admin", scope: { kind: "statewide" } },
   };
   const current = roleFlag?.on ? access.role : "coordinator";
+  // Name the desk actually held, from its access scope, not the candidate the next choice would open.
+  const currentPlace = current === access.role ? demoPlaceLabel(access) : null;
+  function demoPlaceLabel(held: WardAccess): string | null {
+    const scope = held.scope;
+    switch (scope.kind) {
+      case "ward":
+        return `Demo ward: ${accessPlaceLabel(held, world.units)}`;
+      case "ed":
+        return `Demo ED: ${
+          network.sites.find((site) => site.emergencyDepartment?.id === scope.edId)?.emergencyDepartment?.name ??
+          accessPlaceLabel(held, world.units)
+        }`;
+      case "site":
+        return `Demo site: ${
+          network.sites.find((site) => site.code === scope.siteCode)?.name ?? accessPlaceLabel(held, world.units)
+        }`;
+      case "team":
+        return `Demo team: ${scope.teamName}`;
+      default:
+        return null;
+    }
+  }
   function go(next: WardAccess) {
     const href = homeHrefFor(next, communityTeamSlug);
     markDeskSwitch(pathname === href ? undefined : (pathname ?? undefined));
@@ -139,12 +162,7 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
         ))}
       </div>
       <p className={styles.current} aria-live="polite">
-        Current role: {ACCESS_ROLE_LABELS[current]}.{current === "ward" && unit ? ` Demo ward: ${unit.name}.` : null}
-        {current === "ed" && ed ? ` Demo ED: ${ed.name}.` : null}
-        {current === "bed_manager" && unit
-          ? ` Demo site: ${network.sites.find((site) => site.code === unit.siteCode)?.name ?? unit.siteCode}.`
-          : null}
-        {current === "community" && team ? ` Demo team: ${team.name}.` : null}
+        Current role: {ACCESS_ROLE_LABELS[current]}.{currentPlace ? ` ${currentPlace}.` : null}
         {current === "admin" ? " Access settings only; no patient data." : null}
         {current === "executive" ? " Aggregate reports and read-only controls." : null}
       </p>
