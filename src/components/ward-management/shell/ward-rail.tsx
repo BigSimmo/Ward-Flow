@@ -36,7 +36,8 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
-import { OPERATIONAL_DEFAULT_LABEL, SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
+import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
+import { shiftAtMinute } from "@/components/ward-management/ward-board-time-features";
 import { Dot, SrOnly, durMinutes, useIsPhone } from "@/components/wf";
 import { applyAppearance, applyGlare } from "./ward-bar";
 import { closeWardDrawer, isPhoneViewport, subscribeWardMenu } from "./ward-drawer-bus";
@@ -1352,14 +1353,9 @@ export function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
   }
 
   // The shift pattern itself (07:00/15:00/23:00) is a labelled default, not a legal roster rule —
-  // owner ruling 26 September 2026 (decisions.md D-22) — read from `SHIFT_PATTERN`, never
+  // owner ruling 26 September 2026 (decisions.md D-22) — read from `SHIFT_PATTERN` through `shiftAtMinute` (the rule `currentShift` uses too), never
   // hand-typed here, so the one figure and its three titles cannot drift apart.
-  const shift =
-    SHIFT_PATTERN.find(({ startMinute, endMinute }) =>
-      endMinute <= startMinute
-        ? currentMinute >= startMinute || currentMinute < endMinute
-        : currentMinute >= startMinute && currentMinute < endMinute,
-    ) ?? SHIFT_PATTERN[SHIFT_PATTERN.length - 1];
+  const shift = shiftAtMinute(currentMinute);
 
   const shiftHours = `${formatMinuteOfDay(shift.startMinute)}–${formatMinuteOfDay(shift.endMinute)}`;
   const shiftTitle = `${shift.name} (${shiftHours})`;

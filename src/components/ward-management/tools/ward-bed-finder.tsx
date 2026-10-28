@@ -220,7 +220,7 @@ export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
         </>
       ) : (
         <p className={styles.result} role="status">
-          Choose a legal status to list wards.
+          Choose Voluntary or Involuntary under Legal status to list wards. Involuntary lists only authorised wards.
         </p>
       )}
       <p className={styles.note}>

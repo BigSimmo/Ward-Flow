@@ -87,8 +87,8 @@ describe("Activity drawer is consistently wired across all screens", () => {
     const escalationsChip = within(sheet).getByTestId("ward-bar-activity-filter-escalation");
     expect(escalationsChip.textContent).toMatch(/Escalations\s*[1-9]/u);
 
-    // Recent changes list contains 20 items
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    // Recent events list contains 20 items
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     const items = within(feed).getAllByRole("listitem");
     expect(items).toHaveLength(20);
 
@@ -108,7 +108,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
     expect(segButtons[1].textContent).toMatch(/Live tally\s*Waiting/u);
 
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
 
     await user.click(segButtons[1]);
@@ -124,7 +124,7 @@ describe("Activity drawer is consistently wired across all screens", () => {
     expect(segButtons[0].textContent).toMatch(/Activity\s*20/u);
     expect(segButtons[1].textContent).toContain(unitName);
 
-    const feed = within(sheet).getByRole("list", { name: "Recent changes" });
+    const feed = within(sheet).getByRole("list", { name: "Recent events" });
     expect(within(feed).getAllByRole("listitem")).toHaveLength(20);
 
     await user.click(segButtons[1]);

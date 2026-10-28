@@ -23,6 +23,7 @@
 // The map and `NetworkWardRow` both read `bedStates`, including its reconciliation of live
 // reservations against newer capacity observations. Ready and Pulled must be disjoint even when
 // the ward's latest offered count includes a bed already reserved for someone.
+import Link from "next/link";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { StatusGlyph, WardCapacityRow, WardCapacityRows } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -35,6 +36,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { unitHasLockedBeds, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { countCellText } from "./capacity-derivations";
 import styles from "./bed-map.module.css";
 
@@ -498,12 +500,10 @@ function WardBlock({
               </div>
               <div className={styles.baySquares}>
                 {bay.squares.map(({ square, index }) => (
-                  // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- focusable so keyboard users can open its tooltip
-                  <span
+                  // P093 (Josh, 9:55 PM 27 Oct 2026, option A): each square opens its ward's bed board.
+                  <Link
                     key={square.key}
-                    role="img"
-                    // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- focusable so keyboard users can open its tooltip
-                    tabIndex={0}
+                    href={`${unitHref(ward.unit.id)}?tab=board`}
                     aria-label={squareLabel(square)}
                     data-testid={`ward-bed-map-square-${ward.unit.id}`}
                     data-bed-map-state={square.state}
@@ -513,12 +513,6 @@ function WardBlock({
                     onMouseLeave={handleBedBlur}
                     onFocus={(e) => handleBedFocus(e, square, index)}
                     onBlur={handleBedBlur}
-                    onKeyDown={(e) => {
-                      if ((e.key === "Enter" || e.key === " ") && onSelectWard) {
-                        e.preventDefault();
-                        onSelectWard(ward.unit.id);
-                      }
-                    }}
                   >
                     <span className={styles.pillow} aria-hidden="true" />
                     {square.state === "ready" && !square.preparing && (
@@ -550,7 +544,7 @@ function WardBlock({
                       </span>
                     )}
                     {square.state === "occupied" && <span className={styles.occupiedDot} aria-hidden="true" />}
-                  </span>
+                  </Link>
                 ))}
               </div>
             </div>

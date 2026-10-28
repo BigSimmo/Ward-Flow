@@ -42,6 +42,7 @@ type Pending = {
   undone?: string;
   /** A refusal is already said inline by the page; see `UndoableStep.refusalShownInline`. */
   refusalShownInline?: boolean;
+  onRefused?: (reason: string) => void;
   /** The record number already kept for this undo and subject before the step, if any. */
   priorSeq?: number;
   /**
@@ -77,6 +78,8 @@ export type UndoableStep = {
    * command outcome, and an unconfirmed save, are still said, because nothing inline covers them.
    */
   refusalShownInline?: boolean;
+  /** Told the engine's own reason when the step is refused, so the page can say it beside its control. */
+  onRefused?: (reason: string) => void;
 };
 
 export type UndoableStepOptions = {
@@ -149,6 +152,9 @@ export function useUndoableStep({
         : rejections.length > pending.prior
           ? rejections[rejections.length - 1]
           : undefined;
+      if (pending.outcome?.status === "refused")
+        pending.onRefused?.(pending.outcome.message ?? "The action was refused.");
+      else if (!pending.outcome && refused) pending.onRefused?.(refused.reason);
       if (pending.outcome && pending.outcome.status !== "accepted") {
         // Only when the refusal also reached `rejections`, which is what the inline surface reads;
         // a refusal known only from the command outcome (shared mode) is still said here.

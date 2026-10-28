@@ -18,9 +18,8 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
 /** Day shift end on the board clock, read from the one shift pattern (H-0759), as the sidebar countdown does. */
 export const DAY_SHIFT_END_MINUTE = SHIFT_PATTERN[0].endMinute;
 
-/** The shift `now` falls in, on the one shift pattern every screen uses (night wraps midnight). */
-export function currentShift(now: Instant): (typeof SHIFT_PATTERN)[number] {
-  const minute = minuteOfDay(now);
+/** The shift a minute of the day (0 to 1439) falls in, on the one shift pattern (night wraps midnight). */
+export function shiftAtMinute(minute: number): (typeof SHIFT_PATTERN)[number] {
   return (
     SHIFT_PATTERN.find(({ startMinute, endMinute }) =>
       endMinute <= startMinute
@@ -28,6 +27,11 @@ export function currentShift(now: Instant): (typeof SHIFT_PATTERN)[number] {
         : minute >= startMinute && minute < endMinute,
     ) ?? SHIFT_PATTERN[SHIFT_PATTERN.length - 1]
   );
+}
+
+/** The shift `now` falls in, on the one shift pattern every screen uses (night wraps midnight). */
+export function currentShift(now: Instant): (typeof SHIFT_PATTERN)[number] {
+  return shiftAtMinute(minuteOfDay(now));
 }
 
 /** When the shift `now` falls in began. */
