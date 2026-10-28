@@ -45,6 +45,7 @@
 
 .fullscreen .diagSplit {
   height: auto;
+  max-height: none;
   flex: 1;
 }
 
@@ -316,7 +317,8 @@
   grid-template-columns: minmax(0, 1fr) minmax(15rem, 18.5rem);
   align-items: stretch;
   position: relative;
-  height: clamp(24.5rem, 57dvh, 36rem);
+  /* P194: fit the rows on a desktop monitor, capped where the fixed height used to be. */
+  max-height: clamp(24.5rem, 57dvh, 36rem);
 }
 
 .diagSplit.enlarged {
@@ -360,7 +362,6 @@
 .ganttGridTable {
   width: 100%;
   min-width: 640px;
-  min-height: 100%;
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
@@ -751,6 +752,9 @@
   min-width: 0;
   height: 100%;
   min-height: 0;
+  /* P194: the ranked list must not set the split's row height; the timeline's rows do, and the
+     rail stretches to them and scrolls its own list. */
+  contain: size;
   overflow: hidden;
   border-left: 1px solid var(--wf-line);
   background: var(--wf-surface);
@@ -909,6 +913,7 @@
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: clamp(24.5rem, 57dvh, 36rem) 14rem;
     height: auto;
+    max-height: none;
   }
 
   .fullscreen .diagSplit {
@@ -942,6 +947,7 @@
   .diagSplit {
     grid-template-columns: minmax(0, 1fr);
     height: 35rem;
+    max-height: none;
     grid-template-rows: minmax(0, 1fr) 9rem;
   }
 

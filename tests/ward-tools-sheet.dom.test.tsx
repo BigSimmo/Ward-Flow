@@ -92,7 +92,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(toggle.getAttribute("aria-expanded")).toBe("true");
     // Audit 24-1 decision 1: no legal status is assumed, so the tool opens asking for one.
     expect(within(screen.getByTestId("ward-tools-bed-finder")).getByRole("status").textContent).toMatch(
-      /Choose a legal status/u,
+      /Choose Voluntary or Involuntary under Legal status/u,
     );
     fireEvent.click(toggle);
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();

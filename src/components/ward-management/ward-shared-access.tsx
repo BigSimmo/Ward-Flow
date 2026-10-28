@@ -85,7 +85,10 @@ const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m
 });
 
 /** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
-export type WardSharedAccessApi = SharedAccessApi & Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess">;
+/** P056: `readActivityAudit` rides on the shell's access context for the Activity feed (`ward-desk-audit.ts`). */
+export type WardSharedAccessApi = SharedAccessApi &
+  Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess"> &
+  Partial<Pick<SharedWorkspaceClient, "readActivityAudit">>;
 
 export type WardSharedConnection = SharedView & {
   /** Reports may freeze a new snapshot only after this exact server state has been adopted. */
@@ -105,6 +108,8 @@ export type WardSharedConnection = SharedView & {
   /** What the sign-in screen says after a deliberate sign-out, such as the shared computer reminder. */
   farewell?: string | null;
   retry: () => void;
+  /** P172: clears the outcome of an uncertain save once read. Not offered while the receipt is being checked. */
+  dismissRecovery?: (shown?: string) => void;
   dispatch: WardCommandDispatch;
   /** Phone alerts (feature 4) through the signed-in connection. Rejects when not connected. */
   pushApi: PhonePushApi;
@@ -206,6 +211,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       requestAccess: async (role, scope) => connected().requestAccess(role, scope),
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
       readRecordAccess: async () => connected().readRecordAccess(),
+      readActivityAudit: async () => connected().readActivityAudit(),
       forecastHistory: async (body) => connected().forecastHistory(body),
     };
   }, [supabase.client, accountBinding]);
@@ -512,10 +518,8 @@ function DataModePill({ detail, loadMenu }: { detail: string; loadMenu?: WardDem
         }}
       >
         <span className={styles.pillRing} aria-hidden="true" />
-        <span>
-          Synthetic
-          <span className={styles.pillTail}> prototype</span>
-        </span>
+        {/* P077: both words stay on screen at every header width (200% zoom too). */}
+        <span>Synthetic prototype</span>
       </button>
       {open && Menu ? <Menu onClose={close} /> : null}
     </div>
@@ -532,6 +536,7 @@ function WardSharedWorkspaceContent({
   children: ReactNode;
 }) {
   "use no memo";
+  const recoveryOutcomeRef = useRef<HTMLDivElement>(null);
   const hasSnapshot = !!(connection.snapshot || connection.executiveSnapshot);
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   // TV-13 (H-0787): a wall TV whose session ends says so at TV size, not as a small sign-in page.
@@ -661,7 +666,22 @@ function WardSharedWorkspaceContent({
         connection={connection}
         deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
       />
-      {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+      {/* Always mounted, so focus has somewhere to land when Dismiss removes the outcome it sat beside. */}
+      <div ref={recoveryOutcomeRef} tabIndex={-1} data-testid="ward-shared-recovery-outcome">
+        {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+        {connection.recovery && !connection.recovering && connection.dismissRecovery && (
+          <button
+            type="button"
+            className={styles.dismissRecovery}
+            onClick={() => {
+              connection.dismissRecovery?.(connection.recovery);
+              recoveryOutcomeRef.current?.focus({ preventScroll: true });
+            }}
+          >
+            Dismiss
+          </button>
+        )}
+      </div>
       <FocusKeepingInert
         key={JSON.stringify([
           connection.actorId,

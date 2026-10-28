@@ -50,6 +50,7 @@ import {
 } from "../../src/components/ward-management/ward-flow-reducer";
 import { isValidSharedWardFlowState } from "../../src/components/ward-management/ward-shared-state-validation";
 import { checkSyntheticPayload } from "../../src/lib/synthetic-data-guard";
+import { cleanReferralFields } from "../../src/components/ward-management/referrals/referral-text-clean";
 
 export { checkSyntheticPayload };
 
@@ -305,12 +306,15 @@ export function storableCommand(supplied: unknown): unknown {
     const { fileName, ...kept } = fields;
     return kept.fileType === undefined ? { ...kept, fileType: uploadedFileTypeOf(fileName) } : kept;
   }
-  if (fields?.type !== "RECEIVE_REFERRAL" || !Array.isArray(fields.intake?.charts)) return supplied;
+  if (fields?.type !== "RECEIVE_REFERRAL") return supplied;
+  // P148: invisible characters and outer spaces are cleaned quietly from new referral text only.
+  const cleaned = cleanReferralFields(fields);
+  if (!Array.isArray(cleaned.intake?.charts)) return cleaned;
   return {
-    ...fields,
+    ...cleaned,
     intake: {
-      ...fields.intake,
-      charts: fields.intake.charts.map((chart: unknown) => {
+      ...cleaned.intake,
+      charts: cleaned.intake.charts.map((chart: unknown) => {
         if (!chart || typeof chart !== "object") return chart;
         const kept = { ...(chart as Record<string, unknown>) };
         delete kept.base64;

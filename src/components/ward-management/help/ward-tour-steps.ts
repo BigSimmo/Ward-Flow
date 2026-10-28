@@ -195,7 +195,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "pressure",
           { sel: '[data-testid="wf-occupancy-ring"]' },
           "How full the network is",
-          "The ring shows how many beds are in use against the at-risk line. The chips beside it count overdue waits, Tier 1 patients and open alerts.",
+          "The ring shows how many beds are in use against the at-risk line. The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.",
         ),
         step(
           "Your daily work",
@@ -682,7 +682,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "chips",
           { sel: `${HERO_SEL} button`, up: 2 },
           "What needs you",
-          "The chips count overdue waits, Tier 1 patients and open alerts. The figures update as the network changes.",
+          "The chips beside it count Act now, To decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
         ),
         step(
           "Your daily work",

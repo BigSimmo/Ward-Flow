@@ -13,6 +13,7 @@ import {
   DISCHARGE_BARRIERS,
   isDischargeBarrier,
   LEAVING_DESTINATIONS,
+  stayDayNumber,
   type DischargeBarrier,
   type LeavingDestination,
 } from "@/components/ward-management/ward-admissions";
@@ -749,7 +750,7 @@ export function WardBedDossierDrawer({
         ) : (
           <>
             <div className={styles.facts}>
-              <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `${stayDays}d`} />
+              <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`} />
               <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
               <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "danger" : null} />
               <FactTile label="Observation" value={observationShort} />
@@ -1301,7 +1302,7 @@ function PhoneBedSheet({
             <>
               <div className={styles.phoneFacts}>
                 <FactTile label="Now" value={nowLabel(bedItem, isReady)} />
-                <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `${stayDays}d`} />
+                <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`} />
                 <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
                 <FactTile label="Sex" value={bedItem?.sex ?? "Not recorded"} />
               </div>

@@ -21,7 +21,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { Button, buttonClass, useModalFocus } from "@/components/wf";
 import { IdleLockScreen, IdleWarningSheet } from "@/components/ward-management/front-door/lock-cards-lazy";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
-import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { WARD_BED_MEETING_TV_HREF } from "@/components/ward-management/ward-nav";
 import { plannedAdmissionsForDesk, supportNotificationsForDesk } from "@/components/ward-management/ward-access-state";
@@ -769,7 +768,6 @@ function OwnHomeRedirect({ href }: { href: string }) {
 }
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
-  const [switching, setSwitching] = useState(false);
   const { previewOf, switchFrom, signInLanding } = useWardAccessSnapshot();
   // A desk switch still on its way from this page (`markDeskSwitch`): say so, not "closed".
   const opening = switchFrom === usePathname();
@@ -816,20 +814,10 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
           <Link href={home} className={buttonClass({ variant: "pri" })} data-testid="ward-access-home">
             Go to your home
           </Link>
-          <Button
-            variant="sec"
-            onClick={() => (shell?.authenticated ? shell.switchRole?.() : setSwitching(true))}
-            data-testid="ward-access-switch"
-          >
-            Switch desk
-          </Button>
         </div>
         {/* A preview is read only, so it never offers break glass (review on PR #330). */}
         {patientId && canBreakGlass(access.role) && previewOf === null ? (
           <BreakGlassForm access={access} patientId={patientId} />
-        ) : null}
-        {switching && !shell?.authenticated ? (
-          <OperatorSwitcherModal isOpen onClose={() => setSwitching(false)} />
         ) : null}
       </main>
     </WardGround>

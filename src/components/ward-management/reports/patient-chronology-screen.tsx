@@ -185,6 +185,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const [filtersOpen, setFiltersOpen] = useState(false);
   // Phone only: the patient name in the hero opens this list of people to choose from.
   const [pickerOpen, setPickerOpen] = useState(false);
+  // An Activity link to another patient changes initialPatientId on this mounted screen; follow it.
+  const [seenInitialId, setSeenInitialId] = useState(initialPatientId);
+  if (initialPatientId !== seenInitialId) {
+    setSeenInitialId(initialPatientId);
+    if (initialPatientId && patients.some((patient) => patient.id === initialPatientId)) setPatientId(initialPatientId);
+  }
   const tableScroll = useRef<HTMLDivElement>(null);
   const patientSelect = useRef<HTMLSelectElement>(null);
 

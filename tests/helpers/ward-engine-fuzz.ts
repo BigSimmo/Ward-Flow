@@ -799,13 +799,17 @@ const BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = [
     (state, random) => {
       const admission = admissionFor(state, random, ["occupied"]);
       if (!admission) return null;
+      const expectedReturn = currentNow + int(random, 60, 2880);
       return {
         type: "RECORD_LEAVE_BED",
         unitId: admission.unitId,
         actingUnitId: admission.unitId,
         admissionId: admission.id,
-        expectedReturn: currentNow + int(random, 60, 2880),
+        expectedReturn,
         ...(chance(random, 0.3) ? { kind: pick(random, ["off_ward", "medical_trip"]) } : {}),
+        // #101: the optional authority tick, read off a value already drawn so the seeded runs keep
+        // their random stream.
+        ...(expectedReturn % 3 === 0 ? { psychiatristAuthorised: expectedReturn % 2 === 0 } : {}),
       };
     },
   ],
@@ -1235,8 +1239,8 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     1,
     (state, random) => {
       const stay = stayFor(state, random, occupied);
-      return {
-        type: "RECORD_REPATRIATION",
+      const event = {
+        type: "RECORD_REPATRIATION" as const,
         admissionId: id(stay),
         homeHospital: chance(random, 0.95) ? pick(random, SITE_CODES) : MISSING_ID,
         receivingWardAgreed: chance(random, 0.5),
@@ -1245,6 +1249,13 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         cadNumber: `CAD${int(random, 1000, 9999)}`,
         transportLegalStatus: pick(random, TRANSPORT_LEGAL_STATUSES),
         estimatedAt: currentNow + int(random, 30, 1440),
+      };
+      // #177: the optional Form 4C and escort answers, read off values already drawn so the seeded
+      // runs keep their random stream.
+      return {
+        ...event,
+        ...(event.estimatedAt % 2 === 0 ? { form4CReceived: event.estimatedAt % 4 === 0 } : {}),
+        ...(event.estimatedAt % 3 === 0 ? { escortRequired: event.estimatedAt % 5 === 0 } : {}),
       };
     },
   ],
@@ -1969,7 +1980,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       ),
     ),
   ],
-  [1, inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP")],
+  [
+    1,
+    (state, random) => {
+      // Prefer a row someone holds now, so a release is drawn whatever rows the inbox has.
+      const event = inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP", (current) =>
+        Object.fromEntries(
+          Object.entries(current.inboxOwnership ?? {}).filter(([, history]) => {
+            const latest = history?.at(-1);
+            return latest !== undefined && latest.kind !== "released";
+          }),
+        ),
+      )(state, random)!;
+      // P019: a row someone holds is released instead.
+      const latest = state.inboxOwnership[String(event.inboxItemId)]?.at(-1);
+      return latest && latest.kind !== "released" ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
+    },
+  ],
   [
     1,
     (state, random) => ({

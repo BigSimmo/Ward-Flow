@@ -108,7 +108,8 @@ const WardHelpUsageCard = dynamic(() =>
   import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
 );
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
+import { useEffectiveWardAccess, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
+import { accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
 import { AccessSettings, showsAccessTab } from "./access-settings";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
@@ -166,6 +167,9 @@ const TAB_ICONS = {
   access: KeyRound,
 } as const;
 
+/** The save check's own sentence for a global settings change (`commandScopeRefusal`); a test keeps the two equal. */
+const STATEWIDE_ONLY = "Only the statewide coordinator may change global settings.";
+
 export function SettingsScreen() {
   return <SettingsSourceHost>{(source) => <SettingsWorkspace source={source} />}</SettingsSourceHost>;
 }
@@ -178,10 +182,14 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const operational = source.kind === "operational" ? source : null;
   const sharedEnabled = source.kind === "executive" ? source.authenticated : !!source.shared?.enabled;
   const roleGate = useRoleGate()("SET_CONFIGURATION");
+  // P055: the save check also refuses anyone but the statewide coordinator, so say so up front.
+  const notStatewide = !accessIsWholeNetwork(useEffectiveWardAccess());
   const configurationGate =
     source.kind === "executive"
       ? { ...roleGate, allowed: false, reason: roleGate.reason ?? "Coordinator only" }
-      : roleGate;
+      : roleGate.allowed && notStatewide
+        ? { ...roleGate, allowed: false, reason: STATEWIDE_ONLY }
+        : roleGate;
   const configurationBlockReason = configurationGate.allowed
     ? undefined
     : (configurationGate.reason ?? "Coordination rules can only be changed by a coordinator.");

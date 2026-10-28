@@ -336,6 +336,8 @@ describe("task workspace state filters and actions", () => {
     expect(within(drawer).queryByRole("button", { name: /Acknowledge visible/ })).toBeNull();
     fireEvent.click(within(drawer).getByRole("button", { name: /^All/u }));
     fireEvent.click(within(drawer).getByRole("button", { name: /Acknowledge visible/ }));
+    expect(dispatch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: `Acknowledge ${review.length - 1}` }));
     expect(dispatch).toHaveBeenCalledTimes(review.length - 1);
     for (const item of critical)
       expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ inboxItemId: item.id }));

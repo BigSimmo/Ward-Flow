@@ -6,12 +6,7 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 
-import {
-  alertDetail,
-  ALERT_KIND_LABELS,
-  alertKindOf,
-  minutesText,
-} from "@/components/ward-management/alerts/alerts-model";
+import { alertDetail, alertKindLabel, minutesText } from "@/components/ward-management/alerts/alerts-model";
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
@@ -20,14 +15,14 @@ import styles from "./home-list.module.css";
 
 /** `onClear` is left out inside a sheet, which has its own Close. */
 export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; now: Instant; onClear?: () => void }) {
-  const kind = alertKindOf(entry.item.id);
+  const kindLabel = alertKindLabel(entry.item.id);
   const inPlacement = Boolean(entry.movement);
   const age = entry.raised === undefined ? "time not recorded" : `${minutesText(Math.max(0, now - entry.raised))} ago`;
   return (
     <Card className={styles.alertCard} data-testid="home-chosen-alert" aria-label="Chosen alert">
       <CardHead
         title="Chosen alert"
-        meta={kind ? `${ALERT_KIND_LABELS[kind]} · ${age}` : age}
+        meta={kindLabel ? `${kindLabel} · ${age}` : age}
         action={
           onClear ? (
             <Button size="sm" variant="ghost" icon={X} onClick={onClear} aria-label="Clear the chosen alert">

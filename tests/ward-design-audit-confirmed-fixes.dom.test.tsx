@@ -71,9 +71,14 @@ function modalTree(kind: ModalKind, movement: Movement, dispatch: WardCommandDis
 
 function fillModal(kind: ModalKind) {
   if (kind === "arrival") {
-    fireEvent.change(screen.getByLabelText("Arrival mode"), { target: { value: "hospital_transfer" } });
-    fireEvent.change(screen.getByLabelText(/Transport CAD/), { target: { value: "SYNTHETIC-TRACKING" } });
+    fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "hospital_transfer" } });
+    fireEvent.change(screen.getByLabelText("CAD or tracking number"), { target: { value: "SYNTHETIC-TRACKING" } });
+    // The ETA opens blank when nothing is recorded or booked, so a preset is chosen.
+    fireEvent.click(screen.getByRole("button", { name: "+2 hours" }));
   } else {
+    fireEvent.change(screen.getByLabelText("Document / Statutory Form Type"), {
+      target: { value: "Form 4A Transport order" },
+    });
     fireEvent.change(screen.getByLabelText("Select a file to record its details"), {
       target: { files: [new File(["synthetic"], "synthetic-form.pdf", { type: "application/pdf" })] },
     });
@@ -83,7 +88,7 @@ function submitModal(kind: ModalKind) {
   return screen.getByTestId(kind === "arrival" ? "save-arrival-plan-button" : "confirm-upload-form-button");
 }
 function expectRetained(kind: ModalKind) {
-  if (kind === "arrival") expect(screen.getByLabelText(/Transport CAD/)).toHaveValue("SYNTHETIC-TRACKING");
+  if (kind === "arrival") expect(screen.getByLabelText("CAD or tracking number")).toHaveValue("SYNTHETIC-TRACKING");
   else expect(screen.getByRole("dialog")).toHaveTextContent("synthetic-form.pdf");
 }
 

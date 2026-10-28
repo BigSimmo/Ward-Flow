@@ -659,5 +659,5 @@ export const KEYBOARD_SHORTCUTS: readonly { keys: string; action: string }[] = [
   { keys: "Shift+R", action: "Start a new referral." },
   { keys: "[", action: "Fold the side menu to icons, or open it again." },
   { keys: "Esc", action: "Close what is open, or step back." },
-  { keys: "?", action: "On Handover and Referrals, list that page's own keys." },
+  { keys: "?", action: "Show these shortcuts. On Handover and Referrals, list that page's own keys." },
 ];

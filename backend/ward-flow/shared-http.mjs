@@ -490,12 +490,22 @@ export function createSharedHandler({
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
-        // them all; the access admin reads role changes only. Nobody else reads the audit.
-        if (!whole && view.access.role !== "admin")
+        // them all; the access admin reads role changes only. Any other desk reads, for its Activity
+        // feed (P056), only the kind and time of changes made inside its own place, and only from a
+        // store that can scope them (desk-audit.mjs); without one it is refused as before.
+        const desk = !whole && view.access.role !== "admin";
+        // The executive reads counts only, so it, and any other statewide desk, is refused here too.
+        if (
+          desk &&
+          (typeof store.deskAuditPage !== "function" ||
+            view.access.role === "executive" ||
+            view.access.scope.kind === "statewide")
+        )
           return reply(403, { error: "The audit record is not part of your role" }, "role_denied");
         const cursor = new URL(request.url).searchParams.get("before");
         if (cursor !== null && (!/^[1-9][0-9]{0,18}$/.test(cursor) || BigInt(cursor) > 9223372036854775807n))
           return reply(400, { error: "Invalid audit cursor" });
+        if (desk) return reply(200, await store.deskAuditPage(view, cursor));
         if (typeof store.auditPage === "function") return reply(200, await store.auditPage(view, cursor));
         const events = cursor === null ? await store.audit(view) : await store.audit(view, cursor);
         const complete = events.length < 200;

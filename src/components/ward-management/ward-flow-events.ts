@@ -1323,6 +1323,12 @@ export type WardFlowEvent =
       expectedReturn: Instant;
       /** Off-ward leave or medical trip — both count as leave beds with a 24-hour open warning. */
       kind?: "off_ward" | "medical_trip";
+      /**
+       * #101 (Josh, 27 Oct 2026): for a patient on an order, the ward's tick that the treating
+       * psychiatrist authorised this leave. Optional and never a gate: absent when the question was
+       * not asked, `false` when it was left unticked. The reducer stores it as given.
+       */
+      psychiatristAuthorised?: boolean;
     }
   | {
       type: "END_LEAVE_BED";
@@ -1476,9 +1482,12 @@ export type WardFlowEvent =
        * typed.** The reducer checks its LENGTH and nothing else — it cannot check meaning, and it
        * must not try.
        *
-       * ⚠️ **PASSED THROUGH UNTOUCHED.** No trim, no collapse of whitespace, no normalisation. A
-       * referrer's paragraph breaks are part of what they wrote. `RECEIVE_REFERRAL` rejects an
-       * over-length value rather than shortening it.
+       * ⚠️ **CLEANED, NEVER REWRITTEN BEYOND THAT (P148, owner ruling 27 Oct 2026).** A new command's
+       * text has bidi controls (U+202A-202E, U+2066-2069) and C0 controls except newline removed and
+       * outer spaces trimmed, quietly, on the client and in `storableCommand` before storage (see
+       * `referral-text-clean.ts`). No collapse of inner whitespace, no other normalisation: a
+       * referrer's paragraph breaks are part of what they wrote. Already-stored records are never
+       * rewritten. `RECEIVE_REFERRAL` rejects an over-length CLEANED value rather than shortening it.
        *
        * ⚠️ **AND IT NO LONGER REJECTS AN EMPTY ONE.** It did until the owner's ruling of
        * 2026-09-05 — one story box, optional. `""` is a valid, complete answer on this event.
@@ -2218,6 +2227,13 @@ export type WardFlowEvent =
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;
       estimatedAt: Instant;
+      /**
+       * #177 (Josh, 27 Oct 2026): for an involuntary return, whether Form 4C is in hand and whether
+       * an escort is needed for the journey. Both optional and never a gate: absent when the
+       * coordinator left them blank. An agreement that omits them keeps the plan's own answers.
+       */
+      form4CReceived?: boolean;
+      escortRequired?: boolean;
     }
   | {
       /**

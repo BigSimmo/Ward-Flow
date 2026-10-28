@@ -105,6 +105,13 @@ export type RepatDraft = {
   transportLegalStatus: TransportLegalStatus | undefined;
   estimatedTime: string;
   estimatedDay: "today" | "tomorrow";
+  /**
+   * #177 (Josh, 27 Oct 2026): for an involuntary return, whether Form 4C is in hand and whether an
+   * escort is needed for the journey. Both open blank and are answered by a person. Unanswered is a
+   * warning on the plan, never a missing answer, and neither is derived. Saved on the return.
+   */
+  form4CReceived: boolean | undefined;
+  escortRequired: boolean | undefined;
 };
 
 export const BLANK_REPAT_DRAFT: RepatDraft = {
@@ -116,6 +123,8 @@ export const BLANK_REPAT_DRAFT: RepatDraft = {
   transportLegalStatus: undefined,
   estimatedTime: "",
   estimatedDay: "today",
+  form4CReceived: undefined,
+  escortRequired: undefined,
 };
 
 /** The three steps of the plan, and the answers each holds. */
@@ -139,6 +148,18 @@ export function missingAnswers(draft: RepatDraft, now: Instant): string[] {
     missing.push("depart time");
   }
   return missing;
+}
+
+/**
+ * #177: the involuntary return's answers for `RECORD_REPATRIATION`. Only an involuntary return
+ * asks them, and a blank answer is left out rather than sent as "no".
+ */
+export function involuntaryReturnAnswers(draft: RepatDraft): { form4CReceived?: boolean; escortRequired?: boolean } {
+  if (draft.transportLegalStatus !== "involuntary") return {};
+  return {
+    ...(draft.form4CReceived === undefined ? {} : { form4CReceived: draft.form4CReceived }),
+    ...(draft.escortRequired === undefined ? {} : { escortRequired: draft.escortRequired }),
+  };
 }
 
 /* ------------------------------------------------------------------------------------------- *

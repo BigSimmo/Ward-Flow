@@ -450,6 +450,8 @@ test(
       engine,
       clock: () => at,
       log: (event) => logs.push(event),
+      // A slow runner would add a command timing line (P011); this test is about failure lines only.
+      slowCommandMs: 60_000,
       deliveryWaitMs: 10_000,
       push: {
         send: async (row, payload) => {
@@ -554,6 +556,8 @@ test(
         engine: options.engine ?? engine,
         clock: () => at,
         log: (event) => logs.push(event),
+        // A slow runner would add a command timing line (P011); these cases count failure lines only.
+        slowCommandMs: 60_000,
         deliveryWaitMs: options.deliveryWaitMs ?? 10_000,
         // No gap between retries here, so a sweep can retry at once on the fixed clock.
         retryAfterMs: 0,
@@ -874,7 +878,12 @@ test(
         assert.equal(kept.body.commandRevision, 3);
         const stale = await shared.command(actor, randomUUID(), 2, confirm, { revisionOnly: true });
         assert.equal(stale.status, 409);
-        assert.match(stale.body.error, /Someone else changed this record first/);
+        assert.match(
+          stale.body.error,
+          /^Another desk changed this (bed|stay|movement|referral|alert|discharge|record) first\. Review the latest board before trying again\.$/,
+        );
+        assert.equal(stale.body.code, "stale");
+        assert.equal(stale.body.recordType, "record", "a ward's capacity is a record");
         assert.equal(stale.body.snapshot.revision, 3, "a stale command always carries the board");
       });
       await t.test("demo controls are refused on the shared workspace unless switched on", async () => {
@@ -2140,7 +2149,10 @@ test(
       const winner = await won.json();
       const loser = await lost.json();
       assert.equal(loser.outcome, "stale");
-      assert.match(loser.error, /Someone else changed this record first/);
+      assert.match(
+        loser.error,
+        /^Another desk changed this (bed|stay|movement|referral|alert|discharge|record) first\. Review the latest board before trying again\.$/,
+      );
       assert.equal(loser.snapshot.revision, 6);
       assert.equal(urgencyOf(loser.snapshot, "WF-003"), urgencyOf(winner.snapshot, "WF-003"));
       // The person told about the clash reloads and saves again; this time it is kept.

@@ -15,6 +15,8 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { referralAgeBand } from "./referral-age-band";
+import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
+import { referralDraftKeptOnScreen } from "./referral-draft-kept-check";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -308,12 +310,16 @@ export function useWardReferralDrawerState({
   const deskScope = useEffectiveWardAccess().scope;
   const deskOriginSite = deskScope.kind === "ed" ? edById(deskScope.edId)?.siteCode : undefined;
   const deskSendingTeam = deskScope.kind === "team" ? deskScope.teamName : undefined;
-  const [sourceKind, setSourceKind] = useState<"community" | "ed">(
+  // Opener values (props or web address) win over a kept draft when the drawer starts.
+  const openerSourceKind: "community" | "ed" | undefined =
     (initialSendingTeam ? "community" : undefined) ??
-      (urlPrefill?.source === "ed" && effectiveInitialOriginSiteCode ? "ed" : undefined) ??
-      (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
-        ? "ed"
-        : kept?.sourceKind) ??
+    (urlPrefill?.source === "ed" && effectiveInitialOriginSiteCode ? "ed" : undefined) ??
+    (effectiveInitialOriginSiteCode && initialCategory !== "ward" && initialCategory !== "community"
+      ? "ed"
+      : undefined);
+  const [sourceKind, setSourceKind] = useState<"community" | "ed">(
+    openerSourceKind ??
+      kept?.sourceKind ??
       (liveOriginSite || initialCategory === "ed" || deskOriginSite ? "ed" : "community"),
   );
   const [originSiteCode, setOriginSiteCode] = useState(
@@ -468,6 +474,15 @@ export function useWardReferralDrawerState({
     isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
     value: draftJson,
     skipAnchor: isOwnLeaveGuardAnchor,
+    // An unfinished New patient form is not kept, so it always counts as unsaved.
+    unloadSafe: () =>
+      JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
+      referralDraftKeptOnScreen(draftStorageKey, draftNow, {
+        destType: initialDestination,
+        sourceKind: openerSourceKind,
+        originSiteCode: effectiveInitialOriginSiteCode,
+        sendingTeam: initialSendingTeam,
+      }),
   });
   const requestClose = useCallback(() => {
     if (guardOpen) return setGuardOpen(false);
@@ -796,7 +811,8 @@ export function useWardReferralDrawerState({
     const shortForm = community ? communityReferralError(communityPurpose, documentation) : null;
     if (shortForm) return shortForm;
     if (reasonNoteRequired && !doctorNote.trim()) return "Give the reason for referral.";
-    if (doctorNote.length > reasonRoom) return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
+    if (cleanReferralText(doctorNote).length > reasonRoom)
+      return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
     return null;
   }
   const originValid =
@@ -847,7 +863,9 @@ export function useWardReferralDrawerState({
     const label = unidentified?.trim();
     const prefix = !patientRecord && label ? UNIDENTIFIED_REFERRAL_PREFIX.length + label.length + 1 : 0;
     const room = REFERRAL_HISTORY_LIMITS.history - prefix;
-    return clinicalSummary.length > room ? `Shorten the patient story to ${room} characters or fewer.` : null;
+    return cleanReferralText(clinicalSummary).length > room
+      ? `Shorten the patient story to ${room} characters or fewer.`
+      : null;
   }
   function sectionFor(error: string | null): DrawerSection | null {
     if (!error) return null;
@@ -913,14 +931,18 @@ export function useWardReferralDrawerState({
     event.preventDefault();
     if (sendPending || submissionRef.current || sentReferralId || !sendGate.allowed) return;
     const validation =
-      patientError() ?? referralError() ?? storyError() ?? docsError() ?? referralContactError(contact);
+      patientError() ??
+      referralError() ??
+      storyError() ??
+      docsError() ??
+      referralContactError(cleanReferralContact(contact));
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
-    const intake: ReferralIntakeDetails = {
+    const intake: ReferralIntakeDetails = cleanReferralFields({
       catchment: catchmentNotKnown
         ? { teamName: "", confirmed: true, notKnown: true }
         : { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
@@ -948,7 +970,7 @@ export function useWardReferralDrawerState({
           }
         : {}),
       ...(needs && referralNeedsWords(needs).length ? { needs } : {}),
-    };
+    });
     const intakeError = referralIntakeError(intake);
     if (intakeError) {
       setFlowError(intakeError);
@@ -973,11 +995,11 @@ export function useWardReferralDrawerState({
       source: sendingWard ? "psychiatric_ward" : sourceKind === "ed" ? "ed_medical" : "community",
       originSiteCode: sendingWard?.siteCode ?? originSiteCode,
       ...(sendingWard ? { originUnitId: sendingWard.id, actingUnitId: sendingWard.id } : {}),
-      sendingTeamName: needsSendingTeam ? sendingTeam : undefined,
+      sendingTeamName: needsSendingTeam ? cleanReferralText(sendingTeam) : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
       transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
-      history: unidentifiedHistory,
+      history: cleanReferralText(unidentifiedHistory),
       tentativeDiagnosis: isTentativeDiagnosisBlock(provisionalDiag) ? provisionalDiag : undefined,
       intake,
     });

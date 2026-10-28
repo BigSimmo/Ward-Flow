@@ -2,6 +2,7 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-shared-figures";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
@@ -735,7 +736,7 @@ export function ReferralBoard({
             <Sheet
               open={phoneSheet !== null}
               onClose={() => setPhoneSheet(null)}
-              title={phoneSheet === "beds" ? "Beds ready statewide" : "Waiting time against due times"}
+              title={phoneSheet === "beds" ? BEDS_READY_SCOPED_TITLE : "Waiting time against due times"}
               description={DUE_TIMES_NOTE}
             >
               <div className={p.sheetHero}>

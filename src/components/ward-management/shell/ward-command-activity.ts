@@ -33,6 +33,7 @@ import { allEmergencyDepartments } from "@/components/ward-management/ward-sites
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 
 import type { WardActivityCategory, WardActivityContent } from "./ward-shell-types";
+import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 
 export type WardActivityEventTone = "info" | "warning" | "danger";
@@ -223,6 +224,20 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
   const bedsReady = counts.capacity?.value ?? 0;
   // The severe delay causes (`need`), not the Waiting badge's waiting-in-ED figure.
   const urgentDelays = counts.delays?.need?.value ?? 0;
+  // B3 P170: a row about a journey or a referral links to its patient's record.
+  const movementById = new Map<string, (typeof movements)[number]>(
+    movements.map((movement) => [movement.id, movement]),
+  );
+  const referralById = new Map<string, (typeof referrals)[number]>(
+    referrals.map((referral) => [referral.id, referral]),
+  );
+  const recordHref = (eventId: string): string | undefined => {
+    const [kind, key] = eventId.split(":");
+    if (!key || kind === "rejection" || kind === "capacity-refresh") return undefined;
+    const subject = kind?.startsWith("referral-") ? referralById.get(key) : movementById.get(key);
+    const patientId = subject ? resolveSubjectPatient(subject, lookup).patient?.id : undefined;
+    return patientId ? patientChronologyHref(patientId) : undefined;
+  };
   const shown = ordered
     .slice(0, 20)
     .map((event) => ({ ...event, text: withUmrnInPlaceOfMovementIds(event.text, lookup) }));
@@ -242,6 +257,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
         time: formatInstantWithDay(event.at, now),
         text: event.text,
         category: event.category,
+        ...(recordHref(event.id) ? { href: recordHref(event.id) } : {}),
       })),
     },
     lastEventAt: ordered[0]?.at,

@@ -143,6 +143,8 @@ describe("SV-5 seclusion room status (shared mode)", () => {
       within(card).getByTestId("seclusion-room-out-of-service"),
     ].find((candidate) => candidate.getAttribute("aria-disabled") !== "true")!;
     await press(button);
+    // P090: the room status asks first; confirm with the dialog's main button.
+    await press(within(screen.getByRole("dialog")).getByRole("button", { name: button.textContent! }));
     expect(dispatch).toHaveBeenCalledTimes(1);
     expectSaid(within(card).queryByTestId("seclusion-room-failure")?.textContent ?? null, mode);
   });

@@ -53,6 +53,8 @@ type WardActivityChange = {
    * named chips never falsely include an untagged row; All still shows every row.
    */
   category?: WardActivityCategory;
+  /** B3 P170: the record this row is about, opened only when the desk may open it. */
+  href?: string;
 };
 
 /**

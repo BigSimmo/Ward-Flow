@@ -9,9 +9,8 @@ import type { EventLogEntry } from "@/components/ward-management/ward-event-log"
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import {
-  ALERT_KIND_LABELS,
+  alertKindLabel,
   admissionIdOfInboxId,
-  alertKindOf,
   bookingOfInboxId,
   movementIdOfInboxId,
   personIdOfInboxId,
@@ -70,8 +69,7 @@ export function alertsHistory({
       admission,
       personIdOfInboxId(inboxItemId),
     );
-    const kind = alertKindOf(inboxItemId);
-    return `${kind ? ALERT_KIND_LABELS[kind] : "Alert"} for ${subject.displayName} ${subject.umrn}`;
+    return `${alertKindLabel(inboxItemId) ?? "Alert"} for ${subject.displayName} ${subject.umrn}`;
   };
   for (const [id, list] of Object.entries(inboxAcknowledgements)) {
     list.forEach((entry, index) =>
@@ -92,7 +90,7 @@ export function alertsHistory({
         id: `own-${id}-${index}`,
         at: entry.at,
         tone: "success",
-        title: "Taken",
+        title: entry.kind === "released" ? "Released" : "Taken",
         sub: about(id),
         by: entry.by,
         action: true,

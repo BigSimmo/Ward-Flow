@@ -200,7 +200,7 @@ function transportCell(
       tone: "success",
       value: job.provider,
       // Audit round 2, A4-19: a number recorded as "CAD-11111" is not prefixed again.
-      sub: job.cadNumber ? (/^CAD/i.test(job.cadNumber) ? job.cadNumber : `CAD ${job.cadNumber}`) : "CAD not recorded",
+      sub: job.cadNumber ? (/^CAD/i.test(job.cadNumber) ? job.cadNumber : `CAD ${job.cadNumber}`) : "CAD to follow",
       time: job.estimatedAt !== undefined ? `ETA ${clock(job.estimatedAt)}, typed by the booker` : undefined,
       clear: true,
       action: bookingInCard

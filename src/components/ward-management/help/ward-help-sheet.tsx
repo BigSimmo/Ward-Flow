@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 
-import { useIsPhone } from "@/components/wf";
+import { StatusGlyph, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
@@ -14,6 +14,7 @@ import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 import { WardHelpAsk } from "./ward-help-ask";
+import { WardHelpSearch } from "./ward-help-search";
 import {
   ADMIN_SETTINGS_HELP,
   filterGlossary,
@@ -23,6 +24,8 @@ import {
 } from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
+import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
+import { ROLE_REFERENCE } from "./ward-help-roles";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
@@ -186,6 +189,8 @@ function WardHelpSheetView({
           The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
         </p>
       </section>
+
+      <WardHelpSearch role={role} home={deskHome ?? home} />
 
       {ask !== undefined ? (
         <WardHelpAsk
@@ -363,6 +368,31 @@ function WardHelpSheetView({
               ))}
             </dl>
           )}
+          <div className={styles.group} data-testid="ward-help-reference">
+            <h3 className={styles.groupHeading}>Reference</h3>
+            <h4 className={styles.groupHeading}>Colour code</h4>
+            <dl className={styles.card} data-testid="ward-help-legend">
+              {COLOUR_LEGEND.map((item) => (
+                <div key={item.tone} className={`${styles.entry} ${styles.legendEntry}`}>
+                  <dt>
+                    <StatusGlyph tone={item.tone} size={12} />
+                    {item.meaning}
+                  </dt>
+                  <dd>{item.shape}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className={styles.note}>{COLOUR_LEGEND_NOTE}</p>
+            <h4 className={styles.groupHeading}>Roles</h4>
+            <dl className={styles.card} data-testid="ward-help-roles">
+              {ROLE_REFERENCE.map((item) => (
+                <div key={item.id} className={styles.entry}>
+                  <dt>{item.name}</dt>
+                  <dd>{item.summary}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
         </section>
       ) : null}
     </Sheet>

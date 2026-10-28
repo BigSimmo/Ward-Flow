@@ -915,7 +915,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       onClick={() => {
                         const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
                         const admissionId = detailRelease.admissionId;
-                        const completion = recordWardDeparture(admissionId, detailRelease.unitId, departureDestination);
+                        const completion = recordWardDeparture(
+                          admissionId,
+                          detailRelease.unitId,
+                          departureDestination,
+                          s.releaseActor.role === "coordinator" ? "coordinator" : "ward",
+                        );
                         // The completion carries this command's accepted Undo record, including shared saves.
                         offerDeparture(
                           {

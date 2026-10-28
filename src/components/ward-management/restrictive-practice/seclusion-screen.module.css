@@ -53,6 +53,12 @@
   gap: var(--wf-s-2);
 }
 
+/* P090: the room status buttons are small buttons elsewhere; here they keep the 44px touch target. */
+.controls > button {
+  height: auto;
+  min-height: var(--wf-touch);
+}
+
 .list {
   display: flex;
   flex-direction: column;

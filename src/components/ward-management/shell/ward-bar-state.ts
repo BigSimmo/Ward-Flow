@@ -19,6 +19,7 @@ import { resolveWardScreenTitle } from "@/components/ward-management/ward-nav";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 
 import { deriveCommandActivity } from "./ward-command-activity";
+import { useActivityFromAudit } from "./ward-desk-audit";
 import {
   activityChangeCategory,
   isPendingNavigation,
@@ -179,7 +180,7 @@ export function useWardBarActivity({
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [activityPart, setActivityPart] = useState<ActivityPart>("activity");
   const [activityCategoryFilter, setActivityCategoryFilter] = useState<ActivityCategoryFilter>("all");
-  const commandActivity = useMemo(
+  const derivedActivity = useMemo(
     () =>
       deriveCommandActivity({
         movements,
@@ -210,6 +211,8 @@ export function useWardBarActivity({
       network,
     ],
   );
+  // P056: the feed's events come from the server audit once read (`ward-desk-audit.ts`).
+  const commandActivity = useActivityFromAudit(derivedActivity, now);
   const usesDerivedActivity = activity === undefined;
   const currentScreenTitle = useMemo(() => resolveWardScreenTitle(pathname, units), [pathname, units]);
   const defaultActivity = useMemo(
