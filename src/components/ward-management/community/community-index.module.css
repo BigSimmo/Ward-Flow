@@ -753,7 +753,7 @@
      A–Z rows give the team name more room and keep the reads-alike marker close under the name;
      the service bar chart is left to the larger screen. */
   .main {
-    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
+    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-4) + var(--wf-s-1));
   }
 
   .heroActions {

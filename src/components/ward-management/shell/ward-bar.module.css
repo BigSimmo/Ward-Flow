@@ -3720,7 +3720,7 @@
 
   .servicePanel .serviceOption[aria-pressed="true"] {
     background: var(--wf-selected);
-    border-color: var(--wf-accent-line);
+    border-color: var(--wf-accent);
     font-weight: 600;
   }
 

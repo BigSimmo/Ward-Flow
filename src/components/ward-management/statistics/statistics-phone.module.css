@@ -2,7 +2,7 @@
    phone parts. */
 .page {
   min-width: 0;
-  padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
+  padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-4) + var(--wf-s-1));
   box-sizing: border-box;
   background: var(--wf-canvas);
   --wf-page-canvas: var(--wf-canvas);

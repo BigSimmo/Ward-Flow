@@ -1139,7 +1139,7 @@ button.taskLabel[aria-pressed="true"] {
  * the time left. The panel sits below the list and the page scrolls to it on select. */
 @media (max-width: 48rem) {
   .main {
-    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
+    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-4) + var(--wf-s-1));
   }
 
   .heroAside {

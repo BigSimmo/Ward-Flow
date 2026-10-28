@@ -1146,7 +1146,7 @@
 @media (max-width: 48rem) {
   .main {
     gap: var(--wf-s-3);
-    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
+    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-4) + var(--wf-s-1));
   }
 
   .screen .deskOnly {
