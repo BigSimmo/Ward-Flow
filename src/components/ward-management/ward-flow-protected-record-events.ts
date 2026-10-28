@@ -1,5 +1,6 @@
 import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
+import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
 import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
@@ -50,25 +51,7 @@ export type ProtectedRecordEvent = Extract<
 export const UNLINKED_CARE_REFUSAL =
   "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";
 
-/**
- * What a refused protected-record step says when its check gives no reason of its own: what
- * happened, then what to do (stress test 25 Oct 2026). A record outside the desk's place and one
- * that does not exist read alike, so the wording never says which.
- */
-export const PROTECTED_REFUSAL_REASONS: Record<AuditDecision["reasonCode"], string> = {
-  none: "This change was not made. Check the board, then try again. Nothing was changed.",
-  role: "Your role cannot make this change. Nothing was changed.",
-  scope: "This record is not open to your desk, or no longer exists. Nothing was changed.",
-  "missing-or-inaccessible": "This record is not open to your desk, or no longer exists. Nothing was changed.",
-  revision: "Someone else changed this record first. Check the board, then try again. Nothing was changed.",
-  generation:
-    "The board was reset or replaced since you opened this. Check the board, then try again. Nothing was changed.",
-  transition:
-    "This record has moved on to a step that does not allow this change. Check the board. Nothing was changed.",
-  "invalid-payload": "Some details were missing or not valid. Check the form, then try again. Nothing was changed.",
-  "identity-link":
-    "The patient record link could not be checked. Check the patient, then try again. Nothing was changed.",
-};
+export { PROTECTED_REFUSAL_REASONS };
 
 function protectedRefusal(
   state: WardFlowState,

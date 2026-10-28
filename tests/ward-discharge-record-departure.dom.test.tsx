@@ -37,7 +37,31 @@ function firstRecordRow(group: HTMLElement): HTMLElement | undefined {
     .find((candidate) => !candidate.querySelector("th") && candidate.querySelector("td"));
 }
 
+/** Who the newest step was recorded by, read back from the Undo record. */
+function LastStepRole() {
+  const { undoRecords } = useWardFlow();
+  return <output data-testid="last-step-role">{undoRecords?.at(-1)?.role ?? "none"}</output>;
+}
+
 describe("Record departure from the release sheet", () => {
+  it("records the departure in the name of the acting desk, which Undo then matches", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ToastProvider>
+          <Probe />
+          <LastStepRole />
+          <DischargeBoard />
+        </ToastProvider>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(firstRecordRow(screen.getByTestId("ward-discharge-group-confirmed"))!);
+    fireEvent.click(screen.getByTestId("ward-discharge-record-departure"));
+    // With no ward desk selected the sheet is read as the coordinator, so the departure is its own.
+    expect(screen.getByTestId("last-step-role").textContent).toBe("coordinator");
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(probe()[1]).toBe(0);
+  });
+
   it("records a confirmed release's departure with the chosen destination", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
