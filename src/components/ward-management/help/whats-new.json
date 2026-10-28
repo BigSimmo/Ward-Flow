@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-27-stay-tile-day-number",
-    "date": "2026-10-27",
-    "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
-  },
-  {
     "id": "2026-10-27-help-search-box",
     "date": "2026-10-27",
     "line": "Help now has a search box: type what you need to find guides, shortcuts and settings."
