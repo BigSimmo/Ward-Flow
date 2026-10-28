@@ -11,6 +11,9 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const router = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
 const flags = vi.hoisted(() => ({ helpAsk: false }));
 vi.mock("@/components/ward-management/shell/ward-feature-flag-store", () => ({
   useWardFeatureFlag: (name: string) => (name === "help-ask" ? flags.helpAsk : false),
@@ -27,6 +30,18 @@ function openSearch() {
 }
 
 describe("WardHelpSearch", () => {
+  it.each(["pointer", "Enter"])("opens internal destinations through the client router using %s", (method) => {
+    flags.helpAsk = false;
+    router.push.mockClear();
+    const input = openSearch();
+    fireEvent.change(input, { target: { value: "dark mode" } });
+    const option = screen.getByTestId("ward-help-search-result-howto:theme");
+    if (method === "pointer") fireEvent.click(option);
+    else fireEvent.keyDown(input, { key: "Enter" });
+    expect(router.push).toHaveBeenCalledExactlyOnceWith("/ward-flow/settings#display");
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
   it.each(["pointer", "Enter"])("opens Show me through the option using %s", (method) => {
     flags.helpAsk = true;
     const show = vi.fn();
@@ -154,5 +169,6 @@ describe("WardHelpSearch", () => {
       expect(JSON.stringify(stored)).not.toContain("unique-typed-words");
     }
     expect(window.location.href).toBe(before);
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

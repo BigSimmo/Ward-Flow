@@ -48,7 +48,7 @@ type WardHelpAskProps = {
   home: string | undefined;
   initialQuery: string;
   onClose: () => void;
-  /** Explicit public glossary supplied by an aggregate-only host (PR #997 compatibility). */
+  /** Explicit public glossary supplied by an aggregate-only host. */
   termsSource?: ReturnType<typeof glossaryForSites>;
 };
 

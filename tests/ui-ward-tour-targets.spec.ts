@@ -1,4 +1,6 @@
 import { expect, test, type Page } from "playwright/test";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
+import { homeHrefFor, type WardAccess } from "@/components/ward-management/ward-role-access";
 
 /**
  * HF-04 (help and tour audit, 26 Oct 2026): every desk's tour, walked on its real home screen,
@@ -67,7 +69,11 @@ async function signIn(page: Page, desk: Desk): Promise<void> {
   await page.addInitScript((access) => {
     window.sessionStorage.setItem("wardflow:access-desk-v1", JSON.stringify(access));
   }, desk);
-  await page.goto("/ward-flow?flags=role-access:on", { waitUntil: "domcontentloaded" });
+  // Straight to the desk's own home, where the tour walks anyway. A desk whose Home is closed
+  // (Executive) is otherwise sent on from /ward-flow, and a tour opened during that replace
+  // started on the page being left and closed with it, one run in three.
+  const home = homeHrefFor(desk as WardAccess, communityTeamSlug);
+  await page.goto(`${home}?flags=role-access:on`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle");
 }
 
