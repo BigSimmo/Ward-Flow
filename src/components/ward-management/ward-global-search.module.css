@@ -449,6 +449,7 @@
   max-width: 34rem;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+  overflow-wrap: anywhere;
 }
 
 /* Ask help (26 Oct 2026): a typed question is handed to Help instead of ending at "No matches". */
@@ -561,6 +562,10 @@
 .option[data-active] {
   background: var(--wf-selected);
   box-shadow: inset 0 0 0 1px var(--wf-line-2);
+}
+
+.option[aria-disabled="true"] {
+  cursor: progress;
 }
 
 @media (pointer: coarse) {

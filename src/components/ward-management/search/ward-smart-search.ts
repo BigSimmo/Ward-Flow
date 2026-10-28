@@ -202,6 +202,20 @@ export function unitReadyBedCount(unit: Unit): number | null {
   return null;
 }
 
+/** Every word must occur in the supplied record's fields; category words only select its kind. */
+function matchesSearchWords(
+  query: string,
+  fields: readonly (string | undefined)[],
+  categoryWords: readonly string[] = [],
+): boolean {
+  const words = foldPatientSearchText(query).split(" ").filter(Boolean);
+  if (words.length === 0) return false;
+  const haystacks = fields.map((field) => foldPatientSearchText(field ?? ""));
+  return words
+    .filter((word) => !categoryWords.includes(word))
+    .every((word) => haystacks.some((hay) => hay.includes(word)));
+}
+
 /**
  * Matches wards by name, siteCode, unit id, or site name.
  */
@@ -220,12 +234,7 @@ function searchWards(query: string, units?: Unit[]): WardSearchResult[] {
       if (isWardKeyword) return true;
       const site = siteByCode(unit.siteCode);
       const siteName = site?.name ?? "";
-      return (
-        unit.name.toLowerCase().includes(needle) ||
-        unit.siteCode.toLowerCase().includes(needle) ||
-        unit.id.toLowerCase().includes(needle) ||
-        siteName.toLowerCase().includes(needle)
-      );
+      return matchesSearchWords(query, [unit.name, unit.siteCode, unit.id, siteName], ["ward", "wards"]);
     })
     .map((unit) => {
       const site = siteByCode(unit.siteCode);
@@ -249,15 +258,13 @@ function searchEmergencyDepartments(query: string, eds?: EmergencyDepartment[]):
 
   const candidateEds = eds ?? allEmergencyDepartments();
   const isEdKeyword = needle === "ed" || needle === "emergency";
-  const tokens = needle.split(/\s+/).filter(Boolean);
 
   return candidateEds
     .filter((ed) => {
       if (isEdKeyword) return true;
       const site = siteByCode(ed.siteCode);
       const siteName = site?.name ?? "";
-      const haystack = `${ed.name} ${ed.siteCode} ${ed.id} ${siteName}`.toLowerCase();
-      return tokens.every((token) => haystack.includes(token));
+      return matchesSearchWords(query, [ed.name, ed.siteCode, ed.id, siteName], ["ed", "emergency"]);
     })
     .map((ed) => ({
       ed,
@@ -280,7 +287,7 @@ function searchCommunityTeams(
   return teams
     .filter((team) => {
       if (isCommunityKeyword) return true;
-      return team.name.toLowerCase().includes(needle) || team.id.toLowerCase().includes(needle);
+      return matchesSearchWords(query, [team.name, team.id], ["community", "team", "teams"]);
     })
     .map((team) => ({
       team,
@@ -320,7 +327,8 @@ function searchLegalForms(
         code.includes(needle) ||
         bareFormCode.includes(needle) ||
         compactFormCode.includes(needle) ||
-        formTitle.includes(needle)
+        formTitle.includes(needle) ||
+        matchesSearchWords(query, [code, formTitle], ["form", "forms"])
       );
     })
     .map((form) => ({
@@ -345,12 +353,7 @@ export function searchCoreViews(
   return views
     .filter((view) => {
       if (isViewKeyword) return true;
-      return (
-        view.key.toLowerCase().includes(needle) ||
-        view.title.toLowerCase().includes(needle) ||
-        (view.description && view.description.toLowerCase().includes(needle)) ||
-        (view.keywords && view.keywords.some((k) => k.toLowerCase().includes(needle)))
-      );
+      return matchesSearchWords(query, [view.key, view.title, view.description, ...(view.keywords ?? [])]);
     })
     .map((view) => ({
       view,
@@ -471,12 +474,10 @@ function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResu
   return tasks
     .filter((task) => {
       if (isTaskKeyword) return true;
-      return (
-        task.title.toLowerCase().includes(needle) ||
-        task.detail.toLowerCase().includes(needle) ||
-        task.movementId.toLowerCase().includes(needle) ||
-        task.id.toLowerCase().includes(needle) ||
-        task.owner.toLowerCase().includes(needle)
+      return matchesSearchWords(
+        query,
+        [task.title, task.detail, task.movementId, task.id, task.owner],
+        ["task", "tasks"],
       );
     })
     .map((task) => ({
@@ -695,16 +696,14 @@ function similarPeople(patients: readonly Patient[], query: string): Patient[] {
 
 /** 0 = prefix or word-start, 1 = buried in a word, 2 = no text hit (kept in the original order). */
 function matchTier(fields: readonly (string | undefined)[], needle: string): number {
-  const q = needle.trim().toLowerCase();
+  const q = foldPatientSearchText(needle);
   if (q.length === 0) return 0;
-  let tier = 2;
-  for (const field of fields) {
-    if (!field) continue;
-    const hay = field.toLowerCase();
-    if (hay.startsWith(q) || hay.split(/[^a-z0-9]+/).some((word) => word.startsWith(q))) return 0;
-    if (tier > 1 && hay.includes(q)) tier = 1;
-  }
-  return tier;
+  const haystacks = fields.filter((field): field is string => Boolean(field)).map(foldPatientSearchText);
+  const terms = q.split(" ");
+  const words = haystacks.flatMap((hay) => hay.split(/[^\p{L}\p{N}]+/u));
+  if (haystacks.some((hay) => hay.startsWith(q)) || terms.every((term) => words.some((word) => word.startsWith(term))))
+    return 0;
+  return terms.every((term) => haystacks.some((hay) => hay.includes(term))) ? 1 : 2;
 }
 
 function rankAndLimit<T>(

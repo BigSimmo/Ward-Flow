@@ -8,7 +8,9 @@ import {
   searchWardFlow,
   type SearchIntent,
 } from "@/components/ward-management/search/ward-smart-search";
-import { isOpen, searchMovements } from "@/components/ward-management/ward-derivations";
+import { buildActionInbox, isOpen, searchMovements } from "@/components/ward-management/ward-derivations";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
@@ -129,6 +131,19 @@ describe("searchWardFlow ranking", () => {
     expect(result.referrals).toEqual([]);
   });
 
+  it("uses the same accent folding for relevance as for matching", () => {
+    const result = searchWardFlow({
+      query: "eva",
+      patients: [
+        { ...patients[0], givenName: "XÉva" },
+        { ...patients[1], givenName: "Éva" },
+      ],
+      movements: [],
+      units: [],
+    });
+    expect(result.people.map((patient) => patient.id)).toEqual(["PT-A", "PT-B"]);
+  });
+
   it("caps each group at 6 and keeps word-start name matches inside that cap", () => {
     const wordStart = wardPatients.filter((patient) =>
       `${patient.givenName} ${patient.familyName}`
@@ -149,6 +164,57 @@ describe("searchWardFlow ranking", () => {
       const words = `${patient.givenName} ${patient.familyName}`.toLowerCase().split(/[^a-z0-9]+/);
       expect(words.some((word) => word.startsWith("a"))).toBe(true);
     }
+  });
+});
+
+describe("words across the supplied record's fields", () => {
+  const search = (query: string) => searchWardFlow({ query, patients: [], movements: [], units });
+
+  it("finds wards by site and name in either order, with optional kind wording", () => {
+    for (const query of ["SCGH mental", "mental SCGH", "ward SCGH mental", "  SCGH   mental  "]) {
+      const result = search(query);
+      expect(result.wards.map(({ unit }) => unit.id)).toContain("scgh-adult-open");
+      expect(result.wards.every(({ unit }) => unit.siteCode === "SCGH")).toBe(true);
+      expect(result.people).toEqual([]);
+    }
+    expect(search("SCGH mental zzz-no-match").wards).toEqual([]);
+  });
+
+  it("finds an ED using its kind and site code without requiring a literal ED abbreviation", () => {
+    const result = search("ed SCGH");
+    expect(result.emergencyDepartments.length).toBeGreaterThan(0);
+    expect(result.emergencyDepartments.every(({ ed }) => ed.siteCode === "SCGH")).toBe(true);
+  });
+
+  it("finds a team using reordered name words and its kind", () => {
+    const team = COMMUNITY_TEAM_PAGES.find((candidate) => candidate.name.trim().split(/\s+/).length >= 2)!;
+    expect(team).toBeDefined();
+    const words = team.name.trim().split(/\s+/);
+    const query = `team ${words[1]} ${words[0]}`;
+    expect(search(query).communityTeams.map(({ team }) => team.id)).toContain(team.id);
+    expect(search(`${query} zzz-no-match`).communityTeams).toEqual([]);
+  });
+
+  it("requires every page keyword and form-title word rather than accepting a partial query", () => {
+    expect(search("notes shift").views.map(({ view }) => view.key)).toContain("handover");
+    expect(search("notes shift zzz-no-match").views).toEqual([]);
+    const form = SELECTABLE_LEGAL_FORMS[0];
+    const word = legalFormName(form)
+      .split(/\s+/)
+      .find((word) => /^[a-z]{4,}$/i.test(word))!;
+    expect(word).toBeDefined();
+    const query = `form ${form.code} ${word}`;
+    expect(search(query).legalForms.map(({ form }) => form.code)).toContain(form.code);
+    expect(search(`${query} zzz-no-match`).legalForms).toEqual([]);
+  });
+
+  it("finds task words across title and detail without deriving any new task", () => {
+    const existing = buildActionInbox(wardMovements.filter(isOpen), NOW_ANCHOR, units)[0];
+    expect(existing).toBeDefined();
+    const task = { ...existing, title: "Transport awaiting departure", detail: "Synthetic pickup booked" };
+    const input = { patients: [], movements: [], units, precomputedTasks: [task] };
+    expect(searchWardFlow({ ...input, query: "transport pickup" }).tasks.map(({ task }) => task.id)).toEqual([task.id]);
+    expect(searchWardFlow({ ...input, query: "transport zzz-no-match" }).tasks).toEqual([]);
   });
 });
 
