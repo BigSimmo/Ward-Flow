@@ -192,6 +192,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   COMPLETE_INBOX_ITEM: { category: "neither", plainWording: "Action item completed" },
   REOPEN_INBOX_ITEM: { category: "neither", plainWording: "Action item reopened" },
   TAKE_INBOX_ITEM_OWNERSHIP: { category: "neither", plainWording: "Action item ownership taken" },
+  RELEASE_INBOX_ITEM_OWNERSHIP: { category: "neither", plainWording: "Action item ownership released" },
   SNOOZE_INBOX_ITEM: { category: "neither", plainWording: "Action item snoozed" },
   UNSNOOZE_INBOX_ITEM: { category: "neither", plainWording: "Snoozed action item returned" },
   UPLOAD_PATIENT_FORM: { category: "patient", plainWording: "Clinical document uploaded" },

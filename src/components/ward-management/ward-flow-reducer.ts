@@ -2126,6 +2126,7 @@ export function reduceClinicalEvent(
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM": {
       const next = reduceInboxEvent(state, event, decision, reject);
