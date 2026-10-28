@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 /** Help search (variant A) in the Help sheet: the field opens the centred search box. */
@@ -35,5 +35,20 @@ describe("Help sheet search field", () => {
     fireEvent.click(screen.getByTestId("ward-help-search-field"));
     expect(screen.getByRole("dialog", { name: "Search Help" })).toBeTruthy();
     expect(screen.getByText("Suggested for Bed manager")).toBeTruthy();
+  });
+
+  it("closes the parent Help sheet when a search result opens its destination", () => {
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return open ? (
+        <WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={() => setOpen(false)} />
+      ) : null;
+    }
+    render(<Host />);
+    fireEvent.click(screen.getByTestId("ward-help-search-field"));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "dark mode" } });
+    fireEvent.click(screen.getAllByRole("link", { name: "Open" })[0]!);
+    expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Search Help" })).toBeNull();
   });
 });

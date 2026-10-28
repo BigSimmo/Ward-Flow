@@ -36,7 +36,15 @@ function suggested(role: WardTourRole): readonly HelpSearchResult[] {
  * Help. Results come from `searchHelp` only; typed words stay in this component's state and are never
  * written to storage, a URL or a log (D-11, D-18).
  */
-export function WardHelpSearch({ role, home }: { role: WardTourRole; home: string | undefined }) {
+export function WardHelpSearch({
+  role,
+  home,
+  onNavigate,
+}: {
+  role: WardTourRole;
+  home: string | undefined;
+  onNavigate?: () => void;
+}) {
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
   const showMeOn = useWardFeatureFlag("help-ask");
@@ -90,6 +98,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
     const href = mine ? howToHref(result.go, role, home) : undefined;
     if (href) {
       close(false);
+      onNavigate?.();
       window.location.assign(href);
     }
   }
@@ -132,7 +141,15 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
             Show me
           </button>
         ) : href ? (
-          <Link href={href} tabIndex={-1} className={styles.action} onClick={() => close(false)}>
+          <Link
+            href={href}
+            tabIndex={-1}
+            className={styles.action}
+            onClick={() => {
+              close(false);
+              onNavigate?.();
+            }}
+          >
             Open
           </Link>
         ) : null}

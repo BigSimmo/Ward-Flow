@@ -161,11 +161,11 @@ export function WardHelpSheet({
           </button>
         </div>
         <p className={styles.note}>
-          The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
+          A tour is offered once for each desk on this device. Start it here or in Settings whenever you need it.
         </p>
       </section>
 
-      <WardHelpSearch role={role} home={deskHome ?? home} />
+      <WardHelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} />
 
       {ask !== undefined ? (
         <WardHelpAsk role={role} home={deskHome ?? home} initialQuery={ask} onClose={onClose} />

@@ -5,13 +5,15 @@ import { useRef, useState, useSyncExternalStore } from "react";
 
 import { Dialog, useOptionalToast } from "@/components/wf";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
+import { useOptionalWardFlowSelect } from "./ward-flow-provider";
 
 // Rows confirmed but still inside their Undo window. Held outside the component so closing and
 // reopening the drawer inside the window keeps them pending (Josh, 27 Oct 2026, 10:41 PM AWST).
+type DeferredBatch = { ids: readonly string[]; isCurrent: () => boolean };
+const heldBatches = new Map<symbol, DeferredBatch>();
 let heldRows: ReadonlySet<string> = new Set();
 const heldListeners = new Set<() => void>();
-function setHeldRows(next: ReadonlySet<string>) {
-  heldRows = next;
+function publishHeld() {
   heldListeners.forEach((listener) => listener());
 }
 function subscribeHeld(listener: () => void) {
@@ -20,7 +22,11 @@ function subscribeHeld(listener: () => void) {
     heldListeners.delete(listener);
   };
 }
-const readHeld = () => heldRows;
+function readHeld() {
+  const next = new Set([...heldBatches.values()].filter((batch) => batch.isCurrent()).flatMap((batch) => batch.ids));
+  if (next.size !== heldRows.size || [...next].some((id) => !heldRows.has(id))) heldRows = next;
+  return heldRows;
+}
 
 /**
  * P017 (Josh, 27 Oct 2026, 8:35 PM AWST): the Tasks drawer's bulk "Acknowledge visible" asks first
@@ -40,42 +46,52 @@ export function AcknowledgeVisibleButton({
   classes: { readonly [key: string]: string };
 }) {
   const toast = useOptionalToast();
-  const [asking, setAsking] = useState<readonly string[] | null>(null);
+  const [asking, setAsking] = useState<DeferredBatch | null>(null);
+  // Subscribe to generation changes so an open drawer drops an old world's held rows.
+  const capture = useOptionalWardFlowSelect("captureCommandLifetime", "worldGeneration")?.captureCommandLifetime;
   const held = useSyncExternalStore(subscribeHeld, readHeld, readHeld);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const offered = ids.filter((id) => !held.has(id));
 
-  function release(chosen: readonly string[]) {
-    setHeldRows(new Set([...heldRows].filter((id) => !chosen.includes(id))));
+  function release(batchId: symbol) {
+    heldBatches.delete(batchId);
+    publishHeld();
   }
 
   function confirm() {
-    const chosen = asking ?? [];
+    const batch = asking;
     setAsking(null);
-    if (chosen.length === 0) return;
-    if (!toast) return onAcknowledge(chosen);
-    setHeldRows(new Set([...heldRows, ...chosen]));
+    if (!batch || batch.ids.length === 0 || !batch.isCurrent()) return;
+    if (!toast) return onAcknowledge(batch.ids);
+    const batchId = Symbol("acknowledgements");
+    heldBatches.set(batchId, batch);
+    publishHeld();
     toast.push({
       tone: "success",
-      title: `${chosen.length} alerts acknowledged.`,
+      title: `${batch.ids.length} alerts acknowledged.`,
       undo: {
         durationMs: UNDO_TOAST_MS,
-        onUndo: () => release(chosen),
+        onUndo: () => release(batchId),
         onExpire: () => {
-          onAcknowledge(chosen);
-          release(chosen);
+          if (batch.isCurrent()) onAcknowledge(batch.ids);
+          release(batchId);
         },
       },
     });
   }
 
   if (offered.length === 0 && !asking) return null;
-  const count = asking?.length ?? offered.length;
+  const count = asking?.ids.length ?? offered.length;
   return (
     <>
       {offered.length > 0 ? (
-        <button ref={triggerRef} type="button" className={classes.btn} onClick={() => setAsking(offered)}>
+        <button
+          ref={triggerRef}
+          type="button"
+          className={classes.btn}
+          onClick={() => setAsking({ ids: offered, isCurrent: capture?.() ?? (() => true) })}
+        >
           <UserCheck aria-hidden="true" />
           Acknowledge visible
           <span className={classes.count}>{offered.length}</span>

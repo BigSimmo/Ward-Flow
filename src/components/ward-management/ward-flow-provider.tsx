@@ -136,6 +136,8 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
   worldGeneration: number;
   /** True once the saved session has been read (or declined). Before then the world is the seed. */
   sessionAdopted: boolean;
+  /** A deferred action stays valid only while its original provider and world remain current. */
+  captureCommandLifetime?: () => () => boolean;
   /**
    * Records a departure as the ward (the default) or, when the Discharges sheet is held by the
    * coordinator, as the coordinator. Both may record it (`ward-flow-event-roles.ts`); the site bed
@@ -279,6 +281,7 @@ export type WardFlowKey = keyof WardFlowContextValue;
 const WARD_FLOW_KEY_SET = {
   worldGeneration: true,
   sessionAdopted: true,
+  captureCommandLifetime: true,
   recordWardDeparture: true,
   readDischargeRecords: true,
   openDischargeRecord: true,
@@ -668,6 +671,20 @@ function WardFlowWorld({
   // for a typed-text event, before the toast that follows that dispatch is pushed.
   const commandsRef = useRef<LocalCommandState>({ world: state, sequence: 0, early: new Map(), active: true });
   useLocalCommandCompletion(commandsRef, state, container.earlyOutcomes, Boolean(container.sessionAdopted));
+  const accessLifetime = useRef({ context: container.sharedAccessContext, epoch: 0 });
+  useLayoutEffect(() => {
+    if (accessLifetime.current.context !== container.sharedAccessContext) {
+      accessLifetime.current = { context: container.sharedAccessContext, epoch: accessLifetime.current.epoch + 1 };
+    }
+  }, [container.sharedAccessContext]);
+  const captureCommandLifetime = useCallback(() => {
+    const generation = commandsRef.current.world.worldGeneration;
+    const accessEpoch = accessLifetime.current.epoch;
+    return () =>
+      commandsRef.current.active &&
+      commandsRef.current.world.worldGeneration === generation &&
+      accessLifetime.current.epoch === accessEpoch;
+  }, []);
   const savesOnDeviceRef = useRef(false);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
@@ -712,7 +729,12 @@ function WardFlowWorld({
     },
     [dispatchContainer, container.sessionAdopted],
   );
-  const dispatch = useSliceGatedDispatch(dispatchLocal, sharedEnabled ? dispatchShared : null, commandsRef);
+  const dispatch = useSliceGatedDispatch(
+    dispatchLocal,
+    sharedEnabled ? dispatchShared : null,
+    commandsRef,
+    captureCommandLifetime,
+  );
   // Every ward lookup follows the scenario on screen (`ward-scenarios.ts`). Synchronised in
   // `useLayoutEffect` (as well as reducer state transitions) so the component render body stays pure.
   useLayoutEffect(() => {
@@ -1238,6 +1260,7 @@ function WardFlowWorld({
     () => ({
       worldGeneration: state.worldGeneration,
       sessionAdopted: container.sessionAdopted === true,
+      captureCommandLifetime,
       ...stateBound,
       movements: state.movements,
       units: state.units,
@@ -1289,6 +1312,7 @@ function WardFlowWorld({
       state,
       stateBound,
       container.sessionAdopted,
+      captureCommandLifetime,
       typedTextLocked,
       // The log grows even when an event leaves `state` untouched (a no-op), so it is its own dep.
       container.eventLog,
