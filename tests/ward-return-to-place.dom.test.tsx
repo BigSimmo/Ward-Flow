@@ -124,12 +124,12 @@ it("Movements keeps its order and focuses the opened worklist row on Back", asyn
   const row = first.container.querySelector<HTMLElement>("li[data-ward-primitive='record-row'][data-record-key]")!;
   const id = row.getAttribute("data-record-key")!;
   fireEvent.click(row);
-  fireEvent.click(screen.getByRole("radio", { name: "By how long it has waited" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Longest wait" }));
   first.unmount();
   go("/ward-flow/people/P-1");
 
   back("/ward-flow/movements");
   renderMovements();
-  expect(screen.getByRole("radio", { name: "By how long it has waited" })).toHaveAttribute("aria-checked", "true");
+  expect(screen.getByRole("radio", { name: "Longest wait" })).toHaveAttribute("aria-checked", "true");
   await waitFor(() => expect(document.activeElement).toBe(findRow(id)));
 });

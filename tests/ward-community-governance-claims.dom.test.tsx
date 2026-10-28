@@ -167,10 +167,10 @@ describe("the claims the live community screens make", () => {
     renderIndex([]);
     const text = pageText();
     expect(text, "the empty index no longer says the derivation returned nothing").toContain(
-      "that derivation returned no teams",
+      "No names were found in the source",
     );
     expect(text, "the empty index no longer distinguishes finding nothing from having nothing").toContain(
-      "not as a service that has nothing",
+      "This does not establish whether services exist",
     );
   });
 });

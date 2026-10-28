@@ -131,3 +131,9 @@ Collection, Timing, and Escort and legal status consistently in each host.
   borderless inputs inside shared search/field wrappers would gain double boxes.
 - Verify desktop, tablet, 390 px and 320 px phone layouts, long labels, validation,
   selected/focus/disabled states, dark/forced colours and action reachability.
+
+## Existing integration contracts
+
+Ward consumers import shared controls, including `RadioGroup`, through the
+`@/components/wf` barrel. Keep the full board caption qualifying tentative
+diagnosis categories; shorter individual labels do not replace that qualification.

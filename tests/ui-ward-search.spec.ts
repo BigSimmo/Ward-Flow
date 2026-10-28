@@ -333,7 +333,7 @@ test.describe("@mockup Ward patient search", () => {
     const chipCount = await chips.count();
     expect(chipCount, "the phone census shows its highlight chips").toBeGreaterThan(0);
     for (let i = 0; i < chipCount; i += 1) controls.push([chips.nth(i), `highlight chip ${i + 1}`]);
-    const groups = console_.getByRole("radiogroup", { name: "Where patients are now" }).getByRole("radio");
+    const groups = console_.getByRole("group", { name: "Where patients are now" }).getByRole("button");
     await expect(groups, "the phone census shows six group pills").toHaveCount(6);
     for (let i = 0; i < 6; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);
 
