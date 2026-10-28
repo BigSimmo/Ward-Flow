@@ -19,8 +19,10 @@ import {
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
+import * as conflict from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
+import type { PendingCommand } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
@@ -138,19 +140,10 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
+/** P056: one audit row as a desk's Activity reads it; nothing in it names a patient or a person. */
+export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
-type PendingCommand = {
-  dataMode: "prototype";
-  classification: "synthetic";
-  commandId: string;
-  expectedRevision: number;
-  /** Records the popups have seen at a later revision than `expectedRevision`, by token. */
-  seen?: Record<string, number>;
-  event: WardFlowEvent;
-  /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
-  reply?: "revision";
-};
 
 /** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
 const FRESH_TOKEN = new Error("Ask again with a fresh token");
@@ -327,6 +320,13 @@ export class SharedWorkspaceClient {
   private cancelQueued(message = saveProblem("queuedCancelled")) {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
+    this.syncUnloadWarning();
+  }
+  /** P058: a conflict cancels only the queued actions on its own record; the rest still go. */
+  private cancelQueuedOn(event: WardFlowEvent, value: unknown) {
+    const hit = this.queue.filter((queued) => conflict.sameConflictRecord(event, queued.event));
+    this.queue = this.queue.filter((queued) => !hit.includes(queued));
+    for (const queued of hit) this.settle(queued.commandId, "cancelled", conflict.queuedNotSentText(hit.length, value));
     this.syncUnloadWarning();
   }
   /** `sentMessage` is for a command already sent: the server may have applied it, so never say "not saved". */
@@ -1181,11 +1181,13 @@ export class SharedWorkspaceClient {
           return;
         }
         if (!response.ok) {
-          this.cancelQueued();
+          const scoped = response.status === 409 && conflict.namedConflict(value);
+          if (scoped) this.cancelQueuedOn(command.event, value);
+          else this.cancelQueued();
           if (response.status === 409) {
             // The person has now been told. Popups still open are checked against the board from
             // here on, so trying again after reviewing it works.
-            this.sheetSeen = new WeakMap();
+            this.sheetSeen = conflict.keepBasis(scoped && this.queue, this.sheetSeen, command.expectedRevision);
             if (!value?.snapshot) this.needsRefresh = true;
             else this.noteOpenSheets();
           }
@@ -1193,7 +1195,9 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? saveProblem("changedMeanwhile")
+                ? scoped
+                  ? conflict.changedFirstText(value)
+                  : saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"
@@ -1208,6 +1212,7 @@ export class SharedWorkspaceClient {
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
+          if (scoped && this.queue.length) continue;
           break;
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
@@ -1310,6 +1315,12 @@ export class SharedWorkspaceClient {
       views: Array.isArray(value?.views) ? value.views : [],
       openings: Array.isArray(value?.openings) ? value.openings : [],
     };
+  }
+  /** P056: the newest audit page this desk may read, for the Activity feed (/v1/workspace/audit). */
+  async readActivityAudit(): Promise<SharedActivityAuditEvent[]> {
+    const { response, value } = await this.request("/v1/workspace/audit");
+    if (!response.ok || !Array.isArray(value?.events)) throw new Error("Activity could not be read");
+    return value.events;
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

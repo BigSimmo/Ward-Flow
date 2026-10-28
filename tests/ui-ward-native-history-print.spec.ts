@@ -364,4 +364,14 @@ test.describe("native history and handover print @mockup", () => {
       expect(await paper.evaluate((element) => element.scrollHeight <= element.clientHeight)).toBe(true);
     }
   });
+
+  test("Waiting board prints the Legal column's form chips", async ({ page }) => {
+    await page.goto(`${HOME}/waiting`);
+    await settled(page);
+    const chip = page.getByTestId("delays-legal-chip").first();
+    await expect(chip).toBeVisible();
+    await page.emulateMedia({ media: "print" });
+    await expect(chip).toBeVisible();
+    await page.emulateMedia({ media: "screen" });
+  });
 });

@@ -1,15 +1,5 @@
 [
   {
-    "id": "2026-10-27-home-back-on-rail",
-    "date": "2026-10-27",
-    "line": "Home is back at the top of the side menu on a computer, with a house icon."
-  },
-  {
-    "id": "2026-10-27-full-given-names-on-boards",
-    "date": "2026-10-27",
-    "line": "Bed board, movement bars and board cards show the given name in full."
-  },
-  {
     "id": "2026-10-27-waiting-list-and-record",
     "date": "2026-10-27",
     "line": "Waitlist is now Waiting list, and dossier is now record."
@@ -98,5 +88,15 @@
     "id": "2026-10-27-alerts-yours-on-phone",
     "date": "2026-10-27",
     "line": "On a phone, the Alerts page calls your own alerts Yours, the same as on a computer."
+  },
+  {
+    "id": "2026-10-27-stay-tile-day-number",
+    "date": "2026-10-27",
+    "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
+  },
+  {
+    "id": "2026-10-28-settings-plus-minus-larger",
+    "date": "2026-10-28",
+    "line": "The plus and minus buttons in Settings are now larger and easier to tap."
   }
 ]

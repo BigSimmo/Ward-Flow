@@ -619,3 +619,43 @@ test.describe("@mockup phone navigation follows the stable header", () => {
     });
   }
 });
+
+test.describe("@mockup Movements timeline fits its rows on a ward desktop monitor (P194)", () => {
+  // P194, approved by Josh in chat, 27 Oct 2026, 9:21 PM AWST: "P194: tune for a ward desktop
+  // monitor, about 1920 by 1080, shrink the panel to fit its content". The panel used to hold a
+  // fixed clamp(24.5rem, 57dvh, 36rem) height, so a short day left empty space under the last row.
+  test("a service with few rows gets a panel that ends at its last row at 1920x1080", async ({ page }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto("/ward-flow/movements", { waitUntil: "networkidle" });
+    const filter = page.getByRole("combobox", { name: "Filter movement horizon by health service" });
+    const options = await filter.locator("option").evaluateAll((nodes) =>
+      nodes.map((node) => ({
+        value: (node as HTMLOptionElement).value,
+        count: Number(/\((\d+)\)\s*$/.exec(node.textContent ?? "")?.[1] ?? "0"),
+      })),
+    );
+    const fewest = options
+      .filter((option) => option.value !== "ALL" && option.count > 0)
+      .sort((a, b) => a.count - b.count)[0];
+    expect(fewest, "a health service with at least one movement lane").toBeDefined();
+    await filter.selectOption(fewest!.value);
+    const timeline = page.getByRole("region", { name: "Movements timeline" });
+    await expect(timeline).toBeVisible();
+    const geometry = await timeline.evaluate((wrap) => {
+      const split = wrap.closest<HTMLElement>('[id$="-horizonSplit"]')!;
+      // The timeline's rows and the scope footer under them are the panel's content.
+      const content = wrap.parentElement!;
+      const cells = [...content.querySelectorAll<HTMLElement>("*")].filter(
+        (cell) =>
+          cell.childElementCount === 0 && cell.offsetHeight > 0 && getComputedStyle(cell).position !== "absolute",
+      );
+      const rowsBottom = Math.max(...cells.map((cell) => cell.getBoundingClientRect().bottom));
+      const splitBox = split.getBoundingClientRect();
+      const oldFixedHeight = Math.min(Math.max(24.5 * 16, 0.57 * window.innerHeight), 36 * 16);
+      return { height: splitBox.height, oldFixedHeight, empty: splitBox.bottom - rowsBottom };
+    });
+    expect(geometry.height).toBeLessThan(geometry.oldFixedHeight - 16);
+    expect(geometry.empty).toBeLessThanOrEqual(24);
+  });
+});

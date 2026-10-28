@@ -38,7 +38,9 @@ import {
   type AlertSubject,
 } from "./alerts-model";
 import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
+import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
 import { PullNowButton } from "./global-alert-panels";
+import { ReleaseOwnershipButton } from "./alert-release-ownership";
 import styles from "./alerts.module.css";
 
 export type AlertDetailHandlers = {
@@ -162,7 +164,13 @@ export function AlertDetail({
   for (const entry of acknowledgements ?? []) {
     activity.push({ at: entry.at, text: `Acknowledged by ${entry.by}`, done: true });
   }
-  for (const entry of ownership ?? []) activity.push({ at: entry.at, text: `Taken by ${entry.by}`, done: true });
+  for (const entry of ownership ?? []) {
+    activity.push({
+      at: entry.at,
+      text: `${entry.kind === "released" ? "Released" : "Taken"} by ${entry.by}`,
+      done: true,
+    });
+  }
   for (const entry of snoozeEntries ?? []) {
     activity.push({
       at: entry.at,
@@ -206,7 +214,7 @@ export function AlertDetail({
 
   // Device audit (11 Oct 2026): the sheet and the rail show two actions (the primary and Take), and the
   // rest sit behind one "More actions" disclosure instead of a grid of equal buttons.
-  const takeButton = (
+  const ownButton = (
     <Button
       size="sm"
       icon={mine ? Check : UserRound}
@@ -217,6 +225,17 @@ export function AlertDetail({
     >
       {mine ? "Yours" : "Take"}
     </Button>
+  );
+  // P019: an alert you took offers Release in place of the greyed "Yours".
+  const takeButton = mine ? (
+    <ReleaseOwnershipButton
+      item={item}
+      subjectLine={subjectLine}
+      disabledReason={actionDisabledReason}
+      fallback={ownButton}
+    />
+  ) : (
+    ownButton
   );
   const moreActions = (
     <details className={styles.moreActions} data-testid="alerts-more-actions">
@@ -418,19 +437,28 @@ export function AlertDetail({
               {action.label}
             </Link>
           ) : (
-            <Button
-              variant="pri"
-              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
-              reasonDisplay="tooltip"
-              onClick={() => {
-                if (releaseReason === "") return;
-                handlers.onRelease(item, releaseReason);
-                setReleaseReason("");
-              }}
-            >
-              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
-              Release pulled bed for {subject.displayName}
-            </Button>
+            <>
+              <Button
+                variant="pri"
+                disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
+                reasonDisplay="tooltip"
+                onClick={() => {
+                  if (releaseReason === "") return;
+                  handlers.onRelease(item, releaseReason);
+                  setReleaseReason("");
+                }}
+              >
+                {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+                Release pulled bed for {subject.displayName}
+              </Button>
+              {movement ? (
+                <AlertArrivedAtWard
+                  movement={movement}
+                  displayName={subject.displayName}
+                  disabledReason={actionDisabledReason}
+                />
+              ) : null}
+            </>
           )}
         </div>
       </div>
@@ -573,6 +601,13 @@ export function AlertDetail({
               {/* CT-19: the reason-gated release names its patient at the point of commit. */}
               Release pulled bed for {subject.displayName}
             </Button>
+            {movement ? (
+              <AlertArrivedAtWard
+                movement={movement}
+                displayName={subject.displayName}
+                disabledReason={actionDisabledReason}
+              />
+            ) : null}
           </div>
         )}
         <div className={styles.actionRow}>{takeButton}</div>

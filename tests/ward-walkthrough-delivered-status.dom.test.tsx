@@ -2,7 +2,7 @@
 // reads one status and the pull clock stops. WT-06: Update arrival offers the CAD number the booking
 // already logged.
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", async (importOriginal) => ({
@@ -93,5 +93,42 @@ describe("Update arrival offers the booked CAD number (WT-06)", () => {
     const input = renderModal(cancelled);
     expect(input).toHaveValue("");
     expect(input).not.toHaveAccessibleDescription();
+  });
+  it("offers the booked provider as the travel mode and the booked estimate as the ETA (form-friction 87, 88)", () => {
+    const booked = {
+      ...seedMovement(),
+      stage: "pulled",
+      arrivalDetails: undefined,
+      transport: job({ provider: "RFDS", estimatedAt: NOW_ANCHOR + 45 }),
+    } as Movement;
+    renderModal(booked);
+    const mode = screen.getByLabelText("How they are travelling");
+    expect(mode).toHaveValue("rfds");
+    expect(mode).toHaveAccessibleDescription("From the transport booking");
+    expect(screen.getByText(/from the transport booking\)/u)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "+2 hours" })).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("opens the ETA blank with no booking, takes a typed 1440, and keeps a chosen preset lit", () => {
+    const unbooked = {
+      ...seedMovement(),
+      stage: "pulled",
+      arrivalDetails: undefined,
+      transport: undefined,
+    } as Movement;
+    renderModal(unbooked);
+    expect(screen.getByLabelText("How they are travelling")).toHaveValue("");
+    expect(screen.getByText("Not set")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "ambulance" } });
+    fireEvent.click(screen.getByTestId("save-arrival-plan-button"));
+    expect(screen.getByRole("alert")).toHaveTextContent("Enter the estimated time of arrival.");
+    const preset = screen.getByRole("button", { name: "+1h" });
+    fireEvent.click(preset);
+    expect(preset).toHaveAttribute("aria-pressed", "true");
+    fireEvent.change(screen.getByLabelText("Or type the ETA"), { target: { value: "1440" } });
+    expect(preset).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByLabelText("Or type the ETA")).not.toHaveAttribute("aria-invalid");
+    fireEvent.change(screen.getByLabelText("Or type the ETA"), { target: { value: "144" } });
+    expect(screen.getByLabelText("Or type the ETA")).toHaveAttribute("aria-invalid", "true");
   });
 });

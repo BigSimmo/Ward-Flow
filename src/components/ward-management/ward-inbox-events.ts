@@ -115,6 +115,16 @@ export type InboxWardFlowEvent =
     }
   | {
       /**
+       * P019 (Josh, 27 Oct 2026): the role that owns an inbox row hands it back to the queue. Appends a
+       * `kind: "released"` entry to `WardFlowState.inboxOwnership`; refused unless that role owns it now.
+       */
+      type: "RELEASE_INBOX_ITEM_OWNERSHIP";
+      role: WardFlowRole;
+      now: Instant;
+      inboxItemId: string;
+    }
+  | {
+      /**
        * Stream A, 9 Oct 2026: hides an inbox row from the active list until `until`, with a
        * reason from the closed `SNOOZE_REASONS` list. The row returns by itself when `until`
        * passes. An act-now (red) row may not be snoozed past `RED_ROW_SNOOZE_CAP_MINUTES`; the

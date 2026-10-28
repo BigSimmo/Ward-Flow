@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { drawerFootStatus } from "@/components/ward-management/referrals/referral-drawer-foot-status";
+import {
+  drawerFootStatus,
+  drawerRailHeading,
+} from "@/components/ward-management/referrals/referral-drawer-foot-status";
 import { referralContactError } from "@/components/ward-management/referrals/referral-submission";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -53,5 +56,45 @@ describe("referral drawer footer after a refused Send (#823)", () => {
     expect(status("Shorten your name, role or location to 200 characters.", 0).first).toBe(
       "Shorten your name, role or location to 200 characters.",
     );
+  });
+});
+
+describe("referral drawer footer once every step is done (P155)", () => {
+  function foot(itemsLeft: number, contactNeeded: number) {
+    return drawerFootStatus({
+      view: "new",
+      inboxWard: undefined,
+      inboxWardCount: 0,
+      sentReferralId: null,
+      sentAt: null,
+      now: NOW_ANCHOR,
+      recipientLabels: ["Test ward"],
+      submissionAwaitingRecord: false,
+      flowError: null,
+      confirmationOpen: false,
+      contactNeeded,
+      contactAttempted: false,
+      itemsLeft,
+      itemsTotal: 19,
+    }).first;
+  }
+
+  it("says only contact details remain, and that they are asked at Send", () => {
+    expect(foot(5, 5)).toBe("5 contact details needed at Send");
+    expect(foot(1, 1)).toBe("1 contact detail needed at Send");
+  });
+
+  it("keeps the overall count while step items also remain", () => {
+    expect(foot(7, 5)).toBe("7 of 19 items still needed");
+    expect(foot(3, 0)).toBe("3 of 19 items still needed");
+    expect(foot(0, 0)).toBe("All items in");
+  });
+});
+
+describe("referral rail heading (P051)", () => {
+  it("says Before you send while items remain and Ready to send when none do", () => {
+    expect(drawerRailHeading(19)).toBe("Before you send");
+    expect(drawerRailHeading(1)).toBe("Before you send");
+    expect(drawerRailHeading(0)).toBe("Ready to send");
   });
 });

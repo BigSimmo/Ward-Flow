@@ -4,6 +4,7 @@
 // `capacity-screen.tsx` (18 October 2026) to keep that file under the line cap.
 
 import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
+import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useState } from "react";
 import { dayOf, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -498,7 +499,7 @@ export function NetworkServiceGroupRows({
       <tbody data-testid={`ward-capacity-network-group-${slug}`}>
         <tr>
           <td colSpan={NETWORK_TABLE_COLUMN_COUNT} className={styles.networkGroupAbsent}>
-            {group.service} has no inpatient unit reporting to this board.
+            <SpelledCodes text={group.service} /> has no inpatient unit reporting to this board.
           </td>
         </tr>
       </tbody>
@@ -522,7 +523,9 @@ export function NetworkServiceGroupRows({
               <span className={styles.foldIcon} aria-hidden="true">
                 {open ? "▾" : "▸"}
               </span>
-              <span className={styles.groupServiceName}>{group.service}</span>
+              <span className={styles.groupServiceName}>
+                <SpelledCodes text={group.service} />
+              </span>
               <span className={styles.groupWardBadge}>{totals.wards === 1 ? "1 ward" : `${totals.wards} wards`}</span>
               <span className={styles.srOnly}>{open ? "Hide" : "Show"}</span>
             </button>
