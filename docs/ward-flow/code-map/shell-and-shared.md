@@ -553,6 +553,8 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   Help search uses `correctedQuestionWords` from `ward-help-howto.ts` to correct spelling before
   stemming, including transposed letters. The clinical-question guard checks the original question;
   questions stay in component state and never become stored values or navigation parameters.
+  Search consumes Escape before closing its modal layer, so the same key cannot close the Help
+  sheet underneath; focus returns to that sheet's search field.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never

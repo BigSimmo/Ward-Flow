@@ -97,6 +97,9 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
   function onKey(event: KeyboardEvent) {
     if (event.key === "Escape") {
       event.preventDefault();
+      // Closing removes this layer before window listeners run. Keep the same Escape from
+      // reaching the Help sheet that has just become the top layer again.
+      event.stopPropagation();
       close();
     } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();

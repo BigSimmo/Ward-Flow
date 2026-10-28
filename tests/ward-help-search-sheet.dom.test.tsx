@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -30,6 +30,23 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (importOrigin
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 
 describe("Help sheet search field", () => {
+  it("Escape closes only search and returns focus to the Help sheet", async () => {
+    const onClose = vi.fn();
+    render(<WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={onClose} />);
+    const field = screen.getByTestId("ward-help-search-field");
+    fireEvent.click(field);
+    const outsideKey = vi.fn();
+    window.addEventListener("keydown", outsideKey);
+    try {
+      fireEvent.keyDown(screen.getByRole("combobox"), { key: "Escape" });
+      expect(outsideKey).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("keydown", outsideKey);
+    }
+    await waitFor(() => expect(document.activeElement).toBe(field));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("is in the sheet and opens the search box with the desk's suggestions", () => {
     render(<WardHelpSheet view="screen" ask={undefined} onView={vi.fn()} onClose={vi.fn()} />);
     fireEvent.click(screen.getByTestId("ward-help-search-field"));
