@@ -38,6 +38,16 @@ describe("searchHelp", () => {
     expect(searchHelp("book transport", "officer")).toEqual(searchHelp("book transport", "officer"));
   });
 
+  it.each([
+    ["trasnport", "transport"],
+    ["handovr", "handover"],
+    ["thme", "theme"],
+    ["decline refferal", "decline referral"],
+  ])("corrects %s before stemming", (typed, intended) => {
+    expect(searchHelp(typed, "coordinator")).toEqual(searchHelp(intended, "coordinator"));
+    expect(searchHelp(typed, "coordinator").kind).toBe("results");
+  });
+
   it("offers closest topics when nothing matches fully", () => {
     const answer = searchHelp("transport zzzqqq xxyyzz", "coordinator");
     expect(answer.kind).toBe("none");

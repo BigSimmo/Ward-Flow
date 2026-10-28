@@ -550,6 +550,9 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   apart from the store so the header loads only it. `ward-help-host.tsx` lazy-loads the sheet, the
   tour and the auto-start. `ward-help-link.tsx` is the rail and phone menu row, marked New until the
   tour is seen. The rail's demo people live in `shell/ward-desk-personas.ts`.
+  Help search uses `correctedQuestionWords` from `ward-help-howto.ts` to correct spelling before
+  stemming, including transposed letters. The clinical-question guard checks the original question;
+  questions stay in component state and never become stored values or navigation parameters.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never

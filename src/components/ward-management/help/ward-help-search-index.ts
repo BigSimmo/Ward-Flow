@@ -10,7 +10,7 @@ import { SETTINGS_SEARCH_ENTRIES, SETTINGS_TABS } from "@/components/ward-manage
 
 import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
 import { DESK_GUIDES } from "./ward-help-guide";
-import { HOW_TOS, questionWords } from "./ward-help-howto";
+import { correctedQuestionWords, HOW_TOS, questionWords } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
 
 export type HelpSearchGroup = "Guides" | "This screen" | "Glossary" | "Shortcuts" | "Settings";
@@ -169,7 +169,7 @@ function strip(item: Entry): HelpSearchResult {
  * With no match, the closest topics are those sharing any one word.
  */
 export function searchHelp(query: string, role: WardTourRole, limit = 12): HelpSearchAnswer {
-  const words = questionWords(query);
+  const words = correctedQuestionWords(query);
   if (words.length === 0) return { kind: "empty" };
   if (isClinicalQuestion(query)) return { kind: "clinical" };
   const needed = Math.max(1, Math.ceil(words.length / 2));

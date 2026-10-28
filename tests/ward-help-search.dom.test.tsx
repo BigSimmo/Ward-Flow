@@ -117,10 +117,22 @@ describe("WardHelpSearch", () => {
     flags.helpAsk = false;
   });
 
-  it("never writes typed words to storage", () => {
+  it("never writes typed words to either storage or the URL, including after choosing a result", () => {
+    const write = vi.spyOn(Storage.prototype, "setItem");
+    const push = vi.spyOn(window.history, "pushState");
+    const replace = vi.spyOn(window.history, "replaceState");
+    const before = window.location.href;
     const input = openSearch();
     fireEvent.change(input, { target: { value: "unique-typed-words" } });
-    const stored = [...Array(localStorage.length).keys()].map((i) => localStorage.getItem(localStorage.key(i) ?? ""));
-    expect(stored.join(" ")).not.toContain("unique-typed-words");
+    fireEvent.change(input, { target: { value: "unique-typed-words dark mode" } });
+    const links = screen.getAllByRole("option");
+    fireEvent.click(links[0]);
+    expect(JSON.stringify(write.mock.calls)).not.toContain("unique-typed-words");
+    expect(JSON.stringify([...push.mock.calls, ...replace.mock.calls])).not.toContain("unique-typed-words");
+    for (const storage of [localStorage, sessionStorage]) {
+      const stored = Object.keys(storage).map((key) => [key, storage.getItem(key)]);
+      expect(JSON.stringify(stored)).not.toContain("unique-typed-words");
+    }
+    expect(window.location.href).toBe(before);
   });
 });
