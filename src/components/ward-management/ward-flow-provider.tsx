@@ -112,22 +112,9 @@ import {
 } from "@/components/ward-management/ward-flow-persistence-classification";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
-import { WardAuthorisedExecutivePreview } from "./shell/ward-chrome-frame";
-import {
-  WardShellAuthorityProvider,
-  WardShellPublicProvider,
-  wardShellLifetime,
-} from "./shell/ward-shell-public-context";
-import {
-  useEffectiveWardAccess,
-  parseStoredAccess,
-  readWardAccessSnapshot,
-  endAccessPreview,
-  setWardAccess,
-} from "./shell/ward-access-store";
-import { STATEWIDE_COORDINATOR } from "./ward-role-access";
-import { accessPlaceLabel } from "./shell/ward-access-labels";
-import { wardPlaceLookup } from "./ward-access-places";
+import { WardShellAuthorityProvider, WardShellPublicProvider } from "./shell/ward-shell-public-context";
+import { parseStoredAccess } from "./shell/ward-access-store";
+import { useWardShellValues } from "./ward-flow-shell-values";
 import { ExecutiveStatisticsUnavailable } from "./statistics/statistics-small-numbers";
 import {
   broadcastDispatchEvent,
@@ -1359,60 +1346,15 @@ function WardFlowWorld({
     ],
   );
 
-  const shellAccess = useEffectiveWardAccess();
-  const switchPublicRole = useCallback(() => {
-    if (readWardAccessSnapshot().previewOf) endAccessPreview();
-    else if (!shared.enabled) setWardAccess(STATEWIDE_COORDINATOR);
-    else shared.switchRole?.();
-  }, [shared]);
-  const shellPublic = useMemo(
-    () => ({
-      places: wardPlaceLookup(state.units),
-      placeLabel: accessPlaceLabel(shellAccess, state.units),
-      now,
-      authenticated: shared.enabled,
-      switchRole: switchPublicRole,
-      accessLifetime: wardShellLifetime(shared, state.scenario, state.worldGeneration, shellAccess),
-    }),
-    [state.units, state.scenario, state.worldGeneration, shellAccess, now, shared, switchPublicRole],
-  );
-  const previewSource = useMemo(
-    () => ({
-      state,
-      access: shellAccess,
-      now,
-      dayZero: dayZero.toISOString(),
-      startedAt: shared.snapshot?.payload.startedAt ?? localStartedAt,
-      events: shared.enabled ? (shared.eventLog ?? EMPTY_ARRAY) : (container.eventLog ?? EMPTY_ARRAY),
-    }),
-    [
-      state,
-      shellAccess,
-      now,
-      dayZero,
-      shared.snapshot?.payload.startedAt,
-      localStartedAt,
-      shared.enabled,
-      shared.eventLog,
-      container.eventLog,
-    ],
-  );
-  // Actual authority is checked above World construction. Only a coordinator can preview here.
-  const previewAuthority = JSON.stringify([
-    shared.actorId,
-    shared.workingAs,
-    shared.snapshot?.accessContext,
-    shared.viewEpoch,
-    shellAccess,
-  ]);
-  const previewChildren =
-    shellAccess.role === "executive" ? (
-      <WardAuthorisedExecutivePreview key={previewAuthority} source={previewSource}>
-        {children}
-      </WardAuthorisedExecutivePreview>
-    ) : (
-      children
-    );
+  const { shellPublic, previewChildren } = useWardShellValues({
+    state,
+    now,
+    dayZero,
+    startedAt: shared.snapshot?.payload.startedAt ?? localStartedAt,
+    events: shared.enabled ? (shared.eventLog ?? EMPTY_ARRAY) : (container.eventLog ?? EMPTY_ARRAY),
+    shared,
+    children,
+  });
   const screenKey =
     (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
   return (

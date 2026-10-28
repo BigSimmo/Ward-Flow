@@ -146,9 +146,7 @@ function AlertsWorkspace() {
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
   // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
   const broadcastDisabledReason =
-    access.role === "coordinator" || access.role === "bed_manager"
-      ? undefined
-      : "Only the coordinator or a bed manager can broadcast.";
+    coordDesk || access.role === "bed_manager" ? undefined : "Only the coordinator or a bed manager can broadcast.";
 
   const state = useWardFlowSelect(
     "movements",
