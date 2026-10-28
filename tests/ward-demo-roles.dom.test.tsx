@@ -209,7 +209,8 @@ describe("Roles within the existing Demo selector", () => {
 
   it("disables all role changes when demo controls are off", () => {
     renderPanel((child) => <DemoHostOverride>{child}</DemoHostOverride>);
-    for (const button of within(roles()).getAllByRole("button")) expect(button).toBeDisabled();
+    for (const button of within(roles()).getAllByRole("button"))
+      expect(button).toHaveAttribute("aria-disabled", "true");
     choose("Executive");
     expect(readWardAccessSnapshot().access.role).toBe("coordinator");
     expect(navigation.push).not.toHaveBeenCalled();

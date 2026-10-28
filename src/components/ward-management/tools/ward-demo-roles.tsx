@@ -22,6 +22,15 @@ import {
 import { exitDemoRole, selectDemoRole, useDemoRoleSession } from "./ward-demo-role-session";
 import styles from "./ward-demo-roles.module.css";
 
+/** The router, or null where the panel renders outside the app router (a panel rendered on its own in a test). */
+function useOptionalRouter(): ReturnType<typeof useRouter> | null {
+  try {
+    return useRouter();
+  } catch {
+    return null;
+  }
+}
+
 /** One role section in the existing desktop/phone Demo selector. Never an account switcher. */
 export function WardDemoRoles({ enabled }: { enabled: boolean }) {
   const { shared } = useWardFlowSelect("shared");
@@ -49,7 +58,7 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   const personaDeskId = usePersonaDeskId();
   const session = useDemoRoleSession();
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useOptionalRouter();
   const noteId = useId();
   const { unit, ed, team } = useMemo(() => {
     const unit =
@@ -82,7 +91,8 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   function go(next: WardAccess) {
     const href = homeHrefFor(next, communityTeamSlug);
     markDeskSwitch(pathname === href ? undefined : (pathname ?? undefined));
-    router.push(href);
+    if (router) router.push(href);
+    else window.location.assign(href);
   }
   function choose(role: WardAccessRole) {
     const next = choices[role];
@@ -119,7 +129,7 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
             className={styles.choice}
             aria-pressed={current === role}
             aria-describedby={noteId}
-            disabled={!enabled || !choices[role]}
+            aria-disabled={!enabled || !choices[role]}
             onClick={() => choose(role)}
           >
             <strong>{ACCESS_ROLE_LABELS[role]}</strong>
