@@ -14,7 +14,7 @@ describe("Help glossary and compact Reference", () => {
     render(<WardHelpGlossary termsSource={GLOSSARY} />);
     fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: "Beds" } });
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "nurse" } });
-    expect(screen.getByRole("status").textContent).toContain("0 words");
+    expect(screen.getByRole("status").textContent).toContain("No word or code matches");
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("");
     expect(screen.getByText("NIC")).toBeTruthy();

@@ -43,8 +43,14 @@ export function WardHelpGlossary({ termsSource }: { termsSource: readonly Glossa
           ))}
         </select>
       </label>
-      <p className={styles.note} role="status">
-        {terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}
+      <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>
+      <p className="sr-only" role="status" aria-label="Glossary" aria-atomic="true">
+        {terms.length === 0
+          ? "No word or code matches. Try the first few letters."
+          : terms
+              .slice(0, 3)
+              .map((entry) => entry.term)
+              .join(", ")}
       </p>
       {!query && group === "all" ? (
         <details className={styles.referenceSection}>

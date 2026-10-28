@@ -50,7 +50,7 @@ describe("printable Help guides from the app's content", () => {
       await writeCheatSheets(directory, sheets);
       expect(names.map((name) => readFileSync(path.join(directory, name), "utf8"))).toEqual(before);
     } finally {
-      rmSync(directory, { recursive: true, force: true });
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5 });
     }
   });
   it("preserves existing documents and human edits", async () => {
@@ -65,7 +65,7 @@ describe("printable Help guides from the app's content", () => {
       await expect(writeCheatSheets(generated, sheets)).rejects.toThrow(/Preserving/);
       expect(readFileSync(path.join(generated, "ward.md"), "utf8")).toBe("A human correction");
     } finally {
-      rmSync(directory, { recursive: true, force: true });
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5 });
     }
   });
   it("escapes content and needs no scripts or remote resources to read or print", () => {
