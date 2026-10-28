@@ -66,23 +66,30 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
     return () => popSheet(layerId);
   }, [open, id]);
 
-  function close() {
+  useEffect(() => {
+    // Keep the highlighted result visible when arrows move past the edge of a scrolled list.
+    if (open) document.getElementById(`${id}-${active}`)?.scrollIntoView?.({ block: "nearest" });
+  }, [open, active, id]);
+
+  function close(restoreFocus = true) {
     setOpen(false);
     setQuery("");
     setActive(0);
-    opener.current?.focus();
+    // Wait a frame so the layer has left the modal stack and the Help sheet behind is no longer
+    // inert; Show me and navigation pass false because they take focus elsewhere.
+    if (restoreFocus) requestAnimationFrame(() => opener.current?.focus());
   }
 
   function act(result: HelpSearchResult) {
     const mine = !result.desks || result.desks.includes(role);
     if (showMeOn && result.howToId && mine) {
-      close();
+      close(false);
       showWardHowTo(result.howToId);
       return;
     }
     const href = mine ? howToHref(result.go, role, home) : undefined;
     if (href) {
-      close();
+      close(false);
       window.location.assign(href);
     }
   }
@@ -125,7 +132,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
             Show me
           </button>
         ) : href ? (
-          <Link href={href} tabIndex={-1} className={styles.action} onClick={close}>
+          <Link href={href} tabIndex={-1} className={styles.action} onClick={() => close(false)}>
             Open
           </Link>
         ) : null}
@@ -134,15 +141,15 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
   }
 
   function groups(list: readonly HelpSearchResult[]) {
-    return HELP_SEARCH_GROUPS.map((group) => {
+    return HELP_SEARCH_GROUPS.map((group, groupIndex) => {
       const inGroup = list.flatMap((result, index) => (result.group === group ? [{ result, index }] : []));
       if (!inGroup.length) return null;
       return (
         <li key={group} role="presentation">
-          <p className={styles.group} id={`${id}-g-${group}`}>
+          <p className={styles.group} id={`${id}-g-${groupIndex}`}>
             {group}
           </p>
-          <ul role="group" aria-labelledby={`${id}-g-${group}`} className={styles.list}>
+          <ul role="group" aria-labelledby={`${id}-g-${groupIndex}`} className={styles.list}>
             {inGroup.map(({ result, index }) => row(result, index))}
           </ul>
         </li>
@@ -166,7 +173,7 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
       {open && typeof document !== "undefined"
         ? createPortal(
             <div ref={layer} className={styles.backdrop}>
-              <button type="button" aria-label="Close" tabIndex={-1} className={styles.scrim} onClick={close} />
+              <button type="button" aria-label="Close" tabIndex={-1} className={styles.scrim} onClick={() => close()} />
               <div
                 role="dialog"
                 aria-modal="true"
@@ -206,7 +213,11 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
                     {answer.kind === "none" ? (
                       <div className={styles.notice} role="status" data-testid="ward-help-search-none">
                         <strong>No Help topics match &ldquo;{query.trim()}&rdquo;.</strong>
-                        <p>Check the spelling, or try one of these closest topics.</p>
+                        <p>
+                          {rows.length
+                            ? "Check the spelling, or try one of these closest topics."
+                            : "Check the spelling, or try different words."}
+                        </p>
                       </div>
                     ) : null}
                     <ul id={`${id}-list`} role="listbox" aria-label="Search Help" className={styles.list}>
