@@ -14,6 +14,8 @@
  * never class names; `tests/ward-help-howto.test.ts` fails when a test id leaves the source.
  */
 import type { WardTourRole } from "./ward-help-store";
+import { HELP_SYNONYMS } from "./ward-help-synonyms";
+import { nearestWord } from "./ward-help-typo";
 import type { TourTarget } from "./ward-tour-steps";
 
 /**
@@ -537,37 +539,6 @@ const STOP = new Set(
   ),
 );
 
-/** Word families: each word on the left is read as the one on the right. */
-const FAMILY: Readonly<Record<string, string>> = {
-  reserve: "pull",
-  keep: "pull",
-  hold: "pull",
-  hand: "handover",
-  handoff: "handover",
-  ambulance: "transport",
-  car: "transport",
-  transfer: "transport",
-  television: "tv",
-  telly: "tv",
-  approve: "accept",
-  reject: "decline",
-  refuse: "decline",
-  rang: "call",
-  ring: "call",
-  phoned: "call",
-  dark: "theme",
-  night: "theme",
-  colour: "theme",
-  color: "theme",
-  notify: "notification",
-  alarm: "alert",
-  sound: "buzz",
-  chime: "buzz",
-  mute: "buzz",
-  switch: "change",
-  swap: "change",
-};
-
 /** Lower case with a few endings off, so "pulled", "pulls" and "pull", or "times" and "time", meet. */
 function bareStem(word: string): string {
   let w = word.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -580,7 +551,7 @@ function bareStem(word: string): string {
 }
 
 const STEM_FAMILY: ReadonlyMap<string, string> = new Map(
-  Object.entries(FAMILY).map(([word, family]) => [bareStem(word), bareStem(family)]),
+  HELP_SYNONYMS.map(([word, family]) => [bareStem(word), bareStem(family)]),
 );
 
 /** A word's stem, then its family. */
@@ -615,6 +586,68 @@ function wordsOf(howTo: HowTo) {
   return entry;
 }
 
+let vocabulary: { list: readonly string[]; known: ReadonlySet<string> } | undefined;
+/** Every word stem the how-tos hold, title and keyword words first, in list order. */
+function howToVocabulary() {
+  if (!vocabulary) {
+    const strong = HOW_TOS.flatMap((howTo) => [...wordsOf(howTo).strong]);
+    const weak = HOW_TOS.flatMap((howTo) => [...wordsOf(howTo).weak]);
+    const list = [...new Set([...strong, ...weak])];
+    vocabulary = { list, known: new Set(list) };
+  }
+  return vocabulary;
+}
+
+/**
+ * Question words with small typos mended (P9): a word Help does not hold becomes the nearest word
+ * it does, one slip away up to six letters and two beyond. Same words in, same words out.
+ */
+export function correctWords(words: readonly string[]): readonly string[] {
+  const { list, known } = howToVocabulary();
+  return [...new Set(words.map((word) => nearestWord(word, list, known)))];
+}
+
+/** A word as typed: lower case, letters and digits only, no endings taken off. */
+function plainWord(word: string): string {
+  return word.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+/** The words as written, endings still on, split the way a question is. */
+function plainWords(text: string): string[] {
+  return text
+    .split(/[\s,.?!/]+/)
+    .filter((word) => word && !STOP.has(word.toLowerCase().replace(/'/g, "")))
+    .map(plainWord)
+    .filter(Boolean);
+}
+
+let plainVocabulary: { list: readonly string[]; known: ReadonlySet<string> } | undefined;
+/** Every word as written in the how-tos (title and keywords first) and the synonym list, endings on. */
+function howToPlainVocabulary() {
+  if (!plainVocabulary) {
+    const strong = HOW_TOS.flatMap((howTo) => plainWords(`${howTo.title} ${howTo.keywords}`));
+    const weak = HOW_TOS.flatMap((howTo) => plainWords(howTo.answer));
+    const synonyms = HELP_SYNONYMS.map(([word]) => plainWord(word));
+    const list = [...new Set([...strong, ...weak, ...synonyms])];
+    plainVocabulary = { list, known: new Set(list) };
+  }
+  return plainVocabulary;
+}
+
+/**
+ * The question's word stems with typos mended first (P9). A typed word is mended against the words
+ * as written, then stemmed, because stemming first shortens the word and changes how many slips it
+ * may hold ("thme" is one slip from "theme" but would be a three-letter stem). Same words in, same
+ * words out.
+ */
+export function correctedQuestionWords(query: string): readonly string[] {
+  const { list, known } = howToPlainVocabulary();
+  const words = plainWords(query)
+    .map((word) => stem(nearestWord(word, list, known)))
+    .filter((word) => word.length > 1);
+  return [...new Set(words)];
+}
+
 export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean };
 
 /**
@@ -624,7 +657,7 @@ export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean 
  * so the same words always give the same answers. Answers scoring under half the best are dropped.
  */
 export function askHelp(query: string, role: WardTourRole, limit = 6): readonly HowToMatch[] {
-  const words = questionWords(query);
+  const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
   const needed = Math.max(1, Math.ceil(words.length / 2));
   const scored = HOW_TOS.flatMap((howTo, order) => {
@@ -652,6 +685,24 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
       (a, b) =>
         b.hits - a.hits || Number(b.forThisDesk) - Number(a.forThisDesk) || b.score - a.score || a.order - b.order,
     )
+    .slice(0, limit)
+    .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
+}
+
+/**
+ * When nothing answers (P9): up to `limit` how-tos sharing any one question word, most shared first,
+ * this desk's own before others, then list order. Empty when no word is shared at all.
+ */
+export function closestHowTos(query: string, role: WardTourRole, limit = 3): readonly HowToMatch[] {
+  const words = correctedQuestionWords(query);
+  if (words.length === 0) return [];
+  return HOW_TOS.flatMap((howTo, order) => {
+    const { strong, weak } = wordsOf(howTo);
+    const score = words.reduce((sum, word) => sum + (strong.has(word) ? 3 : weak.has(word) ? 1 : 0), 0);
+    const forThisDesk = howTo.desks === EVERY_DESK || howTo.desks.includes(role);
+    return score ? [{ howTo, forThisDesk, score, order }] : [];
+  })
+    .sort((a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order)
     .slice(0, limit)
     .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
 }

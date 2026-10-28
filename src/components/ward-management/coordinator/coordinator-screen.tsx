@@ -147,6 +147,9 @@ const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
 /** Focus target when a selection goes away: the selected queue row, else the active queue choice. */
 const QUEUE_FOCUS_SELECTOR = 'button[aria-pressed="true"], [role="radio"][aria-checked="true"]';
 
+/** P124: what the footer's "N refused" count means, for a hover and for a screen reader. */
+const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this session. Details are under Refused.";
+
 /**
  * Home: the coordinator's first screen (direction A, owner 10 Oct 2026).
  *
@@ -1190,9 +1193,13 @@ export function CoordinatorScreen() {
                 className={styles.refusalMarker}
                 data-alert={rejections.length > 0 ? "true" : undefined}
                 data-testid="ward-coordinator-refusal-marker"
-                title={`${rejections.length} refused action${rejections.length === 1 ? "" : "s"}`}
+                title={REFUSED_MARKER_EXPLANATION}
+                aria-describedby="ward-coordinator-refusal-explained"
               >
                 {rejections.length === 1 ? "1 refused" : `${rejections.length} refused`}
+              </span>
+              <span id="ward-coordinator-refusal-explained" className="sr-only">
+                {REFUSED_MARKER_EXPLANATION}
               </span>
             </>
           }

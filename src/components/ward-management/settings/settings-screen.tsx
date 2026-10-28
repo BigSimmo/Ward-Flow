@@ -111,7 +111,8 @@ const WardHelpUsageCard = dynamic(() =>
 );
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
+import { useEffectiveWardAccess, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
+import { accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
 import { AccessSettings, showsAccessTab } from "./access-settings";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
@@ -174,6 +175,9 @@ const TAB_ICONS = {
   access: KeyRound,
 } as const;
 
+/** The save check's own sentence for a global settings change (`commandScopeRefusal`); a test keeps the two equal. */
+const STATEWIDE_ONLY = "Only the statewide coordinator may change global settings.";
+
 export function SettingsScreen() {
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
@@ -190,7 +194,11 @@ export function SettingsScreen() {
   const now = useWardFlowClock();
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
-  const configurationGate = useRoleGate()("SET_CONFIGURATION");
+  const roleGate = useRoleGate()("SET_CONFIGURATION");
+  // P055: the save check also refuses anyone but the statewide coordinator, so say so up front.
+  const notStatewide = !accessIsWholeNetwork(useEffectiveWardAccess());
+  const configurationGate =
+    roleGate.allowed && notStatewide ? { ...roleGate, allowed: false, reason: STATEWIDE_ONLY } : roleGate;
   const [auditActor] = useWardRecordActors();
   const configurationBlockReason = configurationGate.allowed
     ? undefined

@@ -1,0 +1,52 @@
+/**
+ * Help search synonyms (P9): each pair reads the word on the left as the word on the right, so a
+ * question in everyday words finds the how-to written in the app's words. Built from the plain
+ * words in docs word-list.md and the Help glossary. Data only: nothing here is shown on screen.
+ * Wording rule D-81/D-85: "hold" and "keep" are what people type for pulling a bed, so they lead to
+ * the pull answer; Help's own text still says "pull".
+ */
+export const HELP_SYNONYMS: readonly (readonly [word: string, family: string])[] = [
+  ["reserve", "pull"],
+  ["keep", "pull"],
+  ["hold", "pull"],
+  ["hand", "handover"],
+  ["handoff", "handover"],
+  ["ambulance", "transport"],
+  ["ambo", "transport"],
+  ["car", "transport"],
+  ["taxi", "transport"],
+  ["cab", "transport"],
+  ["transfer", "transport"],
+  ["television", "tv"],
+  ["telly", "tv"],
+  ["approve", "accept"],
+  ["reject", "decline"],
+  ["refuse", "decline"],
+  ["rang", "call"],
+  ["ring", "call"],
+  ["phoned", "call"],
+  ["telephone", "call"],
+  ["dark", "theme"],
+  ["night", "theme"],
+  ["colour", "theme"],
+  ["color", "theme"],
+  ["notify", "notification"],
+  ["alarm", "alert"],
+  ["sound", "buzz"],
+  ["chime", "buzz"],
+  ["mute", "buzz"],
+  ["switch", "change"],
+  ["swap", "change"],
+  ["empty", "vacancy"],
+  ["spare", "vacancy"],
+  ["vacant", "vacancy"],
+  ["favorite", "favourite"],
+  ["revert", "undo"],
+  ["crashed", "broken"],
+  ["frozen", "broken"],
+  ["chart", "statistics"],
+  ["graph", "statistics"],
+  ["dashboard", "board"],
+  ["login", "access"],
+  ["permissions", "access"],
+];

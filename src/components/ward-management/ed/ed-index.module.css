@@ -292,14 +292,16 @@
 
 /* Table */
 .tableCard {
+  position: relative; /* P034: holds the visually hidden labels, so they cannot widen the page. */
   padding: 0;
-  overflow: hidden;
+  overflow-x: auto; /* P034: a card narrower than its columns scrolls, at every width and beside the preview rail. */
+  overflow-y: hidden;
 }
 
 .table {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 1060px; /* P034: the nine columns, their gaps and the row padding. */
 }
 
 .tr {
@@ -587,14 +589,6 @@
 @media (max-width: 60rem) {
   .cardGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .tableCard {
-    overflow-x: auto;
-  }
-
-  .table {
-    min-width: 820px;
   }
 }
 
