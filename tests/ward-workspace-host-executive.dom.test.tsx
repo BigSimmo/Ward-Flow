@@ -339,8 +339,14 @@ describe("workspace host actual authority before operational construction", () =
 });
 
 describe("controlled authorised preview host", () => {
-  it("clears old source completions immediately and never invents a transport binding", async () => {
-    const project = vi.spyOn(projector, "projectExecutiveReportingFoundation").mockReturnValue(aggregate.report);
+  it("never shows an old source's report and never invents a transport binding", async () => {
+    // Each report carries its source's time, so an old one would show the old time.
+    const project = vi
+      .spyOn(projector, "projectExecutiveReportingFoundation")
+      .mockImplementation((_state, _access, options) => ({
+        ...aggregate.report,
+        network: { ...aggregate.report.network, asAt: { ...aggregate.report.network.asAt, now: options.now } },
+      }));
     const input = {
       state: source,
       access: { role: "executive", scope: { kind: "statewide" } } as const,
@@ -358,10 +364,9 @@ describe("controlled authorised preview host", () => {
     expect(screen.getByTestId("report")).toHaveTextContent(String(NOW_ANCHOR));
     const changed = { ...input, now: NOW_ANCHOR + 1 };
     view.rerender(<WardAuthorisedExecutivePreview source={changed}>{child}</WardAuthorisedExecutivePreview>);
-    expect(screen.getByTestId("report")).toHaveTextContent("none");
-    await act(async () => {
-      await vi.dynamicImportSettled();
-    });
+    // The new source's report in the same render: never the old one, and no empty frame that would
+    // swap the executive shell for "unavailable" and close an open tour or sheet.
+    expect(screen.getByTestId("report")).toHaveTextContent(String(NOW_ANCHOR + 1));
     expect(project).toHaveBeenLastCalledWith(source, input.access, expect.objectContaining({ now: NOW_ANCHOR + 1 }));
     project.mockRestore();
   });
