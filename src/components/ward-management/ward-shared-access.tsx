@@ -273,10 +273,11 @@ function useDisplaySessionLifetime(until: number | null | undefined): boolean {
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
+  const hasSnapshot = !!(connection.snapshot || connection.executiveSnapshot);
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const [slot, setSlot] = useState<DataModeSlot | null>(null);
   const displaySessionCurrent = useDisplaySessionLifetime(connection.sessionEndsAt);
-  const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && !!connection.snapshot;
+  const connected = connection.enabled && ["ready", "saving"].includes(connection.status) && hasSnapshot;
   // Audit 1 (CS-13, Josh 20 Oct): Live chips read Stale while the shared board cannot refresh or
   // its last good refresh is more than two refreshes old. The one publisher; nothing in local mode.
   const refreshUnavailable = connection.enabled && connection.status === "unavailable";
@@ -290,7 +291,12 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   }, [connection.enabled, refreshUnavailable, receivedAt]);
   useEffect(() => () => publishLiveRefresh(undefined), []);
   // The server's role and place for this account. Checked against the access table, never widened.
-  const accessKey = connection.enabled && connection.snapshot ? JSON.stringify(connection.access ?? null) : null;
+  // Keyed on the parsed form (fixed key order, known fields only), so an equal access sent in a
+  // different order by a refresh keeps the same object and does not remount the workspace.
+  const accessKey =
+    connection.enabled && connection.access
+      ? JSON.stringify(parseStoredAccess(JSON.stringify(connection.access)))
+      : null;
   const serverAccess = useMemo(() => (accessKey ? parseStoredAccess(accessKey) : null), [accessKey]);
   // The desk follows the server's role, so every screen is scoped to it (a coordinator's preview
   // of another role is left alone until it ends).
@@ -306,7 +312,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
   const pushKind = !connection.enabled
     ? "local"
-    : connection.signedIn && connection.snapshot && connection.status !== "not-authorised"
+    : connection.signedIn && hasSnapshot && connection.status !== "not-authorised"
       ? hearsAlerts
         ? "connected"
         : "role"
@@ -412,7 +418,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   return (
     <DowntimePackBoundary
       identity={packIdentity}
-      ready={connection.reportSnapshotReady !== false}
+      ready={serverAccess?.role !== "executive" && connection.reportSnapshotReady !== false}
       unavailable={packUnavailable}
     >
       <PhonePushAccessContext.Provider value={pushAccess}>
@@ -536,6 +542,7 @@ function WardSharedWorkspaceContent({
 }) {
   "use no memo";
   const recoveryOutcomeRef = useRef<HTMLDivElement>(null);
+  const hasSnapshot = !!(connection.snapshot || connection.executiveSnapshot);
   const [checkedAt, setCheckedAt] = useState(() => Date.now());
   // TV-13 (H-0787): a wall TV whose session ends says so at TV size, not as a small sign-in page.
   const onTv = isTvPath(usePathname() ?? "");
@@ -556,7 +563,7 @@ function WardSharedWorkspaceContent({
     connection.status === "loading" &&
     !connection.error &&
     !connection.credentials?.open &&
-    !connection.snapshot;
+    !hasSnapshot;
   const [stalled, setStalled] = useState(false);
   useEffect(() => {
     if (!connecting) return;
@@ -587,23 +594,8 @@ function WardSharedWorkspaceContent({
         onSignOut={connection.signOut}
       />
     );
-  // Audit 24-5 RA-09: the server named a role this build cannot parse. The tab must not carry on
-  // with the desk it held before, so it falls back to the no-role screen. A server that names no
-  // access at all (`connection.access` absent) is the older shared workspace and still opens.
-  if (connection.signedIn && connection.snapshot && connection.access != null && access === null)
-    return (
-      <WardAskForAccess
-        canRequest={connection.canRequest === true}
-        api={connection.accessApi ?? null}
-        onRetry={connection.retry}
-        accountEmail={connection.accountEmail}
-        onSignOut={connection.signOut}
-      />
-    );
-  // Audit 24-5 RA-09: the server named a role this build cannot parse. The tab must not carry on
-  // with the desk it held before, so it falls back to the no-role screen. A server that names no
-  // access at all (`connection.access` absent) is the older shared workspace and still opens.
-  if (connection.signedIn && connection.snapshot && connection.access != null && access === null)
+  // An authenticated payload without a current parsed role never opens an operational world.
+  if (connection.signedIn && hasSnapshot && access === null)
     return (
       <WardAskForAccess
         canRequest={connection.canRequest === true}
@@ -634,7 +626,7 @@ function WardSharedWorkspaceContent({
     );
   // P013 (Josh, 27 Oct 2026): while the first read after connecting is still out, a spinner with
   // no text stands in for the sign-in or Reconnect screen, since nothing has failed yet.
-  if (connection.signedIn && connection.connecting && !connection.snapshot)
+  if (connection.signedIn && connection.connecting && !hasSnapshot)
     return (
       <div
         data-testid="ward-shared-reconnecting"
@@ -645,7 +637,7 @@ function WardSharedWorkspaceContent({
       </div>
     );
   // Signed in, but the shared workspace did not open: say so, and offer the two ways on.
-  if (connection.signedIn && !connection.snapshot && connection.status !== "not-authorised")
+  if (connection.signedIn && !hasSnapshot && connection.status !== "not-authorised")
     return (
       <FrontDoorStatus
         title="Ward Flow did not open"
@@ -658,7 +650,7 @@ function WardSharedWorkspaceContent({
         <FrontDoorStatusButton onClick={connection.signOut}>Sign out</FrontDoorStatusButton>
       </FrontDoorStatus>
     );
-  if (!connection.signedIn || !connection.snapshot)
+  if (!connection.signedIn || !hasSnapshot)
     return (
       <FrontDoor
         form={connection.credentials}
@@ -699,8 +691,8 @@ function WardSharedWorkspaceContent({
         key={JSON.stringify([
           connection.actorId,
           connection.workingAs,
-          connection.access,
-          connection.snapshot?.accessContext,
+          access,
+          (connection.snapshot ?? connection.executiveSnapshot)?.accessContext,
         ])}
         blocked={blocked}
       >

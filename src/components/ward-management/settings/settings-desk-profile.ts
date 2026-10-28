@@ -1,8 +1,8 @@
-import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
+import { SEED_UNITS, accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { ACCESS_ROLE_LABELS, accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 
 import { SETTINGS_DEMO_PROFILE, type WorkspaceProfile } from "./settings-profile";
 
@@ -15,7 +15,7 @@ export type DeskProfile = Pick<WorkspaceProfile, "name" | "initials" | "role" | 
  */
 export function useSettingsDeskProfile(): DeskProfile {
   const access = useEffectiveWardAccess();
-  const { units } = useWardFlowSelect("units");
+  const publicModel = useWardShellPublic();
   if (accessIsWholeNetwork(access)) return SETTINGS_DEMO_PROFILE;
   const persona = access.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[access.role];
   const role = ACCESS_ROLE_LABELS[access.role];
@@ -24,6 +24,6 @@ export function useSettingsDeskProfile(): DeskProfile {
     name: named ? persona.name : role,
     initials: persona.initials,
     role,
-    location: accessPlaceLabel(access, units),
+    location: publicModel?.placeLabel ?? accessPlaceLabel(access, SEED_UNITS),
   };
 }

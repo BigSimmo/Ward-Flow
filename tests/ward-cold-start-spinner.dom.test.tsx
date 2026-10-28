@@ -53,7 +53,13 @@ it("never shows the did-not-open screen while a saved sign-in's first read is st
     "fetch",
     vi.fn(async (url) =>
       String(url).includes("/v1/workspace")
-        ? workspace.then(() => Response.json({ snapshot }))
+        ? workspace.then(() =>
+            Response.json({
+              snapshot,
+              actorId: user.id,
+              access: { role: "coordinator", scope: { kind: "statewide" } },
+            }),
+          )
         : String(url).endsWith("/user")
           ? Response.json(user)
           : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),

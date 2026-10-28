@@ -67,6 +67,7 @@ type Context = {
   /** Movement, stay and planned admission ids an inbox row may name after its prefix. */
   readonly inboxSubjectIds: ReadonlySet<string>;
   readonly auditEvents: readonly AuditEvent[];
+  readonly reviewableBreakGlassEventIds: ReadonlySet<string>;
 };
 
 const keep =
@@ -273,9 +274,12 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     if (!context.coordinator) return [];
     const kept = seededAuditIds(context.scoped, context.state);
     for (const event of context.auditEvents) kept.add(event.id);
-    // D-80 item 14: a break glass opening's review names no record here; the server scopes the openings.
-    return context.state.auditReviews.filter(
-      (review: AuditReview) => kept.has(review.eventId) || isBreakGlassReviewId(review.eventId),
+    // Openings live outside the world. Only the server's current-place lookup can authorise
+    // their review marks; an id prefix alone carries no authority.
+    return context.state.auditReviews.filter((review: AuditReview) =>
+      isBreakGlassReviewId(review.eventId)
+        ? context.reviewableBreakGlassEventIds.has(review.eventId)
+        : kept.has(review.eventId),
     );
   },
   // Coordinator records, narrowed to the coordinator's own service.
@@ -313,6 +317,8 @@ export type StateScopeOptions = {
   readonly now: number;
   readonly places: PlaceLookup;
   readonly grants?: readonly BreakGlassGrant[];
+  /** Server-resolved openings in the current desk's ordinary scope. Never browser input. */
+  readonly reviewableBreakGlassEventIds?: ReadonlySet<string>;
 };
 
 /**
@@ -357,6 +363,7 @@ export function scopeWardFlowState(
     places,
     admissionIds,
     inboxSubjectIds,
+    reviewableBreakGlassEventIds: options.reviewableBreakGlassEventIds ?? new Set<string>(),
   };
   const auditEvents = state.auditEvents.filter(
     (event) =>

@@ -42,25 +42,39 @@ function settingsTabLabel(tab: string): string {
  * then the glossary and Settings. The question lives in this component's state only: it is never
  * written to storage, a URL or a log (D-11, D-18), and nothing leaves the browser.
  */
-export function WardHelpAsk({
-  role,
-  home,
-  initialQuery,
-  onClose,
-}: {
+type WardHelpAskProps = {
   role: WardTourRole;
   home: string | undefined;
   initialQuery: string;
   onClose: () => void;
-}) {
-  const id = useId();
+  /** Explicit public glossary supplied by an aggregate-only host. */
+  termsSource?: ReturnType<typeof glossaryForSites>;
+};
+export function WardHelpAsk(props: WardHelpAskProps) {
+  return props.termsSource ? (
+    <HelpAskView {...props} termsSource={props.termsSource} />
+  ) : (
+    <OperationalHelpAsk {...props} />
+  );
+}
+function OperationalHelpAsk(props: WardHelpAskProps) {
   const { sites } = useWardNetwork();
+  return <HelpAskView {...props} termsSource={glossaryForSites(sites)} />;
+}
+function HelpAskView({
+  role,
+  home,
+  initialQuery,
+  onClose,
+  termsSource,
+}: WardHelpAskProps & { termsSource: ReturnType<typeof glossaryForSites> }) {
+  const id = useId();
   const [query, setQuery] = useState(initialQuery);
   const asked = questionWords(query).length > 0;
   const answers = useMemo(() => askHelp(query, role), [query, role]);
   const words = useMemo(
-    () => (asked ? filterGlossary(query.trim().split(/\s+/).at(-1) ?? "", glossaryForSites(sites)).slice(0, 3) : []),
-    [asked, query, sites],
+    () => (asked ? filterGlossary(query.trim().split(/\s+/).at(-1) ?? "", termsSource).slice(0, 3) : []),
+    [asked, query, termsSource],
   );
   const settings = useMemo(() => (asked ? findSettings(questionWords(query).join(" "), 3) : []), [asked, query]);
   const [openId, setOpenId] = useState<string | undefined>(undefined);

@@ -31,6 +31,7 @@ import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import { WHATS_NEW } from "./ward-whats-new";
 import styles from "./ward-help-sheet.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 
 const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
   { id: "desk", label: "Your desk" },
@@ -74,20 +75,44 @@ function deskLabel(role: WardTourRole): string {
  * 12; desk guide 24 Oct 2026), with the way into the desk's tour, which runs over the screen itself
  * (`ward-tour.tsx`). The glossary filter is held in this component only and is never saved.
  */
-export function WardHelpSheet({
+type WardHelpSheetProps = {
+  view: HelpView;
+  ask?: string;
+  onView: (view: HelpView) => void;
+  onClose: () => void;
+};
+const BASE_GLOSSARY = glossaryForSites([]);
+export function WardHelpSheet(props: WardHelpSheetProps) {
+  return useExecutiveStatisticsControl().executive ? (
+    <ExecutiveHelpSheet {...props} />
+  ) : (
+    <OperationalHelpSheet {...props} />
+  );
+}
+function ExecutiveHelpSheet(props: WardHelpSheetProps) {
+  const report = useExecutiveStatistics();
+  const terms = useMemo(
+    () =>
+      [
+        ...BASE_GLOSSARY,
+        ...(report?.catalogue.sites.map((site) => ({ term: site.code, meaning: site.name })) ?? []),
+      ].toSorted((a, b) => a.term.localeCompare(b.term, "en-AU")),
+    [report],
+  );
+  return <WardHelpSheetView {...props} termsSource={terms} />;
+}
+function OperationalHelpSheet(props: WardHelpSheetProps) {
+  const { sites } = useWardNetwork();
+  return <WardHelpSheetView {...props} termsSource={glossaryForSites(sites)} />;
+}
+function WardHelpSheetView({
   view,
   ask,
   onView,
   onClose,
-}: {
-  view: HelpView;
-  /** The Ask box's starting words, or undefined while the Ask help preview flag is off. */
-  ask?: string;
-  onView: (view: HelpView) => void;
-  onClose: () => void;
-}) {
+  termsSource,
+}: WardHelpSheetProps & { termsSource: ReturnType<typeof glossaryForSites> }) {
   const pathname = usePathname() ?? "";
-  const { sites } = useWardNetwork();
   const role = useTourRole();
   const guide = DESK_GUIDES[role];
   const { home, deskHome } = useTourFacts(role);
@@ -103,7 +128,7 @@ export function WardHelpSheet({
   }, [entries, pathname, role]);
   const phone = useIsPhone();
   const [query, setQuery] = useState("");
-  const terms = filterGlossary(query, glossaryForSites(sites));
+  const terms = filterGlossary(query, termsSource);
 
   const latest = WHATS_NEW.at(-1);
 
@@ -168,7 +193,13 @@ export function WardHelpSheet({
       <WardHelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} />
 
       {ask !== undefined ? (
-        <WardHelpAsk role={role} home={deskHome ?? home} initialQuery={ask} onClose={onClose} />
+        <WardHelpAsk
+          role={role}
+          home={deskHome ?? home}
+          initialQuery={ask}
+          onClose={onClose}
+          termsSource={termsSource}
+        />
       ) : null}
 
       <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">

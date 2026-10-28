@@ -22,6 +22,9 @@ import { readFavourites, saveFavourites, subscribeFavourites } from "../on-call/
 import { onCallHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+import { scenarioWardNetwork } from "../ward-scenarios";
+import { useCanOpenHref } from "../shell/ward-access";
 
 type ContactsView = "key" | "mine" | "now" | "recent" | "all";
 
@@ -42,10 +45,43 @@ function availabilityLine(
  * My list (shared with On-call) and the numbers copied this visit. Every number is a labelled mock.
  */
 export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
+  return useExecutiveStatisticsControl().executive ? (
+    <ExecutiveContacts onNavigate={onNavigate} />
+  ) : (
+    <OperationalContacts onNavigate={onNavigate} />
+  );
+}
+function ExecutiveContacts({ onNavigate }: { onNavigate: () => void }) {
+  const report = useExecutiveStatistics();
+  const entries = useMemo(
+    () => (report ? buildOnCallDirectory(scenarioWardNetwork(report.sampleScenario).sites) : null),
+    [report],
+  );
+  return report && entries ? (
+    <ContactsBody entries={entries} minute={minuteOfDay(report.network.asAt.now)} onNavigate={onNavigate} />
+  ) : (
+    <p role="status">On-call is unavailable until this report is ready.</p>
+  );
+}
+function OperationalContacts({ onNavigate }: { onNavigate: () => void }) {
   const scenario = useContext(WardFlowContext)?.scenario;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- `scenario` re-points `wardSites`, which the build reads
-  const entries = useMemo(() => buildOnCallDirectory(), [scenario]);
+  const entries = useMemo(
+    () => buildOnCallDirectory(scenario ? scenarioWardNetwork(scenario).sites : undefined),
+    [scenario],
+  );
   const minute = minuteOfDay(useWardFlowClock());
+  return <ContactsBody entries={entries} minute={minute} onNavigate={onNavigate} />;
+}
+function ContactsBody({
+  entries,
+  minute,
+  onNavigate,
+}: {
+  entries: DirectoryEntry[];
+  minute: number;
+  onNavigate: () => void;
+}) {
+  const canOpen = useCanOpenHref();
   const [view, setView] = useState<ContactsView>("key");
   const [query, setQuery] = useState("");
   const [favourites, setFavourites] = useState<string[]>([]);
@@ -207,9 +243,11 @@ export function WardToolsContacts({ onNavigate }: { onNavigate: () => void }) {
       <p className={styles.liveNote} role="status">
         <span key={notice.revision}>{notice.text}</span>
       </p>
-      <Link className={styles.moreLink} href={onCallHref()} onClick={onNavigate}>
-        Open On-call
-      </Link>
+      {canOpen(onCallHref()) && (
+        <Link className={styles.moreLink} href={onCallHref()} onClick={onNavigate}>
+          Open On-call
+        </Link>
+      )}
     </div>
   );
 }

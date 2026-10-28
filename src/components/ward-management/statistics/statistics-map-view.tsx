@@ -56,6 +56,18 @@ import { FlushRow, Follow } from "./statistics-layout";
 import { occupiedBeds } from "./statistics-occupancy";
 import { StatisticsWaMap, type WaMapNode } from "./statistics-wa-map";
 import styles from "./statistics-map-view.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import {
+  ExecutiveStatisticsUnavailable,
+  PeopleNotListed,
+  exactStatisticsCount,
+  statisticsCountText,
+  sumStatisticsCounts,
+  withheldBar,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 export type MapLens = "beds" | "ed" | "dis" | "stay";
 
@@ -76,41 +88,59 @@ export const shortSite = (name: string) =>
 // W-3 (fresh audit 26 Oct 2026): one unit word for a stay, "days", never "d".
 const daysText = (days: number) => `${days.toFixed(1)} days`;
 
-type WardFigures = {
-  unit: Unit;
+type WardFigures<Count = number> = {
+  unit: Pick<Unit, "id" | "name">;
   ready: number;
   /** Beds in use: Occupied + Pulled (`ward-occupancy.ts`). */
   occupied: number;
   pct: number;
-  dischargedToday: number;
-  dueToday: number;
+  dischargedToday: Count;
+  dueToday: Count;
   meanStay: number | null;
 };
 
 /** One site's figures for every lens. Every number comes from the synthetic state. */
-export type SiteFigures = {
+type SiteFigureData<Count> = {
   code: string;
   name: string;
   service: HealthService;
-  wards: WardFigures[];
-  ed: EmergencyDepartment | undefined;
+  wards: WardFigures<Count>[];
+  ed: (Pick<EmergencyDepartment, "id"> & { openable?: boolean }) | undefined;
   beds: number;
   /** Beds in use: Occupied + Pulled (`ward-occupancy.ts`). */
   occupied: number;
   pct: number;
   ready: number;
   wardsOverLine: number;
-  edWaiting: number;
+  edWaiting: Count;
   edLongest: number | null;
-  edOver24: number;
-  edOver48: number;
+  edOver24: Count;
+  edOver48: Count;
   edEntries: readonly EdWaitingEntry[];
-  dischargedToday: number;
-  dueToday: number;
-  blocked: number;
+  dischargedToday: Count;
+  dueToday: Count;
+  blocked: Count;
   meanStay: number | null;
-  longStays: number;
+  longStays: Count;
 };
+export type SiteFigures = SiteFigureData<number>;
+type PresentedSiteFigures = SiteFigureData<StatisticsCount>;
+type MapNetwork = Pick<
+  PresentedSiteFigures,
+  | "beds"
+  | "occupied"
+  | "pct"
+  | "ready"
+  | "wardsOverLine"
+  | "edWaiting"
+  | "edOver24"
+  | "edOver48"
+  | "dischargedToday"
+  | "dueToday"
+  | "blocked"
+  | "meanStay"
+  | "longStays"
+> & { preparing: number; longest: PresentedSiteFigures | null };
 
 /** Gone today: left the ward on today's date. The hero's "Discharged today" uses the same rule. */
 const leftToday = (admission: Admission, now: Instant) =>
@@ -212,7 +242,8 @@ export function siteFigures({
 }
 
 /** Whether a lens applies to a site: the ED lens needs an ED, the rest need a ward. */
-const applies = (site: SiteFigures, lens: MapLens) => (lens === "ed" ? site.ed !== undefined : site.wards.length > 0);
+const applies = (site: PresentedSiteFigures, lens: MapLens) =>
+  lens === "ed" ? site.ed !== undefined : site.wards.length > 0;
 
 /** The figure a lens ranks and sizes by. */
 export function lensValue(site: SiteFigures, lens: MapLens): number {
@@ -222,44 +253,72 @@ export function lensValue(site: SiteFigures, lens: MapLens): number {
   return site.meanStay ?? 0;
 }
 
-const lensDisplay = (site: SiteFigures, lens: MapLens): string =>
-  lens === "stay" ? (site.meanStay === null ? "none" : site.meanStay.toFixed(0)) : String(lensValue(site, lens));
+const displayedLensValue = (site: PresentedSiteFigures, lens: MapLens): StatisticsCount =>
+  lens === "ed"
+    ? site.edWaiting
+    : lens === "beds"
+      ? site.ready
+      : lens === "dis"
+        ? sumStatisticsCounts([site.dischargedToday, site.dueToday])
+        : (site.meanStay ?? 0);
+const compareSites = (a: PresentedSiteFigures, b: PresentedSiteFigures, lens: MapLens) => {
+  const left = exactStatisticsCount(displayedLensValue(a, lens));
+  const right = exactStatisticsCount(displayedLensValue(b, lens));
+  return left === null || right === null
+    ? a.name.localeCompare(b.name)
+    : right - left || (lens === "ed" ? (b.edLongest ?? 0) - (a.edLongest ?? 0) : 0) || a.name.localeCompare(b.name);
+};
 
-const lensSub = (site: SiteFigures, lens: MapLens): string => {
+const lensDisplay = (site: PresentedSiteFigures, lens: MapLens): string =>
+  lens === "stay"
+    ? site.meanStay === null
+      ? "none"
+      : site.meanStay.toFixed(0)
+    : String(statisticsCountText(displayedLensValue(site, lens)));
+
+const lensSub = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (lens === "beds") return `${site.pct}% · ${site.ready} ready`;
   if (lens === "ed")
     return site.edLongest === null ? "none waiting" : `${durMinutes(Math.round(site.edLongest))} longest`;
-  if (lens === "dis") return `${site.dischargedToday} gone · ${site.dueToday} due`;
-  return `${site.longStays} over 3 mo`;
+  if (lens === "dis")
+    return `${statisticsCountText(site.dischargedToday)} gone · ${statisticsCountText(site.dueToday)} due`;
+  return `${statisticsCountText(site.longStays)} over 3 mo`;
 };
 
-const lensRing = (site: SiteFigures, lens: MapLens): number => {
+const lensRing = (site: PresentedSiteFigures, lens: MapLens): number => {
   if (lens === "beds") return site.beds > 0 ? site.occupied / site.beds : 0;
   if (lens === "ed") return site.edLongest === null ? 0 : site.edLongest / (48 * 60);
   if (lens === "dis") {
-    const total = site.dischargedToday + site.dueToday;
-    return total > 0 ? site.dischargedToday / total : 0;
+    const gone = exactStatisticsCount(site.dischargedToday);
+    const due = exactStatisticsCount(site.dueToday);
+    return gone !== null && due !== null && gone + due > 0 ? gone / (gone + due) : 0;
   }
-  return site.occupied > 0 ? site.longStays / site.occupied : 0;
+  const long = exactStatisticsCount(site.longStays);
+  return site.occupied > 0 && long !== null ? long / site.occupied : 0;
 };
 
 /** Shape-coded status. Red only where somebody must act now: an ED wait past 48 hours. */
-const lensStatus = (site: SiteFigures, lens: MapLens): WaMapNode["status"] => {
-  if (lens === "ed") return site.edOver48 > 0 ? "danger" : site.edOver24 > 0 ? "warning" : undefined;
+const lensStatus = (site: PresentedSiteFigures, lens: MapLens): WaMapNode["status"] => {
+  if (lens === "ed")
+    return (exactStatisticsCount(site.edOver48) ?? 0) > 0
+      ? "danger"
+      : (exactStatisticsCount(site.edOver24) ?? 0) > 0
+        ? "warning"
+        : undefined;
   if (lens === "beds") return site.wardsOverLine > 0 ? "warning" : undefined;
-  if (lens === "dis") return site.blocked > 0 ? "warning" : undefined;
+  if (lens === "dis") return (exactStatisticsCount(site.blocked) ?? 0) > 0 ? "warning" : undefined;
   return undefined;
 };
 
-const lensAria = (site: SiteFigures, lens: MapLens): string => {
+const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
     return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed")
-    return `${site.name} ED: ${site.edWaiting} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${site.edOver24 ? `, ${site.edOver24} over ${LONG_WAIT_HOURS} hours` : ""}`;
+    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED journeys${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${exactStatisticsCount(site.edOver24) !== 0 ? `, ${statisticsCountText(site.edOver24)} over ${LONG_WAIT_HOURS} hours` : ""}`;
   if (lens === "dis")
-    return `${site.name}: ${site.dischargedToday} discharged today, ${site.dueToday} due later today${site.blocked ? `, ${site.blocked} blocked` : ""}`;
-  return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${site.longStays} over 3 months`;
+    return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due later today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
+  return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
 };
 
 const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key: string }> = [
@@ -290,10 +349,20 @@ const LENSES: ReadonlyArray<{ id: MapLens; label: string; rankTitle: string; key
 ];
 
 /** The ward a rank row opens: the one that leads this site on the lens. */
-function leadWard(site: SiteFigures, lens: MapLens): WardFigures | undefined {
-  const score = (ward: WardFigures) =>
-    lens === "beds" ? ward.ready : lens === "dis" ? ward.dischargedToday + ward.dueToday : (ward.meanStay ?? -1);
-  return [...site.wards].sort((a, b) => score(b) - score(a) || a.unit.name.localeCompare(b.unit.name))[0];
+function leadWard(site: PresentedSiteFigures, lens: MapLens): WardFigures<StatisticsCount> | undefined {
+  const score = (ward: WardFigures<StatisticsCount>) =>
+    lens === "beds"
+      ? ward.ready
+      : lens === "dis"
+        ? exactStatisticsCount(sumStatisticsCounts([ward.dischargedToday, ward.dueToday]))
+        : (ward.meanStay ?? -1);
+  return [...site.wards].sort((a, b) => {
+    const left = score(a);
+    const right = score(b);
+    return left === null || right === null
+      ? a.unit.name.localeCompare(b.unit.name)
+      : right - left || a.unit.name.localeCompare(b.unit.name);
+  })[0];
 }
 
 type Headline = { value: string; label: string; tone?: "warning" | "danger" };
@@ -302,7 +371,18 @@ type Headline = { value: string; label: string; tone?: "warning" | "danger" };
  * Summary, Map view: every site across WA on one map, with lenses for beds, ED waits, discharges and
  * length of stay, and a ranked list beside it. Reached with the view bar or #map.
  */
-export function StatisticsMapView({
+type MapViewProps = { live?: { state: ReturnType<typeof useStatisticsLive>["state"]; now: Instant } };
+
+export function StatisticsMapView(props: MapViewProps = {}) {
+  const control = useExecutiveStatisticsControl();
+  const data = useExecutiveStatistics();
+  const access = useEffectiveWardAccess();
+  if (control.executive || access.role === "executive")
+    return data ? <ExecutiveMapView data={data} /> : <ExecutiveStatisticsUnavailable />;
+  return <OperationalMapView {...props} />;
+}
+
+function OperationalMapView({
   live: liveProp,
 }: {
   /** The page's own live state, so pausing the hero holds the map too. Read here when absent. */
@@ -312,10 +392,6 @@ export function StatisticsMapView({
   const live = liveProp ?? ownLive;
   const { admissions, bedReleases, movements, leaveBeds, units, dayZero } = live.state;
   const now = live.now;
-
-  const [lens, setLens] = useState<MapLens>("beds");
-  const [selected, setSelected] = useState<string | null>(null);
-  const [highlighted, setHighlighted] = useState<string | null>(null);
 
   const sites = useMemo(
     () => siteFigures({ units, admissions, bedReleases, leaveBeds, movements, now }),
@@ -350,11 +426,102 @@ export function StatisticsMapView({
     };
   }, [sites, admissions, bedReleases, units, now]);
 
+  return <MapPresentation {...{ sites, network, admissions, now, dayZero }} />;
+}
+
+function ExecutiveMapView({ data }: { data: ExecutiveReportingFoundation }) {
+  const sites: PresentedSiteFigures[] = data.sites.map((site) => ({
+    code: site.code,
+    name: shortSite(site.name),
+    service: site.service,
+    wards: data.wards
+      .filter((ward) => site.wardIds.includes(ward.id))
+      .map((ward) => ({
+        unit: { id: ward.id, name: ward.name },
+        ready: ward.beds.ready,
+        occupied: ward.beds.inUse,
+        pct: ward.beds.total > 0 ? Math.round((ward.beds.inUse / ward.beds.total) * 100) : 0,
+        dischargedToday: ward.dischargedToday,
+        dueToday: ward.dueToday,
+        meanStay: ward.statistics.averageLengthOfStayDays,
+      })),
+    ed: site.edId ? { id: site.edId, openable: data.openableEmergencyDepartmentIds.includes(site.edId) } : undefined,
+    beds: site.beds.total,
+    occupied: site.beds.inUse,
+    pct: site.beds.total > 0 ? Math.round((site.beds.inUse / site.beds.total) * 100) : 0,
+    ready: site.beds.ready,
+    wardsOverLine: site.wardsOverLine,
+    edWaiting: site.edWaiting,
+    edLongest: site.edLongest,
+    edOver24: site.edOver24,
+    edOver48: site.edOver48,
+    edEntries: [],
+    dischargedToday: site.dischargedToday,
+    dueToday: site.dueToday,
+    blocked: site.blocked,
+    meanStay: site.meanStay,
+    longStays: site.longStays,
+  }));
+  const beds = data.network.beds;
+  const longest =
+    sites.filter((site) => site.edLongest !== null).sort((a, b) => (b.edLongest ?? 0) - (a.edLongest ?? 0))[0] ?? null;
+  const network: MapNetwork = {
+    beds: beds.total,
+    occupied: beds.inUse,
+    pct: beds.total > 0 ? Math.round((beds.inUse / beds.total) * 100) : 0,
+    ready: beds.ready,
+    preparing: beds.beingMadeReady,
+    wardsOverLine: sites.reduce((sum, site) => sum + site.wardsOverLine, 0),
+    edWaiting: data.networkDetails.listedEdJourneys,
+    edOver24: data.networkDetails.listedOver24h,
+    edOver48: sumStatisticsCounts(sites.map((site) => site.edOver48)),
+    longest,
+    dischargedToday: data.network.people.admissionsEndedToday,
+    dueToday: sumStatisticsCounts(sites.map((site) => site.dueToday)),
+    blocked: data.networkDetails.blockedTotal,
+    meanStay: data.networkDetails.pooledAverageStayDays,
+    longStays: data.networkDetails.longStayTotal,
+  };
+  return (
+    <MapPresentation
+      sites={sites}
+      network={network}
+      admissions={[]}
+      now={data.network.asAt.now}
+      dayZero={new Date(data.network.asAt.dayZero)}
+      aggregate={data}
+    />
+  );
+}
+
+function MapPresentation({
+  sites,
+  network,
+  admissions,
+  now,
+  dayZero,
+  aggregate,
+}: {
+  sites: readonly PresentedSiteFigures[];
+  network: MapNetwork;
+  admissions: readonly Admission[];
+  now: Instant;
+  dayZero: Date;
+  aggregate?: ExecutiveReportingFoundation;
+}) {
+  const [lens, setLens] = useState<MapLens>("beds");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [highlighted, setHighlighted] = useState<string | null>(null);
+
   const lensInfo = LENSES.find((item) => item.id === lens) ?? LENSES[0]!;
   const lensItems: ChoiceItem<MapLens>[] = [
     { id: "beds", label: "Beds", count: network.ready },
-    { id: "ed", label: "Open ED journeys", count: network.edWaiting },
-    { id: "dis", label: "Discharge", count: network.dischargedToday + network.dueToday },
+    { id: "ed", label: "Open ED journeys", count: statisticsCountText(network.edWaiting) },
+    {
+      id: "dis",
+      label: "Discharge",
+      count: statisticsCountText(sumStatisticsCounts([network.dischargedToday, network.dueToday])),
+    },
     { id: "stay", label: "Stay", count: network.meanStay === null ? "none" : daysText(network.meanStay) },
   ];
 
@@ -374,27 +541,31 @@ export function StatisticsMapView({
         ]
       : lens === "ed"
         ? [
-            { value: String(network.edWaiting), label: "Open ED journeys" },
+            { value: String(statisticsCountText(network.edWaiting)), label: "Open ED journeys" },
             {
               value: network.longest?.edLongest == null ? "none" : durMinutes(Math.round(network.longest.edLongest)),
               label: network.longest ? `Longest, ${network.longest.name}` : "Longest",
-              tone: network.edOver48 ? "danger" : undefined,
+              tone: (exactStatisticsCount(network.edOver48) ?? 0) > 0 ? "danger" : undefined,
             },
             {
-              value: String(network.edOver24),
+              value: String(statisticsCountText(network.edOver24)),
               label: `Over ${LONG_WAIT_HOURS}h`,
-              tone: network.edOver24 ? "warning" : undefined,
+              tone: (exactStatisticsCount(network.edOver24) ?? 0) > 0 ? "warning" : undefined,
             },
           ]
         : lens === "dis"
           ? [
-              { value: String(network.dischargedToday), label: "Gone today" },
-              { value: String(network.dueToday), label: "Due later today" },
-              { value: String(network.blocked), label: "Blocked", tone: network.blocked ? "warning" : undefined },
+              { value: String(statisticsCountText(network.dischargedToday)), label: "Gone today" },
+              { value: String(statisticsCountText(network.dueToday)), label: "Due later today" },
+              {
+                value: String(statisticsCountText(network.blocked)),
+                label: "Blocked",
+                tone: (exactStatisticsCount(network.blocked) ?? 0) > 0 ? "warning" : undefined,
+              },
             ]
           : [
               { value: network.meanStay === null ? "none" : daysText(network.meanStay), label: "Average stay" },
-              { value: String(network.longStays), label: "Over 3 months" },
+              { value: String(statisticsCountText(network.longStays)), label: "Over 3 months" },
               { value: String(network.occupied), label: "Beds in use" },
             ];
 
@@ -403,7 +574,7 @@ export function StatisticsMapView({
     name: site.name,
     colour: SERVICE_COLOUR[site.service],
     applies: applies(site, lens),
-    value: applies(site, lens) ? lensValue(site, lens) : 0,
+    value: applies(site, lens) ? (exactStatisticsCount(displayedLensValue(site, lens)) ?? 0) : 0,
     display: lensDisplay(site, lens),
     sub: lensSub(site, lens),
     ring: lensRing(site, lens),
@@ -411,14 +582,7 @@ export function StatisticsMapView({
     ariaLabel: lensAria(site, lens),
   }));
 
-  const ranked = sites
-    .filter((site) => applies(site, lens))
-    .sort(
-      (a, b) =>
-        lensValue(b, lens) - lensValue(a, lens) ||
-        (lens === "ed" ? (b.edLongest ?? 0) - (a.edLongest ?? 0) : 0) ||
-        a.name.localeCompare(b.name),
-    );
+  const ranked = sites.filter((site) => applies(site, lens)).sort((a, b) => compareSites(a, b, lens));
 
   const chosen = selected ? sites.find((site) => site.code === selected) : undefined;
   const asAt = formatInstant(now);
@@ -488,7 +652,7 @@ export function StatisticsMapView({
                 {ranked.map((site, index) => {
                   const ward = lens === "ed" ? undefined : leadWard(site, lens);
                   const href =
-                    lens === "ed" && site.ed
+                    lens === "ed" && site.ed && site.ed.openable !== false
                       ? edStatisticsHref(site.ed.id)
                       : ward
                         ? wardStatisticsHref(ward.unit.id)
@@ -516,9 +680,9 @@ export function StatisticsMapView({
                           ? site.meanStay === null
                             ? "none"
                             : daysText(site.meanStay)
-                          : lensValue(site, lens)}
+                          : statisticsCountText(displayedLensValue(site, lens))}
                       </span>
-                      <ChevronRight size={14} aria-hidden="true" className={styles.rankChev} />
+                      {href ? <ChevronRight size={14} aria-hidden="true" className={styles.rankChev} /> : null}
                     </>
                   );
                   return (
@@ -551,13 +715,27 @@ export function StatisticsMapView({
         </Follow>
       </FlushRow>
 
-      <BelowMap lens={lens} sites={sites} admissions={admissions} now={now} dayZero={dayZero} />
+      <BelowMap lens={lens} sites={sites} admissions={admissions} now={now} dayZero={dayZero} aggregate={aggregate} />
     </section>
   );
 }
 
 /** The chosen site: its wards and ED, each a link to its statistics page. */
-function SiteCard({ site, lens, onClose }: { site: SiteFigures; lens: MapLens; onClose: () => void }) {
+function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: MapLens; onClose: () => void }) {
+  const edContent = (
+    <>
+      <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED journeys</span>
+      <span className={styles.siteFig}>
+        {(exactStatisticsCount(site.edOver48) ?? 0) > 0 ? (
+          <StatusGlyph tone="danger" size={9} />
+        ) : (exactStatisticsCount(site.edOver24) ?? 0) > 0 ? (
+          <StatusGlyph tone="warning" size={9} />
+        ) : null}
+        {site.edLongest === null ? "none" : `${durMinutes(Math.round(site.edLongest))} longest`}
+      </span>
+      {site.ed?.openable === false ? null : <ChevronRight size={14} aria-hidden="true" />}
+    </>
+  );
   return (
     <StatCard
       icon={Stethoscope}
@@ -588,18 +766,13 @@ function SiteCard({ site, lens, onClose }: { site: SiteFigures; lens: MapLens; o
         {site.ed ? (
           <div className={styles.siteGroup}>
             <span className={styles.siteLabel}>Emergency department</span>
-            <Link href={edStatisticsHref(site.ed.id)} className={styles.siteRow}>
-              <span className={styles.siteName}>{site.edWaiting} open ED journeys</span>
-              <span className={styles.siteFig}>
-                {site.edOver48 ? (
-                  <StatusGlyph tone="danger" size={9} />
-                ) : site.edOver24 ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                {site.edLongest === null ? "none" : `${durMinutes(Math.round(site.edLongest))} longest`}
-              </span>
-              <ChevronRight size={14} aria-hidden="true" />
-            </Link>
+            {site.ed.openable === false ? (
+              <div className={styles.siteRow}>{edContent}</div>
+            ) : (
+              <Link href={edStatisticsHref(site.ed.id)} className={styles.siteRow}>
+                {edContent}
+              </Link>
+            )}
           </div>
         ) : null}
         {site.wards.length > 0 ? (
@@ -620,17 +793,48 @@ function BelowMap({
   admissions,
   now,
   dayZero,
+  aggregate,
 }: {
   lens: MapLens;
-  sites: readonly SiteFigures[];
+  sites: readonly PresentedSiteFigures[];
   admissions: readonly Admission[];
   now: Instant;
   dayZero: Date;
+  aggregate?: ExecutiveReportingFoundation;
 }) {
   if (lens === "ed") {
+    if (aggregate)
+      return (
+        <StatCard
+          id="map-below"
+          icon={Clock}
+          title="Open ED journeys, by ED"
+          aside={`${aggregate.emergencyDepartments.length} EDs`}
+          data-testid="ward-statistics-map-below"
+        >
+          <CardBody>
+            <PeopleNotListed />
+            <ul>
+              {aggregate.emergencyDepartments.map((ed) => (
+                <li key={ed.id}>
+                  {aggregate.openableEmergencyDepartmentIds.includes(ed.id) ? (
+                    <Link href={edStatisticsHref(ed.id)}>
+                      {ed.name}: {statisticsCountText(ed.onTheList)}
+                    </Link>
+                  ) : (
+                    <span>
+                      {ed.name}: {statisticsCountText(ed.onTheList)}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </StatCard>
+      );
     const rows = sites
       .filter((site) => site.ed !== undefined)
-      .sort((a, b) => b.edWaiting - a.edWaiting || (b.edLongest ?? 0) - (a.edLongest ?? 0))
+      .sort((a, b) => compareSites(a, b, "ed"))
       .map((site) => ({
         id: site.ed!.id,
         name: site.name,
@@ -653,6 +857,46 @@ function BelowMap({
   }
 
   if (lens === "dis") {
+    if (aggregate) {
+      const columns = Array.from({ length: 7 }, (_, offset) => {
+        const date = calendarDateOf(now + offset * MINUTES_PER_DAY, dayZero);
+        const count = sumStatisticsCounts(
+          aggregate.wards.map((ward) => ward.dueByDay.find((day) => day.offset === offset)!.count),
+        );
+        const shown = statisticsCountText(count);
+        return {
+          id: `day-${offset}`,
+          label:
+            offset === 0
+              ? "Today"
+              : date.toLocaleDateString("en-AU", { weekday: "short", timeZone: "Australia/Perth" }),
+          ...withheldBar(exactStatisticsCount(count) ?? 0, shown),
+        };
+      });
+      const blocked = aggregate.networkDetails.blocked;
+      return (
+        <FlushRow layout="halves" id="map-below" data-testid="ward-statistics-map-below">
+          <StatCard icon={CalendarClock} title="Expected discharges" aside="Next 7 days">
+            <CardBody>
+              <ColumnChart columns={columns} gridlines label="Expected discharges across the network, next 7 days" />
+            </CardBody>
+          </StatCard>
+          <StatCard icon={Lock} title="Discharges held up" aside={`${statisticsCountText(blocked.total)} not departed`}>
+            <CardBody>
+              <BarList
+                label="Discharges held up, by reason"
+                labelWidth="min(15rem, 42%)"
+                rows={blocked.byReason.map((tally) => ({
+                  id: tally.reason,
+                  label: tally.reason,
+                  ...withheldBar(exactStatisticsCount(tally.count) ?? 0, statisticsCountText(tally.count)),
+                }))}
+              />
+            </CardBody>
+          </StatCard>
+        </FlushRow>
+      );
+    }
     const today = dayOf(now);
     const current = admissions.filter((admission) => admission.state !== "departed" && admission.state !== "pulled");
     const columns = Array.from({ length: 7 }, (_, offset) => {

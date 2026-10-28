@@ -12,6 +12,8 @@
  * The table is `ward-role-access.ts`, the scoping is `ward-access-scope.ts`, and the desk is
  * `ward-access-store.ts`. This file only connects them to React.
  */
+import { useWardAccessEnabled, useWardShellPublic } from "./ward-shell-public-context";
+import { ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -142,14 +144,15 @@ export function useIsBreakGlassRecord(): (record: { patientId?: string | null } 
  * desk holds only its own acknowledgements, so its counts are against its own desks (review on PR #330).
  */
 export function useDeskInScope(): ((deskId: string) => boolean) | undefined {
-  const on = useWardFeatureFlag("role-access");
+  const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
-  const { units } = useUnscopedWardFlow();
+  const shell = useWardShellPublic();
   return useMemo(() => {
     if (!on || accessIsWholeNetwork(access)) return undefined;
-    const places = wardPlaceLookup(units);
-    return (deskId: string) => unitInScope(access.scope, deskId, places) || edInScope(access.scope, deskId, places);
-  }, [on, access, units]);
+    const places = shell?.places;
+    return (deskId: string) =>
+      places !== undefined && (unitInScope(access.scope, deskId, places) || edInScope(access.scope, deskId, places));
+  }, [on, access, shell]);
 }
 
 function sameItems(a: readonly unknown[], b: readonly unknown[]): boolean {
@@ -209,7 +212,7 @@ export type StatisticsCounts = {
  * give a hidden one away (review on PR #345). Every other desk sees exact counts and the lists.
  */
 export function useStatisticsCounts(): StatisticsCounts {
-  const on = useWardFeatureFlag("role-access");
+  const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
   const hide = on && access.role === "executive";
   // D-80: a ward, ED or community desk holds a `counts` grant on its own place's page, which is
@@ -568,16 +571,17 @@ const OWN_PLACE_ENTRY: Partial<Record<WardAccess["scope"]["kind"], { id: string;
 export function useAccessNavFilter(): <T extends { href: string; id: string; label: string }>(
   entries: readonly T[],
 ) => T[] {
-  const on = useWardFeatureFlag("role-access");
+  const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
-  const { units } = useUnscopedWardFlow();
+  const shell = useWardShellPublic();
   return useCallback(
     <T extends { href: string; id: string; label: string }>(entries: readonly T[]): T[] => {
       if (!on || accessIsWholeNetwork(access)) return [...entries];
-      const places = wardPlaceLookup(units);
+      const places = shell?.places;
       const own = OWN_PLACE_ENTRY[access.scope.kind];
       // D-80: Statistics opens a ward, ED or team desk's own place's page.
       const ownStatistics = ownStatisticsHrefFor(access, communityTeamSlug);
+      if (!places) return [];
       return entries.flatMap((entry) => {
         const shown =
           own && entry.id === own.id
@@ -588,7 +592,7 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
         return screenDecision(access, screenForPath(shown.href), places).open ? [shown] : [];
       });
     },
-    [on, access, units],
+    [on, access, shell],
   );
 }
 
@@ -599,15 +603,15 @@ export function useAccessNavFilter(): <T extends { href: string; id: string; lab
  * `role-access` flag is off or for the statewide coordinator.
  */
 export function useCanOpenHref(): (href: string) => boolean {
-  const on = useWardFeatureFlag("role-access");
+  const on = useWardAccessEnabled();
   const access = useEffectiveWardAccess();
-  const { units } = useUnscopedWardFlow();
+  const shell = useWardShellPublic();
   return useCallback(
     (href: string) => {
       if (!on || accessIsWholeNetwork(access)) return true;
-      return screenDecision(access, screenForPath(href), wardPlaceLookup(units)).open;
+      return shell !== null && screenDecision(access, screenForPath(href), shell.places).open;
     },
-    [on, access, units],
+    [on, access, shell],
   );
 }
 
@@ -626,16 +630,16 @@ export function useDeskHomeHref(): string {
  * the header's scope pill (Josh, 27 Oct 2026: a strip on every page looked poor).
  */
 export function WardAccessBanner() {
-  const on = useWardFeatureFlag("role-access");
-  const { access, previewOf } = useWardAccessSnapshot();
-  const { units } = useUnscopedWardFlow();
+  const on = useWardAccessEnabled();
+  const { previewOf } = useWardAccessSnapshot();
+  const access = useEffectiveWardAccess();
+  const shell = useWardShellPublic();
   if (!on || !previewOf) return null;
   return (
     <div className={styles.banner} role="status" data-testid="ward-access-banner">
       <span>
         {previewOf ? "Previewing as " : "Desk: "}
-        <b>{ACCESS_ROLE_LABELS[access.role]}</b>, {accessPlaceLabel(access, units)}. Lists show only the places this
-        desk covers.
+        <b>{ACCESS_ROLE_LABELS[access.role]}</b>, {shell?.placeLabel}. Lists show only the places this desk covers.
       </span>
       {previewOf ? (
         <Button size="sm" variant="sec" onClick={endAccessPreview} data-testid="ward-access-end-preview">
@@ -652,18 +656,40 @@ export function WardAccessBanner() {
  * exists (review finding 12).
  */
 export function WardAccessGate({ children }: { children: ReactNode }) {
-  const on = useWardFeatureFlag("role-access");
+  const access = useEffectiveWardAccess();
+  return access.role === "executive" ? (
+    <ExecutiveAccessGate access={access}>{children}</ExecutiveAccessGate>
+  ) : (
+    <OperationalWardAccessGate>{children}</OperationalWardAccessGate>
+  );
+}
+/** A desk switch ends when its new page arrives, so going Back later finds the page as it is. */
+function useEndArrivedSwitch(pathname: string): void {
+  const { switchFrom, signInLanding } = useWardAccessSnapshot();
+  useEffect(() => {
+    if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
+    if (signInLanding !== undefined && signInLanding !== pathname) markSignInLanding();
+  }, [switchFrom, signInLanding, pathname]);
+}
+function ExecutiveAccessGate({ access, children }: { access: WardAccess; children: ReactNode }) {
+  const shell = useWardShellPublic();
+  const pathname = usePathname() ?? "";
+  useEndArrivedSwitch(pathname);
+  if (!shell) return <ExecutiveStatisticsUnavailable />;
+  return screenDecision(access, screenForPath(pathname), shell.places).open ? (
+    <>{children}</>
+  ) : (
+    <ClosedScreen access={access} />
+  );
+}
+function OperationalWardAccessGate({ children }: { children: ReactNode }) {
+  const on = useWardAccessEnabled();
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
   const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
-  const { switchFrom, signInLanding } = useWardAccessSnapshot();
-  // A desk switch ends when its new page arrives, so going Back later finds the page as it is.
-  useEffect(() => {
-    if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
-    if (signInLanding !== undefined && signInLanding !== pathname) markSignInLanding();
-  }, [switchFrom, signInLanding, pathname]);
+  useEndArrivedSwitch(pathname);
   const address = screenForPath(pathname);
   const logged = recordViewFor(address, unscoped.movements);
   if (!on || accessIsWholeNetwork(access))
@@ -755,7 +781,7 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   useEffect(() => {
     headingRef.current?.focus();
   }, [opening]);
-  const { units } = useUnscopedWardFlow();
+  const shell = useWardShellPublic();
   const home = homeHrefFor(access, communityTeamSlug);
   // DR-06: Ward Flow's own address (the app icon, the brand) sends a desk whose Home is closed to
   // that desk's own home instead of saying the screen is not part of the role.
@@ -786,7 +812,7 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
           {patientId
             ? "This patient is not in your care."
             : "This screen is not part of the " + ACCESS_ROLE_LABELS[access.role] + " desk."}{" "}
-          You are working as {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}.
+          You are working as {ACCESS_ROLE_LABELS[access.role]}, {shell?.placeLabel}.
         </p>
         <div className={styles.actions}>
           <Link href={home} className={buttonClass({ variant: "pri" })} data-testid="ward-access-home">
@@ -1032,11 +1058,13 @@ export function WardPrintAttribution({
   lead?: string;
 }) {
   const access = useEffectiveWardAccess();
-  const { units, now } = useUnscopedWardFlow();
+  const shell = useWardShellPublic();
+  if (!shell) return null;
+  const { now } = shell;
   return (
     <span className={className} data-testid="ward-print-attribution">
-      {lead} {ACCESS_ROLE_LABELS[access.role]}, {accessPlaceLabel(access, units)}, at{" "}
-      {formatInstantWithDay(at ?? now, now)}. Synthetic data.
+      {lead} {ACCESS_ROLE_LABELS[access.role]}, {shell.placeLabel}, at {formatInstantWithDay(at ?? now, now)}. Synthetic
+      data.
     </span>
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { WardRailFrame } from "./ward-chrome-frame";
+
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
@@ -671,7 +673,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   }
 
   return (
-    <aside
+    <WardRailFrame
       className={styles.rail}
       data-rail={earlyShape ? earlyShape.rail : shownOpen ? "open" : "closed"}
       data-tablet={earlyShape ? (earlyShape.tablet ?? undefined) : isTabletLandscape ? "landscape" : undefined}
@@ -1304,7 +1306,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           ) : null,
         )}
       </Sheet>
-    </aside>
+    </WardRailFrame>
   );
 }
 

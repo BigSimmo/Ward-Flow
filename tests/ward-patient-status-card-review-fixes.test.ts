@@ -6,6 +6,7 @@ import {
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { senderPresentationLookup } from "@/components/ward-management/ward-sender-presentation";
 
 /**
  * PR #147 review fixes on the gate board status card. Each case is one the first build got wrong:
@@ -40,6 +41,29 @@ function bedCell(movement: Movement) {
 }
 
 describe("gate board status card review fixes", () => {
+  it("does not infer no request from grant-only masked destinations and keeps permitted clearance and transport facts", () => {
+    const movement = { ...base, referredUnitIds: [], declines: [] };
+    const lookup = senderPresentationLookup(
+      { version: 1, referrals: [], movements: [{ id: movement.id, kind: "restricted", restriction: "grant" }] },
+      true,
+    );
+    const context = ctx(movement, { onOpenPlacement: () => {} });
+    const ordinary = buildPatientStatus("find", context);
+    const protectedStatus = buildPatientStatus("find", context, lookup.movementFor(movement));
+    expect(protectedStatus.cells.find((cell) => cell.key === "bed")?.value).toBe("Progress unavailable in this view");
+    expect(protectedStatus.cells.find((cell) => cell.key === "bed")?.action).toBeUndefined();
+    for (const key of ["clearance", "transport"]) {
+      expect(protectedStatus.cells.find((cell) => cell.key === key)).toEqual(
+        ordinary.cells.find((cell) => cell.key === key),
+      );
+    }
+    const receiving = senderPresentationLookup(
+      { version: 1, referrals: [], movements: [{ id: movement.id, kind: "restricted", restriction: "receiving" }] },
+      true,
+    );
+    const held = ctx(movement, { acceptedUnitName: "Synthetic own ward", hasBedHold: false });
+    expect(buildPatientStatus("held", held, receiving.movementFor(movement))).toEqual(buildPatientStatus("held", held));
+  });
   it("counts live requests only once: one ward left after a decline is still awaiting an answer", () => {
     const movement: Movement = {
       ...base,

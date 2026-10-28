@@ -11,9 +11,14 @@ import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs"
 import { usePersonaDeskId } from "@/components/ward-management/settings/persona-sync";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { edHref, teamHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
+import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+import { useWardShellPublic } from "../shell/ward-shell-public-context";
+import { useServiceScope } from "../shell/ward-service-store";
+import { scenarioWardNetwork } from "../ward-scenarios";
+import { dueSoonThresholdsOf } from "../ward-clock";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
 import { homeHrefFor } from "@/components/ward-management/ward-role-access";
 import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
@@ -43,19 +48,52 @@ export function useTourFacts(role: TourRole): {
   const pathname = usePathname() ?? "";
   const access = useEffectiveWardAccess();
   const deskId = usePersonaDeskId();
-  const { counts } = useWardNavCounts();
-  const { movements, units, bedReleases, admissions, leaveBeds, configuration } = useWardFlowSelect(
+  const flow = useOptionalWardFlowSelect(
     "movements",
     "units",
     "bedReleases",
     "admissions",
     "leaveBeds",
     "configuration",
+    "referrals",
+    "scenario",
+    "now",
   );
-  const now = useWardFlowClock();
-  const network = useWardNetwork();
+  const report = useExecutiveStatistics();
+  const reporting = useExecutiveStatisticsControl();
+  const shell = useWardShellPublic();
+  const service = useServiceScope();
 
   return useMemo(() => {
+    if (reporting.executive) {
+      const exact = (value: { kind: string; value?: number } | undefined) =>
+        value?.kind === "exact" ? value.value : undefined;
+      return {
+        facts: {
+          place: shell?.placeLabel,
+          readyBeds: report?.capacity.ready,
+          openMovements: exact(report?.network.people.stillOpen),
+          waitingInEd: exact(report?.network.people.waitingInEd),
+        },
+        home: FIXED_HOMES.executive,
+        deskHome: FIXED_HOMES.executive,
+      };
+    }
+    if (!flow) return { facts: {}, home: FIXED_HOMES[role], deskHome: FIXED_HOMES[role] };
+    const { movements, units, bedReleases, admissions, leaveBeds, configuration, now, referrals, scenario } = flow;
+    const network = scenarioWardNetwork(scenario);
+    const counts = wardNavCounts({
+      movements,
+      units,
+      bedReleases,
+      admissions,
+      leaveBeds,
+      referrals,
+      now,
+      sites: network.sites,
+      thresholds: dueSoonThresholdsOf(configuration),
+      service,
+    });
     const scope = access.role === role ? access.scope : undefined;
     const routePlace = wardPlaceIdFor(pathname);
     const facts: {
@@ -142,19 +180,5 @@ export function useTourFacts(role: TourRole): {
     const deskHome = access.role === role ? homeHrefFor(access, communityTeamSlug) : home;
     if (access.role === role && role !== "admin" && role !== "coordinator") home = deskHome;
     return { facts, home, deskHome };
-  }, [
-    role,
-    access,
-    pathname,
-    deskId,
-    counts,
-    movements,
-    units,
-    bedReleases,
-    admissions,
-    leaveBeds,
-    configuration,
-    now,
-    network,
-  ]);
+  }, [role, access, pathname, deskId, flow, report, reporting.executive, shell, service]);
 }

@@ -17,6 +17,7 @@
  * in memory only, like break glass, and ended by `endDueCovers` when its time passes.
  */
 import { useSyncExternalStore } from "react";
+import { useWardShellAuthority } from "./ward-shell-public-context";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import {
   ACCESS_ROLE_LABELS,
@@ -236,7 +237,15 @@ export function useWardAccessSnapshot(): Snapshot {
 /** The access in force: the desk's when the flag is on, the whole view when it is off. */
 export function useEffectiveWardAccess(): WardAccess {
   const on = useWardFeatureFlag("role-access");
-  const { access } = useWardAccessSnapshot();
+  const { access, previewOf } = useWardAccessSnapshot();
+  const authority = useWardShellAuthority();
+  if (authority) {
+    // Only an actual coordinator can retain the existing authorised preview. A stale local desk
+    // or a disabled demonstration flag can never override an authenticated non-coordinator role.
+    return authority.role === "coordinator" && on && previewOf?.role === "coordinator" && sameDesk(previewOf, authority)
+      ? access
+      : authority;
+  }
   return on ? access : STATEWIDE_COORDINATOR;
 }
 

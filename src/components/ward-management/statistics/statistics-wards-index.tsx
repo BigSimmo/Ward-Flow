@@ -1,5 +1,9 @@
 "use client";
 
+import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import type { StatisticsFigure } from "./statistics-absence";
+import type { Unit } from "../ward-model";
+
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, BedDouble, CalendarClock, ChevronDown, ChevronUp, Lock } from "lucide-react";
@@ -41,6 +45,16 @@ import { ServiceDot } from "./statistics-services-index";
 import { PhoneBody, PhoneDotKey, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  sumStatisticsCounts,
+  withheldBar,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
 
 /** A sortable column head: the button inside carries the sort, the cell carries `aria-sort`. */
 export function SortTh<K extends string>({
@@ -83,7 +97,7 @@ function stayDays(arrivedAt: number | null, now: number): number | null {
   return Math.floor((now - arrivedAt) / MINUTES_PER_DAY);
 }
 
-const plural = (count: number, one: string, many: string) => (count === 1 ? one : many);
+const plural = (count: StatisticsCount, one: string, many: string) => (count === 1 ? one : many);
 
 /**
  * ALL WARDS — the Wards index page (Statistics A, 9 Oct 2026).
@@ -97,20 +111,67 @@ const plural = (count: number, one: string, many: string) => (count === 1 ? one 
  * ⚠️ **The filter chips HIGHLIGHT matching rows and never hide one** (owner rule): a ward that is
  * not shown cannot be seen to be fine.
  */
-export function StatisticsWardsIndexScreen() {
-  const section = statisticsSectionById("units");
-  if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
 
+type WardIndexRow = {
+  id: string;
+  name: string;
+  hospital: string;
+  code: string;
+  service: HealthService | undefined;
+  beds: number;
+  occupied: number;
+  inUse: number;
+  rate: number;
+  ready: number;
+  pending: number;
+  pulled: number;
+  closed: number;
+  blocked: StatisticsCount;
+  longest: number | null;
+  mean: number | null;
+};
+export function StatisticsWardsIndexScreen() {
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  return control.executive || access.role === "executive" ? <ExecutiveWardsIndex /> : <OperationalWardsIndex />;
+}
+function ExecutiveWardsIndex() {
+  const data = useExecutiveStatistics();
+  const control = useExecutiveStatisticsControl();
+  if (!data) return <ExecutiveStatisticsUnavailable />;
+  const rows: WardIndexRow[] = data.wards.map((ward) => ({
+    id: ward.id,
+    name: ward.name,
+    hospital: data.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode,
+    code: ward.siteCode,
+    service: ward.service,
+    beds: ward.beds.total,
+    occupied: ward.beds.occupied,
+    inUse: ward.beds.inUse,
+    rate: ward.beds.total > 0 ? Math.round((ward.beds.inUse / ward.beds.total) * 100) : 0,
+    ready: ward.beds.ready,
+    pending: ward.pendingPreparation,
+    pulled: ward.beds.pulled,
+    closed: ward.beds.closed,
+    blocked: ward.blocked,
+    longest: ward.longestStayDays,
+    mean: ward.meanCurrentStayDays,
+  }));
+  return (
+    <WardsIndexView
+      rows={rows}
+      now={data.network.asAt.now}
+      paused={control.paused}
+      togglePause={control.togglePause}
+      scopeLabel={data.network.scope.kind === "service" ? data.network.scope.service : undefined}
+      releasedBlockedTotal={data.networkDetails.blockedTotal}
+    />
+  );
+}
+function OperationalWardsIndex() {
   const live = useStatisticsLive();
   const { units, admissions, bedReleases, leaveBeds } = live.state;
   const now = live.now;
-
-  const [sort, setSort] = useState<WardSortKey>("rate");
-  const [asc, setAsc] = useState(false);
-  const [group, setGroup] = useState<"service" | "none">("service");
-  const [chips, setChips] = useState<ReadonlySet<WardChip>>(new Set());
-  const isPhone = useIsPhone();
-
   const rows = useMemo(
     () =>
       units.map((unit) => {
@@ -145,7 +206,38 @@ export function StatisticsWardsIndexScreen() {
       }),
     [units, admissions, bedReleases, leaveBeds, now],
   );
-  type Row = (typeof rows)[number];
+
+  return <WardsIndexView rows={rows} now={now} paused={live.paused} togglePause={live.togglePause} />;
+}
+function WardsIndexView({
+  rows,
+  now,
+  paused,
+  togglePause,
+  scopeLabel,
+  releasedBlockedTotal,
+}: {
+  rows: WardIndexRow[];
+  now: number;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  scopeLabel?: string;
+  releasedBlockedTotal?: StatisticsCount;
+}) {
+  const section = statisticsSectionById("units");
+  if (!section) throw new Error("statistics-sections.ts no longer defines the units section");
+  const shown = (count: StatisticsCount) => statisticsCountText(count);
+  const positive = (count: StatisticsCount) => {
+    const exact = exactStatisticsCount(count);
+    return exact === null || exact > 0;
+  };
+  const [sort, setSort] = useState<WardSortKey>("rate");
+  const [asc, setAsc] = useState(false);
+  const [group, setGroup] = useState<"service" | "none">("service");
+  const [chips, setChips] = useState<ReadonlySet<WardChip>>(new Set());
+  const isPhone = useIsPhone();
+
+  type Row = WardIndexRow;
 
   const matches = (row: Row) =>
     chips.size > 0 &&
@@ -158,15 +250,23 @@ export function StatisticsWardsIndexScreen() {
             ? row.pending > 0
             : chip === "pulled"
               ? row.pulled > 0
-              : row.blocked > 0,
+              : positive(row.blocked),
     );
 
   const sorted = useMemo(() => {
-    const value = (row: Row): number | string =>
-      sort === "name" ? row.name : sort === "longest" ? (row.longest ?? -1) : row[sort];
+    const value = (row: Row): number | string | null =>
+      sort === "name"
+        ? row.name
+        : sort === "longest"
+          ? (row.longest ?? -1)
+          : sort === "blocked"
+            ? exactStatisticsCount(row.blocked)
+            : row[sort];
     return [...rows].sort((a, b) => {
       const left = value(a);
       const right = value(b);
+      if (left === null || right === null)
+        return left === right ? a.name.localeCompare(b.name) : left === null ? 1 : -1;
       if (left < right) return asc ? -1 : 1;
       if (left > right) return asc ? 1 : -1;
       return a.name.localeCompare(b.name);
@@ -205,14 +305,16 @@ export function StatisticsWardsIndexScreen() {
   const readyBeds = rows.reduce((total, row) => total + row.ready, 0);
   const pendingBeds = rows.reduce((total, row) => total + row.pending, 0);
   const pulledBeds = rows.reduce((total, row) => total + row.pulled, 0);
-  const blockedTotal = rows.reduce((total, row) => total + row.blocked, 0);
+  const blockedTotal = releasedBlockedTotal ?? sumStatisticsCounts(rows.map((row) => row.blocked));
   const matched = count(matches);
 
   const byMean = rows
     .filter((row): row is Row & { mean: number } => row.mean !== null)
     .sort((a, b) => b.mean - a.mean)
     .slice(0, 10);
-  const blockedRows = rows.filter((row) => row.blocked > 0).sort((a, b) => b.blocked - a.blocked);
+  const blockedRows = rows
+    .filter((row) => positive(row.blocked))
+    .sort((a, b) => (exactStatisticsCount(b.blocked) ?? -1) - (exactStatisticsCount(a.blocked) ?? -1));
 
   const chipItems: Array<{ id: WardChip; label: string; count: number; tone?: "warning" }> = [
     { id: "over", label: `At or over ${BED_ALERT_THRESHOLD_PERCENT}%`, count: overLine, tone: "warning" },
@@ -220,7 +322,7 @@ export function StatisticsWardsIndexScreen() {
     // These count wards, so they say so: the hero's "Pulled, not arrived" counts beds (UX audit 21 Oct 2026).
     { id: "pending", label: "With a bed being made ready", count: count((row) => row.pending > 0) },
     { id: "pulled", label: "With a pulled bed", count: count((row) => row.pulled > 0) },
-    { id: "blocked", label: "With a discharge held up", count: count((row) => row.blocked > 0) },
+    { id: "blocked", label: "With a discharge held up", count: count((row) => positive(row.blocked)) },
   ];
 
   return (
@@ -228,11 +330,12 @@ export function StatisticsWardsIndexScreen() {
       section={section}
       navSection="ward"
       testId="ward-statistics-wards-index"
-      eyebrowLabel={`Statistics · ${units.length} ${plural(units.length, "ward", "wards")}`}
+      eyebrowLabel={`Statistics · ${rows.length} ${plural(rows.length, "ward", "wards")}`}
       title="All wards"
+      eyebrowDetail={scopeLabel}
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause ?? undefined}
       tools={
         <HeroTool
           href={STATISTICS_COMPARE_HREF}
@@ -244,7 +347,7 @@ export function StatisticsWardsIndexScreen() {
       }
       phone={{
         title: `${overLine} ${plural(overLine, "ward", "wards")} over ${BED_ALERT_THRESHOLD_PERCENT}%`,
-        sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${blockedTotal} ${plural(blockedTotal, "discharge", "discharges")} held up`,
+        sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${shown(blockedTotal)} ${plural(blockedTotal, "discharge", "discharges")} held up`,
         stats: (
           <>
             <HeroStat
@@ -278,7 +381,7 @@ export function StatisticsWardsIndexScreen() {
             label={pendingBeds > 0 ? `Ready beds, ${pendingBeds} being made ready` : "Ready beds"}
           />
           <HeroStat value={pulledBeds} label="Pulled, not arrived" />
-          <HeroStat value={blockedTotal} label="Discharges held up" />
+          <HeroStat value={shown(blockedTotal)} label="Discharges held up" />
         </>
       }
     >
@@ -346,7 +449,7 @@ export function StatisticsWardsIndexScreen() {
                       as="li"
                       className={cx(chips.size > 0 && !hit && phone.dim)}
                       name={row.name}
-                      meta={`${row.hospital.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u, "")} · ${row.ready} ready · ${row.blocked} blocked`}
+                      meta={`${row.hospital.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u, "")} · ${row.ready} ready · ${shown(row.blocked)} blocked`}
                       value={
                         <span className={phone.flagged}>
                           {row.rate >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -477,7 +580,9 @@ export function StatisticsWardsIndexScreen() {
                             <td className={cx(styles.num, row.pending === 0 && styles.zero)}>{row.pending}</td>
                             <td className={cx(styles.num, row.pulled === 0 && styles.zero)}>{row.pulled}</td>
                             <td className={cx(styles.num, row.closed === 0 && styles.zero)}>{row.closed}</td>
-                            <td className={cx(styles.num, row.blocked === 0 && styles.zero)}>{row.blocked}</td>
+                            <td className={cx(styles.num, exactStatisticsCount(row.blocked) === 0 && styles.zero)}>
+                              {shown(row.blocked)}
+                            </td>
                             <td className={cx(styles.num, row.longest === null && styles.zero)}>
                               {row.longest === null ? "none" : `${row.longest}d`}
                             </td>
@@ -528,7 +633,7 @@ export function StatisticsWardsIndexScreen() {
               id="blocked"
               className={index.anchorTarget}
               title="Discharges held up"
-              aside={<span className={cx(styles.muted, index.phoneHide)}>{blockedTotal} in all</span>}
+              aside={<span className={cx(styles.muted, index.phoneHide)}>{shown(blockedTotal)} in all</span>}
               data-testid="ward-statistics-wards-blocked"
             >
               <CardBody>
@@ -539,7 +644,11 @@ export function StatisticsWardsIndexScreen() {
                     label="Current admissions with a block reason, by ward"
                     track
                     labelWidth="9.5rem"
-                    rows={blockedRows.map((row) => ({ id: row.id, label: row.name, value: row.blocked }))}
+                    rows={blockedRows.map((row) => ({
+                      id: row.id,
+                      label: row.name,
+                      ...withheldBar(exactStatisticsCount(row.blocked) ?? 0, shown(row.blocked)),
+                    }))}
                   />
                 )}
               </CardBody>
@@ -550,3 +659,65 @@ export function StatisticsWardsIndexScreen() {
     </StatisticsPage>
   );
 }
+
+// Shared scalar models for ward detail; these contain public metadata and released counts only.
+type PublicWard = ExecutiveReportingFoundation["wards"][number];
+export type WardMetadata = Pick<Unit, "id" | "name" | "siteCode" | "beds" | "lockedBeds" | "authorised"> & {
+  cohort: string;
+};
+type CountStatistics =
+  | "readyToLeaveCannot"
+  | "longStays"
+  | "lengthOfStayIncoherentCount"
+  | "emptyBedIncoherentCount"
+  | "dischargeDateOutcomes";
+type WardMeasures = Omit<PublicWard["statistics"], CountStatistics> & {
+  readyToLeaveCannot: StatisticsCount;
+  longStays: StatisticsCount;
+  lengthOfStayIncoherentCount: StatisticsCount;
+  emptyBedIncoherentCount: StatisticsCount;
+  dischargeDateOutcomes: {
+    met: StatisticsCount;
+    missed: StatisticsCount;
+    moved: StatisticsCount;
+    consideredCount: StatisticsCount;
+  };
+};
+export type ReadyView = {
+  tallies: readonly { reason: string; count: StatisticsCount }[];
+  total: StatisticsCount;
+  population: StatisticsCount;
+  vocabularySize: number;
+  shareOfWard: StatisticsFigure;
+};
+export type WardDetailModel = {
+  canOpen: (href: string) => boolean;
+  unit: WardMetadata;
+  openUnits: WardMetadata[];
+  site?: { name: string };
+  statistics: WardMeasures;
+  capacity: { available: number };
+  pendingPreparation: number;
+  openBeds: number;
+  emptyBeds: number;
+  allocatableBeds: number;
+  wardOccupancy: { occupied: number; inUse: number; pulled: number };
+  occupancyPct: number;
+  referrals: { askedAndWaiting: StatisticsCount; everAccepted: StatisticsCount; everDeclined: StatisticsCount };
+  ready: ReadyView | null;
+  blockedByReasonError: string | null;
+  dischargeDates: {
+    recorded: StatisticsCount;
+    notRecorded: StatisticsCount;
+    population: StatisticsCount;
+    shareRecorded: StatisticsFigure;
+  };
+  dueByDay: { offset: number; count: StatisticsCount }[];
+  dueThisWeek: StatisticsCount;
+  oldestPulled: number | null;
+  now: number;
+  dayZero: Date;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  countsOnly: boolean;
+};

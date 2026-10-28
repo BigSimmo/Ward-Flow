@@ -262,11 +262,112 @@ export function createWorkspaceStore(
    * @type {LruCache<{ payload: any, partial: any }>}
    */
   const scopedReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
+  /** Full public reports only, from committed locked reads; never a candidate save. */
+  const executiveReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
+  async function executiveSnapshot(connection, row, at, view, stamp) {
+    const unavailable = () => new Error("Executive reporting is unavailable");
+    const context = accessContext(at, view);
+    const accessUntil = view?.accessUntil;
+    if (
+      !view?.membershipId ||
+      typeof context.accessContext !== "string" ||
+      !Number.isFinite(accessUntil) ||
+      accessUntil <= clock().getTime()
+    )
+      throw new Error("role-ended");
+    if (
+      !connection ||
+      known.version < ARCHIVE_MIGRATION ||
+      !Number.isSafeInteger(row.archived) ||
+      row.archived < 0 ||
+      row.archived > ARCHIVE_READ_LIMIT ||
+      typeof engine.executiveReport !== "function"
+    )
+      throw unavailable();
+    const now = engine.worldNow(row.payload, at);
+    const key =
+      typeof stamp === "string"
+        ? JSON.stringify([
+            stamp,
+            row.payload.state.worldGeneration,
+            row.archived,
+            now,
+            view.actorId,
+            context.accessContext,
+            accessUntil,
+          ])
+        : null;
+    let report = key ? executiveReplies.get(key) : undefined;
+    if (!report) {
+      // The same global retention window as History, before role scoping. A missing tail is
+      // unavailable: it must never silently turn an older reporting week into zero.
+      const { rows } = await connection.query(
+        `SELECT collection, record_id, closed_at, body FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2 ORDER BY closed_at DESC, collection, record_id LIMIT ${ARCHIVE_READ_LIMIT}`,
+        [workspaceId, row.payload.state.worldGeneration],
+      );
+      if (rows.length !== row.archived) throw unavailable();
+      const state = { ...row.payload.state };
+      const collections = new Set(engine.ARCHIVED_COLLECTIONS);
+      const seen = new Set();
+      for (const record of rows) {
+        const identity = `${record.collection}\0${record.record_id}`;
+        if (
+          !collections.has(record.collection) ||
+          !record.body ||
+          record.body.id !== record.record_id ||
+          !Number.isFinite(Number(record.closed_at)) ||
+          seen.has(identity)
+        )
+          throw unavailable();
+        seen.add(identity);
+      }
+      for (const collection of collections) {
+        const live = state[collection];
+        if (!Array.isArray(live)) throw unavailable();
+        const liveIds = new Set(live.map((record) => record.id));
+        state[collection] = [
+          ...live,
+          ...rows
+            .filter((record) => record.collection === collection && !liveIds.has(record.record_id))
+            .map((record) => record.body),
+        ];
+      }
+      const world = { ...row.payload, state };
+      if (!engine.validWorld(world)) throw unavailable();
+      try {
+        report = engine.executiveReport(world, view.access, at);
+      } catch {
+        throw unavailable();
+      }
+      if (report?.network?.asAt?.now !== now) throw unavailable();
+      if (accessUntil <= clock().getTime()) throw new Error("role-ended");
+      if (key) {
+        registerPart(report);
+        executiveReplies.set(key, report);
+      }
+    }
+    // Projection is expensive. Membership must still be live when the result leaves the store.
+    if (accessUntil <= clock().getTime()) throw new Error("role-ended");
+    return {
+      kind: "executive-aggregate",
+      dataMode: "prototype",
+      actorId: view.actorId,
+      revision: Number(row.revision),
+      ...context,
+      accessUntil,
+      now,
+      report,
+      demoControls: false,
+    };
+  }
   function scopedParts(row, at, view, senderView, stamp) {
+    const reviewable = reviewIdsFor(row, row.payload, view, at);
     const build = () => ({
       partial: senderView ? engine.partialViewForWorld(row.payload, view.access, at, view.grants) : undefined,
       // H-0731: no desk is sent the detail no list shows; `logView` sends it for one opened record.
-      payload: withoutRecordDetail(view ? engine.scopeWorld(row.payload, view.access, at, view.grants) : row.payload),
+      payload: withoutRecordDetail(
+        view ? engine.scopeWorld(row.payload, view.access, at, view.grants, reviewable) : row.payload,
+      ),
     });
     if (typeof stamp !== "string") return build();
     const now = engine.worldNow(row.payload, at);
@@ -277,6 +378,7 @@ export function createWorkspaceStore(
             stamp,
             now,
             senderView,
+            reviewable,
             access: view ? view.access : null,
             // As the engine turns them into workspace minutes (engine.ts `worldGrants`).
             grants: view
@@ -303,7 +405,8 @@ export function createWorkspaceStore(
    * only a read path passes it, so a board built inside a save that might still roll back is
    * never kept for other requests. The payload may then be shared: no caller may change it.
    */
-  const snapshot = (row, at, view, stamp) => {
+  const snapshot = async (row, at, view, stamp, connection = null) => {
+    if (view?.access?.role === "executive") return executiveSnapshot(connection, row, at, view, stamp);
     const context = accessContext(at, view);
     const revision = Number(row.revision);
     const senderView =
@@ -604,18 +707,63 @@ export function createWorkspaceStore(
    * workspace and, below statewide, be of a record in the coordinator's own part of the workspace
    * (the same rule as reading the openings). Anything else is refused as outside the role's place.
    */
-  async function breakGlassReviewRefusal(client, world, view, event, at) {
-    if (event?.type !== "REVIEW_AUDIT_EVENT" || typeof event.eventId !== "string") return null;
-    if (!event.eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
-    const id = event.eventId.slice(BREAK_GLASS_REVIEW_PREFIX.length);
-    if (!/^[1-9][0-9]{0,17}$/.test(id) || !(view.version >= ROLE_ACCESS_MIGRATION)) return OUTSIDE_PLACE;
-    const { rows } = await client.query(
-      "SELECT patient_id FROM ward_flow.break_glass WHERE id=$1 AND workspace_id=$2 AND data_mode='prototype'",
-      [id, workspaceId],
-    );
-    if (!rows[0]) return OUTSIDE_PLACE;
+  function openingEventFor(world, event) {
+    if (event?.type === "REVIEW_AUDIT_EVENT") return event.eventId;
+    if (event?.type !== "UNDO_AUDIT_REVIEW" || typeof event.reviewId !== "string") return null;
+    const reviews = world.state.auditReviews.filter((review) => review.id === event.reviewId);
+    return reviews.length === 1 ? reviews[0].eventId : null;
+  }
+  const openingId = (eventId) => {
+    if (typeof eventId !== "string" || !eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
+    const id = eventId.slice(BREAK_GLASS_REVIEW_PREFIX.length);
+    return /^[1-9][0-9]{0,17}$/.test(id) ? id : null;
+  };
+  // A caller cannot supply this authority through a view or command. Each row belongs to one
+  // read/locked transaction; only the committed scoped reply parts survive that request.
+  const reviewAuthorities = new WeakMap();
+  async function prepareReviewAuthority(connection, row, view, event = null) {
+    if (view?.access?.role !== "coordinator") return;
+    const eventIds = engine.wholeNetwork(view.access)
+      ? []
+      : row.payload.state.auditReviews.map((review) => review.eventId);
+    eventIds.push(openingEventFor(row.payload, event));
+    const ids = [...new Set(eventIds.map(openingId).filter((id) => id !== null))];
+    const openings = new Map();
+    if (ids.length && view.version >= ROLE_ACCESS_MIGRATION) {
+      const { rows } = await connection.query(
+        "SELECT id::text AS id, patient_id FROM ward_flow.break_glass WHERE workspace_id=$1 AND data_mode='prototype' AND id = ANY($2::bigint[])",
+        [workspaceId, ids],
+      );
+      for (const opening of rows) openings.set(String(opening.id), opening.patient_id);
+    }
+    reviewAuthorities.set(row, { openings, scopes: new WeakMap() });
+  }
+  function reviewIdsFor(row, world, view, at) {
+    if (view?.access?.role !== "coordinator" || engine.wholeNetwork(view.access)) return [];
+    const authority = reviewAuthorities.get(row);
+    if (!authority?.openings.size) return [];
+    const scopeKey = JSON.stringify(canonical(view.access));
+    const now = engine.worldNow(world, at);
+    const cached = authority.scopes.get(world);
+    if (cached?.scopeKey === scopeKey && cached.now === now) return cached.ids;
+    // Grants never widen governance review authority. Re-evaluate the same opening map against
+    // the actual world being projected, including an accepted command's resulting world.
+    const own = new Set(placeRecords(world, view.access, at));
+    const ids = [...authority.openings]
+      .filter(([, patientId]) => own.has(patientId))
+      .map(([id]) => `${BREAK_GLASS_REVIEW_PREFIX}${id}`)
+      .sort();
+    authority.scopes.set(world, { scopeKey, now, ids });
+    return ids;
+  }
+  function breakGlassReviewRefusal(row, view, event, at) {
+    const eventId = openingEventFor(row.payload, event);
+    if (typeof eventId !== "string" || !eventId.startsWith(BREAK_GLASS_REVIEW_PREFIX)) return null;
+    const id = openingId(eventId);
+    if (!id || !(view.version >= ROLE_ACCESS_MIGRATION) || !reviewAuthorities.get(row)?.openings.has(id))
+      return OUTSIDE_PLACE;
     if (engine.wholeNetwork(view.access)) return null;
-    return placeRecords(world, view.access, at).includes(rows[0].patient_id) ? null : OUTSIDE_PLACE;
+    return reviewIdsFor(row, row.payload, view, at).includes(eventId) ? null : OUTSIDE_PLACE;
   }
   /**
    * The workspace row under `lock` ("UPDATE" or "SHARE"), with its whole world in `payload`, the
@@ -1203,18 +1351,21 @@ export function createWorkspaceStore(
     }
   }
   async function read(actorId, view) {
+    if (view?.access?.role === "executive" && !view.membershipId) throw new Error("role-ended");
     if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
     // Read only: the cached record bodies are shared, not copied (audit PS-05).
     const stored = await readWorld(pool, undefined, { copy: false });
     if (stored && engine.validWorld(stored.payload)) {
       stored.archived = await archivedCount(pool, stored.payload, stored.revision);
+      await prepareReviewAuthority(pool, stored, view);
       return snapshot(stored, at, view, stored.stamp);
     }
     return transaction(async (client, now) => {
       const row = await lock(client, actorId, now, view);
       row.archived = await archivedCount(client, row.payload, row.revision);
-      return snapshot(row, now, view);
+      await prepareReviewAuthority(client, row, view);
+      return snapshot(row, now, view, undefined, client);
     });
   }
   /**
@@ -1234,7 +1385,8 @@ export function createWorkspaceStore(
       // The HTTP reply uses this request's view for its access metadata too.
       Object.assign(view, current);
       row.archived = await archivedCount(client, row.payload, row.revision);
-      return snapshot(row, at, current, row.stamp);
+      await prepareReviewAuthority(client, row, current);
+      return snapshot(row, at, current, row.stamp, client);
     });
     if (ready) return ready;
     const current = await viewer(actorId, { workingAs: view.membershipId });
@@ -1243,7 +1395,8 @@ export function createWorkspaceStore(
       const row = await lock(client, actorId, now, current);
       Object.assign(view, current);
       row.archived = await archivedCount(client, row.payload, row.revision);
-      return snapshot(row, now, current);
+      await prepareReviewAuthority(client, row, current);
+      return snapshot(row, now, current, undefined, client);
     });
   }
   /**
@@ -1695,6 +1848,7 @@ export function createWorkspaceStore(
      * @param {string | null} [knownContext]
      */
     async poll(actorId, knownRevision, view, knownContext = null) {
+      if (view?.access?.role === "executive") return { notModified: false, snapshot: await read(actorId, view) };
       const at = clock();
       // Re-resolve scoped access immediately before reading. A role or one of its covers may have
       // ended since the HTTP handler resolved the view; never use that stale scope for a snapshot.
@@ -1749,6 +1903,7 @@ export function createWorkspaceStore(
      * @returns {Promise<{ archived: number, records: any[], through?: number, sum?: string, since?: number, floor?: Array<number | string>, revision?: number, partialView?: { revision: number, accessContext: string, view: any } }>}
      */
     async archive(view, since) {
+      if (view?.access?.role === "executive") throw new Error("Executive reporting does not include record access");
       if ((await schemaVersion()) < ARCHIVE_MIGRATION) {
         archiveHeld = null;
         return { archived: 0, records: [] };
@@ -2128,6 +2283,8 @@ export function createWorkspaceStore(
      * minute. Nothing is sent when the opening could not be logged.
      */
     async logView(view, patientId, surface) {
+      if (view?.access?.role === "executive")
+        return { status: 403, body: { error: "Record access is not part of your role" } };
       if (!(view.version >= RECORD_ACCESS_MIGRATION)) return { status: 200, body: { logged: false } };
       // Before 13 the log's check takes a patient or movement page only.
       if (surface === "referral" && !(view.version >= REFERRAL_VIEW_MIGRATION))
@@ -2399,7 +2556,11 @@ export function createWorkspaceStore(
           changes: { patientId, reason, until: until.toISOString(), membershipId: view.membershipId, pattern },
         });
         const opened = { ...view, grants: [...view.grants, { patientId, until }] };
-        return { status: 200, body: { until: until.toISOString(), pattern, snapshot: snapshot(row, at, opened) } };
+        await prepareReviewAuthority(client, row, opened);
+        return {
+          status: 200,
+          body: { until: until.toISOString(), pattern, snapshot: await snapshot(row, at, opened, undefined, client) },
+        };
       });
     },
     /**
@@ -2456,6 +2617,7 @@ export function createWorkspaceStore(
         commandTiming.skip();
         const row = await lock(client, actorId, at, view);
         commandTiming.lap("lock");
+        await prepareReviewAuthority(client, row, view, event);
         const previous = await client.query(
           "SELECT fingerprint, status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
           [workspaceId, actorId, commandId],
@@ -2466,7 +2628,10 @@ export function createWorkspaceStore(
           if (![fingerprint, legacyFingerprint, unstampedFingerprint].includes(receipt.fingerprint))
             return {
               status: 422,
-              body: { error: "Command ID was already used for a different request", snapshot: snapshot(row, at, view) },
+              body: {
+                error: "Command ID was already used for a different request",
+                snapshot: await snapshot(row, at, view, undefined, client),
+              },
             };
           // A receipt confirms what already happened; it cannot lend the desk its earlier access.
           // Context includes the selected membership, joined cover and active record openings.
@@ -2478,14 +2643,26 @@ export function createWorkspaceStore(
             Object.hasOwn(receipt.result, "receiptAccessContext") &&
             receiptAccessContext === (accessContext(at, view).accessContext ?? null);
           const detailsAllowed =
-            sameAccess && (!view || !engine.commandRefusal(row.payload, view.access, event, at, view.grants));
+            view?.access?.role !== "executive" &&
+            sameAccess &&
+            (!view ||
+              (!engine.commandRefusal(
+                row.payload,
+                view.access,
+                event,
+                at,
+                view.grants,
+                reviewIdsFor(row, row.payload, view, at),
+              ) &&
+                !breakGlassReviewRefusal(row, view, event, at)));
           // A command can create related records whose ids were absent from the request. Those
           // records may later move outside this unchanged desk while the original request remains
           // permitted (for example, moving a new planned booking to another service). Checked
           // record tokens must therefore name only records still in the desk's current projection.
           let replaySnapshot;
           if (detailsAllowed && Array.isArray(recordedResult.covered)) {
-            replaySnapshot = snapshot(row, at, view);
+            replaySnapshot = await snapshot(row, at, view, undefined, client);
+            if (!("payload" in replaySnapshot)) throw new Error("Executive reporting is unavailable");
             const visible = new Set([...splitWorld(replaySnapshot.payload).parts.keys()].map(recordToken));
             recordedResult.covered = recordedResult.covered.filter((token) => visible.has(token));
           }
@@ -2512,7 +2689,7 @@ export function createWorkspaceStore(
               replayed: true,
               ...(detailsAllowed && revisionOnly && receipt.status === 200
                 ? {}
-                : { snapshot: replaySnapshot ?? snapshot(row, at, view) }),
+                : { snapshot: replaySnapshot ?? (await snapshot(row, at, view, undefined, client)) }),
             },
           };
         }
@@ -2535,8 +2712,14 @@ export function createWorkspaceStore(
         // whether a record outside its place changed. A refusal can still show that an id
         // exists, because ids it cannot find fall through to the engine's own not-found reply.
         const scopeRefusal = view
-          ? (engine.commandRefusal(row.payload, view.access, event, at, view.grants) ??
-            (await breakGlassReviewRefusal(client, row.payload, view, event, at)))
+          ? (engine.commandRefusal(
+              row.payload,
+              view.access,
+              event,
+              at,
+              view.grants,
+              reviewIdsFor(row, row.payload, view, at),
+            ) ?? breakGlassReviewRefusal(row, view, event, at))
           : null;
         if (privacyRefusal) {
           outcome = "denied";
@@ -2591,7 +2774,9 @@ export function createWorkspaceStore(
             if (row.core) {
               const worlds = [before, applied.world];
               const scoped = view
-                ? worlds.map((world) => engine.scopeWorld(world, view.access, at, view.grants))
+                ? worlds.map((world) =>
+                    engine.scopeWorld(world, view.access, at, view.grants, reviewIdsFor(row, world, view, at)),
+                  )
                 : worlds;
               const visible = scoped.every((world, index) => world === worlds[index]) ? null : scoped;
               covered = coveredRecords({
@@ -2704,7 +2889,10 @@ export function createWorkspaceStore(
           row.archived = await archivedCount(client, row.payload, row.revision, settle);
         return {
           status,
-          body: { ...result, ...(revisionOnly && status === 200 ? {} : { snapshot: snapshot(row, at, view) }) },
+          body: {
+            ...result,
+            ...(revisionOnly && status === 200 ? {} : { snapshot: await snapshot(row, at, view, undefined, client) }),
+          },
         };
       });
       commandTiming.lap("commit");

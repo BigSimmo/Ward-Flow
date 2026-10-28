@@ -12,11 +12,14 @@ function connection(status: WardSharedConnection["status"] = "unavailable", unco
   return {
     enabled: true,
     signedIn: true,
+    actorId: "synthetic-recovery-account",
+    access: { role: "coordinator", scope: { kind: "statewide" } },
     status,
     unconfirmedSave,
     error: status === "unavailable" ? "Save is not confirmed." : null,
     receivedAt: Date.now(),
     snapshot: {
+      accessContext: "a".repeat(64),
       dataMode: "prototype",
       revision: 1,
       now: 642,

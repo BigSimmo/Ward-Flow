@@ -1,9 +1,8 @@
 "use client";
 
 import { openEdJourneys } from "@/components/ward-management/ward-shared-figures";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, Clock, Hospital, Users } from "lucide-react";
 
@@ -38,6 +37,17 @@ import { SortTh } from "./statistics-wards-index";
 import { PhoneBody, PhoneGroup, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import {
+  ExecutiveStatisticsUnavailable,
+  PeopleNotListed,
+  statisticsCountText,
+  exactStatisticsCount,
+  withheldBar,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import type { HealthService } from "../ward-model";
 
 /** "Royal Perth Hospital Emergency Department" reads "Royal Perth"; the site code leads the row. */
 const shortName = (name: string) =>
@@ -70,19 +80,89 @@ type EdSortKey = "name" | "waiting" | "unplaced" | "over24" | "over48" | "longes
  * open movements no ward has accepted, and the long-wait counts OVERLAP (anyone past the second line
  * is past the first), so they are shown side by side and never summed.
  */
-export function StatisticsEdsIndexScreen() {
-  const { parts } = useStatisticsCounts();
-  const section = statisticsSectionById("units");
-  if (!section) throw new Error("statistics-sections.ts no longer defines the 'units' section");
 
+type EdIndexRow = {
+  id: string;
+  name: string;
+  code: string;
+  service: HealthService | undefined;
+  waiting: StatisticsCount;
+  unplaced: StatisticsCount;
+  over24: StatisticsCount;
+  over48: StatisticsCount;
+  urgent: StatisticsCount;
+  longest: number | null;
+  median: number | null;
+  openable: boolean;
+};
+type EdIndexTotals = {
+  waiting: StatisticsCount;
+  over24: StatisticsCount;
+  over48: StatisticsCount;
+  unplaced: StatisticsCount;
+  urgent: StatisticsCount;
+  stillInEd: StatisticsCount;
+  inTransit: StatisticsCount;
+};
+export function StatisticsEdsIndexScreen() {
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  return control.executive || access.role === "executive" ? <ExecutiveEdsIndex /> : <OperationalEdsIndex />;
+}
+function ExecutiveEdsIndex() {
+  const data = useExecutiveStatistics();
+  const control = useExecutiveStatisticsControl();
+  if (!data) return <ExecutiveStatisticsUnavailable />;
+  const departments: EdIndexRow[] = data.emergencyDepartments.map((ed) => ({
+    id: ed.id,
+    name: shortName(ed.name),
+    code: ed.siteCode,
+    service: ed.service,
+    waiting: ed.onTheList,
+    unplaced: ed.unplaced,
+    over24: ed.over24h,
+    over48: ed.over48h,
+    urgent: ed.urgent,
+    longest: ed.longestWaitMinutes,
+    median: ed.medianWaitMinutes,
+    openable: data.openableEmergencyDepartmentIds.includes(ed.id),
+  }));
+  return (
+    <EdsIndexView
+      executive
+      departments={departments}
+      now={data.network.asAt.now}
+      paused={control.paused}
+      togglePause={control.togglePause}
+      scopeLabel={data.network.scope.kind === "service" ? data.network.scope.service : undefined}
+      totals={data.edIndex}
+      networkMedian={data.networkDetails.medianWaitMinutes}
+      bands={data.edIndex.bands.map((band, position) => {
+        const from = ED_WAIT_BANDS[position]!.fromMinutes / 60;
+        const next = ED_WAIT_BANDS[position + 1]?.fromMinutes;
+        return {
+          id: band.label,
+          label: next === undefined ? `${from}h+` : position === 0 ? `<${next / 60}h` : `${from}-${next / 60}h`,
+          value: band.count,
+        };
+      })}
+      swarmRows={[...departments]
+        .sort((a, b) => {
+          const left = exactStatisticsCount(a.waiting),
+            right = exactStatisticsCount(b.waiting);
+          if (left === null || right === null)
+            return left === right ? a.name.localeCompare(b.name) : left === null ? 1 : -1;
+          return right - left || (b.longest ?? 0) - (a.longest ?? 0) || a.name.localeCompare(b.name);
+        })
+        .map((ed) => ({ id: ed.id }))}
+      renderSwarm={() => <PeopleNotListed />}
+    />
+  );
+}
+function OperationalEdsIndex() {
   const live = useStatisticsLive();
   const { movements } = live.state;
   const now = live.now;
-
-  const [sort, setSort] = useState<EdSortKey>("waiting");
-  const [asc, setAsc] = useState(false);
-  const isPhone = useIsPhone();
-
   const departments = useMemo(
     () =>
       allEmergencyDepartments().map((department) => {
@@ -107,27 +187,6 @@ export function StatisticsEdsIndexScreen() {
     [movements, now],
   );
   type Row = (typeof departments)[number];
-
-  const sorted = useMemo(() => {
-    const value = (row: Row): number | string =>
-      sort === "name" ? row.name : sort === "longest" || sort === "median" ? (row[sort] ?? -1) : row[sort];
-    return [...departments].sort((a, b) => {
-      const left = value(a);
-      const right = value(b);
-      if (left < right) return asc ? -1 : 1;
-      if (left > right) return asc ? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [departments, sort, asc]);
-
-  const onSort = (key: EdSortKey) => {
-    if (key === sort) setAsc((value) => !value);
-    else {
-      setSort(key);
-      setAsc(key === "name");
-    }
-  };
-
   const swarmRows = [...departments]
     .sort((a, b) => b.waiting - a.waiting || (b.longest ?? 0) - (a.longest ?? 0) || a.name.localeCompare(b.name))
     .map((row) => ({ id: row.id, name: row.name, href: edStatisticsHref(row.id), entries: row.entries }));
@@ -135,15 +194,10 @@ export function StatisticsEdsIndexScreen() {
   const total = (pick: (row: Row) => number) => departments.reduce((sum, row) => sum + pick(row), 0);
   const waiting = total((row) => row.waiting);
   const edJourneys = openEdJourneys(movements, now);
-  const [stillInEdShown, inTransitShown] = parts([edJourneys.stillInEd, edJourneys.inTransit]);
   const over24 = total((row) => row.over24);
   const over48 = total((row) => row.over48);
   const unplaced = total((row) => row.unplaced);
   const urgent = total((row) => row.urgent);
-  const longestRow = departments.reduce<Row | null>(
-    (best, row) => (row.longest !== null && (best === null || (best.longest ?? 0) < row.longest) ? row : best),
-    null,
-  );
   const networkMedian = median(departments.flatMap((row) => row.waits));
 
   // Short column labels from the band floors ("<4h", "4-8h", "24h+"); the full name is the band's own.
@@ -158,15 +212,125 @@ export function StatisticsEdsIndexScreen() {
   });
 
   return (
+    <EdsIndexView
+      departments={departments.map(
+        ({ id, name, code, service, waiting, unplaced, over24, over48, urgent, longest, median }) => ({
+          id,
+          name,
+          code,
+          service,
+          waiting,
+          unplaced,
+          over24,
+          over48,
+          urgent,
+          longest,
+          median,
+          openable: true,
+        }),
+      )}
+      now={now}
+      paused={live.paused}
+      togglePause={live.togglePause}
+      totals={{
+        waiting,
+        over24,
+        over48,
+        unplaced,
+        urgent,
+        stillInEd: edJourneys.stillInEd,
+        inTransit: edJourneys.inTransit,
+      }}
+      networkMedian={networkMedian}
+      bands={bands}
+      swarmRows={swarmRows.map(({ id }) => ({ id }))}
+      renderSwarm={(width) => (
+        <StatisticsEdSwarm rows={swarmRows} labelWidth={width} testId="ward-statistics-eds-swarm" />
+      )}
+    />
+  );
+}
+function EdsIndexView({
+  departments,
+  now,
+  paused,
+  togglePause,
+  scopeLabel,
+  totals,
+  networkMedian,
+  bands,
+  swarmRows,
+  renderSwarm,
+  executive = false,
+}: {
+  departments: EdIndexRow[];
+  now: number;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  scopeLabel?: string;
+  totals: EdIndexTotals;
+  networkMedian: number | null;
+  bands: { id: string; label: string; value: StatisticsCount }[];
+  swarmRows: { id: string }[];
+  renderSwarm: (width: number) => ReactNode;
+  executive?: boolean;
+}) {
+  const section = statisticsSectionById("units");
+  if (!section) throw new Error("Statistics units section is missing.");
+  const shown = (count: StatisticsCount) => statisticsCountText(count);
+  const positive = (count: StatisticsCount) => {
+    const exact = exactStatisticsCount(count);
+    return exact === null || exact > 0;
+  };
+  const { waiting, over24, over48, unplaced, urgent } = totals;
+  const stillInEdShown = shown(totals.stillInEd),
+    inTransitShown = shown(totals.inTransit);
+  const longestRow = departments.reduce<EdIndexRow | null>(
+    (best, row) => (row.longest !== null && (best === null || (best.longest ?? 0) < row.longest) ? row : best),
+    null,
+  );
+  type Row = EdIndexRow;
+  const [sort, setSort] = useState<EdSortKey>("waiting");
+  const [asc, setAsc] = useState(false);
+  const isPhone = useIsPhone();
+
+  const sorted = useMemo(() => {
+    const value = (row: Row): number | string | null =>
+      sort === "name"
+        ? row.name
+        : sort === "longest" || sort === "median"
+          ? (row[sort] ?? -1)
+          : exactStatisticsCount(row[sort]);
+    return [...departments].sort((a, b) => {
+      const left = value(a);
+      const right = value(b);
+      if (left === null || right === null)
+        return left === right ? a.name.localeCompare(b.name) : left === null ? 1 : -1;
+      if (left < right) return asc ? -1 : 1;
+      if (left > right) return asc ? 1 : -1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [departments, sort, asc]);
+
+  const onSort = (key: EdSortKey) => {
+    if (key === sort) setAsc((value) => !value);
+    else {
+      setSort(key);
+      setAsc(key === "name");
+    }
+  };
+
+  return (
     <StatisticsPage
       section={section}
       navSection="ed"
       testId="ward-statistics-eds-index"
       eyebrowLabel={`Statistics · ${departments.length} EDs`}
       title="All emergency departments"
+      eyebrowDetail={scopeLabel}
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause ?? undefined}
       tools={
         <HeroTool
           href={STATISTICS_COMPARE_HREF}
@@ -177,19 +341,23 @@ export function StatisticsEdsIndexScreen() {
         </HeroTool>
       }
       phone={{
-        title: `${waiting} open ED journeys`,
+        title: `${shown(waiting)} open ED journeys`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
           <>
-            <HeroStat value={over24} label={`Past ${LONG_HOURS}h`} tone={over24 > 0 ? "warning" : undefined} />
-            <HeroStat value={unplaced} label="No ward yet" />
-            <HeroStat value={urgent} label="Urgent" />
+            <HeroStat
+              value={shown(over24)}
+              label={`Past ${LONG_HOURS}h`}
+              tone={positive(over24) ? "warning" : undefined}
+            />
+            <HeroStat value={shown(unplaced)} label="No ward yet" />
+            <HeroStat value={shown(urgent)} label="Urgent" />
           </>
         ),
       }}
       stats={
         <>
-          <HeroStat value={waiting} label="Open ED journeys" />
+          <HeroStat value={shown(waiting)} label="Open ED journeys" />
           <HeroStat
             value={waitText(longestRow?.longest ?? null)}
             label={longestRow ? `Longest, ${longestRow.code}` : "Longest"}
@@ -204,8 +372,12 @@ export function StatisticsEdsIndexScreen() {
             }
           />
           <HeroStat value={waitText(networkMedian)} label="Median" />
-          <HeroStat value={over24} label={`Past ${LONG_HOURS}h`} tone={over24 > 0 ? "warning" : undefined} />
-          <HeroStat value={unplaced} label="No ward yet" />
+          <HeroStat
+            value={shown(over24)}
+            label={`Past ${LONG_HOURS}h`}
+            tone={positive(over24) ? "warning" : undefined}
+          />
+          <HeroStat value={shown(unplaced)} label="No ward yet" />
         </>
       }
     >
@@ -227,33 +399,46 @@ export function StatisticsEdsIndexScreen() {
                   name={row.name}
                   meta={
                     <span className={phone.dotName}>
-                      {row.waiting === 0 ? "No one waiting" : `${row.unplaced} no ward yet`}
+                      {exactStatisticsCount(row.waiting) === 0
+                        ? "No one waiting"
+                        : `${shown(row.unplaced)} no ward yet`}
                     </span>
                   }
-                  value={row.waiting}
+                  value={shown(row.waiting)}
                   // Phone review F-24: "longest none" read as a wait; an empty ED reads "0 waiting".
                   time={row.longest === null ? "waiting" : `longest ${waitText(row.longest)}`}
-                  href={edStatisticsHref(row.id)}
+                  href={row.openable ? edStatisticsHref(row.id) : undefined}
                 />
               );
             })}
           </PhoneList>
           <PhoneGroup title="Time since opening" aside="Open ED journeys">
             <div className={phone.chartCard}>
-              <ColumnChart label="Open ED journeys, by time since opening" columns={bands} height={160} />
+              <ColumnChart
+                label="Open ED journeys, by time since opening"
+                columns={bands.map((band) => ({
+                  ...band,
+                  ...withheldBar(exactStatisticsCount(band.value) ?? 0, shown(band.value)),
+                }))}
+                height={160}
+              />
             </div>
           </PhoneGroup>
-          <PhoneSheetRow
-            icon={Users}
-            title="Open ED journeys, one mark each"
-            sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
-            testId="ward-statistics-eds-phone-swarm"
-          >
-            <StatisticsEdSwarm rows={swarmRows} labelWidth={96} testId="ward-statistics-eds-swarm" />
-            <p className={phone.note}>
-              {`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits.`}
-            </p>
-          </PhoneSheetRow>
+          {executive ? (
+            <PeopleNotListed />
+          ) : (
+            <PhoneSheetRow
+              icon={Users}
+              title="Open ED journeys, one mark each"
+              sub={`Axis to ${VERY_LONG_HOURS * 1.5}h, longer waits on its last line`}
+              testId="ward-statistics-eds-phone-swarm"
+            >
+              {renderSwarm(96)}
+              <p className={phone.note}>
+                {`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits.`}
+              </p>
+            </PhoneSheetRow>
+          )}
         </PhoneBody>
       ) : (
         <>
@@ -265,15 +450,17 @@ export function StatisticsEdsIndexScreen() {
             aside={
               <span
                 className={cx(styles.muted, index.phoneHide)}
-              >{`${waiting} open journeys across ${departments.length} EDs`}</span>
+              >{`${shown(waiting)} open journeys across ${departments.length} EDs`}</span>
             }
             data-testid="ward-statistics-eds-swarm-card"
           >
-            <div className={index.swarmBody}>
-              <StatisticsEdSwarm rows={swarmRows} labelWidth={176} testId="ward-statistics-eds-swarm" />
-            </div>
+            <div className={index.swarmBody}>{renderSwarm(176)}</div>
             <CardFoot
-              meta={`Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits. Open a row for that ED's page.`}
+              meta={
+                executive
+                  ? undefined
+                  : `Each mark is one open ED journey. The ${LONG_HOURS} and ${VERY_LONG_HOURS} hour lines show time since opening, using local defaults, not legal limits. Open a row for that ED's page.`
+              }
             />
           </StatCard>
 
@@ -320,9 +507,13 @@ export function StatisticsEdsIndexScreen() {
                       <tr key={row.id}>
                         <th scope="row">
                           <span className={index.rowName}>
-                            <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
-                              {row.name}
-                            </Link>
+                            {row.openable ? (
+                              <Link href={edStatisticsHref(row.id)} className={index.rowLink}>
+                                {row.name}
+                              </Link>
+                            ) : (
+                              row.name
+                            )}
                             <span className={index.rowSub}>
                               <ServiceDot service={row.service} />
                               {row.code}
@@ -330,18 +521,22 @@ export function StatisticsEdsIndexScreen() {
                             </span>
                           </span>
                         </th>
-                        <td className={cx(styles.num, row.waiting === 0 && styles.zero)}>{row.waiting}</td>
-                        <td className={cx(styles.num, row.unplaced === 0 && styles.zero)}>{row.unplaced}</td>
-                        <td className={cx(styles.num, row.over24 === 0 && styles.zero)}>
+                        <td className={cx(styles.num, exactStatisticsCount(row.waiting) === 0 && styles.zero)}>
+                          {shown(row.waiting)}
+                        </td>
+                        <td className={cx(styles.num, exactStatisticsCount(row.unplaced) === 0 && styles.zero)}>
+                          {shown(row.unplaced)}
+                        </td>
+                        <td className={cx(styles.num, exactStatisticsCount(row.over24) === 0 && styles.zero)}>
                           <span className={styles.flagged}>
-                            {row.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                            {row.over24}
+                            {positive(row.over24) ? <StatusGlyph tone="warning" size={9} /> : null}
+                            {shown(row.over24)}
                           </span>
                         </td>
-                        <td className={cx(styles.num, row.over48 === 0 && styles.zero)}>
+                        <td className={cx(styles.num, exactStatisticsCount(row.over48) === 0 && styles.zero)}>
                           <span className={styles.flagged}>
-                            {row.over48 > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
-                            {row.over48}
+                            {positive(row.over48) ? <StatusGlyph tone="danger" size={9} /> : null}
+                            {shown(row.over48)}
                           </span>
                         </td>
                         <td className={cx(styles.num, row.longest === null && styles.zero)}>{waitText(row.longest)}</td>
@@ -352,10 +547,10 @@ export function StatisticsEdsIndexScreen() {
                   <tfoot>
                     <tr>
                       <th scope="row">All {departments.length} EDs</th>
-                      <td className={styles.num}>{waiting}</td>
-                      <td className={styles.num}>{unplaced}</td>
-                      <td className={styles.num}>{over24}</td>
-                      <td className={styles.num}>{over48}</td>
+                      <td className={styles.num}>{shown(waiting)}</td>
+                      <td className={styles.num}>{shown(unplaced)}</td>
+                      <td className={styles.num}>{shown(over24)}</td>
+                      <td className={styles.num}>{shown(over48)}</td>
                       <td className={styles.num}>{waitText(longestRow?.longest ?? null)}</td>
                       <td className={styles.num}>{waitText(networkMedian)}</td>
                     </tr>
@@ -377,7 +572,14 @@ export function StatisticsEdsIndexScreen() {
                 data-testid="ward-statistics-eds-bands"
               >
                 <CardBody>
-                  <ColumnChart label="Open ED journeys, by time since opening" columns={bands} height={220} />
+                  <ColumnChart
+                    label="Open ED journeys, by time since opening"
+                    columns={bands.map((band) => ({
+                      ...band,
+                      ...withheldBar(exactStatisticsCount(band.value) ?? 0, shown(band.value)),
+                    }))}
+                    height={220}
+                  />
                 </CardBody>
                 <CardFoot meta="The bands do not overlap: they add up to all open ED journeys." />
               </StatCard>

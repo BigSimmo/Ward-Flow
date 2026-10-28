@@ -323,7 +323,14 @@ export function reduceReferralAnswerEvent(
         // exactly one entry.
         stageChanges: [
           ...movement.stageChanges,
-          { at: event.now, from: movement.stage, to: "destination_review", by: event.role, reason },
+          {
+            at: event.now,
+            from: movement.stage,
+            to: "destination_review",
+            by: event.role,
+            reason,
+            unitId: event.unitId,
+          },
         ],
         // "Awaiting destination response" is only true while a live request stands; declining the
         // last one switches to `wardRequestWithdrawn`, as `WITHDRAW_WARD_REQUEST` does.
@@ -1360,6 +1367,7 @@ export function reduceReferralAnswerEvent(
                   to: withdrawnStage,
                   by: event.role,
                   reason: event.reason,
+                  unitId: withdrawnUnitId,
                 },
               ],
         unwinds: [
