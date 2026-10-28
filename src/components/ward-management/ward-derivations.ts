@@ -578,6 +578,9 @@ export type ActionInboxRecords = Partial<Omit<Parameters<typeof supportNotificat
   stuckHandoverMinutes?: number;
 };
 
+/** P068: minutes past the booking estimate before Alerts raise it (Josh, 27 Oct 2026, 10:02 PM AWST). */
+const BOOKING_ESTIMATE_PASSED_AFTER_MINUTES = CLINICAL_VALUES.bookingEstimatePassed.value;
+
 export function buildActionInbox(
   movements: Movement[],
   now: Instant,
@@ -708,6 +711,28 @@ export function buildActionInbox(
       owner: stuck ? "Sending team" : movement.owner,
       movementId: movement.id,
       since: movement.transport.acceptedAt,
+    });
+  }
+
+  // P068 (Josh, 27 Oct 2026, 10:02 PM AWST): a booked job still not at the ward 10 minutes after
+  // its booking estimate, on the booking-ETA clock the officer's arrivals card uses.
+  for (const movement of movements) {
+    const transport = movement.transport;
+    const estimatedAt = transport?.estimatedAt;
+    if (!transport || estimatedAt === undefined || transport.arrivedAt !== undefined) continue;
+    if (transport.cancelledAt !== undefined || movement.closure !== undefined) continue;
+    if (now - estimatedAt < BOOKING_ESTIMATE_PASSED_AFTER_MINUTES) continue;
+    const ward = movement.acceptedUnitId ? getUnitByIdMap(units).get(movement.acceptedUnitId)?.name : undefined;
+    items.push({
+      id: `${INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix}${movement.id}`,
+      kind: INBOX_CATEGORIES.transport_booking_estimate_passed.kind,
+      tone: "warning",
+      icon: Truck,
+      title: `Booking estimate passed ${splitDuration(now - estimatedAt)} ago`,
+      detail: `${movement.id} · to ${ward ?? "ward not recorded"}`,
+      owner: movement.owner,
+      movementId: movement.id,
+      since: estimatedAt,
     });
   }
 

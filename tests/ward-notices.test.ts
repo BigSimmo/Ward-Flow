@@ -128,7 +128,9 @@ function transportBooked(state: WardFlowState, now = NOW): WardFlowState {
     escortRequired: true,
     cadNumber: "CAD-STUB-0001",
     transportLegalStatus: "voluntary",
-    estimatedAt: 0,
+    // Not yet passed at `now`: Alerts raise a passed booking estimate (P068), and a cancel would then
+    // legitimately take that row away, which is not what assertion 5 is about.
+    estimatedAt: now,
   });
 }
 
