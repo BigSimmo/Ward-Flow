@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-27-alerts-yours-on-phone",
-    "date": "2026-10-27",
-    "line": "On a phone, the Alerts page calls your own alerts Yours, the same as on a computer."
-  },
-  {
     "id": "2026-10-27-stay-tile-day-number",
     "date": "2026-10-27",
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
@@ -98,5 +93,10 @@
     "id": "2026-10-27-closing-ward-keeps-reason",
     "date": "2026-10-27",
     "line": "Closing a ward keeps your reason and time if the save is refused, and reopening a ward now asks you to confirm."
+  },
+  {
+    "id": "2026-10-28-settings-plus-minus-larger",
+    "date": "2026-10-28",
+    "line": "The plus and minus buttons in Settings are now larger and easier to tap."
   }
 ]
