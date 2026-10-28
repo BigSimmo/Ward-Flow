@@ -49,3 +49,19 @@
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-1);
 }
+
+/* P010: the refusal, said beside the control, with Try again. */
+.alert {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2);
+  border: 1px solid var(--wf-warning);
+  border-radius: var(--wf-r-tag);
+}
+
+.alertText {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-warning-ink);
+}

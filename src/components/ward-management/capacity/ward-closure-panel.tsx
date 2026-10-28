@@ -9,6 +9,8 @@ import { formatInstantWithDay, type Instant } from "../ward-clock";
 import type { WardRecordActor } from "../ward-discharge-records";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { useHoldOpenForm } from "../use-hold-open-form";
+import { useWardSharedSave } from "../shell/ward-shared-save-context";
+import { refusalReasonText } from "../ward-refusal-words";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { useUndoableStep } from "../use-undoable-step";
 import type { Unit } from "../ward-model";
@@ -24,6 +26,20 @@ import {
 import styles from "./ward-closure-panel.module.css";
 // Closing the loop, package D (24 Oct 2026): restriction reviews and the closure transition list.
 import { ClosureTransitionChecklist, WardRestrictionReviews } from "../loop-checks/loop-checks-lazy";
+
+/**
+ * P010 DRAFT WORDING, not yet approved by Josh (his approved text was not supplied): what a coordinator reads
+ * when their close of a ward did not go through because it was already closed. Kept in one place so the
+ * approved text replaces it here and nowhere else.
+ */
+const CLOSE_CONFLICT_DRAFT_WORDING = {
+  /** The close was refused and the board has not yet shown why. `why` is the engine's reason in plain words. */
+  refused: (why: string) => `Not recorded. ${why}. Nothing was changed.`,
+  /** The board shows the ward closed with another reason than the one this person chose. */
+  closedFirst: (ward: string, recorded: string, by: string, chosen: string) =>
+    `Not recorded. ${ward} was closed first: ${recorded}, by ${by}. You chose ${chosen}. Nothing was changed.`,
+  tryAgain: "Try again",
+} as const;
 
 /**
  * Smart features idea 7 (19 Oct 2026), the screen half: close a whole ward to admissions with a
@@ -49,6 +65,17 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   // B2a P021 (27 Oct 2026): reopening asks once too.
   const [confirmingReopen, setConfirmingReopen] = useState(false);
   const reasonId = useId();
+  // P010: a refused close, or a board that shows someone else closed this ward first, is said in an alert.
+  const [refusedWords, setRefusedWords] = useState<string | null>(null);
+  const [overtakenBy, setOvertakenBy] = useState<WardClosureReason | null>(null);
+  const shared = useWardSharedSave();
+  // Try again only reads the board again (a refused close leaves nothing waiting to send); it never sends the
+  // close a second time. The chosen reason stays, so the coordinator redoes the close from what the board shows.
+  const tryAgain = () => {
+    setRefusedWords(null);
+    setOvertakenBy(null);
+    shared?.retry();
+  };
   const mayAct = actor.role === "coordinator" || (actor.role === "ward" && actor.actingUnitId === unit.id);
   const refusal = mayAct ? undefined : "Only this ward or the coordinator can close or reopen it.";
   const actingUnitId = actor.role === "ward" ? actor.actingUnitId : undefined;
@@ -91,8 +118,14 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
   if (seenClosed !== unit.isClosed) {
     setSeenClosed(unit.isClosed);
     if (unit.isClosed) {
-      setReason("");
+      // P010: a different reason was chosen here; keep it, and say what is recorded instead.
+      const recorded = unit.admissionsClosure?.reason;
+      if (reason !== "" && recorded !== undefined && recorded !== reason) setOvertakenBy(reason);
+      else setReason("");
       setReopenAfter("");
+      setRefusedWords(null);
+    } else {
+      setOvertakenBy(null);
     }
   }
   // The saved draft goes once the choices are empty, whether the close was recorded or both selects were put
@@ -166,6 +199,9 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         </Button>
         {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
         {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
+        {refusedWords !== null ? (
+          <ClosureAlert words={CLOSE_CONFLICT_DRAFT_WORDING.refused(refusedWords)} onTryAgain={tryAgain} />
+        ) : null}
         <Dialog
           open={confirming}
           onClose={() => setConfirming(false)}
@@ -188,7 +224,11 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
                   reason,
                   ...(reopenAfter !== "" ? { until: at + Number(reopenAfter) * 60 } : {}),
                 },
-                { success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}.` },
+                {
+                  success: `${unit.name} closed to admissions: ${wardClosureReasonLabel(reason)}.`,
+                  refusalShownInline: true,
+                  onRefused: (why) => setRefusedWords(refusalReasonText(why).replace(/\.$/, "")),
+                },
               );
             },
           }}
@@ -205,6 +245,17 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
       <h3 className={styles.heading}>
         <StatusGlyph tone="closed" size={8} /> {unit.name} closed to admissions
       </h3>
+      {overtakenBy !== null && closure ? (
+        <ClosureAlert
+          words={CLOSE_CONFLICT_DRAFT_WORDING.closedFirst(
+            unit.name,
+            wardClosureReasonLabel(closure.reason),
+            closure.by,
+            wardClosureReasonLabel(overtakenBy),
+          )}
+          onTryAgain={tryAgain}
+        />
+      ) : null}
       {closure ? (
         <p className={styles.line}>
           {wardClosureReasonLabel(closure.reason)} · since {formatInstantWithDay(closure.at, now)} · by {closure.by}
@@ -260,5 +311,16 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         data-testid="ward-closure-reopen-confirm"
       />
     </section>
+  );
+}
+
+function ClosureAlert({ words, onTryAgain }: { words: string; onTryAgain: () => void }) {
+  return (
+    <div className={styles.alert} role="alert" data-testid="ward-closure-alert">
+      <p className={styles.alertText}>{words}</p>
+      <Button size="sm" variant="sec" onClick={onTryAgain}>
+        {CLOSE_CONFLICT_DRAFT_WORDING.tryAgain}
+      </Button>
+    </div>
   );
 }

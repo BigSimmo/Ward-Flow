@@ -14,6 +14,7 @@ import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../wa
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels, type WardScenario } from "../ward-scenarios";
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
+import { WardDemoRoles } from "./ward-demo-roles";
 import styles from "./ward-tools-sheet.module.css";
 
 /**
@@ -153,6 +154,7 @@ export function WardDemoPanel({ oneList = false }: { oneList?: boolean } = {}) {
           </button>
         ))}
       </div>
+      <WardDemoRoles enabled={demoOn} />
       <div className={styles.demoRow}>
         <span className={styles.demoClock}>
           Demo clock <b>{formatInstant(now)}</b>

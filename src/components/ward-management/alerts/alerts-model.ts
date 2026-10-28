@@ -42,6 +42,7 @@ const KIND_PREFIXES: [AlertKind, string][] = [
   ["nobed", INBOX_CATEGORIES.no_eligible_bed.idPrefix],
   ["hold", INBOX_CATEGORIES.bed_pull_expired.idPrefix],
   ["transport", INBOX_CATEGORIES.transport_awaiting_departure.idPrefix],
+  ["transport", INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix],
   ["planned", INBOX_CATEGORIES.planned_arrival_overdue.idPrefix],
   // L1 (site review, 12 Oct 2026): the arrival and discharge notification rows the Tasks badge
   // counts, so Alerts "Now" and the badge agree.
@@ -137,7 +138,7 @@ export function bookingOfInboxId(
 }
 
 /** Short name for a condition, used in History and the Today chart. */
-export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
+const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   awol: "Absent without leave on an order",
   legal: "Form due time passed",
   declines: "Every ward asked declined",
@@ -151,6 +152,19 @@ export const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   running: "Decision target running",
   duplicate: "More than one active bed request",
 };
+
+/**
+ * The condition's short name for one row. The passed booking estimate shares the "transport" kind
+ * (and so its "Chase transport" action) but names its own condition: it also applies once the
+ * transport has left, so "Transport not yet left" would be wrong (P068, Josh's wording).
+ */
+export function alertKindLabel(id: string): string | undefined {
+  const kind = alertKindOf(id);
+  if (kind === undefined) return undefined;
+  return id.startsWith(INBOX_CATEGORIES.transport_booking_estimate_passed.idPrefix)
+    ? "Booking estimate passed"
+    : ALERT_KIND_LABELS[kind];
+}
 
 /** Remove the legacy movement reference from presentation, preserving the recorded detail. */
 export function alertDetail(item: InboxItem): string {

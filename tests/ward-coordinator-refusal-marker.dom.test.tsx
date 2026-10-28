@@ -74,6 +74,19 @@ describe("the persistent refusal marker", () => {
     expect(marker).toHaveTextContent("0 refused");
   });
 
+  it("explains itself to a screen reader and on hover (audit P124)", () => {
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+    const marker = screen.getByTestId("ward-coordinator-refusal-marker");
+    expect(marker).toHaveAccessibleDescription(/refused to record/);
+    expect(marker).toHaveAttribute("title", expect.stringMatching(/refused to record/));
+    // The count itself is unchanged: the description sits beside it, not inside it.
+    expect(marker).toHaveTextContent(/^0 refused$/);
+  });
+
   it("is structurally OUTSIDE the scrollable body the registers panel now lives inside", () => {
     // The whole reason this marker exists: `.body` (`ward-coordinator-body`) is the element that
     // scrolls in this layout, and the registers panel is a descendant of it now (`.regionGrid` >

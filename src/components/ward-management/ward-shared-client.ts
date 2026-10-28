@@ -22,6 +22,7 @@ import { RecordDetailHold } from "./ward-shared-record-detail";
 import * as conflict from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
+import type { PendingCommand } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
@@ -83,17 +84,6 @@ const NO_ROLE = "No Ward Flow role is assigned to this account";
 export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
-type PendingCommand = {
-  dataMode: "prototype";
-  classification: "synthetic";
-  commandId: string;
-  expectedRevision: number;
-  /** Records the popups have seen at a later revision than `expectedRevision`, by token. */
-  seen?: Record<string, number>;
-  event: WardFlowEvent;
-  /** Asked for while more commands are queued: an accepted reply then carries no snapshot. */
-  reply?: "revision";
-};
 
 /** Thrown once by a request whose first 401 is asked again with a fresh token (audit A4-02). */
 const FRESH_TOKEN = new Error("Ask again with a fresh token");
@@ -1433,6 +1423,17 @@ export class SharedWorkspaceClient {
       this.publish({ status: "loading", error: null });
     if (this.pending) await this.drain();
     else await this.refresh();
+  };
+  /**
+   * P172 (Josh, 28 Oct 2026): the person reads the outcome of an uncertain save and dismisses it.
+   * Never while the receipt is still being checked, since that message tells the person the board is locked until the receipt is read.
+   */
+  dismissRecovery = (shown?: string) => {
+    if (this.disposed || this.view.recovering || this.view.recovery === undefined) return;
+    // A newer outcome than the one the person read stays until they read it.
+    if (shown !== undefined && shown !== this.view.recovery) return;
+    // Putting a message away is not news about the board, so what the status bar knows stays as it was.
+    this.publish({ recovery: undefined, boardCurrent: this.view.boardCurrent });
   };
   dispose() {
     this.disposed = true;
