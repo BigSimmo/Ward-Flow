@@ -78,6 +78,8 @@ const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>
   "src/components/ward-management/statistics/statistics-claims-shared.ts": { "the waitlist": 1 },
   // "Waitlist" as a verb in a refusal, which the word list allows; another branch owns the file.
   "src/components/ward-management/ward-flow-referral-answer-events.ts": { "the waitlist": 1 },
+  // Help search input data, never shown: "favorite" is a word people type, read as "favourite" (P9).
+  "src/components/ward-management/help/ward-help-synonyms.ts": { "US spelling": 1 },
 };
 
 const SOURCE_ROOT = "src";
