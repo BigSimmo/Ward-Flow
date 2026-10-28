@@ -291,7 +291,12 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   }, [connection.enabled, refreshUnavailable, receivedAt]);
   useEffect(() => () => publishLiveRefresh(undefined), []);
   // The server's role and place for this account. Checked against the access table, never widened.
-  const accessKey = connection.enabled && connection.access ? JSON.stringify(connection.access) : null;
+  // Keyed on the parsed form (fixed key order, known fields only), so an equal access sent in a
+  // different order by a refresh keeps the same object and does not remount the workspace.
+  const accessKey =
+    connection.enabled && connection.access
+      ? JSON.stringify(parseStoredAccess(JSON.stringify(connection.access)))
+      : null;
   const serverAccess = useMemo(() => (accessKey ? parseStoredAccess(accessKey) : null), [accessKey]);
   // The desk follows the server's role, so every screen is scoped to it (a coordinator's preview
   // of another role is left alone until it ends).
@@ -686,7 +691,7 @@ function WardSharedWorkspaceContent({
         key={JSON.stringify([
           connection.actorId,
           connection.workingAs,
-          connection.access,
+          access,
           (connection.snapshot ?? connection.executiveSnapshot)?.accessContext,
         ])}
         blocked={blocked}
