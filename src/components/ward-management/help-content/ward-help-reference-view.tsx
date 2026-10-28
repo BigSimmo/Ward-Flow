@@ -95,6 +95,17 @@ export function WardHelpReference({ role, onClose }: { role: WardTourRole; onClo
           </dl>
         </details>
         <details className={styles.referenceSection}>
+          <summary>Interactions</summary>
+          <dl className={styles.card}>
+            {INTERACTIONS_HELP.map((item) => (
+              <div key={item.title} className={styles.entry}>
+                <dt>{item.title}</dt>
+                <dd>{item.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+        <details className={styles.referenceSection}>
           <summary>Accessibility</summary>
           <dl className={styles.card}>
             {ACCESSIBILITY_HELP.map((item) => (

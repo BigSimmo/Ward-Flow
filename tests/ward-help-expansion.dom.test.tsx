@@ -47,6 +47,10 @@ describe("Help glossary and compact Reference", () => {
       const id = screenForPath(anchor.getAttribute("href")!)?.screen;
       expect(id && ROLE_SCREENS.executive[id]).toBeTruthy();
     }
+    expect(screen.getByText("Interactions")).toBeTruthy();
+    expect(
+      screen.getByText("Show me highlights a control on the screen. Follow the steps, or close it to return to Help."),
+    ).toBeTruthy();
     const shortcuts = screen.getByTestId("ward-help-reference-shortcuts");
     expect(shortcuts.textContent).toContain("?");
     expect(shortcuts.textContent).not.toContain("Shift+R");
