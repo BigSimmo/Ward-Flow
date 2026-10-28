@@ -200,18 +200,18 @@
 /* B6-27 (device sweep): on a laptop the five filters share one row rather than leaving Sort alone
    on a second one. */
 @media (min-width: 62.5625rem) and (max-width: 100rem) {
-  .filters {
+  .main > .filterCard > .filters {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: var(--wf-s-2);
     flex: 1 1 auto;
   }
 
-  .filters > .filterField {
+  .main > .filterCard > .filters > .filterField {
     width: 100%;
   }
 
-  .filters > .filterField > .filterSelect {
+  .main > .filterCard > .filters > .filterField > .filterSelect {
     flex: 1 1 0;
     width: 100%;
     min-width: 0;

@@ -28,43 +28,45 @@ type PreviewSource = {
   startedAt: string;
   events: readonly EventLogEntry[];
 };
+type Projector = typeof import("../statistics/executive-statistics-projector").projectExecutiveReportingFoundation;
 
 /** The caller mounts this only for local demo or an authorised coordinator preview.
  * Actual executive transport never enters this component or constructs its source World. */
 export function WardAuthorisedExecutivePreview({ source, children }: { source: PreviewSource; children: ReactNode }) {
   const identity = useMemo(() => ({ source }), [source]);
-  const [completed, setCompleted] = useState<ExecutiveLivePreviewProjection | null>(null);
+  const [projector, setProjector] = useState<{ project: Projector } | null>(null);
   const [held, setHeld] = useState<ExecutiveLivePreviewProjection | null>(null);
   useEffect(() => {
-    if (held) return;
     let current = true;
     // The private projector is loaded only on this explicit preview path, not normal phone startup.
     void import("../statistics/executive-statistics-projector").then(
       ({ projectExecutiveReportingFoundation }) => {
-        if (!current) return;
-        try {
-          const data = projectExecutiveReportingFoundation(source.state, source.access, {
-            now: source.now,
-            dayZero: source.dayZero,
-            startedAt: source.startedAt,
-            places: wardPlaceLookup(source.state.units),
-            sessionEvents: source.events,
-          });
-          if (current) setCompleted({ identity, data });
-        } catch {
-          if (current) setCompleted(null);
-        }
+        if (current) setProjector({ project: projectExecutiveReportingFoundation });
       },
-      () => {
-        if (current) setCompleted(null);
-      },
+      () => undefined,
     );
     return () => {
       current = false;
     };
-  }, [identity, source, held]);
-  // Identity changes hide an older completion synchronously, before effect cleanup or import resolution.
-  const live = completed?.identity === identity ? completed : null;
+  }, []);
+  // Projected in render once the projector is loaded, so a new source (each demo tick) shows its
+  // own report at once. An effect left one render with no report, which swapped the whole executive
+  // shell for "unavailable" and closed any open tour or sheet. An older source's report is never shown.
+  const live = useMemo<ExecutiveLivePreviewProjection | null>(() => {
+    if (!projector || held) return null;
+    try {
+      const data = projector.project(source.state, source.access, {
+        now: source.now,
+        dayZero: source.dayZero,
+        startedAt: source.startedAt,
+        places: wardPlaceLookup(source.state.units),
+        sessionEvents: source.events,
+      });
+      return { identity, data };
+    } catch {
+      return null;
+    }
+  }, [projector, held, identity, source]);
   const selected = held ?? live;
   return (
     <ExecutiveStatisticsLivePreviewProvider
