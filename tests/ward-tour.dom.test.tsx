@@ -9,6 +9,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const route = { pathname: "/ward-flow" };
 const push = vi.fn();
+const desk = { role: "coordinator" as import("@/components/ward-management/help/ward-tour-steps").TourRole };
+vi.mock("@/components/ward-management/help/ward-help-store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/ward-management/help/ward-help-store")>()),
+  useTourRole: () => desk.role,
+}));
 vi.mock("next/navigation", () => ({
   usePathname: () => route.pathname,
   useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
@@ -35,6 +40,7 @@ import {
   markTourSeen,
   parseTourSeen,
   readTourStep,
+  readTourStepId,
   resetTourSeenForTests,
   saveTourStep,
 } from "@/components/ward-management/help/ward-help-store";
@@ -48,6 +54,7 @@ function card() {
 }
 
 beforeEach(() => {
+  desk.role = "coordinator";
   route.pathname = "/ward-flow";
   tourFacts.home = "/ward-flow";
   tourFacts.deskHome = "/ward-flow";
@@ -63,6 +70,87 @@ afterEach(() => {
 });
 
 describe("tour player", () => {
+  it("jumps to optional topics, restarts that topic and resumes it after closing", () => {
+    const first = render(<WardTour onClose={vi.fn()} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Tour topic" }), { target: { value: "safe-use" } });
+    expect(card().dataset.step).toBe("safe-start");
+    fireEvent.click(screen.getByTestId("ward-tour-next"));
+    expect(card().dataset.step).not.toBe("safe-start");
+    fireEvent.click(screen.getByRole("button", { name: "Restart topic" }));
+    expect(card().dataset.step).toBe("safe-start");
+    fireEvent.click(screen.getByTestId("ward-tour-next"));
+    const subject = card().dataset.step;
+    fireEvent.click(screen.getByTestId("ward-tour-close"));
+    first.unmount();
+    render(<WardTour onClose={vi.fn()} />);
+    expect(card().dataset.step).toBe(subject);
+    expect((screen.getByRole("combobox", { name: "Tour topic" }) as HTMLSelectElement).value).toBe("safe-use");
+  });
+
+  it("does not intercept arrow keys used by the topic selector", () => {
+    render(<WardTour onClose={vi.fn()} />);
+    fireEvent.keyDown(screen.getByRole("combobox", { name: "Tour topic" }), { key: "ArrowRight" });
+    expect(card().dataset.step).toBe("welcome");
+  });
+
+  it("keeps the optional topic when closed at its final summary", () => {
+    const view = render(<WardTour onClose={vi.fn()} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Tour topic" }), { target: { value: "safe-use" } });
+    for (let n = 0; n < 10 && screen.queryByTestId("ward-tour-next"); n++)
+      fireEvent.click(screen.getByTestId("ward-tour-next"));
+    expect(screen.getByTestId("ward-tour-done")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("ward-tour-close"));
+    view.unmount();
+    render(<WardTour onClose={vi.fn()} />);
+    expect((screen.getByRole("combobox", { name: "Tour topic" }) as HTMLSelectElement).value).toBe("safe-use");
+    expect(screen.getByTestId("ward-tour-done")).toBeTruthy();
+  });
+
+  it("returns to the real desk only when its orientation is explicitly selected", () => {
+    saveTourStep("coordinator", 0, "safe-start");
+    route.pathname = "/ward-flow/settings";
+    render(<WardTour onClose={vi.fn()} />);
+    expect(push).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByRole("combobox", { name: "Tour topic" }), { target: { value: "orientation" } });
+    expect(push).toHaveBeenCalledWith("/ward-flow");
+  });
+
+  it("loads each role's saved subject on a real role change without overwriting the previous desk", () => {
+    saveTourStep("coordinator", 3, "pressure");
+    saveTourStep("ward", 5, "beds");
+    const view = render(<WardTour onClose={vi.fn()} />);
+    expect(card().dataset.step).toBe("pressure");
+    desk.role = "ward";
+    view.rerender(<WardTour onClose={vi.fn()} />);
+    expect(card().dataset.step).toBe("beds");
+    expect(readTourStepId("coordinator")).toBe("pressure");
+    fireEvent.click(screen.getByTestId("ward-tour-close"));
+    expect(readTourStepId("ward")).toBe("beds");
+  });
+
+  it("saves and closes before opening an allowed screen with client navigation", () => {
+    const onClose = vi.fn();
+    render(<WardTour onClose={onClose} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Tour topic" }), { target: { value: "safe-use" } });
+    for (let n = 0; n < 8 && !screen.queryByRole("button", { name: "Open Settings" }); n++) {
+      fireEvent.click(screen.getByTestId("ward-tour-next"));
+    }
+    const subject = card().dataset.step;
+    fireEvent.click(screen.getByRole("button", { name: "Open Settings" }));
+    expect(onClose).toHaveBeenCalledOnce();
+    expect(push).toHaveBeenCalledWith("/ward-flow/settings");
+    expect(readTourStepId("coordinator")).toBe(subject);
+    expect(onClose.mock.invocationCallOrder[0]).toBeLessThan(push.mock.invocationCallOrder[0]!);
+  });
+
+  it("does not force Home again when the route changes while the tour is open", () => {
+    const view = render(<WardTour onClose={vi.fn()} />);
+    route.pathname = "/ward-flow/settings";
+    view.rerender(<WardTour onClose={vi.fn()} />);
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.getByTestId("ward-tour-close")).toBeTruthy();
+  });
+
   it("walks the desk's steps, lists what the desk can do last, and marks the tour seen when done", () => {
     const onClose = vi.fn();
     render(<WardTour onClose={onClose} />);

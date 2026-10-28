@@ -58,6 +58,11 @@ import type { ExecutiveReportingFoundation } from "../src/components/ward-manage
 import { setForceDynamicLoading } from "./setup/jsdom.setup";
 import { ExecutiveStatisticsLivePreviewProvider } from "../src/components/ward-management/statistics/executive-statistics-context";
 import { WardExecutiveChromeMount } from "../src/components/ward-management/shell/ward-workspace-host";
+import {
+  WardShellAuthorityProvider,
+  WardShellPublicProvider,
+  executiveShellPlaces,
+} from "../src/components/ward-management/shell/ward-shell-public-context";
 let report: ExecutiveReportingFoundation;
 beforeAll(() => {
   const source = seedWardFlowState();
@@ -151,6 +156,46 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("the real layout's authenticated executive branch", () => {
+  it.each([false, true])(
+    "keeps the open tour while a public preview report refresh is unavailable (phone=%s)",
+    async (phone) => {
+      guard.phone = phone;
+      const identity = { source: "synthetic-tour-refresh" };
+      const shell = { places: executiveShellPlaces(report), placeLabel: "Statewide", now: 642 };
+      const tree = (ready: boolean) => (
+        <WardShellAuthorityProvider access={{ role: "executive", scope: { kind: "statewide" } }}>
+          <ExecutiveStatisticsLivePreviewProvider
+            enabled
+            identity={identity}
+            projection={ready ? { identity, data: report } : null}
+          >
+            <WardShellPublicProvider value={shell}>
+              <WardExecutiveChromeMount>
+                <Probe />
+              </WardExecutiveChromeMount>
+            </WardShellPublicProvider>
+          </ExecutiveStatisticsLivePreviewProvider>
+        </WardShellAuthorityProvider>
+      );
+      const view = render(tree(true));
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent("ward-flow-open-help", { detail: { view: "tour" } }));
+      });
+      const card = await screen.findByTestId("ward-tour-card");
+      fireEvent.change(screen.getByRole("combobox", { name: "Tour topic" }), { target: { value: "safe-use" } });
+      fireEvent.click(screen.getByTestId("ward-tour-next"));
+      const subject = card.getAttribute("data-step");
+      view.rerender(tree(false));
+      expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
+      expect(screen.queryByTestId("public-report")).toBeNull();
+      expect(screen.getByTestId("ward-tour-card")).toHaveAttribute("data-step", subject);
+      view.rerender(tree(true));
+      expect(screen.getByTestId("ward-tour-card")).toHaveAttribute("data-step", subject);
+      expect(guard.raw).not.toHaveBeenCalled();
+      expect(guard.seed).not.toHaveBeenCalled();
+    },
+  );
+
   it("shows unavailable while the public chrome chunk or preview projection is pending", async () => {
     setForceDynamicLoading(true);
     const view = await openLayout();
@@ -309,5 +354,27 @@ describe("the real layout's authenticated executive branch", () => {
     expect(screen.queryByTestId("ward-bar-activity-sheet")).toBeNull();
     expect(screen.queryByTestId("public-report")).toBeNull();
     expect(guard.raw).not.toHaveBeenCalled();
+  });
+
+  it("drops an open tutorial when the authenticated workspace ends", async () => {
+    const view = await openLayout();
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent("ward-flow-open-help", { detail: { view: "tour" } }));
+    });
+    expect(await screen.findByTestId("ward-tour-card")).toBeInTheDocument();
+    guard.connection = {
+      ...(guard.connection as WardSharedConnection),
+      signedIn: false,
+      access: undefined,
+      executiveSnapshot: null,
+      snapshot: null,
+    };
+    await act(async () => {
+      view.rerender(await Layout({ children: <Probe /> }));
+    });
+    expect(screen.queryByTestId("ward-tour-card")).toBeNull();
+    expect(screen.queryByTestId("public-report")).toBeNull();
+    expect(guard.raw).not.toHaveBeenCalled();
+    expect(guard.seed).not.toHaveBeenCalled();
   });
 });

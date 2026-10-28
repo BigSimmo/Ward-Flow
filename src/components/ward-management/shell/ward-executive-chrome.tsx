@@ -249,6 +249,17 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
 /** The authenticated reporting desk has no operational provider. These are the existing chrome
  * elements, classes and sheet conventions, fed only by the public reporting contract. */
 export function WardExecutiveChrome({ children }: { children: ReactNode }) {
+  // Help contains no report data. Keep its local tutorial state while the report chrome refreshes.
+  // The authenticated workspace still owns this whole subtree's role/session lifetime.
+  return (
+    <>
+      <ExecutiveReportChrome>{children}</ExecutiveReportChrome>
+      <WardHelpHost />
+    </>
+  );
+}
+
+function ExecutiveReportChrome({ children }: { children: ReactNode }) {
   const report = useExecutiveStatistics();
   const shell = useWardShellPublic();
   const pathname = usePathname() ?? "";
@@ -895,7 +906,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         </div>
       </Sheet>
       {panel === "demo" && <ExecutiveDemoMenu onClose={close} />}
-      <WardHelpHost />
     </>
   );
 }

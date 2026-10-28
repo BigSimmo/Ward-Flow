@@ -15,7 +15,9 @@ import {
   type TourDevice,
   type TourStep,
   type TourTarget,
+  type TourRole,
 } from "./ward-tour-steps";
+import { TOUR_TOPICS, topicForTourStep, type TourTopic } from "./ward-tour-workflows";
 import styles from "./ward-tour.module.css";
 
 type Box = { top: number; left: number; width: number; height: number };
@@ -151,17 +153,27 @@ function placeCard(card: HTMLElement, box: Box | null, device: TourDevice): void
  */
 export function WardTour({ onClose }: { onClose: () => void }) {
   const role = useTourRole();
+  // A genuine role change reloads that desk's own progress and drops all old spotlight state.
+  return <WardTourForRole key={role} role={role} onClose={onClose} />;
+}
+
+function WardTourForRole({ role, onClose }: { role: TourRole; onClose: () => void }) {
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
-  const { facts, home } = useTourFacts(role);
-  const steps = useMemo(() => tourSteps(role, device, facts), [role, device, facts]);
+  const { facts, home: screenHome, deskHome } = useTourFacts(role);
+  // Access administration lives on Settings. Do not take an admin to a record-review screen.
+  const home = role === "admin" ? (deskHome ?? screenHome) : screenHome;
   const canDo = useMemo(() => tourCanDo(role), [role]);
   // The place is held by the step's id, so crossing the phone width (a different set of steps)
   // keeps the same step, or the nearest one when that device has no such step. The saved place
   // carries the id too, so a tour closed on one width reopens on the same subject on the other.
   const [place, setPlace] = useState(() => {
-    const at = Math.min(readTourStep(role), Math.max(0, steps.length - 1));
-    return { id: readTourStepId(role) ?? steps[at]?.id, at };
+    const id = readTourStepId(role);
+    const topic = topicForTourStep(id);
+    const initial = tourSteps(role, device, facts, topic);
+    const at = Math.min(readTourStep(role), Math.max(0, initial.length - 1));
+    return { topic, id: id ?? initial[at]?.id, at };
   });
+  const steps = useMemo(() => tourSteps(role, device, facts, place.topic), [role, device, facts, place.topic]);
   const found = steps.findIndex((candidate) => candidate.id === place.id);
   const index = found >= 0 ? found : Math.min(place.at, Math.max(0, steps.length - 1));
   // The box belongs to the step's control it measured, so a new step starts with no spotlight.
@@ -180,8 +192,8 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (!home || wentHome.current === home) return;
     wentHome.current = home;
-    if (pathname !== home) router.push(home);
-  }, [home, pathname, router]);
+    if (place.topic === "orientation" && pathname !== home) router.push(home);
+  }, [home, pathname, router, place.topic]);
 
   // Find the step's control (waiting a moment for a page still drawing), bring it into view and
   // follow it while the window scrolls or resizes.
@@ -250,9 +262,9 @@ export function WardTour({ onClose }: { onClose: () => void }) {
 
   const close = useCallback(() => {
     markTourSeen(role);
-    saveTourStep(role, last ? 0 : index, step?.id);
+    saveTourStep(role, index, step?.id);
     onClose();
-  }, [index, last, onClose, role, step?.id]);
+  }, [index, onClose, role, step?.id]);
 
   // The shared modal contract: the page behind is inert and held still, Tab stays in the card,
   // Escape closes the tour wherever focus is (on a phone often not inside the card), and focus goes
@@ -267,11 +279,24 @@ export function WardTour({ onClose }: { onClose: () => void }) {
 
   function go(next: number) {
     const clamped = Math.min(Math.max(0, next), steps.length - 1);
-    setPlace({ id: steps[clamped]?.id, at: clamped });
+    setPlace({ topic: place.topic, id: steps[clamped]?.id, at: clamped });
     saveTourStep(role, clamped, steps[clamped]?.id);
   }
 
+  function chooseTopic(topic: TourTopic) {
+    const first = tourSteps(role, device, facts, topic)[0];
+    setPlace({ topic, id: first?.id, at: 0 });
+    saveTourStep(role, 0, first?.id);
+    if (topic === "orientation" && home && pathname !== home) router.push(home);
+  }
+
+  function openScreen(href: string) {
+    close();
+    router.push(href);
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.target instanceof HTMLSelectElement) return;
     if (event.key === "ArrowRight" && !last) {
       event.preventDefault();
       go(index + 1);
@@ -321,6 +346,9 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           id="ward-tour-card"
           data-testid="ward-tour-card"
           data-step={step.id}
+          data-topic={place.topic}
+          data-targeted={target ? "true" : "false"}
+          data-step-count={steps.length}
         >
           <div className={styles.head}>
             <p className={styles.who}>{who}</p>
@@ -334,6 +362,23 @@ export function WardTour({ onClose }: { onClose: () => void }) {
               Close
             </button>
           </div>
+          <div className={styles.topics}>
+            <label htmlFor="ward-tour-topic">Tour topic</label>
+            <select
+              id="ward-tour-topic"
+              value={place.topic}
+              onChange={(event) => chooseTopic(event.target.value as TourTopic)}
+            >
+              {TOUR_TOPICS.map((topic) => (
+                <option key={topic.id} value={topic.id}>
+                  {topic.label}
+                </option>
+              ))}
+            </select>
+            <button type="button" className={styles.skip} onClick={() => go(0)}>
+              Restart topic
+            </button>
+          </div>
           <p className={styles.chapter}>{step.chapter}</p>
           <h2 id="ward-tour-title" className={styles.title} aria-live="polite">
             {step.title}
@@ -344,7 +389,13 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           {step.tryIt ? (
             <p className={styles.try}>
               <b>Try it.</b> {step.tryIt}
+              {" Close the tour first; Help keeps your place."}
             </p>
+          ) : null}
+          {step.open ? (
+            <button type="button" className={styles.secondary} onClick={() => openScreen(step.open!.href)}>
+              {step.open.label}
+            </button>
           ) : null}
           {step.canDo ? (
             // A long ask list scrolls inside its own box, so Done and Back stay on screen.

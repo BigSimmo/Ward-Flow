@@ -78,7 +78,7 @@ async function signIn(page: Page, desk: Desk): Promise<void> {
 }
 
 /** Opens the tour, lets it reach the desk's home, and returns each step with whether it was lit. */
-async function walkTour(page: Page): Promise<Map<string, boolean>> {
+async function walkTour(page: Page, topic?: "workflows" | "safe-use"): Promise<Map<string, boolean>> {
   const card = page.getByTestId("ward-tour-card");
   await expect(async () => {
     await page.evaluate(() =>
@@ -88,22 +88,34 @@ async function walkTour(page: Page): Promise<Map<string, boolean>> {
   }).toPass({ timeout: 30_000 });
   // The tour goes to the desk's home first. Let that page settle before reading the first step.
   await page.waitForLoadState("networkidle");
+  if (topic) {
+    await page.getByRole("combobox", { name: "Tour topic" }).selectOption(topic);
+    await expect(card).toHaveAttribute("data-topic", topic);
+  }
+  const total = Number(await card.getAttribute("data-step-count"));
+  expect(total, "a finite, bounded tour length").toBeGreaterThan(0);
+  expect(total).toBeLessThanOrEqual(40);
   const seen = new Map<string, boolean>();
-  for (let index = 0; index < 20; index++) {
+  for (let index = 0; index < total; index++) {
     const id = (await card.getAttribute("data-step")) ?? "";
-    const lit = await expect
-      .poll(() => page.getByTestId("ward-tour-spot").count(), { timeout: 8_000 })
-      .toBe(1)
-      .then(
-        () => true,
-        () => false,
-      );
+    // Explanation cards intentionally have no target; they must not wait for a nonexistent light.
+    const lit =
+      (await card.getAttribute("data-targeted")) === "true"
+        ? await expect
+            .poll(() => page.getByTestId("ward-tour-spot").count(), { timeout: 8_000 })
+            .toBe(1)
+            .then(
+              () => true,
+              () => false,
+            )
+        : false;
     seen.set(id, lit);
     const next = page.getByTestId("ward-tour-next");
     if ((await next.count()) === 0) break;
     await next.click();
     await expect(card).not.toHaveAttribute("data-step", id);
   }
+  expect(seen.size, "every step was reached, including the final summary").toBe(total);
   return seen;
 }
 
@@ -113,6 +125,40 @@ for (const device of ["desk", "phone"] as const) {
     else test.use({ viewport: { width: 1440, height: 1024 } });
 
     for (const [name, desk] of Object.entries(DESKS)) {
+      test(`${name} optional topics resume and open Settings without reloading`, async ({ page }) => {
+        test.setTimeout(120_000);
+        await signIn(page, desk);
+        for (const topic of ["workflows", "safe-use"] as const) {
+          const seen = await walkTour(page, topic);
+          expect(seen.has(topic === "workflows" ? "workflow-summary" : "safe-summary")).toBe(true);
+          await page.getByTestId("ward-tour-close").click();
+        }
+        await page.evaluate(() =>
+          window.dispatchEvent(new CustomEvent("ward-flow-open-help", { detail: { view: "tour" } })),
+        );
+        const card = page.getByTestId("ward-tour-card");
+        await expect(card).toHaveAttribute("data-topic", "safe-use");
+        await expect(card).toHaveAttribute("data-step", "safe-summary");
+        await page.getByRole("button", { name: "Restart topic" }).click();
+        await expect(card).toHaveAttribute("data-step", "safe-start");
+        for (
+          let n = 0;
+          n < 9 && (await page.getByRole("button", { name: "Open Settings", exact: true }).count()) === 0;
+          n++
+        ) {
+          await page.getByTestId("ward-tour-next").click();
+        }
+        await page.evaluate(() => {
+          (window as Window & { __wardTourNavigation?: boolean }).__wardTourNavigation = true;
+        });
+        await page.getByRole("button", { name: "Open Settings", exact: true }).click();
+        await expect(card).toHaveCount(0);
+        await expect(page).toHaveURL(/\/ward-flow\/settings$/);
+        expect(
+          await page.evaluate(() => (window as Window & { __wardTourNavigation?: boolean }).__wardTourNavigation),
+        ).toBe(true);
+      });
+
       test(`${name} tour lights each control it names`, async ({ page }) => {
         test.setTimeout(120_000);
         await signIn(page, desk);

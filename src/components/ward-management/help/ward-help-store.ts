@@ -142,10 +142,11 @@ export function readTourStepId(role: WardTourRole): string | undefined {
   return readSteps().get(role)?.id;
 }
 
-/** Remembers the step `role`'s tour was left at, and its id; 0 forgets it. */
+/** Remembers the subject, including a topic's first step. Zero without an id forgets it. */
 export function saveTourStep(role: WardTourRole, step: number, id?: string): void {
   const steps = new Map(readSteps());
-  if (step > 0) steps.set(role, id !== undefined && TOUR_STEP_ID.test(id) ? { at: step, id } : { at: step });
+  const validId = id !== undefined && TOUR_STEP_ID.test(id);
+  if (step > 0 || (step === 0 && validId)) steps.set(role, validId ? { at: step, id } : { at: step });
   else steps.delete(role);
   writeSteps(steps);
 }

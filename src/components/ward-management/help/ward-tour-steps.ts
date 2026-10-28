@@ -4,6 +4,7 @@
  * Each desk's steps point at a real control on its own home screen, and the words use the signed-in
  * person, their place and the figures the screen shows. Three chapters (your desk, your daily work,
  * finding your way), then a last step that lists what the desk can do and who to ask for the rest.
+ * Optional Daily workflows and Safe use and recovery topics live in ward-tour-workflows.ts.
  *
  * Targets are CSS selectors over attributes the screens already carry (test ids, ids and accessible
  * names), never class names, which the production build renames. A target the screen does not show
@@ -15,6 +16,7 @@ import { DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-pers
 import { deskActions, type DeskRole } from "@/components/ward-management/settings/workstation-desks";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { ROLE_SCREENS, type WardScreenId } from "@/components/ward-management/ward-role-access";
+import { workflowTourSteps, type TourTopic } from "./ward-tour-workflows";
 
 /** The tour's own idea of a desk: the chrome roles, plus the access admin, who has no clinical chrome. */
 export type TourRole = WardChromeRole | "admin";
@@ -31,6 +33,8 @@ export type TourStep = {
   readonly title: string;
   readonly body: string;
   readonly tryIt?: string;
+  /** Pauses the tour and opens an existing role-granted screen; never performs its actions. */
+  readonly open?: { readonly label: string; readonly href: string };
   /** The last step, which lists what the desk can do. */
   readonly canDo?: true;
 };
@@ -123,7 +127,7 @@ function canDoStep(role: TourRole): TourStep {
     title: screensOnly ? "What your desk can open" : "What your desk can do",
     body:
       role === "coordinator"
-        ? "The bed coordinator can take every action in Ward Flow. Other desks will ask you for the ones they cannot take."
+        ? "Your available actions are listed below. Each still checks your scope, the current record and its required steps. Demo controls and account access have separate checks."
         : screensOnly
           ? "Taken from the access table for your role."
           : "These come from the same rules the app checks when you act. For the rest, the list says who to ask.",
@@ -621,14 +625,14 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "welcome",
           undefined,
           `Welcome, ${tourGreeting(role)}`,
-          `${signedInAs(role, f, "for the whole state")} You review overrides, refused actions and who opened which record.`,
+          `${signedInAs(role, f, "for the whole state")} Settings holds your account-access controls. Governance records and review actions have separate restrictions.`,
         ),
         step(
           "Your daily work",
           "review",
           HERO,
-          "What is waiting for review",
-          "Overrides, refused or stale actions, record access and follow-ups. The tabs hold gaps by site, the audit trail, registers and reports.",
+          "Your access work",
+          "Open Settings, then Access, for the role controls available to you. The Governance route does not grant every audit record or review action; follow any restriction shown.",
         ),
         ...ACCESS_STEPS,
       ];
@@ -930,13 +934,16 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
       ];
     case "admin":
       return [
-        welcome("You review overrides, refused actions and who opened which record.", "for the whole state"),
+        welcome(
+          "Settings holds your account-access controls. Governance records and review actions have separate restrictions.",
+          "for the whole state",
+        ),
         step(
           "Your daily work",
           "review",
           HERO,
-          "What is waiting",
-          "Overrides, refused actions and record access checks. Review next opens the next item when there is one.",
+          "Your access work",
+          "Open Settings, then Access, for the role controls available to you. Governance records and review actions have separate restrictions; follow the message shown.",
         ),
         ...ACCESS_STEPS,
         phoneDock("Tasks and Activity."),
@@ -946,7 +953,17 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
 }
 
 /** One desk's tour on one kind of screen, ending with what the desk can do. */
-export function tourSteps(role: TourRole, device: TourDevice, facts: TourFacts): readonly TourStep[] {
+export function tourSteps(
+  role: TourRole,
+  device: TourDevice,
+  facts: TourFacts,
+  topic: TourTopic = "orientation",
+): readonly TourStep[] {
+  if (topic !== "orientation")
+    return [
+      ...workflowTourSteps(role, topic),
+      { ...canDoStep(role), id: topic === "workflows" ? "workflow-summary" : "safe-summary" },
+    ];
   const steps = [...(device === "phone" ? phoneSteps(role, facts) : deskSteps(role, facts)), canDoStep(role)];
   // The welcome says how long the tour takes, which depends on how many steps it has.
   const [first, ...rest] = steps;
@@ -999,8 +1016,8 @@ const SCREEN_ASKS: Partial<Record<TourRole, TourCanDo["ask"]>> = {
 
 /**
  * What the desk can do, and who to ask for the rest. A desk that acts reads `deskActions`, the same
- * `EVENT_ROLE` table the reducer enforces. The bed manager, executive and access admin take no
- * actions there, so theirs lists the screens `ROLE_SCREENS` opens for them.
+ * `EVENT_ROLE` table the reducer enforces. The bed manager, executive and access admin summary
+ * lists screens from ROLE_SCREENS, not a complete action list: bed managers can confirm capacity.
  */
 export function tourCanDo(role: TourRole): TourCanDo {
   if (role === "bed_manager" || role === "executive" || role === "admin") {
