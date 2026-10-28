@@ -234,7 +234,7 @@ export function WardBarActivityBody({
         <div className={styles.card}>
           <div className={`${styles.cardHead} ${styles.changesHead}`}>
             <p className={styles.activityHead}>
-              Recent changes <span className={styles.countPill}>{filteredActivityChanges.length}</span>
+              Recent events <span className={styles.countPill}>{filteredActivityChanges.length}</span>
             </p>
           </div>
           {!shownActivity && scopedNotices.length === 0 ? (
@@ -260,7 +260,7 @@ export function WardBarActivityBody({
               </button>
             </div>
           ) : (
-            <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent changes">
+            <ol className={`${styles.activityFeed} ${styles.feedList}`} aria-label="Recent events">
               {filteredActivityChanges.map((change) => {
                 const tone = activityToneFor(change.id);
                 return (

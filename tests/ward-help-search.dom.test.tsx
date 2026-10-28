@@ -1,5 +1,5 @@
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -44,7 +44,7 @@ describe("WardHelpSearch", () => {
     );
   });
 
-  it("moves with arrows, closes with Esc and returns focus", () => {
+  it("moves with arrows, closes with Esc and returns focus once the layer has left the stack", async () => {
     const input = openSearch();
     fireEvent.change(input, { target: { value: "bed" } });
     const first = input.getAttribute("aria-activedescendant");
@@ -52,7 +52,45 @@ describe("WardHelpSearch", () => {
     expect(input.getAttribute("aria-activedescendant")).not.toBe(first);
     fireEvent.keyDown(input, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(document.activeElement).toBe(screen.getByTestId("ward-help-search-field"));
+    const field = screen.getByTestId("ward-help-search-field");
+    await waitFor(() => expect(document.activeElement).toBe(field));
+    expect(hasOpenSheet()).toBe(false);
+  });
+
+  it("scrolls the highlighted result into view as arrows move", () => {
+    const scroll = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = scroll;
+    try {
+      const input = openSearch();
+      fireEvent.change(input, { target: { value: "bed" } });
+      scroll.mockClear();
+      fireEvent.keyDown(input, { key: "ArrowDown" });
+      expect(scroll).toHaveBeenCalledWith({ block: "nearest" });
+      expect(scroll.mock.contexts.at(-1)).toBe(document.getElementById(input.getAttribute("aria-activedescendant")!));
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
+  it("labels each result group with an id that has no spaces", () => {
+    const input = openSearch();
+    fireEvent.change(input, { target: { value: "bed" } });
+    const groups = screen.getAllByRole("group");
+    expect(groups.length).toBeGreaterThan(0);
+    for (const group of groups) {
+      const labelledBy = group.getAttribute("aria-labelledby") ?? "";
+      expect(labelledBy).not.toMatch(/\s/);
+      expect(document.getElementById(labelledBy)?.textContent).toBeTruthy();
+    }
+  });
+
+  it("does not promise closest topics when there are none", () => {
+    const input = openSearch();
+    fireEvent.change(input, { target: { value: "qzxvwk" } });
+    const notice = screen.getByTestId("ward-help-search-none").textContent;
+    expect(notice).toContain("Check the spelling, or try different words.");
+    expect(notice).not.toContain("closest topics");
   });
 
   it("joins the shared modal stack while open", () => {

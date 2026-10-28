@@ -38,6 +38,8 @@ import {
   type Patient,
 } from "@/components/ward-management/ward-patients";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
@@ -830,6 +832,10 @@ export function PatientSearchPage() {
   // shell-16: History lists every closure and search whatever is typed, so it shows no count while
   // a search is on rather than a figure that disagrees with the result.
   const historyCount = searching ? undefined : census.closedToday.length + accessRecord.length;
+  // P165: only a desk whose role can add a patient is offered the way in (the page refuses the rest).
+  const canOpenHref = useCanOpenHref();
+  const gate = useRoleGate();
+  const canAddPatient = canOpenHref(WARD_ADD_PERSON_HREF) && gate("ADD_PATIENT").allowed;
   const addPatientClick = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     if (isNewTabClick(event)) {
       handOffTypedPatientQuery("", "carried");
@@ -911,7 +917,7 @@ export function PatientSearchPage() {
     <CensusEmpty
       query={`${text} ${dobOn ? dob : ""}`.trim()}
       onReset={resetAllFilters}
-      addHref={WARD_ADD_PERSON_HREF}
+      addHref={canAddPatient ? WARD_ADD_PERSON_HREF : undefined}
       onAdd={addPatientClick}
       near={near}
     />
@@ -972,7 +978,7 @@ export function PatientSearchPage() {
             aside={
               <>
                 {/* P140: Add patient comes first, away from the live/Demo chip, so it is not a mis-tap. */}
-                {isPhone ? null : (
+                {isPhone || !canAddPatient ? null : (
                   <Link
                     href={WARD_ADD_PERSON_HREF}
                     className={buttonClass({ variant: "light", size: "sm" })}
@@ -1000,9 +1006,9 @@ export function PatientSearchPage() {
                 )}
               </div>
             }
-            footKind={isPhone ? "actions" : "line"}
+            footKind={isPhone && canAddPatient ? "actions" : "line"}
             foot={
-              isPhone ? (
+              isPhone && canAddPatient ? (
                 <div className={cs.phoneHeroFoot}>
                   {/* The five group figures live once, in the band under the hero (device audit
                       11 Oct 2026): a three-up here repeated 51 / 41 / 242 directly above it. */}
