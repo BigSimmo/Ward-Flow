@@ -522,6 +522,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   REOPEN_INBOX_ITEM: ["coordinator"],
   // Stream A, 9 Oct 2026: the same coordinator floor as acknowledging a row.
   TAKE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
+  RELEASE_INBOX_ITEM_OWNERSHIP: ["coordinator"],
   SNOOZE_INBOX_ITEM: ["coordinator"],
   UNSNOOZE_INBOX_ITEM: ["coordinator"],
   SET_ARRIVAL_DETAILS: ["coordinator", "ed", "ward", "community"],
