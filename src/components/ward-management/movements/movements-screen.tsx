@@ -1,7 +1,5 @@
 "use client";
 
-import { RadioGroup } from "@/components/wf/radio-group";
-
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 import { waitingHref } from "@/components/ward-management/delays/waiting-href";
@@ -48,6 +46,7 @@ import {
   Hero,
   Legend,
   LiveChip,
+  RadioGroup,
   StackBar,
   StatusGlyph,
   TextInput,

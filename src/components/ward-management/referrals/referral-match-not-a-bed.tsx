@@ -1,6 +1,6 @@
 "use client";
 
-import { RadioGroup } from "@/components/wf/radio-group";
+import { RadioGroup } from "@/components/wf";
 
 import { type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";

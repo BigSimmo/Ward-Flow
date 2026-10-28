@@ -1,10 +1,8 @@
 "use client";
 
-import { RadioGroup } from "@/components/wf/radio-group";
-
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Copy, Mail, Search, Star } from "lucide-react";
-import { Button, Icon, Sheet, StatusGlyph, cx } from "@/components/wf";
+import { Button, Icon, RadioGroup, Sheet, StatusGlyph, cx } from "@/components/wf";
 import {
   SERVICE_META,
   availability,

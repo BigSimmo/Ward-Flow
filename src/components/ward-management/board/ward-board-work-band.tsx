@@ -1,6 +1,6 @@
 "use client";
 
-import { RadioGroup } from "@/components/wf/radio-group";
+import { RadioGroup } from "@/components/wf";
 
 // The bed board's work band: the shift's Needs you tiles and the bed-release blocker dialog.
 // Split out of ward-board.tsx to keep that file under the line cap; WardBoard still owns every
