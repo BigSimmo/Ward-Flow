@@ -41,7 +41,7 @@ export const INTERACTIONS_HELP = [
   { title: "Touch", text: SCREEN_HELP.referrals.phoneActions?.[2] ?? SCREEN_HELP.referrals.actions[0] },
   {
     title: "Show me",
-    text: "Show me highlights a control on the screen. Follow the steps, or close it to return to Help.",
+    text: "Show me highlights a control on the screen.",
   },
   { title: "Go there", text: "Go there opens the screen for that job. Help only links to screens your desk can open." },
   { title: "Undo", text: HOW_TOS.find((item) => item.id === "undo")!.answer },

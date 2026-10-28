@@ -45,6 +45,7 @@ export function WardHelpGlossary({ termsSource }: { termsSource: readonly Glossa
       </label>
       <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>
       <p className="sr-only" role="status" aria-label="Glossary" aria-atomic="true">
+        Glossary:{" "}
         {terms.length === 0
           ? "No word or code matches. Try the first few letters."
           : terms
