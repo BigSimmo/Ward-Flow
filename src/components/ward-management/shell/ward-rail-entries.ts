@@ -9,7 +9,7 @@ import {
 } from "@/components/ward-management/ward-nav";
 import { BedDouble, type LucideIcon } from "lucide-react";
 
-import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+import { wardTasksAreActionableForRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
 import type { WardFeatureFlag } from "@/components/ward-management/ward-feature-flags";
 
@@ -243,7 +243,9 @@ export type RoleMenu = {
 
 /**
  * Splits `entries` (already filtered for flags and the desk's access) into the role's own menu and
- * More. Nothing is dropped: an entry is in exactly one of the two. Each More group puts the role's
+ * More. Nothing else is dropped: an entry is in exactly one of the two, except Alerts on the desk
+ * whose header bell is the Alerts button (P116, Josh, 27 Oct 2026: Alerts lives in the header bell
+ * only). Each More group puts the role's
  * `moreFirst` ids first, then the rest in their `RAIL_GROUPS` order.
  */
 export function roleMenu(entries: readonly RailEntry[], role: WardChromeRole): RoleMenu {
@@ -255,6 +257,7 @@ export function roleMenu(entries: readonly RailEntry[], role: WardChromeRole): R
     return entry ? [{ ...entry, label }] : [];
   });
   const inMain = new Set(main.map((item) => item.id));
+  if (wardTasksAreActionableForRole(role)) inMain.add("alerts");
   const rank = (id: string) => {
     const at = moreFirst.indexOf(id);
     return at === -1 ? Number.MAX_SAFE_INTEGER : at;

@@ -87,7 +87,7 @@ afterEach(() => {
 });
 
 describe("role menus split every page into the menu or More, never both or neither (B1)", () => {
-  it("keeps every page for every role, one place each", () => {
+  it("keeps every page for every role, one place each (the coordinator's Alerts in the header bell)", () => {
     const entries = railEntries();
     for (const role of Object.keys(ROLE_MENUS) as (keyof typeof ROLE_MENUS)[]) {
       const { main, more } = roleMenu(entries, role);
@@ -96,7 +96,9 @@ describe("role menus split every page into the menu or More, never both or neith
         ...more.flatMap((g) => g.entries.map((e) => e.id)),
       ];
       expect(new Set(ids).size, role).toBe(ids.length);
-      expect(ids.toSorted(), role).toEqual(entries.map((entry) => entry.id).toSorted());
+      // P116 (Josh, 27 Oct 2026): on the coordinator desk Alerts lives in the header bell only.
+      const expected = entries.map((entry) => entry.id).filter((id) => role !== "coordinator" || id !== "alerts");
+      expect(ids.toSorted(), role).toEqual(expected.toSorted());
     }
   });
 });
