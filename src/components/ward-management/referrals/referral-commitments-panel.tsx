@@ -7,6 +7,7 @@ import { Button, DisabledReason, Field, Select, StatusGlyph } from "@/components
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
+import { useWardFormSave } from "../use-ward-form-save";
 import type { Referral, Unit } from "../ward-model";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
 import {
@@ -44,16 +45,18 @@ export function CommitmentTimeSelect({
   onChange,
   now,
   testId,
+  disabled,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   now: Instant;
   testId?: string;
+  disabled?: boolean;
 }) {
   return (
     <Field label={label} className={styles.field}>
-      <Select value={value} onChange={(event) => onChange(event.target.value)} data-testid={testId}>
+      <Select value={value} disabled={disabled} onChange={(event) => onChange(event.target.value)} data-testid={testId}>
         <option value="">Not set</option>
         {REFERRAL_COMMITMENT_TIME_CHOICES.map((choice) => (
           <option key={choice.minutes} value={String(choice.minutes)}>
@@ -179,6 +182,8 @@ function CommitmentsBody({
   const wardName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? "Ward not recorded";
 
   const unitId = choices.length === 1 ? choices[0]!.id : unitChoice;
+  const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration;
+  const save = useWardFormSave(`commitment:${referral.id}:${role}:${unitId}:${generation}:${readOnly}`);
   const current = rows.find((row) => row.unitId === unitId)?.status;
   const closed = referralClosedForFollowUp(referral);
   const recordGate = gate("RECORD_REFERRAL_COMMITMENT");
@@ -225,7 +230,7 @@ function CommitmentsBody({
       )}
 
       {readOnly || closed ? null : (
-        <fieldset className={styles.form}>
+        <fieldset className={styles.form} disabled={save.pending} aria-busy={save.pending || undefined}>
           <legend className={styles.heading}>Record a commitment</legend>
           <div className={styles.row}>
             {choices.length > 1 ? (
@@ -283,23 +288,33 @@ function CommitmentsBody({
               aria-describedby={refusal ? `${baseId}-why` : undefined}
               onClick={() => {
                 if (refusal) return;
-                raise("RECORD_REFERRAL_COMMITMENT", {
-                  referralId: referral.id,
-                  unitId,
-                  ...(stepChoice !== "" ? { step: stepChoice } : {}),
-                  ...(stepChoice === "promised" ? { promisedFor: now + Number(promiseChoice) } : {}),
-                  ...(callbackChoice !== "" ? { nextCallbackAt: now + Number(callbackChoice) } : {}),
-                });
-                setStepChoice("");
-                setPromiseChoice("");
-                setCallbackChoice("");
+                save.submit(
+                  () =>
+                    raise("RECORD_REFERRAL_COMMITMENT", {
+                      referralId: referral.id,
+                      unitId,
+                      ...(stepChoice !== "" ? { step: stepChoice } : {}),
+                      ...(stepChoice === "promised" ? { promisedFor: now + Number(promiseChoice) } : {}),
+                      ...(callbackChoice !== "" ? { nextCallbackAt: now + Number(callbackChoice) } : {}),
+                    }),
+                  () => {
+                    setStepChoice("");
+                    setPromiseChoice("");
+                    setCallbackChoice("");
+                  },
+                );
               }}
               data-testid={`ward-referral-commitment-record-${referral.id}`}
             >
-              Record
+              {save.pending ? "Recording…" : "Record"}
             </Button>
             {refusal ? <DisabledReason id={`${baseId}-why`}>{refusal}</DisabledReason> : null}
           </div>
+          {save.error ? (
+            <p className={styles.when} role="alert">
+              {save.error}
+            </p>
+          ) : null}
           <p className={styles.when}>
             Acknowledged means the ward has seen it and agreed to respond. A commitment does not answer the referral.
           </p>
@@ -329,6 +344,8 @@ export function WardCommitmentControls({
   const raise = useWardRaise(routeRole);
   const baseId = useId();
   const [promiseChoice, setPromiseChoice] = useState("");
+  const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration;
+  const save = useWardFormSave(`ward-commitment:${entry.id}:${unitId}:${actingUnitId}:${routeRole}:${generation}`);
   const status = commitmentStatus(commitmentEntriesFor(entry, unitId));
   if (status.step?.step === "resolved") return <CommitmentStatusLine status={status} now={now} />;
   const rank = commitmentStepRank(status.step?.step);
@@ -336,17 +353,25 @@ export function WardCommitmentControls({
   const promiseRefusal = refusal ?? (promiseChoice === "" ? "Choose a time" : undefined);
   const base = { referralId: entry.id, unitId, ...(actingUnitId ? { actingUnitId } : {}) };
   return (
-    <div className={styles.panel} data-testid={`ward-referral-commitment-ward-${entry.id}`}>
+    <div
+      className={styles.panel}
+      aria-busy={save.pending || undefined}
+      data-testid={`ward-referral-commitment-ward-${entry.id}`}
+    >
       {status.entries > 0 ? <CommitmentStatusLine status={status} now={now} /> : null}
       <div className={styles.row}>
         <Button
           size="sm"
           variant="sec"
+          disabled={save.pending}
           aria-disabled={ackRefusal !== undefined ? "true" : undefined}
           aria-describedby={ackRefusal ? `${baseId}-ack` : undefined}
           onClick={() => {
             if (ackRefusal) return;
-            raise("RECORD_REFERRAL_COMMITMENT", { ...base, step: "acknowledged" });
+            save.submit(
+              () => raise("RECORD_REFERRAL_COMMITMENT", { ...base, step: "acknowledged" }),
+              () => {},
+            );
           }}
           data-testid={`ward-referral-acknowledge-${entry.id}`}
         >
@@ -361,27 +386,37 @@ export function WardCommitmentControls({
           onChange={setPromiseChoice}
           now={now}
           testId={`ward-referral-promise-choice-${entry.id}`}
+          disabled={save.pending}
         />
         <Button
           size="sm"
           variant="sec"
+          disabled={save.pending}
           aria-disabled={promiseRefusal !== undefined ? "true" : undefined}
           aria-describedby={promiseRefusal ? `${baseId}-promise` : undefined}
           onClick={() => {
             if (promiseRefusal) return;
-            raise("RECORD_REFERRAL_COMMITMENT", {
-              ...base,
-              step: "promised",
-              promisedFor: now + Number(promiseChoice),
-            });
-            setPromiseChoice("");
+            save.submit(
+              () =>
+                raise("RECORD_REFERRAL_COMMITMENT", {
+                  ...base,
+                  step: "promised",
+                  promisedFor: now + Number(promiseChoice),
+                }),
+              () => setPromiseChoice(""),
+            );
           }}
           data-testid={`ward-referral-promise-${entry.id}`}
         >
-          Record promise
+          {save.pending ? "Recording…" : "Record promise"}
         </Button>
         {promiseRefusal ? <DisabledReason id={`${baseId}-promise`}>{promiseRefusal}</DisabledReason> : null}
       </div>
+      {save.error ? (
+        <p className={styles.when} role="alert">
+          {save.error}
+        </p>
+      ) : null}
     </div>
   );
 }
