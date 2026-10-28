@@ -5,36 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-place-move-pulled-explained",
-    "date": "2026-10-27",
-    "line": "Place or move now explains what Pulled means, with a link to the Help glossary."
-  },
-  {
-    "id": "2026-10-27-transport-heading-screen-name",
-    "date": "2026-10-27",
-    "line": "The Transport page heading is now the screen name, Transport, instead of a count."
-  },
-  {
-    "id": "2026-10-27-tomorrow-tiles-bed-type",
-    "date": "2026-10-27",
-    "line": "Tomorrow tiles now say which bed type they count, and All EDs shows how many EDs match."
-  },
-  {
-    "id": "2026-10-27-register-refer-open-patient",
-    "date": "2026-10-27",
-    "line": "After you register and refer a patient, the message now has an Open patient button."
-  },
-  {
-    "id": "2026-10-27-help-colour-code-guide",
-    "date": "2026-10-27",
-    "line": "Help now has a colour code guide under Reference in the Glossary tab, showing what each colour and shape means."
-  },
-  {
-    "id": "2026-10-27-help-search-box",
-    "date": "2026-10-27",
-    "line": "Help now has a search box: type what you need to find guides, shortcuts and settings."
-  },
-  {
     "id": "2026-10-27-form-code-titles",
     "date": "2026-10-27",
     "line": "Statutory form codes now show their title, such as Form 4A (Transport order), in more places."
@@ -98,5 +68,35 @@
     "id": "2026-10-28-settings-plus-minus-larger",
     "date": "2026-10-28",
     "line": "The plus and minus buttons in Settings are now larger and easier to tap."
+  },
+  {
+    "id": "2026-10-28-finder-surname-first",
+    "date": "2026-10-28",
+    "line": "Patient search movement rows now show surname first."
+  },
+  {
+    "id": "2026-10-28-uncertain-save-dismiss",
+    "date": "2026-10-28",
+    "line": "You can now dismiss the note about an uncertain save once you have read it."
+  },
+  {
+    "id": "2026-10-28-add-patient-by-desk",
+    "date": "2026-10-28",
+    "line": "Add patient now shows only on desks that are allowed to add a patient."
+  },
+  {
+    "id": "2026-10-28-ward-close-conflict",
+    "date": "2026-10-28",
+    "line": "If two people close the same ward, the second now sees who closed it first and can try again."
+  },
+  {
+    "id": "2026-10-28-coordinator-departure",
+    "date": "2026-10-28",
+    "line": "A coordinator can now record that a person has left, from the Discharges sheet."
+  },
+  {
+    "id": "2026-10-28-help-search-completion",
+    "date": "2026-10-28",
+    "line": "Help now handles spelling slips, offers closest topics and searches roles, colours and save guidance."
   }
 ]
