@@ -25,7 +25,7 @@ import {
   FrontDoorStatusButton,
 } from "@/components/ward-management/front-door/front-door-lazy";
 import { PUSH_ROLES } from "./ward-access-shell-rules";
-import type { WardAccess } from "./ward-role-access";
+import { accessIsWholeNetwork, type WardAccess } from "./ward-role-access";
 import {
   markSignInLanding,
   parseStoredAccess,
@@ -675,7 +675,10 @@ function WardSharedWorkspaceContent({
   return (
     <>
       <WardSessionEndingNotice endsAt={connection.sessionEndsAt ?? null} />
-      <WardSharedSaveStatus connection={connection} deskLabel={access ? sharedDeskLabel(access) : "Coordinator"} />
+      <WardSharedSaveStatus
+        connection={connection}
+        deskLabel={access && !accessIsWholeNetwork(access) ? sharedDeskLabel(access) : "Coordinator"}
+      />
       {/* Always mounted, so focus has somewhere to land when Dismiss removes the outcome it sat beside. */}
       <div ref={recoveryOutcomeRef} tabIndex={-1} data-testid="ward-shared-recovery-outcome">
         {connection.recovery && <span role="alert"> {connection.recovery}</span>}

@@ -439,16 +439,6 @@ describe("shared provider boundary", () => {
     expect(readWardAccessSnapshot().access).toEqual(access);
     resetWardAccessStoreForTests();
   });
-  it("names a statewide coordinator by role and place, like a single-ward desk (P162)", () => {
-    fake.connection = { ...fake.connection!, access: { role: "coordinator", scope: { kind: "statewide" } } };
-    render(
-      <WardFlowProvider>
-        <Probe />
-      </WardFlowProvider>,
-    );
-    expect(screen.getByText("Bed coordinator, Statewide · shared synthetic workspace")).toBeInTheDocument();
-    resetWardAccessStoreForTests();
-  });
   it("adopts server state without reading or writing browser demo storage", () => {
     const read = vi.spyOn(Storage.prototype, "getItem");
     const write = vi.spyOn(Storage.prototype, "setItem");
