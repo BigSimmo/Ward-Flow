@@ -14,6 +14,7 @@ import { WARD_HOME_HREF } from "@/components/ward-management/ward-nav";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 import { WardHelpAsk } from "./ward-help-ask";
+import { WardHelpSearch } from "./ward-help-search";
 import {
   ADMIN_SETTINGS_HELP,
   filterGlossary,
@@ -24,6 +25,7 @@ import {
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
+import { ROLE_REFERENCE } from "./ward-help-roles";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
@@ -162,6 +164,8 @@ export function WardHelpSheet({
           The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
         </p>
       </section>
+
+      <WardHelpSearch role={role} home={deskHome ?? home} />
 
       {ask !== undefined ? (
         <WardHelpAsk role={role} home={deskHome ?? home} initialQuery={ask} onClose={onClose} />
@@ -348,6 +352,15 @@ export function WardHelpSheet({
               ))}
             </dl>
             <p className={styles.note}>{COLOUR_LEGEND_NOTE}</p>
+            <h4 className={styles.groupHeading}>Roles</h4>
+            <dl className={styles.card} data-testid="ward-help-roles">
+              {ROLE_REFERENCE.map((item) => (
+                <div key={item.id} className={styles.entry}>
+                  <dt>{item.name}</dt>
+                  <dd>{item.summary}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
       ) : null}
