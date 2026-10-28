@@ -14,9 +14,12 @@ import type { WardSharedConnection } from "@/components/ward-management/ward-sha
 const fake = vi.hoisted(() => ({ connection: null as WardSharedConnection | null }));
 vi.mock("@/components/ward-management/ward-shared-access", async (original) => {
   const actual = await original<typeof import("@/components/ward-management/ward-shared-access")>();
-  return { ...actual, useWardShared: (enabled: boolean) => fake.connection ? { ...fake.connection, enabled } : actual.useWardShared(enabled) };
+  return {
+    ...actual,
+    useWardShared: (enabled: boolean) =>
+      fake.connection ? { ...fake.connection, enabled } : actual.useWardShared(enabled),
+  };
 });
-
 
 function Host() {
   const world = useWardFlow();
@@ -66,15 +69,37 @@ describe("deferred acknowledgements stay in their original world", () => {
   it("does not revive held rows after access changes away and back to the same desk", () => {
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
     fake.connection = {
-      enabled: true, signedIn: true, status: "ready", error: null, eventLog: [], receivedAt: Date.now(),
+      enabled: true,
+      signedIn: true,
+      status: "ready",
+      error: null,
+      eventLog: [],
+      receivedAt: Date.now(),
       snapshot: {
-        accessContext: "a".repeat(64), dataMode: "prototype", revision: 1, now: NOW_ANCHOR,
-        payload: { version: 1, state: seedWardFlowState(), dayZero: "2026-10-07T00:00:00Z", startedAt: "2026-10-07T10:00:00Z" },
+        accessContext: "a".repeat(64),
+        dataMode: "prototype",
+        revision: 1,
+        now: NOW_ANCHOR,
+        payload: {
+          version: 1,
+          state: seedWardFlowState(),
+          dayZero: "2026-10-07T00:00:00Z",
+          startedAt: "2026-10-07T10:00:00Z",
+        },
       },
-      dispatch: vi.fn(), signIn: vi.fn(), signOut: vi.fn(), retry: vi.fn(),
+      dispatch: vi.fn(),
+      signIn: vi.fn(),
+      signOut: vi.fn(),
+      retry: vi.fn(),
       pushApi: { pushKey: vi.fn(), pushStatus: vi.fn(), pushSubscribe: vi.fn(), pushUnsubscribe: vi.fn() },
     };
-    const tree = () => <WardFlowProvider><ToastProvider><Host /></ToastProvider></WardFlowProvider>;
+    const tree = () => (
+      <WardFlowProvider>
+        <ToastProvider>
+          <Host />
+        </ToastProvider>
+      </WardFlowProvider>
+    );
     const { rerender } = render(tree());
     const offered = screen.getByRole("button", { name: /^Acknowledge visible/ });
     const count = Number(offered.textContent?.match(/(\d+)\s*$/)?.[1]);
@@ -82,7 +107,10 @@ describe("deferred acknowledgements stay in their original world", () => {
     fireEvent.click(screen.getByRole("button", { name: `Acknowledge ${count}` }));
     expect(screen.queryByRole("button", { name: /^Acknowledge visible/ })).toBeNull();
     for (const context of ["b", "a"]) {
-      fake.connection = { ...fake.connection, snapshot: { ...fake.connection.snapshot!, accessContext: context.repeat(64) } };
+      fake.connection = {
+        ...fake.connection,
+        snapshot: { ...fake.connection.snapshot!, accessContext: context.repeat(64) },
+      };
       rerender(tree());
       expect(screen.getByRole("button", { name: /^Acknowledge visible/ })).toBeTruthy();
     }
