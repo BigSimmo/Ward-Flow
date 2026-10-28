@@ -80,11 +80,6 @@
     "line": "You can now dismiss the note about an uncertain save once you have read it."
   },
   {
-    "id": "2026-10-28-statewide-desk-label",
-    "date": "2026-10-28",
-    "line": "The header now names a statewide coordinator's desk, for example Bed coordinator, Statewide."
-  },
-  {
     "id": "2026-10-28-add-patient-by-desk",
     "date": "2026-10-28",
     "line": "Add patient now shows only on desks that are allowed to add a patient."
