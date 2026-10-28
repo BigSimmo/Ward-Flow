@@ -136,10 +136,10 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
 
   it("gives every square an accessible name", () => {
     render(<BedMap units={units} bedReleases={bedReleases} />);
-    const readyBeds = screen.getAllByRole("img", { name: "Ready bed" });
-    const preparingBeds = screen.getAllByRole("img", { name: "Ready bed — still being made ready" });
-    const closedBeds = screen.getAllByRole("img", { name: "Closed bed — not offered" });
-    const occupiedBeds = screen.getAllByRole("img", { name: "Occupied bed" });
+    const readyBeds = screen.getAllByRole("link", { name: "Ready bed" });
+    const preparingBeds = screen.getAllByRole("link", { name: "Ready bed — still being made ready" });
+    const closedBeds = screen.getAllByRole("link", { name: "Closed bed — not offered" });
+    const occupiedBeds = screen.getAllByRole("link", { name: "Occupied bed" });
     expect(readyBeds.length + preparingBeds.length).toBeGreaterThan(0);
     expect(closedBeds.length).toBeGreaterThan(0);
     expect(occupiedBeds.length).toBeGreaterThan(0);
@@ -175,15 +175,15 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     expect(within(panel).getByLabelText("Bed map legend")).toBeInTheDocument();
   });
 
-  it("calls onSelectWard when clicking a bed square", () => {
+  // P093 (Josh, 9:55 PM 27 Oct 2026, option A): a square now opens its ward's bed board.
+  it("links a bed square to its ward's bed board", () => {
     const onSelectWard = vi.fn();
     render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
     const firstWard = units[0];
     const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
     const firstSquare = block.querySelector(`[data-testid="ward-bed-map-square-${firstWard.id}"]`);
     expect(firstSquare, "bed square exists").not.toBeNull();
-    fireEvent.click(firstSquare!);
-    expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
+    expect(firstSquare).toHaveAttribute("href", `/ward-flow/ward/${firstWard.id}?tab=board`);
   });
 
   it("calls onSelectWard when clicking the ward card body", () => {
@@ -195,18 +195,14 @@ describe("BedMap — the network's whole bed supply, one square per bed", () => 
     expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
   });
 
-  it("calls onSelectWard when pressing Enter or Space on a bed square", () => {
-    const onSelectWard = vi.fn();
-    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
+  // P093: a square is a link now, so Enter follows it to the bed board; keyboard users reach it by Tab.
+  it("makes every bed square a keyboard-reachable link", () => {
+    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={vi.fn()} />);
     const firstWard = units[0];
     const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
     const firstSquare = block.querySelector(`[data-testid="ward-bed-map-square-${firstWard.id}"]`);
-    expect(firstSquare).not.toBeNull();
-    fireEvent.keyDown(firstSquare!, { key: "Enter" });
-    expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
-    onSelectWard.mockClear();
-    fireEvent.keyDown(firstSquare!, { key: " " });
-    expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
+    expect(firstSquare?.tagName).toBe("A");
+    expect(firstSquare).toHaveAttribute("href", `/ward-flow/ward/${firstWard.id}?tab=board`);
   });
 
   it("advances carousel on Next button click without triggering onSelectWard", () => {
