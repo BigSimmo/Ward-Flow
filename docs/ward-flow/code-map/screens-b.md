@@ -12,7 +12,8 @@ Undo observes the command's lifetime and reports a refused retake.
 Help search closes its parent sheet before opening a destination, and the introduction describes
 the optional tour offer. Bulk acknowledgements capture their provider, world and access lifetime
 when confirmation opens, retain the eight-second Undo window, and discard stale batches after
-reset or access changes. Queued local commands check that lifetime again after reducer slices load.
+reset or access changes. Access changes replace an identity token, so returning to the original
+desk cannot revive its earlier actions. Queued local commands check that lifetime again after reducer slices load.
 
 Focused DOM and pure-function checks cover these repairs. Local commits and passing focused
 checks do not establish merge, deployment or physical-browser acceptance.

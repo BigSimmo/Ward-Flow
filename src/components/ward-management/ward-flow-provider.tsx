@@ -671,19 +671,19 @@ function WardFlowWorld({
   // for a typed-text event, before the toast that follows that dispatch is pushed.
   const commandsRef = useRef<LocalCommandState>({ world: state, sequence: 0, early: new Map(), active: true });
   useLocalCommandCompletion(commandsRef, state, container.earlyOutcomes, Boolean(container.sessionAdopted));
-  const accessLifetime = useRef({ context: container.sharedAccessContext, epoch: 0 });
+  const accessLifetime = useRef({ context: container.sharedAccessContext });
   useLayoutEffect(() => {
     if (accessLifetime.current.context !== container.sharedAccessContext) {
-      accessLifetime.current = { context: container.sharedAccessContext, epoch: accessLifetime.current.epoch + 1 };
+      accessLifetime.current = { context: container.sharedAccessContext };
     }
   }, [container.sharedAccessContext]);
   const captureCommandLifetime = useCallback(() => {
     const generation = commandsRef.current.world.worldGeneration;
-    const accessEpoch = accessLifetime.current.epoch;
+    const access = accessLifetime.current;
     return () =>
       commandsRef.current.active &&
       commandsRef.current.world.worldGeneration === generation &&
-      accessLifetime.current.epoch === accessEpoch;
+      accessLifetime.current === access;
   }, []);
   const savesOnDeviceRef = useRef(false);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
