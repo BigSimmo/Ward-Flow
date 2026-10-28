@@ -73,4 +73,12 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     expect(railCss).toMatch(/\.rail\[data-rail="closed"\]\s+\.utilityLink\s*\{[^}]*width:\s*2\.75rem/);
     expect(railCss).toMatch(/\.rail\[data-rail="closed"\]\s+\.userProfileCard\s*\{[^}]*min-height:\s*2\.75rem/);
   });
+
+  // P151: a CSS rule can't be rendered in jsdom (no pseudo-element content), so this one stays a CSS
+  // contract here rather than in the drawer's DOM wording test.
+  it("P151: the referral drawer's CSS asterisk has empty alt text, so screen readers do not read '* * *'", () => {
+    const css = readCss("src/components/ward-management/referrals/ward-referral-drawer.module.css");
+    const rule = /\.required::after\s*\{([^}]*)\}/u.exec(css)?.[1] ?? "";
+    expect(rule).toMatch(/content:\s*"\*"\s*\/\s*""/u);
+  });
 });

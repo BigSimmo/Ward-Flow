@@ -100,6 +100,7 @@ export const actionLabels: Record<AuditEvent["action"], string> = {
   REVIEW_AUDIT_EVENT: "Review event",
   SET_CONFIGURATION: "Change configuration",
   TAKE_INBOX_ITEM_OWNERSHIP: "Take action item",
+  RELEASE_INBOX_ITEM_OWNERSHIP: "Release action item",
   SNOOZE_INBOX_ITEM: "Snooze action item",
   UNSNOOZE_INBOX_ITEM: "Return snoozed action item",
   UNDO_REFERRAL_DECISION: "Undo referral decision",

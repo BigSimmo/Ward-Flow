@@ -17,6 +17,7 @@ import { WardCommitmentControls } from "./referral-commitments-lazy";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
 import { readyBedsAllPromised, readyBedsPromisedSentence } from "../ward-ready-bed-promises";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./ward-referral-drawer.module.css";
 
 /**
@@ -63,6 +64,21 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
   const [reasons, setReasons] = useState<Record<string, ReferralDeclineReason | "">>({});
   // A ward undoes its own decision by naming itself (UNDO_REFERRAL_DECISION, v10 pass 2).
   const watchDecision = useReferralDecisionUndo(routeRole, isCoordinator ? undefined : unitId);
+  // Audit row P053: one answer saves at a time. While it is in flight (or held for the status bar's
+  // Retry, which re-sends the same command id) every answer is unavailable, so a second press never
+  // sends the decision again under a new command id.
+  const save = useWardFormSave(`ward-referral-inbox-${unitId}`);
+  const answer = (referralId: string, title: string, event: Parameters<typeof dispatch>[0]) => {
+    setAttempt({ id: referralId, count: rejections.length });
+    save.submit(
+      () => {
+        const completion = dispatch(event);
+        watchDecision(referralId, title, completion);
+        return completion;
+      },
+      () => undefined,
+    );
+  };
   const decisionBase = {
     role: routeRole,
     now,
@@ -179,10 +195,10 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
             <button
               type="button"
               className={styles.patientChipBtn}
-              aria-disabled={acceptRefusal !== undefined ? "true" : undefined}
+              aria-disabled={acceptRefusal !== undefined || save.pending ? "true" : undefined}
               aria-describedby={acceptRefusal ? acceptReasonId : undefined}
               onClick={(e) => {
-                if (acceptRefusal) {
+                if (acceptRefusal || save.pending) {
                   ignoreUnavailableActivation(e);
                   return;
                 }
@@ -191,8 +207,7 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                   return;
                 }
                 setLocalNote(null);
-                setAttempt({ id: entry.id, count: rejections.length });
-                const completion = dispatch({
+                answer(entry.id, "Referral accepted", {
                   type: "ACCEPT_REFERRAL",
                   ...decisionBase,
                   referralId: entry.id,
@@ -200,7 +215,6 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                     ? { genderPlacementReason: genderReason, genderPlacementChecked: true as const }
                     : {}),
                 });
-                watchDecision(entry.id, "Referral accepted", completion);
               }}
             >
               Accept referral
@@ -223,22 +237,20 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
             <button
               type="button"
               className={styles.patientChipBtn}
-              aria-disabled={roleRefusal !== undefined ? "true" : undefined}
+              aria-disabled={roleRefusal !== undefined || save.pending ? "true" : undefined}
               aria-describedby={roleRefusal ? declineReasonId : undefined}
               onClick={(e) => {
-                if (roleRefusal) {
+                if (roleRefusal || save.pending) {
                   ignoreUnavailableActivation(e);
                   return;
                 }
-                setAttempt({ id: entry.id, count: rejections.length });
-                const completion = dispatch({
+                answer(entry.id, "Referral put on the waiting list", {
                   type: "DECLINE_REFERRAL",
                   ...decisionBase,
                   referralId: entry.id,
                   reason: "no_suitable_bed",
                   waitlist: true,
                 });
-                watchDecision(entry.id, "Referral put on the waiting list", completion);
               }}
             >
               Waiting list
@@ -270,22 +282,20 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                   <button
                     type="button"
                     className={styles.patientChipBtn}
-                    aria-disabled={declineRefusal !== undefined ? "true" : undefined}
+                    aria-disabled={declineRefusal !== undefined || save.pending ? "true" : undefined}
                     aria-describedby={declineRefusal ? declineReasonId : undefined}
                     onClick={(e) => {
                       const reason = reasons[entry.id];
-                      if (!reason || roleRefusal) {
+                      if (!reason || roleRefusal || save.pending) {
                         ignoreUnavailableActivation(e);
                         return;
                       }
-                      setAttempt({ id: entry.id, count: rejections.length });
-                      const completion = dispatch({
+                      answer(entry.id, "Referral declined", {
                         type: "DECLINE_REFERRAL",
                         ...decisionBase,
                         referralId: entry.id,
                         reason,
                       });
-                      watchDecision(entry.id, "Referral declined", completion);
                     }}
                   >
                     Decline referral

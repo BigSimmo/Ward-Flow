@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -29,6 +29,11 @@ import {
 } from "@/components/ward-management/help/ward-tour-auto-start";
 import { resetTourSeenForTests } from "@/components/ward-management/help/ward-help-store";
 
+/** P188: the tour is offered first; this presses "Start the tour" on the card. */
+async function startFromOffer() {
+  fireEvent.click(await screen.findByRole("button", { name: "Start the tour" }));
+}
+
 const settle = () => new Promise((resolve) => setTimeout(resolve, 700));
 
 beforeEach(() => {
@@ -41,12 +46,14 @@ describe("tour auto-start once per desk", () => {
   it("starts each desk's tour once on the same device, and never again for a desk that had it", async () => {
     const onStart = vi.fn();
     const first = render(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(1);
     first.unmount();
 
     desk.role = "ward";
     const second = render(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(2));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(2);
     second.unmount();
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator,ward");
 
@@ -63,10 +70,12 @@ describe("tour auto-start once per desk", () => {
   it("starts the next desk's tour when the desk changes without a reload", async () => {
     const onStart = vi.fn();
     const { rerender } = render(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(1);
     desk.role = "ed";
     rerender(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(2));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(2);
   });
 
   it("reads the old once-per-device mark as the coordinator's, so no desk's tour comes back twice", async () => {
@@ -80,7 +89,8 @@ describe("tour auto-start once per desk", () => {
     first.unmount();
     desk.role = "community";
     render(<WardTourAutoStart onStart={onStart} />);
-    await waitFor(() => expect(onStart).toHaveBeenCalledTimes(1));
+    await startFromOffer();
+    expect(onStart).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator,community");
   });
 });

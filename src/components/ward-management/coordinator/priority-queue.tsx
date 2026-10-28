@@ -49,7 +49,12 @@ import { liveTurnaroundPreference } from "@/components/ward-management/ward-turn
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { referralState } from "@/components/ward-management/ward-referrals";
 
-import { tierOverdueAfterMinutes, tierOverdueRuleText } from "@/components/ward-management/ward-shared-figures";
+import {
+  inEdTierOverdue,
+  isTierOneOpen,
+  tierOverdueAfterMinutes,
+  tierOverdueRuleText,
+} from "@/components/ward-management/ward-shared-figures";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./home.module.css";
@@ -208,10 +213,9 @@ export function PriorityQueue({
   // Form due is offered on the phone too, so the count stays visible there (audit A1-16).
   const rows = soonOnly ? movements.filter((movement) => isSoon(movement, now, dueSoonThresholds)) : movements;
   const total = totalMovements ?? movements.length;
-  const isOverdue = (movement: Movement) =>
-    Math.max(0, now - movement.openedAt) >= queueWaitThresholds(movement.urgency).overdue;
   const matchesHighlight = (movement: Movement) =>
-    highlight === "overdue" ? isOverdue(movement) : highlight === "tier1" ? movement.urgency === 1 : true;
+    // P002: the hero chips' own rules (`ward-shared-figures.ts`), so "N of M highlighted" matches the chip.
+    highlight === "overdue" ? inEdTierOverdue(movement, now) : highlight === "tier1" ? isTierOneOpen(movement) : true;
   const highlighted = highlight ? rows.filter(matchesHighlight).length : 0;
   const capped = rowCap !== undefined && rows.length > rowCap;
   // Desktop keeps the chosen patient's row in view even when it sits below the cap: it shows in its

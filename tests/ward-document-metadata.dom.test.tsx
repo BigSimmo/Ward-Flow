@@ -44,6 +44,10 @@ describe("document metadata and modal lifecycle", () => {
     fireEvent.change(input, {
       target: { files: [new File(["synthetic"], "Synthetic-Name-Marker.pdf", { type: "application/pdf" })] },
     });
+    // The document type opens blank: with a file but no type, nothing is recorded.
+    fireEvent.click(submit);
+    expect(screen.getByTestId("metadata")).toHaveTextContent("[]");
+    fireEvent.change(within(dialog).getByRole("combobox"), { target: { value: "Form 4A Transport order" } });
     // The chosen name shows while the dialog is open, on this device only.
     expect(dialog).toHaveTextContent("Synthetic-Name-Marker.pdf");
     fireEvent.click(submit);

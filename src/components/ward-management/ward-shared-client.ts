@@ -6,7 +6,7 @@ import { WardAuthError } from "./ward-supabase-auth";
 import type { WardFlowEvent } from "./ward-flow-events";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { RecordViewSurface } from "./shell/ward-shared-session-context";
-import { eventLogEntryFor, type EventLogEntry } from "./ward-event-log";
+import { eventLogEntryFor } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
 import { boardNotRefreshed, SAVE_PROBLEMS, saveProblem } from "./ward-save-failure";
@@ -19,6 +19,7 @@ import {
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
+import * as conflict from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
@@ -42,83 +43,23 @@ function loadSharedStateCheck(): Promise<void> {
   });
 }
 
-export type SharedSnapshot = {
-  dataMode: "prototype";
-  revision: number;
-  now: number;
-  payload: { version: 1; state: WardFlowState; dayZero: string; startedAt: string };
-  /** False when the server refuses the demonstration controls (clock, reset and scenario). */
-  demoControls?: boolean;
-  /** Opaque server access lifetime for retained reports; absent on older servers. Never a grant. */
-  accessContext?: string;
-  /** Earliest known membership, cover or temporary-opening expiry. */
-  accessUntil?: number;
-  /** Display-only response data, validated against this outer snapshot before publication. */
-  partialView?: BoundWardPartialView;
-  /** How many closed records this world has archived (migration 14); absent on older servers. */
-  archived?: number;
-};
+import type {
+  SharedSnapshot,
+  SharedRoleChoice,
+  SharedView,
+  SharedChangeResult,
+  WardCommandOutcome,
+} from "./ward-shared-client-types";
+export type {
+  SharedSnapshot,
+  SharedRoleChoice,
+  SharedView,
+  SharedChangeResult,
+  WardCommandOutcome,
+  WardCommandDispatch,
+} from "./ward-shared-client-types";
 /** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
 type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
-/**
- * `choose-role`: the account holds more than one role and must say which to work as.
- * `no-role`: signed in, but no role is assigned. Neither signs the person out.
- */
-type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-authorised" | "choose-role" | "no-role";
-/** One role this account may work as: the membership id (or "bootstrap") and its role and place. */
-export type SharedRoleChoice = { workingAs: string; role: string; scope: unknown };
-export type SharedView = {
-  snapshot: SharedSnapshot | null;
-  receivedAt: number;
-  status: SharedStatus;
-  error: string | null;
-  /** Payload stays in this tab; only opaque receipt identity may survive a reload. */
-  unconfirmedSave?: boolean;
-  /** Audit 24-3 SM-4: `unavailable` only because a save waits on Retry; the board itself is current. */
-  boardCurrent?: boolean;
-  eventLog?: readonly EventLogEntry[];
-  /** The role and place the server says this account is working as now. Checked by the caller. */
-  access?: unknown;
-  /** The membership id worked as, or "bootstrap" for a WARD_COORDINATOR_USER_IDS account. */
-  workingAs?: string | null;
-  /** With `choose-role`: the roles to choose from. */
-  choices?: readonly SharedRoleChoice[];
-  /** With `no-role`: whether this server takes requests for access, and its refusal code (`role-needs-service`). */
-  canRequest?: boolean;
-  noRoleReason?: string;
-  /** The signed-in account's id, to say "You" in the access lists. */
-  actorId?: string | null;
-  /** This tab chose its role, so it can go back and choose another. */
-  canSwitch?: boolean;
-  /** Server-bounded retention authorisation; a failed poll never renews it. */
-  accessUntil?: number;
-  receiptScope?: string;
-  recovery?: string;
-  recovering?: boolean;
-};
-/** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
-export type SharedChangeResult = string | null;
-/** In-memory completion for one command. A failed save may have reached the server. */
-export type WardCommandOutcome = WardCommandMetadata & {
-  commandId: string;
-  status: "accepted" | "refused" | "failed" | "cancelled";
-  /** This command's definitive answer, including after an uncertain response and same-ID Retry.
-   * Memory only: scoped forms need no access to another command's event history. */
-  confirmation?: Promise<WardCommandOutcome>;
-  message?: string;
-  /**
-   * Audit E-05: an accepted "Refer to wards" that held a ward back, and why. The wards that were
-   * suitable were referred; the person must still be told about the one that was not.
-   */
-  partly?: string;
-  undoRecords?: WardFlowState["undoRecords"];
-  generation?: number;
-  /** Memory-only fence for an accepted toast; never serialized with workspace state. */
-  isCurrent?: () => boolean;
-  /** Current board availability, separate from the command's permanent lifetime fence. */
-  canUndo?: () => boolean;
-};
-export type WardCommandDispatch = (event: WardFlowEvent) => void | WardCommandOutcome | Promise<WardCommandOutcome>;
 type QueuedCommand = {
   event: WardFlowEvent;
   commandId: string;
@@ -138,6 +79,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
+/** P056: one audit row as a desk's Activity reads it; nothing in it names a patient or a person. */
+export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
 type PendingCommand = {
@@ -327,6 +270,13 @@ export class SharedWorkspaceClient {
   private cancelQueued(message = saveProblem("queuedCancelled")) {
     for (const command of this.queue) this.settle(command.commandId, "cancelled", message);
     this.queue = [];
+    this.syncUnloadWarning();
+  }
+  /** P058: a conflict cancels only the queued actions on its own record; the rest still go. */
+  private cancelQueuedOn(event: WardFlowEvent, value: unknown) {
+    const hit = this.queue.filter((queued) => conflict.sameConflictRecord(event, queued.event));
+    this.queue = this.queue.filter((queued) => !hit.includes(queued));
+    for (const queued of hit) this.settle(queued.commandId, "cancelled", conflict.queuedNotSentText(hit.length, value));
     this.syncUnloadWarning();
   }
   /** `sentMessage` is for a command already sent: the server may have applied it, so never say "not saved". */
@@ -1181,11 +1131,13 @@ export class SharedWorkspaceClient {
           return;
         }
         if (!response.ok) {
-          this.cancelQueued();
+          const scoped = response.status === 409 && conflict.namedConflict(value);
+          if (scoped) this.cancelQueuedOn(command.event, value);
+          else this.cancelQueued();
           if (response.status === 409) {
             // The person has now been told. Popups still open are checked against the board from
             // here on, so trying again after reviewing it works.
-            this.sheetSeen = new WeakMap();
+            this.sheetSeen = conflict.keepBasis(scoped && this.queue, this.sheetSeen, command.expectedRevision);
             if (!value?.snapshot) this.needsRefresh = true;
             else this.noteOpenSheets();
           }
@@ -1193,7 +1145,9 @@ export class SharedWorkspaceClient {
             status: "ready",
             error:
               response.status === 409
-                ? saveProblem("changedMeanwhile")
+                ? scoped
+                  ? conflict.changedFirstText(value)
+                  : saveProblem("changedMeanwhile")
                 : value?.code === "scope" && typeof value.error === "string"
                   ? `${value.error} Nothing was changed.`
                   : value?.code === "role-ended" && typeof value.error === "string"
@@ -1208,6 +1162,7 @@ export class SharedWorkspaceClient {
                           : saveProblem("refused"),
           });
           this.settle(command.commandId, "refused", this.view.error ?? "The action was not applied.");
+          if (scoped && this.queue.length) continue;
           break;
         }
         if (!value.snapshot && (command.event.type === "RESET_SCENARIO" || command.event.type === "SET_SCENARIO"))
@@ -1310,6 +1265,12 @@ export class SharedWorkspaceClient {
       views: Array.isArray(value?.views) ? value.views : [],
       openings: Array.isArray(value?.openings) ? value.openings : [],
     };
+  }
+  /** P056: the newest audit page this desk may read, for the Activity feed (/v1/workspace/audit). */
+  async readActivityAudit(): Promise<SharedActivityAuditEvent[]> {
+    const { response, value } = await this.request("/v1/workspace/audit");
+    if (!response.ok || !Array.isArray(value?.events)) throw new Error("Activity could not be read");
+    return value.events;
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

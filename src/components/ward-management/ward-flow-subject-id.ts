@@ -130,6 +130,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "COMPLETE_INBOX_ITEM":
     case "REOPEN_INBOX_ITEM":
     case "TAKE_INBOX_ITEM_OWNERSHIP":
+    case "RELEASE_INBOX_ITEM_OWNERSHIP":
     case "SNOOZE_INBOX_ITEM":
     case "UNSNOOZE_INBOX_ITEM":
       return event.inboxItemId;

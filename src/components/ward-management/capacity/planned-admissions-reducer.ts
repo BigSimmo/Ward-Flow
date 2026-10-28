@@ -40,7 +40,7 @@ import {
   type ReferralGender,
   type Unit,
 } from "../ward-model";
-import { patientCohort } from "../ward-patients";
+import { cohortFitsAge, patientCohort } from "../ward-patients";
 import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observation";
 
 export type RejectFn = (state: WardFlowState, event: WardFlowEvent, reason: string) => WardFlowState;
@@ -222,7 +222,7 @@ function linkedAgeBandRefusal(
     calendar.day + dayOf(event.expectedArrivalAt) - dayOf(event.now),
   );
   const recorded = patientCohort(dateOfBirth, arrivalDay);
-  return recorded === ageBand
+  return cohortFitsAge(ageBand, dateOfBirth, arrivalDay)
     ? null
     : `On the expected arrival date this patient's recorded date of birth gives the ${recorded} age group, not ${ageBand}.`;
 }
