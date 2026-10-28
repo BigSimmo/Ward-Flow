@@ -3461,7 +3461,7 @@
   }
 
   /* v10 Activity sheet: short rows, glyph then the line, the clock time at the right. The tone
-     word leaves (the glyph carries it); the "Recent changes" heading leaves too. */
+     word leaves (the glyph carries it); the "Recent events" heading leaves too. */
   .changesHead {
     display: none;
   }

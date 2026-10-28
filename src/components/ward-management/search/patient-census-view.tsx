@@ -1028,7 +1028,8 @@ export function CensusEmpty({
 }: {
   query: string;
   onReset: () => void;
-  addHref: string;
+  /** Absent for a desk whose role cannot add a patient (P165): no link to a refusal page. */
+  addHref?: string;
   onAdd: (event: ReactMouseEvent<HTMLAnchorElement>) => void;
   /** Audit 24-7 item 2: names one keystroke away, in record order, shown before Add patient. */
   near?: readonly Patient[];
@@ -1056,10 +1057,12 @@ export function CensusEmpty({
         <Button size="sm" onClick={onReset}>
           Clear search
         </Button>
-        <Link className={buttonClass({ variant: "pri", size: "sm" })} href={addHref} onClick={onAdd}>
-          <Icon icon={UserPlus} size={14} />
-          Add patient
-        </Link>
+        {addHref ? (
+          <Link className={buttonClass({ variant: "pri", size: "sm" })} href={addHref} onClick={onAdd}>
+            <Icon icon={UserPlus} size={14} />
+            Add patient
+          </Link>
+        ) : null}
       </span>
     </div>
   );
