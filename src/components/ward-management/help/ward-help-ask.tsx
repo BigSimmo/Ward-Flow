@@ -10,7 +10,8 @@ import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-r
 
 import { filterGlossary, glossaryForSites } from "./ward-help-content";
 import { showWardHowTo } from "./ward-help-events";
-import { askHelp, HOW_TO_IDS, questionWords, type HowTo } from "./ward-help-howto";
+import { askHelp, closestHowTos, HOW_TO_IDS, questionWords, type HowTo } from "./ward-help-howto";
+import { CLINICAL_REPLY, isClinicalQuestion } from "./ward-help-search-index";
 import { recordHowToUsed } from "./ward-help-usage";
 import type { WardTourRole } from "./ward-help-store";
 import { useWardNetwork } from "../ward-flow-provider";
@@ -42,27 +43,53 @@ function settingsTabLabel(tab: string): string {
  * then the glossary and Settings. The question lives in this component's state only: it is never
  * written to storage, a URL or a log (D-11, D-18), and nothing leaves the browser.
  */
-export function WardHelpAsk({
-  role,
-  home,
-  initialQuery,
-  onClose,
-}: {
+type WardHelpAskProps = {
   role: WardTourRole;
   home: string | undefined;
   initialQuery: string;
   onClose: () => void;
+  /** Explicit public glossary supplied by an aggregate-only host (PR #997 compatibility). */
+  termsSource?: ReturnType<typeof glossaryForSites>;
+};
+
+export function WardHelpAsk(props: WardHelpAskProps) {
+  return props.termsSource ? (
+    <HelpAskView {...props} termsSource={props.termsSource} />
+  ) : (
+    <OperationalHelpAsk {...props} />
+  );
+}
+
+function OperationalHelpAsk(props: WardHelpAskProps) {
+  const { sites } = useWardNetwork();
+  return <HelpAskView {...props} termsSource={glossaryForSites(sites)} />;
+}
+
+function HelpAskView({
+  role,
+  home,
+  initialQuery,
+  onClose,
+  termsSource,
+}: WardHelpAskProps & {
+  termsSource: ReturnType<typeof glossaryForSites>;
 }) {
   const id = useId();
-  const { sites } = useWardNetwork();
   const [query, setQuery] = useState(initialQuery);
   const asked = questionWords(query).length > 0;
-  const answers = useMemo(() => askHelp(query, role), [query, role]);
+  const clinical = isClinicalQuestion(query);
+  const searchable = asked && !clinical;
+  const answers = useMemo(() => (searchable ? askHelp(query, role) : []), [query, role, searchable]);
   const words = useMemo(
-    () => (asked ? filterGlossary(query.trim().split(/\s+/).at(-1) ?? "", glossaryForSites(sites)).slice(0, 3) : []),
-    [asked, query, sites],
+    () => (searchable ? filterGlossary(query.trim().split(/\s+/).at(-1) ?? "", termsSource).slice(0, 3) : []),
+    [searchable, query, termsSource],
   );
-  const settings = useMemo(() => (asked ? findSettings(questionWords(query).join(" "), 3) : []), [asked, query]);
+  const settings = useMemo(
+    () => (searchable ? findSettings(questionWords(query).join(" "), 3) : []),
+    [searchable, query],
+  );
+  const nothing = searchable && answers.length === 0 && words.length === 0 && settings.length === 0;
+  const closest = useMemo(() => (nothing ? closestHowTos(query, role) : []), [nothing, query, role]);
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   const shownId = openId ?? answers[0]?.howTo.id;
 
@@ -125,9 +152,9 @@ export function WardHelpAsk({
     );
   }
 
-  const mine = answers.filter((match) => match.forThisDesk);
-  const others = answers.filter((match) => !match.forThisDesk);
-  const nothing = asked && answers.length === 0 && words.length === 0 && settings.length === 0;
+  const displayed = nothing ? closest : answers;
+  const mine = displayed.filter((match) => match.forThisDesk);
+  const others = displayed.filter((match) => !match.forThisDesk);
 
   return (
     <section className={styles.ask} aria-labelledby={`${id}-title`} data-testid="ward-help-ask">
@@ -159,6 +186,16 @@ export function WardHelpAsk({
         </div>
       ) : null}
       <div aria-live="polite" className={styles.results}>
+        {clinical ? (
+          <p className={styles.text} data-testid="ward-help-ask-clinical">
+            {CLINICAL_REPLY}
+          </p>
+        ) : null}
+        {nothing && closest.length ? (
+          <p className={styles.empty} data-testid="ward-help-ask-closest">
+            Check the spelling, or try one of these closest topics.
+          </p>
+        ) : null}
         {mine.length ? <ul className={styles.card}>{mine.map((m) => answer(m.howTo, true))}</ul> : null}
         {others.length ? (
           <div className={styles.group}>
@@ -202,13 +239,13 @@ export function WardHelpAsk({
             </ul>
           </div>
         ) : null}
-        {nothing ? (
+        {nothing && !closest.length ? (
           <p className={styles.empty} data-testid="ward-help-ask-none">
             No answer matches those words. Try fewer words, such as the button name, or look in Your desk below.
           </p>
         ) : null}
       </div>
-      {asked ? (
+      {asked && !clinical ? (
         <p className={styles.note} data-testid="ward-help-ask-stuck">
           Still stuck? Ask your nurse unit manager or the bed coordinator on shift. If Ward Flow is down, switch to the
           paper process.

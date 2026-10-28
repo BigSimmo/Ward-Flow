@@ -39,6 +39,19 @@ describe("searchHelp", () => {
   });
 
   it.each([
+    ["triangle", "colour:danger"],
+    ["capsule", "colour:info"],
+    ["colour code", "reference:colour-code"],
+    ["color legend", "reference:colour-code"],
+    ["access admin", "role:admin"],
+    ["TV board", "role:tv"],
+    ["is it saved", "guide:saved"],
+    ["downtime offline paper", "guide:downtime"],
+  ])("finds the existing Help reference for %s", (query, key) => {
+    expect(results(searchHelp(query, "coordinator")).some((item) => item.key === key)).toBe(true);
+  });
+
+  it.each([
     ["trasnport", "transport"],
     ["handovr", "handover"],
     ["thme", "theme"],

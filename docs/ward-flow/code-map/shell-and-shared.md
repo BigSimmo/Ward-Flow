@@ -555,6 +555,14 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   questions stay in component state and never become stored values or navigation parameters.
   Search consumes Escape before closing its modal layer, so the same key cannot close the Help
   sheet underneath; focus returns to that sheet's search field.
+  The index also covers Roles, colour meanings and shapes, saved-state guidance and downtime
+  guidance, reusing their approved source content. Exact indexed words survive typo correction.
+  `ward-help-ask.tsx` applies the same clinical-question guard and fixed reply as main search,
+  suppressing ordinary results for those questions. With no matching answer, glossary term or setting,
+  it offers up to three closest how-tos; another desk's topics retain their read-only presentation.
+  Ask results, fallback suggestions and the clinical reply share a polite live region.
+  Ask accepts an explicit public `termsSource` without reading the operational network hook,
+  retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never
