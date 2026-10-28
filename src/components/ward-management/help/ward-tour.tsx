@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
+import { useHomePolishPreview } from "@/components/ward-management/coordinator/home-preview";
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 
 import { markTourSeen, readTourStep, readTourStepId, saveTourStep, useTourRole } from "./ward-help-store";
@@ -30,6 +31,8 @@ const EDGE = 8;
 const TALL_SHARE = 0.45;
 /** Room left above a control scrolled to the top, for the header that sits over the page. */
 const HEADER_ROOM = 72;
+/** Home polish mock-up: where the rail is folded away (tablet portrait), its steps point at the menu. */
+const MENU_FALLBACK: TourTarget = { sel: '[data-testid="ward-bar-phone-menu"]' };
 
 function tall(rect: DOMRect): boolean {
   return rect.height > window.innerHeight * TALL_SHARE;
@@ -65,14 +68,20 @@ export function findTourTarget(target: TourTarget): HTMLElement | null {
 }
 
 /** The spotlight's box: the control with a little room, kept inside the window. */
-function spotBox(element: HTMLElement): Box {
+function spotBox(element: HTMLElement, trimLip = false): Box {
   const rect = element.getBoundingClientRect();
+  // Home polish mock-up: a band hero's foot is the lip the next card's curve sits in, so the light
+  // stops above it rather than taking in a strip of that card.
+  const lip =
+    trimLip && element.dataset.wfHero === "band"
+      ? Number.parseFloat(getComputedStyle(element).getPropertyValue("--wf-band-lip")) || 0
+      : 0;
   const pad = rect.width < 120 || rect.height < 40 ? 6 : 4;
   const top = Math.max(EDGE / 2, rect.top - pad);
   const left = Math.max(EDGE / 2, rect.left - pad);
   // A tall control is lit from its top only, leaving room under it for the card.
   const tallest = tall(rect) ? window.innerHeight * TALL_SHARE : Infinity;
-  const bottom = Math.min(window.innerHeight - EDGE / 2, rect.bottom + pad, top + tallest);
+  const bottom = Math.min(window.innerHeight - EDGE / 2, rect.bottom - lip + pad, top + tallest);
   const right = Math.min(window.innerWidth - EDGE / 2, rect.right + pad);
   return { top, left, width: Math.max(0, right - left), height: Math.max(0, bottom - top) };
 }
@@ -173,6 +182,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const step: TourStep | undefined = steps[index];
   const last = index >= steps.length - 1;
+  const polish = useHomePolishPreview();
 
   // The tour walks the desk's home screen, so it goes there first when opened from another page,
   // and again if the desk's access settles to another role while it is open.
@@ -195,12 +205,13 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     const measure = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() =>
-        setSpot({ target, box: element && element.isConnected ? spotBox(element) : null }),
+        setSpot({ target, box: element && element.isConnected ? spotBox(element, polish) : null }),
       );
     };
     const started = Date.now();
     const poll = window.setInterval(() => {
       element = findTourTarget(target);
+      if (!element && polish && device === "desk") element = findTourTarget(MENU_FALLBACK);
       if (!element && Date.now() - started < FIND_TIMEOUT_MS) return;
       window.clearInterval(poll);
       if (!element) return;
@@ -217,7 +228,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
       window.removeEventListener("scroll", measure, true);
       window.removeEventListener("resize", measure);
     };
-  }, [target, pathname]);
+  }, [target, pathname, polish, device]);
 
   useLayoutEffect(() => {
     // The card is placed by transform, so a step with no control is placed again when the window
@@ -339,7 +350,8 @@ export function WardTour({ onClose }: { onClose: () => void }) {
             {step.title}
           </h2>
           <p id="ward-tour-body" className={styles.body}>
-            {step.body}
+            {/* Polish: the time is already in the step line under the bar, so the welcome does not say it twice. */}
+            {polish && index === 0 ? step.body.replace(/ This takes [^.]*\./u, "") : step.body}
           </p>
           {step.tryIt ? (
             <p className={styles.try}>
@@ -386,9 +398,12 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           </div>
           <p className={styles.meta}>{meta}</p>
           <div className={styles.buttons}>
-            <button type="button" className={styles.secondary} disabled={index === 0} onClick={() => go(index - 1)}>
-              Back
-            </button>
+            {/* Polish: no greyed-out Back on the first step. */}
+            {polish && index === 0 ? null : (
+              <button type="button" className={styles.secondary} disabled={index === 0} onClick={() => go(index - 1)}>
+                Back
+              </button>
+            )}
             <button
               type="button"
               className={styles.skip}

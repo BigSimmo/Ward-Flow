@@ -1,0 +1,165 @@
+/*
+ * Home polish mock-up (design review, 28 Oct 2026). Applies only under `?preview=home-polish`
+ * (home-preview.ts), never in production. It reaches into other modules by test id and by the
+ * kit's class prefixes so the accepted design is untouched; on Josh's approval each rule moves
+ * into the module that owns the element and this file goes.
+ */
+
+.polish {
+  min-width: 0;
+}
+
+.hero {
+  min-width: 0;
+}
+
+/* ---------- Phone ---------- */
+@media (max-width: 48rem) {
+  /* Four figures in one row (Act now, To decide, Overdue, New since), replacing three figures
+     plus a row of its own for New since. */
+  .hero :global([class*="hero_stats"]) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .hero :global([class*="hero_stats"] > [class*="hero_stat"]:nth-child(4)) {
+    display: flex;
+  }
+
+  .hero :global([class*="hero_stats"] [class*="hero_statToggle"]) {
+    padding-inline: 8px;
+  }
+
+  .hero :global([class*="hero_stats"] [class*="hero_label"]) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  /* The Checking summary: a full 44px tap target without adding visible height. */
+  .hero details > summary {
+    padding-block: 14px;
+    margin-block: -14px;
+    cursor: pointer;
+  }
+
+  /* The access line: a step smaller, and a slimmer See who, so the sentence takes three lines. */
+  .polish :global([data-testid="home-ed-access-risk"]) {
+    font-size: var(--wf-fs-14);
+    line-height: 1.4;
+  }
+
+  .polish :global([data-testid="home-ed-access-risk"] > a) {
+    padding-inline: var(--wf-s-2);
+  }
+
+  /* My list / Everyone waiting: the switch takes the row's width at the 44px touch height. */
+  .polish :global([role="radiogroup"][aria-label="Home list"]) {
+    flex: 1 1 auto;
+  }
+
+  .polish :global([role="radiogroup"][aria-label="Home list"] > button) {
+    flex: 1 1 auto;
+    min-height: var(--wf-touch);
+    justify-content: center;
+  }
+
+  /* A row opens its person: a quiet chevron at the row's right edge says so. */
+  .polish :global([data-testid="home-my-list"] li) {
+    position: relative;
+    padding-right: 28px;
+  }
+
+  .polish :global([data-testid="home-my-list"] li)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 14px;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid var(--wf-ink-3);
+    border-top: 2px solid var(--wf-ink-3);
+    transform: translateY(-50%) rotate(45deg);
+    pointer-events: none;
+  }
+
+  /* Call sheet: one line, 44px tall. */
+  .polish :global([data-testid="home-call-sheet-open"]) {
+    min-height: var(--wf-touch);
+    white-space: nowrap;
+  }
+}
+
+/* The pinned list switch: a soft shadow so rows passing under it do not look cut off. */
+.polish :global(div:has(> [role="radiogroup"][aria-label="Home list"])) {
+  box-shadow: 0 10px 12px -12px color-mix(in srgb, var(--wf-ink-1) 40%, transparent);
+}
+
+/* ---------- Phone and tablet: the ED strip says it scrolls ---------- */
+@media (max-width: 75rem) {
+  .polish :global([data-testid="ward-home-ed-pressure"] ul) {
+    scroll-snap-type: x proximity;
+    mask-image: linear-gradient(to right, black calc(100% - 40px), transparent);
+  }
+
+  .polish :global([data-testid="ward-home-ed-pressure"] li) {
+    scroll-snap-align: start;
+  }
+
+  .polish :global([data-testid="ward-home-ed-pressure"] li:last-child) {
+    margin-right: 40px;
+  }
+}
+
+/* ---------- Tablet portrait ---------- */
+@media (min-width: 48.0625rem) and (max-width: 62.5rem) {
+  /* New since stays on the toggles' line instead of a row of its own. */
+  .hero :global([class*="hero_barRow"]) {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .hero :global([class*="hero_barRow"] > [class*="hero_bar"]) {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  .hero :global([class*="hero_barRow"] > [class*="hero_aside"]) {
+    flex: none;
+  }
+
+  /* The footer: badge, then the note as one full-width line, rather than a squeezed middle column. */
+  .polish :global([data-testid="ward-coordinator-governance"]) {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .polish :global([data-testid="ward-coordinator-governance"] > *) {
+    max-width: 100%;
+  }
+}
+
+/* ---------- Desktop and laptop ---------- */
+
+/* Beds that fit: labels wrap rather than cut off ("Locked adult to..."). */
+.polish :global([data-testid="home-beds-gap"] li *) {
+  white-space: normal;
+  text-overflow: clip;
+  overflow: visible;
+}
+
+/* Underlined codes (RPH, BUN) read as links; a dotted underline reads as "hover to expand". */
+.polish :global(abbr[title]) {
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--wf-ink-3);
+  text-underline-offset: 2px;
+}
+
+/* Wide screens: the list and Beds that fit share the width more evenly, so the list's rows
+   are not stretched and the right column is not left short. */
+@media (min-width: 100rem) {
+  .polish :global([data-testid="ward-coordinator-region-grid"][data-layout="desktop"]) {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+}

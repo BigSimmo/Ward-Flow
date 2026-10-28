@@ -71,6 +71,8 @@ import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
 import { useHomeLayout } from "./home-layout";
+import polishStyles from "./home-polish.module.css";
+import { useHomePolishPreview } from "./home-preview";
 import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import { PlacementPrompt } from "./placement-prompt";
@@ -282,6 +284,8 @@ export function CoordinatorScreen() {
   // up, one column on tablet portrait with Placement as a side sheet, phone direction A.
   const layout = useHomeLayout();
   const isPhone = layout === "phone";
+  // Home polish mock-up (28 Oct 2026): `?preview=home-polish`, never on in production. See home-preview.ts.
+  const polish = useHomePolishPreview();
   const isTabletPortrait = layout === "tablet-portrait";
   // Where Placement is a sheet over the page, the chosen alert travels inside it.
   const sheetPlacement = isPhone || isTabletPortrait;
@@ -782,13 +786,18 @@ export function CoordinatorScreen() {
   ) : null;
 
   return (
-    <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="v6">
+    <div
+      className={polish ? `${styles.screen} ${polishStyles.polish}` : styles.screen}
+      data-testid="ward-coordinator"
+      data-ward-design="v6"
+      data-home-preview={polish ? "home-polish" : undefined}
+    >
       <main id="main-content" className={styles.main}>
         <h1 className="sr-only">Bed coordinator</h1>
 
         <div className={styles.body} data-testid="ward-coordinator-body">
           <Hero
-            className={styles.homeHero}
+            className={polish ? `${styles.homeHero} ${polishStyles.hero}` : styles.homeHero}
             // Phone direction A (Josh, 10 Oct 2026): queue first. The same answer as the desktop
             // title, three figures you can tap, then New since and Pause.
             eyebrow={
@@ -841,6 +850,21 @@ export function CoordinatorScreen() {
                       toggleHighlight("overdue");
                     }}
                   />
+                  {/* Polish: New since joins the figures as a fourth, so it no longer floats on a row of its own. */}
+                  {polish && newEvents > 0 ? (
+                    <HeroStat
+                      command
+                      value={newEvents}
+                      label={
+                        <>
+                          {lastLook.changes?.basis === "shift" ? "New since" : "Since you looked at"}{" "}
+                          <span className={styles.phoneSinceMono}>{sinceClock}</span>
+                        </>
+                      }
+                      tone="info"
+                      onToggle={() => setPhoneSheet({ kind: "since" })}
+                    />
+                  ) : null}
                 </>
               ) : undefined
             }
@@ -851,7 +875,7 @@ export function CoordinatorScreen() {
               )
             }
             bar={
-              isPhone ? (
+              isPhone && polish ? undefined : isPhone ? (
                 // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
                 // pause. The Live chip itself sits on the eyebrow line (`aside` below). The pill
                 // shows only when something changed (device audit, 11 Oct 2026: "0 since you
