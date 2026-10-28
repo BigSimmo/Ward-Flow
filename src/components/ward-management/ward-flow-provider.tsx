@@ -44,7 +44,7 @@ import {
   type RecordRead,
   type WardRecordActor,
 } from "./ward-discharge-records";
-import { PROTECTED_REFUSAL_REASONS } from "./ward-flow-protected-record-events";
+import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
 import {
   readAuditEvents,
   readAuditReviews,
