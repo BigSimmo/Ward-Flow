@@ -172,6 +172,14 @@
   padding: var(--wf-s-4);
 }
 
+/* Containment stops chaining but still permits a sideways boundary bounce inside a phone sheet.
+   Change only that axis; the body and any nested table retain their normal scrolling and zoom. */
+@media screen and (max-width: 48rem) {
+  .sheetBody {
+    overscroll-behavior-x: none;
+  }
+}
+
 .sheetNoFooter .sheetBody {
   padding-bottom: var(--wf-end-space);
 }

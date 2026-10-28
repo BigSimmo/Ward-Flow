@@ -659,3 +659,108 @@ test.describe("@mockup Movements timeline fits its rows on a ward desktop monito
     expect(geometry.empty).toBeLessThanOrEqual(24);
   });
 });
+
+test.describe("@mockup Patient phone scroll stability", () => {
+  test.use({ hasTouch: true });
+
+  test("the census table keeps its own horizontal scrolling inside the stable phone column", async ({ page }) => {
+    await page.setViewportSize({ width: 700, height: 844 });
+    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    const table = page.getByRole("table", { name: "Patients by where they are now" });
+    await expect(table).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const region = table.locator("..");
+    expect(await region.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true);
+    await page.mouse.move(350, 600);
+    await page.mouse.wheel(160, 0);
+    await expect.poll(() => region.evaluate((element) => element.scrollLeft)).toBeGreaterThan(0);
+    expect(await page.locator("[data-wf-scroller]").evaluate((element) => element.scrollLeft)).toBe(0);
+  });
+
+  test("patient page suppresses sideways boundary movement while preserving vertical scroll and native touch gestures", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/ward-flow/people/${encodeRecordAddress("PT-001")}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("ward-person-screen")).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const column = page.locator("[data-wf-scroller]");
+
+    for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      // Boundary effects belong to the actual nested scroller; a rule on html is not inherited.
+      // Chromium checks the browser policy and geometry; physical Safari must verify rubberband.
+      await expect(column).toHaveCSS("overscroll-behavior-x", width <= 768 ? "none" : "auto");
+      await expect(column).toHaveCSS("touch-action", "auto");
+      expect(await column.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+      if (width <= 768) {
+        await column.evaluate((element) => {
+          element.scrollTop = 0;
+        });
+        await page.mouse.move(width / 2, 550);
+        await page.mouse.wheel(170, 280);
+        await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+        expect(await column.evaluate((element) => element.scrollLeft)).toBe(0);
+      }
+    }
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    for (const tab of ["History", "Details", "Documents", "Now"]) {
+      await page.getByRole("tab", { name: tab, exact: true }).click();
+      expect(await column.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+    }
+    await page.getByRole("tab", { name: "Now", exact: true }).focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByRole("tab", { name: "History", exact: true })).toBeFocused();
+    await expect(page.getByRole("tab", { name: "History", exact: true })).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("patient sheets suppress sideways boundary movement and retain scroll, dismissal and focus return", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/ward-flow/people/${encodeRecordAddress("PT-001")}`, { waitUntil: "domcontentloaded" });
+    await expect(page.getByTestId("ward-person-screen")).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const column = page.locator("[data-wf-scroller]");
+
+    for (const width of [320, 375, 390, 430, 768, 1024, 1440]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const openerId of ["ward-patient-destination-row", "ward-patient-transport-row"]) {
+        const opener = page.getByTestId(openerId);
+        for (let repeat = 0; repeat < 2; repeat++) {
+          await opener.focus();
+          await opener.click();
+          const dialog = page.getByRole("dialog").last();
+          await expect(dialog).toBeVisible();
+          const body = dialog.locator("[data-phone-sheet-body]");
+          await expect(body).toHaveCSS("overscroll-behavior-x", width <= 768 ? "none" : "contain");
+          await expect(body).toHaveCSS("overscroll-behavior-y", "contain");
+          await expect(body).toHaveCSS("touch-action", "auto");
+          expect(await body.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+          const box = (await dialog.boundingBox())!;
+          expect(box.x).toBeGreaterThanOrEqual(-1);
+          expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+          const pageTop = await column.evaluate((element) => element.scrollTop);
+          await body.evaluate((element) => {
+            element.scrollTop = 0;
+          });
+          const bodyBox = (await body.boundingBox())!;
+          await page.mouse.move(bodyBox.x + bodyBox.width / 2, bodyBox.y + Math.min(60, bodyBox.height / 2));
+          await page.mouse.wheel(120, 260);
+          if (await body.evaluate((element) => element.scrollHeight > element.clientHeight + 1)) {
+            await expect.poll(() => body.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+          }
+          expect(await column.evaluate((element) => element.scrollTop)).toBe(pageTop);
+          await page.keyboard.press("Tab");
+          expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true);
+          await page.keyboard.press("Escape");
+          await expect(dialog).not.toBeVisible();
+          await expect(opener).toBeFocused();
+        }
+      }
+    }
+  });
+});

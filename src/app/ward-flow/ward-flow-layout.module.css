@@ -239,6 +239,9 @@
     min-height: 0;
     overflow-x: hidden;
     overflow-y: auto;
+    /* The phone scrolls this column, so suppress sideways boundary bounce here rather than on html.
+       Nested tables keep their own horizontal scrolling; vertical momentum and pinch zoom stay native. */
+    overscroll-behavior-x: none;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     /* WCAG 2.4.11: the column is the scroller here, so the html rule above has no effect. Keep a
