@@ -27,6 +27,8 @@ function connection(extra: Partial<WardSharedConnection> = {}): WardSharedConnec
   return {
     enabled: true,
     signedIn: true,
+    actorId: "synthetic-shared-account",
+    access: { role: "coordinator", scope: { kind: "statewide" } },
     status: "ready",
     error: null,
     receivedAt: Date.now(),

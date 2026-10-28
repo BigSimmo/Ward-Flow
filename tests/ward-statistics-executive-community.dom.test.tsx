@@ -17,6 +17,10 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { StatisticsCommunityScreen } from "@/components/ward-management/statistics/statistics-community-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 
 /**
  * Executive Statistics are counts only (role access plan): on a community team's page a count of
@@ -24,7 +28,30 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * people (follow-up, due out) are not shown. Every other desk sees the exact counts and the lists.
  * Inner City Clinic's one member in the seed has left the ward, so its "left another way" count is 1.
  */
-function renderTeam() {
+function renderTeam(executive = false) {
+  if (executive) {
+    const state = seedWardFlowState();
+    const data = projectExecutiveReportingFoundation(
+      state,
+      { role: "executive", scope: { kind: "statewide" } },
+      {
+        now: NOW_ANCHOR,
+        dayZero: "2026-10-24T00:00:00.000Z",
+        startedAt: "2026-10-24T00:00:00.000Z",
+        places: wardPlaceLookup(state.units),
+      },
+    );
+    const binding = { actorId: "synthetic-community-report", accessContext: "b".repeat(64), epoch: 0, revision: 1 };
+    return render(
+      <ExecutiveStatisticsProvider
+        binding={binding}
+        snapshot={{ binding, receivedAt: 100, expiresAt: 200, data }}
+        now={150}
+      >
+        <StatisticsCommunityScreen teamId="inner-city-clinic" />
+      </ExecutiveStatisticsProvider>,
+    );
+  }
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <StatisticsCommunityScreen teamId="inner-city-clinic" />
@@ -48,7 +75,7 @@ describe("executive counts on the community team page", () => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "executive", scope: { kind: "statewide" } });
     });
-    renderTeam();
+    renderTeam(true);
     expect(leftOrDischarged()).toContain("fewer than 5");
     expect(leftOrDischarged()).not.toContain("1");
     expect(screen.getByTestId("ward-statistics-community-follow-up-not-listed")).toBeInTheDocument();

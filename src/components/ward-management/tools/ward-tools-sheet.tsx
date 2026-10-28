@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 
 import { useDueSoonThresholds, useWardFlowClock, useWardFlowSelect, useWardNetwork } from "../ward-flow-provider";
-import { WardRoleSwitcher } from "../ward-role-switcher";
+import { WardRoleSwitcher } from "../ward-public-role-switcher";
 import { contactForTeam } from "../community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "../reports/report-routes";
 import { handoverHref } from "../shell/ward-facade";
@@ -42,6 +42,9 @@ import styles from "./ward-tools-sheet.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+import { releasedCountText } from "../statistics/statistics-small-numbers";
+import { WARD_REFERRAL_INTAKE_HREF } from "../ward-nav";
 
 const WardCatchmentResolver = dynamic(
   withLoadRetry(
@@ -187,6 +190,49 @@ function ToolRow({
 }
 
 function BedSummary() {
+  return useExecutiveStatisticsControl().executive ? <ExecutiveBedSummary /> : <OperationalBedSummary />;
+}
+function ExecutiveBedSummary() {
+  const report = useExecutiveStatistics();
+  const [status, setStatus] = useState("");
+  if (!report) return <p role="status">Bed summary is unavailable until this report is ready.</p>;
+  // C04, the 5 Sep 2026 ruling: a ready figure says how many of those beds are still being made
+  // ready, in the other screens' words. The figure itself is unchanged, and a zero says nothing.
+  const preparing = (beds: { beingMadeReady: number }) =>
+    beds.beingMadeReady > 0
+      ? ` (${beds.beingMadeReady} of the ready ${beds.beingMadeReady === 1 ? "bed is" : "beds are"} still being made ready)`
+      : "";
+  const text = `${report.network.scope.kind === "service" ? report.network.scope.service : "Whole network"} · synthetic prototype\n${report.network.beds.ready} beds ready${preparing(report.network.beds)}, ${report.network.beds.occupied} occupied, ${report.network.beds.pulled} pulled.\n${report.services
+    .filter((service) => report.network.scope.kind === "statewide" || service.service === report.network.scope.service)
+    .map(
+      (service) =>
+        `${service.service}: ${service.beds.ready} beds ready${preparing(service.beds)}, ${releasedCountText(service.waiting)} waiting in ED`,
+    )
+    .join("\n")}`;
+  return (
+    <div className={styles.toolBody} data-testid="ward-tools-bed-summary">
+      <pre className={styles.summaryText}>{text}</pre>
+      <button
+        type="button"
+        className={styles.primaryButton}
+        onClick={async () => {
+          try {
+            await copyTextToClipboard(text);
+            setStatus("Bed summary copied. Paste it into the email or Teams message.");
+          } catch {
+            setStatus("Copy is unavailable in this browser. Select the text instead.");
+          }
+        }}
+      >
+        Copy bed summary
+      </button>
+      <p className={styles.liveNote} role="status">
+        {status}
+      </p>
+    </div>
+  );
+}
+function OperationalBedSummary() {
   const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
     "units",
     "admissions",
@@ -249,6 +295,8 @@ export function WardToolsSheet({
   const accessNav = useAccessNavFilter();
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
   const canOpen = useCanOpenHref();
+  const executive = useExecutiveStatisticsControl().executive;
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
   const toggle = (id: ToolsSheetToolId) =>
@@ -307,7 +355,7 @@ export function WardToolsSheet({
           Handover sheet, Bed meeting TV and Out of area each have their own place already, and the
           Demo controls open from the Synthetic pill. The phone has no pill, so it keeps them all. */}
       <Group title="Do now">
-        {isPhone ? (
+        {isPhone && canRefer ? (
           <button type="button" className={styles.row} onClick={() => onNewReferral()}>
             <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
             <ChevronRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
@@ -379,9 +427,11 @@ export function WardToolsSheet({
                   </span>
                   {/* Opens a community referral. The slide-out has no clinic field to prefill, so the
                       label promises only what it does. */}
-                  <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
-                    Start a community referral
-                  </button>
+                  {canRefer && (
+                    <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
+                      Start a community referral
+                    </button>
+                  )}
                 </>
               );
             }}
@@ -402,9 +452,11 @@ export function WardToolsSheet({
           "Check a time written on a form",
           <>
             <WardFormTimes />
-            <Link className={styles.moreLink} href={`${root}/legal-forms`} onClick={onNavigate}>
-              See every open form on Legal forms
-            </Link>
+            {canOpen(`${root}/legal-forms`) && (
+              <Link className={styles.moreLink} href={`${root}/legal-forms`} onClick={onNavigate}>
+                See every open form on Legal forms
+              </Link>
+            )}
           </>,
         )}
       </Group>
@@ -466,7 +518,7 @@ export function WardToolsSheet({
             Inbox,
             "Hospital feed",
             "Invented admissions and discharges to confirm or reject.",
-            <WardFeedInbox />,
+            executive ? <p role="status">Individual feed records are unavailable for this desk.</p> : <WardFeedInbox />,
           )}
         </div>
       </section>

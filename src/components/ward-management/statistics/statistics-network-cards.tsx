@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Activity, Filter, Network } from "lucide-react";
 
 import { BarList, CardBody, Donut, Legend, Segmented, cx, tableClasses } from "@/components/wf";
@@ -14,13 +14,20 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Unit, DeclineReason } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { StatCard } from "./statistics-hero";
 import { FlushStack } from "./statistics-layout";
 import { axisMax } from "./statistics-axis";
-import { withheldBar } from "./statistics-small-numbers";
+import {
+  withheldBar,
+  statisticsCountText,
+  exactStatisticsCount,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import type { Instant } from "../ward-clock";
+import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import styles from "./statistics-v6.module.css";
 import cards from "./statistics-network-cards.module.css";
 
@@ -310,11 +317,23 @@ export function EmptyToReadyCard({
 
 /** Admissions in each of the four stages, as a chart or a table. Small counts follow executive mode. */
 export function AdmissionStagesCard({ admissions }: { admissions: Admission[] }) {
+  const stageTallies = useMemo(() => admissionStageTallies(admissions), [admissions]);
+  return <AdmissionStagesCardView stageTallies={stageTallies} total={admissions.length} />;
+}
+
+function AdmissionStagesCardView({
+  stageTallies,
+  total,
+}: {
+  stageTallies: { position: AdmissionStagePosition; label: string; count: StatisticsCount }[];
+  total: StatisticsCount;
+}) {
   const { small, parts } = useStatisticsCounts();
   const [stagesView, setStagesView] = useState<"chart" | "data">("chart");
-  const stageTallies = useMemo(() => admissionStageTallies(admissions), [admissions]);
   // Executive: the stage parts add up to the total in the table's foot, so they hide together.
-  const stagesShown = parts(stageTallies.map((stage) => stage.count));
+  const stagesShown = stageTallies.every((stage) => typeof stage.count === "number")
+    ? parts(stageTallies.map((stage) => stage.count as number))
+    : stageTallies.map((stage) => statisticsCountText(stage.count, small));
   return (
     <StatCard
       id="admission-stages"
@@ -339,12 +358,16 @@ export function AdmissionStagesCard({ admissions }: { admissions: Admission[] })
           <BarList
             label="Admissions by stage"
             axis
-            max={axisMax(stageTallies.map((stage, index) => withheldBar(stage.count, stagesShown[index]!).value))}
+            max={axisMax(
+              stageTallies.map(
+                (stage, index) => withheldBar(exactStatisticsCount(stage.count) ?? 0, stagesShown[index]!).value,
+              ),
+            )}
             labelWidth="10.5rem"
             rows={stageTallies.map((stage, index) => ({
               id: stage.position,
               label: stage.label,
-              ...withheldBar(stage.count, stagesShown[index]!),
+              ...withheldBar(exactStatisticsCount(stage.count) ?? 0, stagesShown[index]!),
             }))}
           />
         </CardBody>
@@ -373,7 +396,7 @@ export function AdmissionStagesCard({ admissions }: { admissions: Admission[] })
             <tfoot>
               <tr>
                 <th scope="row">All stages</th>
-                <td className={styles.num}>{small(admissions.length)}</td>
+                <td className={styles.num}>{statisticsCountText(total, small)}</td>
               </tr>
             </tfoot>
           </table>
@@ -426,3 +449,134 @@ export function NetworkOverviewCards({
     </FlushStack>
   );
 }
+
+/** Public bed aggregates and already-released admission counts use the same three cards. */
+export function ExecutiveNetworkOverviewCards({ data }: { data: ExecutiveReportingFoundation }) {
+  const services: NetworkServiceRow[] = NETWORK_SERVICES.flatMap((entry) => {
+    const service = data.services.find((candidate) => candidate.service === entry.service);
+    if (!service) return [];
+    const beds = service.beds;
+    const sites = data.catalogue.sites
+      .filter((site) => site.service === entry.service)
+      .map((site) => shortSite(site.name));
+    return [
+      {
+        ...entry,
+        beds: beds.total,
+        occupied: beds.occupied,
+        ready: beds.ready,
+        pulled: beds.pulled,
+        closed: beds.closed,
+        headroom: beds.ready + beds.closed,
+        over: service.wardsOverOccupancyLine,
+        share: beds.total > 0 ? beds.inUse / beds.total : 0,
+        hospitals: sites.length ? sites.join(", ") : "Regional units",
+      },
+    ];
+  });
+  const stageTallies = (Object.keys(ADMISSION_STAGE_LABELS) as AdmissionStagePosition[]).map((position) => ({
+    position,
+    label: ADMISSION_STAGE_LABELS[position],
+    count: data.network.admissionStages[position],
+  }));
+  return (
+    <FlushStack data-testid="ward-statistics-network-cards">
+      <ServiceOccupancyCard services={services} />
+      <EmptyToReadyCard
+        capacity={{
+          ready: data.capacity.ready,
+          empty: data.capacity.empty,
+          allocatable: data.capacity.allocatable,
+        }}
+        openNow={data.capacity.openNow}
+        closedTotal={data.network.beds.closed}
+        preparingCount={data.capacity.pendingPreparation}
+      />
+      <AdmissionStagesCardView stageTallies={stageTallies} total={data.network.people.admissionsRecorded} />
+    </FlushStack>
+  );
+}
+
+type Counted<T, K extends keyof T> = Omit<T, K> & { [P in K]: StatisticsCount };
+type SummaryWard = {
+  id: string;
+  name: string;
+  site: string;
+  hospital: string;
+  beds: number;
+  ready: number;
+  occupancyRate: number;
+  referred: StatisticsCount;
+};
+export type SummaryEd = {
+  id: string;
+  name: string;
+  site: string;
+  waiting: StatisticsCount;
+  longest: number | null;
+  median: number | null;
+  over8: StatisticsCount;
+  over24: StatisticsCount;
+};
+type SummaryDeclines = Omit<
+  ReturnType<typeof import("./statistics-derivations").declinesByReason>,
+  "totalCount" | "movementsWithDeclinesCount" | "movementCount" | "tallies"
+> & {
+  totalCount: StatisticsCount;
+  movementsWithDeclinesCount: StatisticsCount;
+  movementCount: StatisticsCount;
+  tallies: { reason: DeclineReason; count: StatisticsCount }[];
+};
+export type SummaryModel = {
+  executive: boolean;
+  directory?: { services: string[]; teams: { id: string; name: string }[]; edIds: string[] };
+  now: Instant;
+  dayZero: Date;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  scopeLabel: string;
+  refused: { count: StatisticsCount; openMovementCount: StatisticsCount; escalatedCount: StatisticsCount };
+  preparingCount: number;
+  totalBeds: number;
+  occupiedCount: number;
+  inUseCount: number;
+  occupiedPct: number;
+  availableNow: number;
+  pendingPreparation: number;
+  waitingCount: StatisticsCount;
+  stillOpenCount: StatisticsCount;
+  admissionsCount: StatisticsCount;
+  dischargesCount: StatisticsCount;
+  arrivals: Counted<
+    ReturnType<typeof import("./statistics-derivations").pullToArrival>,
+    "measuredCount" | "endedCount" | "awaitingArrivalCount" | "incoherentCount"
+  >;
+  declinesReadout: { ok: true; value: SummaryDeclines } | { ok: false; statement: string };
+  blocked: Omit<
+    ReturnType<typeof import("./statistics-derivations").blockedDischargesByReason>,
+    "totalCount" | "admissionCount" | "tallies"
+  > & {
+    totalCount: StatisticsCount;
+    admissionCount: StatisticsCount;
+    tallies: { reason: string; count: StatisticsCount }[];
+  };
+  emergencyDepts: SummaryEd[];
+  totalEdWaiting: StatisticsCount;
+  networkMedianWait: number | null;
+  totalEdOver8: StatisticsCount;
+  totalEdOver24: StatisticsCount;
+  allPressureWards: SummaryWard[];
+  refRaised: StatisticsCount;
+  refAccepted: StatisticsCount;
+  refDeclined: StatisticsCount;
+  refOpen: StatisticsCount;
+  arrivalBands: { id: string; label: string; value: StatisticsCount }[];
+  parallelReferralCap: number;
+};
+export type SummarySlots = {
+  capacity: ReactNode;
+  overview: ReactNode;
+  journey: (onShowBoard: () => void) => ReactNode;
+  map: ReactNode;
+  operationalExtra: ReactNode;
+};

@@ -79,7 +79,12 @@ describe("break glass on the review list", () => {
     expect(commandScopeRefusal(state, service, review("audit-break-glass-7"), options)).toBeNull();
     expect(commandScopeRefusal(state, ward, review("audit-break-glass-7"), options)).not.toBeNull();
     const reviewed = wardFlowReducer(state, review("audit-break-glass-7"));
-    expect(scopeWardFlowState(reviewed, service, options).state.auditReviews).toHaveLength(1);
+    // Openings live outside the world. Only a trusted server lookup of the opening's current
+    // own-service record supplies this authority; the prefix itself never grants visibility.
+    const serverOptions = { ...options, reviewableBreakGlassEventIds: new Set(["audit-break-glass-7"]) };
+    expect(scopeWardFlowState(reviewed, service, serverOptions).state.auditReviews).toHaveLength(1);
+    expect(scopeWardFlowState(reviewed, service, options).state.auditReviews).toEqual([]);
+    expect(scopeWardFlowState(reviewed, ward, serverOptions).state.auditReviews).toEqual([]);
   });
 
   it("reads the server's rows on the demo clock and leaves out a row it cannot place", () => {

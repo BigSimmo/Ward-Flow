@@ -307,7 +307,12 @@ describe("BarList axis, CardHead plain icon and the layout toast", () => {
   it("mounts one ToastProvider in the ward-flow layout so useToast works on every page", () => {
     const layout = read("src/app/ward-flow/layout.tsx");
     // Audit 13 Oct 2026: the provider now carries the offline note as a prop.
-    expect(layout.match(/<ToastProvider[ >]/gu)).toHaveLength(1);
+    // The executive shell and the operational tree are alternatives (one mounts per page), and
+    // each holds exactly one provider.
+    const split = layout.indexOf("  return (\n", layout.indexOf("const executiveShell = ("));
+    expect(split).toBeGreaterThan(0);
+    expect(layout.slice(0, split).match(/<ToastProvider[ >]/gu)).toHaveLength(1);
+    expect(layout.slice(split).match(/<ToastProvider[ >]/gu)).toHaveLength(1);
     function Pusher() {
       const toast = useToast();
       return (

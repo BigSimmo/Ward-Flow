@@ -51,6 +51,16 @@ import { PhoneBody, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics
 import compare from "./statistics-compare.module.css";
 import detail from "./statistics-detail.module.css";
 import styles from "./statistics-v6.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import {
+  ExecutiveStatisticsUnavailable,
+  exactStatisticsCount,
+  releasedCountText,
+  statisticsCountText,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 /**
  * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
@@ -67,11 +77,30 @@ import styles from "./statistics-v6.module.css";
  * ward, one serving every emergency department — so this is the one page whose subject is the
  * whole set of units, and `STATISTICS_UNIT_CHOOSER_ID` is the anchor the hub links to.
  *
- * **Wards come from the provider's live `units`**, never from the frozen fixture, which is what
- * `tests/ward-flow-single-source.test.ts` requires. Emergency departments are identity, not
- * capacity, so they come from `allEmergencyDepartments()`.
+ * Operational wards come from the provider's live `units`, never a frozen fixture. Executive
+ * figures come only from the host-bound aggregate; the common view contains public place
+ * metadata and scalar measures. Public ED origin groups do not grant a detail route.
  */
-export function StatisticsCompareScreen({
+type CompareScreenProps = { units?: Unit[]; emergencyDepartments?: EmergencyDepartment[]; admissions?: Admission[] };
+
+export function StatisticsCompareScreen(props: CompareScreenProps = {}) {
+  const control = useExecutiveStatisticsControl();
+  const data = useExecutiveStatistics();
+  const access = useEffectiveWardAccess();
+  if (control.executive || access.role === "executive")
+    return data ? (
+      <ComparePresentation
+        model={executiveComparisonModel(data)}
+        paused={control.paused}
+        onTogglePause={control.togglePause ?? undefined}
+      />
+    ) : (
+      <ExecutiveStatisticsUnavailable />
+    );
+  return <OperationalCompareScreen {...props} />;
+}
+
+function OperationalCompareScreen({
   units: unitsOverride,
   emergencyDepartments: edsOverride,
   admissions: admissionsOverride,
@@ -92,7 +121,6 @@ export function StatisticsCompareScreen({
   const { units: liveUnits, admissions: liveAdmissions, movements, bedReleases } = live.state;
   const now = live.now;
   const asAt = formatSheetMoment(now, live.state.dayZero, { includeYearAndZone: true });
-  const isPhone = useIsPhone();
   const admissions = admissionsOverride ?? liveAdmissions;
   const units = unitsOverride ?? liveUnits;
   const emergencyDepartments = edsOverride ?? allEmergencyDepartments();
@@ -101,7 +129,6 @@ export function StatisticsCompareScreen({
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
   const readyBeds = totalReadyBedsNow(units, admissions, bedReleases);
   const pendingPreparationBeds = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, bedReleases), 0);
-  const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
   const wardStats = allWardStatistics(units, admissions, now);
   const unitIds = new Set(units.map((unit) => unit.id));
@@ -121,8 +148,8 @@ export function StatisticsCompareScreen({
 
   const wardRows: WardRow[] = wardStats.map(({ unit, statistics }) => {
     return {
-      unit,
-      statistics,
+      unit: comparisonUnit(unit),
+      statistics: comparisonStatistics(statistics),
       site: siteByCode(unit.siteCode),
       group: wardGroup(unit),
       // L1: the one occupancy count, Occupied + Pulled (`wardBedsInUse`, `ward-occupancy.ts`).
@@ -135,11 +162,166 @@ export function StatisticsCompareScreen({
   const edRows: EdCompareRow[] = emergencyDepartments.map((department) => {
     const figures = edWaitFigures(movements, department.id, now);
     return {
-      department,
+      department: { id: department.id, name: department.name, siteCode: department.siteCode },
       row: { onTheList: figures.onTheList, urgent: figures.urgent, unplaced: figures.unplaced },
       longestMinutes: figures.longestWait?.waitMinutes ?? 0,
     };
   });
+
+  return (
+    <ComparePresentation
+      model={{
+        units: units.map(comparisonUnit),
+        emergencyDepartments: emergencyDepartments.map((ed) => ({ id: ed.id, name: ed.name, siteCode: ed.siteCode })),
+        totalBeds,
+        readyBeds,
+        pendingPreparationBeds,
+        networkAvgStay,
+        totalBlockers,
+        totalLongStays,
+        stillOpenCount,
+        urgentCount,
+        unplacedCount,
+        wardRows,
+        edRows,
+        now,
+        asAt,
+      }}
+      paused={live.paused}
+      onTogglePause={live.togglePause}
+    />
+  );
+}
+
+type ComparisonUnit = Pick<Unit, "id" | "name" | "siteCode" | "beds" | "lockedBeds"> & { cohort: string };
+type ComparisonDepartment = Pick<EmergencyDepartment, "id" | "name" | "siteCode"> & { openable?: boolean };
+type ComparisonStatistics = {
+  averageLengthOfStayDays: number | null;
+  readyToLeaveCannot: StatisticsCount;
+  longStays: StatisticsCount;
+  dischargeDateOutcomes: { met: StatisticsCount; missed: StatisticsCount; consideredCount: StatisticsCount };
+};
+type ComparisonModel = {
+  scopeLabel?: string;
+  units: ComparisonUnit[];
+  emergencyDepartments: ComparisonDepartment[];
+  totalBeds: number;
+  readyBeds: number;
+  pendingPreparationBeds: number;
+  networkAvgStay: number | null;
+  totalBlockers: StatisticsCount;
+  totalLongStays: StatisticsCount;
+  stillOpenCount: StatisticsCount;
+  urgentCount: StatisticsCount;
+  unplacedCount: StatisticsCount;
+  wardRows: WardRow[];
+  edRows: EdCompareRow[];
+  now: number;
+  asAt: string;
+};
+const comparisonUnit = (unit: Unit): ComparisonUnit => ({
+  id: unit.id,
+  name: unit.name,
+  siteCode: unit.siteCode,
+  beds: unit.beds,
+  cohort: unit.cohort,
+  lockedBeds: unit.lockedBeds,
+});
+const comparisonStatistics = (statistics: WardStatistics): ComparisonStatistics => ({
+  averageLengthOfStayDays: statistics.averageLengthOfStayDays,
+  readyToLeaveCannot: statistics.readyToLeaveCannot,
+  longStays: statistics.longStays,
+  dischargeDateOutcomes: {
+    met: statistics.dischargeDateOutcomes.met,
+    missed: statistics.dischargeDateOutcomes.missed,
+    consideredCount: statistics.dischargeDateOutcomes.consideredCount,
+  },
+});
+
+function executiveComparisonModel(data: ExecutiveReportingFoundation): ComparisonModel {
+  const units: ComparisonUnit[] = data.wards.map((ward) => ({
+    id: ward.id,
+    name: ward.name,
+    siteCode: ward.siteCode,
+    beds: ward.beds.total,
+    cohort: ward.cohort,
+    lockedBeds: ward.lockedBeds,
+  }));
+  const emergencyDepartments = data.emergencyDepartments.map((ed) => ({
+    id: ed.id,
+    name: ed.name,
+    siteCode: ed.siteCode,
+    openable: data.openableEmergencyDepartmentIds.includes(ed.id),
+  }));
+  return {
+    scopeLabel: data.network.scope.kind === "service" ? data.network.scope.service : undefined,
+    units,
+    emergencyDepartments,
+    totalBeds: data.network.beds.total,
+    readyBeds: data.network.beds.ready,
+    pendingPreparationBeds: data.capacity.pendingPreparation,
+    networkAvgStay: data.networkDetails.pooledAverageStayDays,
+    totalBlockers: data.networkDetails.blockedTotal,
+    totalLongStays: data.networkDetails.longStayTotal,
+    stillOpenCount: data.network.people.stillOpen,
+    urgentCount: data.networkDetails.urgentOpen,
+    unplacedCount: data.networkDetails.unplacedOpen,
+    wardRows: data.wards.map((ward, index) => ({
+      unit: units[index]!,
+      statistics: {
+        averageLengthOfStayDays: ward.statistics.averageLengthOfStayDays,
+        readyToLeaveCannot: ward.statistics.readyToLeaveCannot,
+        longStays: ward.statistics.longStays,
+        dischargeDateOutcomes: {
+          met: ward.statistics.dischargeDateOutcomes.met,
+          missed: ward.statistics.dischargeDateOutcomes.missed,
+          consideredCount: ward.statistics.dischargeDateOutcomes.consideredCount,
+        },
+      },
+      site: data.catalogue.sites.find((site) => site.code === ward.siteCode),
+      group: wardGroup(units[index]!),
+      occupancy: ward.beds.total > 0 ? Math.round((ward.beds.inUse / ward.beds.total) * 100) : 0,
+      readyNow: ward.beds.ready,
+      awaitingAnswer: ward.awaitingAnswer,
+    })),
+    edRows: data.emergencyDepartments.map((ed, index) => ({
+      department: emergencyDepartments[index]!,
+      row: { onTheList: ed.onTheList, urgent: ed.urgent, unplaced: ed.unplaced },
+      longestMinutes: ed.longestWaitMinutes,
+    })),
+    now: data.network.asAt.now,
+    asAt: formatSheetMoment(data.network.asAt.now, new Date(data.network.asAt.dayZero), { includeYearAndZone: true }),
+  };
+}
+
+function ComparePresentation({
+  model,
+  paused,
+  onTogglePause,
+}: {
+  model: ComparisonModel;
+  paused: boolean;
+  onTogglePause?: () => void;
+}) {
+  const {
+    units,
+    emergencyDepartments,
+    totalBeds,
+    readyBeds,
+    pendingPreparationBeds,
+    networkAvgStay,
+    totalBlockers,
+    totalLongStays,
+    stillOpenCount,
+    urgentCount,
+    unplacedCount,
+    wardRows,
+    edRows,
+    now,
+    asAt,
+  } = model;
+  const isPhone = useIsPhone();
+  const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");
@@ -151,9 +333,10 @@ export function StatisticsCompareScreen({
       testId="ward-statistics-compare-screen"
       title="Ward and ED comparisons"
       eyebrowLabel="Statistics"
+      eyebrowDetail={model.scopeLabel}
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={onTogglePause}
       tools={
         <HeroTool
           href={STATISTICS_UNIT_CHOOSER_HREF}
@@ -165,7 +348,7 @@ export function StatisticsCompareScreen({
       }
       phone={{
         title: `${units.length} ${units.length === 1 ? "ward" : "wards"}, ${emergencyDepartments.length} EDs`,
-        sub: `${totalLongStays} ${totalLongStays === 1 ? "stay" : "stays"} over 3 months`,
+        sub: `${statisticsCountText(totalLongStays)} ${totalLongStays === 1 ? "stay" : "stays"} over 3 months`,
         stats: (
           <>
             <HeroStat value={readyBeds} label="Ready" />
@@ -173,7 +356,7 @@ export function StatisticsCompareScreen({
               value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
               label="Average stay"
             />
-            <HeroStat value={totalBlockers} label="Blockers" />
+            <HeroStat value={statisticsCountText(totalBlockers)} label="Blockers" />
           </>
         ),
       }}
@@ -186,13 +369,14 @@ export function StatisticsCompareScreen({
             value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
             label="Average stay"
           />
-          <HeroStat value={totalBlockers} label="Blockers" />
-          <HeroStat value={totalLongStays} label="Over 3 months" />
+          <HeroStat value={statisticsCountText(totalBlockers)} label="Blockers" />
+          <HeroStat value={statisticsCountText(totalLongStays)} label="Over 3 months" />
           <HeroStat
-            value={stillOpenCount}
+            value={statisticsCountText(stillOpenCount)}
             label={
               <>
-                <SrOnly>Still open:</SrOnly> {`${urgentCount} urgent, ${unplacedCount} no ward`}
+                <SrOnly>Still open:</SrOnly>{" "}
+                {`${statisticsCountText(urgentCount)} urgent, ${statisticsCountText(unplacedCount)} no ward`}
               </>
             }
           />
@@ -229,17 +413,19 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
   const [wardMetric, setWardMetric] = useState<WardMetric>("stay");
   const [edMetric, setEdMetric] = useState<EdMetric>("open");
 
-  const wardValues = wardRows.flatMap((row) => {
-    const value = wardMetricValue(row.statistics, wardMetric);
-    return value === null ? [] : [value];
-  });
-  const wardMean = wardValues.length > 0 ? mean(wardValues) : null;
+  const wardMeasurements = wardRows.map((row) => wardMetricValue(row.statistics, wardMetric));
+  const wardValues = knownValues(wardMeasurements);
+  const wardReference = referenceMean(wardMeasurements);
+  const wardReferenceProtected = protectedValue(wardReference);
+  const wardMean = exactValue(wardReference);
   const flagAbove = wardMean === null ? null : wardMean + standardDeviation(wardValues);
   const wardSorted = sortRows(
     wardRows.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, wardMetric) })),
     "high",
   ).filter((entry) => entry.value !== null);
-  const edValues = edRows.map((entry) => edMetricValue(entry, edMetric));
+  const edMeasurements = edRows.map((entry) => edMetricValue(entry, edMetric));
+  const edValues = knownValues(edMeasurements);
+  const edReference = referenceMean(edMeasurements, true);
   const edSorted = sortRows(
     edRows.map((entry) => ({ entry, name: entry.department.name, value: edMetricValue(entry, edMetric) })),
     "high",
@@ -298,9 +484,11 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
                   id: row.unit.id,
                   label: unitLabel(row.unit.name, row.unit.siteCode),
                   labelText: row.unit.name,
-                  value: value!,
-                  display: wardMetric === "stay" ? value!.toFixed(1) : undefined,
-                  flag: flagAbove !== null && value! > flagAbove ? "warning" : undefined,
+                  ...comparisonBar(value, wardMetric === "stay" ? (value) => value.toFixed(1) : undefined),
+                  flag:
+                    flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove
+                      ? "warning"
+                      : undefined,
                 }))}
                 mean={wardMean ?? undefined}
                 meanLabel="Mean of wards"
@@ -312,7 +500,9 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
               <p className={phone.note}>
                 <span className={phone.flagged}>
                   <StatusGlyph tone="warning" size={9} />
-                  Amber dot: well above the mean, by more than one standard deviation. Case mix differs.
+                  {wardReferenceProtected
+                    ? "Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used."
+                    : "Amber dot: well above the mean, by more than one standard deviation. Case mix differs."}
                 </span>
               </p>
             </>
@@ -325,11 +515,14 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
               id: entry.department.id,
               label: shortDepartmentName(entry.department.name),
               labelText: entry.department.name,
-              value: value ?? 0,
-              display:
-                edMetric === "longest" && entry.longestMinutes > 0 ? durMinutes(entry.longestMinutes) : undefined,
+              ...comparisonBar(
+                value,
+                edMetric === "longest" && entry.longestMinutes !== null && entry.longestMinutes > 0
+                  ? () => durMinutes(entry.longestMinutes!)
+                  : undefined,
+              ),
             }))}
-            mean={mean(edValues)}
+            mean={exactValue(edReference) ?? undefined}
             meanLabel="Mean of EDs"
             track
             max={axisMax(edValues)}
@@ -353,7 +546,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
 type WardGroup = "secure" | "open" | "older" | "youth";
 
 /** Older adult and youth wards are their own groups; adult wards split on whether any bed locks. */
-function wardGroup(unit: Unit): WardGroup {
+function wardGroup(unit: Pick<ComparisonUnit, "cohort" | "lockedBeds">): WardGroup {
   if (unit.cohort === "Youth") return "youth";
   if (unit.cohort === "Older adult") return "older";
   return unit.lockedBeds > 0 ? "secure" : "open";
@@ -362,16 +555,41 @@ function wardGroup(unit: Unit): WardGroup {
 const GROUP_LABELS: Record<WardGroup, string> = { secure: "Secure", open: "Open", older: "Older", youth: "Youth" };
 
 type WardRow = {
-  unit: Unit;
-  statistics: WardStatistics;
-  site: ReturnType<typeof siteByCode>;
+  unit: ComparisonUnit;
+  statistics: ComparisonStatistics;
+  site: { name: string } | undefined;
   group: WardGroup;
   occupancy: number;
   readyNow: number;
-  awaitingAnswer: number;
+  awaitingAnswer: StatisticsCount;
 };
 
 type SortOrder = "high" | "low" | "name";
+type ComparisonValue = StatisticsCount | null;
+const protectedValue = (value: ComparisonValue) =>
+  value !== null && typeof value !== "number" && value.kind !== "exact";
+const exactValue = (value: ComparisonValue) => (value === null ? null : exactStatisticsCount(value));
+const knownValues = (values: readonly ComparisonValue[]) =>
+  values.flatMap((value) => {
+    const exact = exactValue(value);
+    return exact === null ? [] : [exact];
+  });
+function referenceMean(values: readonly ComparisonValue[], strictUnknown = false): ComparisonValue {
+  if (values.some(protectedValue)) return { kind: "withheld" };
+  if (strictUnknown && values.some((value) => value === null)) return null;
+  const recorded = knownValues(values);
+  return recorded.length > 0 ? mean(recorded) : null;
+}
+function comparisonBar(
+  value: ComparisonValue,
+  format?: (value: number) => string,
+): Pick<BarListRow, "value" | "valueText" | "display"> {
+  if (value === null) return { value: 0, valueText: "Not recorded" };
+  const exact = exactValue(value);
+  return exact === null
+    ? { value: 0, valueText: String(statisticsCountText(value)) }
+    : { value: exact, display: format?.(exact) };
+}
 
 const SORT_ITEMS: { id: SortOrder; label: string }[] = [
   { id: "high", label: "Highest" },
@@ -399,11 +617,12 @@ function unitLabel(name: string, code: string | undefined) {
   );
 }
 
-function sortRows<T extends { name: string; value: number | null }>(rows: T[], order: SortOrder): T[] {
+function sortRows<T extends { name: string; value: ComparisonValue }>(rows: T[], order: SortOrder): T[] {
+  const protectedOrder = rows.some((row) => protectedValue(row.value));
   return [...rows].sort((a, b) => {
-    if (order === "name") return a.name.localeCompare(b.name);
-    const av = a.value ?? -Infinity;
-    const bv = b.value ?? -Infinity;
+    if (order === "name" || protectedOrder) return a.name.localeCompare(b.name);
+    const av = exactValue(a.value) ?? -Infinity;
+    const bv = exactValue(b.value) ?? -Infinity;
     return order === "high" ? bv - av : av - bv;
   });
 }
@@ -423,7 +642,7 @@ const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: str
   long: { label: "Long stays", chart: "Ward long stays bar chart", unit: "people" },
 };
 
-function wardMetricValue(statistics: WardStatistics, metric: WardMetric): number | null {
+function wardMetricValue(statistics: ComparisonStatistics, metric: WardMetric): ComparisonValue {
   if (metric === "stay") return statistics.averageLengthOfStayDays;
   if (metric === "blocked") return statistics.readyToLeaveCannot;
   return statistics.longStays;
@@ -445,16 +664,16 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
   );
 
   // The mean and spread are the whole network's, so a filter never moves the line it is read against.
-  const networkValues = rows.flatMap((row) => {
-    const value = wardMetricValue(row.statistics, metric);
-    return value === null ? [] : [value];
-  });
-  const networkMean = networkValues.length > 0 ? mean(networkValues) : null;
+  const measurements = rows.map((row) => wardMetricValue(row.statistics, metric));
+  const networkValues = knownValues(measurements);
+  const networkReference = referenceMean(measurements);
+  const referenceProtected = protectedValue(networkReference);
+  const networkMean = exactValue(networkReference);
   const flagAbove = networkMean === null ? null : networkMean + standardDeviation(networkValues);
 
   const sorted = sortRows(
     shown.map((row) => ({ row, name: row.unit.name, value: wardMetricValue(row.statistics, metric) })),
-    order,
+    referenceProtected ? "name" : order,
   );
   const charted = sorted.filter((entry) => entry.value !== null);
   const unrecorded = sorted.filter((entry) => entry.value === null);
@@ -462,9 +681,8 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
     id: row.unit.id,
     label: unitLabel(row.unit.name, row.unit.siteCode),
     labelText: row.unit.name,
-    value: value!,
-    display: metric === "stay" ? value!.toFixed(1) : undefined,
-    flag: flagAbove !== null && value! > flagAbove ? "warning" : undefined,
+    ...comparisonBar(value, metric === "stay" ? (value) => value.toFixed(1) : undefined),
+    flag: flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove ? "warning" : undefined,
   }));
 
   const counts = { all: rows.length } as Record<WardGroup | "all", number>;
@@ -555,7 +773,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
               rows={barRows}
               mean={networkMean ?? undefined}
               meanLabel="Mean of wards"
-              axis
+              axis={!referenceProtected}
               max={axisMax(networkValues)}
               label={WARD_METRICS[metric].chart}
               labelWidth="14rem"
@@ -585,12 +803,21 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
       </CardBody>
       <CardFoot
         meta={
-          <span className={styles.flagged}>
-            <StatusGlyph tone="warning" size={9} />
-            Over 1 SD above the mean
-          </span>
+          referenceProtected ? (
+            "Network reference not shown"
+          ) : (
+            <span className={styles.flagged}>
+              <StatusGlyph tone="warning" size={9} />
+              Over 1 SD above the mean
+            </span>
+          )
         }
       >
+        {referenceProtected ? (
+          <p className={compare.footNote}>
+            Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used.
+          </p>
+        ) : null}
         <span className={compare.footNote}>Case mix differs</span>
       </CardFoot>
     </StatCard>
@@ -606,7 +833,7 @@ const ED_METRICS: Record<EdMetric, { label: string; chart: string }> = {
   longest: { label: "Longest", chart: "Emergency department longest wait bar chart, in hours" },
 };
 
-type EdCompareRow = { department: EmergencyDepartment; row: EdRow; longestMinutes: number };
+type EdCompareRow = { department: ComparisonDepartment; row: EdRow; longestMinutes: number | null };
 
 /** "Armadale Hospital Emergency Department" reads "Armadale ED" on the chart; the full name stays in the accessible list. */
 const shortDepartmentName = (name: string) =>
@@ -614,11 +841,11 @@ const shortDepartmentName = (name: string) =>
     .replace(/ Emergency Department$/, " ED")
     .replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service) ED$/, " ED");
 
-function edMetricValue(entry: EdCompareRow, metric: EdMetric): number {
+function edMetricValue(entry: EdCompareRow, metric: EdMetric): ComparisonValue {
   if (metric === "open") return entry.row.onTheList;
   if (metric === "urgent") return entry.row.urgent;
   if (metric === "unplaced") return entry.row.unplaced;
-  return Math.round((entry.longestMinutes / 60) * 10) / 10;
+  return entry.longestMinutes === null ? null : Math.round((entry.longestMinutes / 60) * 10) / 10;
 }
 
 function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
@@ -631,13 +858,20 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
     rows.map((entry) => ({ entry, name: entry.department.name, value: edMetricValue(entry, metric) })),
     order,
   );
-  const values = rows.map((entry) => edMetricValue(entry, metric));
+  const measurements = rows.map((entry) => edMetricValue(entry, metric));
+  const values = knownValues(measurements);
+  const reference = referenceMean(measurements, true);
+  const referenceProtected = protectedValue(reference);
   const barRows: BarListRow[] = sorted.map(({ entry, value }) => ({
     id: entry.department.id,
     label: unitLabel(shortDepartmentName(entry.department.name), entry.department.siteCode),
     labelText: entry.department.name,
-    value: value ?? 0,
-    display: metric === "longest" && entry.longestMinutes > 0 ? durMinutes(entry.longestMinutes) : undefined,
+    ...comparisonBar(
+      value,
+      metric === "longest" && entry.longestMinutes !== null && entry.longestMinutes > 0
+        ? () => durMinutes(entry.longestMinutes!)
+        : undefined,
+    ),
   }));
 
   function exportCsv() {
@@ -649,7 +883,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
           entry.department.name,
           entry.department.siteCode,
           ...ED_COLUMNS.map((column) => column.cell(entry.row, words).text),
-          entry.longestMinutes,
+          entry.longestMinutes ?? "Not recorded",
         ]),
       ],
       { asAt, scope: "ED comparison; all departments in this view" },
@@ -689,9 +923,9 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
           <div className={compare.chart}>
             <BarList
               rows={barRows}
-              mean={mean(values)}
+              mean={exactValue(reference) ?? undefined}
               meanLabel="Mean of EDs"
-              axis
+              axis={!referenceProtected}
               max={axisMax(values)}
               label={ED_METRICS[metric].chart}
               labelWidth="12rem"
@@ -714,6 +948,13 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
           />
         )}
       </CardBody>
+      {referenceProtected ? (
+        <CardFoot>
+          <span className={compare.footNote}>
+            Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used.
+          </span>
+        </CardFoot>
+      ) : null}
     </StatCard>
   );
 }
@@ -723,7 +964,7 @@ const PIN_LIMIT = 3;
 type PinnedMeasure = {
   id: string;
   label: string;
-  value: (row: WardRow) => number | null;
+  value: (row: WardRow) => ComparisonValue;
   text: (value: number) => string;
   /** Mark a ward whose value sits above the network's per-ward figure. */
   markAbove: boolean;
@@ -759,16 +1000,13 @@ const PINNED_MEASURES: PinnedMeasure[] = [
 const oneDecimal = (value: number) => (Number.isInteger(value) ? String(value) : value.toFixed(1));
 
 /** The mean of the wards' own values for one measure; `null` when no ward has a value. */
-function networkMean(rows: readonly WardRow[], measure: PinnedMeasure): number | null {
-  const values = rows.flatMap((row) => {
-    const value = measure.value(row);
-    return value === null ? [] : [value];
-  });
-  return values.length > 0 ? mean(values) : null;
+function networkMean(rows: readonly WardRow[], measure: PinnedMeasure): ComparisonValue {
+  return referenceMean(rows.map((row) => measure.value(row)));
 }
 
 /** The network's per-ward figure for one measure, in that measure's own units. */
-function networkText(measure: PinnedMeasure, reference: number): string {
+function networkText(measure: PinnedMeasure, reference: Exclude<ComparisonValue, null>): string {
+  if (typeof reference !== "number") return String(releasedCountText(reference));
   if (measure.id === "stay") return `${reference.toFixed(1)} days`;
   if (measure.id === "occupancy") return `${Math.round(reference)}%`;
   return oneDecimal(Math.round(reference * 10) / 10);
@@ -832,7 +1070,10 @@ function CompareTwoWards({
               <span className={phone.pairValues}>
                 {chosen.map((row, index) => {
                   const value = row ? measure.value(row) : null;
-                  const above = measure.markAbove && value !== null && reference !== null && value > reference;
+                  const exact = exactValue(value);
+                  const referenceExact = exactValue(reference);
+                  const above =
+                    measure.markAbove && exact !== null && referenceExact !== null && exact > referenceExact;
                   return (
                     <span key={index} className={phone.flagged}>
                       <SrOnly>{`${heads[index]}: `}</SrOnly>
@@ -842,7 +1083,13 @@ function CompareTwoWards({
                           <SrOnly>above network, </SrOnly>
                         </>
                       ) : null}
-                      {row === null ? "none" : value === null ? "none arrived" : measure.text(value)}
+                      {row === null
+                        ? "none"
+                        : value === null
+                          ? "none arrived"
+                          : typeof value === "number"
+                            ? measure.text(value)
+                            : releasedCountText(value)}
                     </span>
                   );
                 })}
@@ -950,7 +1197,10 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
                     <th scope="row">{measure.label}</th>
                     {pinned.map((row) => {
                       const value = measure.value(row);
-                      const above = measure.markAbove && value !== null && reference !== null && value > reference;
+                      const exact = exactValue(value);
+                      const referenceExact = exactValue(reference);
+                      const above =
+                        measure.markAbove && exact !== null && referenceExact !== null && exact > referenceExact;
                       return (
                         <td key={row.unit.id} className={styles.num}>
                           {value === null ? (
@@ -963,7 +1213,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
                                   <SrOnly>above network, </SrOnly>
                                 </>
                               ) : null}
-                              {measure.text(value)}
+                              {typeof value === "number" ? measure.text(value) : releasedCountText(value)}
                             </span>
                           )}
                         </td>
@@ -1004,22 +1254,35 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
 
 type ChooserKind = "ward" | "ed";
 
-/** "Open a unit": every ward and every department, each a link to its own detail page. */
-function UnitChooser({ units, emergencyDepartments }: { units: Unit[]; emergencyDepartments: EmergencyDepartment[] }) {
+/** "Open a unit": public places, linking only to detail pages the current desk may open. */
+function UnitChooser({
+  units,
+  emergencyDepartments,
+}: {
+  units: ComparisonUnit[];
+  emergencyDepartments: ComparisonDepartment[];
+}) {
   const [kind, setKind] = useState<ChooserKind>("ward");
   const [query, setQuery] = useState("");
   const needle = query.trim().toLowerCase();
   const matches = (name: string, code: string) => !needle || `${name} ${code}`.toLowerCase().includes(needle);
 
-  const unitLink = (id: string, name: string, siteCode: string, href: string) => {
+  const unitLink = (id: string, name: string, siteCode: string, href: string | null) => {
     const site = siteByCode(siteCode);
     return (
       <li key={id} hidden={!matches(name, siteCode) || undefined}>
-        <Link href={href} className={compare.chooserLink}>
-          <span className={compare.rowNameText}>{name}</span>
-          <span className={site ? styles.code : compare.noSite}>{site ? siteCode : "matches no site"}</span>
-          <Icon icon={ChevronRight} size={14} />
-        </Link>
+        {href ? (
+          <Link href={href} className={compare.chooserLink}>
+            <span className={compare.rowNameText}>{name}</span>
+            <span className={site ? styles.code : compare.noSite}>{site ? siteCode : "matches no site"}</span>
+            <Icon icon={ChevronRight} size={14} />
+          </Link>
+        ) : (
+          <span className={compare.chooserLink}>
+            <span className={compare.rowNameText}>{name}</span>
+            <span className={site ? styles.code : compare.noSite}>{site ? siteCode : "matches no site"}</span>
+          </span>
+        )}
       </li>
     );
   };
@@ -1075,7 +1338,12 @@ function UnitChooser({ units, emergencyDepartments }: { units: Unit[]; emergency
               data-testid="ward-statistics-compare-ed-list"
             >
               {emergencyDepartments.map((department) =>
-                unitLink(department.id, department.name, department.siteCode, edStatisticsHref(department.id)),
+                unitLink(
+                  department.id,
+                  department.name,
+                  department.siteCode,
+                  department.openable === false ? null : edStatisticsHref(department.id),
+                ),
               )}
             </ul>
           )}
@@ -1108,8 +1376,8 @@ type CompareColumn<Row> = {
 type CompareRow<Row> = { readonly id: string; readonly name: string; readonly code: string; readonly row: Row };
 
 /** A measured count. Nought is a true and correct answer and renders as one — see `ward-statistics.ts`. */
-function count(value: number, words: CountWords): CompareCell {
-  return { text: String(words.small(value)) };
+function count(value: StatisticsCount, words: CountWords): CompareCell {
+  return { text: String(statisticsCountText(value, words.small)) };
 }
 
 /** A figure that cannot be FORMED, worded rather than flattened. Never a nought and never a dash. */
@@ -1125,7 +1393,7 @@ function cannotBeFormed(words: string): CompareCell {
  * cross-ward inference. `ward-statistics-compare-two-tables.dom.test.tsx` fails on any column
  * that gives every unit the same answer.
  */
-const WARD_COLUMNS: readonly CompareColumn<WardStatistics>[] = [
+const WARD_COLUMNS: readonly CompareColumn<ComparisonStatistics>[] = [
   {
     header: "Average stay",
     // `lengthOfStayMinutes` returns null only when nobody has ARRIVED, so the absence says that.
@@ -1141,16 +1409,22 @@ const WARD_COLUMNS: readonly CompareColumn<WardStatistics>[] = [
     // `consideredCount` is met + missed: 0 of 0 is undefined, not zero, so it keeps the absence wording.
     header: "Dates met",
     cell: ({ dischargeDateOutcomes }, words) => {
-      if (dischargeDateOutcomes.consideredCount === 0) return cannotBeFormed("none yet");
+      if (exactStatisticsCount(dischargeDateOutcomes.consideredCount) === 0) return cannotBeFormed("none yet");
       // Met and missed add up to the total shown, so met is withheld when missed could be worked back.
       const { met, consideredCount } = dischargeDateOutcomes;
+      if (typeof met !== "number" || typeof consideredCount !== "number")
+        return { text: `${statisticsCountText(met)} of ${statisticsCountText(consideredCount)} met` };
       const [metShown] = words.parts([met, consideredCount - met]);
       return { text: `${metShown} of ${words.small(consideredCount)} met` };
     },
   },
 ];
 
-type EdRow = { readonly onTheList: number; readonly urgent: number; readonly unplaced: number };
+type EdRow = {
+  readonly onTheList: StatisticsCount;
+  readonly urgent: StatisticsCount;
+  readonly unplaced: StatisticsCount;
+};
 
 /** All three are lengths of a filtered list, so nought is a count and never an absence. */
 const ED_COLUMNS: readonly CompareColumn<EdRow>[] = [

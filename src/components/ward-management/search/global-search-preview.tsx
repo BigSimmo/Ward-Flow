@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, type MouseEvent } from "react";
+import { createContext, useContext, useMemo, type MouseEvent } from "react";
 import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboard, Plus, Users } from "lucide-react";
 
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
@@ -16,13 +16,7 @@ import {
   type PatientLookup,
 } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  edHref,
-  movementHref,
-  patientHref,
-  unitHref,
-  wardBoardHref,
-} from "@/components/ward-management/shell/ward-facade";
+import { movementHref, patientHref, unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { unitReadyBedCount } from "./ward-smart-search";
 
 import type { Census, CensusRow } from "./patient-census";
@@ -69,7 +63,11 @@ type PreviewProps = {
    * come from it, so the header and the Patients page say the same thing. Absent means no such lines.
    */
   census?: Census | null;
+  canOpenHref?: (href: string) => boolean;
 };
+
+const allowPreviewNavigation = () => true;
+const PreviewNavigation = createContext<(href: string) => boolean>(allowPreviewNavigation);
 
 const JOURNEY: readonly MovementStage[] = [
   "placement_requested",
@@ -132,11 +130,16 @@ function Action({
   onOpen: PreviewProps["onOpen"];
   testId?: string;
 }) {
+  const canOpenHref = useContext(PreviewNavigation);
+  if (!canOpenHref(href)) return null;
   return (
     <Link
       href={href}
       className={primary ? styles.primary : styles.secondary}
-      onClick={(event) => onOpen(event, href)}
+      onClick={(event) => {
+        if (!canOpenHref(href)) event.preventDefault();
+        else onOpen(event, href);
+      }}
       data-testid={testId}
     >
       {children}
@@ -569,7 +572,7 @@ function EdPreview({
         ) : null}
       </dl>
       <div className={styles.actions}>
-        <Action href={edHref(edId) || href} primary onOpen={onOpen} testId="ward-global-search-preview-open">
+        <Action href={href} primary onOpen={onOpen} testId="ward-global-search-preview-open">
           Open ED
         </Action>
       </div>
@@ -623,6 +626,7 @@ export function GlobalSearchPreview({
   dayZero,
   onOpen,
   census,
+  canOpenHref = allowPreviewNavigation,
 }: PreviewProps) {
   const flow = useOptionalWardFlow();
   const resolvedNow = now ?? flow?.now;
@@ -688,8 +692,10 @@ export function GlobalSearchPreview({
   }
 
   return (
-    <section className={styles.preview} aria-label="Preview" data-testid="ward-global-search-preview">
-      {body ?? <SimplePreview item={item} onOpen={onOpen} />}
-    </section>
+    <PreviewNavigation.Provider value={canOpenHref}>
+      <section className={styles.preview} aria-label="Preview" data-testid="ward-global-search-preview">
+        {body ?? <SimplePreview item={item} onOpen={onOpen} />}
+      </section>
+    </PreviewNavigation.Provider>
   );
 }

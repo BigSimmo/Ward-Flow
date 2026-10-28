@@ -9,6 +9,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 import styles from "./ward-offline-banner.module.css";
+import { useWardShellAuthority } from "./ward-shell-public-context";
 
 // Design audit DA-07: a screen in full screen (the bed meeting TV) shows only the element it made
 // full screen, so the notice moves inside that element, pinned to its bottom corner so it never
@@ -65,12 +66,31 @@ function WardPracticeLine() {
  * the screen stops. Renders nothing while online. It also carries the practice line (CT-17).
  */
 export function WardOfflineBanner() {
+  const authority = useWardShellAuthority();
+  if (authority?.role === "executive") return <ExecutiveOfflineNotice />;
   return (
     <>
       <WardPracticeLine />
       <WardOfflineNotice />
     </>
   );
+}
+
+function ExecutiveOfflineNotice() {
+  const online = useOnlineStatus();
+  const fullscreenElement = useFullscreenElement();
+  if (online) return null;
+  const banner = (
+    <p
+      className={styles.banner}
+      role="status"
+      data-testid="ward-offline-banner"
+      style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
+    >
+      Offline. This report is not updating until the connection returns.
+    </p>
+  );
+  return fullscreenElement ? createPortal(banner, fullscreenElement) : banner;
 }
 
 function WardOfflineNotice() {

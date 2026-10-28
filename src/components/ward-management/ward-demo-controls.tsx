@@ -4,6 +4,7 @@ import { type ReactNode } from "react";
 
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
+import { useWardShellPublic } from "./shell/ward-shell-public-context";
 import { requestDemoMenu } from "@/components/ward-management/tools/ward-demo-menu-open";
 
 export type WardDemoClockPopoverProps = {
@@ -23,15 +24,23 @@ export type WardDemoClockPopoverProps = {
  * on a phone. Keeps every caller `aria-label`,
  * `title` and child on the clock display.
  */
-export function WardDemoClockPopover({
+export function WardDemoClockPopover(props: WardDemoClockPopoverProps) {
+  const shell = useWardShellPublic();
+  return shell ? <WardDemoClockView {...props} now={shell.now} /> : <OperationalDemoClock {...props} />;
+}
+function OperationalDemoClock(props: WardDemoClockPopoverProps) {
+  const now = useWardFlowClock();
+  return <WardDemoClockView {...props} now={now} />;
+}
+function WardDemoClockView({
   className,
   title,
   "aria-label": ariaLabel,
   children,
   testId = "ward-demo-clock-pill",
   onOpen,
-}: WardDemoClockPopoverProps) {
-  const now = useWardFlowClock();
+  now,
+}: WardDemoClockPopoverProps & { now: number }) {
   const clockText = formatInstant(now);
   return (
     <button

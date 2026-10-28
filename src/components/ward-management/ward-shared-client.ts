@@ -19,10 +19,26 @@ import {
 import { payloadUnchanged, reuseUnchangedPayload } from "./ward-shared-client-reuse";
 import type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import { RecordDetailHold } from "./ward-shared-record-detail";
+import {
+  bindWorkspaceReply,
+  refusesRecordPath,
+  roleChoices,
+  sentBindingFor,
+  verifyResponseBinding,
+  viewLifetimeChanged,
+  type SentBinding,
+} from "./ward-shared-role-binding";
+export type { ExecutiveAggregateSnapshot, SharedWorkspaceSnapshot } from "./ward-shared-executive-snapshot";
 import * as conflict from "./ward-conflict-scope";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
-import type { PendingCommand } from "./ward-shared-pending-command";
+import {
+  markOwnSave,
+  sheetBasis,
+  type PendingCommand,
+  type QueuedCommand,
+  type SheetSeen,
+} from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
 // The shared state schema loads with the first request rather than with every phone page (Josh,
@@ -44,13 +60,7 @@ function loadSharedStateCheck(): Promise<void> {
   });
 }
 
-import type {
-  SharedSnapshot,
-  SharedRoleChoice,
-  SharedView,
-  SharedChangeResult,
-  WardCommandOutcome,
-} from "./ward-shared-client-types";
+import type { SharedSnapshot, SharedView, SharedChangeResult, WardCommandOutcome } from "./ward-shared-client-types";
 export type {
   SharedSnapshot,
   SharedRoleChoice,
@@ -61,20 +71,6 @@ export type {
 } from "./ward-shared-client-types";
 /** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
 type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
-type QueuedCommand = {
-  event: WardFlowEvent;
-  commandId: string;
-  confirmed: boolean;
-  worldEpoch: number;
-  /** The popups open when this was asked for (audit CS-19); it is checked against what they showed. */
-  sheets?: readonly object[];
-};
-/**
- * What an open popup has shown (audit CS-19): the revision this tab held when it opened, and the
- * records (by the server's opaque tokens) it has since seen at a later revision through this tab's
- * own saves from it.
- */
-type SheetSeen = { revision: number; records: Map<string, number> };
 export const WARD_COMMAND_RECOVERY_KEY = "wardflow:pending-command-v1";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
@@ -332,6 +328,16 @@ export class SharedWorkspaceClient {
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
   }
+  private bindingHost() {
+    return {
+      view: () => this.view,
+      publish: (update: Partial<SharedView>) => this.publish(update),
+      endRole: () => {
+        this.cancelForRoleChange();
+        this.clearRecovery();
+      },
+    };
+  }
   private workingAs() {
     return this.workingAsOverride === undefined ? (this.options.workingAs?.get() ?? null) : this.workingAsOverride;
   }
@@ -348,6 +354,8 @@ export class SharedWorkspaceClient {
       recoveryStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
       /** Which of this account's roles to work as. The membership id only, never a name. */
       workingAs?: { get: () => string | null; set: (id: string | null) => void };
+      /** Actual current Auth identity; required before an executive report may be adopted. */
+      authenticatedActorId?: () => string | null;
     },
   ) {}
   private held() {
@@ -365,40 +373,14 @@ export class SharedWorkspaceClient {
     const sheets = commandSheetHandles().filter((sheet) => this.sheetSeen.has(sheet));
     return sheets.length ? sheets : undefined;
   }
-  /**
-   * What a command from these popups is checked against: the oldest revision they showed, and each
-   * record all of them have seen later, at the oldest of those. `undefined` when none is noted.
-   */
+  /** What a command from these popups is checked against (`sheetBasis`). */
   private basis(sheets: readonly object[] | undefined) {
-    const seen = (sheets ?? []).flatMap((sheet) => this.sheetSeen.get(sheet) ?? []);
-    if (!seen.length) return undefined;
-    const revision = Math.min(...seen.map((entry) => entry.revision));
-    const records: Record<string, number> = {};
-    for (const token of seen[0].records.keys()) {
-      const at = Math.min(...seen.map((entry) => entry.records.get(token) ?? entry.revision));
-      if (at > revision) records[token] = at;
-    }
-    return { revision, records };
+    return sheetBasis(this.sheetSeen, sheets);
   }
-  /**
-   * This tab's own save is not a change made while the person was looking, so popups and queued
-   * commands based on the revision it was checked against move on with it. Only when nothing came
-   * in between: otherwise another desk's save sits in the gap, and a later save from the same popup
-   * is still checked against it.
-   */
+  /** This tab's own save moves its popups' basis on with it (`markOwnSave`). */
   private ownSaveLanded(from: number, to: number | undefined, sheets?: readonly object[], covered?: unknown) {
-    if (to === undefined) return;
-    const tracked = new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
-    if (to === from + 1)
-      for (const sheet of tracked) {
-        const seen = this.sheetSeen.get(sheet);
-        if (seen?.revision === from) seen.revision = to;
-      }
-    // Otherwise the server still names the records it checked against what these popups showed:
-    // nobody else changed those since, so the popups have now seen them at this save.
-    if (!Array.isArray(covered)) return;
-    for (const sheet of sheets ?? [])
-      for (const token of covered) if (typeof token === "string") this.sheetSeen.get(sheet)?.records.set(token, to);
+    const tracked = () => new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
+    markOwnSave(this.sheetSeen, tracked, from, to, sheets, covered);
   }
   /**
    * History's archived records for this desk and world generation, as the server last sent them.
@@ -544,18 +526,22 @@ export class SharedWorkspaceClient {
     if (this.disposed) return;
     if (update.snapshot === null) {
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
-      update = { accessUntil: undefined, recovery: undefined, ...update };
+      update = { executiveSnapshot: null, accessUntil: undefined, recovery: undefined, ...update };
       this.archive = null;
       this.archiveAsked = null;
       this.rawPayload = null;
       this.liveSibling = undefined;
+      this.recordDetail = new RecordDetailHold();
       this.archiveEpoch++;
     }
+    if (update.snapshot) update = { ...update, executiveSnapshot: null };
+    const changedLifetime = viewLifetimeChanged(this.view, update);
     this.syncUnloadWarning();
     this.view = {
       ...this.view,
       boardCurrent: false,
       ...update,
+      viewEpoch: (this.view.viewEpoch ?? 0) + (changedLifetime ? 1 : 0),
       recovering: this.recoveryPending,
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
     };
@@ -679,12 +665,24 @@ export class SharedWorkspaceClient {
     body: PendingCommand | Record<string, unknown> | undefined,
     retried: boolean,
   ) {
+    if (refusesRecordPath(this.view, path))
+      throw new Error("Record operations are unavailable for aggregate reporting.");
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
+    const authenticatedActor = this.options.authenticatedActorId?.();
     const workspaceRead = path === "/v1/workspace" || path.startsWith("/v1/workspace?");
     const tvRead = workspaceRead && globalThis.location?.pathname.startsWith("/ward-flow/bed-meeting");
     const current = () => {
+      if (
+        this.options.authenticatedActorId &&
+        (!authenticatedActor || authenticatedActor !== this.options.authenticatedActorId())
+      ) {
+        this.cancelForRoleChange();
+        this.clearRecovery();
+        this.publish({ snapshot: null, eventLog: [], access: undefined, actorId: null, status: "unavailable" });
+        throw new Error("The signed-in account changed; reconnect.");
+      }
       if (generation !== this.viewGeneration || (workspaceRead && grantGeneration !== this.grantGeneration))
         throw new Error("The working view changed; try again.");
     };
@@ -716,6 +714,7 @@ export class SharedWorkspaceClient {
     if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
     const stored = this.workingAs();
     const workingAs = stored && (stored === "bootstrap" || UUID.test(stored)) ? stored : null;
+    let sentBinding: SentBinding | undefined;
     const send = async (as: string | null) => {
       // A token wait may outlive the ready board. Check at the actual access-write boundary too.
       if (
@@ -730,6 +729,9 @@ export class SharedWorkspaceClient {
         this.sentCommandId = body.commandId as string;
         this.recoveryWrite(this.sentCommandId);
       }
+      if (body && this.options.authenticatedActorId)
+        sentBinding =
+          sentBindingFor(this.view, authenticatedActor, this.roleEpoch, this.grantGeneration) ?? sentBinding;
       const response = await (this.options.fetch ?? fetch)(`${this.options.baseUrl}${path}`, {
         method: body ? "POST" : "GET",
         cache: "no-store",
@@ -836,25 +838,30 @@ export class SharedWorkspaceClient {
     }
     // The server holds more than one role for this account and needs to be told which.
     if (response.status === 409 && value?.code === "choose-role") {
-      const choices: SharedRoleChoice[] = Array.isArray(value.choices)
-        ? value.choices
-            .filter(
-              (choice: unknown): choice is SharedRoleChoice =>
-                !!choice &&
-                typeof (choice as SharedRoleChoice).workingAs === "string" &&
-                typeof (choice as SharedRoleChoice).role === "string",
-            )
-            // The server sends up to 20 roles, plus the bootstrap statewide desk.
-            .slice(0, 21)
-            .map((choice: SharedRoleChoice) => ({
-              workingAs: choice.workingAs,
-              role: choice.role,
-              scope: choice.scope,
-            }))
-        : [];
+      const choices = roleChoices(value.choices);
       throw gate({ status: "choose-role", choices });
     }
     if (value === null) throw new Error("Workspace unavailable");
+    if (this.options.authenticatedActorId && (workspaceRead || value.snapshot || path === "/v1/workspace/commands")) {
+      const rebound = await verifyResponseBinding(
+        {
+          ...this.bindingHost(),
+          current,
+          cancelQueued: () => this.cancelQueued(),
+          clearRecovery: () => this.clearRecovery(),
+          hasPending: () => !!this.pending,
+          newRoleEpoch: () => {
+            this.roleEpoch++;
+            this.roleLifetime.abort();
+            this.roleLifetime = new AbortController();
+          },
+          roleEpoch: () => this.roleEpoch,
+          grantGeneration: () => this.grantGeneration,
+        },
+        { path, body, response, value, sentBinding, authenticatedActor, workspaceRead },
+      );
+      if (rebound) return rebound;
+    }
     return { response, value };
   }
   async refresh() {
@@ -866,8 +873,9 @@ export class SharedWorkspaceClient {
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
     const grantGeneration = this.grantGeneration;
+    const authenticatedActor = this.options.authenticatedActorId?.();
     try {
-      const current = this.view.snapshot;
+      const current = this.view.executiveSnapshot ?? this.view.snapshot;
       const epoch = this.roleEpoch;
       // The poll names the revision it holds; an unchanged workspace answers with its clock only.
       // A desk's access context lets the server say "not modified" to a member desk too (audit
@@ -884,10 +892,28 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
+      const bound = await bindWorkspaceReply(
+        {
+          ...this.bindingHost(),
+          stale: () =>
+            this.disposed ||
+            roleSignal.aborted ||
+            generation !== this.viewGeneration ||
+            grantGeneration !== this.grantGeneration ||
+            epoch !== this.roleEpoch,
+          canSwitch: () => !!this.workingAs(),
+          fullRead: () => {
+            this.fullReadAt = Date.now();
+          },
+        },
+        { current, value, authenticatedActor, authenticatedActorId: this.options.authenticatedActorId },
+      );
+      if (!bound) return;
+      const actualAccess = bound.access;
       if (Number.isFinite(value.accessUntil) && value.accessUntil <= Date.now())
         throw new Error("Access verification expired");
       if (value?.notModified === true) {
-        if (!current || value.revision !== current.revision || !Number.isFinite(value.now))
+        if (!current || "kind" in current || value.revision !== current.revision || !Number.isFinite(value.now))
           throw new Error("Incompatible workspace data");
         if (this.view.snapshot === current)
           this.publish({ snapshot: { ...current, now: value.now }, receivedAt: Date.now() });
@@ -910,7 +936,7 @@ export class SharedWorkspaceClient {
               error: "Your last change was not confirmed. The board is up to date. Press Retry to send it.",
             }
           : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
-        access: value.access,
+        access: actualAccess,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
         canSwitch: !!this.workingAs(),
@@ -1033,6 +1059,13 @@ export class SharedWorkspaceClient {
         if (response.status >= 500) throw new Error("Save not confirmed");
         this.sentCommandId = null;
         this.clearRecovery();
+        if (value.responseBindingChanged) {
+          this.pending = null;
+          this.settle(command.commandId, response.ok ? "accepted" : "refused");
+          this.needsRefresh = true;
+          this.publish({ status: "unavailable", error: boardNotRefreshed(response.ok) });
+          break;
+        }
         let reconciliationFailed = false;
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
@@ -1235,6 +1268,7 @@ export class SharedWorkspaceClient {
    * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
    */
   async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
+    if (this.view.executiveSnapshot || !this.view.snapshot) return false;
     const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
     try {
       const { response, value } = await this.request("/v1/workspace/record-access", { patientId, surface });
@@ -1388,7 +1422,7 @@ export class SharedWorkspaceClient {
       this.grantGeneration += 1;
       try {
         let opened = value;
-        if (grantGeneration !== this.grantGeneration - 1) {
+        if (value.responseBindingChanged || grantGeneration !== this.grantGeneration - 1) {
           // Response order is not commit order. Once another opening has answered, re-read the
           // server's full current grant set instead of accepting an earlier response's subset.
           const latest = await this.request("/v1/workspace");
@@ -1396,10 +1430,23 @@ export class SharedWorkspaceClient {
           if (!latest.response.ok) throw new Error("Opened view unavailable");
           opened = latest.value;
         }
-        if (opened?.snapshot) this.adopt(opened.snapshot);
+        if (opened?.snapshot) {
+          this.adopt(opened.snapshot);
+          if (this.options.authenticatedActorId)
+            this.publish({
+              access: opened.access,
+              actorId: opened.actorId,
+              accessUntil: opened.accessUntil,
+              status: this.pending ? "saving" : "ready",
+            });
+        }
       } catch {
         // The next poll reads the board again.
         if (generation !== this.viewGeneration) return "The working view changed; open the record again.";
+        if (value.responseBindingChanged) {
+          this.needsRefresh = this.busy;
+          this.publish({ status: "unavailable", error: boardNotRefreshed(true) });
+        }
       }
       return null;
     }

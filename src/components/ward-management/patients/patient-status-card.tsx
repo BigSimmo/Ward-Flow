@@ -321,7 +321,7 @@ function statusFor(
           label: "Bed",
           owner: "Bed coordinator",
           tone: "warning",
-          value: "Progress unavailable",
+          value: "Progress unavailable in this view",
           sub: "Destination details are restricted",
         },
         clearanceCell(movement, ctx.onClearance),

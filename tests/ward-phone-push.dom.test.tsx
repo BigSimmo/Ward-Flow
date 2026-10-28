@@ -623,7 +623,11 @@ function sharedServer(hang: string | null = null) {
     "/auth/v1/user": user,
     // A reload swaps the saved refresh token for an access token held in memory (H-0044).
     "/auth/v1/token": { access_token: "synthetic-token", refresh_token: "synthetic-refresh", expires_in: 3600 },
-    "/v1/workspace": { snapshot: SHARED_SNAPSHOT },
+    "/v1/workspace": {
+      snapshot: SHARED_SNAPSHOT,
+      actorId: user.id,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+    },
     "/v1/workspace/push-key": { enabled: true, publicKey: SERVER_KEY },
     "/v1/workspace/push-status": { owned: true },
     "/v1/workspace/push-subscribe": { subscribed: true },
@@ -704,6 +708,13 @@ describe("shared connection phone alerts", () => {
         });
       if (secondAccount && parsed.pathname === "/auth/v1/user")
         return Response.json({ id: "87654321-4321-4321-4321-cba987654321" });
+      // The workspace answers the second account as itself; a reply naming the first is refused.
+      if (secondAccount && parsed.pathname === "/v1/workspace")
+        return Response.json({
+          snapshot: SHARED_SNAPSHOT,
+          actorId: "87654321-4321-4321-4321-cba987654321",
+          access: { role: "coordinator", scope: { kind: "statewide" } },
+        });
       if (parsed.pathname === "/v1/workspace/access/request") return Response.json({ request: null });
       return originalFetch(endpoint, init);
     });

@@ -7,6 +7,7 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
+  useCallback,
   useId,
   useLayoutEffect,
   useRef,
@@ -15,7 +16,10 @@ import {
 
 import { useIsPhone } from "@/components/wf";
 import { isGlobalSearchShortcut } from "./search/search-shortcut";
-import { useEffectiveWardAccess } from "./shell/ward-access-store";
+import { useEffectiveWardAccess, useWardAccessSnapshot } from "./shell/ward-access-store";
+import { useWardPartialDisplayHost } from "./ward-partial-view";
+import { useCanOpenHref } from "./shell/ward-access";
+import { canDispatch } from "./ward-role-permissions";
 import type { WardGlobalSearchProps } from "./ward-global-search";
 import styles from "./ward-global-search.module.css";
 // The palette's preview styles stay in the shell's own stylesheet, in the same order as before, so
@@ -39,7 +43,37 @@ const SearchLoaded = dynamic(() => loadSearch().then((m) => m.WardGlobalSearch))
  */
 export function WardGlobalSearch(props: WardGlobalSearchProps) {
   const desk = useEffectiveWardAccess();
-  return <DeskSearch key={`${desk.role}:${JSON.stringify(desk.scope)}`} {...props} />;
+  const access = useWardAccessSnapshot();
+  const host = useWardPartialDisplayHost();
+  const canOpenHref = useCanOpenHref();
+  const canRunAction = useCallback(
+    (action: "new-referral" | "add-patient" | "advance-clock") =>
+      action === "advance-clock"
+        ? desk.role === "coordinator"
+        : desk.role !== "admin" &&
+          canDispatch(desk.role, action === "new-referral" ? "RECEIVE_REFERRAL" : "ADD_PATIENT"),
+    [desk.role],
+  );
+  const active = (until: number) => props.now === undefined || until > props.now;
+  const accessLifetime =
+    host.shared && host.accessContext === null
+      ? null
+      : JSON.stringify({
+          shared: host.shared,
+          context: host.accessContext,
+          desk,
+          openings: access.records.filter((record) => active(record.until)).map(({ id, until }) => [id, until]),
+          covers: access.covers.filter((cover) => active(cover.until)).map(({ id, until }) => [id, until]),
+        });
+  return (
+    <DeskSearch
+      key={accessLifetime ?? "unavailable"}
+      {...props}
+      accessLifetime={accessLifetime}
+      canOpenHref={canOpenHref}
+      canRunAction={canRunAction}
+    />
+  );
 }
 
 function DeskSearch(props: WardGlobalSearchProps) {

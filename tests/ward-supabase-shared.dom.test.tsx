@@ -8,6 +8,8 @@ import {
 import { SIGNED_OUT_NOTICE } from "../src/components/ward-management/front-door/front-door-notice";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { SharedWorkspaceClient } from "../src/components/ward-management/ward-shared-client";
+import { useWardSupabaseShared } from "../src/components/ward-management/use-ward-supabase-shared";
+import type { WardBrowserAuthAdapter } from "../src/components/ward-management/ward-supabase-auth";
 import { releasePhonePush } from "../src/components/ward-management/shell/ward-phone-push";
 vi.mock("../src/components/ward-management/shell/ward-phone-push", async (original) => {
   const actual = await original<typeof import("../src/components/ward-management/shell/ward-phone-push")>();
@@ -16,6 +18,35 @@ vi.mock("../src/components/ward-management/shell/ward-phone-push", async (origin
 import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical-values";
 import { WARD_AUTH_STORAGE_KEY } from "../src/components/ward-management/ward-supabase-auth";
 const user = { id: "12345678-1234-1234-1234-123456789abc" };
+
+function mutableAuth() {
+  let account: string | null = user.id;
+  const adapter: WardBrowserAuthAdapter = {
+    get userId() {
+      return account;
+    },
+    isRecovery: false,
+    accountEmail: "synthetic@example.invalid",
+    restore: async () => {},
+    signIn: async () => {},
+    signUp: async () => {},
+    recover: async () => {},
+    updatePassword: async () => {},
+    reauthenticate: async () => {},
+    token: async () => "synthetic-access",
+    captureAccessTokenForSignOut: () => null,
+    signOut: async () => {
+      account = null;
+    },
+    dispose: () => {},
+  };
+  return {
+    adapter,
+    replace: (id: string | null) => {
+      account = id;
+    },
+  };
+}
 function Probe({ enabled = true }: { enabled?: boolean }) {
   const connection = useWardShared(enabled);
   return (
@@ -46,6 +77,145 @@ afterEach(() => {
   sessionStorage.clear();
 });
 describe("Supabase shared sign-in", () => {
+  it.each(["operational", "executive"] as const)(
+    "hides the %s holder in the first render after Auth account replacement",
+    async (kind) => {
+      const auth = mutableAuth();
+      const state = seedWardFlowStateAt(0);
+      const access = { role: kind === "executive" ? "executive" : "coordinator", scope: { kind: "statewide" } };
+      const until = Date.now() + 120_000;
+      const aggregate =
+        kind === "executive"
+          ? await (async () => {
+              const { projectExecutiveReportingFoundation } =
+                await import("../src/components/ward-management/statistics/executive-statistics-projector");
+              const { wardPlaceLookup } = await import("../src/components/ward-management/ward-access-places");
+              return projectExecutiveReportingFoundation(
+                state,
+                { role: "executive", scope: { kind: "statewide" } },
+                {
+                  now: 642,
+                  dayZero: "2026-10-24T00:00:00Z",
+                  startedAt: "2026-10-24T00:00:00Z",
+                  places: wardPlaceLookup(state.units),
+                },
+              );
+            })()
+          : null;
+      const snapshot = aggregate
+        ? {
+            kind: "executive-aggregate",
+            dataMode: "prototype",
+            actorId: user.id,
+            revision: 1,
+            accessContext: "a".repeat(64),
+            accessUntil: until,
+            now: 642,
+            report: aggregate,
+            demoControls: false,
+          }
+        : {
+            dataMode: "prototype",
+            revision: 1,
+            now: 642,
+            payload: { version: 1, state, dayZero: "2026-10-24T00:00:00Z", startedAt: "2026-10-24T00:00:00Z" },
+          };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () => Response.json({ actorId: user.id, access, accessUntil: until, snapshot })),
+      );
+      const renders: boolean[] = [];
+      const hook = renderHook(() => {
+        const connection = useWardSupabaseShared(true, async () => auth.adapter);
+        renders.push(Boolean(connection.snapshot || connection.executiveSnapshot));
+        return connection;
+      });
+      await waitFor(() => expect(hook.result.current.status).toBe("ready"));
+      expect(renders.at(-1)).toBe(true);
+      auth.replace("replacement-synthetic-account");
+      const before = renders.length;
+      hook.rerender();
+      expect(renders.slice(before)).toEqual([false]);
+      expect(hook.result.current.snapshot).toBeNull();
+      expect(hook.result.current.executiveSnapshot).toBeNull();
+      hook.unmount();
+    },
+    20_000,
+  );
+
+  it("refuses a real authenticated workspace response without actual role metadata", async () => {
+    const auth = mutableAuth();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          actorId: user.id,
+          snapshot: {
+            dataMode: "prototype",
+            revision: 1,
+            now: 642,
+            payload: {
+              version: 1,
+              state: seedWardFlowStateAt(0),
+              dayZero: "2026-10-24T00:00:00Z",
+              startedAt: "2026-10-24T00:00:00Z",
+            },
+          },
+        }),
+      ),
+    );
+    const hook = renderHook(() => useWardSupabaseShared(true, async () => auth.adapter));
+    await waitFor(() => expect(hook.result.current.status).toBe("unavailable"));
+    expect(hook.result.current.snapshot).toBeNull();
+    expect(hook.result.current.executiveSnapshot).toBeNull();
+    hook.unmount();
+  });
+
+  it("clears the rendered holder when Auth changes during an in-flight poll", async () => {
+    const auth = mutableAuth();
+    const body = {
+      actorId: user.id,
+      access: { role: "coordinator", scope: { kind: "statewide" } },
+      snapshot: {
+        dataMode: "prototype",
+        revision: 1,
+        now: 642,
+        payload: {
+          version: 1,
+          state: seedWardFlowStateAt(0),
+          dayZero: "2026-10-24T00:00:00Z",
+          startedAt: "2026-10-24T00:00:00Z",
+        },
+      },
+    };
+    let finish!: (response: Response) => void;
+    let reads = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) => {
+        if (String(url).includes("/v1/workspace?") && ++reads === 1)
+          return new Promise<Response>((resolve) => {
+            finish = resolve;
+          });
+        return Response.json(body);
+      }),
+    );
+    const hook = renderHook(() => useWardSupabaseShared(true, async () => auth.adapter));
+    await waitFor(() => expect(hook.result.current.status).toBe("ready"));
+    await act(async () => {
+      const pending = hook.result.current.client.current!.refresh();
+      await waitFor(() => expect(finish).toBeDefined());
+      auth.replace("replacement-synthetic-account");
+      finish(Response.json(body));
+      await pending;
+    });
+    expect(hook.result.current.snapshot).toBeNull();
+    expect(hook.result.current.executiveSnapshot).toBeNull();
+    expect(hook.result.current.status).toBe("unavailable");
+    expect(hook.result.current.client.current).toBeNull();
+    hook.unmount();
+  });
+
   it.each(["entra", "supabase"])("makes no Auth, workspace or storage requests in %s demo", (provider) => {
     vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", provider);
     sessionStorage.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify({ access_token: "synthetic-expired-session" }));
@@ -234,7 +404,7 @@ it("disposes the old provider and starts without its signed-in state", async () 
   const fetcher = vi.fn<typeof fetch>(async (url) =>
     Response.json(
       String(url).includes("/v1/workspace")
-        ? { snapshot }
+        ? { snapshot, actorId: user.id, access: { role: "coordinator", scope: { kind: "statewide" } } }
         : String(url).endsWith("/user")
           ? user
           : { access_token: "synthetic-access", refresh_token: "synthetic-refresh", expires_in: 3600 },
@@ -289,7 +459,7 @@ it("disposes the board immediately while phone cleanup is unresolved", async () 
     "fetch",
     vi.fn(async (url) =>
       String(url).includes("/v1/workspace")
-        ? Response.json({ snapshot })
+        ? Response.json({ snapshot, actorId: user.id, access: { role: "coordinator", scope: { kind: "statewide" } } })
         : String(url).endsWith("/user")
           ? Response.json(user)
           : String(url).includes("/logout")
@@ -440,7 +610,7 @@ it("pauses 3-second polling while document is hidden and refreshes immediately w
   };
   const fetcher = vi.fn(async (url: string | URL | Request) =>
     String(url).includes("/v1/workspace")
-      ? Response.json({ snapshot })
+      ? Response.json({ snapshot, actorId: user.id, access: { role: "coordinator", scope: { kind: "statewide" } } })
       : String(url).endsWith("/user")
         ? Response.json(user)
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
