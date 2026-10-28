@@ -8,7 +8,7 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
-import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { Button, Dialog, useOptionalToast } from "@/components/wf";
 
 /**
@@ -47,38 +47,56 @@ function ReleaseOwnershipControl({
   function confirm() {
     setAsking(false);
     const inboxItemId = item.id;
-    const say = (outcome: WardCommandOutcome) => {
-      if (outcome.isCurrent && !outcome.isCurrent()) return;
-      if (outcome.status !== "accepted") {
-        toast?.push({
-          tone: "warning",
-          title:
-            outcome.status === "refused"
-              ? `Not recorded: ${outcome.message ?? "The action was refused."}`
-              : (outcome.message ?? SAVE_NOT_CONFIRMED),
-        });
-        return;
-      }
+    const complete = (result: ReturnType<WardCommandDispatch>, accepted: (outcome: WardCommandOutcome) => void) => {
+      const failed = () => toast?.push({ tone: "warning", title: SAVE_NOT_CONFIRMED });
+      const read = (outcome: WardCommandOutcome): void => {
+        if (outcome.isCurrent && !outcome.isCurrent()) return;
+        if (outcome.confirmation) {
+          void outcome.confirmation.then(read, failed);
+          return;
+        }
+        if (outcome.status === "accepted") accepted(outcome);
+        else
+          toast?.push({
+            tone: "warning",
+            title:
+              outcome.status === "refused"
+                ? `Not recorded: ${outcome.message ?? "The action was refused."}`
+                : (outcome.message ?? SAVE_NOT_CONFIRMED),
+          });
+      };
+      const completion = confirmedWardCommand(result);
+      if ("then" in completion) void completion.then(read, failed);
+      else read(completion);
+    };
+    complete(raiseRef.current("RELEASE_INBOX_ITEM_OWNERSHIP", { inboxItemId }), (outcome) => {
       toast?.push({
         tone: "success",
         title: `Released ${item.title}`,
         undo: {
           durationMs: UNDO_TOAST_MS,
           onUndo: () => {
-            if (outcome.isCurrent && !outcome.isCurrent()) return;
-            if (outcome.canUndo && !outcome.canUndo()) return false;
-            raiseRef.current("TAKE_INBOX_ITEM_OWNERSHIP", { inboxItemId });
+            if (outcome.isCurrent && !outcome.isCurrent()) {
+              toast.push({
+                tone: "warning",
+                title: "Undo is unavailable because the workspace or working role changed. Review the current board.",
+              });
+              return;
+            }
+            if (outcome.canUndo && !outcome.canUndo()) {
+              toast.push({
+                tone: "warning",
+                title:
+                  "Undo is unavailable until the shared board is ready. Wait for it to reconnect, then check the board.",
+              });
+              return false;
+            }
+            complete(raiseRef.current("TAKE_INBOX_ITEM_OWNERSHIP", { inboxItemId }), () => {});
             return;
           },
         },
       });
-    };
-    const completion = confirmedWardCommand(raiseRef.current("RELEASE_INBOX_ITEM_OWNERSHIP", { inboxItemId }));
-    if ("then" in completion) {
-      void completion.then(say, () => toast?.push({ tone: "warning", title: SAVE_NOT_CONFIRMED }));
-    } else {
-      say(completion);
-    }
+    });
   }
 
   return (

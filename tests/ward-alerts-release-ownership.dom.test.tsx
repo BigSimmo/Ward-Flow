@@ -132,6 +132,28 @@ describe("shared Release confirmation and Undo lifetime", () => {
     expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
   });
 
+  it("follows a recovered uncertain save to its definitive answer", async () => {
+    let resolve!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((done) => {
+      resolve = done;
+    });
+    confirmSyntheticRelease(() => ({ commandId: "release", status: "failed", confirmation }));
+    expect(screen.queryByText("Released Synthetic alert")).toBeNull();
+    await act(async () => resolve({ commandId: "release", status: "accepted" }));
+    expect(screen.getByText("Released Synthetic alert")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
+  });
+
+  it("explains a refused retake from Undo", () => {
+    confirmSyntheticRelease((event) =>
+      event.type === "RELEASE_INBOX_ITEM_OWNERSHIP"
+        ? { commandId: "release", status: "accepted" }
+        : { commandId: "retake", status: "refused", message: "Synthetic alert is held elsewhere." },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.getByText(/Synthetic alert is held elsewhere/)).toBeTruthy();
+  });
+
   it.each(["isCurrent", "canUndo"] as const)("does not retake an alert after %s becomes false", (fence) => {
     let current = true;
     const dispatch = vi.fn<WardCommandDispatch>(() => ({
