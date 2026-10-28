@@ -2220,11 +2220,10 @@ button.gLaneL:hover {
   }
 
   .fRow {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: var(--wf-s-2);
     margin-bottom: var(--wf-s-3);
-    overflow-x: auto;
-    scrollbar-width: none;
+    overflow-x: visible;
   }
 
   .fRow > .eyebrow {
@@ -2601,6 +2600,19 @@ button.gLaneL:hover {
   .statL {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 24rem) {
+  .stat,
+  .stat:nth-child(odd) {
+    padding: 6px 6px;
+  }
+
+  .statL {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
   }
 }
 

@@ -2357,6 +2357,28 @@ details.refCard > summary {
   font-weight: 500;
 }
 
+.railJump {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 100%;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-weight: 600;
+  text-align: right;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.railJump:hover {
+  color: var(--wf-ink-1);
+}
+
 .summaryToggle {
   display: inline-flex;
 }

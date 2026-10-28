@@ -3,6 +3,7 @@
 .screen {
   --wf-page-canvas: var(--wf-canvas);
   min-width: 0;
+  overflow-x: hidden;
   background: var(--wf-canvas);
   color: var(--wf-ink-1);
   font-family: var(--wf-font);
@@ -685,8 +686,14 @@
   }
 
   .filterRow + .filterRow[data-open="true"] > div {
-    overflow-x: auto;
-    scrollbar-width: none;
+    max-width: 100%;
+    overflow-x: visible;
+  }
+
+  .filterRow + .filterRow[data-open="true"] [role="radiogroup"] {
+    flex-wrap: wrap;
+    height: auto;
+    max-width: 100%;
   }
 
   /* The Filters pill takes the shared phone pill size (`--wf-phone-*`): a 32px face with a

@@ -188,10 +188,6 @@
   .layout[data-open="true"] {
     grid-template-columns: minmax(0, 1fr);
   }
-
-  .side {
-    order: -1;
-  }
 }
 
 /* ---- Jobs card ---- */

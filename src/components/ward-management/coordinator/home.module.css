@@ -1711,7 +1711,7 @@ button.registerRow:hover {
    pinned under the header, and the queue as one list card with inset overdue markers. Phone only. */
 @media (max-width: 48rem) {
   .body {
-    padding: var(--wf-s-3) var(--wf-s-4);
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
     /* The shared phone server band (hero.module.css) takes these sides, so Home's hero paints at
        its measured place on the first frame. */
     --wf-band-phone-x: var(--wf-s-4);
@@ -1926,7 +1926,13 @@ button.registerRow:hover {
 
   /* The switch runs the full width (the Soon chip is not on the phone) with 12px before the rows. */
   .queueTools {
+    flex-wrap: wrap;
     margin-bottom: var(--wf-s-3);
+  }
+
+  .queueSeg > * {
+    min-width: 0;
+    padding-inline: var(--wf-s-2);
   }
 }
 

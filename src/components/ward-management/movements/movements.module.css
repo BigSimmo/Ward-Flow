@@ -2190,12 +2190,13 @@
 }
 
 @media (max-width: 48rem) {
-  /* Needs you head on one line: the uppercase label left, "3 of 18 Tier 1" right. */
+  /* Needs you head on one line when room permits; wraps cleanly at 320px so "3 of 18 Tier 1" never overlaps its link. */
   .needsYouHead.needsYouHead {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--wf-s-2);
+    gap: var(--wf-s-1) var(--wf-s-2);
     padding: var(--wf-s-2) var(--wf-s-4);
     background: var(--wf-surface-2);
   }
@@ -2208,7 +2209,8 @@
   }
 
   .needsYouMeta {
-    white-space: nowrap;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }
 
