@@ -157,6 +157,18 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe("workspace host actual authority before operational construction", () => {
+  it("keeps one access object across a refresh with the same role and place, so the idle lock is not reset", () => {
+    const seen: ReturnType<typeof useEffectiveWardAccess>[] = [];
+    function AccessProbe() {
+      seen.push(useEffectiveWardAccess());
+      return null;
+    }
+    const view = render(host(connection(), <AccessProbe />));
+    // A poll hands over a fresh connection whose access is equal but not the same object.
+    view.rerender(host(connection({ access: { role: "executive", scope: { kind: "statewide" } } }), <AccessProbe />));
+    expect(seen.length).toBeGreaterThan(1);
+    expect(new Set(seen).size).toBe(1);
+  });
   it("uses only the aggregate for an actual executive even when the local feature flag is off", () => {
     render(host(connection()));
     expect(screen.getByTestId("report")).toHaveTextContent(String(NOW_ANCHOR));

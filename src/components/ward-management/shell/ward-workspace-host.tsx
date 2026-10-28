@@ -88,7 +88,10 @@ function ConnectedWorkspaceHost({
   executiveChildren,
   initialDayZero,
 }: WorkspaceHostProps & { connection: WardSharedConnection }) {
-  const access = parseStoredAccess(JSON.stringify(connection.access ?? null));
+  // One object while the role and place stay the same: a poll hands over a fresh copy every few
+  // seconds, and consumers keyed on access (the idle lock's clock) must not restart for it.
+  const accessKey = JSON.stringify(connection.access ?? null);
+  const access = useMemo(() => parseStoredAccess(accessKey), [accessKey]);
   if (!connection.enabled)
     return (
       <WardFlowProvider sharedConnection={connection} initialDayZero={initialDayZero}>
