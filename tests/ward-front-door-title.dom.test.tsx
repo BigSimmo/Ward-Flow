@@ -14,4 +14,20 @@ describe("front door tab title", () => {
     render(<FrontDoor form={undefined} demoUrl={null} />);
     expect(document.title).toBe("Sign in — Ward Flow");
   });
+
+  it("puts the page's title back when the sign-in screen goes, as after signing back in at the same address", () => {
+    document.title = "Patients — Ward Flow";
+    const view = render(<FrontDoor form={undefined} demoUrl={null} />);
+    expect(document.title).toBe("Sign in — Ward Flow");
+    view.unmount();
+    expect(document.title).toBe("Patients — Ward Flow");
+  });
+
+  it("leaves a title the next page has already set", () => {
+    document.title = "Patients — Ward Flow";
+    const view = render(<FrontDoor form={undefined} demoUrl={null} />);
+    document.title = "Referrals — Ward Flow";
+    view.unmount();
+    expect(document.title).toBe("Referrals — Ward Flow");
+  });
 });
