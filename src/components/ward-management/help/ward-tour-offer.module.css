@@ -1,0 +1,31 @@
+/* P188: the small card that offers the tour on a desk's first visit, instead of opening it. */
+.offer {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  pointer-events: auto;
+  max-width: min(22.5rem, calc(100vw - 2rem));
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+}
+
+/* Above the phone's bottom tab bar, as the what's new note does. */
+@media (width <= 640px) {
+  .offer {
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.text {
+  margin: 0 0 0.625rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}

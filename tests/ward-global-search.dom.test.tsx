@@ -311,6 +311,14 @@ describe("WardGlobalSearch", () => {
     expect(onNavigate).toHaveBeenCalledWith(patientHref(targetPatient.id));
   });
 
+  it("P141: clears the search box after a result opens", () => {
+    renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: personQuery } });
+    fireEvent.click(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`), { button: 0 });
+    expect(input).toHaveValue("");
+  });
+
   it("requires a fresh selection when a new query still has results", () => {
     const { onNavigate } = renderSearch();
     const input = screen.getByTestId("ward-global-search-input");
@@ -682,7 +690,9 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.click(screen.getByTestId(`ward-global-search-result-person-${targetPatient.id}`), { button: 0 });
     expect(onNavigate).toHaveBeenCalledWith(patientHref(targetPatient.id));
 
-    fireEvent.change(input, { target: { value: "" } });
+    // P141: the box is already empty after opening; focusing it again shows the start screen.
+    expect(input).toHaveValue("");
+    fireEvent.focus(input);
     expect(screen.getByTestId("ward-global-search-group-recent")).toHaveTextContent("Recent");
     expect(
       within(screen.getByTestId("ward-global-search-popup")).getByTestId(

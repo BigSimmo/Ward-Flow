@@ -18,6 +18,10 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import { edPressure } from "@/components/ward-management/ward-pressure";
 import {
+  BEDS_READY_SCOPED_TITLE,
+  coordinatorOwnsAcceptedAwaitingBed,
+  inEdTierOverdue,
+  isTierOneOpen,
   isTierOverdue,
   notWaitingMoreText,
   notWaitingParts,
@@ -27,7 +31,12 @@ import {
   waitingSplit,
 } from "@/components/ward-management/ward-shared-figures";
 import { boardRows } from "@/components/ward-management/delays/delays-board-model";
-import { delayGroups } from "@/components/ward-management/delays/delays-derivations";
+import { causeOf, delayGroups, ownerOf } from "@/components/ward-management/delays/delays-derivations";
+import { HANDOVER_ME, toHandoverRow } from "@/components/ward-management/handover/handover-model";
+import { movementNextStep } from "@/components/ward-management/movements/movement-next-step";
+import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
+import { queueOrder } from "@/components/ward-management/ward-priority";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
@@ -181,5 +190,66 @@ describe("the shared figures agree on the seed (hero, chip, badge and list)", ()
       ).length;
     expect(sinceLastLookCount(changes)).toBeGreaterThanOrEqual(opened);
     expect(opened, "the seed has activity since the shift began").toBeGreaterThan(0);
+  });
+});
+
+/**
+ * P002, P032 (Josh, 27 Oct 2026, "Go ahead with all recommendations"). One seed: Home, Movements
+ * and Patients count Tier 1 as every open journey at tier 1 (in transit included); Overdue waits
+ * count people still in an ED past their tier's window; an accepted patient still waiting for the
+ * bed is the coordinator's on Waiting, Movements, Patients and Handover.
+ */
+const DAY_ZERO = new Date("2026-10-01T00:00:00+08:00");
+
+describe("one Tier 1 and Overdue count everywhere (P002), one owner for accepted awaiting a bed (P032)", () => {
+  const state = seedWardFlowState();
+  const now = NOW_ANCHOR;
+  const open = state.movements.filter(isOpen);
+
+  it("Home's queue, Movements' Tier 1 now and the Patients census count the same Tier 1 journeys", () => {
+    const home = queueOrder(state.movements, now).filter(isTierOneOpen).length;
+    const movements = open.filter(isTierOneOpen).length;
+    const census = buildCensus({ ...state, now, thresholds: DEFAULT_DUE_SOON_THRESHOLDS, dayZero: DAY_ZERO });
+    const patients = census.rows.filter((row) => row.kind === "movement" && row.tier === 1).length;
+    expect(home, "the seed has Tier 1 journeys").toBeGreaterThan(0);
+    expect(movements, "Movements vs Home").toBe(home);
+    expect(patients, "Patients vs Home").toBe(home);
+    expect(
+      open.some((m) => isTierOneOpen(m) && !isWaitingInEd(m)),
+      "in transit counts too, so the rule is not just waiting in ED",
+    ).toBe(true);
+  });
+
+  it("Overdue waits count only people still in an ED, past their tier's window", () => {
+    const overdue = open.filter((m) => inEdTierOverdue(m, now));
+    expect(overdue.length, "the seed has overdue waits").toBeGreaterThan(0);
+    for (const m of overdue) expect(isWaitingInEd(m) && isTierOverdue(m.urgency, now - m.openedAt)).toBe(true);
+    const pastWindowNotInEd = open.filter((m) => !isWaitingInEd(m) && isTierOverdue(m.urgency, now - m.openedAt));
+    expect(pastWindowNotInEd.length, "the seed has people past the window who already left the ED").toBeGreaterThan(0);
+    for (const m of pastWindowNotInEd) expect(inEdTierOverdue(m, now)).toBe(false);
+  });
+
+  it("accepted, awaiting a bed: Waiting on you, Pull the bed, Bed desk and Coordinator on Handover", () => {
+    const accepted = open.filter(coordinatorOwnsAcceptedAwaitingBed);
+    expect(
+      accepted.some((m) => m.owner === "ED mental health team"),
+      "the seed records some of them against the ED team",
+    ).toBe(true);
+    const census = buildCensus({ ...state, now, thresholds: DEFAULT_DUE_SOON_THRESHOLDS, dayZero: DAY_ZERO });
+    for (const m of accepted) {
+      const cause = causeOf(m, state.units, now, DEFAULT_DUE_SOON_THRESHOLDS);
+      expect(ownerOf(cause), `${m.id} on Waiting`).toBe("yours");
+      expect(movementNextStep(m)?.owner, `${m.id} on Movements`).toBe("Coordinator");
+      expect(census.rows.find((row) => row.key === m.id)?.nextWho, `${m.id} on Patients`).toBe("Bed desk");
+      const handover = toHandoverRow(m, state.units, state.patients, state.referrals);
+      expect(handover.owner, `${m.id} on Handover`).toBe(HANDOVER_ME);
+      expect(handover.ownerShort, `${m.id} on Handover`).toBe("Coordinator");
+    }
+  });
+});
+
+describe("Beds ready names whose admissions it counts (P028)", () => {
+  it("the scoped label says the beds are statewide and the admissions are this desk's", () => {
+    expect(BEDS_READY_SCOPED_TITLE).toBe("Beds ready statewide (your desk's admissions)");
   });
 });

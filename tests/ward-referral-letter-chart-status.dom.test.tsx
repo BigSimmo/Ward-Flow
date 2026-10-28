@@ -104,9 +104,11 @@ describe("chart status through the real drawer text input and copy controls", ()
     expect(letter).not.toContain("synthetic.pdf");
   });
 
-  it("omits chart status for community referrals and does not invent missing chart answers", async () => {
+  it("lists unattached charts as to follow (finding 42) and omits chart status for community referrals", async () => {
     setup();
-    expect(await copiedLetter()).not.toMatch(/Medication chart|Observation chart/u);
+    const draft = await copiedLetter();
+    expect(draft).toContain("Medication chart to follow, not attached yet");
+    expect(draft).toContain("Observation chart to follow, not attached yet");
     act(() => {
       state.setDocumentation({ ...EMPTY_DOCUMENTATION, toFollow: ["medication", "observation"] });
       state.chooseDestination("community");

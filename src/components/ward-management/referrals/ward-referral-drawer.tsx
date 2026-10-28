@@ -146,6 +146,8 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
                 {previewOpen ? <ReferralLetterPreview s={s} /> : null}
                 {confirmationOpen && !previewOpen && <ReferralConfirmation s={s} />}
 
+                {/* P151: one legend for the asterisk on required labels. */}
+                <p className={styles.fieldHint}>* Required</p>
                 <ReferralPatientStep s={s} alreadyOpen={alreadyOpen} alreadyOpenHref={alreadyOpenHref} />
 
                 <ReferralDetailsStep s={s} />

@@ -162,7 +162,7 @@ describe("missedRequestCheck", () => {
   });
 });
 
-describe('"Checked, all accounted for" (overall review, 20 Oct 2026)', () => {
+describe('Daily check "Mark all checked" (overall review, 20 Oct 2026; P027 wording)', () => {
   const complete = (state: ReturnType<typeof seedWardFlowState>, inboxItemId: string, role = "coordinator") =>
     wardFlowReducer(state, { type: "COMPLETE_INBOX_ITEM", role: role as "coordinator", now: NOW + 5, inboxItemId });
 
@@ -192,5 +192,36 @@ describe('"Checked, all accounted for" (overall review, 20 Oct 2026)', () => {
     expect(complete(state, dailyCheckId(NOW), "ward").rejections).toHaveLength(1);
     expect(complete(state, "daily-check-WF-001").rejections).toHaveLength(1);
     expect(complete(state, "daily-check-day-1.5").rejections).toHaveLength(1);
+  });
+});
+
+describe("Patients groups: every asked ward declined or withdrew (Josh, 27 Oct 2026, 11:03 PM)", () => {
+  it("keeps the bed request in the asked group, not 'No ward asked yet'", async () => {
+    const { buildCensus } = await import("@/components/ward-management/search/patient-census");
+    const { dueSoonThresholdsOf, demoDayZero } = await import("@/components/ward-management/ward-clock");
+    const { NOW_ANCHOR } = await import("@/components/ward-management/ward-sites");
+    const { state, movement } = fixture();
+    const unitA = state.units[0]!.id;
+    const unitB = state.units[1]!.id;
+    const declined = movement("M-ALL-DECLINED", {
+      openedAt: (NOW_ANCHOR - 60) as Movement["openedAt"],
+      referredAt: (NOW_ANCHOR - 50) as Movement["openedAt"],
+      referredUnitIds: [],
+      declines: [{ unitId: unitA, at: (NOW_ANCHOR - 40) as Movement["openedAt"] }],
+      withdrawnReferrals: [
+        { unitId: unitB, at: (NOW_ANCHOR - 30) as Movement["openedAt"], reason: "coordinator_withdrew" },
+      ],
+    });
+    const neverAsked = movement("M-NEVER-ASKED", { openedAt: (NOW_ANCHOR - 60) as Movement["openedAt"] });
+    const census = buildCensus({
+      ...state,
+      movements: [declined, neverAsked],
+      now: NOW_ANCHOR,
+      thresholds: dueSoonThresholdsOf(state.configuration),
+      dayZero: demoDayZero(new Date("2026-10-19T00:00:00Z")),
+    });
+    const groupOf = (id: string) => census.rows.find((row) => row.key === id)?.group;
+    expect(groupOf("M-NEVER-ASKED")).toBe("ask");
+    expect(groupOf("M-ALL-DECLINED")).toBe("wait");
   });
 });

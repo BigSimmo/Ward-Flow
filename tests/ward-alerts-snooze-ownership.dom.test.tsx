@@ -67,7 +67,8 @@ describe("alerts: ownership and snooze", () => {
     expect(screen.getByText(/^You own "/)).toBeInTheDocument();
 
     expect(within(panel).queryByRole("button", { name: /^Take / })).toBeNull();
-    expect(within(panel).getByRole("button", { name: /^Yours: / })).toHaveAttribute("aria-disabled", "true");
+    // P019: the owner is offered Release in place of the greyed "Yours".
+    expect(within(panel).getByRole("button", { name: /^Release (?!pulled bed)/ })).toHaveTextContent("Release");
     expect(within(panel).getByText(/Owned by Bed coordinator since/)).toBeInTheDocument();
   });
 

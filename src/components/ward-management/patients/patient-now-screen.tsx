@@ -677,7 +677,7 @@ export function PatientNowScreen({
   }
   // Leave, gone to ED and the discharge date, from the change card. Each remembers where the
   // rejection list stood, so the card can say when the engine refused.
-  function recordLeave(expectedReturn: number, kind: LeaveKind) {
+  function recordLeave(expectedReturn: number, kind: LeaveKind, psychiatristAuthorised?: boolean) {
     const stay = resolved?.liveAdmission;
     if (!stay || !gate("RECORD_LEAVE_BED").allowed) return;
     setWardAttemptFor({ admissionId: stay.id, start: rejections.length });
@@ -690,6 +690,8 @@ export function PatientNowScreen({
       admissionId: stay.id,
       expectedReturn,
       kind,
+      // #101 (Josh, 27 Oct 2026): the authority tick, asked only for a patient on an order.
+      ...(psychiatristAuthorised === undefined ? {} : { psychiatristAuthorised }),
     });
     setWardForm("none");
   }
