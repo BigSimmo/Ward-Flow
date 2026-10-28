@@ -208,7 +208,7 @@ export function BroadcastComposer({
           </Field>
 
           <div className={styles.previewBlock}>
-            <span className={styles.drawerSectionTitle}>Preview on every desk</span>
+            <span className={styles.drawerSectionTitle}>Preview for the chosen scope</span>
             <div className={styles.previewCard}>
               <StatusGlyph
                 tone={
@@ -228,7 +228,7 @@ export function BroadcastComposer({
             id="alerts-broadcast-safeguard"
             checked={broadcastConfirmed}
             onChange={(e) => setBroadcastConfirmed(e.target.checked)}
-            label="I confirm this directive is clinically authorised for immediate statewide network broadcast."
+            label="I confirm this directive is clinically authorised for immediate broadcast to the chosen scope."
           />
         </div>
         <div className={styles.drawerFoot}>
