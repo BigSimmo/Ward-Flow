@@ -96,10 +96,15 @@ export type WardCredentialForm = {
   /** What `message` is, so the sign-in screen can say it in the right tone. */
   messageKind?: WardCredentialMessageKind | null;
   signIn: (email: string, password: string) => Promise<void>;
+  /** P191: present after a blocked saved sign-in, so Try again retries it in place without a reload. */
+  retry?: () => void;
   recover: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   cancel: () => void;
 };
+/** P191 (Josh, 27 Oct 2026): a blocked saved sign-in is retried quietly after these waits first. */
+const RESTORE_RETRY_MS = [2_000, 5_000, 10_000];
+const restoreBlocked = (error: unknown) => !(error instanceof WardAuthError) || error.kind === "unavailable";
 const emptyView: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
 /** Which of this account's roles this tab works as: a membership id or "bootstrap", nothing else. */
 const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
@@ -142,6 +147,8 @@ export function useWardSupabaseShared(
   const [firstRead, setFirstRead] = useState(false);
   /** What the sign-in screen says after a deliberate sign-out; cleared by the next sign-in step. */
   const [farewell, setFarewell] = useState<string | null>(null);
+  // P191: the saved sign-in check stayed blocked after its quiet retries, so Try again retries it.
+  const [restoreFailed, setRestoreFailed] = useState(false);
   const [form, setForm] = useState<{
     open: boolean;
     recovery: boolean;
@@ -180,6 +187,9 @@ export function useWardSupabaseShared(
   useEffect(() => {
     if (!enabled) return;
     let closed = false;
+    // P191: set once Try again is pressed, so the quiet startup retries stop and cannot restore (and
+    // reconnect) a second time over a connection the manual retry has already opened.
+    let manualRetryTook = false;
     let timer: ReturnType<typeof setInterval> | undefined;
     let onVisibilityChange: (() => void) | undefined;
     let auth: WardBrowserAuthAdapter | null = null;
@@ -475,11 +485,18 @@ export function useWardSupabaseShared(
           },
           retry: () =>
             run(async () => {
+              manualRetryTook = true;
               if (connection.current) {
                 await connection.current.retry();
                 return;
               }
-              await auth!.restore();
+              try {
+                await auth!.restore();
+              } catch (error) {
+                if (!closed && restoreBlocked(error)) setRestoreFailed(true);
+                throw error;
+              }
+              if (!closed) setRestoreFailed(false);
               if (auth!.isRecovery) {
                 setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth!.accountEmail }));
                 setView({ ...emptyView, status: "ready" });
@@ -511,8 +528,22 @@ export function useWardSupabaseShared(
           fail(fragmentError);
           return;
         }
-        await auth.restore(recovery);
-        if (closed) return;
+        // P191: a blocked check is retried quietly behind the connecting screen before anything shows.
+        for (let attempt = 0; ; attempt += 1) {
+          try {
+            await auth.restore(recovery);
+            break;
+          } catch (error) {
+            if (manualRetryTook) return;
+            if (closed || attempt >= RESTORE_RETRY_MS.length || !restoreBlocked(error)) {
+              if (!closed && restoreBlocked(error)) setRestoreFailed(true);
+              throw error;
+            }
+            await new Promise((resolve) => setTimeout(resolve, RESTORE_RETRY_MS[attempt]));
+            if (closed || manualRetryTook) return;
+          }
+        }
+        if (closed || manualRetryTook) return;
         if (auth.isRecovery) {
           setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth?.accountEmail ?? null }));
           setView({ ...emptyView, status: "ready" });
@@ -583,6 +614,7 @@ export function useWardSupabaseShared(
       signIn: async (email: string, password: string) => {
         await actions.current?.signIn(email, password);
       },
+      retry: restoreFailed ? () => void actions.current?.retry() : undefined,
       recover: async (email: string) => {
         await actions.current?.recover(email);
       },

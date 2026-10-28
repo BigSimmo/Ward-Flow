@@ -40,6 +40,9 @@ export const UNDO_WINDOW_MINUTES = 5;
 /** How long an Undo toast stays on screen (pass 2 engine: 8 seconds). The engine's
  *  `UNDO_WINDOW_MINUTES` still decides whether an undo is accepted. */
 export const UNDO_TOAST_MS = 8000;
+/** How long the Undo toast stays up after "Arrived at ward" on a pulled-bed alert: Josh approved 10 seconds
+ *  for that step (P069, 27 Oct 2026). Undo is still accepted for `UNDO_WINDOW_MINUTES`. */
+export const ARRIVED_AT_WARD_UNDO_TOAST_MS = 10_000;
 
 /** How often an open shared workspace asks for a fresh snapshot (a software setting, not a
  *  clinical figure). Add patient waits this long for its new record before finishing without it. */

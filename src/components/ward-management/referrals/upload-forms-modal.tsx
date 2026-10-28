@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Button } from "@/components/wf";
+import { Button, DisabledReason } from "@/components/wf";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { type UploadedFileType } from "@/components/ward-management/ward-model-vocabulary";
 import { uploadedFileTypeOf } from "@/components/ward-management/ward-uploaded-file";
@@ -38,7 +38,8 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
   const now = useWardFlowClock();
   const baseId = useId();
 
-  const [formName, setFormName] = useState<string>(FORM_TYPE_OPTIONS[0]);
+  // Lists open blank: the document type is chosen, never assumed from the first entry.
+  const [formName, setFormName] = useState<string>("");
   // Shown only while this dialog is open. The name is never sent or saved (H-0049).
   const [fileName, setFileName] = useState<string>("");
   const [fileType, setFileType] = useState<UploadedFileType>("Other");
@@ -75,7 +76,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!fileAttached || !fileName.trim() || simulatedSize <= 0 || pending.current) return;
+    if (!formName || !fileAttached || !fileName.trim() || simulatedSize <= 0 || pending.current) return;
     pending.current = true;
     setSaving(true);
     setSaveError(null);
@@ -211,6 +212,9 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
                 fontSize: "0.9375rem",
               }}
             >
+              <option value="" disabled>
+                Choose a document type
+              </option>
               {FORM_TYPE_OPTIONS.map((type) => (
                 <option key={type} value={type}>
                   {type}
@@ -286,10 +290,17 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               variant="pri"
               size="lg"
               loading={saving}
-              aria-disabled={saving || !fileAttached || simulatedSize <= 0 ? "true" : undefined}
-              onClick={saving || !fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined}
+              aria-disabled={saving || !formName || !fileAttached || simulatedSize <= 0 ? "true" : undefined}
+              onClick={
+                saving || !formName || !fileAttached || simulatedSize <= 0 ? ignoreUnavailableActivation : undefined
+              }
               aria-describedby={
-                !fileAttached || simulatedSize <= 0 ? `${baseId}-upload-forms-file-requirement` : undefined
+                [
+                  !formName ? `${baseId}-upload-forms-type-requirement` : "",
+                  !fileAttached || simulatedSize <= 0 ? `${baseId}-upload-forms-file-requirement` : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined
               }
               title={
                 !fileAttached || simulatedSize <= 0 ? "Select a non-empty PDF, JPEG or PNG file first." : undefined
@@ -299,6 +310,12 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
             >
               {saving ? "Saving…" : "Record document details"}
             </Button>
+            {/* The document type opens blank, so the button says it is waiting for one. */}
+            {!saving && !formName ? (
+              <DisabledReason id={`${baseId}-upload-forms-type-requirement`}>
+                Choose the document type first.
+              </DisabledReason>
+            ) : null}
           </div>
         </form>
       </div>

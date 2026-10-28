@@ -6,6 +6,7 @@ import {
   documentationError,
   documentationProblems,
   EMPTY_DOCUMENTATION,
+  intakeCharts,
   type DocumentationDraft,
 } from "@/components/ward-management/referrals/referral-flow-panels";
 import { ReferralDocumentLinks, chartsCountText } from "@/components/ward-management/referrals/referral-document-links";
@@ -72,14 +73,15 @@ describe("charts to follow", () => {
     }
   });
 
-  it("counts a chart marked to follow as answered on the Documents step", () => {
-    expect(documentationError(answered)).toMatch(/or mark them to follow/u);
-    expect(documentationProblems(answered, "doc").map((item) => item.text)).toEqual([
-      "Attach the medication chart or mark it to follow",
-    ]);
+  it("never holds the Documents step for a chart, and sends one not attached as to follow (finding 42)", () => {
+    expect(documentationError(answered)).toBeNull();
+    expect(documentationProblems(answered, "doc")).toEqual([]);
+    expect(documentationNeeded(answered)).toBe(0);
+    expect(intakeCharts(answered, false).chartsToFollow).toEqual(["medication"]);
     const marked = { ...answered, toFollow: ["medication" as const] };
     expect(documentationError(marked)).toBeNull();
-    expect(documentationNeeded(marked)).toBe(0);
+    expect(intakeCharts(marked, false).chartsToFollow).toEqual(["medication"]);
+    expect(intakeCharts(EMPTY_DOCUMENTATION, true).chartsToFollow).toBeUndefined();
   });
 
   it("names each required chart's To follow checkbox independently", () => {

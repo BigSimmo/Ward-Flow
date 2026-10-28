@@ -7,6 +7,7 @@ import {
   Card,
   CardBody,
   CardHead,
+  Dialog,
   DisabledReason,
   Field,
   Hero,
@@ -165,6 +166,11 @@ function WardCard({
   const roomStatus = recorded?.status;
   // Audit 24-3 SV-5: a refused room status is said beside these buttons, not only in the status line.
   const roomSave = useWardFormSave(ward.id);
+  // P090 (Josh, 27 Oct 2026, option A): both room status buttons ask first.
+  const [confirmRoom, setConfirmRoom] = useState<"available" | "out_of_service" | null>(null);
+  const askRoom = (status: "available" | "out_of_service") => {
+    if (roomStatus !== status) setConfirmRoom(status);
+  };
   const markRoom = (status: "available" | "out_of_service") =>
     roomStatus !== status &&
     roomSave.submit(
@@ -193,7 +199,7 @@ function WardCard({
               size="sm"
               variant="sec"
               aria-disabled={roomStatus === "available" ? "true" : undefined}
-              onClick={() => markRoom("available")}
+              onClick={() => askRoom("available")}
               data-testid="seclusion-room-available"
             >
               Mark available
@@ -202,13 +208,38 @@ function WardCard({
               size="sm"
               variant="sec"
               aria-disabled={roomStatus === "out_of_service" ? "true" : undefined}
-              onClick={() => markRoom("out_of_service")}
+              onClick={() => askRoom("out_of_service")}
               data-testid="seclusion-room-out-of-service"
             >
               Mark out of service
             </Button>
           </div>
           <SaveAnswer save={roomSave} testId="seclusion-room-failure" />
+          <Dialog
+            open={confirmRoom !== null}
+            onClose={() => setConfirmRoom(null)}
+            size="sm"
+            title={
+              confirmRoom === "out_of_service"
+                ? "Mark seclusion room out of service?"
+                : "Mark seclusion room available?"
+            }
+            description={
+              confirmRoom === "out_of_service"
+                ? `${ward.name}'s seclusion room will show as out of service to everyone until it is marked available again.`
+                : `${ward.name}'s seclusion room will show as available to everyone.`
+            }
+            secondary={[{ label: "Cancel", onAction: () => setConfirmRoom(null) }]}
+            primary={{
+              label: confirmRoom === "out_of_service" ? "Mark out of service" : "Mark available",
+              onAction: () => {
+                const status = confirmRoom;
+                setConfirmRoom(null);
+                if (status) markRoom(status);
+              },
+            }}
+            data-testid="seclusion-room-confirm"
+          />
         </section>
 
         <section className={styles.section} aria-labelledby={`${ward.id}-use`}>
