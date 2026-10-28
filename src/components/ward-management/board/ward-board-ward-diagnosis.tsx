@@ -69,7 +69,7 @@ export function WardDiagnosisControl({
       >
         Record the ward&apos;s diagnosis
       </button>
-      <p className={styles.personLine}>Kept beside the diagnosis the stay arrived with, never in place of it.</p>
+      <p className={styles.personLine}>Recorded alongside the arrival diagnosis; it does not replace it.</p>
     </form>
   );
 }

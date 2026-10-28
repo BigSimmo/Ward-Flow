@@ -226,8 +226,8 @@
   color: var(--ink);
 }
 .deck button,
-.deck input:not([type="checkbox"]),
-.deck select {
+.deck label > input:not([type="checkbox"]),
+.deck label > select {
   min-height: 44px;
   min-width: 44px;
 }
@@ -237,7 +237,8 @@
   color: var(--wf-ink-3);
   cursor: not-allowed;
 }
-.deck :is(button, summary, input, select):focus-visible {
+.deck :is(button, summary):focus-visible,
+.deck label > :is(input, select):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 3px;
 }
@@ -307,14 +308,14 @@
   margin: 0;
   font-size: 13px;
 }
-.deck label:not(.pick) {
+.deck label:not(.pick, .wardSearch):has(> input, > select) {
   display: grid;
   gap: 6px;
   font-size: 12px;
   margin: 10px 0;
 }
-.deck input:not([type="checkbox"]),
-.deck select {
+.deck label > input:not([type="checkbox"]),
+.deck label > select {
   width: 100%;
   border: 1px solid var(--line-strong);
   border-radius: 5px;
@@ -483,8 +484,8 @@
   padding: 12px;
   background: var(--good-soft);
 }
-.deck input:not([type="checkbox"]),
-.deck select {
+.deck label > input:not([type="checkbox"]),
+.deck label > select {
   border-radius: 9px;
 }
 .additional > summary {
@@ -710,8 +711,8 @@
   background: var(--surface-2);
   border-color: var(--line);
 }
-.deck input:not([type="checkbox"]),
-.deck select {
+.deck label > input:not([type="checkbox"]),
+.deck label > select {
   border-radius: 8px;
   min-height: 44px;
 }
@@ -721,8 +722,8 @@
 .correction > summary {
   font-size: var(--wf-fs-12);
 }
-.deck label {
-  font-size: var(--wf-fs-12);
+.deck label:not(.wardSearch):has(> input, > select) {
+  font-size: var(--wf-fs-13);
 }
 @media (max-width: 700px) {
   .deck {
@@ -931,23 +932,24 @@
   color: var(--wf-ink-1);
 }
 
-[data-ward-design="v6"] .deck :is(button, summary, input, select):focus-visible {
+[data-ward-design="v6"] .deck :is(button, summary):focus-visible,
+[data-ward-design="v6"] .deck label > :is(input, select):focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
 
-[data-ward-design="v6"] .deck input:not([type="checkbox"]),
-[data-ward-design="v6"] .deck select {
+[data-ward-design="v6"] .deck label > input:not([type="checkbox"]),
+[data-ward-design="v6"] .deck label > select {
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-form-control-radius);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
 }
 
-[data-ward-design="v6"] .deck label {
+[data-ward-design="v6"] .deck label:not(.wardSearch):has(> input, > select) {
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
+  font-size: var(--wf-fs-13);
 }
 
 [data-ward-design="v6"] .additional > summary,
@@ -982,9 +984,9 @@
   [data-ward-design="v6"] .deck .primary,
   [data-ward-design="v6"] .deck .secondary,
   [data-ward-design="v6"] .deck .danger,
-  [data-ward-design="v6"] .deck input:not([type="checkbox"]),
-  [data-ward-design="v6"] .deck select {
-    min-height: var(--wf-h-md);
+  [data-ward-design="v6"] .deck label > input:not([type="checkbox"]),
+  [data-ward-design="v6"] .deck label > select {
+    min-height: var(--wf-form-control-height);
   }
 
   [data-ward-design="v6"] .additional > summary {
@@ -1075,4 +1077,45 @@
 .askedRow {
   display: grid;
   gap: var(--wf-s-2);
+}
+
+/* Clear slate raw-editor adapter. Nested shared booking fields keep their own box/focus owner. */
+[data-ward-design="v6"] .deck label:not(.pick, .wardSearch):has(> input, > select) {
+  gap: var(--wf-form-field-gap);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+[data-ward-design="v6"] .deck label > input:not([type="checkbox"]),
+[data-ward-design="v6"] .deck label > select {
+  min-height: var(--wf-form-control-height);
+  border-radius: var(--wf-form-control-radius);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  font-weight: 400;
+}
+
+[data-ward-design="v6"] .deck label > :is(input, select)[aria-invalid="true"] {
+  border-color: var(--wf-danger);
+}
+
+/* Search is a compound control; its existing shell remains the sole edge and focus owner. */
+[data-ward-design="v6"] .deck .wardSearch input {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  [data-ward-design="v6"] .deck label > input:not([type="checkbox"]),
+  [data-ward-design="v6"] .deck label > select {
+    min-height: var(--wf-form-control-height-phone);
+    font-size: max(1rem, 16px);
+  }
+
+  [data-ward-design="v6"] .deck .wardSearch input {
+    min-height: 0;
+  }
 }

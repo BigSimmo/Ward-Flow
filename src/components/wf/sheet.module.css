@@ -1,7 +1,7 @@
 /*
- * v9 sheet material: sheet glass (86%, blur 32px) over a scrim, a top highlight, a soft sheen, e3 depth, hairline edges.
- * Layout, placement and motion stay in sheet.tsx. Tokens only. Falls back to a solid surface when
- * blur or transparency is unavailable. Rules sit in :where() so a caller's own class always wins.
+ * Clear slate sheet: solid reading surface with distinct header and action areas.
+ * Layout, placement, scroll ownership and motion stay in sheet.tsx. Rules sit in :where()
+ * so a caller's documented variant always wins.
  */
 :where(.backdrop) {
   background: var(--wf-scrim);
@@ -9,14 +9,9 @@
 
 :where(.panel) {
   color: var(--wf-ink-1);
-  background-color: var(--wf-glass-thick);
-  background-image: var(--wf-sheen);
-  -webkit-backdrop-filter: blur(32px) saturate(1.4);
-  backdrop-filter: blur(32px) saturate(1.4);
+  background-color: var(--wf-surface);
   border-color: var(--wf-line-2);
-  box-shadow:
-    inset 0 1px 0 var(--wf-glass-hl),
-    var(--wf-e3);
+  box-shadow: var(--wf-e2);
   font-family: var(--wf-font);
 }
 
@@ -30,31 +25,34 @@
 
 :where(.header) {
   border-color: var(--wf-line);
+  background: var(--wf-surface);
 }
 
 :where(.title) {
-  font-size: var(--wf-fs-15);
-  line-height: var(--wf-lh-15);
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
   font-weight: 600;
   letter-spacing: var(--wf-tr-15);
   color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
 }
 
 :where(.description) {
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
   color: var(--wf-ink-3);
+  overflow-wrap: anywhere;
 }
 
 :where(.close) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: var(--wf-h-md);
-  height: var(--wf-h-md);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-md);
-  background: transparent;
+  width: max(var(--wf-h-md), var(--wf-form-control-height));
+  height: max(var(--wf-h-md), var(--wf-form-control-height));
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
   color: var(--wf-ink-2);
   cursor: pointer;
 }
@@ -74,6 +72,7 @@
 
 :where(.footer) {
   border-color: var(--wf-line);
+  background: var(--wf-surface-2);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -85,6 +84,11 @@
 /* Phone (8 Oct 2026): no hardware keyboard, so the Esc hint leaves the header and the title gets
  * the room. Above 48rem the header is unchanged. */
 @media (max-width: 48rem) {
+  :where(.close) {
+    min-width: var(--spacing-tap, 3rem);
+    min-height: var(--spacing-tap, 3rem);
+  }
+
   .header kbd {
     display: none;
   }

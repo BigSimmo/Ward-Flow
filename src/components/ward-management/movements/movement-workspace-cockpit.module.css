@@ -997,3 +997,49 @@
 .coverageNote {
   margin-top: 4px;
 }
+
+/* Clear slate: native movement editors use the same field edge, density and focus as shared fields. */
+@media screen {
+  .controlRow {
+    gap: var(--wf-form-field-gap);
+  }
+
+  .controlSelect,
+  .blockerInput {
+    min-height: var(--wf-form-control-height);
+    height: auto;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-form-control-radius);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .controlSelect:focus-visible,
+  .blockerInput:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .controlSelect[aria-invalid="true"],
+  .blockerInput[aria-invalid="true"] {
+    border-color: var(--wf-danger-ink);
+  }
+
+  .controlSelect:disabled,
+  .blockerInput:disabled,
+  .blockerInput[readonly] {
+    border-style: dashed;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-off);
+  }
+}
+
+@media screen and (max-width: 48rem), screen and (pointer: coarse) {
+  .controlSelect,
+  .blockerInput {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    font-size: max(1rem, 16px);
+  }
+}

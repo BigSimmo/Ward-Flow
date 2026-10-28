@@ -595,9 +595,7 @@ export function ShortlistPanel({
   }
 
   if (!movement) {
-    return (
-      <p className={styles.placeholder}>Select a movement from the priority queue to see its explainable shortlist.</p>
-    );
+    return <p className={styles.placeholder}>Select a movement from the priority queue.</p>;
   }
 
   // TypeScript's narrowing of `movement` above does not reach into the `handleRefer` /

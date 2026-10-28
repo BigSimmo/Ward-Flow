@@ -15,10 +15,7 @@ export function PlacementPrompt() {
       <CardHead title="Placement" />
       <div className={styles.promptBody}>
         <MousePointerClick size={20} aria-hidden="true" className={styles.promptIcon} />
-        <p className={styles.promptText}>
-          Choose a patient, alert or referral from the list. Placement opens for that person only, so the name is
-          checked before anything is done.
-        </p>
+        <p className={styles.promptText}>Choose a patient, alert or referral from the list.</p>
       </div>
     </Card>
   );

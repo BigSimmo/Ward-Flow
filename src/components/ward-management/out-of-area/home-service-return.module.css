@@ -63,15 +63,21 @@
 .field {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--wf-form-field-gap);
   min-width: 0;
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   color: var(--wf-ink-2);
 }
 
-.field select {
-  min-height: 36px;
+.field > select {
+  min-height: var(--wf-form-control-height);
   max-width: 100%;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .fieldset {
@@ -95,12 +101,46 @@
 .option {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 32px;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-form-choice-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wf-s-2);
+}
+
+.field > select:focus-visible,
+.option:has(input:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.option input {
+  accent-color: var(--wf-accent);
+}
+
+.option input:focus-visible {
+  outline: none;
+}
+
+.option:has(input:checked) {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .field > select,
+  .option {
+    min-height: var(--wf-form-control-height-phone);
+  }
+
+  .field > select {
+    font-size: max(1rem, 16px);
+  }
 }

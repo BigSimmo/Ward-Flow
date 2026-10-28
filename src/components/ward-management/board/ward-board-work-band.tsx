@@ -1,5 +1,7 @@
 "use client";
 
+import { RadioGroup } from "@/components/wf/radio-group";
+
 // The bed board's work band: the shift's Needs you tiles and the bed-release blocker dialog.
 // Split out of ward-board.tsx to keep that file under the line cap; WardBoard still owns every
 // value and passes it in.
@@ -180,11 +182,7 @@ export function WardBoardWorkBand({
                 <p id="blocker-dialog-description" className={styles.blockerReasonPrompt}>
                   Select the reason preventing bed release:
                 </p>
-                <div
-                  role="radiogroup"
-                  aria-labelledby="blocker-dialog-description"
-                  className={styles.blockerReasonList}
-                >
+                <RadioGroup aria-labelledby="blocker-dialog-description" className={styles.blockerReasonList}>
                   {BED_RELEASE_BLOCKERS.map((b) => {
                     const isSelected = selectedBlocker === b;
                     return (
@@ -220,7 +218,7 @@ export function WardBoardWorkBand({
                       </button>
                     );
                   })}
-                </div>
+                </RadioGroup>
               </div>
 
               <div className={styles.modalActions}>

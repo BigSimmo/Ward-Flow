@@ -95,7 +95,7 @@ export function DischargeWeekendPrep({
       </h2>
       <p className={styles.note}>
         Outstanding arrangements owned by a service that closes over the next weekend or public holiday. Opening hours
-        are synthetic reference data to check. Grouped by service, in recorded order; nothing here acts by itself.
+        are synthetic reference data to check.
       </p>
       {pastHolidayList ? (
         <p className={styles.note}>

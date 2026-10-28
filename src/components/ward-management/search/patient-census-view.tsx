@@ -759,7 +759,6 @@ export function ShiftSummary(props: ShiftSummaryProps) {
           );
         })}
       </ul>
-      <p className={styles.panelFoot}>Choose a row to see the patient here</p>
       {/* B4: everyone waiting, with why, is the Delays list. */}
       <Link href={waitingHref()} className={buttonClass({ variant: "ghost", size: "sm" })}>
         Waiting list
@@ -1127,19 +1126,18 @@ export function PhoneCensus(props: PhoneCensusProps) {
     ...entry,
     rows: rows.filter((row) => row.group === entry.id),
   })).filter((entry) => entry.rows.length > 0 && (entry.id !== "off" || offInList));
-  // The five groups as one radio set: choosing one moves the list to that group's band.
+  // The five jump actions move the list to their group; current marks the last explicit jump.
   const [jumped, setJumped] = useState<CensusGroup | null>(null);
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
-      <div className={styles.phoneGroups} role="radiogroup" aria-label="Where patients are now">
+      <div className={styles.phoneGroups} role="group" aria-label="Where patients are now">
         {CENSUS_GROUPS.map((entry) => {
           const n = searching ? props.matched[entry.id] : props.totals[entry.id];
           return (
             <button
               key={entry.id}
               type="button"
-              role="radio"
-              aria-checked={props.tab === "now" && jumped === entry.id}
+              aria-current={props.tab === "now" && jumped === entry.id ? "true" : undefined}
               className={cx(styles.phoneGroup, searching && n === 0 && styles.phoneGroupZero)}
               onClick={() => {
                 props.onTab("now");

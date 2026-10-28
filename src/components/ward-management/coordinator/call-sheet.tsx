@@ -40,9 +40,7 @@ export function CallSheet() {
   return (
     <div className={styles.sheet} data-print-output data-testid="ward-call-sheet">
       <div className={styles.head}>
-        <p className={styles.note}>
-          Prepared {formatInstantWithDay(now, now)}. Grouped by ward, in recorded order. Synthetic data.
-        </p>
+        <p className={styles.note}>Prepared {formatInstantWithDay(now, now)}. Synthetic data.</p>
         <Button size="sm" variant="sec" icon={Printer} onClick={() => window.print()} data-print-hide>
           Print
         </Button>

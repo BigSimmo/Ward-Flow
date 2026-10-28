@@ -701,12 +701,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                  */
                 <div className={styles.emptyNotice} data-testid="community-index-empty">
                   <p>
-                    <strong>This list is empty.</strong> Every team on this page is derived from the vocabulary a
-                    referral can name, so an empty list means that derivation returned no teams.
-                  </p>
-                  <p>
-                    It does not mean this prototype has no community teams, and nothing on this page has checked whether
-                    any exist. Read it as a page that found nothing, not as a service that has nothing.
+                    <strong>This list is empty.</strong> No names were found in the source. This does not establish
+                    whether services exist.
                   </p>
                 </div>
               ) : (
@@ -789,8 +785,7 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               <CardBody className={styles.familyBody}>
                 {familyGroups.length === 0 ? (
                   <p className={styles.muted} data-testid="community-gateway-family-empty">
-                    No name in this list currently reads like another. That would itself be a change worth noticing,
-                    since the source document is known to hold near-duplicate spellings.
+                    No similar names found in this list.
                   </p>
                 ) : (
                   <>
@@ -1449,10 +1444,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
         <p>
           <strong>No team name contains &ldquo;{query}&rdquo;.</strong>
         </p>
-        <p>
-          The list holds names as they reach this page, so a team may be recorded under a spelling you would not expect.
-          Try a shorter fragment.
-        </p>
+        <p>Try a shorter name or another spelling.</p>
       </div>
     );
   }

@@ -125,16 +125,12 @@ function OperationalStatisticsEdScreen({
         <StatCard icon={Hospital} title="No such department">
           <CardBody className={styles.bodyStack}>
             <p data-testid="ward-statistics-ed-unresolved">
-              No emergency department in this prototype has the id <code className={detail.code}>{edId}</code>. It may
-              have been renamed or removed, or the id in the address may be wrong. This page never falls back to a
-              different department, because a page showing the wrong department under the right heading is worse than a
-              page showing nothing.
+              No emergency department in this prototype has the id <code className={detail.code}>{edId}</code>.
             </p>
             <p>
               <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ed-chooser-link">
                 Choose an emergency department from the comparisons page
-              </Link>{" "}
-              to reach one that does exist.
+              </Link>
             </p>
           </CardBody>
         </StatCard>

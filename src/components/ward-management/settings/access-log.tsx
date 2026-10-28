@@ -111,8 +111,8 @@ export function AccessLog() {
       <CardBody flush>
         <p className={styles.empty}>
           {shared
-            ? "Who opened which person's record, newest first: patient records, movements and referral details. The server lists its newest 200 openings by desks inside your place. A record is shown by its id only."
-            : "Demo only: made-up openings by the demo staff, held for this tab only. In the shared workspace this list comes from the server's log."}
+            ? "Newest 200 record openings within your place. Records are shown by id only."
+            : "Synthetic openings, held for this tab only."}
         </p>
         <div className={styles.form}>
           <Field label="Find a record id or account">

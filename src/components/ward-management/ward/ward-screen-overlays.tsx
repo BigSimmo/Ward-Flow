@@ -63,7 +63,6 @@ export function WardScreenCapacityModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-capacity-title"
-      aria-describedby="modal-capacity-desc"
     >
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
       <div
@@ -87,10 +86,6 @@ export function WardScreenCapacityModal({
           </button>
         </div>
         <div className={styles.modalBody}>
-          <p id="modal-capacity-desc" className={styles.blurb}>
-            Confirm or update the live operational figures for {unit.name}.
-          </p>
-
           <div className={styles.unitCard}>
             <div className={styles.unitCardHeader}>
               <h3 className={styles.sectionHeading}>Bed roster &amp; census overview</h3>

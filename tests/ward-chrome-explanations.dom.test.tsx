@@ -1,6 +1,6 @@
-// Audit P123: the top bar's Tools button and its dialog say what Tools holds, not only
-// "Tools" and "Whole network".
-import { fireEvent, render, screen } from "@testing-library/react";
+// Tools keeps its accessible purpose and modal focus without repeating a subtitle
+// above the named tool rows (owner copy cleanup, 28 October 2026).
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -27,7 +27,7 @@ afterEach(() => {
   resetServiceScopeForTests();
 });
 
-describe("the Tools button and dialog explain themselves (audit P123)", () => {
+describe("the Tools button and dialog remain understandable", () => {
   it("the button describes what Tools holds and keeps its visible name", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -39,14 +39,20 @@ describe("the Tools button and dialog explain themselves (audit P123)", () => {
     expect(button).toHaveAccessibleDescription(/Quick actions, look ups, print and share/);
   });
 
-  it("the dialog says what the sheet covers, not only 'Whole network'", async () => {
+  it("keeps its name and modal focus without a redundant subtitle", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <WardBar primaryAction={{ kind: "none" }} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));
+    const trigger = screen.getByTestId("ward-bar-tools-trigger");
+    fireEvent.click(trigger);
     const dialog = await screen.findByRole("dialog", { name: "Tools" });
-    expect(dialog).toHaveAccessibleDescription(/Quick actions and look ups for the whole network/);
+    expect(dialog).toHaveAccessibleName("Tools");
+    expect(dialog).not.toHaveAccessibleDescription();
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tools" })).not.toBeInTheDocument());
+    await waitFor(() => expect(trigger).toHaveFocus());
   });
 });

@@ -201,16 +201,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               disabled={saving}
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              style={{
-                width: "100%",
-                minHeight: "48px",
-                padding: "0.625rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--wf-line-ctl)",
-                backgroundColor: "var(--wf-surface)",
-                color: "var(--wf-ink-1)",
-                fontSize: "0.9375rem",
-              }}
+              className={styles.control}
             >
               <option value="" disabled>
                 Choose a document type

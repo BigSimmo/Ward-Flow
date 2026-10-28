@@ -2293,11 +2293,11 @@
 }
 
 .tableActionGroup select {
-  height: 20px;
-  padding: 0 4px;
-  font-size: var(--t-0, 12px);
-  border-radius: var(--r2);
-  border: 1px solid var(--line-strong);
+  min-height: var(--wf-form-control-height);
+  padding: 0 var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+  border-radius: var(--wf-form-control-radius);
+  border: 1px solid var(--wf-line-ctl);
   background: var(--surface);
   color: var(--ink);
 }
@@ -2392,19 +2392,19 @@
 .referralField {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: var(--t-0);
+  gap: var(--wf-form-field-gap);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
-  color: var(--ink);
+  color: var(--wf-ink-2);
 }
 
 .referralField select,
 .referralField input[type="text"] {
-  min-height: 44px;
-  height: 44px;
-  padding: 8px 12px;
-  border-radius: var(--r2);
-  border: 1px solid var(--line-strong);
+  min-height: var(--wf-form-control-height);
+  height: var(--wf-form-control-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-form-control-radius);
+  border: 1px solid var(--wf-line-ctl);
   background: var(--surface);
   color: var(--ink);
   font-family: var(--body);
@@ -2414,8 +2414,8 @@
 
 .referralField select:focus-visible,
 .referralField input[type="text"]:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* Restored 2026-09-16 alongside the decline-form classes above — same drop, same commit, same
@@ -5600,4 +5600,19 @@
 }
 .sentForBedClock {
   color: var(--muted);
+}
+
+/* Clear slate entry states; raw ED fields retain their current values and handlers. */
+.referralField :is(input, select)[aria-invalid="true"] {
+  border-color: var(--wf-danger);
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .tableActionGroup select,
+  .referralField select,
+  .referralField input[type="text"] {
+    height: var(--wf-form-control-height-phone);
+    min-height: var(--wf-form-control-height-phone);
+    font-size: max(1rem, 16px);
+  }
 }

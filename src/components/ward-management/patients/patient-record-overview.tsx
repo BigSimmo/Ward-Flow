@@ -82,10 +82,7 @@ export function PatientRecordOverview({
           <ArrowUpRight size={16} aria-hidden="true" />
         </button>
       </div>
-      <p className={styles.note}>
-        No linked movement is displayed. Placement, bed reservation and transport controls appear here when a transfer
-        is active.
-      </p>
+      <p className={styles.note}>No linked movement is displayed.</p>
     </section>
   );
 }

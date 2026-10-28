@@ -158,9 +158,7 @@ export function WardBoardPrintSections({
         <h2 id="ward-board-people-heading" className={styles.peopleHeading}>
           Who is in these beds
         </h2>
-        <p className={styles.peopleIntro}>
-          Every occupant of this ward, soonest expected out first; anyone with no date set is last.
-        </p>
+        <p className={styles.peopleIntro}>All occupants, soonest expected out first; no date last.</p>
         {/* An empty list under a heading reads as a panel that failed to load rather than as a ward
             with nobody in it, so the absence is said in words. `constraintSentence` returns null for
             the same reason a few lines up. */}

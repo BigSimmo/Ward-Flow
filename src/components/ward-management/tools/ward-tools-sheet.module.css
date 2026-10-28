@@ -559,7 +559,7 @@
   background: var(--wf-hover);
 }
 
-.scenarioCard[aria-checked="true"] {
+.scenarioCard[aria-current="true"] {
   border-color: var(--wf-accent);
   box-shadow: inset 0 0 0 1px var(--wf-accent);
 }
@@ -760,13 +760,13 @@
   }
 
   .chip[aria-pressed="true"],
-  .scenarioCard[aria-checked="true"] {
+  .scenarioCard[aria-current="true"] {
     background: Highlight;
     color: HighlightText;
   }
 
   .chip[aria-pressed="true"] .chipCount,
-  .scenarioCard[aria-checked="true"] em {
+  .scenarioCard[aria-current="true"] em {
     color: HighlightText;
   }
 }
@@ -774,5 +774,69 @@
 @media (max-width: 48rem) {
   .search {
     min-height: var(--wf-touch);
+  }
+}
+
+/* Clear slate: native form-time controls and the composed search box share the entry geometry. */
+@media screen {
+  .fieldRow {
+    gap: var(--wf-s-4);
+  }
+
+  .fieldRow label {
+    min-width: 0;
+    gap: var(--wf-form-field-gap);
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    overflow-wrap: anywhere;
+  }
+
+  .select,
+  .input {
+    min-height: var(--wf-form-control-height);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-color: var(--wf-line-ctl);
+    border-radius: var(--wf-form-control-radius);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .search {
+    min-height: var(--wf-form-control-height);
+    border-color: var(--wf-line-ctl);
+    border-radius: var(--wf-form-control-radius);
+  }
+
+  .search:focus-within,
+  .select:focus-visible,
+  .input:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .select[aria-invalid="true"],
+  .input[aria-invalid="true"] {
+    border-color: var(--wf-danger-ink);
+  }
+
+  .select:disabled,
+  .input:disabled,
+  .input[readonly] {
+    border-style: dashed;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-off);
+  }
+}
+
+@media screen and (max-width: 48rem), screen and (pointer: coarse) {
+  .search,
+  .select,
+  .input {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+  }
+
+  .select,
+  .input,
+  .search input {
+    font-size: max(1rem, 16px);
   }
 }

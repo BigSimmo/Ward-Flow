@@ -46,12 +46,7 @@ export function SettingsInstallHint() {
   }
   if (!installEvent) return null;
   return (
-    <SettingRow
-      setting="install"
-      title="Install Ward Flow"
-      sub="Opens on its own, like an app"
-      testId="setting-install-row"
-    >
+    <SettingRow setting="install" title="Install Ward Flow" testId="setting-install-row">
       <Button variant="sec" size="sm" className={styles.pill} onClick={() => void promptInstall()}>
         Install
       </Button>

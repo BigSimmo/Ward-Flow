@@ -99,6 +99,14 @@
   --wf-h-chip: 22px;
   --wf-h-sm: 32px;
   --wf-h-md: 36px;
+  /* Clear slate forms (Josh approved 28 Oct 2026). Entry geometry is independent of
+     compact table/navigation controls; colours and theme mappings remain v9-owned. */
+  --wf-form-control-height: 42px;
+  --wf-form-control-height-phone: 46px;
+  --wf-form-control-radius: var(--wf-r-sm);
+  --wf-form-field-gap: 8px;
+  --wf-form-group-gap: 20px;
+  --wf-form-choice-height: 42px;
   /* Shared sticky header and navigation geometry. Phone overrides this in the Ward layout. */
   --wf-header-height: 3.75rem;
   --wf-h-lg: 44px;

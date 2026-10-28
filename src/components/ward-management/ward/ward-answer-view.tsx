@@ -1183,7 +1183,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             open={declineOpen && !blocked}
                             onClose={() => toggleDecline(activeMovement.id)}
                             title="Decline this request"
-                            description="Choose a reason. The referrer sees it."
+                            description="The referrer sees your reason."
                             height="tall"
                             secondary={{ label: "Back", onAction: () => toggleDecline(activeMovement.id) }}
                             primary={{

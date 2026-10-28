@@ -195,7 +195,6 @@ export function AlertsNoticesPanel({
         {feedNotices.length === 0 ? (
           <div className={styles.feedEmpty}>
             <p className={styles.none}>No notices have been raised this session.</p>
-            <p className={styles.quiet}>Recorded referral, bed pull and transport notices appear here.</p>
           </div>
         ) : (
           <ul className={styles.historyList}>

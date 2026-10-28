@@ -6425,3 +6425,63 @@
   border-top: 0;
   padding-top: 0;
 }
+
+/* Clear slate: only entry controls change; ward tiles, filters and board scroll geometry stay owned above. */
+@media screen {
+  .leavingSelect,
+  .orderControl select {
+    min-height: var(--wf-form-control-height);
+    max-width: 100%;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-form-control-radius);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .leavingSelect:focus-visible,
+  .orderControl select:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .leavingLabel {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    letter-spacing: normal;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .leavingSelect[aria-invalid="true"] {
+    border-color: var(--wf-danger-ink);
+  }
+
+  .leavingSelect:disabled {
+    border-style: dashed;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-off);
+  }
+}
+
+@media screen and (max-width: 48rem), screen and (pointer: coarse) {
+  .leavingSelect,
+  .orderControl select,
+  .screen .phoneBeds .phoneFilterSelect,
+  .screen .phoneBeds .phoneSort select {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    border-radius: var(--wf-form-control-radius);
+    font-size: max(1rem, 16px);
+  }
+
+  .screen .phoneBeds .phoneFilterSelect {
+    border-color: var(--wf-line-ctl);
+  }
+
+  .screen .phoneBeds .phoneSort {
+    width: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+  }
+}

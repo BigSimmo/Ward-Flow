@@ -61,10 +61,7 @@ function CommunityPurposeAndFollowUp({ s }: { s: WardReferralDrawerState }) {
               setFlowError(null);
             }}
           />
-          <p className={styles.bodyMeta}>
-            No bed is asked for either way. The team sees the purpose in its inbox. Older referrals read as Community
-            follow-up.
-          </p>
+          <p className={styles.bodyMeta}>No bed is requested.</p>
         </div>
       </section>
       <section className={styles.refCard} data-testid="ward-referral-needs">

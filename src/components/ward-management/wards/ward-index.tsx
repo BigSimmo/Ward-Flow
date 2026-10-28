@@ -414,7 +414,6 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             />
           ))}
         </WardCapacityRows>
-        <p className={styles.railNote}>Press a service to highlight its wards.</p>
       </Card>
 
       <Card as="section" className={styles.railCard} aria-labelledby="ward-counts-to-check">

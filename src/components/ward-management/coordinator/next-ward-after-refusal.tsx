@@ -77,7 +77,7 @@ export function NextWardAfterRefusal({
               );
             })}
           </ul>
-          <p className={styles.note}>Listed by health service, then name. Send the referral with Refer.</p>
+          <p className={styles.note}>Send the referral with Refer.</p>
         </>
       )}
     </section>

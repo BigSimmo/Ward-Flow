@@ -306,7 +306,7 @@ describe("the Access tab", () => {
     });
     settings();
     const log = screen.getByTestId("ward-access-log");
-    expect(log).toHaveTextContent("Demo only: made-up openings by the demo staff");
+    expect(log).toHaveTextContent("Synthetic openings, held for this tab only.");
     const rows = within(log).getAllByTestId("ward-access-log-row");
     expect(rows.length).toBeGreaterThan(0);
     expect(rows[0]).toHaveTextContent("Demo staff A, Nurse in charge, FSH Adult Secure. 12 minutes ago.");
@@ -386,7 +386,7 @@ describe("the Access tab", () => {
     // H-0731: a read the server logged itself names no record.
     expect(rows[2]).toHaveTextContent("TV board sent to this desk");
     expect(rows[2]).not.toHaveTextContent("*");
-    expect(log).not.toHaveTextContent("Demo only");
+    expect(log).not.toHaveTextContent("Synthetic openings, held for this tab only.");
     expect(api.listRecordViews).toHaveBeenCalledTimes(1);
   });
 

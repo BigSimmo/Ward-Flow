@@ -498,7 +498,6 @@ export function PatientTransitOperations({
       </div>
       {canRefer && needsGenderPlacement && (
         <div className={styles.cardBody}>
-          <p className={styles.deckHint}>Record the placement plan agreed with the selected wards.</p>
           <label>
             Ward placement reason
             <select value={genderReason} onChange={(e) => setGenderReason(e.target.value as GenderPlacementReason)}>
@@ -732,7 +731,6 @@ export function PatientTransitOperations({
           {open && movement.stage === "pulled" && (activeJob || noTransport) && handoverMine && handoverGate.note}
           {open && movement.stage === "handover_ready" && activeJob && (
             <div className={styles.actionStack}>
-              <p className={styles.deckHint}>Transport officer · record each confirmed milestone.</p>
               <button
                 type="button"
                 className={styles.secondary}
@@ -1069,7 +1067,6 @@ export function PatientTransitOperations({
         <div>
           <span className={styles.eyebrow}>PATIENT NOW / BEDFLOW</span>
           <h2 id={`${baseId}-transit-title`}>Transit operations</h2>
-          <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
       </header>
       {/* Audit 24-1 (B-05): the sheet that hosts this deck covers the page header on a phone, so the

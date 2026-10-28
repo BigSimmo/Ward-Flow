@@ -308,10 +308,10 @@
 }
 
 .capacityInput {
-  min-height: var(--ward-tap);
+  min-height: max(var(--wf-form-control-height), var(--ward-tap));
   width: 6rem;
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   background: var(--surface);
   padding: 0 var(--ward-space-10);
   color: var(--ink);
@@ -495,17 +495,17 @@
 
 .declineFieldset {
   display: grid;
-  gap: 0;
+  gap: var(--wf-form-field-gap);
   margin: 0;
   border: 0;
   padding: 0;
 }
 
 .declineLegend {
-  padding: 0;
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 700;
+  padding: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
 }
 
 /* The one-hold-up clause the owner ruled must appear beside each waiting-on picker (R7,
@@ -520,8 +520,11 @@
 
 .declineOption {
   display: flex;
-  /* 44px (v9 rows): stacked radio rows at the 48px floor left wide gaps on the answer card. */
-  min-height: var(--wf-touch, 2.75rem);
+  min-height: var(--wf-form-choice-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
   align-items: center;
   gap: var(--ward-space-8);
   overflow-wrap: anywhere;
@@ -4345,20 +4348,29 @@
 /* Start placement for an accepted referral: one question per row, label above its control. */
 .placementForm {
   display: grid;
-  gap: var(--wf-s-2);
+  gap: var(--wf-form-group-gap);
   max-width: 420px;
   margin-top: var(--wf-s-2);
 }
 
 .placementForm label {
   display: grid;
-  gap: 4px;
+  gap: var(--wf-form-field-gap);
   font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
 }
 
 .placementForm select {
-  min-height: 44px;
+  min-height: var(--wf-form-control-height);
   width: 100%;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 400;
 }
 
 .placementActions {
@@ -4393,5 +4405,36 @@
 @media (min-width: 90rem) {
   .inboxPlaceholder {
     --inbox-entry: 9.25rem;
+  }
+}
+
+/* Clear slate entry feedback. The bed board and its scroll owners stay unchanged. */
+.declineOption:has(input:checked) {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.declineOption:has(input:focus-visible),
+.capacityInput:focus-visible,
+.placementForm select:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.declineOption input:focus-visible {
+  outline: none;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .capacityInput,
+  .placementForm select {
+    min-height: max(var(--wf-form-control-height-phone), var(--ward-tap));
+    font-size: max(1rem, 16px);
+  }
+
+  .declineOption {
+    min-height: var(--wf-form-control-height-phone);
+    font-size: var(--wf-fs-14);
   }
 }

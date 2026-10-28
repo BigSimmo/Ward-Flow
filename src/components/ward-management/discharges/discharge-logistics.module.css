@@ -91,10 +91,10 @@
 }
 
 .time {
-  min-height: 32px;
-  padding: 0 var(--wf-s-2);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
+  min-height: var(--wf-form-control-height);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: inherit;
@@ -142,4 +142,16 @@
 .rowButton:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
+}
+
+.time:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .time {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    font-size: max(1rem, 16px);
+  }
 }

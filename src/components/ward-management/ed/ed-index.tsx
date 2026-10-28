@@ -1061,8 +1061,7 @@ function ServicePicker({
         }}
       />
       <p className={styles.serviceNote}>
-        Dashed line is the mean, <b className={styles.num}>{Number(mean.toFixed(1))}</b>. Press a service to highlight
-        it.
+        Dashed line is the mean, <b className={styles.num}>{Number(mean.toFixed(1))}</b>.
       </p>
       <Legend accessTarget={accessTarget} />
     </Card>

@@ -1345,13 +1345,7 @@ export function ReferralBoard({
         />
         <ShortcutsSheet open={sheet === "keys"} onClose={() => setSheet(null)} />
         {pulling ? (
-          <Sheet
-            open
-            onClose={() => setPulling(undefined)}
-            title="Pull the bed"
-            description="Anything already recorded is filled in. Check the details, then pull the bed."
-            testId="ward-referral-pull-sheet"
-          >
+          <Sheet open onClose={() => setPulling(undefined)} title="Pull the bed" testId="ward-referral-pull-sheet">
             <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
           </Sheet>
         ) : null}

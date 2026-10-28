@@ -98,5 +98,10 @@
     "id": "2026-10-28-coordinator-departure",
     "date": "2026-10-28",
     "line": "A coordinator can now record that a person has left, from the Discharges sheet."
+  },
+  {
+    "id": "2026-10-28-clearer-forms-and-choices",
+    "date": "2026-10-28",
+    "line": "Forms have clearer grouping and selection states, less repeated guidance and better keyboard support."
   }
 ]

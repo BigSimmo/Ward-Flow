@@ -873,10 +873,7 @@ export function MovementWorkspaceCockpit({
                 </div>
               </div>
               <div className={styles.panelCardBody}>
-                <p className={styles.panelBlurb}>
-                  What this record holds about this patient&apos;s status and the form beside it. It is not a statement
-                  of what the Mental Health Act requires.
-                </p>
+                <p className={styles.panelBlurb}>This record does not state what the Mental Health Act requires.</p>
                 <dl className={styles.factGrid}>
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Legal status</dt>
@@ -915,10 +912,7 @@ export function MovementWorkspaceCockpit({
                 </div>
               </div>
               <div className={styles.panelCardBody}>
-                <p className={styles.panelBlurb}>
-                  Only what the transport record holds, and the one place on this page that holds it. There is no
-                  estimated arrival time anywhere in this model, and no risk documentation.
-                </p>
+                <p className={styles.panelBlurb}>No estimated arrival time or risk documentation is recorded here.</p>
                 <dl className={styles.factGrid}>
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Is transport needed?</dt>
@@ -1137,18 +1131,12 @@ export function MovementWorkspaceCockpit({
                   </div>
                   <div className={styles.panelCardBody}>
                     <p className={styles.panelBlurb}>
-                      An eligibility calculation against the wards as they are right now. It is not a record of what was
-                      true when this movement closed, and it is not shown by default for that reason.
+                      Current eligibility only. It does not show eligibility when this movement closed.
                     </p>
                     {showClosedEligibility ? (
                       eligibilityBlock
                     ) : (
                       <>
-                        <p className={styles.actionSay}>
-                          Nothing recorded which wards could have taken this patient at the moment this movement closed.
-                          There is no snapshot — only a fresh calculation against today&rsquo;s occupancy, staffing and
-                          bed state.
-                        </p>
                         <button
                           type="button"
                           className={styles.controlButton}

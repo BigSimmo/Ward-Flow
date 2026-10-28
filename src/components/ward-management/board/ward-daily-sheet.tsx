@@ -500,10 +500,6 @@ export function WardDailySheet({
       <h2 id={`${baseId}-ward-daily-sheet-heading`} className={isEmbedded ? styles.visuallyHidden : styles.heading}>
         Shift brief
       </h2>
-      {isEmbedded ? null : (
-        <p className={styles.intro}>Live at the moment stamped above. Nothing here is held from an earlier hour.</p>
-      )}
-
       {resolvedTimestamp && !isEmbedded ? (
         <p className={styles.stamp} data-testid="ward-daily-sheet-shift-timestamp" style={TNUM}>
           Shift timestamp: <span style={TNUM}>{resolvedTimestamp}</span>
@@ -721,8 +717,7 @@ export function WardDailySheet({
       {/* The honest limit of the sheet, on the sheet. D10's editable half — the ward's one-minute
         update — is not here, and its absence must not read as "there is nothing to update". */}
       <p className={styles.footnote} data-testid="ward-daily-sheet-limits">
-        This sheet is read-only. Updating a discharge date, or confirming that nothing has changed, is not done from
-        here.
+        This sheet is read-only. Update discharge dates or confirm figures on the ward screen.
       </p>
 
       {onPrint ? (

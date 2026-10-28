@@ -325,7 +325,6 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
           )}
           {(activeDrawer === "referral" || activeDrawer === "referralDrawer") && (
             <>
-              <p className={styles.footnote}>Priority triage assessment and referral routing record.</p>
               <div className={styles.cardPanel}>
                 <div className={styles.panelHead}>
                   <h4 className={`${styles.panelTitle} ${styles.titleMd}`}>Referral demographics &amp; urgency</h4>

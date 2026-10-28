@@ -307,193 +307,213 @@ export function TransportBookingForm({
 
   return (
     <div className={styles.form} aria-busy={pending || undefined}>
-      <Field label={`Who is collecting ${patientName}`} id={did("provider")}>
-        <Select
-          data-testid={tid("provider")}
-          disabled={pending}
-          value={answers.provider ?? ""}
-          onChange={(event) => {
-            const next = event.target.value;
-            set({
-              provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode) ? (next as TravelMode) : undefined,
-            });
-          }}
-        >
-          {/* Nobody chosen, first and selected: never a provider standing in for a choice not made. */}
-          <option value="">Not chosen</option>
-          {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
-            <option key={provider} value={provider}>
-              {provider}
-            </option>
-          ))}
-        </Select>
-      </Field>
-
-      {/* The box never blocks Save: a ward escort or family has no dispatch call, and a dispatched
-          service may give its number later (CAD to follow, Josh, 27 Oct 2026). */}
-      <Field
-        label="CAD transport number"
-        id={did("cad")}
-        error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
-        help="Read it off the call with the provider."
-      >
-        <TextInput
-          data-testid={tid("cad")}
-          className={styles.mono}
-          autoComplete="off"
-          placeholder="CAD number"
-          disabled={pending}
-          value={answers.cadNumber}
-          onChange={(event) => set({ cadNumber: event.target.value })}
-        />
-      </Field>
-      {transportCadToFollow(answers) ? (
-        <p className={styles.warn} data-testid={tid("cad-to-follow")}>
-          <StatusGlyph tone="warning" size={9} />
-          No CAD number yet. The job will show CAD to follow until it is added.
-        </p>
-      ) : null}
-
-      <div className={styles.timeRow}>
-        <div className={styles.timeCol}>
-          <Field label="Estimated time" id={did("time")}>
-            <TextInput
-              data-testid={tid("time")}
-              className={styles.mono}
-              inputMode="numeric"
-              placeholder="HH:MM"
-              autoComplete="off"
+      <section className={styles.section} aria-label="Collection">
+        <div className={styles.sectionHead}>
+          <h3>Collection</h3>
+        </div>
+        <div className={styles.collectionFields}>
+          <Field label={`Who is collecting ${patientName}`} id={did("provider")}>
+            <Select
+              data-testid={tid("provider")}
               disabled={pending}
-              value={answers.estimatedTime}
-              onChange={(event) => set({ estimatedTime: event.target.value })}
+              value={answers.provider ?? ""}
+              onChange={(event) => {
+                const next = event.target.value;
+                set({
+                  provider: BOOKABLE_TRANSPORT_PROVIDERS.includes(next as TravelMode)
+                    ? (next as TravelMode)
+                    : undefined,
+                });
+              }}
+            >
+              {/* Nobody chosen, first and selected: never a provider standing in for a choice not made. */}
+              <option value="">Not chosen</option>
+              {BOOKABLE_TRANSPORT_PROVIDERS.map((provider) => (
+                <option key={provider} value={provider}>
+                  {provider}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          {/* The box never blocks Save: a ward escort or family has no dispatch call, and a dispatched
+          service may give its number later (CAD to follow, Josh, 27 Oct 2026). */}
+          <Field
+            label="CAD transport number"
+            id={did("cad")}
+            error={
+              cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined
+            }
+          >
+            <TextInput
+              data-testid={tid("cad")}
+              className={styles.mono}
+              autoComplete="off"
+              placeholder="CAD number"
+              disabled={pending}
+              value={answers.cadNumber}
+              onChange={(event) => set({ cadNumber: event.target.value })}
             />
           </Field>
-          <div role="group" aria-label="Quick times" className={styles.presets} data-testid={tid("presets")}>
-            {ETA_PRESETS.map((preset) => {
-              const value = etaPresetAnswers(now, preset.offset);
-              const active =
-                answers.estimatedTime.trim() === value.estimatedTime && answers.estimatedDay === value.estimatedDay;
-              return (
-                <Button
-                  key={preset.label}
-                  size="sm"
-                  variant={active ? "pri" : "sec"}
-                  aria-pressed={active}
-                  disabled={pending}
-                  onClick={() => set(value)}
-                >
-                  {preset.label}
-                </Button>
-              );
-            })}
-          </div>
         </div>
-        <fieldset className={styles.question} data-testid={tid("day")} disabled={pending}>
-          <legend className={styles.legend}>Today or tomorrow?</legend>
+        {transportCadToFollow(answers) ? (
+          <p className={styles.warn} data-testid={tid("cad-to-follow")}>
+            <StatusGlyph tone="warning" size={9} />
+            No CAD number yet. The job will show CAD to follow until it is added.
+          </p>
+        ) : null}
+      </section>
+
+      <section className={styles.section} aria-label="Timing">
+        <div className={styles.sectionHead}>
+          <h3>Timing</h3>
+        </div>
+        <div className={styles.timeRow}>
+          <div className={styles.timeCol}>
+            <Field label="Estimated time" id={did("time")}>
+              <TextInput
+                data-testid={tid("time")}
+                className={styles.mono}
+                inputMode="numeric"
+                placeholder="HH:MM"
+                autoComplete="off"
+                disabled={pending}
+                value={answers.estimatedTime}
+                onChange={(event) => set({ estimatedTime: event.target.value })}
+              />
+            </Field>
+            <div role="group" aria-label="Quick times" className={styles.presets} data-testid={tid("presets")}>
+              {ETA_PRESETS.map((preset) => {
+                const value = etaPresetAnswers(now, preset.offset);
+                const active =
+                  answers.estimatedTime.trim() === value.estimatedTime && answers.estimatedDay === value.estimatedDay;
+                return (
+                  <Button
+                    key={preset.label}
+                    size="sm"
+                    variant={active ? "pri" : "sec"}
+                    aria-pressed={active}
+                    disabled={pending}
+                    onClick={() => set(value)}
+                  >
+                    {preset.label}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          <fieldset className={styles.question} data-testid={tid("day")} disabled={pending}>
+            <legend className={styles.legend}>Today or tomorrow?</legend>
+            <span className={styles.choice}>
+              {(["today", "tomorrow"] as const).map((day) => (
+                <label key={day} className={styles.choiceItem}>
+                  <input
+                    type="radio"
+                    name={did("day")}
+                    data-testid={tid("day", day)}
+                    value={day}
+                    checked={answers.estimatedDay === day}
+                    onChange={() => set({ estimatedDay: day })}
+                  />
+                  <span>{day === "today" ? "Today" : "Tomorrow"}</span>
+                </label>
+              ))}
+            </span>
+          </fieldset>
+        </div>
+        {holdEnd !== undefined ? (
+          <p className={styles.warn} data-testid={tid("hold")}>
+            <StatusGlyph tone="warning" size={9} />
+            Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
+          </p>
+        ) : null}
+      </section>
+
+      <section className={styles.section} aria-label="Escort and legal status">
+        <div className={styles.sectionHead}>
+          <h3>Escort and legal status</h3>
+        </div>
+        <fieldset className={styles.question} data-testid={tid("escort")} disabled={pending}>
+          <legend className={styles.legend}>Does {patientName} need an escort?</legend>
           <span className={styles.choice}>
-            {(["today", "tomorrow"] as const).map((day) => (
-              <label key={day} className={styles.choiceItem}>
+            {ESCORT_ANSWERS.map((answer) => (
+              <label key={answer.label} className={styles.choiceItem}>
                 <input
                   type="radio"
-                  name={did("day")}
-                  data-testid={tid("day", day)}
-                  value={day}
-                  checked={answers.estimatedDay === day}
-                  onChange={() => set({ estimatedDay: day })}
+                  name={`${did("escort")}`}
+                  data-testid={tid("escort", answer.value ? "yes" : "no")}
+                  value={answer.value ? "yes" : "no"}
+                  // `=== answer.value`, never truthiness: an unanswered draft must check neither box.
+                  checked={answers.escortRequired === answer.value}
+                  onChange={() => set({ escortRequired: answer.value })}
                 />
-                <span>{day === "today" ? "Today" : "Tomorrow"}</span>
+                <span>{answer.label}</span>
               </label>
             ))}
           </span>
         </fieldset>
-      </div>
-      {holdEnd !== undefined ? (
-        <p className={styles.warn} data-testid={tid("hold")}>
-          <StatusGlyph tone="warning" size={9} />
-          Arrives after the pull time limit ends at {clockText(holdEnd)}. Extend the pull or rebook.
-        </p>
-      ) : null}
 
-      <fieldset className={styles.question} data-testid={tid("escort")} disabled={pending}>
-        <legend className={styles.legend}>Does {patientName} need an escort?</legend>
-        <span className={styles.choice}>
-          {ESCORT_ANSWERS.map((answer) => (
-            <label key={answer.label} className={styles.choiceItem}>
-              <input
-                type="radio"
-                name={`${did("escort")}`}
-                data-testid={tid("escort", answer.value ? "yes" : "no")}
-                value={answer.value ? "yes" : "no"}
-                // `=== answer.value`, never truthiness: an unanswered draft must check neither box.
-                checked={answers.escortRequired === answer.value}
-                onChange={() => set({ escortRequired: answer.value })}
-              />
-              <span>{answer.label}</span>
-            </label>
-          ))}
-        </span>
-      </fieldset>
-
-      <fieldset className={styles.question} data-testid={tid("legal")} disabled={pending}>
-        <legend className={styles.legend}>Is the transport voluntary or involuntary?</legend>
-        <span className={styles.choice}>
-          {TRANSPORT_LEGAL_STATUSES.map((status) => (
-            <label key={status} className={styles.choiceItem}>
-              <input
-                type="radio"
-                name={did("legal")}
-                data-testid={tid("legal", status)}
-                value={status}
-                checked={answers.transportLegalStatus === status}
-                onChange={() => set({ transportLegalStatus: status })}
-              />
-              <span>{LEGAL_LABELS[status]}</span>
-            </label>
-          ))}
-        </span>
-        {record ? (
-          <p className={styles.note}>
-            Legal now: {legalNowText(record)}.
-            {LEGAL_STATUS_FROM_LEGAL_NOW && legalNow !== undefined && answers.transportLegalStatus === legalNow
-              ? " Filled in from Legal now. Change it if the call said otherwise."
-              : null}
-          </p>
-        ) : null}
-      </fieldset>
-
-      {clash ? (
-        <Field
-          label="Why does it differ from Legal now?"
-          id={did("legal-reason")}
-          help={
-            <span className={styles.warn}>
-              <StatusGlyph tone="warning" size={9} />
-              Differs from Legal now ({legalNowText(record!)}). Record why.
-            </span>
-          }
-        >
-          <Select
-            data-testid={tid("legal-reason")}
-            disabled={pending}
-            value={legalReason}
-            onChange={(event) => {
-              const next = event.target.value;
-              onLegalReason(
-                TRANSPORT_EXCEPTION_REASONS.includes(next as TransportExceptionReason)
-                  ? (next as TransportExceptionReason)
-                  : "",
-              );
-            }}
-          >
-            <option value="">Choose a reason</option>
-            {TRANSPORT_EXCEPTION_REASONS.map((reason) => (
-              <option key={reason} value={reason}>
-                {TRANSPORT_EXCEPTION_REASON_LABELS[reason]}
-              </option>
+        <fieldset className={styles.question} data-testid={tid("legal")} disabled={pending}>
+          <legend className={styles.legend}>Is the transport voluntary or involuntary?</legend>
+          <span className={styles.choice}>
+            {TRANSPORT_LEGAL_STATUSES.map((status) => (
+              <label key={status} className={styles.choiceItem}>
+                <input
+                  type="radio"
+                  name={did("legal")}
+                  data-testid={tid("legal", status)}
+                  value={status}
+                  checked={answers.transportLegalStatus === status}
+                  onChange={() => set({ transportLegalStatus: status })}
+                />
+                <span>{LEGAL_LABELS[status]}</span>
+              </label>
             ))}
-          </Select>
-        </Field>
-      ) : null}
+          </span>
+          {record ? (
+            <p className={styles.note}>
+              Legal now: {legalNowText(record)}.
+              {LEGAL_STATUS_FROM_LEGAL_NOW && legalNow !== undefined && answers.transportLegalStatus === legalNow
+                ? " Filled in from Legal now. Change it if the call said otherwise."
+                : null}
+            </p>
+          ) : null}
+        </fieldset>
+
+        {clash ? (
+          <Field
+            label="Why does it differ from Legal now?"
+            id={did("legal-reason")}
+            help={
+              <span className={styles.warn}>
+                <StatusGlyph tone="warning" size={9} />
+                Differs from Legal now ({legalNowText(record!)}). Record why.
+              </span>
+            }
+          >
+            <Select
+              data-testid={tid("legal-reason")}
+              disabled={pending}
+              value={legalReason}
+              onChange={(event) => {
+                const next = event.target.value;
+                onLegalReason(
+                  TRANSPORT_EXCEPTION_REASONS.includes(next as TransportExceptionReason)
+                    ? (next as TransportExceptionReason)
+                    : "",
+                );
+              }}
+            >
+              <option value="">Choose a reason</option>
+              {TRANSPORT_EXCEPTION_REASONS.map((reason) => (
+                <option key={reason} value={reason}>
+                  {TRANSPORT_EXCEPTION_REASON_LABELS[reason]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
+      </section>
 
       {leftNames.length > 0 ? (
         <p className={styles.left} data-testid={tid("left")}>

@@ -134,10 +134,7 @@ function BedMeetingAgenda() {
           </CardBody>
         </Card>
       ))}
-      <p className={styles.note}>
-        Actions are tasks for people. Recording or completing one changes nothing else, and an overdue action is shown
-        here, never escalated.
-      </p>
+      <p className={styles.note}>Actions do not change other records or escalate when overdue.</p>
       <WardPrototypeFooter testId="ward-bed-meeting-agenda-governance" />
     </main>
   );

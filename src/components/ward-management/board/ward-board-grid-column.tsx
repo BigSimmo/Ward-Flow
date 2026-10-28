@@ -409,9 +409,7 @@ export function WardBoardGridColumn({
        * It is the ONE place the qualification is stated in full, and every per-person line
        * repeats the word "tentative" rather than relying on a reader having scrolled past this.
        */}
-      <p className={styles.peopleAbsence}>
-        Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.
-      </p>
+      <p className={styles.peopleAbsence}>Tentative diagnosis category; not confirmed by this ward.</p>
     </div>
   );
 }

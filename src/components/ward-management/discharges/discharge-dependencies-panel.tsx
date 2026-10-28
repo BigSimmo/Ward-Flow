@@ -109,7 +109,6 @@ export function DischargeDependenciesPanel({
       </h4>
       <p className={styles.note}>
         Practical arrangements only. They do not decide or confirm the discharge, and nothing here frees the bed.
-        Separate items can be worked on at the same time.
       </p>
       <ul className={styles.list} aria-label="Confirmations">
         <li className={styles.meta}>

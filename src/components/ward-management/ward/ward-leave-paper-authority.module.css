@@ -49,3 +49,63 @@
   flex-wrap: wrap;
   gap: var(--wf-s-2);
 }
+
+/* Clear slate: only the written date/time gets a text-field box. Paper answers stay native. */
+.form label:has(> input[type="datetime-local"]) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-form-field-gap);
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.form label > input[type="datetime-local"] {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--wf-form-control-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.form label:has(> input:is([type="radio"], [type="checkbox"])) {
+  min-height: var(--wf-form-choice-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+}
+
+.form label:has(> input:checked) {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+}
+
+.form label > input:is([type="radio"], [type="checkbox"]) {
+  accent-color: var(--wf-accent);
+}
+
+.form label > input[type="datetime-local"]:focus-visible,
+.form label:has(> input:is([type="radio"], [type="checkbox"]):focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.form label > input:is([type="radio"], [type="checkbox"]):focus-visible {
+  outline: none;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .form label > input[type="datetime-local"],
+  .form label:has(> input:is([type="radio"], [type="checkbox"])) {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+  }
+
+  .form label > input[type="datetime-local"] {
+    font-size: max(1rem, 16px);
+  }
+}

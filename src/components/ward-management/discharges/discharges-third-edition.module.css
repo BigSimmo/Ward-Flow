@@ -2283,3 +2283,53 @@
     inset: calc(-1 * var(--wf-phone-seg-band));
   }
 }
+
+/* Clear slate: scope native field chrome to direct care-journey controls; shared Select owns filters. */
+@media screen {
+  .drawerSection .filterField {
+    gap: var(--wf-form-field-gap);
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .filterLabelText {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .drawerSection .filterField > select,
+  .drawerSection .filterField > input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: var(--wf-form-control-height);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-form-control-radius);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .drawerSection .filterField > select:focus-visible,
+  .drawerSection .filterField > input:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .drawerSection .filterField > [aria-invalid="true"] {
+    border-color: var(--wf-danger-ink);
+  }
+
+  .drawerSection .filterField > select:disabled,
+  .drawerSection .filterField > input:disabled,
+  .drawerSection .filterField > input[readonly] {
+    border-style: dashed;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-off);
+  }
+}
+
+@media screen and (max-width: 48rem), screen and (pointer: coarse) {
+  .drawerSection .filterField > select,
+  .drawerSection .filterField > input:not([type="checkbox"]):not([type="radio"]) {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    font-size: max(1rem, 16px);
+  }
+}

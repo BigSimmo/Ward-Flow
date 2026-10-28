@@ -1,6 +1,5 @@
-/* v9 dialog: sheet glass (88% day, 86% night, blur 32px) over the strong scrim, for steps that
-   block the page. One hairline, a bright top edge, the sheen and e3. Without blur or transparency
-   the panel falls back to the solid overlay surface. No fill-mode on the entry: it stops the blur. */
+/* Clear slate dialog: a readable solid surface, clear title and quiet action area.
+   Focus, placement, modal isolation and scroll ownership remain in the shared Dialog. */
 
 .scrim {
   position: fixed;
@@ -25,13 +24,8 @@
   box-sizing: border-box;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-lg);
-  background-color: var(--wf-glass-sheet, var(--wf-glass-thick));
-  background-image: var(--wf-sheen);
-  -webkit-backdrop-filter: blur(32px) saturate(1.4);
-  backdrop-filter: blur(32px) saturate(1.4);
-  box-shadow:
-    inset 0 1px 0 var(--wf-glass-hl),
-    var(--wf-e3);
+  background-color: var(--wf-surface);
+  box-shadow: var(--wf-e2);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   animation: wfDialogIn var(--wf-t-sheet) var(--wf-ease-sheet);
@@ -54,8 +48,8 @@
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
-  min-height: 56px;
-  padding: var(--wf-s-3) var(--wf-s-2) var(--wf-s-3) var(--wf-s-4);
+  min-height: 64px;
+  padding: var(--wf-s-4);
   box-sizing: border-box;
   border-bottom: 1px solid var(--wf-line);
 }
@@ -64,9 +58,9 @@
   min-width: 0;
   flex: 1 1 auto;
   margin: 0;
-  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
-  letter-spacing: var(--wf-tr-15);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
   color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
 }
 
 .close {
@@ -85,10 +79,11 @@
   padding: var(--wf-s-4);
 }
 
-/* Only ink-1 and ink-2 sit on glass. */
 .description {
   margin: 0;
   color: var(--wf-ink-2);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .footer {
@@ -97,8 +92,10 @@
   align-items: center;
   justify-content: flex-end;
   gap: var(--wf-s-2);
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  border-radius: 0 0 var(--wf-r-lg) var(--wf-r-lg);
 }
 
 /* The scrim fades its colour, not its opacity: opacity on an ancestor of glass would cut the

@@ -43,19 +43,19 @@
 }
 .planTrigger,
 .actionsTrigger {
-  font: 500 12px/1.4 var(--body);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 5px;
   max-width: 100%;
   width: 100%;
-  padding: 4px 7px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface-2);
-  color: var(--muted);
-  min-height: 28px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  min-height: var(--wf-form-control-height);
   text-align: left;
   cursor: pointer;
 }
@@ -92,8 +92,8 @@
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  border: 1px solid var(--line);
-  border-radius: 13px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   padding: 6px;
   /* CRIT-03: a shadow shows at an edge only while more of the menu is scrolled past it. */
   background:
@@ -105,7 +105,7 @@
       bottom / 100% 12px no-repeat scroll,
     var(--surface);
   color: var(--ink);
-  font: 12px var(--body);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   box-shadow: 0 8px 28px color-mix(in srgb, var(--ink) 14%, transparent);
 }
 .popover * {
@@ -145,13 +145,13 @@
 .planInput {
   display: block;
   width: calc(100% - 12px);
-  height: 35px;
+  height: var(--wf-form-control-height);
   margin: 0 6px 6px;
   padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface-2);
-  color: var(--ink);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
 }
 /* `.popover input { font: inherit }` is (0,1,1), so the plan input's size names the element. */
 input.planInput {
@@ -162,11 +162,11 @@ input.planInput {
   align-items: center;
   justify-content: space-between;
   gap: 7px;
-  min-height: 34px;
+  min-height: var(--wf-form-choice-height);
   width: 100%;
-  padding: 7px 9px;
-  border: 0;
-  border-radius: 6px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-xs);
   background: none;
   color: var(--ink-soft);
   text-align: left;
@@ -174,12 +174,27 @@ input.planInput {
   overflow-wrap: anywhere;
 }
 .planOption[aria-selected="true"] {
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--wf-accent-ink);
+  background: var(--wf-accent-tint);
+  border-color: var(--wf-accent);
+  font-weight: 600;
+}
+
+/* A decorative tick keeps committed selection distinct from keyboard highlighting. */
+.planOption[aria-selected="true"]::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  flex: 0 0 10px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
 }
 .planOption:hover,
 .planOption[data-active="true"] {
-  background: var(--surface-2);
+  background: var(--wf-hover);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
 }
 .planGuidance {
   margin: 7px 8px 3px;
@@ -209,7 +224,7 @@ input.planInput {
   gap: 5px;
   border: 0 !important;
   border-radius: 6px !important;
-  min-height: 32px !important;
+  min-height: var(--wf-form-choice-height) !important;
   padding: 6px 8px !important;
   color: var(--ink-soft) !important;
   background: none !important;
@@ -321,10 +336,10 @@ input.planInput {
 .dialog header button {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  width: var(--wf-form-control-height);
+  height: var(--wf-form-control-height);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-form-control-radius);
   background: var(--surface);
   color: var(--muted);
   cursor: pointer;
@@ -349,9 +364,9 @@ input.planInput {
   width: 100%;
   min-height: 130px;
   padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
   color: var(--ink);
   font: 13px/1.65 var(--body);
 }
@@ -378,9 +393,9 @@ input.planInput {
   color: var(--muted);
 }
 .dialog footer button {
-  height: 36px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  min-height: var(--wf-form-control-height);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   padding: 0 12px;
   background: var(--surface-2);
   color: var(--ink);
@@ -422,5 +437,26 @@ input.planInput {
 @media (max-width: 48rem) {
   .actionsTrigger {
     min-height: 2.75rem;
+  }
+}
+
+/* Clear slate: entry and menu targets share the phone and touch density. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .planTrigger,
+  .actionsTrigger,
+  .planInput,
+  .planOption,
+  .dialog footer button {
+    min-height: var(--wf-form-control-height-phone);
+  }
+
+  .actionItems button {
+    min-height: var(--wf-form-control-height-phone) !important;
+  }
+
+  .dialog header button,
+  .label > button {
+    width: var(--wf-form-control-height-phone);
+    height: var(--wf-form-control-height-phone);
   }
 }

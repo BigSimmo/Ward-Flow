@@ -208,19 +208,21 @@
  * and it is why this version of the note should still be true next month.** */
 
 .select {
-  min-height: var(--ward-tap);
+  min-height: var(--wf-form-control-height);
+  min-width: 0;
   width: 100%;
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: 0 var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-0);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   font-weight: 400;
 }
 
 .select:focus-visible {
-  outline: 0.125rem solid var(--focus);
+  border-color: var(--wf-accent);
+  outline: 0.125rem solid var(--wf-focus-ring);
   outline-offset: 0.125rem;
 }
 
@@ -229,20 +231,21 @@
    just tall enough (`--ward-tap` twice over) to hold more than one line without the 48px single-line
    tap target `.select` itself needs. */
 .correctionNote {
-  min-height: calc(var(--ward-tap) * 2);
+  min-height: 6rem;
+  min-width: 0;
   width: 100%;
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: var(--ward-space-8) var(--ward-space-10);
-  color: var(--ink);
-  font-size: var(--t-0);
-  font-weight: 400;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / 1.6 var(--wf-font);
   resize: vertical;
 }
 
 .correctionNote:focus-visible {
-  outline: 0.125rem solid var(--focus);
+  border-color: var(--wf-accent);
+  outline: 0.125rem solid var(--wf-focus-ring);
   outline-offset: 0.125rem;
 }
 
@@ -1297,17 +1300,19 @@
 }
 
 .matchOverrideSelect {
-  min-height: var(--ward-tap);
-  border: 0.0625rem solid var(--ward-border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: 0 var(--ward-space-8);
-  color: var(--ink);
-  font-size: var(--t-0);
+  min-height: var(--wf-form-control-height);
+  min-width: 0;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  padding: 0 var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .matchOverrideSelect:focus-visible {
-  outline: 0.125rem solid var(--focus);
+  border-color: var(--wf-accent);
+  outline: 0.125rem solid var(--wf-focus-ring);
   outline-offset: 0.125rem;
 }
 
@@ -3320,21 +3325,21 @@
 
 .formSelect {
   flex: 1 1 14rem;
-  min-height: 2.25rem;
-  padding: 0 10px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r2, 6px);
-  color: var(--ink);
-  font-size: var(--t-1, 13px);
-  font-family: inherit;
+  min-height: var(--wf-form-control-height);
+  min-width: 0;
+  padding: 0 var(--wf-s-3);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   transition: border-color 0.15s ease;
 }
 
 .formSelect:focus {
-  outline: 2px solid var(--accent);
-  outline-offset: 0;
-  border-color: var(--accent);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--wf-accent);
 }
 
 .declineActionButton {
@@ -4529,9 +4534,9 @@
 
 .screen[data-ward-design="v6"] .matchOverrideSelect,
 .screen[data-ward-design="v6"] .declineControls .select {
-  min-height: var(--ward-tap);
+  min-height: var(--wf-form-control-height);
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-form-control-radius);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / 1 var(--wf-font);
@@ -4564,9 +4569,7 @@
   .screen[data-ward-design="v6"] .btnSubtle,
   .screen[data-ward-design="v6"] .localBedButton,
   .screen[data-ward-design="v6"] .matchOverrideButton,
-  .screen[data-ward-design="v6"] .declineButton,
-  .screen[data-ward-design="v6"] .matchOverrideSelect,
-  .screen[data-ward-design="v6"] .declineControls .select {
+  .screen[data-ward-design="v6"] .declineButton {
     min-height: var(--wf-h-md);
   }
 }
@@ -4823,19 +4826,56 @@
 
 .v10AskActions .select {
   width: 100%;
-  min-height: var(--wf-h-md, 2.25rem);
+  min-height: var(--wf-form-control-height);
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
+  border-radius: var(--wf-form-control-radius);
   background-color: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / 1 var(--wf-font);
 }
 
-/* Phone: 16px so iOS Safari does not zoom the page when the decline reason opens. */
-@media (max-width: 48rem) {
+/* Clear slate phone and touch controls share a readable text floor and a full-height target. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .select,
+  .matchOverrideSelect,
+  .formSelect,
+  .screen[data-ward-design="v6"] .matchOverrideSelect,
+  .screen[data-ward-design="v6"] .declineControls .select,
+  .v10AskActions .select {
+    min-height: var(--wf-form-control-height-phone);
+  }
+
+  .select,
+  .matchOverrideSelect,
+  .formSelect,
+  .correctionNote,
+  .screen[data-ward-design="v6"] .matchOverrideSelect,
+  .screen[data-ward-design="v6"] .declineControls .select,
   .v10AskActions .select {
     font-size: max(1rem, 16px);
   }
+}
+
+.select:disabled,
+.matchOverrideSelect:disabled,
+.formSelect:disabled,
+.correctionNote:disabled,
+.screen[data-ward-design="v6"] .matchOverrideSelect:disabled,
+.screen[data-ward-design="v6"] .declineControls .select:disabled,
+.v10AskActions .select:disabled {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-off);
+  cursor: not-allowed;
+}
+
+.select[aria-invalid="true"],
+.matchOverrideSelect[aria-invalid="true"],
+.formSelect[aria-invalid="true"],
+.correctionNote[aria-invalid="true"],
+.screen[data-ward-design="v6"] .matchOverrideSelect[aria-invalid="true"],
+.screen[data-ward-design="v6"] .declineControls .select[aria-invalid="true"],
+.v10AskActions .select[aria-invalid="true"] {
+  border-color: var(--wf-danger);
 }
 
 .v10AskActions .acceptPresentationBtn {

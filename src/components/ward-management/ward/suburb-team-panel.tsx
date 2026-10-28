@@ -156,10 +156,7 @@ function Answer({ found }: { found: CatchmentLookup }) {
                 facts here — that the row exists and the cell is empty — which `found.note` says one line
                 above. **The tests could not see it: they assert presence, and a duplicated sentence is
                 present twice.** Found by reading the rendered panel in a browser. */}
-            <p className={styles.suburbNote}>
-              The place is real and the mapping was never written down. This is a gap to fill in, not an address to
-              re-check — which is the whole reason it is not the same answer as a suburb the table does not carry.
-            </p>
+            <p className={styles.suburbNote}>Record the missing clinic mapping; this suburb is in the source table.</p>
           </div>
         </div>
       ) : (
@@ -172,8 +169,8 @@ function Answer({ found }: { found: CatchmentLookup }) {
             </div>
             <p className={styles.suburbNote}>{found.note}</p>
             <p className={styles.suburbNote}>
-              Check the spelling and the address. A suburb absent from the table may be a misspelling, or somebody out
-              of this catchment altogether — no answer is guessed at from a similar name.
+              Check the spelling and address; the suburb may be outside this catchment. No similar-name match is
+              assumed.
             </p>
           </div>
         </div>
@@ -212,9 +209,6 @@ export function SuburbTeamPanel() {
             <h2 id={headingId} className={styles.suburbHeaderMainTitle}>
               The team for this suburb
             </h2>
-            <p className={styles.suburbHeaderSubText}>
-              Find which Community Mental Health Team covers a patient&rsquo;s residence
-            </p>
           </div>
         </div>
         <span className={styles.badgePill}>Community catchment directory</span>
@@ -284,7 +278,7 @@ export function SuburbTeamPanel() {
 
       {found === null ? (
         <p className={styles.placeholder} data-testid="ward-suburb-team-empty">
-          No suburb has been looked up yet. Absence here means none was asked for, not that no team exists.
+          No suburb has been looked up yet.
         </p>
       ) : (
         <Answer found={found} />

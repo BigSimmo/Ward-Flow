@@ -303,7 +303,7 @@ export function PatientWardChangeCard({
           open={form !== "none"}
           onClose={() => onFormChange("none")}
           title={form === "leave" ? "Start leave" : "Set discharge date"}
-          description={form === "leave" ? "Bed held while away" : "Typed by the ward"}
+          description={form === "leave" ? "Bed held while away" : undefined}
           mobilePlacement="bottom"
           testId="ward-patient-change-sheet"
           footer={

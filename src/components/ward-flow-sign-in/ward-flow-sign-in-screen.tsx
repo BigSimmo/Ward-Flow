@@ -210,31 +210,24 @@ export function WardFlowSignInScreen() {
               <span className={styles.noticeMore}>Details</span>
             </summary>
             <div className={styles.noticeBody}>
-              <p>Ward Flow is a prototype, not approved for clinical use or clinical decision support.</p>
               <p>
-                Every ward state, movement, referral, clock, count and figure on these screens is invented. The hospital
-                sites and health services are real WA names.
+                Prototype only, not approved for clinical use or clinical decision support. All records, ward states,
+                times and figures are invented; hospital sites and health services use real WA names.
               </p>
               <p>
-                Ward Flow places nobody. A coordinator decides every placement and records it, and every figure here is
-                to be checked against the ward&apos;s own record before anyone acts on it.
-              </p>
-              <p>
-                The reach each role is given below is read from the screens index of the Ward Flow design system, which
-                is a drawing of a tool. The live product&apos;s permissions are set outside Ward Flow.
+                A coordinator decides and records every placement. Check figures against the ward&apos;s own record
+                before acting.
               </p>
               <section aria-labelledby="sec-who">
                 <h2 id="sec-who" className={styles.noticeHeading}>
                   Who you are, and what you may do
                 </h2>
                 <p>
-                  Who you are is settled by the hospital&apos;s own sign on, which sits outside Ward Flow and is drawn
-                  nowhere in this prototype. This screen holds no password field, because a drawing of a tool must never
-                  be somewhere a real password is typed.
+                  This role preview does not sign you in or grant permissions. Its example actions do not define the
+                  live app&apos;s permissions.
                 </p>
                 <p>
-                  Role selection previews the drawing&apos;s workspace and actions. It does not sign anyone in or grant
-                  permissions.
+                  This screen has no password field or live hospital sign-on. Never enter real hospital credentials.
                 </p>
               </section>
             </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import { RadioGroup } from "@/components/wf/radio-group";
+
 import {
   acceptedReferralIdsAt,
   readyBedsAllPromised,
@@ -910,9 +912,9 @@ export function ReferralMatchView({
         <p className={ph.ch}>
           {title} <span className={ph.k}>{list.length}</span>
         </p>
-        <div className={ph.cands} role="radiogroup" aria-label={title}>
+        <RadioGroup className={ph.cands} aria-label={title}>
           {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
-        </div>
+        </RadioGroup>
         {kind === "yes" && fitsHidden > 0 ? (
           <button type="button" className={ph.more} onClick={() => setPhoneAllFits(true)}>
             Show {fitsHidden} more with a bed ready
@@ -1063,7 +1065,7 @@ export function ReferralMatchView({
       {phoneDeclining ? (
         <>
           <p className={ph.ch}>Why decline?</p>
-          <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+          <RadioGroup className={ph.cands} aria-label="Why decline?">
             {REFERRAL_DECLINE_REASONS.map((reason) => (
               <button
                 key={reason}
@@ -1078,7 +1080,7 @@ export function ReferralMatchView({
                 <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
               </button>
             ))}
-          </div>
+          </RadioGroup>
           <p className={ph.matchHint} id="ward-referral-match-decline-blocked">
             {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
           </p>

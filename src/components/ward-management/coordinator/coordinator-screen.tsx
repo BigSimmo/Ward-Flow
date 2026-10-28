@@ -1159,7 +1159,6 @@ export function CoordinatorScreen() {
               open
               onClose={() => setPhoneSheet(undefined)}
               title="Registers"
-              description="Choose one to open its patient"
               mobilePlacement="bottom"
               testId="ward-home-exceptions-sheet"
             >

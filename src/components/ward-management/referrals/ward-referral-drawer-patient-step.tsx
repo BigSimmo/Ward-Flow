@@ -493,7 +493,7 @@ export function ReferralPatientStep({
             <div className={styles.confirmRow}>
               {noPatientChosen ? (
                 <p className={`${styles.patientSub} ${styles.patientSubWrap}`} data-testid="ward-referral-no-patient">
-                  No patient chosen. Find them by name or UMRN, add a new patient, or choose Not yet identified.
+                  No patient chosen.
                 </p>
               ) : null}
               <button

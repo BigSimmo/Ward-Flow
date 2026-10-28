@@ -732,7 +732,6 @@ export function AddPatientForm() {
           open={phoneSheet !== null}
           onClose={() => setPhoneSheet(null)}
           title="On a larger screen"
-          description="Kept off the phone so the form stays short"
           height="content"
           secondary={{ label: "Done", onAction: () => setPhoneSheet(null) }}
           data-testid="ward-add-patient-phone-sheet"

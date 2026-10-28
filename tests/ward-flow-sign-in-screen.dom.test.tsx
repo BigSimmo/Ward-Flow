@@ -90,11 +90,15 @@ describe("Ward Flow sign-in screen renders", () => {
 
     // The two disclosure claims the contract names as load-bearing: no real authentication is
     // implied, and the role governs nothing this build actually enforces.
-    expect(
-      screen.getByText(/This screen holds no password field, because a drawing of a tool must never/),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/It does not sign anyone in or grant permissions/)).toBeInTheDocument();
-    expect(screen.getByText(/The live product's permissions are set outside Ward Flow/)).toBeInTheDocument();
+    const notice = screen.getByRole("heading", { name: "Who you are, and what you may do" }).closest("details");
+    expect(notice).toHaveTextContent(/not approved for clinical use or clinical decision support/i);
+    expect(notice).toHaveTextContent(/records, ward states, times and figures are invented/i);
+    expect(notice).toHaveTextContent(/hospital sites and health services use real WA names/i);
+    expect(notice).toHaveTextContent(/coordinator decides and records every placement/i);
+    expect(notice).toHaveTextContent(/check figures against the ward's own record before acting/i);
+    expect(notice).toHaveTextContent(/does not sign you in or grant permissions/i);
+    expect(notice).toHaveTextContent(/no password field or live hospital sign-on/i);
+    expect(notice).toHaveTextContent(/never enter real hospital credentials/i);
 
     // The role group carries all seven roles, each an aria-pressed toggle button.
     const roleGroup = screen.getByRole("group", { name: /^Your role/ });
@@ -139,12 +143,11 @@ describe("Ward Flow sign-in screen renders", () => {
     }
   });
 
-  it("never renders a claim that a role is enforced, only what the design system's screens index names it for", () => {
+  it("keeps example role actions distinct from live permissions", () => {
     render(<WardFlowSignInScreen />);
-    // The screen must attribute reach to the screens index, not to the running application.
-    expect(
-      screen.getByText(/is read from the screens index of the Ward Flow design system, which is a drawing of a tool/),
-    ).toBeInTheDocument();
+    const notice = screen.getByRole("heading", { name: "Who you are, and what you may do" }).closest("details");
+    expect(notice).toHaveTextContent(/role preview does not sign you in or grant permissions/i);
+    expect(notice).toHaveTextContent(/example actions do not define the live app's permissions/i);
   });
 });
 

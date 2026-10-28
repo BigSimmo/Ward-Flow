@@ -2861,3 +2861,79 @@
 .transitOverdueSpaced {
   margin-top: var(--ward-space-8, 0.5rem);
 }
+
+/* Clear slate: the coordinator's native forms share the field recipe without changing placement. */
+@media screen {
+  .shortlistOverrideForm {
+    gap: var(--wf-form-field-gap);
+    border-color: var(--wf-line-2);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface-2);
+    padding: var(--wf-s-4);
+  }
+
+  .shortlistOverrideForm fieldset {
+    display: grid;
+    min-width: 0;
+    gap: var(--wf-form-field-gap);
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .shortlistOverrideLabel {
+    color: var(--wf-ink-2);
+    font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .shortlistOverrideSelect {
+    min-width: 0;
+    max-width: 100%;
+    min-height: max(var(--wf-form-control-height), var(--ward-tap));
+    border: 1px solid var(--wf-line-ctl);
+    border-radius: var(--wf-form-control-radius);
+    padding-inline: var(--wf-s-3);
+    background: var(--wf-surface);
+    color: var(--wf-ink-1);
+    font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  }
+
+  .shortlistOverrideSelect:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .shortlistOverrideSelect[aria-invalid="true"] {
+    border-color: var(--wf-danger-ink);
+  }
+
+  .shortlistOverrideSelect:disabled {
+    border-style: dashed;
+    background: var(--wf-surface-2);
+    color: var(--wf-ink-off);
+    cursor: not-allowed;
+  }
+
+  .shortlistOverrideCheckOption {
+    gap: var(--wf-s-2);
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+    overflow-wrap: anywhere;
+  }
+
+  .shortlistOverrideCheckOption input {
+    flex: 0 0 auto;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--wf-accent);
+  }
+}
+
+@media screen and (max-width: 48rem), screen and (pointer: coarse) {
+  .shortlistOverrideSelect {
+    min-height: max(var(--wf-form-control-height-phone), var(--ward-tap));
+    font-size: max(1rem, 16px);
+  }
+}

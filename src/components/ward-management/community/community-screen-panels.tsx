@@ -186,11 +186,7 @@ export function communitySearchRenderer(view: CommunityScreenView) {
         onChange={(e) => setSearchQuery(e.target.value)}
         onClear={() => setSearchQuery("")}
       />
-      {searchQuery.trim() === "" ? (
-        <p className={v6.searchNote} data-testid="ward-community-search-hint">
-          Type a name or UMRN to search the sample patients.
-        </p>
-      ) : searchResults.length === 0 ? (
+      {searchQuery.trim() === "" ? null : searchResults.length === 0 ? (
         <p className={v6.searchNote} data-testid="ward-community-search-empty">
           No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
         </p>
@@ -728,9 +724,7 @@ export function communityCoveragePanel(view: CommunityScreenView) {
                     ))}
                     {ratifiedBy.decidedByKind === "person" ? " are one service." : ", pending review."}
                   </strong>{" "}
-                  This is a judgement about the real clinic, not an observation that the names look alike. No rule here
-                  could have reached it and none did. Referrals typed under each spelling are still listed on that
-                  spelling&apos;s own page: the decision is recorded, and nobody has been moved.
+                  Referrals remain on each spelling&apos;s own page. Nobody has been moved.
                   <span className={styles.ratifiedProvenance} data-testid="ward-community-ratified-provenance">
                     {ratifiedBy.decidedByKind === "person" ? (
                       <>

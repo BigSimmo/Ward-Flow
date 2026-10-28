@@ -640,9 +640,7 @@ export function MovementDrawer({
 
         <Section title="Journey">
           {movement.stageChanges.length === 0 ? (
-            <p className={d.muted}>
-              No stage change has been recorded, so this movement has not moved since it opened.
-            </p>
+            <p className={d.muted}>No stage change recorded.</p>
           ) : (
             <ul className={d.list}>
               {[...movement.stageChanges].reverse().map((change) => (
@@ -697,7 +695,7 @@ export function MovementDrawer({
 
         <Section title="Escalation">
           {movement.escalation === undefined ? (
-            <p className={d.muted}>Nothing has been escalated on this movement. That is a record, not a gap.</p>
+            <p className={d.muted}>No escalation recorded.</p>
           ) : (
             <p className={d.text}>
               Escalated to {movement.escalation.contact} on {formatInstantWithDay(movement.escalation.at, now)}, after{" "}
@@ -709,7 +707,7 @@ export function MovementDrawer({
 
         <Section title="Transport leg">
           {leg === undefined ? (
-            <p className={d.muted}>No transport leg has been booked, so there is nothing to say about a vehicle.</p>
+            <p className={d.muted}>No transport leg booked.</p>
           ) : (
             <p className={d.text}>
               {leg.provider}
@@ -724,9 +722,8 @@ export function MovementDrawer({
         </Section>
 
         <p className={d.foot}>
-          <strong>Watch and flag is not built.</strong> Nothing in this system records that somebody is watching a
-          movement, so there is no state for it to show. Every person in this prototype is invented. Nobody named here
-          is a real patient.
+          <strong>Watch and flag is not built.</strong> This prototype does not record who is watching a movement. Every
+          person in this prototype is invented. Nobody named here is a real patient.
         </p>
       </div>
     </Sheet>

@@ -972,7 +972,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           <Card aria-labelledby={`${baseId}-none`}>
             <CardHead id={`${baseId}-none`} icon={ListOrdered} title="No patient chosen" />
             <div className={styles.chronologyStart}>
-              <p>Choose a patient to read every recorded event for them, in order.</p>
               <Button variant="sec" icon={Search} onClick={() => patientSelect.current?.focus()}>
                 Choose a patient
               </Button>

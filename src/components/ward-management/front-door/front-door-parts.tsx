@@ -81,7 +81,6 @@ export function Brand() {
       <div className={styles.brandCopy}>
         <p className={styles.eyebrow}>WA mental health bed flow</p>
         <p className={styles.brandTitle}>Beds, referrals and moves across the network, in one shared view.</p>
-        <p className={styles.brandSub}>Sign in to open the screens your role needs.</p>
       </div>
       <ul className={styles.pills}>
         <li>

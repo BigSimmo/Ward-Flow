@@ -1161,7 +1161,7 @@ table.censusTable {
   color: var(--wf-ink-3);
 }
 
-.phoneGroup[aria-checked="true"] {
+.phoneGroup[aria-current="true"] {
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
   color: var(--wf-ink-1);
@@ -1575,4 +1575,23 @@ table.censusTable {
   margin: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
+}
+
+/* Clear slate: the search wrapper owns its edge; nested text and DOB inputs stay borderless. */
+@media screen {
+  .searchForm > div > div:first-of-type {
+    min-height: var(--wf-form-control-height);
+    border-radius: var(--wf-form-control-radius);
+  }
+}
+
+@media screen and (max-width: 48rem), screen and (pointer: coarse) {
+  .searchFormPhone > div > div:first-of-type {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+  }
+
+  .searchForm input,
+  .phoneDob input {
+    font-size: max(1rem, 16px);
+  }
 }

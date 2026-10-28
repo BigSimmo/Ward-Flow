@@ -301,14 +301,21 @@
   color: var(--wf-ink-2);
 }
 
-.bedChange select,
-.bedChange input {
-  min-height: var(--wf-row-touch);
-  font: inherit;
+.bedChange > select,
+.bedChange > input {
+  min-height: max(var(--wf-form-control-height), var(--wf-row-touch, 0px));
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .bedChange input {
-  width: 64px;
+  width: 5.5rem;
 }
 
 /* ED access risk. */
@@ -514,4 +521,17 @@
   margin: 0;
   padding-left: var(--wf-s-4);
   font-size: var(--wf-fs-12);
+}
+
+.bedChange > :is(input, select):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .bedChange > input,
+  .bedChange > select {
+    min-height: max(var(--wf-form-control-height-phone), var(--wf-row-touch, 0px));
+    font-size: max(1rem, 16px);
+  }
 }

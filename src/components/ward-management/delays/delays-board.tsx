@@ -825,7 +825,6 @@ export function DelaysBoard({
     <PortraitRail
       title="Registers"
       summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
-      description="Escalations, attention, resolved today and the longest quiet"
       open={railOpen}
       onOpenChange={setRailOpen}
     >
@@ -1147,7 +1146,7 @@ export function DelaysBoard({
                   <PhoneFilterFold
                     count={filterCount}
                     title="Filter the list"
-                    description="Filters narrow the list. The list says how many they hide."
+                    description="The list shows how many people the filters hide."
                     className={styles.phoneFold}
                     data-testid="delays-filter-fold"
                   >
@@ -1279,11 +1278,7 @@ export function DelaysBoard({
                 open={phoneSheet === "registers" || phoneSheet === "quiet"}
                 onClose={() => setPhoneSheet(null)}
                 title={phoneSheet === "quiet" ? "Longest quiet" : "Registers"}
-                description={
-                  phoneSheet === "quiet"
-                    ? "Who has gone longest with nothing recorded"
-                    : "Escalations, attention and resolved today"
-                }
+                description={phoneSheet === "quiet" ? "Who has gone longest with nothing recorded" : undefined}
                 height="tall"
               >
                 <Registers

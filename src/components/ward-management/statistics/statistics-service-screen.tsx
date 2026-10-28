@@ -386,16 +386,12 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
         <StatCard icon={Network} title="No such health service">
           <CardBody className={styles.bodyStack}>
             <p data-testid="ward-statistics-service-unresolved">
-              No health service in this prototype has the name <code className={detail.code}>{serviceId}</code>. This
-              prototype has exactly five: {wardServiceOrder.join(", ")}. It may have been renamed, or the name in the
-              address may be wrong. This page never falls back to a different service, because a page showing the wrong
-              service under the right heading is worse than a page showing nothing.
+              No health service in this prototype has the name <code className={detail.code}>{serviceId}</code>.
             </p>
             <p>
               <Link href={STATISTICS_SERVICE_CHOOSER_HREF} data-testid="ward-statistics-service-chooser-link">
                 Choose a health service from the statistics hub
-              </Link>{" "}
-              to reach one that does exist.
+              </Link>
             </p>
           </CardBody>
         </StatCard>

@@ -318,7 +318,7 @@ describe("the Movements screen", () => {
         movementHref(movement!.id),
       );
       const worklist = screen.getByRole("region", { name: "Movement worklist" });
-      fireEvent.click(within(worklist).getByRole("radio", { name: "By transport leg, and what has none" }));
+      fireEvent.click(within(worklist).getByRole("radio", { name: "Transport" }));
       const requestGroup = within(worklist).getByRole("heading", { name: "Transport not accepted" }).parentElement!
         .parentElement!;
       expect(findRecordRow(requestGroup, movement!.id)).toBeInTheDocument();
@@ -405,7 +405,7 @@ describe("the Movements screen", () => {
     try {
       renderScreen();
       const board = screen.getByRole("region", { name: "Movement worklist" });
-      fireEvent.click(within(board).getByRole("radio", { name: "By how long it has waited" }));
+      fireEvent.click(within(board).getByRole("radio", { name: "Longest wait" }));
       const rows = board.querySelectorAll("[data-ward-primitive='record-row'][data-record-key]");
       const keys = [...rows].map((row) => row.getAttribute("data-record-key")!);
       const byId = new Map<string, (typeof wardMovements)[number]>(
@@ -422,14 +422,36 @@ describe("the Movements screen", () => {
     }
   });
 
+  it("selects an order with arrows and keeps its visible text as the accessible name", () => {
+    renderScreen();
+    const group = screen.getByRole("radiogroup", { name: /Order/u });
+    const stage = within(group).getByRole("radio", { name: "Stage" });
+    const transport = within(group).getByRole("radio", { name: "Transport" });
+    stage.focus();
+    fireEvent.keyDown(stage, { key: "ArrowRight" });
+    expect(transport).toHaveFocus();
+    expect(transport).toHaveAttribute("aria-checked", "true");
+    expect(transport).toHaveAttribute("title", "By transport leg, and what has none");
+    expect(
+      within(group)
+        .getAllByRole("radio")
+        .filter((radio) => radio.tabIndex === 0),
+    ).toEqual([transport]);
+    fireEvent.keyDown(transport, { key: "End" });
+    expect(within(group).getByRole("radio", { name: "Longest wait" })).toHaveFocus();
+  });
+
   it("offers the three orders as a radiogroup, not as filter pills that would imply removal", () => {
     renderScreen();
     const group = screen.getByRole("radiogroup", { name: /Order/u });
     expect(
       within(group)
         .getAllByRole("radio")
-        .map((option) => option.getAttribute("aria-label")),
-    ).toEqual(["By where it stands", "By transport leg, and what has none", "By how long it has waited"]);
+        .map((option) => option.textContent),
+    ).toEqual(["Stage", "Transport", "Longest wait"]);
+    for (const option of within(group).getAllByRole("radio")) {
+      expect(option).toHaveAccessibleName(option.textContent ?? "");
+    }
   });
 });
 
@@ -783,7 +805,7 @@ describe("the movement detail drawer", () => {
       dialog,
       "the drawer names the unbuilt section without saying WHY, so a reader cannot tell a missing " +
         "feature from a missing fact",
-    ).toHaveTextContent(/records that somebody is watching/u);
+    ).toHaveTextContent(/does not record who is watching a movement/u);
   });
 });
 

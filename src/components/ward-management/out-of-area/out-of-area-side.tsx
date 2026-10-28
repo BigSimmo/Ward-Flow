@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Car, ChevronRight, Clock, Map as MapIcon, Plane } from "lucide-react";
+import { Car, ChevronRight, Clock, Map as MapIcon, Plane } from "lucide-react";
 
 import { Card, CardHead, Icon, SrOnly, StatusGlyph, cx } from "@/components/wf";
 
@@ -260,10 +260,6 @@ export function ReadyCard({
             </ul>
           </>
         ) : null}
-        <p className={styles.gapRow}>
-          <Icon icon={ArrowRight} size={14} />
-          Pick anyone in the register to plan a return
-        </p>
       </div>
     </Card>
   );

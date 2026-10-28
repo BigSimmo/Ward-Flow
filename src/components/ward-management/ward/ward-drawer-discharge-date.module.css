@@ -33,3 +33,37 @@
   gap: var(--wf-s-2);
   margin-top: var(--wf-s-1);
 }
+
+/* These native date/time answers share the field recipe without touching form scroll. */
+.form label {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-form-field-gap);
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.form label > :is(select, input[type="time"]) {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--wf-form-control-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.form label > :is(select, input[type="time"]):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .form label > :is(select, input[type="time"]) {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    font-size: max(1rem, 16px);
+  }
+}

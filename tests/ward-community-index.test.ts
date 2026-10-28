@@ -418,8 +418,8 @@ describe("Community team index — an empty list explains itself instead of look
 
   it("states that the list is empty and that this is a page finding nothing, not a service having nothing", () => {
     expect(main).toContain("This list is empty.");
-    expect(main).toContain("that derivation returned no teams");
-    expect(main).toContain("does not mean this prototype has no community teams");
+    expect(main).toContain("No names were found in the source");
+    expect(main).toContain("does not establish whether services exist");
   });
 
   it("renders zero team links, checked ALONGSIDE the sentence rather than instead of it", () => {

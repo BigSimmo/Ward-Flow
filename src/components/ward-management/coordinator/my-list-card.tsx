@@ -503,7 +503,7 @@ export function MyListCard({
       {act.length > 0 ? (
         alertRows(act)
       ) : toPull.length > 0 ? null : (
-        <p className={alertStyles.groupEmpty}>None firing now. The checks run are named in the header.</p>
+        <p className={alertStyles.groupEmpty}>No alerts firing.</p>
       )}
     </section>
   );
@@ -575,13 +575,7 @@ export function MyListCard({
         </button>
       </div>
       {pulling ? (
-        <Sheet
-          open
-          onClose={() => setPulling(undefined)}
-          title="Pull the bed"
-          description="Anything already recorded is filled in. Check the details, then pull the bed."
-          testId="home-pull-accepted-sheet"
-        >
+        <Sheet open onClose={() => setPulling(undefined)} title="Pull the bed" testId="home-pull-accepted-sheet">
           <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
         </Sheet>
       ) : null}

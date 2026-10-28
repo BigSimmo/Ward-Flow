@@ -299,15 +299,14 @@
 
 .select {
   width: 100%;
-  height: 34px;
-  padding: 0 12px;
+  height: var(--wf-form-control-height);
+  padding: 0 var(--wf-s-3);
   box-sizing: border-box;
-  border-radius: var(--wf-r-ctl);
+  border-radius: var(--wf-form-control-radius);
   border: 1px solid var(--wf-line-ctl);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
-  font: inherit;
-  font-size: var(--wf-fs-12);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   min-width: 0;
 }
 
@@ -337,12 +336,12 @@
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--wf-form-field-gap);
   min-width: 0;
 }
 
 .fieldLabel {
-  font-size: var(--wf-fs-12);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
   color: var(--wf-ink-2);
 }
@@ -727,4 +726,13 @@
   margin: 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
+}
+
+/* Keep the established 48px tablet/phone floor for dossier entry. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .select {
+    height: auto;
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    font-size: max(1rem, 16px);
+  }
 }

@@ -286,7 +286,7 @@ export function RecordPreview({
     return (
       <WardPanel title="Selected person" testId="ward-patient-search-preview" headingLevel={2}>
         <p className={styles.idle} data-testid="ward-patient-search-preview-idle">
-          Select a person or an open movement below to preview their record here — the list stays on screen.
+          Choose a person or open movement.
         </p>
       </WardPanel>
     );

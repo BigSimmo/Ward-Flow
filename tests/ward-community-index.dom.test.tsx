@@ -162,7 +162,7 @@ describe("Community team index — the empty state, driven by an injected list",
   it("says the list is empty and what an empty list here does and does not mean", () => {
     const main = renderIndexMain([]);
     expect(main.textContent).toContain("This list is empty.");
-    expectSays(main.textContent ?? "", "the empty community index", ["returned no teams", "no teams"]);
+    expectSays(main.textContent ?? "", "the empty community index", ["No names were found in the source"]);
     // Widened 2026-09-09: a SINGLE spelling, so it was pinning one idiom while calling itself a
     // concept. RED on "This is not proof that the prototype has no community teams" — a faithful
     // restatement of the identical caveat. The concept is that an empty page is not evidence of
@@ -172,6 +172,7 @@ describe("Community team index — the empty state, driven by an injected list",
       "is not proof",
       "does not imply",
       "must not be read as",
+      "does not establish whether services exist",
     ]);
   });
 

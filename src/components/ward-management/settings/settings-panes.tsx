@@ -291,20 +291,12 @@ export function DisplayPane({
 
           <Card aria-labelledby="help-title" data-setting="help">
             <CardHead iconPlain id="help-title" icon={CircleHelp} title="Help and tour" />
-            <SettingRow
-              setting="help-screen"
-              title="Help"
-              sub="Your desk's guide, what each screen is for, and a glossary"
-            >
+            <SettingRow setting="help-screen" title="Help">
               <Button variant="ghost" size="sm" onClick={() => openWardHelp("desk")} data-testid="settings-open-help">
                 Open help
               </Button>
             </SettingRow>
-            <SettingRow
-              setting="tour"
-              title="First-run tour"
-              sub="Starts by itself once for this desk on this device. Replay it here or from Help."
-            >
+            <SettingRow setting="tour" title="First-run tour" sub="Shown once for this desk on this device.">
               <Button
                 variant="ghost"
                 size="sm"
@@ -337,7 +329,7 @@ export function ProfilePane({ onGoToDesk }: { onGoToDesk: () => void }) {
         <div className={styles.column}>
           <Card aria-labelledby="profile-title">
             <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
-            <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
+            <SettingRow setting="role" title="Role">
               <span className={styles.readout}>{deskProfile.role}</span>
               {/* Audit settings-27: the role row leads to the desk drawer, not a dead end. */}
               <button

@@ -894,7 +894,7 @@
 
 .formGroup {
   display: grid;
-  gap: 0.25rem;
+  gap: var(--wf-form-field-gap);
 }
 
 .formNote {
@@ -904,19 +904,19 @@
 }
 
 .formLabel {
-  font-size: var(--t-0);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
 }
 
 .formInput,
 .formSelect,
 .formTextarea {
   width: 100%;
-  border-radius: var(--r2);
-  border: 1px solid var(--line-strong);
+  min-height: var(--wf-form-control-height);
+  border-radius: var(--wf-form-control-radius);
+  border: 1px solid var(--wf-line-ctl);
   background: var(--surface);
   color: var(--ink);
   padding: 0.5rem 0.75rem;
@@ -929,7 +929,7 @@
 }
 
 .formSelect {
-  min-height: 38px;
+  min-height: var(--wf-form-control-height);
 }
 
 .formTextarea {
@@ -973,7 +973,11 @@
   font-size: var(--t-1);
   color: var(--ink);
   cursor: pointer;
-  min-height: 32px;
+  min-height: var(--wf-form-choice-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
 }
 
 .declineSubmit {
@@ -2305,12 +2309,10 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 .phoneSheetLabel {
-  margin-bottom: var(--wf-s-1);
+  margin-bottom: var(--wf-form-field-gap);
   padding: 0;
   color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .phoneRadioRow {
@@ -2319,8 +2321,8 @@ details[open] > summary > .phoneFoldChevron {
   gap: var(--wf-s-3);
   min-height: var(--spacing-tap, 3rem);
   padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
@@ -2571,5 +2573,42 @@ details[open] > summary > .phoneFoldChevron {
   .decisionArea > button,
   .declineForm button[type="submit"] {
     min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* Clear slate adapts these native accept/decline editors without changing their decisions. */
+:is(.formInput, .formSelect, .formTextarea):focus-visible,
+.declineOption:has(input:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.declineOption input:focus-visible {
+  outline: none;
+}
+
+.declineOption:has(input:checked) {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+:is(.formInput, .formSelect, .formTextarea)[aria-invalid="true"] {
+  border-color: var(--wf-danger);
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .formInput,
+  .formSelect {
+    min-height: var(--wf-form-control-height-phone);
+    font-size: max(1rem, 16px);
+  }
+
+  .formTextarea {
+    font-size: max(1rem, 16px);
+  }
+
+  .declineOption {
+    min-height: var(--wf-form-control-height-phone);
   }
 }

@@ -226,10 +226,10 @@
 
 .credentials input,
 .credentials select {
-  min-height: 2.75rem;
-  padding: 0.5rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.5rem;
+  min-height: var(--wf-form-control-height);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   color: var(--ink);
   background: var(--surface);
   font: inherit;
@@ -295,4 +295,13 @@
   top: 0;
   z-index: 10;
   font-size: clamp(1.25rem, 1.6vw, 2.5rem);
+}
+
+/* Shared account scope selectors retain their values and access behaviour. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .credentials input,
+  .credentials select {
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
+    font-size: max(1rem, 16px);
+  }
 }

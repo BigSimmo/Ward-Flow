@@ -452,17 +452,19 @@
 .select {
   flex: 1 1 12rem;
   min-width: 0;
-  height: var(--wf-h-sm);
+  height: var(--wf-form-control-height);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-ctl);
+  border-radius: var(--wf-form-control-radius);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 @media (max-width: 48rem), (pointer: coarse) {
   .select {
+    height: auto;
+    min-height: max(var(--wf-form-control-height-phone), var(--spacing-tap, 3rem));
     font-size: max(1rem, 16px);
   }
 }

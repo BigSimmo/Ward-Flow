@@ -41,7 +41,7 @@ describe("community team screen: search and dossier come from the patient record
   it("shows no patient until something is typed", () => {
     renderScreen();
 
-    expect(screen.getByTestId("ward-community-search-hint")).toBeTruthy();
+    expect(screen.getByRole("searchbox", { name: "Search sample patients" })).toHaveValue("");
     expect(screen.queryByTestId(/^ward-community-search-hit-/)).toBeNull();
     expect(screen.queryByText(/Davenporton/)).toBeNull();
   });

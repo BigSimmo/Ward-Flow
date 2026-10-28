@@ -1,7 +1,7 @@
 /*
- * Referral drawer, v6 (ReferralDrawer*.webp). The sheet around it owns the chrome; this file styles
- * the content inside it. Tokens only (`--wf-*`). Colour is a glyph, never a fill; the selected ward
- * row carries the one stripe the design allows.
+ * Referral drawer. The sheet around it owns the chrome; this file styles the content inside it.
+ * Clear slate form controls share the `--wf-form-*` geometry and semantic palette with wf/form.
+ * Native choice marks remain visible; selected tint supplements the mark rather than replacing it.
  *
  * Shared with the ward screen's inbox (`ward-referral-inbox.tsx`) and the submitted-details
  * summary (`referral-intake-summary.tsx`): `refCard`, `refCardTitle`, `refCardSubtitle`,
@@ -99,7 +99,6 @@
 }
 
 .headTabs,
-.segmented,
 .categoryTrack {
   display: inline-flex;
   min-width: 0;
@@ -111,18 +110,22 @@
   box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-hero-2) 6%, transparent);
 }
 
-/* Option groups are equal columns that never wrap: a long label shortens, it never breaks the row. */
-.categoryTrack,
-.segmented {
+/* Navigation stays in equal columns; form answers below can wrap without losing their labels. */
+.categoryTrack {
   display: grid;
   grid-auto-columns: minmax(0, 1fr);
   grid-auto-flow: column;
 }
 
-.segmented > button,
-.segmented > label {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.segmented {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .headTabs > button,
@@ -177,8 +180,49 @@
   height: var(--wf-h-sm);
 }
 
+.segmented > button,
+.segmented > label,
+.answerGroup .answerOptions > label {
+  height: auto;
+  min-height: var(--wf-form-choice-height);
+  justify-content: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.segmented > button:hover,
+.segmented > label:hover,
+.answerGroup .answerOptions > label:hover {
+  background: var(--wf-hover);
+}
+
+.segmented > button[aria-pressed="true"],
+.segmented > label[data-selected="true"],
+.answerGroup .answerOptions > label[data-selected="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+  color: var(--wf-accent-ink);
+  box-shadow: none;
+}
+
 .segmented > label input,
-.answerGroup .answerOptions > label input,
+.answerGroup .answerOptions > label input {
+  position: static;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin: 0;
+  accent-color: var(--wf-accent);
+  cursor: inherit;
+}
+
 .tierTile input {
   position: absolute;
   width: 1px;
@@ -1032,7 +1076,8 @@
   display: grid;
   min-width: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--wf-s-3);
+  column-gap: var(--wf-form-group-gap);
+  row-gap: var(--wf-s-4);
 }
 
 .fieldGrid[data-layout="three"] {
@@ -1047,7 +1092,7 @@
   display: grid;
   min-width: 0;
   align-content: start;
-  gap: 6px;
+  gap: var(--wf-form-field-gap);
 }
 
 .fieldWide {
@@ -1059,6 +1104,7 @@
   min-width: 0;
   align-items: baseline;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--wf-s-2);
 }
 
@@ -1066,11 +1112,12 @@
 .fieldLabelRow > span:first-child,
 .radioField > legend,
 .answerGroup > legend {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
-  line-height: var(--wf-lh-12);
-  white-space: nowrap;
+  line-height: var(--wf-lh-13);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .required::after {
@@ -1083,7 +1130,8 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   font-weight: 400;
-  white-space: nowrap;
+  line-height: var(--wf-lh-12);
+  white-space: normal;
 }
 
 .fieldInput,
@@ -1091,15 +1139,17 @@
 .clinicalTextarea {
   width: 100%;
   min-width: 0;
-  height: var(--wf-h-md);
+  height: var(--wf-form-control-height);
   box-sizing: border-box;
   padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-form-control-radius);
   background: var(--wf-surface);
   color: var(--wf-ink-1);
   font: inherit;
   font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
 }
 
 .fieldInput::placeholder,
@@ -1110,36 +1160,74 @@
 .fieldInput:hover,
 .fieldSelect:hover,
 .clinicalTextarea:hover {
-  border-color: var(--wf-line-3);
+  border-color: var(--wf-ink-3);
 }
 
 .fieldInput:focus,
 .fieldSelect:focus,
 .clinicalTextarea:focus {
   border-color: var(--wf-accent);
-  outline: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-accent) 18%, transparent);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 .clinicalTextarea {
   height: auto;
-  min-height: 3.5rem;
+  min-height: 6rem;
   padding: var(--wf-s-2) var(--wf-s-3);
   resize: vertical;
+  line-height: 1.6;
 }
 
-/* Phone: fields read at 16px so iOS Safari does not zoom the page on focus. Desktop keeps 13px. */
-@media (max-width: 48rem) {
+/* Phone and touch inputs retain the iOS text floor and the shared full-height target. */
+@media (max-width: 48rem), (pointer: coarse) {
+  .fieldInput,
+  .fieldSelect {
+    height: var(--wf-form-control-height-phone);
+  }
+
   .fieldInput,
   .fieldSelect,
   .clinicalTextarea {
     font-size: max(1rem, 16px);
   }
+
+  .segmented > button,
+  .segmented > label,
+  .answerGroup .answerOptions > label {
+    min-height: var(--wf-form-control-height-phone);
+  }
 }
 
 .formField[data-invalid="true"] .fieldInput,
-.formField[data-invalid="true"] .fieldSelect {
+.formField[data-invalid="true"] .fieldSelect,
+.formField[data-invalid="true"] .clinicalTextarea,
+.fieldInput[aria-invalid="true"],
+.fieldSelect[aria-invalid="true"],
+.clinicalTextarea[aria-invalid="true"] {
   border-color: var(--wf-danger);
+}
+
+.fieldInput:read-only,
+.clinicalTextarea:read-only {
+  border-style: dashed;
+  background: var(--wf-surface-2);
+}
+
+.fieldInput:disabled,
+.fieldSelect:disabled,
+.clinicalTextarea:disabled {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-off);
+  cursor: not-allowed;
+}
+
+.segmented > button:disabled,
+.segmented > label:has(input:disabled),
+.answerGroup .answerOptions > label:has(input:disabled) {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-off);
+  cursor: not-allowed;
 }
 
 .selectBox {
@@ -1172,10 +1260,10 @@
 .fieldError,
 .flowError {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   margin: 0;
-  color: var(--wf-ink-1);
+  color: var(--wf-danger-ink);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
@@ -1228,13 +1316,13 @@
 .checkList > .radioField > legend {
   width: auto;
   margin: 0;
-  line-height: 32px;
+  line-height: var(--wf-form-choice-height);
 }
 
 .checkList > .radioField > .segmented {
   clear: none;
   float: right;
-  width: min(100%, 17rem);
+  width: min(100%, 22rem);
 }
 
 @container referral-sheet (max-width: 30rem) {
@@ -1412,18 +1500,18 @@
 .answerGroup > legend {
   float: left;
   padding: 0;
-  line-height: var(--wf-h-sm);
+  line-height: var(--wf-form-choice-height);
   white-space: normal;
 }
 
 .answerGroup .answerOptions {
   float: right;
-  flex-wrap: nowrap;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-track);
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
 
 .answerGroup .answerOptions > label {
@@ -2072,6 +2160,7 @@ details.refCard > summary {
 @media (max-width: 40rem) {
   .fieldGrid,
   .fieldGrid[data-layout="three"],
+  .fieldGrid[data-layout="wide-narrow"],
   .priorityGrid,
   .tierGrid {
     grid-template-columns: minmax(0, 1fr);
@@ -3420,14 +3509,14 @@ details.refCard > summary {
   }
 
   .checkList > .radioField > .segmented.segmented {
-    display: inline-grid;
+    display: flex;
     float: none;
     width: auto;
-    margin-left: 20px;
+    margin-left: 0;
   }
 
   .checkList > .radioField > .segmented > label {
-    padding: 0 var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-3);
   }
 }
 
@@ -3514,10 +3603,30 @@ details.refCard > summary {
   }
 }
 
-/* Layout sweep (REF-14): on a phone a card title wraps beside its tag ("Legal status and urgency"
-   beside "limits not legally checked") rather than being cut to "Legal status …". */
+/* Phone headers reserve a full line for their title; long supporting tags keep their own line. */
 @media (max-width: 48rem) {
+  .cardHead {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
   .cardTitle {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: visible;
+    text-overflow: clip;
     white-space: normal;
+  }
+
+  .cardHeadAside {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    max-width: 100%;
+    margin-left: 0;
+  }
+
+  .cardHeadAside .asideText {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 }

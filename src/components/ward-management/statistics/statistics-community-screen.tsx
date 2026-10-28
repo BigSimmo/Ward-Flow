@@ -238,17 +238,12 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
         <StatCard icon={Users} title="No such team">
           <CardBody className={styles.bodyStack}>
             <p data-testid="ward-statistics-community-unresolved">
-              No community team in this prototype has the address <code className={detail.code}>{teamId}</code>. The
-              teams here are exactly those the referral form can name — {COMMUNITY_TEAM_PAGES.length} of them — so a
-              team that exists in the real world and not in that list has no page. This page never falls back to a
-              different team, because a page showing one team&apos;s patients under another team&apos;s name is worse
-              than a page showing nothing.
+              No community team in this prototype has the address <code className={detail.code}>{teamId}</code>.
             </p>
             <p>
               <Link href={STATISTICS_COMMUNITY_CHOOSER_HREF} data-testid="ward-statistics-community-chooser-link">
                 Choose a community team from the statistics hub
-              </Link>{" "}
-              to reach one that does exist.
+              </Link>
             </p>
           </CardBody>
         </StatCard>
