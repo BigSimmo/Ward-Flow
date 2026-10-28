@@ -398,6 +398,7 @@ export function WardBarDrawerTriggers({
         className={styles.drawerTrigger}
         data-bar-mode="tools"
         data-testid="ward-bar-tools-trigger"
+        title="Quick actions, look ups, print and share, and demo controls"
         aria-haspopup="dialog"
         aria-expanded={openPanel === "tools"}
         aria-controls="ward-bar-tools-drawer"

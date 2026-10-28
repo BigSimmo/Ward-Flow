@@ -73,7 +73,9 @@ describe("Find a bed, audit 24-1 decision 1", () => {
       expect(button).toHaveAttribute("aria-pressed", "false");
     }
     expect(within(finder).queryByRole("list")).toBeNull();
-    expect(within(finder).getByRole("status")).toHaveTextContent("Choose a legal status");
+    expect(within(finder).getByRole("status")).toHaveTextContent(
+      "Choose Voluntary or Involuntary under Legal status to list wards. Involuntary lists only authorised wards.",
+    );
   });
 
   it("lists wards A to Z by name, not by free beds", () => {
