@@ -663,9 +663,18 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
     <OperationalWardAccessGate>{children}</OperationalWardAccessGate>
   );
 }
+/** A desk switch ends when its new page arrives, so going Back later finds the page as it is. */
+function useEndArrivedSwitch(pathname: string): void {
+  const { switchFrom, signInLanding } = useWardAccessSnapshot();
+  useEffect(() => {
+    if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
+    if (signInLanding !== undefined && signInLanding !== pathname) markSignInLanding();
+  }, [switchFrom, signInLanding, pathname]);
+}
 function ExecutiveAccessGate({ access, children }: { access: WardAccess; children: ReactNode }) {
   const shell = useWardShellPublic();
   const pathname = usePathname() ?? "";
+  useEndArrivedSwitch(pathname);
   if (!shell) return <ExecutiveStatisticsUnavailable />;
   return screenDecision(access, screenForPath(pathname), shell.places).open ? (
     <>{children}</>
@@ -680,12 +689,7 @@ function OperationalWardAccessGate({ children }: { children: ReactNode }) {
   const scoped = useWardFlowSelect("movements", "patients");
   const unscoped = useUnscopedWardFlow();
   const glass = useBreakGlassPatientIds();
-  const { switchFrom, signInLanding } = useWardAccessSnapshot();
-  // A desk switch ends when its new page arrives, so going Back later finds the page as it is.
-  useEffect(() => {
-    if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
-    if (signInLanding !== undefined && signInLanding !== pathname) markSignInLanding();
-  }, [switchFrom, signInLanding, pathname]);
+  useEndArrivedSwitch(pathname);
   const address = screenForPath(pathname);
   const logged = recordViewFor(address, unscoped.movements);
   if (!on || accessIsWholeNetwork(access))

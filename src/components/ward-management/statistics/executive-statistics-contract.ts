@@ -564,8 +564,6 @@ const reportingFoundation = z.strictObject({
 });
 
 export type ExecutiveReportingFoundation = z.infer<typeof reportingFoundation>;
-export type ExecutiveReportingWard = z.infer<typeof wardSummary>;
-export type ExecutiveReportingEd = z.infer<typeof edSummary>;
 export type ExecutiveReportingWeek = z.infer<typeof weeklySummary>;
 
 /** Deep network seam; the lean React holder deliberately does not import this validator. */

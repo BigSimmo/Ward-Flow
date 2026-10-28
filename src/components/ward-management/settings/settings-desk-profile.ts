@@ -1,8 +1,7 @@
-import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
+import { SEED_UNITS, accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { ACCESS_ROLE_LABELS, accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
-import { allUnits } from "@/components/ward-management/ward-sites";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 
 import { SETTINGS_DEMO_PROFILE, type WorkspaceProfile } from "./settings-profile";
@@ -25,6 +24,6 @@ export function useSettingsDeskProfile(): DeskProfile {
     name: named ? persona.name : role,
     initials: persona.initials,
     role,
-    location: publicModel?.placeLabel ?? accessPlaceLabel(access, allUnits()),
+    location: publicModel?.placeLabel ?? accessPlaceLabel(access, SEED_UNITS),
   };
 }

@@ -196,11 +196,17 @@ function ExecutiveBedSummary() {
   const report = useExecutiveStatistics();
   const [status, setStatus] = useState("");
   if (!report) return <p role="status">Bed summary is unavailable until this report is ready.</p>;
-  const text = `${report.network.scope.kind === "service" ? report.network.scope.service : "Whole network"} · synthetic prototype\n${report.network.beds.ready} beds ready, ${report.network.beds.occupied} occupied, ${report.network.beds.pulled} pulled.\n${report.services
+  // C04, the 5 Sep 2026 ruling: a ready figure says how many of those beds are still being made
+  // ready, in the other screens' words. The figure itself is unchanged, and a zero says nothing.
+  const preparing = (beds: { beingMadeReady: number }) =>
+    beds.beingMadeReady > 0
+      ? ` (${beds.beingMadeReady} of the ready ${beds.beingMadeReady === 1 ? "bed is" : "beds are"} still being made ready)`
+      : "";
+  const text = `${report.network.scope.kind === "service" ? report.network.scope.service : "Whole network"} · synthetic prototype\n${report.network.beds.ready} beds ready${preparing(report.network.beds)}, ${report.network.beds.occupied} occupied, ${report.network.beds.pulled} pulled.\n${report.services
     .filter((service) => report.network.scope.kind === "statewide" || service.service === report.network.scope.service)
     .map(
       (service) =>
-        `${service.service}: ${service.beds.ready} beds ready, ${releasedCountText(service.waiting)} waiting in ED`,
+        `${service.service}: ${service.beds.ready} beds ready${preparing(service.beds)}, ${releasedCountText(service.waiting)} waiting in ED`,
     )
     .join("\n")}`;
   return (

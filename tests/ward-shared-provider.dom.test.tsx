@@ -106,6 +106,8 @@ function connection(): WardSharedConnection {
 }
 beforeEach(() => {
   fake.connection = connection();
+  // Each test starts at the default desk, so an earlier test's desk is not re-adopted (and saved) here.
+  resetWardAccessStoreForTests();
   vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "true");
 });
 afterEach(() => {

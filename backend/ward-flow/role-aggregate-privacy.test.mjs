@@ -78,6 +78,8 @@ function executiveBoundary({
         },
       },
       clock: () => new Date(time),
+      // A slow runner must not add a command timing line (P011) to a log that fails on any line.
+      slowCommandMs: 60_000,
       log: () => assert.fail("Unexpected diagnostic"),
     },
   );

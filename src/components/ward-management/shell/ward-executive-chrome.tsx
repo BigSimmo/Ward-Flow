@@ -52,6 +52,7 @@ import { WardToolsSheet } from "../tools/ward-tools-sheet";
 import { railEntries, roleMenu, isActiveRailEntry, type RailEntry } from "./ward-rail-entries";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { useWardShellPublic } from "./ward-shell-public-context";
+import { settingsHref } from "./ward-facade";
 import {
   setRailOpenPreference,
   useWardDocumentPreferences,
@@ -365,12 +366,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   );
   const utility = (kind: "help" | "appearance" | "settings") =>
     kind === "settings" ? (
-      <Link
-        href="/ward-flow/settings"
-        className={rail.utilityLink}
-        onClick={close}
-        data-testid="ward-rail-settings-link"
-      >
+      <Link href={settingsHref()} className={rail.utilityLink} onClick={close} data-testid="ward-rail-settings-link">
         <Settings aria-hidden="true" /> <span>Settings</span>
       </Link>
     ) : (

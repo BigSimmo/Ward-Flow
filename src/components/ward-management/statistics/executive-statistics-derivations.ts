@@ -608,7 +608,7 @@ function sumBeds(wards: readonly PublicWard[]): ExecutiveBedCounts {
 export function executiveServices(
   input: ExecutivePrivateInput,
   places: PlaceLookup,
-  allUnits: readonly Pick<Unit, "id" | "siteCode">[],
+  catalogueUnits: readonly Pick<Unit, "id" | "siteCode">[],
   wards: readonly PublicWard[],
   eds: readonly ReturnType<typeof executiveEdSummary>[],
   release: ExecutiveCountRelease,
@@ -624,7 +624,7 @@ export function executiveServices(
         (arm) => arm.destination.kind === "psychiatric_ward" && arm.acceptedUnitId !== undefined,
       );
       if (!acceptance) return null;
-      const unit = allUnits.find((entry) => entry.id === acceptance.acceptedUnitId);
+      const unit = catalogueUnits.find((entry) => entry.id === acceptance.acceptedUnitId);
       return unit ? (places.unitService(unit.id) ?? null) : undefined;
     };
     const placedWithinService = c("within", ownReferrals.filter((referral) => acceptedAt(referral) === service).length);

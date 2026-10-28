@@ -723,30 +723,37 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     return list;
   }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
 
-  const finderLists: Record<FinderKind, FinderEntry[]> = {
-    ward: allPressureWards
-      .map((ward) => ({
-        id: ward.id,
-        name: ward.name,
-        code: ward.site,
-        meta: String(ward.ready) + " ready",
-        ready: ward.ready,
-      }))
-      .sort((left, right) => right.ready - left.ready || left.name.localeCompare(right.name)),
-    ed: emergencyDepts
-      .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
-      .map((ed) => ({
-        id: ed.id,
-        name: ed.name,
-        code: ed.site,
-        meta: String(small(ed.waiting)) + " open ED journeys",
-      })),
-    service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
-      const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
-      return { id: name, name, meta: String(count) + (count === 1 ? " ward" : " wards") };
-    }),
-    team: directory?.teams ?? COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
-  };
+  // The finder is desktop only, so the phone skips building and sorting its lists.
+  const finderLists = useMemo<Record<FinderKind, FinderEntry[]>>(
+    () =>
+      isPhone
+        ? { ward: [], ed: [], service: [], team: [] }
+        : {
+            ward: allPressureWards
+              .map((ward) => ({
+                id: ward.id,
+                name: ward.name,
+                code: ward.site,
+                meta: String(ward.ready) + " ready",
+                ready: ward.ready,
+              }))
+              .sort((left, right) => right.ready - left.ready || left.name.localeCompare(right.name)),
+            ed: emergencyDepts
+              .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
+              .map((ed) => ({
+                id: ed.id,
+                name: ed.name,
+                code: ed.site,
+                meta: String(statisticsCountText(ed.waiting, operationalSmall)) + " open ED journeys",
+              })),
+            service: (directory?.services ?? HEALTH_SERVICES).map((name) => {
+              const count = allPressureWards.filter((ward) => siteByCode(ward.site)?.service === name).length;
+              return { id: name, name, meta: String(count) + (count === 1 ? " ward" : " wards") };
+            }),
+            team: directory?.teams ?? COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
+          },
+    [isPhone, allPressureWards, emergencyDepts, directory, operationalSmall],
+  );
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
 

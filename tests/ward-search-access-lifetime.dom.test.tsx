@@ -71,7 +71,9 @@ afterEach(() => {
 function rememberPerson() {
   fireEvent.change(input(), { target: { value: target.umrn } });
   fireEvent.click(screen.getByTestId(`ward-global-search-result-person-${target.id}`), { button: 0 });
-  fireEvent.change(input(), { target: { value: "" } });
+  // P141: opening a result empties the box and closes it; focusing it again shows Recent.
+  expect(input()).toHaveValue("");
+  fireEvent.focus(input());
   expect(recent()).toHaveTextContent(patientListName(target));
 }
 
@@ -197,7 +199,7 @@ describe("search recents follow the current access lifetime", () => {
     const view = render(<Search {...props} accessLifetime="one-desk" />);
     fireEvent.change(input(), { target: { value: movement.id } });
     fireEvent.click(screen.getByTestId(`ward-global-search-result-movement-${movement.id}`));
-    fireEvent.change(input(), { target: { value: "" } });
+    fireEvent.focus(input());
     expect(recent()).toHaveTextContent(destination.name);
     view.rerender(
       <Search {...props} accessLifetime="one-desk" units={units.filter((unit) => unit.id !== destination.id)} />,
@@ -227,7 +229,7 @@ describe("search recents follow the current access lifetime", () => {
     const view = render(<Search {...current} accessLifetime="one-desk" />);
     fireEvent.change(input(), { target: { value: referral.id } });
     fireEvent.click(screen.getByTestId(`ward-global-search-result-referral-${referral.id}`));
-    fireEvent.change(input(), { target: { value: "" } });
+    fireEvent.focus(input());
     expect(recent()).toBeInTheDocument();
     view.rerender(
       <Search
@@ -266,7 +268,7 @@ describe("search recents follow the current access lifetime", () => {
     const row = screen.getAllByTestId(/^ward-global-search-result-stay-/)[0];
     expect(row).toBeInTheDocument();
     fireEvent.click(row);
-    fireEvent.change(input(), { target: { value: "" } });
+    fireEvent.focus(input());
     expect(recent()).toBeInTheDocument();
     view.rerender(content(true));
     expect(recent()).not.toBeInTheDocument();

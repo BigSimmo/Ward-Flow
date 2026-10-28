@@ -18,7 +18,7 @@ import { unitHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 
-export type BedFinderLegalStatus = "voluntary" | "involuntary";
+type BedFinderLegalStatus = "voluntary" | "involuntary";
 
 export type BedFinderFilters = {
   cohort: Cohort;

@@ -36,7 +36,7 @@ import {
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 /** One ward on the phone Summary, from the same figures the desktop pressure table reads. */
-export type PhoneWard = {
+type PhoneWard = {
   id: string;
   name: string;
   hospital: string;
@@ -47,7 +47,7 @@ export type PhoneWard = {
   percent: number;
 };
 
-export type PhoneEd = {
+type PhoneEd = {
   id: string;
   name: string;
   site: string;
