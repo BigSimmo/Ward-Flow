@@ -1983,8 +1983,16 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [
     1,
     (state, random) => {
-      const event = inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP")(state, random)!;
-      // P019: a row someone holds is released instead. No extra draw, so the seeded runs keep their shape.
+      // Prefer a row someone holds now, so a release is drawn whatever rows the inbox has.
+      const event = inboxEvent("TAKE_INBOX_ITEM_OWNERSHIP", (current) =>
+        Object.fromEntries(
+          Object.entries(current.inboxOwnership ?? {}).filter(([, history]) => {
+            const latest = history?.at(-1);
+            return latest !== undefined && latest.kind !== "released";
+          }),
+        ),
+      )(state, random)!;
+      // P019: a row someone holds is released instead.
       const latest = state.inboxOwnership[String(event.inboxItemId)]?.at(-1);
       return latest && latest.kind !== "released" ? { ...event, type: "RELEASE_INBOX_ITEM_OWNERSHIP" } : event;
     },

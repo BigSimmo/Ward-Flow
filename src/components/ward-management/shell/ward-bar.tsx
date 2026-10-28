@@ -1280,7 +1280,9 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
             Esc
           </kbd>
         }
-        descriptionContent={<p className={styles.activityFreshness}>Whole network</p>}
+        descriptionContent={
+          <p className={styles.activityFreshness}>Quick actions and look ups for the whole network</p>
+        }
         placement="right"
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}

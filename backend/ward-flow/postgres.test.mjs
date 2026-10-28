@@ -450,6 +450,8 @@ test(
       engine,
       clock: () => at,
       log: (event) => logs.push(event),
+      // A slow runner would add a command timing line (P011); this test is about failure lines only.
+      slowCommandMs: 60_000,
       deliveryWaitMs: 10_000,
       push: {
         send: async (row, payload) => {
@@ -554,6 +556,8 @@ test(
         engine: options.engine ?? engine,
         clock: () => at,
         log: (event) => logs.push(event),
+        // A slow runner would add a command timing line (P011); these cases count failure lines only.
+        slowCommandMs: 60_000,
         deliveryWaitMs: options.deliveryWaitMs ?? 10_000,
         // No gap between retries here, so a sweep can retry at once on the fixed clock.
         retryAfterMs: 0,
