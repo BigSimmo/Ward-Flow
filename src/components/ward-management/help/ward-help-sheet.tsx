@@ -162,34 +162,12 @@ function WardHelpSheetView({
       }
       footerClassName={barStyles.drawerFooter}
     >
-      <section className={styles.desk} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
-        <div className={styles.deskCard}>
-          <div className={styles.deskText}>
-            <span>Your desk</span>
-            <h3 id="ward-help-intro-title">{deskLabel(role)}</h3>
-          </div>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => onView("tour")}
-            data-testid="ward-help-view-tour"
-          >
-            <Compass aria-hidden="true" strokeWidth={1.75} />
-            Take the tour
-          </button>
-        </div>
-        <p className={styles.note}>
-          The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
-        </p>
-      </section>
-
       <div className={styles.searchDock}>
         <WardHelpSearch role={role} home={deskHome ?? home} />
       </div>
 
-      {ask !== undefined ? (
-        <details className={styles.referenceSection} open={ask.trim().length > 0}>
-          <summary>Ask a question</summary>
+      {ask?.trim() ? (
+        <div className={styles.group}>
           <WardHelpAsk
             role={role}
             home={deskHome ?? home}
@@ -197,7 +175,7 @@ function WardHelpSheetView({
             onClose={onClose}
             termsSource={termsSource}
           />
-        </details>
+        </div>
       ) : null}
 
       <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">
@@ -215,7 +193,37 @@ function WardHelpSheetView({
         ))}
       </div>
 
-      <WardHelpReference role={role} onClose={onClose} />
+      <div className={styles.utilityRow}>
+        <section className={styles.desk} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
+          <div className={styles.deskCard}>
+            <div className={styles.deskText}>
+              <span className="sr-only">Your desk</span>
+              <h3 id="ward-help-intro-title">{deskLabel(role)}</h3>
+            </div>
+            <button
+              type="button"
+              className={`${styles.secondaryButton} ${styles.tourLink}`}
+              onClick={() => onView("tour")}
+              data-testid="ward-help-view-tour"
+            >
+              <Compass aria-hidden="true" strokeWidth={1.75} />
+              Take the tour
+            </button>
+          </div>
+        </section>
+
+        <WardHelpReference role={role} onClose={onClose}>
+          {ask !== undefined && !ask.trim() ? (
+            <WardHelpAsk
+              role={role}
+              home={deskHome ?? home}
+              initialQuery={ask}
+              onClose={onClose}
+              termsSource={termsSource}
+            />
+          ) : null}
+        </WardHelpReference>
+      </div>
 
       {view === "desk" ? (
         <section className={styles.stack} aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">

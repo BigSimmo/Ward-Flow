@@ -18,31 +18,35 @@ export function WardHelpGlossary({ termsSource }: { termsSource: readonly Glossa
   }
   return (
     <section className={styles.group} aria-label="Glossary" data-testid="ward-help-glossary">
-      <label htmlFor="ward-help-glossary-filter" className={styles.label}>
-        Find a word or code
-      </label>
-      <div className={styles.searchField}>
-        <Search aria-hidden="true" strokeWidth={1.75} />
-        <input
-          ref={input}
-          id="ward-help-glossary-filter"
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          autoComplete="off"
-          placeholder="For example Pulled, NIC or RPH"
-          data-testid="ward-help-glossary-filter"
-        />
+      <div className={styles.glossaryFilters}>
+        <div className={styles.group}>
+          <label htmlFor="ward-help-glossary-filter" className={styles.label}>
+            Find a word or code
+          </label>
+          <div className={styles.searchField}>
+            <Search aria-hidden="true" strokeWidth={1.75} />
+            <input
+              ref={input}
+              id="ward-help-glossary-filter"
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              autoComplete="off"
+              placeholder="For example Pulled, NIC or RPH"
+              data-testid="ward-help-glossary-filter"
+            />
+          </div>
+        </div>
+        <label className={styles.groupFilter}>
+          <span className={styles.label}>Group</span>
+          <select value={group} onChange={(event) => setGroup(event.target.value)}>
+            <option value="all">All groups</option>
+            {GLOSSARY_GROUPS.map((name) => (
+              <option key={name}>{name}</option>
+            ))}
+          </select>
+        </label>
       </div>
-      <label className={styles.groupFilter}>
-        Group
-        <select value={group} onChange={(event) => setGroup(event.target.value)}>
-          <option value="all">All groups</option>
-          {GLOSSARY_GROUPS.map((name) => (
-            <option key={name}>{name}</option>
-          ))}
-        </select>
-      </label>
       <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>
       <p className="sr-only" role="status" aria-label="Glossary" aria-atomic="true">
         Glossary:{" "}
@@ -54,7 +58,7 @@ export function WardHelpGlossary({ termsSource }: { termsSource: readonly Glossa
               .join(", ")}
       </p>
       {!query && group === "all" ? (
-        <details className={styles.referenceSection}>
+        <details className={`${styles.referenceSection} ${styles.wordCompare}`}>
           <summary>Words that are easy to mix up</summary>
           <div className={styles.stack}>
             {CONFUSABLE_TERMS.map((names) => (
