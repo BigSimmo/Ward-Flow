@@ -33,6 +33,15 @@ import { STATISTICS_COMPARE_HREF, statisticsSectionById } from "./statistics-sec
 import { PhoneBody, PhoneDotKey, PhoneList, PhoneSheetRow, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import {
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText,
+  exactStatisticsCount,
+  withheldBar,
+  type StatisticsCount,
+} from "./statistics-small-numbers";
 
 /** Each health service's colour class (the `--wf-svc-*` tokens), for its dot. */
 const SERVICE_CLASS: Record<HealthService, string> = {
@@ -63,16 +72,80 @@ const wardsWord = (count: number) => (count === 1 ? "ward" : "wards");
  * from `edWaitFigures`. A service with no inpatient wards says so rather than showing a nought
  * occupancy. Nothing here keeps history, so there is no trend.
  */
-export function StatisticsServicesIndexScreen() {
-  const section = statisticsSectionById("service");
-  if (!section) throw new Error("statistics-sections.ts no longer defines the 'service' section");
 
+type ServiceIndexRow = {
+  service: HealthService;
+  wards: number;
+  beds: number;
+  occupied: number;
+  inUse: number;
+  share: number;
+  ready: number;
+  pulled: number;
+  closed: number;
+  pending: number;
+  over: number;
+  waiting: StatisticsCount;
+  over24: StatisticsCount;
+  departments: number;
+  sites: string[];
+  openable?: boolean;
+};
+export function StatisticsServicesIndexScreen() {
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  return control.executive || access.role === "executive" ? <ExecutiveServicesIndex /> : <OperationalServicesIndex />;
+}
+function ExecutiveServicesIndex() {
+  const data = useExecutiveStatistics();
+  const control = useExecutiveStatisticsControl();
+  if (!data || data.services.length === 0) return <ExecutiveStatisticsUnavailable />;
+  const services: ServiceIndexRow[] = data.services.map((service) => {
+    const ownWards = data.wards.filter((ward) => ward.service === service.service);
+    return {
+      service: service.service,
+      openable: data.openableServiceIds.includes(service.service),
+      wards: service.wards,
+      beds: service.beds.total,
+      occupied: service.beds.occupied,
+      inUse: service.beds.inUse,
+      share: service.beds.total > 0 ? service.beds.inUse / service.beds.total : 0,
+      ready: service.beds.ready,
+      pulled: service.beds.pulled,
+      closed: service.beds.closed,
+      pending: ownWards.reduce((sum, ward) => sum + ward.pendingPreparation, 0),
+      over: service.wardsOverOccupancyLine,
+      waiting: service.waiting,
+      over24: service.over24h,
+      departments: service.departments,
+      sites: [
+        ...new Set(
+          ownWards.map((ward) =>
+            shortSite(data.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode),
+          ),
+        ),
+      ],
+    };
+  });
+  return (
+    <ServicesIndexView
+      services={services}
+      accepted={new Map(data.referralMatrix.map((cell) => [cell.from + "|" + cell.to, cell.count]))}
+      notYet={new Map(data.services.map((service) => [service.service, service.indexNotYetAcceptedAtWard]))}
+      totalWaiting={data.edIndex.waiting}
+      now={data.network.asAt.now}
+      paused={control.paused}
+      togglePause={control.togglePause}
+      scopeLabel={data.network.scope.kind === "service" ? data.network.scope.service : undefined}
+      executive
+    />
+  );
+}
+function OperationalServicesIndex() {
   const live = useStatisticsLive();
   const { units, admissions, bedReleases, leaveBeds, movements, referrals } = live.state;
   const now = live.now;
   const departments = allEmergencyDepartments();
-  const isPhone = useIsPhone();
-
   const services = HEALTH_SERVICES.map((service) => {
     const siteCodes = new Set(siteDirectory.filter((site) => site.service === service).map((site) => site.code));
     const serviceUnits = units.filter((unit) => siteCodes.has(unit.siteCode));
@@ -131,11 +204,51 @@ export function StatisticsServicesIndexScreen() {
     accepted.set(`${from}|${to}`, (accepted.get(`${from}|${to}`) ?? 0) + 1);
   }
 
-  const totalWaiting = services.reduce((total, entry) => total + entry.waiting, 0);
+  return (
+    <ServicesIndexView
+      services={services}
+      accepted={accepted}
+      notYet={notYet}
+      totalWaiting={services.reduce((sum, row) => sum + row.waiting, 0)}
+      now={now}
+      paused={live.paused}
+      togglePause={live.togglePause}
+    />
+  );
+}
+function ServicesIndexView({
+  services,
+  accepted,
+  notYet,
+  totalWaiting,
+  now,
+  paused,
+  togglePause,
+  executive = false,
+  scopeLabel,
+}: {
+  services: ServiceIndexRow[];
+  accepted: ReadonlyMap<string, StatisticsCount>;
+  notYet: ReadonlyMap<HealthService, StatisticsCount>;
+  totalWaiting: StatisticsCount;
+  now: number;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  executive?: boolean;
+  scopeLabel?: string;
+}) {
+  const section = statisticsSectionById("service");
+  if (!section) throw new Error("Statistics service section is missing.");
+  const isPhone = useIsPhone();
+  const shown = (count: StatisticsCount) => statisticsCountText(count);
+  const positive = (count: StatisticsCount) => {
+    const value = exactStatisticsCount(count);
+    return value === null || value > 0;
+  };
+  const unknownCount: StatisticsCount = executive ? { kind: "withheld" } : 0;
   const withBeds = services.filter((entry) => entry.beds > 0);
   const servicesOver = services.filter((entry) => entry.over > 0).length;
   const totalBeds = services.reduce((total, entry) => total + entry.beds, 0);
-
   return (
     <StatisticsPage
       section={section}
@@ -143,9 +256,10 @@ export function StatisticsServicesIndexScreen() {
       testId="ward-statistics-services-index"
       eyebrowLabel={`Statistics · ${HEALTH_SERVICES.length} services`}
       title="Health services"
+      eyebrowDetail={scopeLabel}
       now={now}
-      paused={live.paused}
-      onTogglePause={live.togglePause}
+      paused={paused}
+      onTogglePause={togglePause ?? undefined}
       tools={
         <HeroTool
           href={STATISTICS_COMPARE_HREF}
@@ -162,7 +276,7 @@ export function StatisticsServicesIndexScreen() {
           <>
             <HeroStat value={services.length} label="Services" />
             <HeroStat value={totalBeds} label="Beds" />
-            <HeroStat value={totalWaiting} label="Open ED journeys" />
+            <HeroStat value={shown(totalWaiting)} label="Open ED journeys" />
           </>
         ),
       }}
@@ -208,12 +322,12 @@ export function StatisticsServicesIndexScreen() {
                 }
                 value={
                   <span className={phone.flagged}>
-                    {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                    {entry.departments === 0 ? <span className={phone.word}>No ED</span> : entry.waiting}
+                    {positive(entry.over24) ? <StatusGlyph tone="warning" size={9} /> : null}
+                    {entry.departments === 0 ? <span className={phone.word}>No ED</span> : shown(entry.waiting)}
                   </span>
                 }
                 time={entry.departments === 0 ? undefined : "open ED journeys"}
-                href={serviceStatisticsHref(entry.service)}
+                href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
               />
             ))}
           </PhoneList>
@@ -229,14 +343,14 @@ export function StatisticsServicesIndexScreen() {
             {HEALTH_SERVICES.map((from) => {
               const to = HEALTH_SERVICES.map((target) => ({
                 target,
-                count: accepted.get(`${from}|${target}`) ?? 0,
-              })).filter((cell) => cell.count > 0);
+                count: accepted.get(`${from}|${target}`) ?? unknownCount,
+              })).filter((cell) => positive(cell.count));
               return (
                 <PhoneList key={from} label={`Referrals from ${from}`}>
                   <PhoneListRow
                     as="li"
                     name={<span className={phone.dotName}>{`From ${from}`}</span>}
-                    value={notYet.get(from) ?? 0}
+                    value={shown(notYet.get(from) ?? unknownCount)}
                     time="not yet"
                   />
                   {to.map((cell) => (
@@ -244,7 +358,7 @@ export function StatisticsServicesIndexScreen() {
                       key={cell.target}
                       as="li"
                       name={cell.target === from ? `${cell.target}, its own` : cell.target}
-                      value={cell.count}
+                      value={shown(cell.count)}
                       time="accepted"
                     />
                   ))}
@@ -263,10 +377,13 @@ export function StatisticsServicesIndexScreen() {
                 id={`service-${entry.service.toLowerCase().replace(/\s+/gu, "-")}`}
                 data-testid={`ward-statistics-services-card-${entry.service}`}
                 title={
-                  <Link href={serviceStatisticsHref(entry.service)} className={index.svcTitle}>
+                  <ServiceLink
+                    href={entry.openable === false ? undefined : serviceStatisticsHref(entry.service)}
+                    className={index.svcTitle}
+                  >
                     <ServiceDot service={entry.service} />
                     {entry.service}
-                  </Link>
+                  </ServiceLink>
                 }
                 aside={
                   <span className={styles.muted}>
@@ -327,12 +444,14 @@ export function StatisticsServicesIndexScreen() {
                     </div>
                     <div>
                       <dt>
-                        {entry.over24 > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                        {positive(entry.over24) ? <StatusGlyph tone="warning" size={9} /> : null}
                         Open ED journeys
                       </dt>
                       <dd>
-                        {entry.departments === 0 ? "No ED" : entry.waiting}
-                        {entry.over24 > 0 ? <SrOnly>{`, ${entry.over24} past ${LONG_WAIT_HOURS} hours`}</SrOnly> : null}
+                        {entry.departments === 0 ? "No ED" : shown(entry.waiting)}
+                        {positive(entry.over24) ? (
+                          <SrOnly>{`, ${shown(entry.over24)} past ${LONG_WAIT_HOURS} hours`}</SrOnly>
+                        ) : null}
                       </dd>
                     </div>
                   </dl>
@@ -376,7 +495,7 @@ export function StatisticsServicesIndexScreen() {
                     </tr>
                   </thead>
                   <tbody>
-                    {HEALTH_SERVICES.map((from) => (
+                    {services.map(({ service: from }) => (
                       <tr key={from}>
                         <th scope="row">
                           <span className={index.matrixHead}>
@@ -385,19 +504,23 @@ export function StatisticsServicesIndexScreen() {
                           </span>
                         </th>
                         {HEALTH_SERVICES.map((to) => {
-                          const count = accepted.get(`${from}|${to}`) ?? 0;
+                          const count = accepted.get(`${from}|${to}`) ?? unknownCount;
                           return (
-                            <td key={to} className={count === 0 ? styles.zero : undefined}>
-                              {count === 0 ? (
+                            <td key={to} className={exactStatisticsCount(count) === 0 ? styles.zero : undefined}>
+                              {exactStatisticsCount(count) === 0 ? (
                                 0
                               ) : (
-                                <span className={cx(index.bubble, from === to && index.own)}>{count}</span>
+                                <span className={cx(index.bubble, from === to && index.own)}>{shown(count)}</span>
                               )}
                             </td>
                           );
                         })}
-                        <td className={(notYet.get(from) ?? 0) === 0 ? styles.zero : undefined}>
-                          {notYet.get(from) ?? 0}
+                        <td
+                          className={
+                            exactStatisticsCount(notYet.get(from) ?? unknownCount) === 0 ? styles.zero : undefined
+                          }
+                        >
+                          {shown(notYet.get(from) ?? unknownCount)}
                         </td>
                       </tr>
                     ))}
@@ -412,7 +535,7 @@ export function StatisticsServicesIndexScreen() {
               id="ed-waits"
               className={index.anchorTarget}
               title="Open ED journeys, by service"
-              aside={<span className={styles.muted}>{totalWaiting} open ED journeys</span>}
+              aside={<span className={styles.muted}>{shown(totalWaiting)} open ED journeys</span>}
               data-testid="ward-statistics-services-ed-waits"
             >
               <CardBody>
@@ -423,9 +546,9 @@ export function StatisticsServicesIndexScreen() {
                   rows={services.map((entry) => ({
                     id: entry.service,
                     label: entry.service,
-                    value: entry.waiting,
+                    ...withheldBar(exactStatisticsCount(entry.waiting) ?? 0, shown(entry.waiting)),
                     display: entry.departments === 0 ? "No ED" : undefined,
-                    flag: entry.over24 > 0 ? "warning" : undefined,
+                    flag: positive(entry.over24) ? "warning" : undefined,
                   }))}
                 />
               </CardBody>
@@ -435,5 +558,15 @@ export function StatisticsServicesIndexScreen() {
         </>
       )}
     </StatisticsPage>
+  );
+}
+
+function ServiceLink({ href, children, ...props }: Omit<React.ComponentProps<"a">, "href"> & { href?: string }) {
+  return href ? (
+    <Link href={href} {...props}>
+      {children}
+    </Link>
+  ) : (
+    <span {...props}>{children}</span>
   );
 }

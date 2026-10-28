@@ -18,6 +18,10 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WF_PHONE_QUERY } from "@/components/wf";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+import { ExecutiveStatisticsProvider } from "@/components/ward-management/statistics/executive-statistics-context";
+import { projectExecutiveReportingFoundation } from "@/components/ward-management/statistics/executive-statistics-projector";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 
 /**
  * Executive Statistics on one ED (role access plan, Josh's yes 15 Oct 2026): counts only. A small
@@ -70,14 +74,40 @@ const MOVEMENTS: Movement[] = [
   movement({ id: "WF-z1", originEdId: OTHER.id, openedAt: NOW_ANCHOR - 1500 }),
 ];
 
+let executive = false;
 function asDesk(role: "executive" | "coordinator", flag: boolean) {
+  executive = role === "executive" && flag;
   act(() => {
     setWardFeatureFlagOnDevice("role-access", flag);
     setWardAccess({ role, scope: { kind: "statewide" } });
   });
 }
 
+function renderExecutiveEd(edId = HERE.id) {
+  const state = { ...seedWardFlowState(), movements: MOVEMENTS };
+  const data = projectExecutiveReportingFoundation(
+    state,
+    { role: "executive", scope: { kind: "statewide" } },
+    {
+      now: NOW_ANCHOR,
+      dayZero: "2026-10-24T00:00:00.000Z",
+      startedAt: "2026-10-24T00:00:00.000Z",
+      places: wardPlaceLookup(state.units),
+    },
+  );
+  const binding = { actorId: "synthetic-ed-report", accessContext: "b".repeat(64), epoch: 0, revision: 1 };
+  return render(
+    <ExecutiveStatisticsProvider
+      binding={binding}
+      snapshot={{ binding, receivedAt: 100, expiresAt: 200, data }}
+      now={150}
+    >
+      <StatisticsEdScreen edId={edId} />
+    </ExecutiveStatisticsProvider>,
+  );
+}
 function renderEd() {
+  if (executive) return renderExecutiveEd();
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <StatisticsEdScreen edId={HERE.id} movements={MOVEMENTS} />
@@ -98,11 +128,7 @@ afterEach(() => {
 describe("one ED on the executive desk, counts only", () => {
   it("words a small headline count", () => {
     asDesk("executive", true);
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <StatisticsEdScreen edId={OTHER.id} movements={MOVEMENTS} />
-      </WardFlowProvider>,
-    );
+    renderExecutiveEd(OTHER.id);
     // One person waits at the other department.
     expect(text("ward-stat-ed-on-the-list")).toBe("fewer than 5");
   });
@@ -111,7 +137,9 @@ describe("one ED on the executive desk, counts only", () => {
     asDesk("executive", true);
     renderEd();
 
-    expect(text(`ward-stat-ed-comparison-waiting-${HERE.id}`)).toBe("8");
+    // The complete release also withholds this total to protect the other ED's small count.
+    expect(text(`ward-stat-ed-comparison-waiting-${HERE.id}`)).toBe("not shown");
+    expect(text(`ward-stat-ed-comparison-waiting-${HERE.id}`)).not.toBe("8");
     expect(text(`ward-stat-ed-comparison-waiting-${OTHER.id}`)).toBe("fewer than 5");
     expect(text(`ward-stat-ed-comparison-over24h-${OTHER.id}`)).toBe("fewer than 5");
     // A duration, not a count of people, so it stays.

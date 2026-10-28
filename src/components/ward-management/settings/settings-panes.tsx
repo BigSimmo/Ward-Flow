@@ -433,20 +433,22 @@ export function DataPane({
   onClearSession,
   onRestore,
   restoreUnavailable,
+  importUnavailable,
   shared = false,
 }: {
   /** Held by the screen so Find a setting can open Fixed defaults. */
   reference: ReferenceTab;
   onReferenceChange: (next: ReferenceTab) => void;
-  movementCount: number;
-  eventCount: number;
-  thresholds: readonly PublishedThreshold[];
+  movementCount: number | null;
+  eventCount: number | null;
+  thresholds: readonly PublishedThreshold[] | null;
   onExport: () => void;
   onCopyDiagnostics?: () => void;
   onImport: (event: ChangeEvent<HTMLInputElement>) => void;
   onClearSession: () => void;
   onRestore: () => void;
   restoreUnavailable?: string;
+  importUnavailable?: string;
   shared?: boolean;
 }) {
   // Audit settings-24: the thresholds table is five columns wide, laid out for a tablet or computer.
@@ -459,16 +461,28 @@ export function DataPane({
         <div className={styles.column}>
           <Card aria-labelledby="data-title" data-testid="ward-settings-storage-telemetry">
             <CardHead iconPlain id="data-title" icon={Database} title="Data in this browser" />
-            <div className={styles.dataStats}>
-              <div>
-                <strong className={styles.mono}>{movementCount}</strong>
-                <span>Movements held</span>
+            {movementCount === null || eventCount === null ? (
+              <p className={styles.cardNote}>
+                <ShieldCheck size={16} aria-hidden="true" />
+                <span>
+                  <strong>Aggregate reports only</strong>
+                  <br />
+                  This executive view holds summary reports and public rules. Individual records and session event
+                  history are unavailable.
+                </span>
+              </p>
+            ) : (
+              <div className={styles.dataStats}>
+                <div>
+                  <strong className={styles.mono}>{movementCount}</strong>
+                  <span>Movements held</span>
+                </div>
+                <div>
+                  <strong className={styles.mono}>{eventCount}</strong>
+                  <span>Events recorded this session</span>
+                </div>
               </div>
-              <div>
-                <strong className={styles.mono}>{eventCount}</strong>
-                <span>Events recorded this session</span>
-              </div>
-            </div>
+            )}
             <div className={styles.dataActions}>
               <button
                 type="button"
@@ -492,21 +506,34 @@ export function DataPane({
                   Copy diagnostics
                 </button>
               ) : null}
-              <label
-                className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
-                data-setting="import"
-                title="Load a rules file into the draft"
-              >
-                <Upload size={14} aria-hidden="true" />
-                Import
-                <input
-                  type="file"
-                  accept=".json,application/json"
-                  className={styles.fileInput}
-                  onChange={onImport}
-                  data-testid="input-import-config"
-                />
-              </label>
+              {importUnavailable ? (
+                <Button
+                  variant="sec"
+                  size="sm"
+                  className={styles.pill}
+                  disabledReason={importUnavailable}
+                  data-setting="import"
+                >
+                  <Upload size={14} aria-hidden="true" />
+                  Import
+                </Button>
+              ) : (
+                <label
+                  className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
+                  data-setting="import"
+                  title="Load a rules file into the draft"
+                >
+                  <Upload size={14} aria-hidden="true" />
+                  Import
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    className={styles.fileInput}
+                    onChange={onImport}
+                    data-testid="input-import-config"
+                  />
+                </label>
+              )}
               <button
                 type="button"
                 className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
@@ -559,15 +586,23 @@ export function DataPane({
               </div>
               <div>
                 <dt>Rule saves</dt>
-                <dd>Recorded in the audit</dd>
+                <dd>
+                  {thresholds === null
+                    ? "Individual audit entries unavailable for executive reporting"
+                    : "Recorded in the audit"}
+                </dd>
               </div>
             </dl>
             <p className={styles.cardNote}>
               <ShieldCheck size={14} aria-hidden="true" />
               Governance and the full audit
-              <Link className={styles.inlineLink} href="/ward-flow/governance">
-                Open
-              </Link>
+              {thresholds !== null ? (
+                <Link className={styles.inlineLink} href="/ward-flow/governance">
+                  Open
+                </Link>
+              ) : (
+                <span>Unavailable for executive reporting</span>
+              )}
             </p>
             {/* Moved here from Tools (Tools review, 15 Oct 2026): a builder reference, not a ward task. */}
             <p className={styles.cardNote}>
@@ -632,39 +667,46 @@ export function DataPane({
           </>
         ) : null}
         <TabPanel idPrefix="settings-reference" id="thresholds" hidden={isPhone || reference !== "thresholds"}>
-          <div data-testid="ward-settings-thresholds">
-            <p className={styles.cardNote} data-tone="accent">
-              Figures here change only in Rules, and every change is recorded.
+          {thresholds === null ? (
+            <p className={styles.cardNote} data-testid="ward-settings-thresholds-unavailable">
+              Record-based threshold status unavailable. Executive reporting does not expose the individual records used
+              to calculate “right now” threshold rows. All twelve public rule values remain available in Rules.
             </p>
-            <div className={styles.tableWrap} role="region" aria-label="Published thresholds" tabIndex={0}>
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th scope="col">Figure</th>
-                    <th scope="col">Triggers</th>
-                    <th scope="col">Right now</th>
-                    <th scope="col">Set by</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {thresholds.map((threshold) => (
-                    <tr key={threshold.id} data-testid={`ward-settings-threshold-${threshold.id}`}>
-                      <td className={styles.cellStrong}>{threshold.figure}</td>
-                      <td>{threshold.triggers}</td>
-                      <td data-threshold-state={threshold.state}>
-                        <span className={styles.readout}>
-                          <StatusGlyph tone={threshold.state === "fires-now" ? "warning" : "neutral"} size={9} />
-                          {THRESHOLD_STATE_WORDS[threshold.state]}
-                          {threshold.state === "fires-now" ? `, ${threshold.reached}` : null}
-                        </span>
-                      </td>
-                      <td>{threshold.setBy}</td>
+          ) : (
+            <div data-testid="ward-settings-thresholds">
+              <p className={styles.cardNote} data-tone="accent">
+                Figures here change only in Rules, and every change is recorded.
+              </p>
+              <div className={styles.tableWrap} role="region" aria-label="Published thresholds" tabIndex={0}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th scope="col">Figure</th>
+                      <th scope="col">Triggers</th>
+                      <th scope="col">Right now</th>
+                      <th scope="col">Set by</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {thresholds.map((threshold) => (
+                      <tr key={threshold.id} data-testid={`ward-settings-threshold-${threshold.id}`}>
+                        <td className={styles.cellStrong}>{threshold.figure}</td>
+                        <td>{threshold.triggers}</td>
+                        <td data-threshold-state={threshold.state}>
+                          <span className={styles.readout}>
+                            <StatusGlyph tone={threshold.state === "fires-now" ? "warning" : "neutral"} size={9} />
+                            {THRESHOLD_STATE_WORDS[threshold.state]}
+                            {threshold.state === "fires-now" ? `, ${threshold.reached}` : null}
+                          </span>
+                        </td>
+                        <td>{threshold.setBy}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </TabPanel>
         <TabPanel idPrefix="settings-reference" id="clinical" hidden={isPhone || reference !== "clinical"}>
           {/* Josh, 15 Oct 2026 (item 6): every clinical value with its status, read from

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo, useState, type ReactNode } from "react";
 import { BedDouble, Clock, Hospital, Printer, ShieldAlert, XCircle } from "lucide-react";
 
 import {
@@ -31,8 +31,16 @@ import {
   phoneBodyStyles as phone,
 } from "@/components/ward-management/statistics/statistics-phone-parts";
 
-import { PilotMeasuresSection } from "./pilot-measures-section";
-import { reportWeek, weeklyOperationsReport, type ReasonCount, type ReportWeek } from "./weekly-report";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
+import {
+  PeopleNotListed,
+  ExecutiveStatisticsUnavailable,
+  statisticsCountText as reportCount,
+} from "../statistics/statistics-small-numbers";
+import { PilotMeasuresSection, PilotMeasuresView } from "./pilot-measures-section";
+import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
 import styles from "./reports.module.css";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -55,7 +63,7 @@ function weekLabel(week: ReportWeek, dayZero: Date): string {
   return range;
 }
 
-function ReasonList({ reasons, testId }: { reasons: ReasonCount[]; testId: string }) {
+function ReasonList({ reasons, testId }: { reasons: { reason: string; count: number | string }[]; testId: string }) {
   if (reasons.length === 0) return <p className={styles.empty}>None recorded</p>;
   return (
     <ul className={styles.reasons} data-testid={testId}>
@@ -74,13 +82,93 @@ function ReasonList({ reasons, testId }: { reasons: ReasonCount[]; testId: strin
  * is derived from the live synthetic world by `weeklyOperationsReport`; nothing is stored.
  */
 export function WeeklyReportScreen() {
+  const access = useEffectiveWardAccess();
+  const controls = useExecutiveStatisticsControl();
+  const [offset, setOffset] = useState<number>(0);
+  return controls.executive || access.role === "executive" ? (
+    <ExecutiveWeeklyReport offset={offset} setOffset={setOffset} />
+  ) : (
+    <OperationalWeeklyReport offset={offset} setOffset={setOffset} />
+  );
+}
+
+type WeekPicker = { offset: number; setOffset: (offset: number) => void };
+type WeeklyViewReport = {
+  edWaits: Omit<WeeklyReport["edWaits"], "count" | "rows" | "longestMinutes"> & {
+    count: number | string;
+    rows?: WeeklyReport["edWaits"]["rows"];
+    longestMinutes: number | null;
+  };
+  outOfArea: Omit<WeeklyReport["outOfArea"], "people"> & { people: number | string };
+  delayedDischarge: Omit<WeeklyReport["delayedDischarge"], "people" | "unmeasuredStays"> & {
+    people: number | string;
+    unmeasuredStays: number | string;
+  };
+  declines: {
+    placement: number | string;
+    referral: number | string;
+    byReason: { reason: string; count: number | string }[];
+  };
+  overrides: {
+    placement: number | string;
+    referral: number | string;
+    byReason: { reason: string; count: number | string }[];
+  };
+  occupancy: WeeklyReport["occupancy"];
+};
+
+function executiveReport(report: ExecutiveReportingWeek["report"]): WeeklyViewReport {
+  const paired = (value: ExecutiveReportingWeek["report"]["declines"]) => ({
+    placement: reportCount(value.placement),
+    referral: reportCount(value.referral),
+    byReason: value.byReason.map((entry) => ({ reason: entry.reason, count: reportCount(entry.count) })),
+  });
+  return {
+    ...report,
+    edWaits: { ...report.edWaits, count: reportCount(report.edWaits.count) },
+    outOfArea: { ...report.outOfArea, people: reportCount(report.outOfArea.people) },
+    delayedDischarge: {
+      ...report.delayedDischarge,
+      people: reportCount(report.delayedDischarge.people),
+      unmeasuredStays: reportCount(report.delayedDischarge.unmeasuredStays),
+    },
+    declines: paired(report.declines),
+    overrides: paired(report.overrides),
+  };
+}
+
+function ExecutiveWeeklyReport({ offset, setOffset }: WeekPicker) {
+  const data = useExecutiveStatistics();
+  const controls = useExecutiveStatisticsControl();
+  const selected = data?.weeks.find((entry) => entry.week.offset === offset);
+  if (!data || !selected)
+    return (
+      <main id="main-content" className={styles.main} data-testid="ward-weekly-unavailable">
+        <h1>Weekly operations</h1>
+        <ExecutiveStatisticsUnavailable />
+      </main>
+    );
+  return (
+    <WeeklyReportView
+      offset={offset}
+      setOffset={setOffset}
+      week={selected.week}
+      report={executiveReport(selected.report)}
+      dayZero={new Date(data.network.asAt.dayZero)}
+      now={data.network.asAt.now}
+      paused={controls.paused}
+      togglePause={controls.togglePause}
+      scopeLabel={data.network.scope.kind === "statewide" ? "Statewide" : data.network.scope.service}
+      renderPilot={(isPhone) => <PilotMeasuresView measures={selected.pilot} isPhone={isPhone} />}
+    />
+  );
+}
+
+function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
   const { state, now, paused, togglePause } = useStatisticsLive();
   const { movements, referrals, admissions, patients, bedReleases, leaveBeds, configuration, dayZero } = state;
   // Beds are the desk's own wards only (issue #628), so its occupancy is its stays over its beds.
   const units = useOwnUnits(state.units);
-  const pickerId = useId();
-  const [offset, setOffset] = useState<number>(0);
-  const isPhone = useIsPhone();
 
   const week = useMemo(() => reportWeek(offset, now, dayZero), [offset, now, dayZero]);
   const report = useMemo(
@@ -113,6 +201,67 @@ export function WeeklyReportScreen() {
     ],
   );
 
+  return (
+    <WeeklyReportView
+      offset={offset}
+      setOffset={setOffset}
+      week={week}
+      report={report}
+      dayZero={dayZero}
+      now={now}
+      paused={paused}
+      togglePause={togglePause}
+      admissionLabel={(movementId) =>
+        admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted"
+      }
+      renderPilot={(isPhone) => (
+        <PilotMeasuresSection
+          movements={movements}
+          referrals={referrals}
+          patients={patients}
+          now={now}
+          pullHoldMinutes={configuration.pullHoldMinutes}
+          units={units}
+          morningRollupConfirmations={state.morningRollupConfirmations}
+          morningRollupDeadlineMinutes={configuration.morningRollupDeadlineMinutes}
+          week={week}
+          isPhone={isPhone}
+        />
+      )}
+    />
+  );
+}
+
+function WeeklyReportView({
+  offset,
+  setOffset,
+  week,
+  report,
+  dayZero,
+  now,
+  paused,
+  togglePause,
+  admissionLabel,
+  renderPilot,
+  scopeLabel,
+}: WeekPicker & {
+  week: ReportWeek;
+  report: WeeklyViewReport;
+  dayZero: Date;
+  now: Instant;
+  paused: boolean;
+  togglePause: (() => void) | null;
+  admissionLabel?: (movementId: string) => string;
+  renderPilot: (isPhone: boolean) => ReactNode;
+  scopeLabel?: string;
+}) {
+  const pickerId = useId();
+  const isPhone = useIsPhone();
+  const longestWait =
+    report.edWaits.longestMinutes !== null && report.edWaits.count !== 0
+      ? splitDuration(report.edWaits.longestMinutes)
+      : "—";
+
   // Whole hours ("24h") on every device, not "1d 0h" here and "24h" on the phone (UX audit 21 Oct 2026).
   const targetText = `over ${Math.round(report.edWaits.targetMinutes / 60)}h`;
   const occupancyText = report.occupancy.averagePercent === null ? "—" : `${report.occupancy.averagePercent}%`;
@@ -123,16 +272,12 @@ export function WeeklyReportScreen() {
   const phoneTargetText = `over ${longHoursLabel}`;
   // A wait still open is counted to the end of the week shown, so the figure says when it stops.
   const waitedBy = `by ${dateOf(week.countedEnd - 1, dayZero)}`;
-  // Statistics names a person by AD- admission number only, never a name, UMRN or WF- id (D-39).
-  // A wait that has not led to an admission says so; the live page still shows who it is.
-  const admissionLabel = (movementId: string) =>
-    admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted";
   // Expected dates set after the week began leave the week only partly measured (audit stats-11).
   const delayedFrom = report.delayedDischarge.recordedFrom;
   const delayedUnknown = delayedFrom !== null && delayedFrom >= week.countedEnd;
   const delayedUnmeasured = report.delayedDischarge.unmeasuredStays;
   const delayedSkipped =
-    !delayedUnknown && delayedUnmeasured > 0
+    !delayedUnknown && delayedUnmeasured !== 0
       ? `${delayedUnmeasured} ${delayedUnmeasured === 1 ? "stay" : "stays"} not counted: ${
           delayedUnmeasured === 1 ? "its date was" : "their dates were"
         } changed after this week.`
@@ -154,7 +299,13 @@ export function WeeklyReportScreen() {
         <StatisticsHero
           section="weekly"
           now={now}
-          eyebrow={isPhone ? "Statistics · Weekly report" : <>Weekly report · synthetic demo data</>}
+          eyebrow={
+            isPhone ? (
+              `Statistics · Weekly report${scopeLabel ? ` · ${scopeLabel}` : ""}`
+            ) : (
+              <>Weekly report · synthetic demo data{scopeLabel ? ` · ${scopeLabel}` : ""}</>
+            )
+          }
           title="Weekly operations"
           phone={{
             sub: weekRange,
@@ -193,7 +344,7 @@ export function WeeklyReportScreen() {
             </>
           }
           paused={paused}
-          onTogglePause={togglePause}
+          onTogglePause={togglePause ?? undefined}
         />
 
         <p className={styles.disclosure} data-testid="ward-weekly-period">
@@ -234,7 +385,7 @@ export function WeeklyReportScreen() {
                   {
                     id: "longest",
                     label: "Longest",
-                    value: report.edWaits.count > 0 ? splitDuration(report.edWaits.longestMinutes) : "—",
+                    value: longestWait,
                   },
                 ]}
               />
@@ -302,11 +453,10 @@ export function WeeklyReportScreen() {
                 {OCCUPIED_TIME_DEFINITION}
               </p>
             </PhoneCard>
-            <PhoneGroup
-              title={`Waits first passing ${phoneTargetText}`}
-              aside={`${report.edWaits.rows.length} in the week`}
-            >
-              {report.edWaits.rows.length === 0 ? (
+            <PhoneGroup title={`Waits first passing ${phoneTargetText}`} aside={`${report.edWaits.count} in the week`}>
+              {report.edWaits.rows === undefined ? (
+                <PeopleNotListed />
+              ) : report.edWaits.rows.length === 0 ? (
                 <p className={phone.note}>No wait first passed {phoneTargetText} in this week.</p>
               ) : (
                 <PhoneList label={`ED waits first passing ${phoneTargetText} in the week`}>
@@ -315,7 +465,7 @@ export function WeeklyReportScreen() {
                       <PhoneListRow
                         key={row.movement.id}
                         as="li"
-                        name={admissionLabel(row.movement.id)}
+                        name={admissionLabel?.(row.movement.id)}
                         meta={`${edShortName(edById(row.movement.originEdId)) || (originName(row.movement) ?? row.movement.originEdId)}${row.stillWaiting ? " · still waiting" : ""}`}
                         value={
                           <span className={phone.flagged}>
@@ -334,18 +484,7 @@ export function WeeklyReportScreen() {
                 </PhoneList>
               )}
             </PhoneGroup>
-            <PilotMeasuresSection
-              movements={movements}
-              referrals={referrals}
-              patients={patients}
-              now={now}
-              pullHoldMinutes={configuration.pullHoldMinutes}
-              units={units}
-              morningRollupConfirmations={state.morningRollupConfirmations}
-              morningRollupDeadlineMinutes={configuration.morningRollupDeadlineMinutes}
-              week={week}
-              isPhone
-            />
+            {renderPilot(true)}
             <p className={styles.disclosure}>
               Counts only stays, movements and decisions held in this prototype. People who left before it started are
               not held, so earlier weeks read low.
@@ -390,7 +529,7 @@ export function WeeklyReportScreen() {
                   </div>
                   <div className={styles.figure}>
                     <dt>Longest wait</dt>
-                    <dd>{report.edWaits.count > 0 ? splitDuration(report.edWaits.longestMinutes) : "—"}</dd>
+                    <dd>{longestWait}</dd>
                   </div>
                 </dl>
                 {/* Explanations sit under the figures, so the card titles are not cut (UX audit 21 Oct 2026). */}
@@ -478,9 +617,11 @@ export function WeeklyReportScreen() {
             <StatCard
               title={`Waits first passing ${targetText}`}
               icon={Clock}
-              meta={`${report.edWaits.rows.length} in the week`}
+              meta={`${report.edWaits.count} in the week`}
             >
-              {report.edWaits.rows.length === 0 ? (
+              {report.edWaits.rows === undefined ? (
+                <PeopleNotListed />
+              ) : report.edWaits.rows.length === 0 ? (
                 <p className={styles.empty}>No wait first passed {targetText} in this week.</p>
               ) : (
                 <div className={styles.tableWrap}>
@@ -502,7 +643,7 @@ export function WeeklyReportScreen() {
                     <tbody>
                       {report.edWaits.rows.map((row) => (
                         <tr key={row.movement.id}>
-                          <th scope="row">{admissionLabel(row.movement.id)}</th>
+                          <th scope="row">{admissionLabel?.(row.movement.id)}</th>
                           <td>{originName(row.movement) ?? row.movement.originEdId}</td>
                           <td className={styles.time}>{outputMoment(row.movement.openedAt as Instant)}</td>
                           <td className={styles.num}>{splitDuration(row.waitedMinutes)}</td>
@@ -515,18 +656,7 @@ export function WeeklyReportScreen() {
               )}
             </StatCard>
 
-            <PilotMeasuresSection
-              movements={movements}
-              referrals={referrals}
-              patients={patients}
-              now={now}
-              pullHoldMinutes={configuration.pullHoldMinutes}
-              units={units}
-              morningRollupConfirmations={state.morningRollupConfirmations}
-              morningRollupDeadlineMinutes={configuration.morningRollupDeadlineMinutes}
-              week={week}
-              isPhone={false}
-            />
+            {renderPilot(false)}
 
             <p className={styles.disclosure}>
               Counts only stays, movements and decisions held in this prototype. People who left before it started are

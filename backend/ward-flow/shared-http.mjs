@@ -167,8 +167,26 @@ export function createSharedHandler({
       "x-content-type-options": "nosniff",
       "x-request-id": requestId,
     };
+    let sessionAccessUntil = Infinity;
     const reply = (status, body, outcome) => {
       if (outcome) note.outcome = outcome;
+      // Recheck after projection, transaction commit and any awaited list logging. The clock
+      // here is the real send clock, also supplied to clients for their access deadline.
+      if (body?.snapshot?.kind === "executive-aggregate") {
+        if (sessionAccessUntil <= Date.now())
+          return jsonResponse(
+            { code: "session-limit", error: "Signed out. Sign in again to carry on." },
+            { status: 401, headers },
+          );
+        if (!Number.isFinite(body.snapshot.accessUntil) || body.snapshot.accessUntil <= Date.now())
+          return jsonResponse({ error: "No Ward Flow role is assigned to this account" }, { status: 403, headers });
+        // Command replies have no outer access metadata. Bind their snapshot to the same
+        // real sign-in deadline as a workspace read so they cannot extend a cached report.
+        body = {
+          ...body,
+          snapshot: { ...body.snapshot, accessUntil: Math.min(body.snapshot.accessUntil, sessionAccessUntil) },
+        };
+      }
       // Audit PS-05: a scoped board the store already serialised is reused, not stringified again.
       // TC2-05 (H-0764): every answer carrying a board (a save's too) carries the server's time, so
       // the app reads the board's `accessUntil` on this clock. Spread keeps the board's own object.
@@ -221,6 +239,8 @@ export function createSharedHandler({
     // device's phone alerts off still goes through, so the sign-out can stop them reaching it.
     const limitMinutes = store.sessionLimitMinutes;
     const started = session.startedAt;
+    if (Number.isFinite(limitMinutes) && typeof started === "number" && Number.isFinite(started))
+      sessionAccessUntil = started + limitMinutes * 60_000;
     if (
       Number.isFinite(limitMinutes) &&
       !(typeof started === "number" && Number.isFinite(started) && started >= Date.now() - limitMinutes * 60_000) &&
@@ -406,7 +426,7 @@ export function createSharedHandler({
         // (the store logs at most once a window). A failed log write fails the read.
         const tvScreen = request.headers.get(SCREEN) === "tv";
         const logListRead = async () => {
-          if (store.logList) await store.logList(view, tvScreen ? "tv" : "list");
+          if (view.access.role !== "executive" && store.logList) await store.logList(view, tvScreen ? "tv" : "list");
         };
         // `?since=<revision>`: the poll. An unchanged workspace answers with its revision and clock only.
         const params = new URL(request.url).searchParams;
@@ -441,6 +461,8 @@ export function createSharedHandler({
         return reply(200, { receipt: await store.receipt(actorId, (commandId ?? "").toLowerCase()) });
       }
       if (path === "/v1/workspace/archive" && request.method === "GET") {
+        if (view.access.role === "executive")
+          return reply(403, { error: "Record access is not part of your role" }, "role_denied");
         // History's closed records older than 30 days (migration 14), each desk's own part only,
         // as its live workspace is. A store without an archive answers with an empty list.
         if (!store.archive) return reply(200, { archived: 0, records: [] });
@@ -681,6 +703,8 @@ export function createSharedHandler({
     } catch (error) {
       if (messageOf(error) === "role-ended")
         return reply(403, { error: "No Ward Flow role is assigned to this account" }, "auth_denied");
+      if (messageOf(error) === "Executive reporting is unavailable")
+        return reply(503, { error: "Executive reporting is unavailable" }, "report_unavailable");
       if (messageOf(error) === "invalid-command")
         return reply(400, { error: "The command is invalid; no change was saved" });
       // H-0291: the save would take the workspace past its size limit. It rolled back, so this

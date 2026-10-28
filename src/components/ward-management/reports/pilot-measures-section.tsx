@@ -11,22 +11,45 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
 import { PhoneCard, PhoneFacts, PhoneGroup } from "@/components/ward-management/statistics/statistics-phone-parts";
 
-import { per100, pilotMeasures, type DurationSummary, type PilotMeasuresInput } from "./pilot-measures";
+import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
+import {
+  statisticsCountText as reportCount,
+  exactStatisticsCount,
+  type StatisticsCount,
+} from "../statistics/statistics-small-numbers";
+import {
+  per100,
+  pilotMeasures,
+  type DurationSummary,
+  type PilotMeasures,
+  type PilotMeasuresInput,
+} from "./pilot-measures";
 import type { ReportWeek } from "./weekly-report";
 import styles from "./reports.module.css";
 
 type Figure = { id: string; label: string; value: ReactNode; note?: string; testId?: string };
+type ReportCount = StatisticsCount;
+type ReportDuration = Omit<DurationSummary, "sampleSize" | "population" | "median" | "p90"> & {
+  sampleSize: ReportCount;
+  population: ReportCount;
+  median: number | null | undefined;
+  p90: number | null | undefined;
+};
+
+function exactCount(value: ReportCount): number | undefined {
+  return exactStatisticsCount(value) ?? undefined;
+}
 
 /** A typical time, or why there is none, always with its sample (owner ruling, 30 Aug 2026). */
 function durationFigures(
-  summary: DurationSummary,
+  summary: ReportDuration,
   what: string,
   empty = `No ${what} this week`,
 ): { typical: Figure; slow: Figure } {
-  const sample = `from ${summary.sampleSize} of ${summary.population} ${what}`;
-  if (summary.median === undefined || summary.p90 === undefined) {
+  const sample = `from ${reportCount(summary.sampleSize)} of ${reportCount(summary.population)} ${what}`;
+  if (summary.median == null || summary.p90 == null) {
     // "from 0 of 0 beds pulled" read as a broken figure, so an empty week says so plainly.
-    const note = summary.population === 0 ? empty : `${sample}, not enough data to publish`;
+    const note = exactCount(summary.population) === 0 ? empty : `${sample}, not enough data to publish`;
     return {
       typical: { id: "typical", label: "Typical", value: "—", note },
       slow: { id: "slow", label: "Slowest 1 in 10", value: "—" },
@@ -48,8 +71,11 @@ function clockText(minutes: number): string {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 }
 
-function rateNote(count: number, of: number): string | undefined {
-  const rate = per100(count, of);
+function rateNote(count: ReportCount, of: ReportCount): string | undefined {
+  const numerator = exactCount(count);
+  const denominator = exactCount(of);
+  if (numerator === undefined || denominator === undefined) return undefined;
+  const rate = per100(numerator, denominator);
   return rate === undefined ? undefined : `${rate} per 100`;
 }
 
@@ -128,7 +154,6 @@ export function PilotMeasuresSection({
   week: ReportWeek;
   isPhone: boolean;
 }) {
-  const small = useSmallNumber();
   const measures = useMemo(
     () =>
       pilotMeasures(
@@ -156,16 +181,38 @@ export function PilotMeasuresSection({
       week,
     ],
   );
+  return <PilotMeasuresView measures={measures} isPhone={isPhone} />;
+}
+
+const STEP_LABELS = {
+  ask: "Request raised to first ward asked",
+  answer: "First ward asked to a ward accepting",
+  hold: "Ward accepting to bed pulled",
+  leave: "Bed pulled to leaving the ED",
+  travel: "Leaving the ED to arriving on the ward",
+};
+
+/** The same cards and print content for operational selectors and the row-free executive DTO. */
+export function PilotMeasuresView({
+  measures,
+  isPhone,
+}: {
+  measures: PilotMeasures | ExecutiveReportingWeek["pilot"];
+  isPhone: boolean;
+}) {
+  const small = useSmallNumber();
+  const person = (value: ReportCount) => (typeof value === "number" ? small(value) : reportCount(value));
   const toArrival = durationFigures(measures.requestToArrival, "arrivals");
   const held = durationFigures(measures.requestToBedHeld, "beds pulled");
   const travel = durationFigures(measures.transport.collectedToArrived, "arrivals by transport");
   const { requests, holds, transport, completeness, bedFigures } = measures;
   // A rate is worked back into the count it hides, so a person-derived rate shows only when
   // neither count behind it is held back by the small number rule.
-  const shown = (...counts: number[]) => counts.every((count) => small(count) === count);
-  const personRate = (count: number, of: number) => (shown(count, of) ? rateNote(count, of) : undefined);
+  const shown = (...counts: ReportCount[]) =>
+    counts.every((count) => exactCount(count) !== undefined && person(count) === exactCount(count));
+  const personRate = (count: ReportCount, of: ReportCount) => (shown(count, of) ? rateNote(count, of) : undefined);
   const completePercent = shown(completeness.complete, completeness.arrivals)
-    ? per100(completeness.complete, completeness.arrivals)
+    ? per100(exactCount(completeness.complete)!, exactCount(completeness.arrivals)!)
     : undefined;
 
   const cards = [
@@ -221,20 +268,20 @@ export function PilotMeasuresSection({
       isPhone={isPhone}
       icon={UserX}
       title="Missed requests"
-      meta={`Supporting · ${small(requests.raised)} raised`}
+      meta={`Supporting · ${person(requests.raised)} raised`}
       testId="ward-pilot-requests"
       figures={[
         {
           id: "missed",
           label: `No ward in ${windowText(requests.windowMinutes)}`,
-          value: small(requests.noWardAsked),
+          value: person(requests.noWardAsked),
           note: personRate(requests.noWardAsked, requests.raised),
           testId: "ward-pilot-missed",
         },
         {
           id: "duplicates",
           label: "Same person twice",
-          value: small(requests.duplicates),
+          value: person(requests.duplicates),
           note: personRate(requests.duplicates, requests.raised),
           testId: "ward-pilot-duplicates",
         },
@@ -245,20 +292,20 @@ export function PilotMeasuresSection({
       isPhone={isPhone}
       icon={BedDouble}
       title="Bed pulls"
-      meta={`${holds.held} pulled`}
+      meta={`${reportCount(holds.held)} pulled`}
       testId="ward-pilot-holds"
       figures={[
         {
           id: "ran-out",
           label: "Ran out",
-          value: holds.ranOut,
+          value: reportCount(holds.ranOut),
           note: rateNote(holds.ranOut, holds.held),
           testId: "ward-pilot-holds-ran-out",
         },
         {
           id: "given-back",
           label: "Given back",
-          value: holds.givenBack,
+          value: reportCount(holds.givenBack),
           note: rateNote(holds.givenBack, holds.held),
         },
       ]}
@@ -268,18 +315,18 @@ export function PilotMeasuresSection({
       isPhone={isPhone}
       icon={Truck}
       title="Transport"
-      meta={`${transport.collections} collected`}
+      meta={`${reportCount(transport.collections)} collected`}
       testId="ward-pilot-transport"
       figures={[
         {
           id: "late",
           label: `Over ${windowText(CLINICAL_VALUES.lateArrivalGrace.value)} late`,
-          value: transport.lateCollections,
+          value: reportCount(transport.lateCollections),
           note: rateNote(transport.lateCollections, transport.collections),
           testId: "ward-pilot-transport-late",
         },
         { ...travel.typical, label: "Travel, typical" },
-        { id: "cancelled", label: "Cancelled", value: transport.cancelled },
+        { id: "cancelled", label: "Cancelled", value: reportCount(transport.cancelled) },
       ]}
     />,
     <Card
@@ -287,14 +334,14 @@ export function PilotMeasuresSection({
       isPhone={isPhone}
       icon={ClipboardCheck}
       title="Records complete"
-      meta={`${small(completeness.arrivals)} arrivals`}
+      meta={`${person(completeness.arrivals)} arrivals`}
       testId="ward-pilot-complete"
       figures={[
         {
           id: "complete",
           label: "Every step timed",
           value: completePercent === undefined ? "—" : `${completePercent}%`,
-          note: `${small(completeness.complete)} of ${small(completeness.arrivals)}`,
+          note: `${person(completeness.complete)} of ${person(completeness.arrivals)}`,
           testId: "ward-pilot-complete-percent",
         },
       ]}
@@ -303,7 +350,12 @@ export function PilotMeasuresSection({
 
   const stepRows = measures.steps.map((step) => {
     const figures = durationFigures(step.summary, "finished", "None finished this week");
-    return { id: step.id, label: step.label, typical: figures.typical.value, note: figures.typical.note };
+    return {
+      id: step.id,
+      label: "label" in step ? step.label : STEP_LABELS[step.id],
+      typical: figures.typical.value,
+      note: figures.typical.note,
+    };
   });
 
   const disclosure = (

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import {
   useDeferredValue,
+  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -39,7 +40,12 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  movementHref,
+  wardStatisticsHref,
+  edStatisticsHref,
+  communityStatisticsHref,
+} from "@/components/ward-management/shell/ward-facade";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
@@ -51,12 +57,14 @@ import { ChevronRight, CornerDownLeft, Search, X } from "lucide-react";
 import styles from "./ward-global-search.module.css";
 import {
   needsYouMeta,
+  censusRowItem,
   patientResultTitle,
   smartSearchGroups,
   type SearchResultGroup,
   type SearchResultItem,
 } from "./ward-global-search-groups";
 import { SearchResultIcon } from "./ward-global-search-icon";
+import { WardSearchCommands } from "./ward-global-search-commands";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 
@@ -176,7 +184,34 @@ export type WardGlobalSearchProps = {
   initialQuery?: string;
   /** The phone's placeholder field: on mount this takes over its focus and caret, if it had them. */
   takeFocusFrom?: RefObject<HTMLInputElement | null>;
+  /** Opaque lifetime from the host. Null means no current authorised snapshot; no role logic here. */
+  accessLifetime?: string | null;
+  /** Caller-owned navigation permissions; the shared matcher and public place catalogue stay role-blind. */
+  canOpenHref?: (href: string) => boolean;
+  canRunAction?: (action: "new-referral" | "add-patient" | "advance-clock") => boolean;
 };
+
+const allowSearchChoice = () => true;
+
+/** Navigation permission never changes the catalogue or supplies a record entitlement. */
+export function permittedSearchResult(
+  item: SearchResultItem,
+  canOpenHref: (href: string) => boolean,
+  canRunAction: NonNullable<WardGlobalSearchProps["canRunAction"]> = allowSearchChoice,
+): SearchResultItem[] {
+  const href = canOpenHref(item.href)
+    ? item.href
+    : item.kind === "ward"
+      ? wardStatisticsHref(item.id)
+      : item.kind === "ed"
+        ? edStatisticsHref(item.id)
+        : item.kind === "team"
+          ? communityStatisticsHref(item.id)
+          : null;
+  if (!href || !canOpenHref(href)) return [];
+  if (item.kind === "action" && !canRunAction(item.id as "new-referral" | "add-patient")) return [];
+  return [href === item.href ? item : { ...item, href }];
+}
 
 /**
  * A SHORT LIST, NOT A CATALOGUE. This is chrome that sits above every screen's own content, not a
@@ -239,16 +274,17 @@ const RECENT_LIMIT = 4;
 
 /*
  * ⚠️ RECENT RECORDS LIVE IN THIS MODULE'S MEMORY ONLY, NEVER IN BROWSER STORAGE. They last as long
- * as the page does (client navigation keeps them, a reload clears them) and they hold the row as it
- * was shown: ids, names and hrefs, none of which is typed text. Ward Flow's rule is that nothing a
- * person types reaches storage, and keeping these off storage keeps that rule without a review.
+ * as the current access lifetime does. Only kind and id are retained: every displayed row is
+ * rebuilt from the current authorised collections, so a retained row never carries old details.
  */
-let sessionRecents: readonly SearchResultItem[] = [];
-const NO_RECENTS: readonly SearchResultItem[] = [];
+type RecentRecord = Pick<SearchResultItem, "kind" | "id">;
+let sessionRecents: readonly RecentRecord[] = [];
+const NO_RECENTS: readonly RecentRecord[] = [];
+let recentsLifetime: string | null = null;
 const recentsListeners = new Set<() => void>();
 
 /** A small store, so the React Compiler sees the list change as an input rather than a module read. */
-function setSessionRecents(next: readonly SearchResultItem[]) {
+function setSessionRecents(next: readonly RecentRecord[]) {
   sessionRecents = next;
   recentsListeners.forEach((listener) => listener());
 }
@@ -261,18 +297,34 @@ function subscribeRecents(listener: () => void) {
 }
 
 // Recent records name patients, so a session ending forgets them (Codex review on PR #487).
-onWardSessionEnd(() => setSessionRecents(NO_RECENTS));
+onWardSessionEnd(clearGlobalSearchRecents);
 
-const recentsSnapshot = () => sessionRecents;
 const serverRecentsSnapshot = () => NO_RECENTS;
 
-function useSessionRecents() {
-  return useSyncExternalStore(subscribeRecents, recentsSnapshot, serverRecentsSnapshot);
+function useSessionRecents(lifetime: string | null) {
+  // The getter fails closed on the very first render; an effect alone would paint the old desk.
+  const recents = useSyncExternalStore(
+    subscribeRecents,
+    () => (lifetime !== null && recentsLifetime === lifetime ? sessionRecents : NO_RECENTS),
+    serverRecentsSnapshot,
+  );
+  useLayoutEffect(() => {
+    if (recentsLifetime === lifetime) return;
+    recentsLifetime = lifetime;
+    setSessionRecents(NO_RECENTS);
+  }, [lifetime]);
+  return recents;
 }
 
-function rememberRecent(item: SearchResultItem) {
-  if (item.kind === "action") return;
-  setSessionRecents([item, ...sessionRecents.filter((recent) => recent.href !== item.href)].slice(0, RECENT_LIMIT));
+function rememberRecent(item: SearchResultItem, lifetime: string | null) {
+  if (item.kind === "action" || lifetime === null || recentsLifetime !== lifetime) return;
+  const { kind, id } = item;
+  setSessionRecents(
+    [{ kind, id }, ...sessionRecents.filter((recent) => recent.kind !== kind || recent.id !== id)].slice(
+      0,
+      RECENT_LIMIT,
+    ),
+  );
 }
 
 /** Test seam: recents are module memory, so a suite that asserts the start screen clears them first. */
@@ -314,6 +366,8 @@ function headerBox(root: HTMLElement | null): { top: number; height: number } {
   return { top: Math.max(0, Math.round(rect.top)), height: Math.max(0, Math.round(rect.height)) };
 }
 
+export { WardPublicSearch } from "./ward-public-search";
+
 export function WardGlobalSearch({
   movements,
   patients,
@@ -331,6 +385,9 @@ export function WardGlobalSearch({
   placeholder = "Search people and movements…",
   initialQuery = "",
   takeFocusFrom,
+  accessLifetime = "standalone",
+  canOpenHref = allowSearchChoice,
+  canRunAction = allowSearchChoice,
 }: WardGlobalSearchProps) {
   const id = useId();
   const tasksWord = useMemo(
@@ -348,6 +405,10 @@ export function WardGlobalSearch({
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
   const preparing = wardFlow?.sessionAdopted === false;
+  const permittedResult = useCallback(
+    (item: SearchResultItem) => permittedSearchResult(item, canOpenHref, canRunAction),
+    [canOpenHref, canRunAction],
+  );
 
   const [query, setQuery] = useState(initialQuery);
   const deferredQuery = useDeferredValue(query);
@@ -357,7 +418,7 @@ export function WardGlobalSearch({
   const [kindFilter, setKindFilter] = useState<KindFilter>("all");
   const [top, setTop] = useState(0);
   const [barBox, setBarBox] = useState<{ top: number; height: number }>({ top: 0, height: 0 });
-  const recents = useSessionRecents();
+  const recentRecords = useSessionRecents(accessLifetime);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   const trimmed = deferredQuery.trim();
@@ -432,6 +493,75 @@ export function WardGlobalSearch({
     [trimmed, refusal, census],
   );
 
+  const recents = useMemo(
+    () =>
+      (!open ? [] : recentRecords).flatMap((recent): SearchResultItem[] => {
+        if (recent.kind === "task") {
+          const task = tasks?.find((candidate) => candidate.id === recent.id);
+          return task
+            ? [
+                {
+                  kind: "task",
+                  kindLabel: "Task",
+                  id: task.id,
+                  title: task.title,
+                  meta: needsYouMeta(task, lookup, nameFor),
+                  href: task.href ?? movementHref(task.movementId),
+                  movementId: task.movementId,
+                  tone: task.tone,
+                },
+              ]
+            : [];
+        }
+        if (recent.kind === "stay") {
+          const row = census?.rows.find((candidate) => candidate.kind === "admission" && candidate.key === recent.id);
+          return row ? [censusRowItem(row)] : [];
+        }
+        let query = recent.id;
+        if (recent.kind === "person") {
+          const patient = patients.find((candidate) => candidate.id === recent.id);
+          if (!patient) return [];
+          query = patient.umrn;
+        }
+        if (recent.kind === "bed") {
+          const split = recent.id.lastIndexOf(":");
+          const unit = units.find((candidate) => candidate.id === recent.id.slice(0, split));
+          if (!unit) return [];
+          query = `${unit.name} bed ${recent.id.slice(split + 1)}`;
+        }
+        const current = searchWardFlow({
+          query,
+          patients,
+          movements,
+          units,
+          referrals,
+          now,
+          plannedAdmissions,
+          admissions,
+          limitPerGroup: FULL_RESULTS_PER_GROUP,
+        });
+        const item = smartSearchGroups(current, query, units, lookup)
+          .flatMap((group) => group.items)
+          .find((candidate) => candidate.kind === recent.kind && candidate.id === recent.id);
+        return item ? [item] : [];
+      }),
+    [
+      open,
+      recentRecords,
+      tasks,
+      lookup,
+      nameFor,
+      census,
+      units,
+      patients,
+      movements,
+      referrals,
+      now,
+      plannedAdmissions,
+      admissions,
+    ],
+  );
+
   // Groups cut at the full limit: the engine's, plus the answer group when more rows answer it.
   const truncatedGroups = useMemo(() => {
     const engine = smartResults?.truncatedGroups ?? [];
@@ -440,8 +570,14 @@ export function WardGlobalSearch({
 
   /** Every matched group in full (up to the full limit), in the engine's intent order. */
   const allGroups = useMemo(
-    () => (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer)),
-    [smartResults, refusal, trimmed, units, lookup, answer],
+    () =>
+      (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer))
+        .map((group) => ({
+          ...group,
+          items: group.items.flatMap(permittedResult),
+        }))
+        .filter((group) => group.items.length > 0),
+    [smartResults, refusal, trimmed, units, lookup, answer, permittedResult],
   );
 
   const kindCounts = useMemo(() => {
@@ -486,28 +622,34 @@ export function WardGlobalSearch({
     if (recents.length > 0) {
       g.push({ key: "recent", heading: "Recent", items: [...recents] });
     }
+    const usual = START_VIEW_KEYS.flatMap((key) => {
+      const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
+      return view && canOpenHref(view.href) ? [view] : [];
+    });
+    const startingViews = usual.length ? usual : CORE_SEARCH_VIEWS.filter((view) => canOpenHref(view.href)).slice(0, 4);
     g.push({
       key: "goto",
       heading: "Go to",
-      items: START_VIEW_KEYS.flatMap((key) => {
-        const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
-        return view
-          ? [
-              {
-                kind: "view",
-                kindLabel: "View",
-                id: view.key,
-                title: view.title,
-                meta: view.description ?? "",
-                href: view.href,
-              },
-            ]
-          : [];
-      }),
+      items: startingViews.map((view) => ({
+        kind: "view",
+        kindLabel: "View",
+        id: view.key,
+        title: view.title,
+        meta: view.description ?? "",
+        href: view.href,
+      })),
     });
-    g.push({ key: "do", heading: "Do", items: [...START_ACTIONS] });
-    return g;
-  }, [tasks, recents, lookup, nameFor, tasksWord]);
+    g.push({
+      key: "do",
+      heading: "Do",
+      items: START_ACTIONS.filter(
+        (item) => canOpenHref(item.href) && canRunAction(item.id as "new-referral" | "add-patient"),
+      ),
+    });
+    return g
+      .map((group) => ({ ...group, items: group.items.flatMap(permittedResult) }))
+      .filter((group) => group.items.length > 0);
+  }, [tasks, recents, lookup, nameFor, tasksWord, canOpenHref, canRunAction, permittedResult]);
 
   // A chosen kind with nothing for the current query falls back to All, so a new query never shows
   // a false "No matches" while the chips beside it count real results.
@@ -689,7 +831,7 @@ export function WardGlobalSearch({
   function remember(href: string) {
     const item = options.find((option) => option.href === href);
     if (item) {
-      rememberRecent(item);
+      rememberRecent(item, accessLifetime);
     }
   }
 
@@ -711,7 +853,9 @@ export function WardGlobalSearch({
 
   /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
   function select(href: string, confirmed = false) {
+    if (accessLifetime === null || recentsLifetime !== accessLifetime) return;
     if (!confirmed && !confirmLeave()) return;
+    if (recentsLifetime !== accessLifetime) return;
     remember(href);
     clearAfterOpen();
     if (onNavigate) onNavigate(href);
@@ -742,13 +886,13 @@ export function WardGlobalSearch({
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
     // Preview actions use real links too, so apply the stale-result guard before remembering or
     // allowing plain, modified, or assistive-technology activation to leave this page.
-    if (!resultsCurrent) {
+    if (!resultsCurrent || accessLifetime === null || recentsLifetime !== accessLifetime) {
       event.preventDefault();
       event.stopPropagation();
       return;
     }
     if (previewItem) {
-      rememberRecent(previewItem);
+      rememberRecent(previewItem, accessLifetime);
     }
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -998,7 +1142,7 @@ export function WardGlobalSearch({
                               // result for text that is no longer in the field. The footer link is
                               // not a result, so it keeps working.
                               onClick={(event) => {
-                                if (resultsCurrent) {
+                                if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
                                   onOptionClick(event, item.href);
                                   return;
                                 }
@@ -1006,7 +1150,7 @@ export function WardGlobalSearch({
                                 event.stopPropagation();
                               }}
                               onAuxClick={(event) => {
-                                if (!resultsCurrent) {
+                                if (!resultsCurrent || accessLifetime === null || recentsLifetime !== accessLifetime) {
                                   event.preventDefault();
                                   event.stopPropagation();
                                 }
@@ -1060,164 +1204,28 @@ export function WardGlobalSearch({
             )}
 
             {showQuickCommands && !refusal ? (
-              <div
-                role="group"
-                aria-label="Quick commands"
-                className={styles.quickCommands}
-                data-testid="ward-global-search-quick-commands"
-              >
-                <span className={styles.group} data-testid="ward-global-search-group-commands">
-                  <span>Quick commands</span>
-                </span>
-                {demoOff ? (
-                  <p id={demoOffId} className={styles.commandNote} data-testid="ward-global-search-demo-off">
-                    {DEMO_CONTROLS_OFF}
-                  </p>
-                ) : null}
-                <div className={styles.commandList}>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent || demoOff}
-                    aria-describedby={demoOff ? demoOffId : undefined}
-                    data-testid="ward-global-search-cmd-advance-clock"
-                    onClick={() => {
-                      if (wardFlow) {
-                        wardFlow.dispatch({
-                          type: "ADVANCE_CLOCK",
-                          role: "demo",
-                          now: now ?? wardFlow.now,
-                          minutes: 15,
-                        });
-                      }
-                      close();
-                    }}
-                  >
-                    <span className={styles.commandLabel}>Advance demo clock +15m</span>
-                    <kbd className={styles.hintKbd}>+15m</kbd>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent}
-                    data-testid="ward-global-search-cmd-desk-coordinator"
-                    onClick={() => {
-                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
-                      if (!confirmLeave()) return;
-                      setDeskRole("coordinator", "/ward-flow");
-                      dispatchPersonaSyncForRole("coordinator");
-                      select("/ward-flow", true);
-                    }}
-                  >
-                    <span className={styles.commandLabel}>Switch to Coordinator desk</span>
-                    <kbd className={styles.hintKbd}>Coordinator</kbd>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent}
-                    data-testid="ward-global-search-cmd-desk-ward"
-                    onClick={() => {
-                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
-                      if (!confirmLeave()) return;
-                      setDeskRole("ward", "/ward-flow/wards");
-                      dispatchPersonaSyncForRole("ward");
-                      select("/ward-flow/wards", true);
-                    }}
-                  >
-                    <span className={styles.commandLabel}>Switch to Ward desk</span>
-                    <kbd className={styles.hintKbd}>Ward</kbd>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent}
-                    data-testid="ward-global-search-cmd-desk-ed"
-                    onClick={() => {
-                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
-                      if (!confirmLeave()) return;
-                      setDeskRole("ed", "/ward-flow/ed");
-                      dispatchPersonaSyncForRole("ed");
-                      select("/ward-flow/ed", true);
-                    }}
-                  >
-                    <span className={styles.commandLabel}>Switch to ED desk</span>
-                    <kbd className={styles.hintKbd}>ED</kbd>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent}
-                    data-testid="ward-global-search-cmd-desk-officer"
-                    onClick={() => {
-                      // Ask before the desk or persona changes, so cancelling leaves everything as it was.
-                      if (!confirmLeave()) return;
-                      setDeskRole("officer", "/ward-flow/transport/officer");
-                      dispatchPersonaSyncForRole("officer");
-                      select("/ward-flow/transport/officer", true);
-                    }}
-                  >
-                    <span className={styles.commandLabel}>Switch to Transport desk</span>
-                    <kbd className={styles.hintKbd}>Transport</kbd>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent}
-                    data-testid="ward-global-search-cmd-handover"
-                    onClick={() => select("/ward-flow/handover")}
-                  >
-                    <span className={styles.commandLabel}>Open Handover sheet</span>
-                    <kbd className={styles.hintKbd}>/handover</kbd>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.commandBtn}
-                    disabled={!resultsCurrent}
-                    aria-expanded={shortcutsExpanded}
-                    data-testid="ward-global-search-cmd-shortcuts"
-                    onClick={() => setShowShortcuts((prev) => !prev)}
-                  >
-                    <span className={styles.commandLabel}>Keyboard shortcuts (?)</span>
-                    <kbd className={styles.hintKbd}>?</kbd>
-                  </button>
-                </div>
-                {shortcutsExpanded ? (
-                  <div
-                    className={styles.shortcutsSheet}
-                    role="region"
-                    aria-label="Keyboard shortcuts"
-                    data-testid="ward-global-search-shortcuts-sheet"
-                  >
-                    <span className={styles.shortcutRow}>
-                      <span>Global search &amp; commands</span>
-                      <span>
-                        <kbd className={styles.hintKbd}>Ctrl+K</kbd> <kbd className={styles.hintKbd}>/</kbd>
-                      </span>
-                    </span>
-                    <span className={styles.shortcutRow}>
-                      <span>New referral</span>
-                      <kbd className={styles.hintKbd}>Shift+R</kbd>
-                    </span>
-                    <span className={styles.shortcutRow}>
-                      <span>Tasks drawer</span>
-                      <kbd className={styles.hintKbd}>Shift+T</kbd>
-                    </span>
-                    <span className={styles.shortcutRow}>
-                      <span>Activity drawer</span>
-                      <kbd className={styles.hintKbd}>Shift+A</kbd>
-                    </span>
-                    <span className={styles.shortcutRow}>
-                      <span>Toggle navigation rail</span>
-                      <kbd className={styles.hintKbd}>[</kbd>
-                    </span>
-                    <span className={styles.shortcutRow}>
-                      <span>Dismiss / clear</span>
-                      <kbd className={styles.hintKbd}>Esc</kbd>
-                    </span>
-                  </div>
-                ) : null}
-              </div>
+              <WardSearchCommands
+                demoOff={demoOff}
+                demoOffId={demoOffId}
+                demoOffText={DEMO_CONTROLS_OFF}
+                resultsCurrent={resultsCurrent}
+                canRunAction={canRunAction}
+                canOpenHref={canOpenHref}
+                shortcutsExpanded={shortcutsExpanded}
+                onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
+                onAdvanceClock={() => {
+                  if (wardFlow)
+                    wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
+                  close();
+                }}
+                onSwitchDesk={(role, href) => {
+                  if (!confirmLeave()) return;
+                  setDeskRole(role, href);
+                  dispatchPersonaSyncForRole(role);
+                  select(href, true);
+                }}
+                onHandover={() => select("/ward-flow/handover")}
+              />
             ) : null}
           </div>
 
@@ -1228,6 +1236,7 @@ export function WardGlobalSearch({
               aria-disabled={!resultsCurrent || undefined}
             >
               <GlobalSearchPreview
+                canOpenHref={canOpenHref}
                 item={previewItem}
                 patients={patients}
                 referrals={referrals}
@@ -1264,18 +1273,20 @@ export function WardGlobalSearch({
               <span className={styles.hintLabel}>Dismiss</span>
             </span>
           </div>
-          <Link
-            href={PATIENT_SEARCH_HREF}
-            className={styles.fullSearch}
-            onClick={(event) => {
-              handOffPatientSearchText(isNewTabClick(event) ? undefined : query);
-              onOptionClick(event, PATIENT_SEARCH_HREF);
-            }}
-            data-testid="ward-global-search-full"
-          >
-            Full patient search
-            <ChevronRight className={styles.fullSearchIcon} aria-hidden="true" />
-          </Link>
+          {canOpenHref(PATIENT_SEARCH_HREF) ? (
+            <Link
+              href={PATIENT_SEARCH_HREF}
+              className={styles.fullSearch}
+              onClick={(event) => {
+                handOffPatientSearchText(isNewTabClick(event) ? undefined : query);
+                onOptionClick(event, PATIENT_SEARCH_HREF);
+              }}
+              data-testid="ward-global-search-full"
+            >
+              Full patient search
+              <ChevronRight className={styles.fullSearchIcon} aria-hidden="true" />
+            </Link>
+          ) : null}
         </div>
       </div>
     </>

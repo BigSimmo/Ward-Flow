@@ -105,7 +105,13 @@ export type WardCredentialForm = {
 /** P191 (Josh, 27 Oct 2026): a blocked saved sign-in is retried quietly after these waits first. */
 const RESTORE_RETRY_MS = [2_000, 5_000, 10_000];
 const restoreBlocked = (error: unknown) => !(error instanceof WardAuthError) || error.kind === "unavailable";
-const emptyView: SharedView = { snapshot: null, receivedAt: 0, status: "loading", error: null };
+const emptyView: SharedView = {
+  snapshot: null,
+  executiveSnapshot: null,
+  receivedAt: 0,
+  status: "loading",
+  error: null,
+};
 /** Which of this account's roles this tab works as: a membership id or "bootstrap", nothing else. */
 const WARD_WORKING_AS_KEY = "wardflow:working-as-v1";
 // Held in memory too, so a tab whose storage refuses the write still keeps the role it picked
@@ -138,6 +144,12 @@ export function useWardSupabaseShared(
   createAuth: () => WardBrowserAuthAdapter | Promise<WardBrowserAuthAdapter> = createWardAuth,
 ) {
   const [view, setView] = useState<SharedView>(emptyView);
+  const [ownership, setOwnership] = useState<{
+    auth: WardBrowserAuthAdapter;
+    view: SharedView | null;
+    client: SharedWorkspaceClient | null;
+    actorId: string | null;
+  } | null>(null);
   const [signedIn, setSignedIn] = useState(false);
   // #791: the signed-in account's email, shown beside Sign out. Memory only, like the auth's own copy.
   const [accountEmail, setAccountEmail] = useState<string | null>(null);
@@ -170,6 +182,7 @@ export function useWardSupabaseShared(
     // Reset before rendering children when the selected provider changes.
     setPreviousEnabled(enabled);
     setView(emptyView);
+    setOwnership(null);
     setSignedIn(false);
     setAccountEmail(null);
     setForm({ open: false, recovery: false, busy: false, message: null });
@@ -230,6 +243,7 @@ export function useWardSupabaseShared(
       connection.current?.dispose();
       connection.current = null;
       if (!closed) {
+        setOwnership((owner) => (owner ? { ...owner, view: null, client: null, actorId: null } : null));
         setSignedIn(false);
         setAccountEmail(null);
         setEndsAt(null);
@@ -273,8 +287,18 @@ export function useWardSupabaseShared(
         token: (options) => instance.token(options),
         workingAs,
         recoveryStorage: tabStorage,
+        authenticatedActorId: () => instance.userId,
         changed: (next) => {
-          if (closed) return;
+          if (closed || connection.current !== client) return;
+          if (instance.userId !== actorId) {
+            disconnect();
+            setView({
+              ...emptyView,
+              status: "unavailable",
+              error: "The signed-in account changed. Reconnect to confirm your current role.",
+            });
+            return;
+          }
           if (next.status === "not-authorised") {
             // A refused session or role ends this connection: stop polling, drop the refused
             // local session so it is not left stored, and keep the not-authorised message visible.
@@ -286,6 +310,9 @@ export function useWardSupabaseShared(
             releasePhoneAlerts(baseUrl, token, workingAs.get(), actorId);
             void instance.signOut().catch(() => {});
           }
+          // The state and this ownership receipt must match in the very render that publishes data.
+          // An effect that clears the previous account after rendering would be one frame too late.
+          setOwnership({ auth: instance, view: next, client, actorId });
           setView(next);
         },
       });
@@ -376,6 +403,7 @@ export function useWardSupabaseShared(
           return;
         }
         auth = created;
+        setOwnership({ auth: created, view: null, client: null, actorId: null });
         actions.current = {
           signUp: (email, password) =>
             run(async () => {
@@ -573,9 +601,20 @@ export function useWardSupabaseShared(
       actions.current = null;
     };
   }, [enabled]);
+  const currentAccount = ownership?.auth.userId ?? null;
+  const ownsView =
+    ownership !== null &&
+    ownership.view === view &&
+    ownership.client !== null &&
+    ownership.actorId === currentAccount &&
+    view.actorId === currentAccount;
+  const currentView =
+    (view.snapshot || view.executiveSnapshot) && (!enabled || !ownsView)
+      ? { ...emptyView, status: "loading" as const }
+      : view;
   return {
-    ...view,
-    signedIn,
+    ...currentView,
+    signedIn: signedIn && currentAccount !== null,
     /** P013: the first workspace read after connecting has not settled yet. */
     connecting: signedIn && firstRead,
     accountEmail,

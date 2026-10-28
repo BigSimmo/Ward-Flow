@@ -16,8 +16,9 @@ import { siteByCode } from "../ward-sites";
 import { COHORTS, HEALTH_SERVICES, type BedRelease, type Cohort, type HealthService, type Unit } from "../ward-model";
 import { unitHref } from "../shell/ward-facade";
 import styles from "./ward-tools-sheet.module.css";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 
-export type BedFinderLegalStatus = "voluntary" | "involuntary";
+type BedFinderLegalStatus = "voluntary" | "involuntary";
 
 export type BedFinderFilters = {
   cohort: Cohort;
@@ -128,6 +129,131 @@ function Choice<T extends string>({
 }
 
 export function WardBedFinder({ onNavigate }: { onNavigate: () => void }) {
+  return useExecutiveStatisticsControl().executive ? (
+    <ExecutiveBedFinder onNavigate={onNavigate} />
+  ) : (
+    <OperationalBedFinder onNavigate={onNavigate} />
+  );
+}
+function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
+  const report = useExecutiveStatistics();
+  const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
+  const set =
+    <K extends keyof BedFinderFilters>(key: K) =>
+    (value: BedFinderFilters[K]) =>
+      setFilters((current) => ({ ...current, [key]: value }));
+  if (!report) return <p role="status">Ready beds are unavailable until this report is ready.</p>;
+  const rows = filters.legalStatus
+    ? report.wards
+        .filter(
+          (ward) =>
+            !ward.isClosed &&
+            ward.cohort === filters.cohort &&
+            (filters.legalStatus !== "involuntary" || ward.authorised) &&
+            (filters.sex === "any" || sexDesignationAccepts(ward.sexDesignation, filters.sex)),
+        )
+        .map((ward) => ({
+          ward,
+          free: filters.bed === "locked" ? ward.lockedReady : filters.bed === "open" ? ward.openReady : ward.beds.ready,
+        }))
+        .toSorted((a, b) => a.ward.name.localeCompare(b.ward.name, "en-AU") || a.ward.id.localeCompare(b.ward.id))
+    : null;
+  return (
+    <div className={styles.toolBody} data-testid="ward-tools-bed-finder">
+      <Choice
+        label="Age group"
+        value={filters.cohort}
+        options={COHORTS.map((cohort) => ({ value: cohort, label: cohort }))}
+        onChange={set("cohort")}
+      />
+      <Choice
+        label="Bed"
+        value={filters.bed}
+        options={[
+          { value: "any", label: "Any" },
+          { value: "locked", label: "Locked" },
+          { value: "open", label: "Open" },
+        ]}
+        onChange={set("bed")}
+      />
+      <Choice
+        label="Ward for"
+        value={filters.sex}
+        options={[
+          { value: "any", label: "Any" },
+          { value: "Female", label: "Female" },
+          { value: "Male", label: "Male" },
+        ]}
+        onChange={set("sex")}
+      />
+      <Choice
+        label="Legal status"
+        value={filters.legalStatus}
+        options={[
+          { value: "voluntary", label: "Voluntary" },
+          { value: "involuntary", label: "Involuntary" },
+        ]}
+        onChange={set("legalStatus")}
+      />
+      <Choice
+        label="Home service"
+        value={filters.home}
+        options={[
+          { value: "any", label: "Any" },
+          ...HEALTH_SERVICES.map((service) => ({ value: service, label: service })),
+        ]}
+        onChange={set("home")}
+      />
+      {rows ? (
+        <>
+          <p className={styles.result} role="status">
+            <strong>{rows.reduce((sum, row) => sum + row.free, 0)}</strong> Ready synthetic beds across{" "}
+            <strong>{rows.length}</strong> {rows.length === 1 ? "ward" : "wards"}
+          </p>
+          <ul className={styles.matchList} aria-label="Ready beds by ward">
+            {rows.map(({ ward, free }) => (
+              <li key={ward.id}>
+                <Link
+                  className={styles.matchRow}
+                  href={`/ward-flow/statistics/ward/${encodeURIComponent(ward.id)}`}
+                  onClick={onNavigate}
+                >
+                  <span>
+                    <strong>{ward.name}</strong>
+                    <small>
+                      {report.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode} ·{" "}
+                      {ward.service}
+                      {filters.home === ward.service ? " · Home service" : ""}
+                    </small>
+                    <small>{ward.sexDesignation}</small>
+                  </span>
+                  <span className={styles.matchCount}>
+                    <b>{free}</b> Ready
+                    <small>Recorded {formatInstantWithDay(ward.confirmedAt, report.network.asAt.now)}</small>
+                    {ward.pendingPreparation > 0 && <small>{ward.pendingPreparation} pending</small>}
+                  </span>
+                  <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          {rows.length === 0 && (
+            <p className={styles.empty}>No open ward is left by these filters. Try Any for Bed or Ward for.</p>
+          )}
+        </>
+      ) : (
+        <p className={styles.result} role="status">
+          Choose a legal status to list wards.
+        </p>
+      )}
+      <p className={styles.note}>
+        Listed A to Z by ward name, not ranked. Quick filter only. The referral still checks every rule before a bed is
+        offered.
+      </p>
+    </div>
+  );
+}
+function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
   const { units, admissions, bedReleases, now } = useWardFlowSelect("units", "admissions", "bedReleases", "now");
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
   const rows = findBeds(units, admissions, bedReleases, filters);

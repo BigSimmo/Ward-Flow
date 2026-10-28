@@ -8,16 +8,62 @@ import { occupiedBeds } from "./statistics-occupancy";
 import { generateDemonstrationSeries } from "./statistics-demonstration";
 import { DemonstrationChart } from "./statistics-demonstration-chart";
 import { useStatisticsSamples } from "./statistics-samples";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import type { WardScenario } from "../ward-scenarios";
 import styles from "./statistics-samples.module.css";
 
 export function StatisticsSampleFigures() {
   const enabled = useStatisticsSamples();
   const pathname = usePathname() || "";
-  const state = useWardFlowSelect("units", "admissions", "bedReleases", "leaveBeds", "scenario");
-  const now = useWardFlowClock();
+  const control = useExecutiveStatisticsControl();
+  const access = useEffectiveWardAccess();
+  const data = useExecutiveStatistics();
   if (!enabled) return null;
   const [mode, encodedId] = pathname.split("/statistics")[1]?.split("/").slice(1) ?? [];
   const id = encodedId ? decodeURIComponent(encodedId) : undefined;
+  if (control.executive || access.role === "executive") {
+    if (!data) return null;
+    const ward = mode === "ward" ? data.wards.find((row) => row.id === id) : undefined;
+    const ed = mode === "ed" ? data.emergencyDepartments.find((row) => row.id === id) : undefined;
+    const team = mode === "community" ? data.teams.find((row) => row.id === id) : undefined;
+    if (
+      (mode === "ward" && !ward) ||
+      (mode === "ed" && (!ed || !data.openableEmergencyDepartmentIds.includes(ed.id))) ||
+      (mode === "community" && (!team || !data.openableCommunityTeamIds.includes(team.id))) ||
+      (mode === "service" && (!id || !data.openableServiceIds.some((service) => service === id)))
+    )
+      return null;
+    const wards = ward ? [ward] : mode === "service" ? data.wards.filter((row) => row.service === id) : data.wards;
+    const capacity = wards.reduce(
+      (sum, row) => ({ beds: sum.beds + row.beds.total, inUse: sum.inUse + row.beds.inUse }),
+      { beds: 0, inUse: 0 },
+    );
+    return (
+      <SampleFiguresView
+        mode={mode}
+        scope={
+          ward?.name ??
+          ed?.name ??
+          team?.name ??
+          (mode === "service"
+            ? id!
+            : data.network.scope.kind === "service"
+              ? data.network.scope.service
+              : "Whole network")
+        }
+        capacity={capacity}
+        scenario={data.sampleScenario}
+        now={data.network.asAt.now}
+      />
+    );
+  }
+  return <OperationalSampleFigures mode={mode} id={id} />;
+}
+
+function OperationalSampleFigures({ mode, id }: { mode: string | undefined; id: string | undefined }) {
+  const state = useWardFlowSelect("units", "admissions", "bedReleases", "leaveBeds", "scenario");
+  const now = useWardFlowClock();
   const ward = mode === "ward" ? state.units.find((unit) => unit.id === id) : undefined;
   const ed = mode === "ed" && id ? edById(id) : undefined;
   const team = mode === "community" && id ? communityTeamById(id) : undefined;
@@ -35,6 +81,30 @@ export function StatisticsSampleFigures() {
     return null;
   const scope = ward?.name ?? ed?.name ?? team?.name ?? (mode === "service" ? id : "Whole network");
   const capacity = occupiedBeds(scopedUnits, state.admissions, state.bedReleases, state.leaveBeds);
+  return (
+    <SampleFiguresView
+      mode={mode}
+      scope={scope ?? "Whole network"}
+      capacity={capacity}
+      scenario={state.scenario}
+      now={now}
+    />
+  );
+}
+
+function SampleFiguresView({
+  mode,
+  scope,
+  capacity,
+  scenario,
+  now,
+}: {
+  mode: string | undefined;
+  scope: string;
+  capacity: { beds: number; inUse: number };
+  scenario: WardScenario;
+  now: number;
+}) {
   const occupancy = capacity.beds ? (capacity.inUse / capacity.beds) * 100 : 0;
   const metrics =
     mode === "ed"
@@ -73,7 +143,7 @@ export function StatisticsSampleFigures() {
             testId={"statistics-sample-" + metric.label.toLowerCase().replaceAll(" ", "-")}
             unit={metric.unit}
             series={generateDemonstrationSeries(
-              state.scenario,
+              scenario,
               now,
               {
                 label: metric.label + " · " + scope,

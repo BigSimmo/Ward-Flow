@@ -505,6 +505,9 @@ export type StageChange = {
   to: MovementStage;
   by: string;
   reason?: string;
+  /** Destination responsible for this entry, when it records one ward's answer. Older entries
+   * have no attribution and are projected using the matching recorded answer instead. */
+  unitId?: string;
 };
 
 /**

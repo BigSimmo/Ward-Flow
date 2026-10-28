@@ -54,8 +54,6 @@ import {
   validateConfiguration,
   type WardConfiguration,
 } from "@/components/ward-management/ward-configuration";
-import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { clearReferralDraftSession } from "@/components/ward-management/referrals/referral-draft-lifecycle";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -109,10 +107,8 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 const WardHelpUsageCard = dynamic(() =>
   import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
 );
-import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { useEffectiveWardAccess, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
-import { accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
+import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
+import { useConfigurationGate } from "./settings-configuration-gate";
 import { AccessSettings, showsAccessTab } from "./access-settings";
 import { OperatorSwitcherModal } from "./operator-switcher-modal";
 import { ResetBaselineModal } from "./reset-baseline-modal";
@@ -138,7 +134,6 @@ import {
   clock24,
   copySettingsDiagnostics,
   fullRules,
-  isConfigurationEvent,
   isSurgePreset,
   readTabFromHash,
   ruleDiffs,
@@ -146,24 +141,20 @@ import {
   wardsText,
 } from "./settings-screen-model";
 import { SettingsTargetsColumn } from "./settings-targets-column";
+import {
+  copyExecutiveSettingsDiagnostics,
+  SettingsSourceHost,
+  type SettingsSource,
+} from "./settings-operational-source";
 
 // Moved to `settings-screen-model.ts`; re-exported so existing importers keep working.
 export { copySettingsDiagnostics, maskDiagnosticMovement, maskDiagnosticPatient } from "./settings-screen-model";
 
-/**
- * 🔴 **SETTINGS — AND THE ONE RULE THAT DECIDES WHAT IS ON IT: A CONTROL THAT WRITES STATE NOTHING
- * READS IS WORSE THAN A MISSING CONTROL.**
- *
- * Rebuilt as workspaces on 8 Oct 2026 (Josh picked the Workspaces mockup). A profile band carries
- * the tabs and Find a setting; each tab says once whether its changes wait for Save or apply at
- * once; one save bar holds every unsaved rule on every tab.
- *
- * Wired: the six coordination rules (draft, then `SET_CONFIGURATION`, each save audited), theme,
- * sidebar, reduce motion, high contrast, buzz sound, export, import, clear session and restore.
- * Row density is wired (`row-density.tsx`). Settings nothing reads yet are not shown (D-72).
- *
- * ⚠️ **NO DEMONSTRATION CONTROL BELONGS ON THIS SCREEN.** Owner ruling Q-7 puts the clock, the
- * scenario and Reset in the Tools drawer; the Data tab says so in words.
+/** Settings workspaces (owner-approved 8 Oct 2026): tabs, Find a setting and one rule save bar.
+ * Operational desks edit drafts and audit each SET_CONFIGURATION; executive reports supply
+ * twelve public values, with individual record evidence explicitly unavailable.
+ * Browser preferences, profile, rules export, diagnostics and own-session clearing stay wired.
+ * Never show controls nothing reads (D-72). Clock, scenario and Reset belong in Tools (Q-7).
  */
 
 const TAB_ICONS = {
@@ -175,35 +166,22 @@ const TAB_ICONS = {
   access: KeyRound,
 } as const;
 
-/** The save check's own sentence for a global settings change (`commandScopeRefusal`); a test keeps the two equal. */
-const STATEWIDE_ONLY = "Only the statewide coordinator may change global settings.";
-
 export function SettingsScreen() {
+  return <SettingsSourceHost>{(source) => <SettingsWorkspace source={source} />}</SettingsSourceHost>;
+}
+
+function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const appearance = useAppearanceStore();
   const glare = useGlareStore();
   const railOpen = useRailOpenStore();
-  const {
-    movements,
-    configuration,
-    eventLog = [],
-    readAuditEvents,
-    patients,
-    shared,
-  } = useWardFlowSelect("movements", "configuration", "eventLog", "readAuditEvents", "patients", "shared");
-  const { resetDemoState } = useWardFlowSelect("resetDemoState");
-  const now = useWardFlowClock();
-  const routeRole = useRouteRole();
-  const raise = useWardRaise(routeRole);
-  const roleGate = useRoleGate()("SET_CONFIGURATION");
-  // P055: the save check also refuses anyone but the statewide coordinator, so say so up front.
-  const notStatewide = !accessIsWholeNetwork(useEffectiveWardAccess());
-  const configurationGate =
-    roleGate.allowed && notStatewide ? { ...roleGate, allowed: false, reason: STATEWIDE_ONLY } : roleGate;
-  const [auditActor] = useWardRecordActors();
+  const { configuration, now } = source;
+  const operational = source.kind === "operational" ? source : null;
+  const sharedEnabled = source.kind === "executive" ? source.authenticated : !!source.shared?.enabled;
+  const configurationGate = useConfigurationGate(source.kind === "executive");
   const configurationBlockReason = configurationGate.allowed
     ? undefined
     : (configurationGate.reason ?? "Coordination rules can only be changed by a coordinator.");
-  const thresholds = publishedThresholds(movements, now, configuration);
+  const thresholds = operational ? publishedThresholds(operational.movements, now, configuration) : null;
 
   /**
    * The six rules are edited as a local DRAFT of `state.configuration`, never applied directly.
@@ -248,6 +226,10 @@ export function SettingsScreen() {
   const [phoneSheet, setPhoneSheet] = useState<SettingsTab | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
+  const goToDesk = () => {
+    if (source.kind === "executive") source.switchRole?.();
+    else setIsOperatorModalOpen(true);
+  };
   const [reducedMotion, setReducedMotion] = useWardAccessibilityPreference("reduced-motion");
   const [highContrast, setHighContrast] = useWardAccessibilityPreference("high-contrast");
   const [rowDensity, setRowDensity] = useRowDensity();
@@ -343,22 +325,22 @@ export function SettingsScreen() {
   const isSurge = isSurgePreset(draft);
 
   // The ED row's effect: who waits past the target now, at the draft value and at the saved one.
-  const savedEdOver = thresholds.find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
-  const draftEdOver =
-    publishedThresholds(movements, now, draft).find((threshold) => threshold.id === "ed-access-target")?.reached ?? 0;
+  const savedEdOver = thresholds?.find((threshold) => threshold.id === "ed-access-target")?.reached ?? null;
+  const draftEdOver = operational
+    ? (publishedThresholds(operational.movements, now, draft).find((threshold) => threshold.id === "ed-access-target")
+        ?.reached ?? 0)
+    : null;
 
   // Recent rule saves, newest first, from the audit trail every save writes to.
-  const auditRead = readAuditEvents(auditActor ?? { role: "demo" });
-  const ruleChanges =
-    auditRead.status === "allowed" ? auditRead.value.filter(isConfigurationEvent).slice(-5).reverse() : [];
-  const lastAccepted = ruleChanges.find((change) => change.outcome === "accepted" && change.at !== null);
+  const ruleChanges = operational?.ruleChanges ?? null;
+  const lastAccepted = ruleChanges?.find((change) => change.outcome === "accepted" && change.at !== null);
 
   const setRule = (patch: Partial<WardConfiguration>) => {
     if (configurationGate.allowed && !savingRef.current) setDraft((current) => ({ ...current, ...patch }));
   };
 
   const handleSurge = (choice: "standard" | "surge") => {
-    if (!configurationGate.allowed) {
+    if (!configurationGate.allowed || !operational) {
       showToast(configurationBlockReason!, "warning");
       return;
     }
@@ -389,7 +371,7 @@ export function SettingsScreen() {
     replaceAll: boolean,
     onAccepted: (applied: WardConfiguration, outcome: WardCommandOutcome) => void,
   ) => {
-    if (!configurationGate.allowed) {
+    if (!configurationGate.allowed || !operational) {
       setConfigurationFailure(configurationBlockReason!);
       showToast(configurationBlockReason!, "warning");
       return;
@@ -414,7 +396,11 @@ export function SettingsScreen() {
       onAccepted(applied, outcome);
     };
     try {
-      const completion = raise("SET_CONFIGURATION", { payload: requested, baseConfiguration: base, replaceAll });
+      const completion = operational.raise("SET_CONFIGURATION", {
+        payload: requested,
+        baseConfiguration: base,
+        replaceAll,
+      });
       if (completion && typeof (completion as Promise<WardCommandOutcome>).then === "function") {
         void (completion as Promise<WardCommandOutcome>).then(finish, () => finish(undefined));
       } else finish(completion as void | WardCommandOutcome);
@@ -505,12 +491,20 @@ export function SettingsScreen() {
 
   const handleCopyDiagnostics = async () => {
     try {
-      await copySettingsDiagnostics({
-        configuration,
-        movements,
-        patients,
-      });
-      showToast("Diagnostics copied to clipboard (records masked).");
+      if (operational) {
+        await copySettingsDiagnostics({
+          configuration,
+          movements: operational.movements,
+          patients: operational.patients,
+        });
+      } else {
+        await copyExecutiveSettingsDiagnostics(configuration);
+      }
+      showToast(
+        operational
+          ? "Diagnostics copied to clipboard (records masked)."
+          : "Diagnostics copied to clipboard (aggregate only).",
+      );
     } catch {
       showToast("Diagnostics could not be copied.");
     }
@@ -567,8 +561,10 @@ export function SettingsScreen() {
       }
       keys.forEach((key) => window.sessionStorage.removeItem(key));
       // A2-7: the provider re-saves the day it shows after each change, so the local demo resets too.
-      if (!shared?.enabled) resetDemoState();
-      showToast(`Session data for this tab cleared.${shared?.enabled ? "" : " The demonstration has restarted."}`);
+      if (operational && !sharedEnabled) operational.resetDemoState();
+      showToast(
+        `Session data for this tab cleared.${operational && !sharedEnabled ? " The demonstration has restarted." : ""}`,
+      );
     } catch {
       showToast("Session data could not be cleared.");
     }
@@ -678,7 +674,7 @@ export function SettingsScreen() {
     if (entry.id === "go-to-desk") {
       setQuery("");
       setFindOpen(false);
-      setIsOperatorModalOpen(true);
+      goToDesk();
       return;
     }
     chooseTab(entry.tab);
@@ -717,7 +713,7 @@ export function SettingsScreen() {
     minLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.min / 60}h`,
     maxLabel: `${ED_ACCESS_TARGET_RANGE_MINUTES.max / 60}h`,
   };
-  const edDelta = draftEdOver - savedEdOver;
+  const edDelta = draftEdOver !== null && savedEdOver !== null ? draftEdOver - savedEdOver : null;
 
   const findSetting = (
     <div className={styles.find}>
@@ -779,7 +775,14 @@ export function SettingsScreen() {
 
   const rulesContent = (
     <>
-      <ScopeLine kind="save" />
+      {source.kind === "executive" ? (
+        <p className={styles.scopeLine}>
+          <span className={styles.scopeTag}>Read only</span>
+          <span>Public rules for executive reporting.</span>
+        </p>
+      ) : (
+        <ScopeLine kind="save" />
+      )}
       {configurationBlockReason ? <p role="status">{configurationBlockReason}</p> : null}
       <div className={styles.columns}>
         <div className={styles.column}>
@@ -817,18 +820,24 @@ export function SettingsScreen() {
               onChange={(minutes) => setRule({ edAccessTargetMinutes: minutes })}
               onReset={() => setRule({ edAccessTargetMinutes: saved.ed })}
               effect={
-                <>
-                  <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
-                  {/* Audit settings-25: the count is read from the draft; a changed target says so. */}
-                  {rules.ed !== saved.ed
-                    ? draftEdOver > 0
-                      ? `${draftEdOver} over if saved`
-                      : "None over if saved"
-                    : draftEdOver > 0
-                      ? `${draftEdOver} over now`
-                      : "None over now"}
-                  {edDelta !== 0 ? <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span> : null}
-                </>
+                draftEdOver === null ? (
+                  "Individual record status unavailable for executive reporting."
+                ) : (
+                  <>
+                    <StatusGlyph tone={draftEdOver > 0 ? "warning" : "success"} size={9} />
+                    {/* Audit settings-25: the count is read from the draft; a changed target says so. */}
+                    {rules.ed !== saved.ed
+                      ? draftEdOver > 0
+                        ? `${draftEdOver} over if saved`
+                        : "None over if saved"
+                      : draftEdOver > 0
+                        ? `${draftEdOver} over now`
+                        : "None over now"}
+                    {edDelta !== null && edDelta !== 0 ? (
+                      <span className={styles.delta}>{`${edDelta > 0 ? "+" : ""}${edDelta}`}</span>
+                    ) : null}
+                  </>
+                )
               }
               usedBy="Home, ED, Movements"
             />
@@ -1077,24 +1086,25 @@ export function SettingsScreen() {
 
   const profileContent = (
     <>
-      <ProfilePane onGoToDesk={() => setIsOperatorModalOpen(true)} />
+      <ProfilePane onGoToDesk={goToDesk} />
     </>
   );
 
   const dataContent = (
     <>
       <DataPane
-        shared={!!shared?.enabled}
+        shared={sharedEnabled}
         reference={reference}
         onReferenceChange={setReference}
-        movementCount={movements.length}
-        eventCount={eventLog.length}
+        movementCount={operational?.movements.length ?? null}
+        eventCount={operational?.eventLog?.length ?? (operational ? 0 : null)}
         thresholds={thresholds}
         onExport={handleExport}
         onCopyDiagnostics={handleCopyDiagnostics}
         onImport={handleImport}
         onClearSession={handleClearSession}
         restoreUnavailable={configurationBlockReason}
+        importUnavailable={configurationBlockReason}
         onRestore={() => {
           if (!configurationGate.allowed) return;
           // On a phone the Data sheet closes first, so the restore dialog is the only layer.
@@ -1160,7 +1170,7 @@ export function SettingsScreen() {
       <WardPrototypeFooter
         testId="ward-settings-governance"
         note={
-          shared?.enabled
+          sharedEnabled
             ? "Synthetic records · Not approved for clinical use · Coordination rules are saved to the shared workspace. Appearance preferences apply to this browser."
             : "Synthetic records · Not approved for clinical use · Coordination rules stay in this device's demo workspace. Appearance preferences apply to this browser."
         }
@@ -1227,12 +1237,7 @@ export function SettingsScreen() {
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
-              <Button
-                variant="onHero"
-                icon={Layers}
-                className={styles.phoneGrow}
-                onClick={() => setIsOperatorModalOpen(true)}
-              >
+              <Button variant="onHero" icon={Layers} className={styles.phoneGrow} onClick={goToDesk}>
                 Go to a desk
               </Button>
             }
@@ -1348,7 +1353,9 @@ export function SettingsScreen() {
             title={sheetTab ? tabLabel(sheetTab) : "Settings"}
             description={
               sheetTab === "rules"
-                ? "Save to apply. Each save is recorded in the audit"
+                ? source.kind === "executive"
+                  ? "Read only · Coordinator only"
+                  : "Save to apply. Each save is recorded in the audit"
                 : "Saves at once · this browser only"
             }
             primary={
@@ -1402,7 +1409,7 @@ export function SettingsScreen() {
           aside={
             <>
               {findSetting}
-              <Button variant="onHero" size="sm" icon={Layers} onClick={() => setIsOperatorModalOpen(true)}>
+              <Button variant="onHero" size="sm" icon={Layers} onClick={goToDesk}>
                 Go to a desk
               </Button>
               <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("profile")}>
@@ -1436,7 +1443,9 @@ export function SettingsScreen() {
             // Buzz switch; Last save is the one fact only the hero gives.
             <HeroChips label="Settings at a glance">
               {/* Site review (12 Oct 2026): plain words when nothing has been saved yet. */}
-              {lastAccepted?.at != null ? (
+              {ruleChanges === null ? (
+                <HeroChip value="Rule-save history" label="unavailable" />
+              ) : lastAccepted?.at != null ? (
                 <HeroChip value={formatInstantWithDay(lastAccepted.at, now)} label="Last save" />
               ) : (
                 <HeroChip value="No" label="saves yet" />

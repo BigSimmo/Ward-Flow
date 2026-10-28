@@ -44,7 +44,12 @@ beforeEach(() => {
     "fetch",
     vi.fn(async (url) => {
       const href = String(url);
-      if (href.includes("/v1/workspace")) return Response.json({ snapshot });
+      if (href.includes("/v1/workspace"))
+        return Response.json({
+          snapshot,
+          actorId: user.id,
+          access: { role: "coordinator", scope: { kind: "statewide" } },
+        });
       authCalls += 1;
       if (!authUp) throw new TypeError("network down");
       return href.endsWith("/user")
