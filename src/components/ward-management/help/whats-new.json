@@ -1,35 +1,5 @@
 [
   {
-    "id": "2026-10-27-full-given-names-on-boards",
-    "date": "2026-10-27",
-    "line": "Bed board, movement bars and board cards show the given name in full."
-  },
-  {
-    "id": "2026-10-27-waiting-list-and-record",
-    "date": "2026-10-27",
-    "line": "Waitlist is now Waiting list, and dossier is now record."
-  },
-  {
-    "id": "2026-10-27-officer-guide-steps",
-    "date": "2026-10-27",
-    "line": "The officer guide names each step up to Arrived at ward. Counts read 1 day and 2 days."
-  },
-  {
-    "id": "2026-10-27-stay-figures-and-alert-units",
-    "date": "2026-10-27",
-    "line": "Stay figures say who they cover and write days in full. Forecast alerts name their unit."
-  },
-  {
-    "id": "2026-10-27-statistics-headings-site-key",
-    "date": "2026-10-27",
-    "line": "Statistics and Handover headings name their page, and the ward table has a key for site codes."
-  },
-  {
-    "id": "2026-10-27-sentence-case-plain-refusals",
-    "date": "2026-10-27",
-    "line": "Labels are in sentence case, and refused actions are named in plain words, not codes."
-  },
-  {
     "id": "2026-10-27-gender-mix",
     "date": "2026-10-27",
     "line": "Referral checks say gender mix, matching the bed screens."
@@ -98,5 +68,35 @@
     "id": "2026-10-27-stay-tile-day-number",
     "date": "2026-10-27",
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
+  },
+  {
+    "id": "2026-10-28-finder-surname-first",
+    "date": "2026-10-28",
+    "line": "Patient search movement rows now show surname first."
+  },
+  {
+    "id": "2026-10-28-uncertain-save-dismiss",
+    "date": "2026-10-28",
+    "line": "You can now dismiss the note about an uncertain save once you have read it."
+  },
+  {
+    "id": "2026-10-28-statewide-desk-label",
+    "date": "2026-10-28",
+    "line": "The header now names a statewide coordinator's desk, for example Bed coordinator, Statewide."
+  },
+  {
+    "id": "2026-10-28-add-patient-by-desk",
+    "date": "2026-10-28",
+    "line": "Add patient now shows only on desks that are allowed to add a patient."
+  },
+  {
+    "id": "2026-10-28-ward-close-conflict",
+    "date": "2026-10-28",
+    "line": "If two people close the same ward, the second now sees who closed it first and can try again."
+  },
+  {
+    "id": "2026-10-28-coordinator-departure",
+    "date": "2026-10-28",
+    "line": "A coordinator can now record that a person has left, from the Discharges sheet."
   }
 ]
