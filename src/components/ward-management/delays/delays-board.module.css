@@ -90,8 +90,8 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: var(--wf-s-2) 10px;
-  padding: var(--wf-s-3) 14px;
+  gap: var(--wf-s-2) var(--wf-s-2);
+  padding: var(--wf-s-2) 12px;
   border-bottom: 1px solid var(--wf-line);
 }
 
@@ -175,11 +175,13 @@
 
 .search {
   display: inline-flex;
+  flex: 0 1 11rem;
   align-items: center;
   gap: var(--wf-s-2);
   height: 30px;
-  width: 11rem;
-  padding: 0 12px;
+  width: 10rem;
+  min-width: 8.5rem;
+  padding: 0 10px;
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-ctl);
   background: var(--wf-surface);
@@ -343,7 +345,7 @@
   flex-direction: column;
   gap: 2px;
   margin: -4px 0;
-  padding: 4px 16px;
+  padding: 4px 12px;
   border: 0;
   border-left: 1px solid var(--wf-hero-edge);
   border-radius: 0;
@@ -2289,7 +2291,7 @@ button.gLaneL:hover {
 
   /* REF-15: one fixed time column so the wait, the update line and the status line up row to row. */
   .tbl .r {
-    grid-template-columns: auto minmax(0, 1fr) 6rem;
+    grid-template-columns: auto minmax(0, 1fr) 6.75rem;
     grid-template-areas:
       "tier who wait"
       "tier who upd";

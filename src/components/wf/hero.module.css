@@ -53,7 +53,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 0;
+  min-width: min(14rem, 100%);
   flex: 0 1 auto;
   padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) 0;
 }
@@ -63,9 +63,8 @@
   letter-spacing: var(--wf-tr-caps);
   text-transform: uppercase;
   color: var(--wf-hero-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 /* Device sweep (24 Oct 2026): the title never clips mid-word ("70 open mo"). When the title and its

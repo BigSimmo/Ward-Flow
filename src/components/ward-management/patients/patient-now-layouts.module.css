@@ -6,6 +6,12 @@
   min-width: 0;
 }
 
+@media (max-width: 48rem) {
+  .stack {
+    padding-bottom: calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-4));
+  }
+}
+
 .cols {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 360px);

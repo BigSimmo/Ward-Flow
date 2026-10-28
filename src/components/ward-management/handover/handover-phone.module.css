@@ -631,18 +631,12 @@
 
 .sticky {
   position: sticky;
-  /* Sits flush on the phone dock: the sticky bar already stops above the scroller's dock padding,
-     so it steps back down to the dock's flat edge (Josh, 12 Oct 2026, iPhone). */
-  bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
+  bottom: 0;
   z-index: 15;
   display: flex;
   gap: 8px;
   /* Without a dock it clears the home bar; with one it clears the + hump instead. */
-  padding: 10px 16px
-    max(
-      calc(14px + env(safe-area-inset-bottom, 0px) - var(--wf-dock-top, 0px)),
-      calc(var(--wf-s-2) + var(--wf-dock-clear, 0px) - var(--wf-dock-top, 0px))
-    );
+  padding: 10px 16px calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-2));
   border-top: 1px solid var(--wf-line);
   background: var(--wf-canvas);
 }

@@ -1069,7 +1069,6 @@ export function AddPatientForm() {
                 icon={History}
                 title="Recently added"
                 aside={<span className={styles.countPill}>{recentRecords.length}</span>}
-                action={<span className={styles.muted}>recent</span>}
               />
               <CardBody flush>
                 <ul className={styles.recentList}>

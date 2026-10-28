@@ -11,7 +11,7 @@
 
 .homeTop {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(21.5rem, 1fr);
   gap: var(--wf-s-3);
   align-items: stretch;
   min-width: 0;
@@ -479,16 +479,16 @@
    overlapping. The small side padding keeps one row at 1440; the items grow to share any spare room. */
 .flowSwitch > div {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   width: 100%;
 }
 
 .flowSwitch > div > button {
-  flex: 1 1 auto;
+  flex: 1 1 0;
   justify-content: center;
-  gap: 5px;
-  min-width: max-content;
-  padding-inline: 2px;
+  gap: 4px;
+  min-width: 0;
+  padding-inline: 4px;
 }
 
 .flowBody {

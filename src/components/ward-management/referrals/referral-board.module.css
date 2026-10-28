@@ -233,25 +233,30 @@
 
 .runwayAxis {
   position: relative;
-  height: var(--wf-lh-12);
+  height: calc(var(--wf-lh-12) * 2);
   margin: 0 0.75rem;
   color: var(--wf-hero-ink-3);
   font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
+  line-height: 1.15;
 }
 
 .runwayAxis > span {
   position: absolute;
   top: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
   transform: translateX(-50%);
   white-space: nowrap;
 }
 
 .runwayAxis > span:first-child {
+  align-items: flex-start;
   transform: none;
 }
 
 .runwayAxis > span:last-child {
+  align-items: flex-end;
   transform: translateX(-100%);
 }
 
@@ -1033,7 +1038,8 @@
   }
 
   .strip > div {
-    flex: 1 1 11rem;
+    flex: 1 1 7.25rem;
+    padding: var(--wf-s-2) var(--wf-s-3);
     background: var(--wf-surface);
   }
 

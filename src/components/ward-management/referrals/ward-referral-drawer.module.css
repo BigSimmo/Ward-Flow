@@ -2369,6 +2369,7 @@ details.refCard > summary {
 
   .rail {
     display: grid;
+    padding-left: var(--wf-s-2);
   }
 
   .summaryToggle {
@@ -2744,7 +2745,7 @@ details.refCard > summary {
 
   .phFigures {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
     margin: 0 calc(var(--wf-s-1) * -1);
   }
 

@@ -22,7 +22,7 @@
 
 .list {
   display: grid;
-  grid-auto-columns: minmax(104px, 1fr);
+  grid-auto-columns: minmax(90px, 1fr);
   grid-auto-flow: column;
   margin: 0;
   padding: 0;
@@ -40,7 +40,7 @@
   flex-direction: column;
   gap: 2px;
   height: 100%;
-  padding: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-2);
   border-bottom: 2px solid transparent;
   color: var(--wf-ink-1);
   text-decoration: none;
@@ -332,8 +332,10 @@
 /* v10 phone hero (PhoneHero only renders on phone): the one light action runs the full width, and
  * a pressed figure's note sits on its own line above it. */
 @media (max-width: 48rem) {
-  .phoneHero [data-testid="ward-ed-raise-referral-toggle"] {
-    flex: 1 1 100%;
+  .phoneHero [data-testid="ward-ed-raise-referral-toggle"],
+  .phoneHero [data-testid="ward-ed-add-patient"] {
+    flex: 1 1 0;
+    min-width: fit-content;
     justify-content: center;
     min-height: var(--wf-touch);
   }

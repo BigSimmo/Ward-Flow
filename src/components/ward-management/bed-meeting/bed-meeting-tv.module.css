@@ -424,12 +424,14 @@
 
 /* In a narrow tile the state word drops under the label rather than squeezing it onto two lines. */
 .tileLabel {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: flex-start;
   row-gap: var(--wf-s-1);
 }
 
 .tileLabel > span:first-child {
-  flex: 1 1 8em;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .tileStatus {
@@ -534,7 +536,7 @@
 }
 
 /* A laptop preview beside the side menu: the table takes the full width, the rest pair up below. */
-@container (max-width: 90rem) {
+@container (max-width: 67.9375rem) {
   .panels[data-layout="meeting"] {
     /* L23 (device sweep): dense, so Longest ED waits and Delays fill the row beside Beds that fit
      * instead of leaving it a third filled while the full-width Brief drops below. */
@@ -551,7 +553,7 @@
  * a letter wide and the Brief overprinting itself. On any TV they now sit in three columns: the
  * Brief runs under the service table and "Beds that fit", where its four parts have room, and the
  * delays sit under the ED waits. Table rows are a little tighter so it all stays on one screen. */
-@container (min-width: 90rem) {
+@container (min-width: 68rem) {
   .panels[data-layout="meeting"]:has(> [data-area="brief"]) {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1fr);
     grid-template-rows: auto auto 1fr;

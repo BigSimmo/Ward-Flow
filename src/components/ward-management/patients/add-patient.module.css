@@ -362,13 +362,17 @@
 }
 
 @media (max-width: 48rem) {
+  .screen {
+    padding-bottom: calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-6));
+  }
+
   .screen button,
   .screen a[href] {
     min-height: 3rem;
   }
 }
 
-@media (min-width: 48.0625rem) {
+@media (min-width: 36rem) {
   .grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

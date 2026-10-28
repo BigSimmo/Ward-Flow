@@ -49,10 +49,14 @@ export function CapacityPhoneOverview({
   return (
     <div className={styles.phoneOverview}>
       <p className={styles.phoneDotKey} data-testid="capacity-phone-dot-key">
-        <StatusGlyph tone="warning" size={9} />
-        <span>Amber dot: short of beds, or no ready bed.</span>
-        <Clock size={12} aria-hidden="true" className={styles.phoneStaleIcon} />
-        <span>Stale: count not confirmed in time.</span>
+        <span className={styles.phoneDotKeyItem}>
+          <StatusGlyph tone="warning" size={9} />
+          <span>Amber dot: short of beds, or no ready bed.</span>
+        </span>
+        <span className={styles.phoneDotKeyItem}>
+          <Clock size={12} aria-hidden="true" className={styles.phoneStaleIcon} />
+          <span>Stale: count not confirmed in time.</span>
+        </span>
       </p>
       <section aria-labelledby="capacity-phone-needs-you">
         <h2 id="capacity-phone-needs-you" className={styles.phoneOverviewHead}>

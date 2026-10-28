@@ -57,6 +57,16 @@
   overflow-wrap: anywhere;
 }
 
+@media (min-width: 62.5625rem) {
+  .row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px var(--wf-s-4);
+  }
+}
+
 /* A finger needs a 44px target; the row grows to hold it. */
 @media (pointer: coarse) {
   .row {

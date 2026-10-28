@@ -306,7 +306,7 @@ export function WaitRunway({
         {ticks.map((tick) => (
           <span key={tick.label} style={{ left: `${runwayPercent(tick.at)}%` }}>
             <b>{tick.label}</b>
-            {tick.tier && !compact ? <span className={styles.tickTier}> {tick.tier} due</span> : null}
+            {tick.tier && !compact ? <span className={styles.tickTier}>{tick.tier} due</span> : null}
           </span>
         ))}
       </div>
@@ -455,7 +455,7 @@ export function ReferralAlerts({ referral, readmission }: { referral: Referral; 
   const intake = referral.intake;
   const risks = intake?.riskFlags ?? [];
   const legal = intake?.legalStatus?.trim();
-  const showLegal = legal !== undefined && legal !== "" && !/^voluntary/i.test(legal);
+  const showLegal = legal !== undefined && legal !== "" && !/^(?:voluntary|not recorded)/i.test(legal);
   if (risks.length === 0 && !readmission && !showLegal) return null;
   return (
     <div className={styles.alerts} aria-label="Alerts" role="group">

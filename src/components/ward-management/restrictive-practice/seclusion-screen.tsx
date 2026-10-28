@@ -489,7 +489,7 @@ function StartForm({
       </Field>
       <TimeField label="Started at" time={time} testId="seclusion-start-time" />
       <Button
-        size="sm"
+        size="md"
         variant="pri"
         aria-disabled={refusal || save.pending ? "true" : undefined}
         aria-describedby={refusal ? `${formId}-reason` : undefined}
@@ -550,7 +550,7 @@ function IncidentForm({
       </Field>
       <TimeField label="Happened at" time={time} testId="seclusion-incident-time" />
       <Button
-        size="sm"
+        size="md"
         variant="pri"
         aria-disabled={refusal || save.pending ? "true" : undefined}
         aria-describedby={refusal ? `${formId}-reason` : undefined}

@@ -3896,8 +3896,8 @@
   }
 
   .findBox {
-    flex: 0 1 15rem;
-    min-width: 9rem;
+    flex: 0 1 12.5rem;
+    min-width: 8rem;
     height: 32px;
     border-radius: var(--wf-r-ctl);
     margin-right: var(--wf-s-1);

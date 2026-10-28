@@ -795,7 +795,7 @@
 
 /* Too narrow for the field, its "/" hint and a readable placeholder, the box ran under Activity
  * (visual desk, 21 Oct 2026). It folds to the magnifier instead, as a tablet's does. */
-@container ward-search (max-width: 9rem) {
+@container ward-search (max-width: 6.75rem) {
   .bar .searchWrap :global([data-testid="ward-global-search"]),
   .bar .searchWrap :global([data-testid="ward-global-search"] > div) {
     width: var(--spacing-tap, 3rem);
@@ -832,7 +832,7 @@
  * bars keep their full-width search sheet (the max-width 1000px and ward-bar 768px rules). */
 @media (min-width: 62.5625rem) {
   @container ward-bar (min-width: 48.0625rem) {
-    @container ward-search (max-width: 9rem) {
+    @container ward-search (max-width: 6.75rem) {
       .bar .searchWrap :global([data-testid="ward-global-search"]:is(:focus-within, [data-open]) > div) {
         position: absolute;
         top: 50%;
@@ -3719,7 +3719,8 @@
   }
 
   .servicePanel .serviceOption[aria-pressed="true"] {
-    background: var(--wf-surface);
+    background: var(--wf-selected);
+    border-color: var(--wf-accent-line);
     font-weight: 600;
   }
 

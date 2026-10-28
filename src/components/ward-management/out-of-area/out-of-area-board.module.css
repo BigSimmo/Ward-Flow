@@ -123,7 +123,7 @@
   min-width: 0;
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 /* ---- hero ---- */
@@ -488,7 +488,7 @@
 }
 
 .colPatient {
-  width: 19%;
+  width: 22%;
 }
 
 .colRegion {
@@ -1251,7 +1251,7 @@ fieldset.formRow {
 /* ---- phone, its own layout ---- */
 
 .phoneMain {
-  padding: var(--wf-s-3) var(--wf-s-3) 6.5rem;
+  padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-6));
 }
 
 .phone {

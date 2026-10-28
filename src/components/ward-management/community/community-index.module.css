@@ -132,7 +132,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-1) var(--wf-s-2);
   padding: 0 var(--wf-s-4) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line-2);
 }
@@ -189,7 +189,7 @@
 }
 
 .listWrap {
-  --cti-row-cols: minmax(0, 1fr) 4.5rem 3.5rem 10rem 1rem;
+  --cti-row-cols: minmax(0, 1fr) 4.5rem 4.25rem 10rem 1rem;
 
   min-width: 0;
   max-height: 46rem;
@@ -753,7 +753,7 @@
      A–Z rows give the team name more room and keep the reads-alike marker close under the name;
      the service bar chart is left to the larger screen. */
   .main {
-    padding: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
   }
 
   .heroActions {

@@ -672,7 +672,7 @@
     flex-wrap: wrap;
   }
 
-  .filterRow:first-child > :first-child {
+  .filterRow:first-child > :first-child:not(.search) {
     flex: 1 1 100%;
     min-width: 0;
     overflow-x: auto;
@@ -747,6 +747,12 @@
 
   .cardFoot {
     padding-top: 0;
+  }
+}
+
+@media (min-width: 36rem) and (max-width: 48rem) {
+  .cardGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

@@ -9,7 +9,7 @@
   /* A3 / L22 (device sweep, 24 Oct 2026): centred on a wide screen, as Settings is, rather than a
      narrow column on the left with the rest of the screen empty. */
   margin-inline: auto;
-  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-6);
+  padding: var(--wf-s-4) var(--wf-s-4) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-6));
 }
 
 .off {
@@ -27,6 +27,11 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
 }
 
 .title {

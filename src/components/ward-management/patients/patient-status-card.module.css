@@ -289,9 +289,10 @@
   align-items: center;
   gap: var(--wf-s-2);
   margin: 0 calc(-1 * var(--wf-s-3)) calc(-1 * var(--wf-s-3));
-  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  padding: var(--wf-s-2) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-2));
   border-top: 1px solid var(--wf-line);
   background: var(--wf-canvas);
+  box-shadow: 0 -4px 12px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
 }
 
 .phBar > * {

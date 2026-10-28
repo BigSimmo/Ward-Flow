@@ -1723,7 +1723,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 6px;
+  gap: 4px 12px;
   margin: 0;
   padding-inline: var(--wf-s-1);
   color: var(--wf-ink-2);
@@ -1731,7 +1731,13 @@
   line-height: var(--wf-lh-12);
 }
 
-.phoneDotKey > svg {
+.phoneDotKeyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.phoneDotKey svg {
   flex: none;
 }
 

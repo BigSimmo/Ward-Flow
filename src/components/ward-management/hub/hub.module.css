@@ -94,7 +94,7 @@
 .resultMain {
   display: grid;
   /* Beds is 112px so "1 being made ready" stays whole at the 12px floor. */
-  grid-template-columns: minmax(0, 1fr) 112px 104px 56px;
+  grid-template-columns: minmax(0, 1fr) 112px 84px 48px;
   align-items: center;
   column-gap: var(--wf-s-3);
 }
@@ -1291,17 +1291,19 @@
   min-width: 0;
 }
 
-.phoneCheckText > * {
+.phoneCheckText b {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.phoneCheckText b {
   font-size: var(--wf-fs-13);
 }
 
 .phoneCheckText span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }

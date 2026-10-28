@@ -200,8 +200,21 @@
 /* B6-27 (device sweep): on a laptop the five filters share one row rather than leaving Sort alone
    on a second one. */
 @media (min-width: 62.5625rem) and (max-width: 100rem) {
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+    flex: 1 1 auto;
+  }
+
+  .filters > .filterField {
+    width: 100%;
+  }
+
   .filters > .filterField > .filterSelect {
-    width: 10rem;
+    flex: 1 1 0;
+    width: 100%;
+    min-width: 0;
   }
 }
 
@@ -456,15 +469,15 @@
 }
 
 .workTable td:first-child {
-  width: 32%;
+  width: 26%;
 }
 
 .workTable td:nth-child(2) {
-  width: 34%;
+  width: 24%;
 }
 
 .workTable td:nth-child(3) {
-  width: 34%;
+  width: 50%;
 }
 
 .workTable tr[data-selected="true"] td {
@@ -2021,6 +2034,10 @@
 }
 
 @media screen and (max-width: 48rem) {
+  .main {
+    padding-bottom: calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-4));
+  }
+
   .phMoreRow {
     display: table-row;
   }

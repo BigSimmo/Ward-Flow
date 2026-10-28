@@ -113,11 +113,11 @@
 
 .cardFoot {
   position: sticky;
-  bottom: calc(var(--wf-dock-top, 0px) - var(--wf-dock-clear, 0px));
+  bottom: 0;
   display: flex;
   gap: var(--wf-s-2);
   margin: auto calc(-1 * var(--wf-s-4)) 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-2));
   border-top: 1px solid var(--wf-line);
   background: var(--wf-canvas);
 }

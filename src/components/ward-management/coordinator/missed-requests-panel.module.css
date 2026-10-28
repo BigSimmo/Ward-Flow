@@ -47,7 +47,7 @@
   flex-wrap: wrap;
   gap: var(--wf-s-2);
   align-items: center;
-  min-height: var(--wf-row-default);
+  min-height: 36px;
   margin: 0;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);

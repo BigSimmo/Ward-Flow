@@ -222,7 +222,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-1);
   min-width: 0;
 }
 
@@ -233,7 +233,7 @@
 
 .heroFilters button {
   height: var(--wf-h-sm);
-  padding: 0 12px;
+  padding: 0 10px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
   border-radius: var(--wf-r-seg-item);
 }
@@ -1139,7 +1139,7 @@ button.taskLabel[aria-pressed="true"] {
  * the time left. The panel sits below the list and the page scrolls to it on select. */
 @media (max-width: 48rem) {
   .main {
-    padding: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
   }
 
   .heroAside {

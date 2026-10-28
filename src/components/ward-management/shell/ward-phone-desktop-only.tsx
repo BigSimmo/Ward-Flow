@@ -29,7 +29,7 @@ const DESKTOP_ONLY_PREFIXES: readonly string[] = [
 ];
 
 export function isPhoneDesktopOnlyPath(pathname: string): boolean {
-  return DESKTOP_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return DESKTOP_ONLY_PREFIXES.includes(pathname);
 }
 
 export function WardPhoneDesktopOnly() {

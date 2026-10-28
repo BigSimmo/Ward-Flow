@@ -321,8 +321,8 @@
 }
 
 .dirHead .search {
-  flex: 0 1 16rem;
-  min-width: 11rem;
+  flex: 1 1 19.5rem;
+  min-width: 17.5rem;
   margin-bottom: var(--wf-s-2);
 }
 
@@ -424,10 +424,10 @@
   width: 44px;
 }
 .colRole {
-  width: 36%;
+  width: 32%;
 }
 .colNumber {
-  width: 22%;
+  width: 19%;
 }
 .colActions {
   width: 88px;
@@ -1408,8 +1408,8 @@
 .focal {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px 12px;
+  gap: 5px;
+  padding: 8px 12px 10px;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
   border-radius: 16px;
   background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
@@ -1424,7 +1424,7 @@
 }
 
 .focalNumber {
-  font: 600 28px / 34px var(--wf-mono);
+  font: 600 24px / 28px var(--wf-mono);
   font-feature-settings:
     "zero" 1,
     "tnum" 1;
@@ -1449,11 +1449,11 @@
 .focalActions {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .focalActions > * {
-  min-height: 44px;
+  min-height: 40px;
   border-radius: var(--wf-r-ctl);
 }
 

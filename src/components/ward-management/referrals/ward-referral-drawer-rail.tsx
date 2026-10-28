@@ -143,13 +143,17 @@ export function ReferralSummaryRail({
               // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
               <div>
                 <p className={styles.eyebrow}>First contact</p>
-                <strong className={styles.mono}>{communityNeeds.firstContact ?? "Choose within"}</strong>
+                <strong className={communityNeeds.firstContact ? styles.mono : undefined}>
+                  {communityNeeds.firstContact ?? "Choose within"}
+                </strong>
                 <small>Team sees it as the due time</small>
               </div>
             ) : (
               <div title={OPERATIONAL_DEFAULT_LABEL}>
                 <p className={styles.eyebrow}>Urgency</p>
-                <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
+                <strong className={tier !== undefined ? styles.mono : undefined}>
+                  {tier === undefined ? "Choose urgency" : `T${tier}`}
+                </strong>
                 <small>Decision due shows after Send</small>
               </div>
             )}

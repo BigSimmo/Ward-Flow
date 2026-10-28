@@ -231,11 +231,15 @@
 
 .row:focus-visible,
 .who:focus-visible,
-.close:focus-visible,
 .dockItem:focus-visible,
 .createPrimary:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -6px;
 }
 
 .row[aria-current="page"] .rowIcon,

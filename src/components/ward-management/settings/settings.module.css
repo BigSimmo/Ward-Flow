@@ -799,7 +799,7 @@
 .phoneMain {
   min-width: 0;
   width: 100%;
-  padding: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-3) calc(var(--wf-dock-clear, 5.5rem) + var(--wf-s-5));
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
@@ -1038,7 +1038,7 @@
       grid-column: 1 / -1;
       flex-direction: row;
       flex-wrap: wrap;
-      justify-content: space-between;
+      justify-content: flex-start;
       column-gap: var(--wf-s-3);
       text-align: left;
     }
