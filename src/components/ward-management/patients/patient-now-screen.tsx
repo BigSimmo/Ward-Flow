@@ -605,13 +605,16 @@ export function PatientNowScreen({
               : {}),
           }
         : {
-            // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
-            value:
-              (
+            // A figure, so the status's first word ("Voluntary"); "Not recorded" stays whole.
+            value: (() => {
+              const raw =
                 (mode === "idle"
                   ? livePatient?.legalStatus
-                  : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Not recorded"
-              ).split(" ")[0] ?? "Not recorded",
+                  : (liveMovement?.legalStatus ?? livePatient?.legalStatus)) ?? "Not recorded";
+              return /^(not recorded|legal status not recorded)$/i.test(raw.trim())
+                ? "Not recorded"
+                : (raw.split(" ")[0] ?? "Not recorded");
+            })(),
             label: "Legal status",
           };
   // Audit S-32: the leave sheet names the form in force and says when the person is on an order.

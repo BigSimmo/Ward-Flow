@@ -535,6 +535,7 @@ export function ReferralBoard({
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
+      detailRef.current.focus({ preventScroll: true });
     }
   }, [selectedReferralId]);
 
@@ -837,7 +838,13 @@ export function ReferralBoard({
               data-testid="ward-referral-detail-backdrop"
             />
           ) : null}
-          <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
+          <div
+            className={styles.registerQueue}
+            role="region"
+            aria-label="Referral queues"
+            tabIndex={0}
+            inert={phoneLayout && !!selectedReferral ? true : undefined}
+          >
             <Card className={cx(styles.v6QueueCard, a.queueCard)}>
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
                   queue switch does. The row sits in the queue card beside the list it pins over. */}

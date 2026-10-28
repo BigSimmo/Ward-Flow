@@ -123,18 +123,52 @@ export function ReferralSummaryRail({
               <i style={{ width: `${Math.round((itemsReady / itemsTotal) * 100)}%` }} />
             </span>
             <dl className={styles.railRows}>
-              {readyRows.map((row) => (
-                <div key={row.label} data-state={row.state}>
-                  <dt>
-                    <StatusGlyph
-                      tone={row.state === "done" ? "success" : row.state === "follow" ? "warning" : "neutral"}
-                      size={9}
-                    />
-                    {row.label}
-                  </dt>
-                  <dd>{row.value}</dd>
-                </div>
-              ))}
+              {readyRows.map((row) => {
+                const targetSection =
+                  row.label === "Patient" || row.label === "Catchment"
+                    ? ("patient" as const)
+                    : row.label === "From" ||
+                        row.label === "Purpose" ||
+                        row.label === "Legal status" ||
+                        row.label === "Urgency" ||
+                        (row.label === "Clearance" && destType === "community")
+                      ? ("referral" as const)
+                      : row.label === "Your contact" || row.label === "Refer to"
+                        ? null
+                        : row.label === "Wards" || row.label === "Team" || row.label === "ED"
+                          ? ("placement" as const)
+                          : ("documentation" as const);
+                const canJump = row.state !== "done" && targetSection !== null;
+                return (
+                  <div key={row.label} data-state={row.state}>
+                    <dt>
+                      <StatusGlyph
+                        tone={row.state === "done" ? "success" : row.state === "follow" ? "warning" : "neutral"}
+                        size={9}
+                      />
+                      {row.label}
+                    </dt>
+                    <dd>
+                      {canJump ? (
+                        <button
+                          type="button"
+                          className={styles.railJump}
+                          title={`Open ${sectionLabel(targetSection, destType)}`}
+                          onClick={() => {
+                            if (s.isPhone) s.phOpenStep(targetSection);
+                            else s.selectSection(targetSection);
+                            setSummaryOpen(false);
+                          }}
+                        >
+                          {row.value}
+                        </button>
+                      ) : (
+                        row.value
+                      )}
+                    </dd>
+                  </div>
+                );
+              })}
             </dl>
           </section>
           <section className={styles.railCard} data-layout="pair">

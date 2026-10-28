@@ -972,9 +972,9 @@ export function AddPatientForm() {
               </CardBody>
             </Card>
 
-            {/* Tablet portrait: the duplicate check sits under Identity, where it is needed while
-                typing, not under the Add patient footer (device audit 11 Oct 2026). */}
-            {isTabletPortrait ? duplicateCheck : null}
+            {/* Tablet portrait & active duplicate matches: the duplicate check sits under Identity,
+                where it is needed while typing, not off to the side or under the footer. */}
+            {isTabletPortrait || matches.length > 0 ? duplicateCheck : null}
 
             <Card className={styles.submitBar}>
               <div className={styles.submitLead}>
@@ -1062,7 +1062,7 @@ export function AddPatientForm() {
           </form>
 
           <aside className={styles.side} aria-label="Duplicate checking and records">
-            {isTabletPortrait ? null : duplicateCheck}
+            {isTabletPortrait || matches.length > 0 ? null : duplicateCheck}
 
             <Card className={styles.phHide}>
               <CardHead

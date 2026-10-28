@@ -370,10 +370,14 @@ function PersonPreview({
             <dd>{patient.preferredName}</dd>
           </>
         ) : null}
-        {patient.legalStatus ? (
+        {(openMovement?.legalStatus ?? patient.legalStatus) ? (
           <>
             <dt>Status</dt>
-            <dd>{patient.legalStatus}</dd>
+            <dd>
+              {openMovement?.legalStatus && patient.legalStatus && openMovement.legalStatus !== patient.legalStatus
+                ? `${openMovement.legalStatus} (movement · record: ${patient.legalStatus})`
+                : (openMovement?.legalStatus ?? patient.legalStatus)}
+            </dd>
           </>
         ) : null}
         {whereNow ? (

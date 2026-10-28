@@ -324,10 +324,18 @@ export function buildCensus(state: {
       transportNotBooked: next === "Book transport",
       nextWho: cause ? OWNER_WORDS[ownerOf(cause)] : "Bed desk",
       glyph,
-      legal: form ? `Form ${form.code}` : shortLegal(movement.legalStatus),
+      legal: form ? `Form ${form.code}` : shortLegal(movement.legalStatus ?? resolve(movement).patient?.legalStatus),
       // D5: only 4A and 4C forms carry a due time. Every other form says so rather than inventing one.
       legalSub:
-        form?.dueAt !== undefined ? `Due ${formatInstantWithDay(form.dueAt, now)}` : form ? "No due time" : "No form",
+        form?.dueAt !== undefined
+          ? `Due ${formatInstantWithDay(form.dueAt, now)}`
+          : form
+            ? "No due time"
+            : movement.legalStatus &&
+                resolve(movement).patient?.legalStatus &&
+                shortLegal(movement.legalStatus) !== shortLegal(resolve(movement).patient?.legalStatus)
+              ? `Record: ${shortLegal(resolve(movement).patient?.legalStatus)}`
+              : "No form",
       formCode: form?.code ?? null,
       formDueAt: form?.dueAt ?? null,
       waitMinutes: waited,
@@ -390,7 +398,7 @@ export function buildCensus(state: {
       next: accepted ? "Arrange the move" : `${answerer} to answer`,
       nextWho: accepted ? "Bed desk" : answerer,
       glyph: "wait",
-      legal: "Not recorded",
+      legal: shortLegal(referral.intake?.legalStatus ?? resolve(referral).patient?.legalStatus),
       legalSub: "On the referral",
       formCode: null,
       formDueAt: null,
