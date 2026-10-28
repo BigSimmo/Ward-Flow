@@ -6,6 +6,9 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
+import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { Button, Dialog, useOptionalToast } from "@/components/wf";
 
 /**
@@ -44,17 +47,38 @@ function ReleaseOwnershipControl({
   function confirm() {
     setAsking(false);
     const inboxItemId = item.id;
-    raiseRef.current("RELEASE_INBOX_ITEM_OWNERSHIP", { inboxItemId });
-    toast?.push({
-      tone: "success",
-      title: `Released ${item.title}`,
-      undo: {
-        durationMs: UNDO_TOAST_MS,
-        onUndo: () => {
-          raiseRef.current("TAKE_INBOX_ITEM_OWNERSHIP", { inboxItemId });
+    const say = (outcome: WardCommandOutcome) => {
+      if (outcome.isCurrent && !outcome.isCurrent()) return;
+      if (outcome.status !== "accepted") {
+        toast?.push({
+          tone: "warning",
+          title:
+            outcome.status === "refused"
+              ? `Not recorded: ${outcome.message ?? "The action was refused."}`
+              : (outcome.message ?? SAVE_NOT_CONFIRMED),
+        });
+        return;
+      }
+      toast?.push({
+        tone: "success",
+        title: `Released ${item.title}`,
+        undo: {
+          durationMs: UNDO_TOAST_MS,
+          onUndo: () => {
+            if (outcome.isCurrent && !outcome.isCurrent()) return;
+            if (outcome.canUndo && !outcome.canUndo()) return false;
+            raiseRef.current("TAKE_INBOX_ITEM_OWNERSHIP", { inboxItemId });
+            return;
+          },
         },
-      },
-    });
+      });
+    };
+    const completion = confirmedWardCommand(raiseRef.current("RELEASE_INBOX_ITEM_OWNERSHIP", { inboxItemId }));
+    if ("then" in completion) {
+      void completion.then(say, () => toast?.push({ tone: "warning", title: SAVE_NOT_CONFIRMED }));
+    } else {
+      say(completion);
+    }
   }
 
   return (
