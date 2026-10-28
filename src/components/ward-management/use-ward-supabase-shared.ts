@@ -593,6 +593,8 @@ export function useWardSupabaseShared(
     retry: () => {
       void actions.current?.retry();
     },
+    /** P172: clear the outcome of an uncertain save once it has been read. */
+    dismissRecovery: (shown?: string) => connection.current?.dismissRecovery(shown),
     /** Work as one of this account's roles, when it holds more than one. */
     chooseRole: (id: string) => connection.current?.chooseRole(id),
     /** Forget the role worked as, so the account's roles are listed again. */

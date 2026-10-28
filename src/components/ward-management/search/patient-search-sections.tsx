@@ -335,7 +335,8 @@ function ResultRow({
   referrals: Referral[];
 }) {
   const summary = buildMovementSummary(movement, units, now);
-  const patientName = resolveSubjectPatient(movement, { patients, referrals }).displayName;
+  // P139: surname first ("Zircon, Marcus"), as every other row in the finder names a person.
+  const patientName = resolveSubjectPatient(movement, { patients, referrals }).formalName;
   const rowClass =
     `${viewMode === "cards" ? styles.patientCard : styles.denseRow} ${isSelected ? styles.selectedRow : ""}`.trim() ||
     undefined;
