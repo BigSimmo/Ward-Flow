@@ -563,6 +563,8 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   Ask results, fallback suggestions and the clinical reply share a polite live region.
   Ask accepts an explicit public `termsSource` without reading the operational network hook,
   retaining PR #997's aggregate-host interface; its default host still uses the current site's glossary.
+  Search listbox options have one action each, shared by pointer and Enter; Open/Show me labels
+  are plain text within the option rather than nested interactive controls.
 - **`shell/ward-service-store.ts`** (113 lines) — the one `sessionStorage`-backed module store for
   the chosen `HealthService | null` (`SERVICE_SCOPE_STORAGE_KEY = "ward-flow-service"`), read by
   `WardBar`'s Service selector, `WardRail`'s dot, and any scoped screen. `sessionStorage`, never

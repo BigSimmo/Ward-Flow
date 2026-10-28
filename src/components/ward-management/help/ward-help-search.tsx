@@ -1,7 +1,6 @@
 "use client";
 
 import { Search } from "lucide-react";
-import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
@@ -125,19 +124,23 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
         className={index === active ? `${styles.row} ${styles.active}` : styles.row}
         data-testid={`ward-help-search-result-${result.key}`}
         onMouseEnter={() => setActive(index)}
+        onClick={() => act(result)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            act(result);
+          }
+        }}
       >
         <span className={styles.text}>
           <strong>{result.title}</strong>
           <span className={styles.detail}>{result.detail}</span>
         </span>
         {showMeOn && result.howToId && mine ? (
-          <button type="button" tabIndex={-1} className={styles.action} onClick={() => act(result)}>
-            Show me
-          </button>
+          <span className={styles.action}>Show me</span>
         ) : href ? (
-          <Link href={href} tabIndex={-1} className={styles.action} onClick={() => close(false)}>
-            Open
-          </Link>
+          <span className={styles.action}>Open</span>
         ) : null}
       </li>
     );

@@ -27,6 +27,26 @@ function openSearch() {
 }
 
 describe("WardHelpSearch", () => {
+  it.each(["pointer", "Enter"])("opens Show me through the option using %s", (method) => {
+    flags.helpAsk = true;
+    const show = vi.fn();
+    window.addEventListener("ward-flow-open-help", show);
+    try {
+      const input = openSearch();
+      fireEvent.change(input, { target: { value: "dark mode" } });
+      const option = screen.getByTestId("ward-help-search-result-howto:theme");
+      expect(option.querySelector("button, a, input, [tabindex]")).toBeNull();
+      if (method === "pointer") fireEvent.click(option);
+      else fireEvent.keyDown(input, { key: "Enter" });
+      expect(show).toHaveBeenCalledOnce();
+      expect((show.mock.calls[0][0] as CustomEvent).detail).toEqual({ showMe: "theme" });
+      expect(screen.queryByRole("dialog")).toBeNull();
+    } finally {
+      flags.helpAsk = false;
+      window.removeEventListener("ward-flow-open-help", show);
+    }
+  });
+
   it("opens a dialog with suggestions for the desk, focused on the box", () => {
     const input = openSearch();
     expect(screen.getByRole("dialog", { name: "Search Help" })).toBeTruthy();
