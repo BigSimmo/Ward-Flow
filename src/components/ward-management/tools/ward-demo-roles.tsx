@@ -130,7 +130,19 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   }
   function exit() {
     if (!enabled) return;
-    const original = exitDemoRole();
+    const saved = session?.desk;
+    const scope = saved?.scope;
+    const placeExists =
+      scope?.kind === "ward"
+        ? scope.unitIds.length > 0 && scope.unitIds.every((id) => world.units.some((candidate) => candidate.id === id))
+        : scope?.kind === "ed"
+          ? network.sites.some((site) => site.emergencyDepartment?.id === scope.edId)
+          : scope?.kind === "site"
+            ? network.sites.some((site) => site.code === scope.siteCode)
+            : scope?.kind === "service"
+              ? network.sites.some((site) => site.service === scope.service)
+              : true;
+    const original = exitDemoRole(placeExists ? saved : STATEWIDE_COORDINATOR);
     if (original) go(original);
     else {
       // A reload keeps the existing local desk, but loses the memory-only return history.
