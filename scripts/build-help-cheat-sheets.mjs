@@ -8,18 +8,13 @@ import { fileURLToPath } from "node:url";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 /** Load the app's typed content with the project's existing build tool, without a browser or provider. */
 export async function readCheatSheets() {
-  const { build } = await import("esbuild");
-  const result = await build({
-    entryPoints: [path.join(root, "src/components/ward-management/help-content/ward-help-print.ts")],
-    bundle: true,
-    platform: "node",
-    format: "esm",
-    write: false,
-    logLevel: "silent",
-    tsconfig: path.join(root, "tsconfig.json"),
-  });
-  const contentModule = await import(
-    `data:text/javascript;base64,${Buffer.from(result.outputFiles[0].text).toString("base64")}`
+  const { tsImport } = await import("tsx/esm/api");
+  const contentModule = await tsImport(
+    path.join(root, "src/components/ward-management/help-content/ward-help-print.ts"),
+    {
+      parentURL: import.meta.url,
+      tsconfig: path.join(root, "tsconfig.json"),
+    },
   );
   return contentModule.printHelpGuides();
 }
