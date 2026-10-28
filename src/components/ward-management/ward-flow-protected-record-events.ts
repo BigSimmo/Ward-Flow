@@ -51,7 +51,6 @@ export type ProtectedRecordEvent = Extract<
 export const UNLINKED_CARE_REFUSAL =
   "Link the patient to their record first. A revocation or any other care step can only be recorded for a linked patient.";
 
-
 export { PROTECTED_REFUSAL_REASONS };
 
 function protectedRefusal(
