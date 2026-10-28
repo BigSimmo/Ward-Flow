@@ -71,6 +71,8 @@ describe("deferred acknowledgements stay in their original world", () => {
     fake.connection = {
       enabled: true,
       signedIn: true,
+      actorId: "synthetic-shared-account",
+      access: { role: "coordinator", scope: { kind: "statewide" } },
       status: "ready",
       error: null,
       eventLog: [],
