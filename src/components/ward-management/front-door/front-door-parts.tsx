@@ -132,6 +132,50 @@ export function Brand() {
  * The Night entrance: navy screen, bed texture, brand band and a panel holding one card. `note`
  * says a message sits on the card, so short phones make room for it.
  */
+/**
+ * An iPhone works out how far to pan the page for the keyboard from where the field sat before the
+ * band folded away (front-door.module.css). The fold then lifts the field, so the pan overshoots and
+ * leaves the field cut off above a blank sheet. Once the keyboard is up, bring the page back to the
+ * top, but only when the field still clears the keyboard from there.
+ */
+function useKeyboardSettle(screen: RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    const node = screen.current;
+    const viewport = window.visualViewport;
+    if (!node || !viewport) return;
+    let frame = 0;
+    let later = 0;
+    const settle = () => {
+      frame = 0;
+      const field = document.activeElement;
+      if (!(field instanceof HTMLInputElement) || !node.contains(field) || viewport.scale > 1) return;
+      const panned = node.scrollTop > 0 || viewport.offsetTop > 0 || window.scrollY > 0;
+      const fits = field.getBoundingClientRect().bottom + node.scrollTop + 16 <= viewport.height;
+      if (!panned || !fits) return;
+      node.scrollTop = 0;
+      window.scrollTo(0, 0);
+    };
+    const soon = () => {
+      if (!frame) frame = window.requestAnimationFrame(settle);
+    };
+    const opened = () => {
+      soon();
+      window.clearTimeout(later);
+      later = window.setTimeout(soon, 350);
+    };
+    node.addEventListener("focusin", opened);
+    viewport.addEventListener("resize", soon);
+    viewport.addEventListener("scroll", soon);
+    return () => {
+      node.removeEventListener("focusin", opened);
+      viewport.removeEventListener("resize", soon);
+      viewport.removeEventListener("scroll", soon);
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(later);
+    };
+  }, [screen]);
+}
+
 export function DoorScreen({
   label,
   note,
@@ -144,6 +188,8 @@ export function DoorScreen({
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
+  const screen = useRef<HTMLDivElement>(null);
+  useKeyboardSettle(screen);
   // While someone types on a phone the band folds away (front-door.module.css). A tap on a button
   // would take the field's focus first, unfold the band and move the button from under the finger,
   // so the tap is lost. Keep the field's focus through the tap; the click still lands.
@@ -158,7 +204,7 @@ export function DoorScreen({
     return () => node.removeEventListener("mousedown", keepTyping);
   }, []);
   return (
-    <div className={styles.screen}>
+    <div ref={screen} className={styles.screen}>
       <main id="main-content" className={`${styles.door} ${note ? styles.doorNote : ""}`} aria-label={label}>
         {focusTarget && (
           <button type="button" className={styles.skip} onClick={() => focusTarget.current?.focus()}>
