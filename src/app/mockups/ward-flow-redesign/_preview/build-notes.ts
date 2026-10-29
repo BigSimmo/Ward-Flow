@@ -51,6 +51,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the ten day figures are one Also on this ward line, without the two the hero already shows. Worth a look and Your part in tomorrow's forecast sit in one notice. Bed cards are five to a row and names wrap.",
     "**Kept, against the HTML mock-up:** the bed record column stays on screen with nothing chosen. Your ruling of 30 August made it permanent, so it is narrower here rather than hidden. Say if you want it to open only on a choice.",
   ],
+  "ed-board": [
+    "**Built from a copy of today's ED board**, so the ED peer strip, the access-target card, the filter chips, Record exam, Log transport booking, the row menus, the patient record and On TV all work as now.",
+    "**New:** one table. The Lists section under it repeated the same nine people, so on desktop it folds behind one closed row; nothing in it is lost. The Form column shows the form number, with the description in the record and the tooltip. Statewide capacity and Seen in the last 24 hours are one footer line.",
+    "**To change in the real files once approved:** Medical clearance, Expects and Referred become chips on the board itself, which needs three new board filters; then the folded Lists can go.",
+    '**Found while building:** the Lists write names first name first ("Noor Tremalow"). The board and D-83 put the surname first.',
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",

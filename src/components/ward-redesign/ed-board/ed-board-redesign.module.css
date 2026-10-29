@@ -1,0 +1,53 @@
+/* ED board, redesigned. */
+
+/* The Form column shows the form number only; its description is in the record and the tooltip. */
+.board [data-testid^="ward-ed-form-title-"] {
+  display: none;
+}
+
+/* The two links to other pages, as one quiet footer line under the board. */
+.linksFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-6);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+.linksFoot a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 32px;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.linksFoot a:hover {
+  text-decoration: underline;
+}
+
+/* Lists by step, folded: the board already shows these people. */
+.listsFold {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+.listsFold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+.listsFold > summary span {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.listsFold[open] > summary {
+  border-bottom: 1px solid var(--wf-line);
+}

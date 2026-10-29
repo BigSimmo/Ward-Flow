@@ -12,6 +12,7 @@ import { MovementsRedesign } from "@/components/ward-redesign/movements/movement
 import { WaitingRedesign } from "@/components/ward-redesign/waiting/waiting-redesign";
 import { WardRedesign } from "@/components/ward-redesign/ward/ward-redesign";
 import { StaysPage } from "@/components/ward-redesign/stays/stays-page";
+import { EdBoardPage } from "@/components/ward-redesign/ed-board/ed-board-page";
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -29,4 +30,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   handover: HandoverRedesign,
   ward: WardRedesign,
   stays: StaysPage,
+  "ed-board": EdBoardPage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
