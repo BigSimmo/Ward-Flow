@@ -1,0 +1,74 @@
+/* Day bars: one bar per day, firm days solid and later days hatched, with a small second series. */
+.wrap {
+  min-width: 0;
+}
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.grid {
+  stroke: var(--wf-line);
+  stroke-width: 1;
+}
+.base {
+  stroke: var(--wf-line-3);
+  stroke-width: 1;
+}
+.axis {
+  fill: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+}
+.firm {
+  fill: var(--wf-data-1);
+}
+.later {
+  fill: url(#wf-day-bars-hatch);
+  stroke: var(--wf-data-1);
+  stroke-width: 1;
+}
+.hatchGround {
+  fill: var(--wf-data-3);
+}
+.hatchLine {
+  stroke: var(--wf-data-2);
+  stroke-width: 2;
+}
+.value {
+  fill: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+.second {
+  fill: var(--wf-data-2);
+}
+.secondLabel {
+  fill: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+}
+.day {
+  fill: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+.dayFirm {
+  font-weight: 650;
+}
+.daySub {
+  fill: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+@media (forced-colors: active) {
+  .firm,
+  .second {
+    fill: CanvasText;
+  }
+  .later {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+}

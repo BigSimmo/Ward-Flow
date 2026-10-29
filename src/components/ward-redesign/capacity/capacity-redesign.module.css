@@ -1,0 +1,860 @@
+/*
+ * Capacity, redesigned (October 2026 design review). Tokens only; nothing under 12 px; touch
+ * targets 48 px on a phone. Layout follows the width of the page column (`page` container in
+ * redesign-page.module.css), not the window:
+ *   wide   1100 px and up  — forecast in three columns, bed map with the side column beside it
+ *   middle  700–1099 px    — forecast figures across the top, side column under the map in two
+ *   narrow  under 700 px   — one column
+ */
+
+/* ── Shared text ── */
+.small {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.mutedXs {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.muted {
+  color: var(--wf-ink-3);
+}
+.strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+}
+.warnInk {
+  color: var(--wf-warning-ink);
+}
+.okInk {
+  color: var(--wf-success-ink);
+}
+.kickerInline {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.tag {
+  flex: none;
+  padding: 1px var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.tagGood {
+  border-color: var(--wf-success);
+  color: var(--wf-success-ink);
+}
+
+/* A card's quiet foot line: one sentence on the left, one link or disclosure on the right. */
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.cardFoot > :first-child {
+  flex: 1 1 260px;
+}
+.footLink {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.footLink:hover {
+  text-decoration: underline;
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.heroStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+/* ── Where the mismatch is ── */
+.mismatch {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.mmCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+}
+.mmCard:first-child {
+  border-inline-start: 0;
+}
+.mmTotal {
+  background: var(--wf-surface-2);
+}
+.mmTitle {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+.mmNow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-1);
+  margin: 0;
+  font-size: var(--wf-fs-14);
+}
+.mmFigure {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+.mmSub {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mmTomorrow {
+  margin-top: var(--wf-s-2);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+.mmTomorrowHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* ── Bed forecast ── */
+.fcBody {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 300px;
+  border-top: 1px solid var(--wf-line);
+}
+.fcKpis {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-inline-end: 1px solid var(--wf-line);
+}
+.fcKpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.fcKpi:first-child {
+  border-top: 0;
+}
+.fcKpi dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+.fcKpiValue {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+.fcChart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.fcChartHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+.swHatch {
+  background: repeating-linear-gradient(45deg, var(--wf-data-3) 0 3px, var(--wf-data-2) 3px 5px);
+}
+.swSecond {
+  background: var(--wf-data-2);
+}
+.fcSide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+}
+.levers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lever {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+.leverN {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.leverMain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+.leverHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  font-size: var(--wf-fs-13);
+}
+.leverAction {
+  margin-top: var(--wf-s-1);
+}
+.fcSources {
+  margin-top: auto;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+.fcSources p {
+  margin: 0 0 var(--wf-s-1);
+}
+
+/* By ward: the ward-by-day grid as a quiet heat table. */
+.heat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.heatTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  font-size: var(--wf-fs-12);
+}
+.heatTable th {
+  padding: var(--wf-s-1) var(--wf-s-2);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.heatTable tbody th {
+  max-width: 220px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  white-space: normal;
+}
+.heatCell {
+  min-width: 56px;
+  height: 34px;
+  padding: 0 var(--wf-s-2);
+  border-radius: var(--wf-r-xs);
+  font-family: var(--wf-mono);
+  text-align: center;
+  background: var(--wf-surface-2);
+}
+.heatCell em {
+  display: block;
+  font-style: normal;
+  color: var(--wf-accent-ink);
+}
+.heat1 {
+  background: color-mix(in srgb, var(--wf-data-1) 22%, var(--wf-surface));
+}
+.heat2 {
+  background: color-mix(in srgb, var(--wf-data-1) 42%, var(--wf-surface));
+}
+.heatLater {
+  font-style: italic;
+}
+
+/* ── Bed map ── */
+.mapRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+.mapCard {
+  min-width: 0;
+}
+.mapBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.highlights {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-2);
+}
+.mapGroup {
+  border-top: 1px solid var(--wf-line);
+}
+.mapGroupHead {
+  margin: 0;
+}
+.mapGroupToggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  text-align: start;
+  cursor: pointer;
+}
+.mapGroupToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+.mapGroupName {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-1);
+}
+.mapGroupFigures {
+  margin-inline-start: auto;
+}
+.mapGroupFigures b {
+  color: var(--wf-ink-1);
+}
+.mapGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-3);
+}
+.mapRows {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--wf-s-3);
+}
+.mapGrid[hidden],
+.mapRows[hidden] {
+  display: none;
+}
+
+.wardCard,
+.wardRow {
+  display: grid;
+  min-width: 0;
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color var(--wf-m-fast) var(--wf-ease),
+    box-shadow var(--wf-m-fast) var(--wf-ease),
+    opacity var(--wf-m-fast) var(--wf-ease);
+}
+.wardCard {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name beds"
+    "ready occupied"
+    "cells cells"
+    "note note";
+  gap: var(--wf-s-1) var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+}
+.wardRow {
+  grid-template-columns: minmax(160px, 1.4fr) 64px 96px 96px minmax(120px, 2fr) minmax(120px, 1.2fr);
+  grid-template-areas: "name beds ready occupied cells note";
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-row-default);
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+.wardCard:hover,
+.wardRow:hover {
+  border-color: var(--wf-line-3);
+  box-shadow: var(--wf-e1-hover);
+}
+.wardCard:focus-visible,
+.wardRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.wardCard[data-selected],
+.wardRow[data-selected] {
+  border-color: var(--wf-accent);
+  box-shadow: 0 0 0 1px var(--wf-accent);
+}
+.dimmed {
+  opacity: 0.38;
+}
+.wardName {
+  grid-area: name;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.wardBeds {
+  grid-area: beds;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-align: end;
+}
+.wardReady {
+  grid-area: ready;
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+}
+.wardReadyN {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+.wardOccupied {
+  grid-area: occupied;
+  align-self: center;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-align: end;
+}
+.wardNote {
+  grid-area: note;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.wardNote .warnInk {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+.cells {
+  grid-area: cells;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.cells i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.cellReady {
+  background: var(--wf-data-ready);
+}
+.cellUsed {
+  background: var(--wf-data-1);
+}
+.cellClosed {
+  background: var(--wf-data-closed);
+}
+@media (forced-colors: active) {
+  .cellReady {
+    background: Highlight;
+  }
+  .cellUsed {
+    background: CanvasText;
+  }
+  .cellClosed {
+    background: GrayText;
+  }
+}
+
+/* ── Side column ── */
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+.sideBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.sideBody p {
+  margin: 0;
+}
+.blockers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+}
+.kvList {
+  margin: var(--wf-s-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.kvList li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.kvList b {
+  font-family: var(--wf-mono);
+}
+
+.footRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+
+/* ── Scenario dialog ── */
+.scenarioAnswer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.scenarioFigure {
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+  font-weight: 600;
+}
+.scenarioSet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-3);
+  padding: 0;
+  border: 0;
+}
+.scenarioSet legend {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+}
+.scenarioRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--wf-s-2);
+}
+
+/* ── Bed meeting sheet ── */
+.sheetFigures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-4);
+}
+.sheetFigures > div {
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.sheetFigures dd {
+  margin: 0;
+}
+.sheetFigure {
+  display: block;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+  font-weight: 600;
+}
+.sheetCols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+  margin-bottom: var(--wf-s-3);
+}
+.sheetHead {
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+}
+.sheetHead:first-child {
+  margin-top: 0;
+}
+.sheetList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sheetList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  min-height: 34px;
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.sheetList li:has(> :nth-child(2):last-child) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+}
+.sheetList b {
+  font-family: var(--wf-mono);
+  text-align: end;
+}
+
+/* ── Phone ── */
+.phoneTabs {
+  width: 100%;
+}
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.phoneRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row-touch);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.phoneRow:last-child {
+  border-bottom: 0;
+}
+.phoneRow > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.phoneRow > span {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-weight: 600;
+}
+.phoneForecast {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border-top: 1px solid var(--wf-line);
+}
+.phoneForecast > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-3);
+  border-inline-start: 1px solid var(--wf-line);
+}
+.phoneForecast > div:first-child {
+  border-inline-start: 0;
+}
+.phoneForecast dd {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+}
+.phoneForecast dd.mutedXs {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+/* ── Middle width: tablet, and a laptop with the rail open ── */
+@container page (max-width: 1099px) {
+  .mismatch {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mmCard {
+    border-top: 1px solid var(--wf-line);
+  }
+  .mmCard:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .mmCard:nth-child(odd) {
+    border-inline-start: 0;
+  }
+  .mmTotal {
+    grid-column: 1 / -1;
+  }
+  .fcBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fcKpis {
+    flex-direction: row;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--wf-line);
+  }
+  .fcKpi {
+    flex: 1 1 0;
+    border-top: 0;
+    border-inline-start: 1px solid var(--wf-line);
+  }
+  .fcKpi:first-child {
+    border-inline-start: 0;
+  }
+  .fcSide {
+    border-inline-start: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+  .mapRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sideColumn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .sideColumn > :first-child {
+    grid-row: span 2;
+  }
+  .wardRow {
+    grid-template-columns: minmax(140px, 1.4fr) 84px 84px minmax(100px, 2fr);
+    grid-template-areas: "name ready occupied cells";
+  }
+  .wardRow .wardBeds,
+  .wardRow .wardNote {
+    display: none;
+  }
+}
+
+@container page (max-width: 699px) {
+  .mismatch,
+  .footRow,
+  .sideColumn,
+  .sheetCols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mmCard {
+    border-inline-start: 0;
+  }
+  .fcKpis {
+    flex-direction: column;
+  }
+  .fcKpi {
+    border-inline-start: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+  .sheetFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .scenarioRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mapGroupFigures {
+    flex-basis: 100%;
+    margin-inline-start: calc(14px + var(--wf-s-2));
+  }
+}
+
+@media (max-width: 48rem) {
+  .mapGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wardCard {
+    min-height: var(--wf-row-touch);
+  }
+  .mapGroupToggle {
+    min-height: var(--wf-row-touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wardCard,
+  .wardRow {
+    transition: none;
+  }
+}
+
+/* The oldest-count jump sits at the right end of the hero's figures. */
+.heroJump {
+  margin-inline-start: auto;
+}
