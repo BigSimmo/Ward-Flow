@@ -45,6 +45,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**To change in the real files once approved (not drawn here):** the heading states the ward's position (\"1 bed ready, 16 occupied\") with the facts line moved into the eyebrow; Ward flow's busiest-list default set where the list choice lives.",
     '**Found while building:** bed tiles and Notices write names first name first ("Gareth Ferrowmoor"). D-83 says surname first everywhere, so this needs a fix in the real tile.',
   ],
+  stays: [
+    "**Built from a copy of today's Stays and discharges board**, so the filters, the order, the length-of-stay bands, the bed record, the shift brief and Change ward all work as now.",
+    "**New:** the same full-width hero as Ward home. It still carries everything the old card did: the ward name, site, locked split, Ready now and the band figures, the being-made-ready and constraint sentences, and the As at time.",
+    "**New:** the ten day figures are one Also on this ward line, without the two the hero already shows. Worth a look and Your part in tomorrow's forecast sit in one notice. Bed cards are five to a row and names wrap.",
+    "**Kept, against the HTML mock-up:** the bed record column stays on screen with nothing chosen. Your ruling of 30 August made it permanent, so it is narrower here rather than hidden. Say if you want it to open only on a choice.",
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",

@@ -1,0 +1,93 @@
+/* Stays and discharges, redesigned. */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) 0;
+}
+.asAt {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+}
+.heroFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+}
+.heroNote {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-3);
+}
+
+.also {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin: var(--wf-s-3) 0 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+.alsoTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.alsoList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.alsoList b {
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.alsoNote {
+  color: var(--wf-ink-3);
+}
+
+/* Worth a look and Your part in tomorrow's forecast read as one notice. */
+.oneNotice {
+  margin-top: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.oneNotice > * {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.oneNotice > * + * {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Bed cards: five to a row beside a narrower record column. */
+@media (min-width: 64rem) {
+  .zones.zones {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+  }
+  .zones [class*="beds_"],
+  .zones [class*="beds__"] {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+}
+
+/* Names wrap rather than cut off (D-83: full names, surname first). */
+.zones [class*="bedName"] {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}

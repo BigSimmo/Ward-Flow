@@ -11,6 +11,7 @@ import { ReferralsRedesign } from "@/components/ward-redesign/referrals/referral
 import { MovementsRedesign } from "@/components/ward-redesign/movements/movements-redesign";
 import { WaitingRedesign } from "@/components/ward-redesign/waiting/waiting-redesign";
 import { WardRedesign } from "@/components/ward-redesign/ward/ward-redesign";
+import { StaysPage } from "@/components/ward-redesign/stays/stays-page";
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -27,4 +28,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "new-referral": NewReferralRedesign,
   handover: HandoverRedesign,
   ward: WardRedesign,
+  stays: StaysPage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
