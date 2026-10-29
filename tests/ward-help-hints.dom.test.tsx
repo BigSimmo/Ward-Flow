@@ -90,6 +90,47 @@ describe("quiet first-visit Help hints", () => {
     expect(screen.getByTestId("ward-help-hint").textContent).toContain("Open Settings, then Display.");
     expect(screen.getByTestId("ward-help-hint").textContent).not.toContain("Change a rule");
   });
+  it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive", "admin"])(
+    "limits legacy declined-tour guidance to the coordinator (role=%s)",
+    async (role) => {
+      route.path = "/ward-flow/settings";
+      route.role = role;
+      route.toured = false;
+      localStorage.setItem("ward_flow_choice_tour_auto_done", "yes");
+      render(<WardHelpHints />);
+      await settle();
+      expect(screen.queryByTestId("ward-help-hint") !== null).toBe(role === "coordinator");
+      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(role === "coordinator" ? "coordinator:settings" : null);
+    },
+  );
+  it("does not revive an undismissed hint after navigating away and back", async () => {
+    const ui = render(<WardHelpHints />);
+    await settle();
+    expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
+    route.path = "/ward-flow/statistics";
+    ui.rerender(<WardHelpHints />);
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    route.path = "/ward-flow/capacity";
+    ui.rerender(<WardHelpHints />);
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    await settle();
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    expect(localStorage.getItem(HELP_HINTS_KEY)).toBe("coordinator:capacity");
+  });
+  it("does not revive an undismissed hint after changing role away and back", async () => {
+    const ui = render(<WardHelpHints />);
+    await settle();
+    expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
+    route.role = "executive";
+    ui.rerender(<WardHelpHints />);
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    route.role = "coordinator";
+    ui.rerender(<WardHelpHints />);
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    await settle();
+    expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+    expect(localStorage.getItem(HELP_HINTS_KEY)).toBe("coordinator:capacity");
+  });
   it("suppresses offers if preference storage cannot be written", async () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("blocked");

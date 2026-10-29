@@ -8,6 +8,7 @@ import { ROLE_SCREENS, screenForPath } from "../ward-role-access";
 import { WARD_HOME_HREF } from "../ward-nav";
 import { ADMIN_SETTINGS_HELP, screenHelpFor } from "../help/ward-help-content";
 import { openWardHelp } from "../help/ward-help-events";
+import { parseTourAutoDone, TOUR_AUTO_DONE_STORAGE_KEY } from "../help/ward-tour-auto-start";
 import { parseTourSeen, useTourRole, useTourSeen } from "../help/ward-help-store";
 import type { WardTourRole } from "../help/ward-help-store";
 import { ACCESSIBILITY_HELP } from "./ward-help-reference";
@@ -62,7 +63,7 @@ function hintsAllowed(toured: boolean, role: WardTourRole, topic: string | undef
   // A declined tour still permits hints on later screens, never another prompt on its home.
   if (!topic || topic === "command") return false;
   try {
-    return parseTourSeen(window.localStorage.getItem("ward_flow_choice_tour_auto_done") ?? "").includes(role);
+    return parseTourAutoDone(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY) ?? "").includes(role);
   } catch {
     return false;
   }
@@ -83,6 +84,11 @@ function obstructed() {
 export function WardHelpHints() {
   const pathname = usePathname() ?? "";
   const role = useTourRole();
+  // A route or desk change ends this offer. Returning must consult the once-per-topic mark again.
+  return <WardHelpHintForView key={`${role}:${pathname}`} pathname={pathname} role={role} />;
+}
+
+function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardTourRole }) {
   const toured = useTourSeen(role);
   const phone = useIsPhone();
   const [blocked, setBlocked] = useState(true);
