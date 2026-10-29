@@ -32,6 +32,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the Catchment card says what is known in one line, then the four fields, then one row with Catchment not known and Confirm catchment. Today it says "not known" three ways before the first field. The suggested team box shows only once a team has been found.',
     "**Phone:** unchanged; the step list already reads well.",
   ],
+  handover: [
+    "**Built from a copy of today's Handover page**, so the shift switcher, the meeting-order groups, highlights, Copy summary, the downtime pack, Present and Print all work as now.",
+    "**New:** Since previous handover is one line of figures instead of four large boxes. The hero's Changed since chip still hides and shows it.",
+    "**New:** a sign-off bar stays at the foot of the screen while the table scrolls. It says how many checks are clear, names the ones still open, and has Open checklist and Sign off. Sign off sends the same command as the panel and is available exactly when the panel's is.",
+    "**New:** Due by shows its first 4 rows, with the rest behind Show more.",
+    "**Phone:** unchanged; it already keeps Sign off at the foot.",
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",

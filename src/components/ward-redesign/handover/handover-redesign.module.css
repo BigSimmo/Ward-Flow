@@ -1,0 +1,126 @@
+/* Handover, redesigned: the since line, Show more under Due by, and the sign-off bar. */
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.sinceLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+.sinceTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.sinceItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.sinceItems li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+.sinceItems b {
+  color: var(--wf-ink-1);
+}
+.sinceDetail {
+  color: var(--wf-ink-3);
+}
+
+.moreRow td {
+  padding: 0;
+  border-top: 1px solid var(--wf-line);
+}
+.moreRow button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+}
+.moreRow button:hover {
+  background: var(--wf-surface-2);
+}
+
+.signBar {
+  position: sticky;
+  bottom: var(--wf-s-3);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin-top: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+}
+.signLead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-13);
+}
+.signCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.signOpen {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.signOpen li {
+  padding: 2px var(--wf-s-2);
+  border-radius: var(--wf-r-pill);
+  background: color-mix(in srgb, var(--wf-warning) 12%, var(--wf-surface));
+}
+.signActions {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin-inline-start: auto;
+}
+
+@media (max-width: 48rem) {
+  .signBar {
+    bottom: calc(var(--wf-s-2) + 72px);
+  }
+  .moreRow button {
+    min-height: 48px;
+  }
+}
