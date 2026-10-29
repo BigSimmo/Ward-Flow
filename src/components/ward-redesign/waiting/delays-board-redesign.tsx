@@ -98,7 +98,6 @@ import {
   RowTimeline,
   WaitBar,
   legalCell,
-  originLabel,
   phonePrefix,
   phoneUpdate,
   updateCell,

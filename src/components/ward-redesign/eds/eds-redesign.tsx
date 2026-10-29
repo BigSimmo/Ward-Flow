@@ -140,7 +140,7 @@ function rowClock(row: EdRow): WaitClock {
  * hospital names wrap on the cards instead of ending in "…", and departments with nobody waiting
  * share one line with an Enter button each, rather than a full empty card.
  */
-export function EdIndexRedesign(_props: { openOnLoad?: string }) {
+export function EdIndexRedesign() {
   const { movements, patients, referrals, units, configuration } = useWardFlowSelect(
     "movements",
     "patients",
