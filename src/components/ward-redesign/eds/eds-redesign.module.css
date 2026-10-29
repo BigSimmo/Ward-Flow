@@ -1,0 +1,31 @@
+/* All EDs, redesigned: names that wrap, and one line for departments with nobody waiting. */
+.wrapNames.wrapNames article h2,
+.wrapNames.wrapNames article p[title] {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+.clearLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  grid-column: 1 / -1;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-13);
+}
+.clearLabel {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.clearEd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
