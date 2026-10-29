@@ -1,0 +1,126 @@
+/* Home, redesigned: the two new right-column cards. The rest of the page uses today's Home styles. */
+.headLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+}
+.headLink:hover {
+  text-decoration: underline;
+}
+.warnInk {
+  color: var(--wf-warning-ink);
+}
+.okInk {
+  color: var(--wf-success-ink);
+}
+.muted {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.kicker {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.fitTable {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.fitTable thead th {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  text-align: end;
+  color: var(--wf-ink-3);
+}
+.fitTable thead th:first-child {
+  text-align: start;
+}
+.fitTable tbody th,
+.fitTable td {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  vertical-align: middle;
+}
+.fitTable tbody th {
+  font-weight: 600;
+  text-align: start;
+}
+.fitTable tbody th span {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.fitTable td {
+  text-align: end;
+  white-space: nowrap;
+}
+.fitTable td b {
+  font-family: var(--wf-mono);
+}
+.fitFoot {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+
+.promptBody {
+  display: flex;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.promptIcon {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+.promptMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+.promptMain p {
+  margin: 0;
+}
+.nextUp {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+}
+.nextUp button {
+  margin-top: var(--wf-s-2);
+}
