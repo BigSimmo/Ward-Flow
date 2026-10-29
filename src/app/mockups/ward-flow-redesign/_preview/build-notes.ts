@@ -21,6 +21,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",
     '**New:** the title counts every department ("62 waiting across 10 EDs", with "8 have someone waiting" beside it), hospital names wrap on the cards, and departments with nobody waiting share one line with an Enter button each.',
   ],
+  referrals: [
+    "**Built from a copy of today's Referrals board**, so the queue, History, highlights, the keyboard shortcuts, the decline-reason rule and Accept presentation all work as now.",
+    "**New:** queue rows wrap instead of cutting the patient line off, and Offered to wards is a table (patient, ward offered to, waiting time and what the wards have answered so far).",
+    "**Decision pane:** Written history and Corrections fold behind one button, so Decline and Accept sit higher. The Timeline tab still shows them in full.",
+    "**Kept as today:** the waiting chart already marks the 1, 4 and 24 hour due times, so it is unchanged here.",
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",

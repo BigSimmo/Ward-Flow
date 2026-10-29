@@ -1,0 +1,124 @@
+/* Referrals, redesigned: wrapping queue rows, the ward offers as a table, history folded away. */
+
+/* Queue rows wrap instead of cutting the patient line off ("Adult, not a wa…"). */
+.wrapRows.wrapRows td,
+.wrapRows.wrapRows td * {
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.offers {
+  margin: var(--wf-s-3) 0 0;
+  border-top: 1px solid var(--wf-line);
+}
+.offersTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+.offersNote {
+  margin-inline-start: auto;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--wf-ink-3);
+}
+.offersTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.offersTable thead th {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-3);
+}
+.offersTable tbody th,
+.offersTable td {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  text-align: start;
+  vertical-align: middle;
+  color: var(--wf-ink-1);
+}
+.offersTable tbody th {
+  font-weight: 600;
+}
+.offerLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: inherit;
+  text-decoration: none;
+}
+.offerLink:hover {
+  text-decoration: underline;
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+/* Written history and corrections sit behind one button in the decision pane. */
+.foldHistory:not([data-history-open]) [data-testid="ward-referral-history-and-corrections"] {
+  display: none;
+}
+.historyToggle {
+  display: flex;
+  align-items: center;
+  width: auto;
+  min-height: 44px;
+  margin: var(--wf-s-3) var(--wf-s-4);
+  padding: 0 var(--wf-s-3);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.historyToggle:hover {
+  color: var(--wf-ink-1);
+  background: var(--wf-surface-2);
+}
+
+@media (max-width: 48rem) {
+  .offersTable thead {
+    display: none;
+  }
+  .offersTable tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    border-top: 1px solid var(--wf-line);
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+  .offersTable tbody th,
+  .offersTable td {
+    padding: 0;
+    border: 0;
+  }
+  .offersTable td:nth-child(2) {
+    grid-column: 1 / -1;
+    color: var(--wf-ink-2);
+  }
+  .offerLink {
+    min-height: 48px;
+  }
+  .historyToggle {
+    min-height: 48px;
+  }
+}
