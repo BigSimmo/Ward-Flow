@@ -8,6 +8,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "referrals",
   "new-referral",
   "handover",
+  "ward",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

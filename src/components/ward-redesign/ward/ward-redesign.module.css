@@ -1,0 +1,31 @@
+/* My ward, redesigned: a scoped stylesheet over today's screen (see ward-redesign.tsx). */
+
+/* Bed tiles show the whole name, wrapping to a second line, with the stay length on its own row. */
+.ward [class*="bedTileName"] {
+  display: block;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+.ward [class*="bedTile_"],
+.ward [class*="bedTile__"] {
+  height: auto;
+  min-height: 0;
+}
+.ward [class*="bedTileState"] {
+  margin-top: auto;
+}
+
+/* Desktop toolbar: three actions (On TV, Raise referral, Referral form) and More. Notices, Shift
+   brief and Handover move into the More menu the tablet toolbar already has. */
+@media (min-width: 48.01rem) {
+  .ward [class*="toolMore"] {
+    display: inline-flex;
+  }
+  .ward [data-testid="ward-notifications-toggle-btn"],
+  .ward [data-testid="ward-open-daily-sheet-btn"],
+  .ward a[class*="toolWide"][class*="toolSolo"] {
+    display: none;
+  }
+}
