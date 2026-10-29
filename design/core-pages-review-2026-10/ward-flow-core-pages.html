@@ -2660,17 +2660,995 @@
         color: var(--wf-ink-1);
         font-weight: 650;
       }
+      /* Remaining pages */
+      .tline {
+        position: relative;
+        height: 34px;
+        border-top: 2px solid var(--wf-track);
+        margin-top: 14px;
+      }
+      .tline span {
+        position: absolute;
+        top: 8px;
+        transform: translateX(-50%);
+        font-family: var(--wf-mono);
+        font-size: 11px;
+        color: var(--wf-ink-3);
+      }
+      .tline span:first-child {
+        transform: none;
+      }
+      .tline span:nth-child(4) {
+        transform: translateX(-100%);
+        color: var(--wf-ink-1);
+        font-weight: 600;
+      }
+      .tline i {
+        position: absolute;
+        top: -7px;
+        width: 12px;
+        height: 12px;
+        margin-left: -6px;
+        border-radius: 50%;
+      }
+      .tl-a {
+        border: 2px solid var(--wf-warning);
+        background: var(--wf-surface);
+      }
+      .tl-z {
+        background: var(--wf-danger);
+      }
+      .lines {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .lines > div {
+        display: grid;
+        gap: 1px;
+        padding: 8px 10px;
+        border: 1px solid var(--wf-hero-line);
+        border-radius: 12px;
+        color: var(--wf-hero-ink-2);
+        background: var(--wf-hero-chip);
+        min-width: 0;
+      }
+      .lines > div b {
+        color: var(--wf-hero-ink);
+        font-size: 13px;
+      }
+      .lines > div.on {
+        background: var(--wf-surface);
+        color: var(--wf-ink-2);
+      }
+      .lines > div.on b {
+        color: var(--wf-ink-1);
+      }
+      .plain {
+        margin: 0;
+        padding-left: 18px;
+        display: grid;
+        gap: 6px;
+        color: var(--wf-ink-2);
+      }
+      .tvapp {
+        background: var(--wf-canvas);
+      }
+      .tv {
+        padding: 18px 20px;
+        display: grid;
+        gap: 14px;
+      }
+      .tv-h {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+      .tv-h h1 {
+        margin: 2px 0;
+        font-size: 28px;
+        line-height: 34px;
+        font-weight: 650;
+      }
+      .tv-tiles {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .tv-t {
+        background: var(--wf-surface);
+        border-radius: 16px;
+        padding: 16px 18px;
+        display: grid;
+        gap: 4px;
+        box-shadow: var(--wf-e1);
+        border-left: 5px solid var(--wf-warning);
+        font-size: 15px;
+        color: var(--wf-ink-2);
+      }
+      .tv-t.bad {
+        border-left-color: var(--wf-danger);
+      }
+      .tv-t b:first-child {
+        color: var(--wf-ink-1);
+        font-size: 16px;
+      }
+      .tv-n {
+        font-size: 44px;
+        line-height: 50px;
+        font-weight: 700;
+        color: var(--wf-ink-1);
+        font-variant-numeric: tabular-nums;
+      }
+      .tv-t.bad .tv-n {
+        color: var(--wf-danger-ink);
+      }
+      .tv-g {
+        display: grid;
+        grid-template-columns: 1.3fr 1.1fr 1fr;
+        gap: 12px;
+      }
+      .tv-p {
+        padding: 14px 18px;
+      }
+      .tv-p h3 {
+        margin: 0 0 8px;
+        font-size: 17px;
+      }
+      .tv-tb {
+        display: grid;
+        font-size: 16px;
+      }
+      .tv-tb span {
+        padding: 7px 0;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .tv-tb span.th {
+        color: var(--wf-ink-3);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .tv-tb span.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .tv-brief {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 18px;
+        padding: 14px 18px;
+      }
+      .tv-brief p {
+        margin: 4px 0 0;
+        font-size: 16px;
+        line-height: 22px;
+      }
+      .tv-f {
+        font-size: 13px;
+        color: var(--wf-ink-3);
+      }
+      .stepper {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--wf-hero-line);
+        border-radius: 14px;
+        padding: 4px;
+      }
+      .stepper span {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 6px 8px;
+        border-radius: 10px;
+        font-size: 12.5px;
+        color: var(--wf-hero-ink-3);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .stepper b {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid currentColor;
+        display: grid;
+        place-items: center;
+        font-size: 11px;
+        flex: none;
+      }
+      .stepper .done {
+        color: var(--wf-hero-ink-2);
+      }
+      .stepper .on {
+        background: var(--wf-surface);
+        color: var(--wf-ink-1);
+        font-weight: 600;
+      }
+      .blocker {
+        box-shadow:
+          var(--wf-e1),
+          inset 4px 0 0 var(--wf-danger);
+      }
+      .blk3 {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .blk3 > div {
+        display: grid;
+        gap: 4px;
+        padding: 12px 16px;
+        border-right: 1px solid var(--wf-line);
+        align-content: start;
+        justify-items: start;
+      }
+      .blk3 > div:last-child {
+        border-right: 0;
+      }
+      .blk3 b {
+        font-size: 16px;
+      }
+      .blk3 .btn {
+        margin-top: 4px;
+      }
+      .evs {
+        display: grid;
+        margin-top: 10px;
+      }
+      .ev {
+        display: grid;
+        grid-template-columns: 44px 14px minmax(0, 1fr);
+        gap: 10px;
+        align-items: start;
+        padding: 6px 0;
+        position: relative;
+      }
+      .ev-d {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-top: 4px;
+        background: var(--wf-data-2);
+        position: relative;
+        z-index: 1;
+      }
+      .ev-d.bad {
+        background: var(--wf-danger);
+      }
+      .ev-d.warn {
+        background: var(--wf-warning);
+      }
+      .ev-d.ok {
+        background: var(--wf-success);
+      }
+      .ev:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        left: 58px;
+        top: 18px;
+        bottom: -6px;
+        width: 2px;
+        background: var(--wf-track);
+      }
+      .form4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .form4 label,
+      .pop-b label {
+        display: grid;
+        gap: 6px;
+        min-width: 0;
+      }
+      .inp {
+        display: flex;
+        align-items: center;
+        height: 40px;
+        border: 1px solid var(--wf-line-ctl);
+        border-radius: 10px;
+        padding: 0 12px;
+        color: var(--wf-ink-3);
+        font-size: 13.5px;
+        background: var(--wf-surface);
+      }
+      .stepbox {
+        display: inline-grid;
+        grid-template-columns: 32px minmax(52px, auto) 32px;
+        align-items: center;
+        height: 34px;
+        border: 1px solid var(--wf-line-ctl);
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .stepbox span {
+        text-align: center;
+        color: var(--wf-ink-2);
+        font-size: 16px;
+      }
+      .stepbox b {
+        text-align: center;
+        font-size: 13.5px;
+        border-inline: 1px solid var(--wf-line);
+        line-height: 32px;
+        padding: 0 8px;
+      }
+      .cen {
+        display: grid;
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+        gap: 5px;
+      }
+      .cen span {
+        border: 1px solid var(--wf-line-2);
+        border-radius: 8px;
+        text-align: center;
+        font-family: var(--wf-mono);
+        font-size: 12px;
+        padding: 5px 0;
+        background: var(--wf-data-3);
+        color: var(--wf-ink-1);
+      }
+      .cen .r {
+        background: var(--wf-success-tint);
+        border-color: var(--wf-success);
+        color: var(--wf-success-ink);
+        font-weight: 650;
+      }
+      .cen .p {
+        background: var(--wf-surface);
+        border-style: dashed;
+        border-color: var(--wf-data-1);
+      }
+      .cen .c {
+        background: var(--wf-surface-2);
+        color: var(--wf-ink-off);
+      }
+      .savebar {
+        position: sticky;
+        bottom: 10px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 16px;
+        flex-wrap: wrap;
+        box-shadow: var(--wf-e3);
+        z-index: 4;
+      }
+      .signin {
+        padding: 24px max(16px, 4%);
+        display: grid;
+        gap: 16px;
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      .si-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+      .si-r {
+        border-left: 1px solid var(--wf-line);
+      }
+      .si-h {
+        margin: 0;
+        font-size: 22px;
+        line-height: 28px;
+      }
+      .seg.full5 {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        margin-top: 6px;
+        width: 100%;
+      }
+      .seg.full5 > span,
+      .si-grid .seg.full > span {
+        justify-content: center;
+      }
+      .si-grid .seg.full {
+        width: 100%;
+        margin-top: 6px;
+      }
+      .radio {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1.5px solid var(--wf-line-ctl);
+      }
+      .radio.on {
+        border: 5px solid var(--wf-accent);
+      }
+      .chk {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        border: 1.5px solid var(--wf-line-ctl);
+        flex: none;
+      }
+      .hbars {
+        display: grid;
+        gap: 8px;
+      }
+      .hb-row {
+        display: grid;
+        grid-template-columns: minmax(120px, 1.3fr) 40px minmax(0, 2fr) 64px;
+        gap: 10px;
+        align-items: center;
+      }
+      .hb-row b {
+        text-align: right;
+      }
+      .occ {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 58px;
+        gap: 8px;
+        align-items: center;
+      }
+      .occ b {
+        text-align: right;
+      }
+      .sbeds {
+        display: grid;
+        grid-template-columns: repeat(9, minmax(0, 1fr));
+        gap: 6px;
+      }
+      .sbeds span {
+        border-radius: 10px;
+        background: var(--wf-data-3);
+        padding: 14px 8px 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        font-size: 12.5px;
+        min-height: 54px;
+      }
+      .sbeds span.long {
+        background: color-mix(in srgb, var(--wf-data-1) 30%, var(--wf-surface));
+      }
+      .sbeds span.p {
+        background: var(--wf-surface);
+        border: 1px dashed var(--wf-data-1);
+        color: var(--wf-ink-3);
+      }
+      .sbeds span.r {
+        background: var(--wf-success-tint);
+        border: 1px solid var(--wf-success);
+        color: var(--wf-success-ink);
+        font-weight: 600;
+      }
+      .sbeds span.c {
+        background: var(--wf-surface-2);
+        color: var(--wf-ink-off);
+      }
+      .vb {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        align-items: end;
+        height: 120px;
+      }
+      .vb > span {
+        display: grid;
+        justify-items: center;
+        gap: 4px;
+        align-content: end;
+      }
+      .vb i {
+        width: 70%;
+        background: var(--wf-data-1);
+        border-radius: 4px 4px 0 0;
+        display: block;
+      }
+      .kpi2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .kpi2 > div {
+        display: grid;
+      }
+      .kpi2 b {
+        font-size: 22px;
+        line-height: 28px;
+      }
+
+      /* Popups */
+      .has-pop .app-grid {
+        max-height: 900px;
+        overflow: hidden;
+      }
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: var(--wf-scrim);
+        z-index: 20;
+        backdrop-filter: blur(1px);
+      }
+      .scrim.clear {
+        background: transparent;
+        backdrop-filter: none;
+      }
+      .pop {
+        position: absolute;
+        z-index: 21;
+        background: var(--wf-surface);
+        box-shadow: var(--wf-e3);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        color: var(--wf-ink-1);
+      }
+      .pop-drawer {
+        top: 0;
+        right: 0;
+        height: 900px;
+        width: 440px;
+        border-radius: 18px 0 0 18px;
+      }
+      .pop-modal {
+        top: 64px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(720px, 92%);
+        max-height: 780px;
+        border-radius: 18px;
+      }
+      .pop-pop {
+        border-radius: 14px;
+        max-height: 760px;
+      }
+      .pop-palette {
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(860px, 92%);
+        border-radius: 16px;
+        max-height: 640px;
+      }
+      .pop-sheet {
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        border-radius: 22px 22px 0 0;
+        max-height: 88%;
+        width: auto;
+      }
+      .pop-h {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .pop-h .t {
+        font-weight: 650;
+      }
+      .pop-i {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        border: 1px solid var(--wf-line-2);
+        display: grid;
+        place-items: center;
+        color: var(--wf-ink-2);
+        flex: none;
+      }
+      .pop-b {
+        padding: 14px 16px;
+        display: grid;
+        gap: 14px;
+        overflow: hidden;
+        flex: 1;
+        align-content: start;
+      }
+      .pop-f {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 12px 16px;
+        border-top: 1px solid var(--wf-line);
+        background: var(--wf-surface-2);
+        flex-wrap: wrap;
+      }
+      .grab {
+        width: 40px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--wf-line-3);
+        align-self: center;
+        margin-top: 8px;
+      }
+      .al {
+        display: grid;
+        border: 1px solid var(--wf-line);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .al-r {
+        display: grid;
+        grid-template-columns: 14px minmax(0, 1fr) auto;
+        gap: 10px;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--wf-line);
+        background: color-mix(in srgb, var(--wf-danger) 4%, var(--wf-surface));
+      }
+      .al-r:last-child {
+        border-bottom: 0;
+      }
+      .al-g {
+        display: grid;
+        grid-template-columns: 14px minmax(0, 1fr) auto;
+        gap: 10px;
+        align-items: center;
+        padding: 11px 12px;
+        border: 1px solid var(--wf-line);
+        border-radius: 14px;
+      }
+      .feed {
+        display: grid;
+      }
+      .fd {
+        display: grid;
+        grid-template-columns: 42px 14px minmax(0, 1fr);
+        gap: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--wf-line);
+        align-items: start;
+      }
+      .tl2 {
+        display: grid;
+        border: 1px solid var(--wf-line);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .tl2-i {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .tl2-i:last-child {
+        border-bottom: 0;
+      }
+      .pal-in {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--wf-line);
+        font-size: 16px;
+      }
+      .pal-tabs {
+        padding: 10px 16px 0;
+      }
+      .pal-b {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+        gap: 0;
+        flex: 1;
+        min-height: 0;
+      }
+      .pal-l {
+        padding: 12px 16px;
+        display: grid;
+        gap: 4px;
+        align-content: start;
+        border-right: 1px solid var(--wf-line);
+      }
+      .pal-r {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 10px;
+        color: var(--wf-ink-2);
+      }
+      .pal-r.on {
+        background: var(--wf-selected);
+        box-shadow: inset 3px 0 0 var(--wf-accent);
+      }
+      .pal-p {
+        padding: 14px 16px;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+      .pal-f {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 16px;
+        border-top: 1px solid var(--wf-line);
+        background: var(--wf-surface-2);
+        font-size: 12px;
+        color: var(--wf-ink-3);
+      }
+      .qa {
+        border: 1px solid var(--wf-line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        margin-top: 6px;
+      }
+      .qa summary {
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13.5px;
+      }
+      .qa p {
+        margin: 6px 0 0;
+        color: var(--wf-ink-2);
+      }
+      .ks {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+      .ks-r {
+        display: grid;
+        gap: 4px;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--wf-line);
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-top: 6px;
+      }
+      .opt {
+        border: 1px solid var(--wf-line-2);
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 550;
+        display: grid;
+      }
+      .opt.on {
+        border-color: var(--wf-accent);
+        background: var(--wf-accent-tint);
+        color: var(--wf-accent-ink);
+      }
+      .bs-k {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .bs-k > div {
+        display: grid;
+        gap: 1px;
+        padding: 10px 12px;
+        border: 1px solid var(--wf-line);
+        border-radius: 12px;
+      }
+      .bs-k b.num {
+        font-size: 22px;
+        line-height: 28px;
+      }
+      .stp {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 4px;
+      }
+      .stp span {
+        font-size: 11.5px;
+        text-align: center;
+        padding-top: 10px;
+        color: var(--wf-ink-3);
+        border-top: 3px solid var(--wf-track);
+      }
+      .stp .done {
+        border-top-color: var(--wf-data-1);
+        color: var(--wf-ink-2);
+      }
+      .stp .on {
+        border-top-color: var(--wf-danger);
+        color: var(--wf-ink-1);
+        font-weight: 650;
+      }
+      .mn {
+        display: grid;
+        gap: 2px;
+        padding: 8px;
+      }
+      .mn-h {
+        display: grid;
+        padding: 6px 10px 8px;
+        border-bottom: 1px solid var(--wf-line);
+        margin-bottom: 4px;
+      }
+      .mn .kicker {
+        padding: 8px 10px 2px;
+      }
+      .mn-i {
+        padding: 8px 10px;
+        border-radius: 8px;
+        font-size: 13.5px;
+      }
+      .mn-i:first-of-type {
+        background: var(--wf-hover);
+      }
+
+      @container app (max-width: 1340px) {
+        .lines {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .lines > div:nth-child(n + 5) {
+          display: none;
+        }
+        .tv-tiles {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .tv-g {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      @container app (max-width: 1000px) {
+        .form4 {
+          grid-template-columns: 1fr 1fr;
+        }
+        .stepper {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .sbeds {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+        .si-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .si-r {
+          border-left: 0;
+          border-top: 1px solid var(--wf-line);
+        }
+        .tv-brief {
+          grid-template-columns: 1fr 1fr;
+        }
+        .ks {
+          grid-template-columns: 1fr;
+          gap: 6px;
+        }
+        .pal-b {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .pal-p {
+          display: none;
+        }
+      }
+      @container app (max-width: 560px) {
+        .has-pop .app-grid {
+          max-height: 760px;
+        }
+        .pop-drawer,
+        .pop-modal,
+        .pop-pop,
+        .pop-palette {
+          top: auto !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
+          width: auto !important;
+          height: auto;
+          max-height: 86%;
+          transform: none !important;
+          border-radius: 22px 22px 0 0;
+        }
+        .pop-palette {
+          top: 0 !important;
+          bottom: 0 !important;
+          max-height: none;
+          border-radius: 0;
+        }
+        .lines {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+        .lines > div:nth-child(n + 3) {
+          display: none;
+        }
+        .blk3 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .blk3 > div {
+          border-right: 0;
+          border-bottom: 1px solid var(--wf-line);
+        }
+        .stepper {
+          display: flex;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
+        .stepper span {
+          flex: none;
+        }
+        .form4 {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .sbeds {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        .tv-tiles,
+        .tv-g,
+        .tv-brief {
+          grid-template-columns: minmax(0, 1fr);
+        }
+        .bs-k {
+          grid-template-columns: 1fr 1fr;
+        }
+        .hb-row {
+          grid-template-columns: minmax(0, 1fr) 0 minmax(0, 1fr) 54px;
+        }
+        .hb-row .mono {
+          display: none;
+        }
+        .occ {
+          grid-template-columns: 60px 46px;
+        }
+        .signin {
+          padding: 14px 12px;
+        }
+      }
+      .ks-r {
+        display: flex;
+        gap: 6px 8px;
+        align-items: baseline;
+        flex-wrap: wrap;
+      }
+      .ks-r .kbd {
+        flex: none;
+      }
+      .ks-r .small {
+        flex: 1 1 140px;
+      }
+      .pop-b label .btn,
+      .pop-b > .btn:not(.pri) {
+        justify-content: space-between;
+      }
+      @container app (max-width: 1000px) {
+        .pop-pop {
+          left: auto !important;
+          right: 16px !important;
+        }
+        .hb-row {
+          grid-template-columns: minmax(80px, 1.2fr) 34px minmax(0, 1.4fr) 54px;
+          gap: 8px;
+        }
+      }
+      .hb-row b {
+        white-space: nowrap;
+      }
+      @container app (max-width: 1000px) {
+        .hb-row {
+          grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.4fr) auto;
+        }
+        .hb-row .mono {
+          display: none;
+        }
+        .seg.full > span {
+          font-size: 12px;
+          padding-inline: 2px;
+        }
+      }
+      .kv b {
+        overflow-wrap: anywhere;
+        min-width: 0;
+      }
+      @container app (max-width: 1000px) {
+        .c-main-rail > :first-child {
+          grid-column: 1 / -1;
+        }
+      }
     </style>
   </head>
   <body>
     <div class="viewer">
       <header class="v-head">
         <div>
-          <h1 class="v-title">Ward Flow core pages, redesigned</h1>
+          <h1 class="v-title">Ward Flow, redesigned</h1>
           <p class="v-sub">
-            Mock-ups of the 15 main pages with the design review's fixes applied. Choose a page and a device.<span
-              id="nowhint"
-            >
+            Mock-ups of every Ward Flow page and its popups (37 pages, 17 popups) with the design review's fixes
+            applied. Choose a page and a device.<span id="nowhint">
               "Now" shows the running app as it is today, for comparison.</span
             >
           </p>
@@ -2855,10 +3833,19 @@
         return `<div class="foot"><span class="pill"><span class="dot warn"></span>Synthetic prototype</span><span style="flex:1;min-width:200px">${text || "Invented records under real WA hospital names · Not approved for clinical use"}</span><span class="pill" style="font-family:var(--wf-font);font-weight:500">${ic("shield", 13)} Ward Flow prototype · Synthetic data only</span></div>`;
       }
 
+      /* When OVERLAY is set, the next shell() draws a popup over the page, clipped to one screen. */
+      let OVERLAY = null;
       function shell(o) {
-        return `<div class="app"><div class="app-grid">${rail(o.nav, o.viewing)}
+        const ov = OVERLAY;
+        return `<div class="app ${ov ? "has-pop" : ""}"><div class="app-grid">${rail(o.nav, o.viewing)}
     <div class="main"><div class="top">${bar(o.title, o.scope, o.back)}${pbar(o.title, o.scope, o.back)}${hero(o.hero)}</div>
-    <div class="sheet">${o.body}${footer(o.foot)}</div></div></div>${dock(o.dock || "")}</div>`;
+    <div class="sheet">${o.body}${footer(o.foot)}</div></div></div>${dock(o.dock || "")}${ov ? `<div class="scrim ${ov.clear ? "clear" : ""}"></div><div class="pop pop-${ov.kind}" style="${ov.style || ""}" role="dialog" aria-label="${ov.label}">${ov.html}</div>` : ""}</div>`;
+      }
+      function withPop(base, ov) {
+        OVERLAY = ov;
+        const s = PAGES[base]();
+        OVERLAY = null;
+        return s;
       }
 
       /* grid list helper. cols = CSS grid-template-columns; rows are pre-rendered strings */
@@ -5313,8 +6300,2042 @@
         });
       };
 
+      /* Reports and reference pages: Alerts, Legal forms, Out of area, On-call, Seclusion, Governance,
+   Bed meeting TV, Bed meeting agenda, Downtime pack, Patient chronology. Synthetic data only. */
+      const search = (ph, w = 220) =>
+        `<span class="btn" style="min-width:${w}px;justify-content:flex-start;font-weight:500;color:var(--wf-ink-3)">${ic("search", 14)} ${ph}</span>`;
+      const sel = (v) => `<span class="btn" style="font-weight:500">${v} ${ic("down", 13)}</span>`;
+
+      PAGES.alerts = () => {
+        const row = (t, h, n, u, own, ownS, w, wS, btn, cls = "") =>
+          `<div class="gr ${cls}">${tone(t)}<div class="cell"><div class="t">${h}</div><div class="s"><b class="ink2">${n}</b> <span class="mono">${u}</span></div></div><div class="cell p-hide"><div class="small">${own}</div><div class="s">${ownS}</div></div><div class="cell p-hide"><div class="mono small strong">${w}</div><div class="s">${wS}</div></div><span class="btn sm right p-end">${btn}</span></div>`;
+        const list = `<section class="panel"><div class="ph">${seg([`Now ${ct(12)}`, `Broadcast ${ct(0)}`, `Notices ${ct(0)}`, `History ${ct(0)}`])}<div class="end">${seg(["Urgency", "Lanes", "Owner"])}${sel("Owner: everyone")}</div></div>
+    ${gl(
+      "16px minmax(190px,1.4fr) minmax(120px,0.9fr) 110px 150px",
+      null,
+      [
+        `<div class="gg">${tri} Act now ${ct(3)}<span class="end">needs a person now</span></div>`,
+        row(
+          "bad",
+          "Bed pull expired",
+          "Cadwaller, Rhys",
+          "UM100046",
+          "You",
+          "Bed coordinator",
+          "10m",
+          "overdue",
+          "Release pulled bed",
+          "act sel",
+        ),
+        row(
+          "bad",
+          "Multiple destinations declined",
+          "Wren, Tobias",
+          "UM100023",
+          "You",
+          "Bed coordinator",
+          "5m",
+          "since 10:37",
+          "Find a bed",
+          "act",
+        ),
+        row(
+          "bad",
+          "No eligible bed",
+          "Oquinn, Priya",
+          "UM100006",
+          "You",
+          "Bed coordinator",
+          "—",
+          "time not recorded",
+          "Open patient",
+          "act",
+        ),
+        `<div class="gg"><span class="dot warn"></span> Forecast ${ct(2)}<span class="end">coordinators and bed managers</span></div>`,
+        `<div class="gr"><span class="dot warn"></span><div class="cell p-wide"><div class="t">Open adult beds short tomorrow</div><div class="s">Likely 9 short, at worst 15. Your alert line is 3 beds (Settings).</div></div><span></span><span></span><span class="btn sm right p-end">See forecast</span></div>`,
+        `<div class="gr"><span class="dot warn"></span><div class="cell p-wide"><div class="t">Locked adult beds short tomorrow</div><div class="s">Likely 6 short, at worst 7.</div></div><span></span><span></span><span class="btn sm right p-end">See forecast</span></div>`,
+        `<div class="gg"><span class="dot warn"></span> Waiting on others ${ct(7)}<span class="end">grouped by kind</span></div>`,
+        `<div class="gr"><span class="dot warn"></span><div class="cell"><div class="t">Transport awaiting departure <span class="tag">5 people</span></div><div class="s">Tremalow, Noor · Sedgeward, Merrick · Bramblewick, Ivo · Pendelbury, Alastair · Embleton, Jasper</div></div><div class="cell p-hide"><div class="small">3 owners</div><div class="s">You, ED team, Ward NIC</div></div><div class="cell p-hide"><div class="mono small strong">30m</div><div class="s">longest</div></div><span class="btn sm right p-end">Chase all 5</span></div>`,
+        `<div class="gr"><span class="dot warn"></span><div class="cell"><div class="t">Notifications to record <span class="tag">3 people</span></div><div class="s">Quenfold, Lark · Ridgeholt, Lark · Davenporton, Farah</div></div><div class="cell p-hide"><div class="small">3 wards</div><div class="s">RPH Older Adult, FSH Adult Secure, Moodjar</div></div><div class="cell p-hide"><div class="mono small strong">—</div><div class="s">time not recorded</div></div><span class="btn sm right p-end">Record</span></div>`,
+        row(
+          "warn",
+          "Planned arrival not recorded",
+          "Initials RK",
+          "UMRN not recorded",
+          "Maali (Ward 4.2)",
+          "Ward",
+          "1h 12m",
+          "overdue",
+          "Open bookings",
+        ),
+      ],
+      "16px minmax(0,1fr) auto",
+    )}
+    <div class="pf">Act now first, then oldest. Alerts leave the list by themselves when they stop being true.</div></section>`;
+        const detail = `<section class="panel detail"><div class="ph"><div class="cell"><div class="t">Cadwaller, Rhys</div><div class="s"><span class="mono">UM100046</span> · Involuntary inpatient</div></div><a class="link end">Patient ${ic("chev", 12)}</a></div>
+    <div class="pb stack" style="gap:12px"><div class="row" style="justify-content:space-between"><b>${tri} Bed pull expired</b><span class="mono small">open 10m</span></div>
+      <div class="tline"><span style="left:0">04:00</span><span style="left:33%">06:00</span><span style="left:66%">08:00</span><span style="left:100%">10:42</span><i class="tl-a" style="left:4%"></i><i class="tl-z" style="left:100%"></i></div>
+      <div class="kv"><span>From</span><b>SJGM ED</b><span>To</span><b>BTY Adult Secure</b><span>Pull ended</span><b class="mono">10:32</b><span>Owner</span><b>Bed coordinator</b></div>
+      <label class="small strong">Reason for release<span class="btn" style="width:100%;justify-content:space-between;font-weight:500;margin-top:6px">Choose a reason ${ic("down", 14)}</span></label>
+      <span class="btn pri" style="opacity:.55">Release pulled bed</span><span class="xs muted">Choose a reason first. Releasing frees the bed for the next person.</span>
+      <div class="row" style="gap:8px"><span class="btn sm">Acknowledge</span><span class="btn sm">Snooze 15 min</span><span class="btn sm ghost">More ${ic("down", 12)}</span></div></div>
+    <div class="pf"><span class="mono">10:32</span> ${tri} Raised, 10 minutes overdue</div></section>`;
+        return shell({
+          nav: "",
+          title: "Alerts",
+          dock: "alerts",
+          hero: {
+            eyebrow: "Alerts · statewide",
+            title: "3 act now, 3 new to you",
+            small: "12 open · oldest 1h 12m",
+            chips: [
+              { n: 3, l: "Act now", t: "bad" },
+              { n: 9, l: "Waiting", t: "warn" },
+              { n: 5, l: "Yours" },
+              { n: 6, l: "checks raised · 7 clear", t: "warn", cls: "check hide-phone" },
+            ],
+            actions: `<span class="hbtn">${ic("bell", 15)} Notify me</span><span class="hbtn">${ic("copy", 15)} Copy for handover</span><span class="hbtn light">Broadcast alert</span>`,
+          },
+          body: `<div class="cols c-main-rail">${list}<div class="rail-col">${detail}</div></div>`,
+          foot: "Synthetic alerts · Not approved for clinical use",
+        });
+      };
+
+      PAGES.legal = () => {
+        const r = (n, u, f, fn, where, to, due, left, t, rec, cls = "") =>
+          `<div class="gr ${cls}"><div class="cell"><div class="t">${n}</div><div class="s mono">${u}</div></div><div class="cell"><span class="tag mono">${f}</span> <span class="small">${fn}</span></div><div class="cell p-hide"><div class="small">${where}</div><div class="s">${to}</div></div><div class="cell p-wide"><div class="small ${t ? t + "-ink" : ""} strong">${t ? tone(t) + " " : ""}${due}</div><div class="s">${left}</div></div><span class="small p-hide right ${rec.startsWith("All") ? "ok-ink" : "muted"}">${rec}</span></div>`;
+        return shell({
+          nav: "",
+          title: "Legal forms",
+          hero: {
+            eyebrow: "Mental Health Act forms · on open moves",
+            title: "33 forms on open moves",
+            small: "37 voluntary, no form",
+            chips: [
+              { n: 1, l: "Due within 1h", t: "bad" },
+              { n: 2, l: "Due within 3h", t: "warn" },
+              { n: 27, l: "No time written" },
+            ],
+            actions: `<span class="hbtn">${ic("copy", 15)} Copy for handover</span><span class="hbtn">Record and tell ${ct(67)}</span><span class="hbtn light">${ic("plus", 14)} Record a form</span>`,
+          },
+          body: `<div class="note"><span>${tone("warn")}</span><span><b>Not legally checked.</b> These Mental Health Act times are typed in and have not been checked against the Act by anyone with legal knowledge. Do not rely on them.</span></div>
+      <section class="panel"><div class="ph">${seg([`Clocks ${ct(33)}`, "Checklist", `History ${ct(2)}`])}<div class="end">${search("Name, UMRN or form", 200)}</div></div>
+      ${gl(
+        "minmax(150px,1fr) minmax(190px,1.3fr) minmax(150px,1fr) 150px 100px",
+        ["Patient", "Form", "Where", "Due, as typed", ">To record"],
+        [
+          `<div class="gg">Expiry typed ${ct(6)}<span class="end">soonest typed time first</span></div>`,
+          r(
+            "Marrowvale, Gianna",
+            "UM100013",
+            "4A",
+            "Transport order",
+            "FSH ED",
+            "to Dabakarn",
+            "11:42 · 58m",
+            "typed due time",
+            "bad",
+            "—",
+            "act",
+          ),
+          r(
+            "Uskarby, Owen",
+            "UM100048",
+            "4A",
+            "Transport order",
+            "RGH ED",
+            "to RGH Adult Secure",
+            "12:12 · 1h 28m",
+            "typed due time",
+            "warn",
+            "—",
+          ),
+          r(
+            "Sedgeward, Merrick",
+            "UM100064",
+            "4A",
+            "Transport order",
+            "SJGM ED",
+            "to Mabu Liyan / Broome MHU",
+            "13:12 · 2h 28m",
+            "typed due time",
+            "warn",
+            "—",
+          ),
+          r(
+            "Cadwaller, Rhys",
+            "UM100046",
+            "4C",
+            "Transfer order",
+            "SJGM ED",
+            "to BTY Adult Secure",
+            "15:42",
+            "typed due time",
+            "",
+            "—",
+          ),
+          `<div class="more"><a class="link">Show 2 more with a typed time</a></div>`,
+          `<div class="gg">No time written ${ct(27)}<span class="end">add the time from the form</span></div>`,
+          r(
+            "Ridgeholt, Fiora",
+            "UM500245",
+            "1A",
+            "Referral for examination",
+            "ARM ED",
+            "no receiving ward",
+            "No time written",
+            `<a class="link">Add the time</a>`,
+            "",
+            "3 to record",
+          ),
+          r(
+            "Ridgeholt, Calder",
+            "UM500242",
+            "1A",
+            "Referral for examination",
+            "RPH ED",
+            "no receiving ward",
+            "No time written",
+            `<a class="link">Add the time</a>`,
+            "",
+            "3 to record",
+          ),
+          r(
+            "Wren, Tobias",
+            "UM100023",
+            "3B",
+            "Continuation of detention",
+            "PEEL ED",
+            "no receiving ward",
+            "Ended at the examination",
+            "Form 6A to record",
+            "",
+            "All recorded",
+          ),
+          `<div class="more"><a class="link">Show 24 more with no time written</a></div>`,
+        ],
+        "minmax(0,1fr) auto",
+      )}
+      <div class="pf">Form names are shortened; the full title is in each record. Times are shown only as typed. Nothing here works out a legal period.</div></section>`,
+          foot: "Synthetic forms · Not approved for clinical use",
+        });
+      };
+
+      PAGES.outofarea = () => {
+        const r = (n, u, reg, trav, ward, hosp, dis, disS, t, days) =>
+          `<div class="gr"><div class="cell"><div class="t">${n}</div><div class="s"><span class="mono">${u}</span> · legal status not recorded</div></div><div class="cell p-hide"><div class="small">${reg}</div><div class="s">${trav}</div></div><div class="cell p-hide"><div class="small">${ward}</div><div class="s">${hosp}</div></div><div class="cell p-wide"><div class="small ${t ? "warn-ink" : ""}">${t ? tone("warn") + " " : ""}${dis}</div><div class="s">${disS}</div></div><b class="num right">${days}</b></div>`;
+        return shell({
+          nav: "",
+          title: "Out of area",
+          hero: {
+            eyebrow: "Out of area · statewide · 416 bed days",
+            title: "15 people away from home",
+            small: "longest 150 days",
+            chips: [
+              { n: 10, l: "Under 7 days" },
+              { n: 1, l: "7 to 29 days" },
+              { n: 2, l: "30 to 89 days", t: "warn" },
+              { n: 2, l: "90 days and over", t: "warn" },
+              { n: 4, l: "Discharge date passed", t: "warn", cls: "check" },
+              { n: 15, l: "No return plan", cls: "check hide-phone" },
+            ],
+            actions: `<span class="hbtn">${ic("copy", 15)} Copy list</span><span class="hbtn light">Plan next return</span>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph">${seg([`Away now ${ct(15)}`, `History ${ct(0)}`])}<div class="end">${search("Name, UMRN or ward", 200)}${seg(["Days away", "Region", "Name"])}</div></div>
+      <div class="pb row chips scroll" style="padding-block:10px;gap:6px"><span class="kicker">Highlight</span><span class="chip">Date passed ${ct(4)}</span><span class="chip">Air only ${ct(4)}</span><span class="chip">3 hours or more ${ct(11)}</span><span class="chip">Awaiting home bed ${ct(0)}</span></div>
+      ${gl(
+        "minmax(160px,1.2fr) minmax(120px,1fr) minmax(130px,1fr) minmax(140px,1fr) 70px",
+        ["Person", "Home region", "Placed at", "Discharge", ">Days away"],
+        [
+          r(
+            "Oxleyburn, Hazelle",
+            "UM500187",
+            "Great Southern",
+            "3 hours or more",
+            "Great Southern Acute Psychiatric Unit",
+            "Albany",
+            "Due in 2 days",
+            "Sat 31 Oct",
+            "",
+            "150",
+          ),
+          r(
+            "Kettlewell, Baxter",
+            "UM100097",
+            "Perth Metropolitan",
+            "3 hours or more",
+            "FSH Adult Secure",
+            "Fiona Stanley",
+            "Due in 6 days",
+            "Wed 4 Nov",
+            "",
+            "122",
+          ),
+          r(
+            "Glasswell, Delia",
+            "UM500023",
+            "South West",
+            "Air only",
+            "Mental Health Unit",
+            "Sir Charles Gairdner",
+            "1 day past",
+            "Awaiting transport",
+            "warn",
+            "61",
+          ),
+          r(
+            "Ferrowmoor, Alaric",
+            "UM500000",
+            "South West",
+            "3 hours or more",
+            "Dabakarn",
+            "Royal Perth",
+            "2 days past",
+            "Awaiting accommodation",
+            "warn",
+            "34",
+          ),
+          r(
+            "Inkstone, Calder",
+            "UM500062",
+            "Perth Metropolitan",
+            "3 hours or more",
+            "FSH Adult Secure",
+            "Fiona Stanley",
+            "3 days past",
+            "Mon 26 Oct",
+            "warn",
+            "6",
+          ),
+          `<div class="more"><a class="link">Show 10 more under 7 days</a></div>`,
+        ],
+        "minmax(0,1fr) auto",
+      )}</section>
+      <div class="rail-col stack">${panel("Since the 08:30 bed meeting", "", "", `<div class="pb kpi4" style="grid-template-columns:repeat(3,1fr)"><div><span class="xs muted">Returned</span><b class="num">0</b></div><div><span class="xs muted">Left</span><b class="num">0</b></div><div><span class="xs muted">Due soon</span><b class="num">1</b></div></div>`)}
+      ${panel(
+        "Home regions",
+        "people away",
+        "",
+        `<div class="pb stack" style="gap:10px">${[
+          ["South West", 8],
+          ["Perth Metropolitan", 4],
+          ["Kimberley", 2],
+          ["Great Southern", 1],
+        ]
+          .map(
+            ([s, n]) =>
+              `<div class="svc" style="grid-template-columns:120px minmax(0,1fr) 24px"><span class="small">${s}</span><span class="bar-track" style="height:8px"><i style="width:${(n / 8) * 100}%;background:var(--wf-data-1)"></i></span><b class="num small">${n}</b></div>`,
+          )
+          .join("")}</div><div class="pf">Choose a region to highlight its rows.</div>`,
+      )}</div></div>`,
+          foot: "Travel bands are synthetic · Not approved for clinical use",
+        });
+      };
+
+      PAGES.oncall = () => {
+        const r = (role, s, num, via, until, then) =>
+          `<div class="gr"><span class="muted">${ic("pin", 14)}</span><div class="cell"><div class="t">${role}</div><div class="s">${s}</div></div><div class="cell p-hide"><div class="mono small strong">${num}</div><div class="s">${via}</div></div><div class="cell p-wide"><div class="small ok-ink">${ic("check", 12)} ${until}</div><div class="s">${then}</div></div><span class="row right p-hide" style="gap:6px;color:var(--wf-ink-3)">${ic("copy", 15)}</span></div>`;
+        const lines = [
+          ["State bed desk", "08 0000 1001", "Until 20:00"],
+          ["NMHS bed flow", "08 0000 1016", "Until 20:00"],
+          ["EMHS bed flow", "08 0000 1057", "Until 20:00"],
+          ["SMHS bed flow", "08 0000 1105", "Until 20:00"],
+          ["CAHS bed flow", "08 0000 1149", "Until 17:00"],
+          ["WACHS bed flow", "08 0000 1163", "Until 17:00"],
+          ["MHERL crisis line", "08 0000 1004", "24 hours"],
+        ];
+        return shell({
+          nav: "",
+          title: "On-call",
+          hero: {
+            eyebrow: "Who to call now · 10:44",
+            title: "198 lines answering",
+            small: "2 closed · 42 due a check",
+            chips: [
+              { n: 198, l: "Answering", t: "ok" },
+              { n: 0, l: "End within the hour" },
+              { n: 2, l: "Closed" },
+              { n: 42, l: "Due a check", t: "warn", cls: "check" },
+            ],
+            actions: `<span class="hseg"><span class="on">Now</span><span>22:00</span><span>03:00</span><span>08:00</span><span>12:00</span></span><span class="hbtn">${ic("copy", 15)} Copy who is on</span><span class="hbtn">Downtime card</span>`,
+            extra: `<div class="lines">${lines.map(([a, b, c], i) => `<div class="${i === 1 ? "on" : ""}"><span class="xs">${a}</span><b class="mono">${b}</b><span class="xs">${ic("check", 11)} ${c}</span></div>`).join("")}</div>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph">${seg([`Hospitals ${ct(161)}`, `Teams ${ct(25)}`, `State ${ct(14)}`, `Mine ${ct(0)}`])}<div class="end">${search("Role, place or number", 200)}</div></div>
+      <div class="pb row chips scroll" style="padding-block:10px;gap:6px"><span class="chip on">${ic("check", 12)} Answering ${ct(161)}</span><span class="chip">Ends within the hour ${ct(0)}</span><span class="chip">Has email ${ct(33)}</span><span class="chip">Due a check ${ct(35)}</span><span style="margin-left:auto">${seg(["NM", "EM", "SM", "CA", "WA", "Pvt"])}</span></div>
+      ${gl(
+        "22px minmax(170px,1.3fr) 150px minmax(130px,1fr) 30px",
+        ["", "Role and place", "Number", "Available", ""],
+        [
+          `<div class="gg">North Metro · service wide ${ct("4 of 4")}<span class="end">answering</span></div>`,
+          r(
+            "Bed coordinator",
+            "Placement and transfers",
+            "08 0000 1016",
+            "Bed flow office +1",
+            "Until 20:00",
+            "then on-call mobile",
+          ),
+          r(
+            "Service consultant on call",
+            "Service level advice",
+            "08 0000 1018",
+            "Service office +1",
+            "Until 17:00",
+            "then closed",
+          ),
+          r(
+            "Executive on call",
+            "Diversion and escalation",
+            "08 0000 1020",
+            "Executive office +1",
+            "Until 17:00",
+            "then executive on call",
+          ),
+          `<div class="gg">SCGH · Sir Charles Gairdner Hospital ${ct("10 of 10")}<span class="end">ED, mental health unit, 2 wards</span></div>`,
+          r(
+            "ED mental health liaison",
+            "ED psychiatric review",
+            "08 0000 1025",
+            "Liaison phone",
+            "Until 22:30",
+            "then closed",
+          ),
+          r(
+            "Psychiatry registrar on call",
+            "Assessments and admissions",
+            "08 0000 1026",
+            "Day registrar +1",
+            "Until 17:00",
+            "then on-call phone",
+          ),
+          `<div class="more"><a class="link">Show 8 more at SCGH</a></div>`,
+        ],
+        "22px minmax(0,1fr) auto",
+      )}
+      <div class="pf">Invented numbers from an unassigned range; emails use a reserved domain. 42 records are over 40 days since their last check.</div></section>
+      <div class="rail-col">${panel(
+        "Bed coordinator · NMHS",
+        "",
+        ic("pin", 15),
+        `<div class="pb stack" style="gap:12px"><div class="note" style="background:var(--wf-success-tint);border-color:color-mix(in srgb,var(--wf-success) 35%,transparent)"><span class="ok-ink">${ic("check", 15)}</span><span><b>Answering until 20:00</b> · 9h 16m left<br><span class="small muted">Then on-call mobile, 08 0000 1017</span></span></div>
+        <div class="kv"><span>Bed flow office</span><b class="mono">08 0000 1016 · now</b><span>On-call mobile</span><b class="mono">08 0000 1017 · from 20:00</b><span>Referral email</span><b class="mono">nmhs.bedflow@example.invalid</b></div>
+        <div><span class="kicker">If no answer</span><div class="kv" style="margin-top:6px"><span>After 10 min</span><b>State bed flow coordinator · <span class="mono">08 0000 1001</span></b><span>After 20 min</span><b>Executive on call · <span class="mono">08 0000 1020</span></b></div></div>
+        <div class="row" style="gap:8px"><span class="btn">${ic("copy", 14)} Copy number</span><span class="btn">${ic("copy", 14)} Copy email</span></div></div>`,
+      )}</div></div>`,
+          foot: "Synthetic records · mock numbers only",
+        });
+      };
+
+      PAGES.seclusion = () => {
+        const wards = [
+          ["Dabakarn", "Not recorded", "", 0],
+          ["BTY Adult Secure", "Available", "ok", 0],
+          ["Graylands Adult Secure", "In use", "warn", 1],
+          ["FSH Adult Secure", "Available", "ok", 0],
+          ["RGH Adult Secure", "Out of service", "off", 0],
+          ["SJGS Adult Secure", "Not recorded", "", 0],
+        ];
+        return shell({
+          nav: "",
+          title: "Seclusion",
+          hero: {
+            eyebrow: "Restrictive practice · operational view · as at 10:46",
+            title: "1 in use now",
+            small: "1 incident in the last day",
+            chips: [
+              { n: 1, l: "In use", t: "warn" },
+              { n: 2, l: "Rooms available", t: "ok" },
+              { n: 1, l: "Out of service" },
+              { n: 2, l: "Not recorded", cls: "check" },
+            ],
+          },
+          body: `<div class="note info"><span>${ic("shield", 15)}</span><span>Operational view only. Times are shown as typed. Nothing here works out an order length, a review or any legal limit. The legal register stays in the health service's own system.</span></div>
+      <div class="cols c-main-rail"><section class="panel"><div class="ph"><h3>Seclusion rooms by ward</h3><span class="meta">secure wards</span></div>
+        ${gl(
+          "minmax(170px,1fr) 140px 90px",
+          ["Ward", "Room", ">In use"],
+          wards.map(
+            ([w, s, t, n], i) =>
+              `<div class="gr ${i === 2 ? "sel" : ""}"><b class="small">${w}</b><span class="small ${t ? t + "-ink" : "muted"}">${t ? tone(t) + " " : ""}${s}</span><b class="num small right">${n}</b></div>`,
+          ),
+          "minmax(0,1fr) auto auto",
+        )}</section>
+      <div class="rail-col stack">${panel(
+        "Graylands Adult Secure",
+        "",
+        seg(["Now", "Last day"]),
+        `<div class="pb stack" style="gap:12px">
+        <div class="box"><div class="row" style="justify-content:space-between"><b class="small">Seclusion · Initials TQ</b><span class="mono small">started 09:58 as typed</span></div><span class="xs muted">Recorded by nurse in charge</span><div class="row" style="gap:8px;margin-top:8px"><span class="btn sm">Record end</span><span class="btn sm ghost">Correct</span></div></div>
+        <div><span class="kicker">Record a start</span><div class="cols c-2" style="gap:8px;margin-top:6px">${sel("Choose a patient")}${sel("Seclusion or restraint")}<span class="btn" style="font-weight:500;color:var(--wf-ink-3);justify-content:flex-start">HH:MM</span><span class="btn pri" style="opacity:.55">Record start</span></div><span class="xs muted">Choose the patient first.</span></div>
+        <div><span class="kicker">Incident in the last day</span><div class="cols c-2" style="gap:8px;margin-top:6px">${sel("Kind of incident")}<span class="btn" style="font-weight:500;color:var(--wf-ink-3);justify-content:flex-start">HH:MM</span></div></div>
+        <div class="row" style="gap:8px"><span class="btn sm">Mark room available</span><span class="btn sm">Mark out of service</span></div></div>`,
+      )}</div></div>`,
+          foot: "Synthetic records · Not approved for clinical use",
+        });
+      };
+
+      PAGES.governance = () => {
+        const rows = [
+          [
+            "10:02",
+            "Change legal status",
+            "Legal status",
+            "Orrindale, Imogen",
+            "UM100044",
+            "Coordinator",
+            "Stale request",
+            "",
+          ],
+          ["09:32", "Refer to wards", "Override", "Pellingworth, Keira", "UM100045", "Coordinator", "Accepted", "ok"],
+          [
+            "09:07",
+            "Open discharge record",
+            "Record access",
+            "Ferrowmoor, Alaric",
+            "UM500000",
+            "Coordinator",
+            "Accepted",
+            "ok",
+          ],
+          ["08:42", "Pull the bed", "Override", "Sallowfield, Edmund", "UM100058", "Nurse in charge", "Refused", "bad"],
+          [
+            "08:02",
+            "Change legal status",
+            "Legal status",
+            "Orrindale, Imogen",
+            "UM100044",
+            "Nurse in charge",
+            "Accepted",
+            "ok",
+          ],
+          ["07:32", "Accept referral", "Override", "Mossgrave, Tilly", "UM100079", "Coordinator", "Accepted", "ok"],
+        ];
+        return shell({
+          nav: "",
+          title: "Governance",
+          hero: {
+            eyebrow: "Governance · this session",
+            title: "6 to review",
+            small: "0 of 6 reviewed",
+            chips: [
+              { n: 3, l: "Overrides" },
+              { n: 2, l: "Refused or stale" },
+              { n: 1, l: "Record access" },
+              { n: 0, l: "Follow-up" },
+            ],
+            actions: `<span class="hbtn">PIR chronology</span><span class="hbtn light">Review next</span>`,
+            extra: `<div class="wtabs"><span class="hseg"><span class="on">Review · 6</span><span>Gaps by site</span><span>Audit trail</span><span>Registers</span><span>Reports</span></span><span class="small" style="color:var(--wf-hero-ink-2)">Safety incidents are not recorded here</span></div>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph"><h3>Waiting for review</h3><span class="meta">newest first</span><div class="end">${seg(["All", "Overrides", "Refused or stale", "Record access"])}</div></div>
+      ${gl(
+        "56px minmax(150px,1.2fr) minmax(140px,1fr) 110px 110px",
+        ["When", "What", "Record", "By", ">Outcome"],
+        rows.map(
+          ([w, a, k, n, u, by, o, t], i) =>
+            `<div class="gr ${i === 0 ? "sel" : ""}"><span class="mono small">${w}</span><div class="cell"><div class="t small">${a}</div><div class="s">${k}</div></div><div class="cell p-wide"><div class="small">${n}</div><div class="s mono">${u}</div></div><span class="small p-hide">${by}</span><span class="small right ${t ? t + "-ink" : "muted"}">${t === "ok" ? ic("check", 12) : t === "bad" ? "×" : "○"} ${o}</span></div>`,
+        ),
+        "56px minmax(0,1fr) auto",
+      )}
+      <div class="pf">Break glass openings here are synthetic.</div></section>
+      <div class="rail-col">${panel(
+        "Change legal status",
+        "10:02 · unreviewed",
+        "",
+        `<div class="pb stack" style="gap:12px"><div class="kv"><span>Record</span><b>Orrindale, Imogen · <span class="mono">UM100044</span></b><span>By</span><b>Bed coordinator</b><span>Outcome</span><b>Stale request</b><span>Reason given</span><b>Status changed on the ward first</b></div>
+        <label class="small strong">Your review<span class="btn" style="width:100%;justify-content:flex-start;font-weight:400;color:var(--wf-ink-3);margin-top:6px;height:64px;align-items:flex-start;padding-top:8px">Optional note</span></label>
+        <div class="row" style="gap:8px"><span class="btn pri">Mark reviewed</span><span class="btn">Needs follow-up</span></div><span class="xs muted">1 of 6 · J and K move between events</span></div>`,
+      )}</div></div>`,
+          foot: "Synthetic audit events · Not approved for clinical use",
+        });
+      };
+
+      PAGES.tv = () => {
+        const tile = (l, n, s, t) =>
+          `<div class="tv-t ${t}"><div class="row" style="justify-content:space-between"><b>${l}</b><span class="tag ${t === "bad" ? "bad" : "warn"}">${t === "bad" ? "Act now" : "Watch"}</span></div><b class="tv-n">${n}</b><span>${s}</span></div>`;
+        const table = (h, cols, rows) =>
+          `<section class="panel tv-p"><h3>${h}</h3><div class="tv-tb" style="grid-template-columns:${cols}">${rows.map((r, i) => r.map((c, j) => `<span class="${i === 0 ? "th" : ""} ${j ? "num" : ""}">${c}</span>`).join("")).join("")}</div></section>`;
+        return `<div class="app tvapp"><div class="tv">
+    <div class="tv-h"><div><span class="kicker">State TV · synthetic prototype, not for clinical use</span><h1>Bed meeting · all services</h1><span class="muted">As at 10:42 · updates on its own</span></div><div class="row" style="gap:8px"><span class="btn">Change screen ${ic("down", 13)}</span><span class="btn">${ic("expand", 14)} Full screen</span><span class="btn">${ic("lock", 14)} Lock as TV</span><span class="btn">Leave TV view</span></div></div>
+    <div class="tv-tiles">${tile("Waiting in ED", "62", "5 over 24 hours", "bad")}${tile("Longest ED wait", "7d 1h", "Armadale ED", "bad")}${tile("Beds ready now", "26", "7 locked · 3 bed kinds short", "warn")}${tile("Due out today and tomorrow", "53", "5 releases held up", "warn")}${tile("Open journeys", "70", "1 form due time running out", "warn")}</div>
+    <div class="tv-g">${table("By health service", "1.2fr repeat(5,1fr)", [
+      ["Service", "In ED", "Longest", "Ready", "Locked", "Going"],
+      ["NMHS", "10", "1d 1h", "4", "1", "13"],
+      ["EMHS", "33", "7d 1h", "9", "2", "17"],
+      ["SMHS", "19", "2d 14h", "8", "3", "13"],
+      ["WACHS", "0", "—", "3", "0", "6"],
+      ["Private", "0", "—", "2", "1", "4"],
+    ])}
+      ${table("Beds that fit", "1fr repeat(4,1fr)", [
+        ["Bed", "Waiting", "Fit", "Now", "Tomorrow"],
+        ["Locked", "13", "7", "6 short", "6 short"],
+        ["Open", "28", "14", "14 short", "9 short"],
+        ["Older", "8", "4", "4 short", "1 short"],
+        ["Youth", "0", "1", "1 spare", "2 spare"],
+      ])}
+      ${table("Longest ED waits", "1.4fr 1fr", [
+        ["Person", "Waiting"],
+        ["Oakendell, Verity · ARM", "7d 1h"],
+        ["Hawthornby, Dermot · RGH", "2d 14h"],
+        ["Marrowbee, Devan · ARM", "2d 0h"],
+        ["and 59 more", ""],
+      ])}</div>
+    <section class="panel tv-brief">${[
+      ["Tightest", "Open adult beds: 28 waiting, 14 fit, likely 9 short tomorrow."],
+      ["Biggest blocker", "5 releases held up: 2 transport, 1 clean."],
+      ["ED waits", "14 people at Armadale ED pass 24 hours before a suitable bed is due."],
+      ["Biggest lever", "Clear held-up releases, transport first. Up to 1 bed."],
+    ]
+      .map(([a, b]) => `<div><span class="kicker">${a}</span><p>${b}</p></div>`)
+      .join("")}</section>
+    <div class="tv-f">All services · Day shift · Standard day · synthetic figures, not a record of any real day · read only</div></div></div>`;
+      };
+
+      PAGES.agenda = () => {
+        const item = (n, s, t) =>
+          `<div class="gr" style="min-height:46px"><div class="cell"><div class="t small">${n}</div><div class="s">${s}</div></div><span class="small right ${t || ""}">${tone(t)}</span><span class="btn sm ghost right">${ic("plus", 13)} Action</span></div>`;
+        const list = (h, c, rows) =>
+          panel(h, `${c}`, "", gl("minmax(0,1fr) 20px auto", null, rows, "minmax(0,1fr) 20px auto"));
+        return shell({
+          nav: "",
+          title: "Bed meeting agenda",
+          back: true,
+          hero: {
+            eyebrow: "Bed meeting · 10:30 · all services",
+            title: "Agenda: 20 people to discuss",
+            small: "as at 10:42",
+            chips: [
+              { n: 5, l: "Longest ED waits", t: "bad" },
+              { n: 5, l: "Pulled beds expiring", t: "warn" },
+              { n: 5, l: "Stranded stays" },
+              { n: 5, l: "Held-up releases" },
+              { n: 0, l: "Actions from earlier meetings" },
+            ],
+            actions: `<span class="hbtn">${ic("print", 15)} Bed meeting sheet</span><span class="hbtn light">${ic("clock", 14)} Start meeting</span>`,
+          },
+          body: `<div class="note info"><span>${ic("check", 15)}</span><span>No actions are waiting from earlier meetings. Actions you add here appear on the next agenda.</span></div>
+      <div class="cols c-2">${list(
+        "Longest ED waits",
+        "5",
+        [
+          ["Oakendell, Verity", "7d 1h in ARM ED", "bad"],
+          ["Hawthornby, Dermot", "2d 14h in RGH ED", "bad"],
+          ["Marrowbee, Devan", "2d 0h in ARM ED", "bad"],
+          ["Slateridge, Margery", "1d 5h in PEEL ED", "bad"],
+          ["Finchgrove, Callum", "1d 1h in SCGH ED", "bad"],
+        ].map((r) => item(...r)),
+      )}
+        ${list(
+          "Pulled beds, soonest to expire",
+          "5",
+          [
+            ["Cadwaller, Rhys", "Pull expired 10m ago · BTY Adult Secure", "bad"],
+            ["Iverstone, Horace", "20m left · Wardong (Ward 4.3)", "warn"],
+            ["Quenfold, Petra", "20m left · RGH Adult Secure", "warn"],
+            ["Ridgeholt, Bramwen", "27m left · SJGM Adult Open", "warn"],
+            ["Rookwell, Tamsin", "30m left · SJGS Adult Open", "warn"],
+          ].map((r) => item(...r)),
+        )}
+        ${list(
+          "Stranded stays",
+          "5",
+          [
+            ["Glasswell, Calder", "210 days · no expected date recorded"],
+            ["Pallowmere, Gareth", "91 days · ready, waiting for family or carer"],
+            ["Ironbrook, Barnaby", "48 days · ready, waiting for receiving service"],
+            ["Ferrowmoor, Alaric", "34 days · ready, waiting for accommodation"],
+            ["Kettlewell, Baxter", "122 days · no expected date recorded"],
+          ].map((r) => item(...r)),
+        )}
+        ${list(
+          "Held-up releases",
+          "5",
+          [
+            ["Ferrowmoor, Gareth", "Dabakarn · awaiting clean", "warn"],
+            ["Glasswell, Delia", "Mental Health Unit · awaiting transport", "warn"],
+            ["Moongate, Delia", "BTY Adult Secure · awaiting transport", "warn"],
+            ["Quenfold, Junia", "SJGS Adult Secure · awaiting clean", "warn"],
+            ["Ironbrook, Barnaby", "Moodjar · awaiting acceptance", "warn"],
+          ].map((r) => item(...r)),
+        )}</div>`,
+          foot: "Synthetic agenda · Not approved for clinical use",
+        });
+      };
+
+      PAGES.downtime = () =>
+        shell({
+          nav: "",
+          title: "Downtime pack",
+          back: true,
+          hero: {
+            eyebrow: "Downtime pack · synthetic data",
+            title: "Frozen at 10:46",
+            small: "next pack 11:00",
+            chips: [
+              { n: 26, l: "Beds ready" },
+              { n: 62, l: "Still in ED" },
+              { n: 30, l: "Moves pending" },
+              { n: 33, l: "Legal forms" },
+            ],
+            actions: `<span class="hbtn">${ic("cal", 15)} New snapshot</span><span class="hbtn light">${ic("print", 14)} Print or save PDF</span>`,
+          },
+          body: `<div class="note info"><span>${ic("print", 15)}</span><span>To keep a copy, choose Save as PDF in the print window and save it to your service's approved downtime location. The printout holds all four sections.</span></div>
+    <section class="panel"><div class="ph">${seg([`Beds ${ct(22)}`, `ED queue ${ct(62)}`, `Pending moves ${ct(30)}`, `Legal forms ${ct(33)}`])}<span class="meta">26 ready · 1 being made ready · 242 occupied of 304</span></div>
+    ${gl(
+      "minmax(170px,1.6fr) repeat(7, minmax(50px,0.6fr))",
+      ["Ward", ">Beds", ">Ready", ">Making ready", ">Occupied", ">Leave", ">Pulled", ">Closed"],
+      [
+        ["East Metro · 7 wards", 105, 9, 1, 82, 3, 9, 5, true],
+        ["BTY Adult Secure", 17, 2, 0, 13, 0, 1, 1],
+        ["Dabakarn", 20, 1, 0, 16, 1, 2, 1],
+        ["Moodjar", 19, 2, 1, 15, 2, 1, 1],
+        ["North Metro · 4 wards", 65, 4, 0, 54, 1, 2, 5, true],
+        ["Mental Health Unit", 24, 2, 0, 17, 1, 2, 3],
+        ["Graylands Older Adult", 10, 0, 0, 9, 0, 0, 1],
+      ]
+        .map(([w, ...n]) => {
+          const g = n[7];
+          return `<div class="${g ? "gg" : "gr"}" style="${g ? "display:grid;grid-template-columns:var(--cols)" : "min-height:40px"}"><span class="${g ? "" : "small strong"}">${w}</span>${n
+            .slice(0, 7)
+            .map(
+              (v, i) => `<span class="num small right">${i === 1 && v ? `<span class="tag ok">${v}</span>` : v}</span>`,
+            )
+            .join("")}</div>`;
+        })
+        .concat([`<div class="more"><a class="link">Show all 22 wards</a></div>`]),
+      "minmax(0,1fr) repeat(3,auto)",
+    )}
+    <div class="pf">On screen one section shows at a time. The print copy carries its preparation time on every page.</div></section>`,
+          foot: "Synthetic snapshot · Not approved for clinical use",
+        });
+
+      PAGES.chronology = () =>
+        shell({
+          nav: "",
+          title: "Patient chronology",
+          back: true,
+          hero: {
+            eyebrow: "Reports · PIR chronology",
+            title: "Choose a patient",
+            small: "recorded and typed times only",
+            extra: `<div class="bigsearch">${ic("search", 18)}<span>Name or UMRN</span><kbd>/</kbd></div>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph"><h3>Recently opened</h3><span class="meta">this session</span></div>
+    ${gl(
+      "minmax(0,1fr) auto auto",
+      null,
+      [
+        ["Wren, Tobias", "UM100023", "PEEL ED · destination review", "14 events"],
+        ["Cadwaller, Rhys", "UM100046", "SJGM ED → BTY Adult Secure", "11 events"],
+        ["Oakendell, Verity", "UM100069", "ARM ED · placement requested", "6 events"],
+        ["Mossgrave, Tilly", "UM100079", "ARM ED · youth bed", "9 events"],
+      ].map(
+        ([n, u, s, e]) =>
+          `<div class="gr"><div class="cell"><div class="t">${n}</div><div class="s"><span class="mono">${u}</span> · ${s}</div></div><span class="xs muted p-hide">${e}</span><span class="btn sm right">Open chronology</span></div>`,
+      ),
+      "minmax(0,1fr) auto",
+    )}</section>
+    <div class="rail-col">${panel("What a chronology holds", "", "", `<div class="pb"><ul class="plain small"><li>Every recorded step of the journey, in time order</li><li>Who recorded it, and any later correction</li><li>Times exactly as recorded or typed; nothing is calculated</li></ul></div><div class="pf">Audit trail and session log cover this browser session.</div>`)}</div></div>`,
+          foot: "Synthetic data · Not a clinical record",
+        });
+
+      /* Places and records: Places, Community directory, Community team, Patient record, Add a patient,
+   Ward answer, Settings, Sign in. Synthetic data only. */
+
+      PAGES.places = () => {
+        const r = (n, s, b, rd, o, conf, st, ready) =>
+          `<div class="gr"><span class="muted">${ic("pin", 14)}</span><div class="cell"><div class="t">${n}</div><div class="s">${s}</div></div><div class="cell p-hide">${bedCells(b, rd, o)}<div class="s">${b} beds</div></div><span class="small p-hide ${st ? "warn-ink" : "muted"}">${st ? tone("warn") + " " : ""}${conf}</span><div class="cell right"><b class="num">${ready}</b><div class="s">ready</div></div></div>`;
+        return shell({
+          nav: "",
+          title: "Places",
+          hero: {
+            eyebrow: "Places · statewide",
+            title: "96 places",
+            small: "22 wards · 10 EDs · 64 community teams",
+            chips: [
+              { n: 26, l: "Beds ready", t: "ok" },
+              { n: 17, l: "Pulled" },
+              { n: 1, l: "Stale bed count", t: "warn", cls: "check" },
+            ],
+            extra: `<div class="bigsearch">${ic("search", 18)}<span>Find a ward, ED, team, hospital or suburb</span><kbd>/</kbd></div>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph">${seg([`All ${ct(96)}`, `Wards ${ct(22)}`, `EDs ${ct(10)}`, `Teams ${ct(64)}`])}<div class="end">${seg(["Service", "Most ready"])}<span class="chip">Ready beds only ${ct(26)}</span></div></div>
+      ${gl(
+        "18px minmax(200px,1.5fr) minmax(140px,1fr) 100px 60px",
+        ["", "Place", "Beds", "Confirmed", ">Ready"],
+        [
+          `<div class="gg">North Metro ${ct("4 wards")}<span class="end">4 ready · 86.2% in use</span></div>`,
+          r("Mental Health Unit", "Sir Charles Gairdner Hospital · adult · open", 24, 2, 17, "16m ago", false, 2),
+          r("SCGH Older Adult", "Sir Charles Gairdner Hospital · older adult · open", 16, 1, 15, "19m ago", false, 1),
+          r("Graylands Adult Secure", "Graylands Hospital · adult · locked", 15, 1, 13, "21m ago", false, 1),
+          r(
+            "Graylands Older Adult",
+            "Graylands Hospital · older adult · open",
+            10,
+            0,
+            9,
+            "5h 01m, ask the ward",
+            true,
+            0,
+          ),
+          `<div class="gg">East Metro ${ct("7 wards")}<span class="end">9 ready · 86.7% in use</span></div>`,
+          r("Dabakarn", "Royal Perth Hospital · adult · locked", 20, 1, 16, "21m ago", false, 1),
+          r("Moodjar", "Armadale Health Service · adult · open", 19, 2, 15, "17m ago", false, 2),
+          `<div class="more"><a class="link">Show 5 more East Metro wards</a></div>`,
+          `<div class="gg">South Metro, WACHS, Private ${ct("11 wards")}<span class="end">13 ready · collapsed</span></div>`,
+          `<div class="gg">Emergency departments ${ct(10)}<span class="end">62 waiting · collapsed</span></div>`,
+          `<div class="gg">Community teams ${ct(64)}<span class="end">collapsed · open the directory</span></div>`,
+        ],
+        "18px minmax(0,1fr) auto",
+      )}<div class="pf">Star a place to keep it at the top of your list.</div></section>
+      <div class="rail-col stack">${panel(
+        "At a glance",
+        "as at 10:43",
+        "",
+        `<div class="pb stack" style="gap:10px"><div class="bar-track" style="height:8px"><i style="width:9%;background:var(--wf-data-ready)"></i><i style="width:6%;background:var(--wf-data-2)"></i><i style="width:6%;background:var(--wf-data-closed)"></i><i style="width:79%;background:var(--wf-data-1)"></i></div><div class="row xs muted" style="gap:12px"><span><b class="ink2">26</b> ready</span><span><b class="ink2">17</b> pulled</span><span><b class="ink2">19</b> closed</span><span><b class="ink2">242</b> occupied</span></div>
+        ${[
+          ["North Metro", 4],
+          ["East Metro", 9],
+          ["South Metro", 8],
+          ["WACHS", 3],
+          ["Private", 2],
+        ]
+          .map(
+            ([s, n]) =>
+              `<div class="svc"><span class="small">${s}</span><span class="bar-track" style="height:8px"><i style="width:${(n / 9) * 100}%;background:var(--wf-data-ready)"></i></span><b class="num small">${n}</b></div>`,
+          )
+          .join("")}</div>`,
+      )}
+      ${panel(
+        "Needs a check",
+        "3",
+        "",
+        gl(
+          "16px minmax(0,1fr) auto",
+          null,
+          [
+            ["warn", "Graylands Older Adult", "No ready bed and the count is 5h old"],
+            ["", "FSH Older Adult", "No ready bed right now"],
+            ["", "Mabu Liyan / Broome Mental Health Unit", "No ready bed right now"],
+          ].map(
+            ([t, a, b]) =>
+              `<div class="gr" style="min-height:46px">${t ? tone(t) : '<span class="dot off"></span>'}<div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><a class="link right">Show</a></div>`,
+          ),
+          "16px minmax(0,1fr) auto",
+        ),
+      )}</div></div>`,
+          foot: "Synthetic places under real WA hospital names",
+        });
+      };
+
+      PAGES.community = () => {
+        const r = (n, s, sub, alike) =>
+          `<div class="gr"><div class="cell"><div class="t">${n}</div><div class="s only-phone">${s} · ${sub} suburbs</div></div><span class="mono small p-hide">${s}</span><span class="num small p-hide">${sub}</span><span class="small ${alike ? "warn-ink" : "muted"}">${alike ? tone("warn") + " " + alike : ""}</span><span class="muted right">${ic("chev", 14)}</span></div>`;
+        return shell({
+          nav: "",
+          title: "Community",
+          hero: {
+            eyebrow: "Community · team directory",
+            title: "64 community teams",
+            small: "names as recorded on referrals, not a verified service list",
+            chips: [
+              { n: 22, l: "Names that read alike", t: "warn" },
+              { n: 6, l: "Suburbs with two teams" },
+              { n: 531, l: "Suburbs mapped" },
+            ],
+            actions: `<span class="hbtn">Catchment guide</span><span class="hbtn">Referrals</span><span class="hbtn light">${ic("plus", 14)} Raise referral</span>`,
+          },
+          body: `<section class="panel lookup"><div class="pb row" style="gap:12px;align-items:center"><span class="kicker">Which team covers a suburb?</span><span class="bigsearch" style="flex:1;max-width:none;box-shadow:none;border:1px solid var(--wf-line-ctl)">${ic("pin", 16)}<span style="color:var(--wf-ink-1)">Barragup</span><span class="mono xs" style="margin-left:auto">6210 WA</span></span></div>
+      <div class="pb" style="padding-top:0"><div class="note"><span>${tone("warn")}</span><span><b>Two teams cover Barragup:</b> Peel (SMHS, 32 suburbs) and Rockingham (SMHS, 28 suburbs). Check the right one with the referrer.</span><span class="end row" style="gap:6px"><span class="btn sm">Peel</span><span class="btn sm">Rockingham</span></span></div></div></section>
+      <div class="cols c-main-rail"><section class="panel"><div class="ph"><h3>A to Z</h3><span class="meta">64 teams</span><div class="end">${seg([`All ${ct(64)}`, `NMHS ${ct(6)}`, `SMHS ${ct(8)}`, `EMHS ${ct(16)}`, `WACHS ${ct(34)}`])}${search("Team name", 160)}</div></div>
+        ${gl(
+          "minmax(180px,1.5fr) 70px 70px minmax(130px,1fr) 24px",
+          ["Team", "Service", "Suburbs", "Name check", ""],
+          [
+            `<div class="gg">A</div>`,
+            r("Albany", "WACHS", 1),
+            r("Alma Street", "SMHS", 1),
+            r("Alma Street (Central)", "SMHS", 12),
+            r("Alma Street (Cockburn)", "SMHS", 15),
+            r("Armadale", "EMHS", 4),
+            r("Armadale (Mead Centre)", "EMHS", 1, "Reads like 3 others"),
+            r("Armadale (Mead)", "EMHS", 1, "Reads like 3 others"),
+            `<div class="gg">B</div>`,
+            r("Bentley", "EMHS", 32),
+            r("Bunbury", "WACHS", 46),
+            `<div class="more"><a class="link">Show C to Z, 53 more</a></div>`,
+          ],
+          "minmax(0,1fr) auto auto",
+        )}</section>
+      <div class="rail-col stack">${panel("Names that read alike", "22 names in 9 groups", "", `<div class="pb stack" style="gap:10px">${sel("Central Wheatbelt · 2 spellings")}<div class="kv"><span>Written as</span><b>Central Wheatbelt · Central Wheatbelt H.S.</b><span>Service</span><b>WACHS · WACHS</b><span>Suburbs</span><b>2 · 1</b></div><span class="xs muted">Not merged. Spellings are compared, so an abbreviation or a renaming carries no marker.</span></div>`)}
+      ${panel(
+        "Teams by service",
+        "",
+        "",
+        `<div class="pb stack" style="gap:10px">${[
+          ["North Metro", 6, 0],
+          ["South Metro", 8, 0],
+          ["East Metro", 16, 6],
+          ["Country (WACHS)", 34, 16],
+        ]
+          .map(
+            ([s, n, a]) =>
+              `<div class="svc" style="grid-template-columns:110px minmax(0,1fr) 70px"><span class="small">${s}</span><span class="bar-track" style="height:8px"><i style="width:${(n / 34) * 100}%;background:var(--wf-data-1)"></i></span><span class="small right"><b class="num">${n}</b> <span class="${a ? "warn-ink" : "muted"} xs">${a} alike</span></span></div>`,
+          )
+          .join("")}</div>`,
+      )}</div></div>`,
+          foot: "Synthetic prototype · names come from referral vocabulary, not a roster of WA services",
+        });
+      };
+
+      PAGES.team = () => {
+        const r = (n, u, sx, ward, legal, inbed, before, total) =>
+          `<div class="gr"><div class="cell"><div class="t">${n}</div><div class="s"><span class="mono">${u}</span> · ${sx}</div></div><div class="cell p-hide"><div class="small">${ward}</div><div class="s">${legal}</div></div><div class="cell p-wide"><div class="small"><b class="num">${inbed}</b> in this bed</div><div class="s">${before} before the bed began · ${total} since acceptance</div></div><span class="muted right">${ic("chev", 14)}</span></div>`;
+        return shell({
+          nav: "",
+          title: "Midland",
+          back: true,
+          viewing: "Midland as Bed coordinator",
+          hero: {
+            eyebrow: "Community team · Midland · East Metro",
+            title: "9 on the caseload",
+            small: "all 9 in a bed or with one pulled",
+            chips: [
+              { n: 0, l: "Sent" },
+              { n: 0, l: "Waiting for an answer" },
+              { n: 9, l: "In a bed" },
+              { n: 8, l: "Expected back" },
+              { n: 6, l: "Planned dates passed", t: "warn" },
+            ],
+            actions: `<span class="hbtn">${ic("act", 15)} Record contact</span><span class="hbtn">CTO register</span><span class="hbtn light">${ic("plus", 14)} Refer from team</span>`,
+            extra: `<div class="wtabs"><span class="hseg"><span>Sent · 0</span><span>Waiting answer · 0</span><span class="on">In a bed · 9</span><span>Expected back · 8</span><span>Caseload and CTOs · 9</span></span><span class="small" style="color:var(--wf-hero-ink-2)">No changes since the start of this shift</span></div>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph"><h3>In a bed or with one pulled</h3><span class="meta">longest in the bed first</span><div class="end">${search("Name or UMRN", 180)}</div></div>
+      ${gl(
+        "minmax(170px,1.2fr) minmax(140px,1fr) minmax(190px,1.3fr) 24px",
+        ["Person", "Ward and legal status", "In a bed, and with the team", ""],
+        [
+          r(
+            "Kettlewell, Baxter",
+            "UM100097",
+            "M",
+            "FSH Adult Secure",
+            "Legal status not recorded",
+            "122 days",
+            "6 weeks",
+            "24 weeks",
+          ),
+          r(
+            "Ironbrook, Barnaby",
+            "UM100096",
+            "M",
+            "Moodjar",
+            "Legal status not recorded",
+            "48 days",
+            "5 weeks",
+            "12 weeks",
+          ),
+          r(
+            "Emberfall, Cassia",
+            "UM100093",
+            "F",
+            "SJGM Adult Open",
+            "Legal status not recorded",
+            "20 days",
+            "1 week",
+            "4 weeks",
+          ),
+          r(
+            "Greymantle, Ottoline",
+            "UM100095",
+            "F",
+            "Moodjar",
+            "Legal status not recorded",
+            "12 days",
+            "7 weeks",
+            "9 weeks",
+          ),
+          r("Marrowby, Ines", "UM100003", "F", "Dabakarn", "Voluntary", "6 days", "4 weeks", "5 weeks"),
+          `<div class="more"><a class="link">Show 4 more</a></div>`,
+        ],
+        "minmax(0,1fr) auto",
+      )}
+      <div class="pf">Choose a person to open their record. Acceptance before admission does not establish current care; no team closure is recorded.</div></section>
+      <div class="rail-col stack">${panel(
+        "Worth attention",
+        "2",
+        "",
+        gl(
+          "16px minmax(0,1fr)",
+          null,
+          [
+            ["warn", "Admitted 1 week after this team accepted", "Emberfall, Cassia · UM100093"],
+            ["", "6 planned discharge dates have passed", "of 8 expected back"],
+          ].map(
+            ([t, a, b]) =>
+              `<div class="gr" style="min-height:46px">${t ? tone(t) : '<span class="dot off"></span>'}<div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div></div>`,
+          ),
+          "16px minmax(0,1fr)",
+        ),
+      )}
+      ${panel("How to reach", "invented for the demo", "", `<div class="pb kv"><span>Phone</span><b class="mono">08 5550 0107</b><span>Hours</span><b>08:30–16:30 Mon–Fri, not public holidays</b><span>Address</span><b>281 Great Eastern Highway, Midland</b></div><div class="pf">Invented details, not the service's real ones.</div>`)}
+      ${panel(
+        "On duty today",
+        "sample roster",
+        "",
+        gl(
+          "28px minmax(0,1fr) auto",
+          null,
+          [
+            ["SC", "Consultant psychiatrist", "Clinic room 2", "On duty"],
+            ["KR", "Senior registrar", "Vehicle 1 · co-response", "In field"],
+            ["JL", "Medical officer", "Clinic room 1", "On duty"],
+          ].map(
+            ([a, b, c, d]) =>
+              `<div class="gr" style="min-height:46px"><span class="avatar">${a}</span><div class="cell"><div class="t small">${b}</div><div class="s">${c}</div></div><span class="small ok-ink right">${d}</span></div>`,
+          ),
+          "28px minmax(0,1fr) auto",
+        ),
+      )}</div></div>`,
+          foot: "Community team directory · synthetic · Not approved for clinical use",
+        });
+      };
+
+      PAGES.patient = () => {
+        const steps = [
+          "Placement requested",
+          "Destination review",
+          "Accepted, awaiting bed",
+          "Bed pulled",
+          "Handover ready",
+          "Moving",
+          "Arrived",
+        ];
+        const ev = [
+          ["10:37", "Declined by SJGS Adult Secure", "Specialling unavailable", "bad"],
+          ["10:12", "Declined by BTY Adult Secure", "Bed pulled for an earlier referral", "bad"],
+          ["09:47", "Escalated to the State bed coordination desk", "by Bed coordinator", "warn"],
+          ["09:02", "Psychiatric examination recorded", "ED mental health clinician", "ok"],
+          ["05:20", "Asked 3 wards", "BTY, SJGS, RGH Adult Secure", ""],
+          ["03:42", "Journey opened at Peel ED", "Tier 1 · secure adult bed · 1:1 observation", ""],
+        ];
+        return shell({
+          nav: "",
+          title: "Patient",
+          back: true,
+          hero: {
+            eyebrow: "Patient · Peel Health Campus ED",
+            title: "Wren, Tobias",
+            small: "known as Toby · in placement",
+            sub: `<span class="mono">UM100023</span> · 35 y, male · DOB 17/09/1991`,
+            chips: [
+              { n: "T1", l: "Most urgent", t: "bad" },
+              { l: "Secure adult bed" },
+              { l: "Constant within sight (1:1)", t: "warn" },
+              { n: "7h 3m", l: "since opened · over T1 target" },
+            ],
+            actions: `<span class="hbtn">${ic("copy", 15)} Copy handover</span>`,
+            extra: `<div class="stepper">${steps.map((s, i) => `<span class="${i < 1 ? "done" : i === 1 ? "on" : ""}"><b>${i + 1}</b>${s}</span>`).join("")}</div>`,
+          },
+          body: `<section class="panel blocker"><div class="ph"><b>${tri} Cannot move yet</b><span class="meta">0 of 3 clear · the bed is the blocker</span></div><div class="blk3">
+      <div><span class="kicker">Secure adult bed · bed coordinator</span><b class="bad-ink">${tri} None found</b><span class="xs muted">5 declined · last 10:37</span><span class="btn pri sm">Ask more wards</span></div>
+      <div><span class="kicker">Fit to travel · ED doctor</span><b class="warn-ink">${tone("warn")} Not recorded</b><span class="xs muted">Needed before transport</span><span class="btn sm">Record clearance</span></div>
+      <div><span class="kicker">Transport · ED nurse in charge</span><b class="muted">Not booked</b><span class="xs muted">Needs an accepted bed first</span><span class="btn sm" style="opacity:.55">Log booking</span></div></div></section>
+      <div class="cols c-main-rail"><div class="stack"><section class="panel"><div class="ph">${seg(["Now", `History ${ct(1)}`, `Community ${ct(1)}`, "Details", `Documents ${ct(3)}`])}</div>
+        <div class="pb"><span class="kicker">Journey so far · 7h 3m</span><div class="evs">${ev.map(([t, a, b, k]) => `<div class="ev"><span class="mono small">${t}</span><i class="ev-d ${k}"></i><div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div></div>`).join("")}</div></div>
+        <div class="pf"><a class="link">Destination: ask wards that fit</a><a class="link" style="margin-left:auto">Withdraw referral</a></div></section></div>
+      <div class="rail-col stack">${panel("Why", "opened 03:42", "", `<div class="pb small">Police attendance overnight, acutely distressed in a public place, brought to the nearest department able to assess him.</div><div class="pb kv" style="padding-top:0"><span>Needs</span><b>Secure adult bed, constant within sight (1:1)</b><span>Catchment</span><b>Peel Community Team</b></div>`)}
+      ${panel(
+        "Legal now",
+        "as recorded",
+        `<a class="link">Forms</a>`,
+        gl(
+          "16px minmax(0,1fr) auto",
+          null,
+          [
+            ["info", "Involuntary inpatient", "Legal status as recorded", ""],
+            ["off", "Form 3B", "Ended at the examination", ""],
+            ["warn", "Form 6A", "To record: inpatient treatment order", ""],
+            ["ok", "Examination", "Psychiatric examination recorded", "09:02"],
+          ].map(
+            ([t, a, b, c]) =>
+              `<div class="gr" style="min-height:44px">${tone(t)}<div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><span class="mono xs right">${c}</span></div>`,
+          ),
+          "16px minmax(0,1fr) auto",
+        ),
+      )}
+      ${panel(
+        "Who to call",
+        "mock numbers",
+        "",
+        gl(
+          "minmax(0,1fr) auto",
+          null,
+          [
+            ["Peel ED nurse in charge", "Sending ED", "08 0000 1135"],
+            ["Peel Community Team", "Catchment team", "08 0000 1230"],
+          ].map(
+            ([a, b, c]) =>
+              `<div class="gr" style="min-height:44px"><div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><span class="mono small strong right">${c}</span></div>`,
+          ),
+          "minmax(0,1fr) auto",
+        ),
+      )}</div></div>`,
+          foot: "Every figure on this screen is invented. Nobody here is a real person.",
+        });
+      };
+
+      PAGES.addpatient = () =>
+        shell({
+          nav: "",
+          title: "Add a patient",
+          back: true,
+          hero: {
+            eyebrow: "Patients · new record",
+            title: "Add a patient",
+            small: "identity only",
+            sub: "Check for an existing record before adding.",
+            chips: [
+              { n: "0 of 4", l: "required fields" },
+              { n: 362, l: "records checked for duplicates" },
+            ],
+            actions: `<span class="hbtn">${ic("back", 14)} Patient search</span>`,
+          },
+          body: `<div class="cols c-main-rail"><section class="panel"><div class="ph"><h3>Identity</h3><span class="meta">0 of 4 required</span></div>
+    <div class="pb form4">${[
+      ["UMRN", "UM"],
+      ["Date of birth", "dd/mm/yyyy"],
+      ["Given name", ""],
+      ["Family name", ""],
+    ]
+      .map(
+        ([l, p]) =>
+          `<label><span class="small strong">${l} <span class="bad-ink">*</span></span><span class="inp">${p}</span></label>`,
+      )
+      .join("")}</div>
+    <div class="pb" style="padding-top:0"><div class="box row" style="gap:10px"><span class="muted">${ic("search", 15)}</span><span class="small muted">Duplicate check runs as you type: a record number, or a name of at least 4 letters.</span></div></div>
+    <div class="pb stack" style="padding-top:0;gap:10px"><span class="small strong">Gender <span class="muted" style="font-weight:400">optional, used for bed matching</span></span>${seg(["Female", "Male", "Non-binary", "Different term", "Not recorded"], 4)}
+      <label><span class="small strong">Aboriginal or Torres Strait Islander <span class="muted" style="font-weight:400">optional</span></span>${sel("Choose an answer")}</label></div>
+    <div class="pf"><span>${ic("lock", 13)} Needed: UMRN, date of birth, given and family name.</span><span class="row" style="margin-left:auto;gap:8px"><span class="btn ghost">Reset</span><span class="btn" style="opacity:.55">Add and start referral</span><span class="btn pri" style="opacity:.55">Add patient</span></span></div></section>
+    <div class="rail-col">${panel(
+      "Recently added",
+      "7",
+      "",
+      gl(
+        "minmax(0,1fr) auto",
+        null,
+        [
+          ["Vallowen, Orla", "UM600006"],
+          ["Quellane, Neris", "UM600004"],
+          ["Ridgeholt, Tansy", "UM500259"],
+          ["Ridgeholt, Sabine", "UM500258"],
+          ["Ridgeholt, Reya", "UM500257"],
+        ].map(
+          ([a, b]) =>
+            `<div class="gr" style="min-height:40px"><b class="small">${a}</b><span class="mono xs right">${b}</span></div>`,
+        ),
+        "minmax(0,1fr) auto",
+      ),
+    )}</div></div>`,
+          foot: "Synthetic records only",
+        });
+
+      PAGES.answer = () =>
+        shell({
+          nav: "",
+          title: "Ward answer",
+          back: true,
+          scope: "East Metro",
+          viewing: "Dabakarn as Bed coordinator",
+          hero: {
+            eyebrow: "Ward answer · Dabakarn · Royal Perth Hospital",
+            title: "Nothing to answer",
+            small: "last answer 09:12 · 1 bed ready",
+            ring: 90,
+            chips: [
+              { n: 16, l: "Occupied" },
+              { n: 1, l: "Ready", t: "ok" },
+              { n: 2, l: "Pulled" },
+              { n: 1, l: "Closed" },
+            ],
+          },
+          body: `<div class="note info"><span class="ok-ink">${ic("check", 15)}</span><span><b>All answered.</b> No referral is waiting for Dabakarn. New requests appear here as they are sent.</span></div>
+    <div class="cols c-3">${panel(
+      "Confirm your beds",
+      "confirmed 10:22, 23m ago",
+      "",
+      `<div class="pb kv"><span>Ready now</span><b class="num">1</b><span>Empty</span><b class="num">2</b><span>Confirmed discharges</span><b class="num">1</b><span>Expected discharges</span><b class="num">2</b></div>
+      <div class="pb row" style="padding-top:0;gap:10px"><span class="small strong">Free beds now</span><span class="stepbox"><span>−</span><b class="num">1</b><span>+</span></span><span class="btn pri sm" style="margin-left:auto">Confirm</span></div><div class="pf">Writes to Dabakarn only.</div>`,
+    )}
+      ${panel("Census", "20 beds · 1 ready", "", `<div class="pb"><div class="cen">${Array.from({ length: 20 }, (_, i) => `<span class="${i === 6 ? "r" : i === 17 || i === 18 ? "p" : i === 19 ? "c" : ""}">${String(i + 1).padStart(2, "0")}</span>`).join("")}</div><div class="row xs muted" style="gap:10px;margin-top:10px"><span><i class="sw sw-r"></i> Ready</span><span><i class="sw sw-o"></i> Pulled</span><span><i class="sw sw-c"></i> Closed</span></div></div><div class="pf">Only a ready bed can take a request. Constant observation: 1 active.</div>`)}
+      ${panel(
+        "Recent answers",
+        "3",
+        "",
+        gl(
+          "minmax(0,1fr) auto",
+          null,
+          [
+            ["Wren, Tobias", "Declined · no suitable bed", "09:12"],
+            ["Marrowvale, Gianna", "Accepted in principle", "07:47"],
+            ["Pellingworth, Keira", "Accepted in principle", "time not recorded"],
+          ].map(
+            ([a, b, c]) =>
+              `<div class="gr" style="min-height:46px"><div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><span class="mono xs right">${c}</span></div>`,
+          ),
+          "minmax(0,1fr) auto",
+        ),
+      )}</div>`,
+          foot: "Scoped to Dabakarn · bed decisions stay human-confirmed",
+        });
+
+      PAGES.settings = () => {
+        const rule = (a, b, rng, v, shown) =>
+          `<div class="gr"><div class="cell"><div class="t small">${a}</div><div class="s">${b} · range ${rng}</div></div><span class="stepbox"><span>−</span><b class="num">${v}</b><span>+</span></span><span class="xs muted right p-hide">${shown}</span></div>`;
+        return shell({
+          nav: "",
+          title: "Settings",
+          hero: {
+            eyebrow: "Bed coordinator · Perth central desk",
+            title: "Dr S. Chen",
+            small: "demo profile",
+            chips: [{ n: "No", l: "saves yet this session" }],
+            actions: `<span class="hbtn">${ic("search", 14)} Find a setting</span><span class="hbtn">Go to a desk</span><span class="hbtn light">Edit profile</span>`,
+            extra: `<div class="wtabs"><span class="hseg"><span class="on">Rules</span><span>Alerts</span><span>Display</span><span>Profile and shift</span><span>Data and about</span></span><span class="small" style="color:var(--wf-hero-ink-2)">Rules change what every screen shows. Each save is recorded in the audit.</span></div>`,
+          },
+          body: `<div class="cols c-2">${panel("Busy-day timings", "", seg(["Standard", "Surge"]), gl("minmax(0,1fr) 140px 150px", null, [rule("ED wait target", "access measure only", "12h to 36h", "24h", "Home, ED and Movements"), rule("Wards asked at once", "per referral", "1 to 3", "3 wards", "Home, Referrals"), rule("Pull time limit", "how long a pulled bed is kept", "30m to 4h", "4h", "Home, ED, Referrals"), rule("Morning bed numbers due", "not a legal limit", "08:00 to 11:00", "09:30", "Wards")], "minmax(0,1fr) auto"))}
+      ${panel("Decision targets", "your defaults, not clinical standards", "", gl("minmax(0,1fr) 140px 150px", null, [rule("Referral decision", "referral to ward answer", "15m to 12h", "2h", "Alerts and Tasks"), rule("Transfer acceptance", "acceptance to bed pulled", "15m to 12h", "4h", "Alerts and Tasks"), rule("Transport booked", "bed pulled to transport booked", "15m to 12h", "1h", "Alerts and Tasks")], "minmax(0,1fr) auto"))}
+      ${panel("Form warnings", "your defaults, not legal limits", "", gl("minmax(0,1fr) 140px 150px", null, [rule("Early warning", "shown as due soon", "30m to 8h", "3h", "Home and legal due times"), rule("Final warning", "before a typed due time", "15m to 3h", "1h", "Home and legal due times")], "minmax(0,1fr) auto"))}
+      ${panel("Forecast alerts", "coordinators only", "", gl("minmax(0,1fr) 140px 150px", null, [rule("Bed type short tomorrow", "likely this many short", "1 to 20", "3 beds", "Alerts"), rule("Access target forecast", "passes the ED target within", "2h to 24h", "12h", "Alerts"), rule("Forecast got worse", "drop since you looked", "1 to 10", "2 beds", "Alerts")], "minmax(0,1fr) auto"))}</div>
+      <section class="panel savebar"><span class="small"><b>No unsaved changes.</b> <span class="muted">Change a value, then save to apply it everywhere.</span></span><span class="row" style="gap:8px;margin-left:auto"><a class="link">Full audit</a><span class="btn" style="opacity:.55">Discard</span><span class="btn pri" style="opacity:.55">Save rules</span></span></section>`,
+          foot: "Coordination rules stay in this device's demo workspace · appearance applies to this browser",
+        });
+      };
+
+      PAGES.signin = () => `<div class="app"><div class="signin">
+  <div class="row" style="justify-content:space-between"><span class="row" style="gap:10px"><span class="brand"><span class="logo">${ic("plus", 16)}</span>Ward Flow <span class="wa">WA</span></span><span class="small muted">Mental health bed flow · prototype</span></span>${seg(["Light", "Dark", "Auto"], 2)}</div>
+  <section class="panel si-grid"><div class="pb stack" style="gap:14px"><div><h2 class="si-h">Sign in</h2><span class="small muted">Choose a role to preview. No password field.</span></div>
+    <div class="note info"><span>${ic("shield", 15)}</span><span><b>Synthetic data.</b> No live link and no account is created.</span><a class="link end">Details</a></div>
+    <div><span class="small strong">Catchment</span>${seg(["NMHS", "SMHS", "EMHS", "WACHS", "Statewide"], 4).replace('class="seg"', 'class="seg full5"')}</div>
+    <div><span class="small strong">Shift <span class="muted mono" style="font-weight:400">07:00 to 15:30</span></span>${seg(["Morning", "Afternoon", "Night"]).replace('class="seg"', 'class="seg full"')}</div>
+    <div><span class="small strong">Your role</span>${gl(
+      "20px minmax(0,1fr) auto",
+      null,
+      [
+        ["Bed coordinator", "Runs the queue and places people", "10 of 13", true],
+        ["Coordinator on call", "Holds the queue out of hours", "4 of 13"],
+        ["ED liaison", "Raises referrals from an ED", "4 of 13"],
+        ["Duty consultant", "Triages referrals, oldest first", "2 of 13"],
+        ["Governance lead", "Reviews every recorded override", "3 of 13"],
+        ["Service lead", "Reads the period figures", "3 of 13"],
+        ["Ward", "Answers asks and pulls beds", "4 of 13"],
+      ].map(
+        ([a, b, c, on]) =>
+          `<div class="gr ${on ? "sel" : ""}" style="min-height:48px"><span class="radio ${on ? "on" : ""}"></span><div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><span class="mono xs right">${c}</span></div>`,
+      ),
+      "20px minmax(0,1fr) auto",
+    )}</div>
+    <span class="btn pri" style="height:44px">Open as Bed coordinator</span></div>
+  <div class="pb stack si-r" style="gap:12px"><div class="row" style="gap:10px"><span class="avatar">${ic("users", 14)}</span><div class="cell"><div class="t">Bed coordinator</div><div class="s">Opens Home, the priority queue · statewide · morning</div></div></div>
+    ${seg([`Actions ${ct("10 of 13")}`, `Limits and safety ${ct(9)}`])}
+    ${gl(
+      "16px minmax(0,1fr) auto",
+      null,
+      [
+        ["Open the priority queue", "Home", 1],
+        ["New referral", "Every screen", 1],
+        ["Record a decision on a movement", "Movements", 1],
+        ["Pull the bed", "Capacity", 1],
+        ["Ask a ward", "Wards", 1],
+        ["Sign off the handover", "Handover", 1],
+        ["Override a judgement, with a reason", "Movements", 1],
+        ["Triage a referral", "Duty consultant and triage", 0],
+        ["Export a period's figures", "Service lead and governance", 0],
+      ].map(
+        ([a, b, ok]) =>
+          `<div class="gr" style="min-height:36px">${ok ? `<span class="ok-ink">${ic("check", 13)}</span>` : '<span class="muted">×</span>'}<span class="small ${ok ? "strong" : "muted"}">${a}</span><span class="xs muted right">${b}</span></div>`,
+      ),
+      "16px minmax(0,1fr)",
+    )}
+    <div class="pf" style="padding-inline:0">Preview only; access is not enforced.</div></div></section>
+  ${footer("Every ward state, movement, referral, clock and figure on these screens is invented · Not approved for clinical use")}</div></div>`;
+
+      /* Statistics family: Compare, the list pages (Wards, EDs, Teams, Services), one unit's page, Weekly. */
+      const statTabs = (on) =>
+        `<div class="wtabs"><span class="hseg">${["Network", "Compare", "Services · 6", "Wards · 22", "EDs · 10", "Teams · 64", "Weekly"].map((t, i) => `<span class="${i === on ? "on" : ""}">${t}</span>`).join("")}</span><span class="row" style="gap:8px"><span class="hbtn hide-phone">${ic("search", 14)} Open a unit</span><span class="hbtn hide-phone">${ic("print", 14)} Export the figures</span></span></div>`;
+      const hbars = (rows, max, mean, fmt = (v) => v) =>
+        `<div class="hbars">${rows.map(([n, c, v, t]) => `<div class="hb-row"><span class="small">${n}</span><span class="mono xs muted">${c}</span><span class="bar-track" style="height:9px;position:relative"><i style="width:${(v / max) * 100}%;background:var(--wf-data-1)"></i>${mean ? `<span class="mean" style="left:${(mean / max) * 100}%"></span>` : ""}</span><b class="num small ${t ? "warn-ink" : ""}">${t ? tone("warn") + " " : ""}${fmt(v)}</b></div>`).join("")}</div>`;
+
+      PAGES.scompare = () =>
+        shell({
+          nav: "",
+          title: "Statistics",
+          hero: {
+            eyebrow: "Statistics · compare · as at 10:47",
+            title: "Wards and EDs side by side",
+            small: "22 wards · 10 EDs",
+            chips: [
+              { n: "47.0 days", l: "Average stay" },
+              { n: 13, l: "Blockers" },
+              { n: 53, l: "Stays over 3 months", t: "warn" },
+              { n: 70, l: "Open ED journeys" },
+            ],
+            extra: statTabs(1),
+          },
+          body: `<div class="cols c-2">${panel(
+            "Ward comparison",
+            "average stay, days · mean 47.3",
+            `${seg(["Stay", "Blockers", "Long stays"])}${seg(["Chart", "Data"])}`,
+            `<div class="pb">${hbars(
+              [
+                ["SJGS Adult Open", "SJGS", 65.6, 1],
+                ["Great Southern Acute Psychiatric Unit", "ALB", 65.3, 1],
+                ["Bunbury Acute Psychiatric Unit", "BUN", 62.4, 1],
+                ["Wardong (Ward 4.3)", "FRE", 57.4],
+                ["SCGH Older Adult", "SCGH", 54.8],
+                ["Graylands Adult Secure", "GRY", 54.1],
+                ["Mental Health Unit", "SCGH", 51.5],
+                ["Dabakarn", "RPH", 45.9],
+              ],
+              80,
+              47.3,
+            )}</div><div class="pf"><span>${tone("warn")} more than 1 SD above the mean · case mix differs between wards</span><a class="link" style="margin-left:auto">Show all 22</a></div>`,
+          )}
+    ${panel(
+      "ED comparison",
+      "people waiting · mean 6.2",
+      `${seg(["Waiting", "Urgent", "No ward", "Longest"])}`,
+      `<div class="pb">${hbars(
+        [
+          ["Armadale ED", "ARM", 22, 1],
+          ["Rockingham ED", "RGH", 8],
+          ["Peel ED", "PEEL", 8],
+          ["St John of God Midland ED", "SJGM", 6],
+          ["Joondalup ED", "JHC", 6],
+          ["Royal Perth ED", "RPH", 5],
+          ["Sir Charles Gairdner ED", "SCGH", 4],
+          ["Fiona Stanley ED", "FSH", 3],
+        ],
+        30,
+        6.2,
+      )}</div><div class="pf">King Edward and Perth Children's EDs: no one waiting.</div>`,
+    )}</div>
+    ${panel("Pinned wards", "set up to three beside the network", sel("Pin a ward"), `<div class="pb small muted">Pin a ward to compare it with the network on every chart above.</div>`)}`,
+          foot: "Statistics from synthetic records",
+        });
+
+      PAGES.slist = () => {
+        const r = (w, h, b, o, p, rd, mr, pl, cl, bl, ls) =>
+          `<div class="gr" style="min-height:46px"><div class="cell"><div class="t small">${w}</div><div class="s">${h}</div></div>${[b, o].map((v) => `<span class="num small right p-hide">${v}</span>`).join("")}<span class="occ"><span class="bar-track" style="height:6px;position:relative"><i style="width:${p}%;background:var(--wf-data-1)"></i><span class="mean" style="left:85%"></span></span><b class="num small ${p >= 85 ? "warn-ink" : ""}">${p >= 85 ? tone("warn") + " " : ""}${p}%</b></span>${[rd, mr, pl, cl, bl].map((v) => `<span class="num small right p-hide ${v ? "" : "muted"}">${v}</span>`).join("")}<span class="num small right p-hide">${ls}</span></div>`;
+        return shell({
+          nav: "",
+          title: "Statistics",
+          hero: {
+            eyebrow: "Statistics · 22 wards · as at 10:47",
+            title: "14 wards at or over 85%",
+            small: "3 with no bed ready",
+            chips: [
+              { n: 26, l: "Ready beds" },
+              { n: 1, l: "Being made ready" },
+              { n: 17, l: "Pulled, not arrived" },
+              { n: 13, l: "Discharges held up", t: "warn" },
+            ],
+            extra: statTabs(3),
+          },
+          body: `<section class="panel"><div class="ph"><h3>Every ward</h3><span class="meta">sort by any column · open a ward for its page</span><div class="end">${seg(["By service", "One list"])}</div></div>
+      <div class="pb row chips scroll" style="padding-block:10px;gap:6px"><span class="chip">At or over 85% ${ct(14)}</span><span class="chip">None ready ${ct(3)}</span><span class="chip">Bed being made ready ${ct(1)}</span><span class="chip">Pulled bed ${ct(14)}</span><span class="chip">Discharge held up ${ct(11)}</span></div>
+      ${gl(
+        "minmax(180px,1.6fr) 50px 70px minmax(120px,1fr) 54px 60px 54px 54px 60px 70px",
+        ["Ward", ">Beds", ">Occupied", "Occupancy", ">Ready", ">Making", ">Pulled", ">Closed", ">Blocked", ">Longest"],
+        [
+          `<div class="gg">North Metro ${ct(4)}</div>`,
+          r("SCGH Older Adult", "Sir Charles Gairdner Hospital", 16, 15, 94, 1, 0, 0, 0, 0, "210d"),
+          r("Graylands Older Adult", "Graylands Hospital", 10, 9, 90, 0, 0, 0, 1, 0, "130d"),
+          r("Graylands Adult Secure", "Graylands Hospital", 15, 13, 87, 1, 0, 0, 1, 1, "210d"),
+          r("Mental Health Unit", "Sir Charles Gairdner Hospital", 24, 17, 79, 2, 0, 2, 3, 2, "210d"),
+          `<div class="gg">East Metro ${ct(7)}</div>`,
+          r("BTY Older Adult", "Bentley Health Service", 11, 9, 91, 1, 0, 1, 0, 0, "210d"),
+          r("Dabakarn", "Royal Perth Hospital", 20, 16, 90, 1, 0, 2, 1, 2, "210d"),
+          r("Moodjar", "Armadale Health Service", 19, 15, 84, 2, 1, 1, 1, 1, "210d"),
+          `<div class="more"><a class="link">Show 4 more East Metro, then South Metro (5), WACHS (4) and Private (2)</a></div>`,
+        ],
+        "minmax(0,1fr) 120px",
+      )}<div class="pf">The same layout serves the EDs, Teams and Services lists, each with its own columns.</div></section>`,
+          foot: "Statistics from synthetic records",
+        });
+      };
+
+      PAGES.sunit = () => {
+        const beds = [130, 122, 95, 60, 33, 26, 20, 12, 6, 5, 3, 2, 1];
+        return shell({
+          nav: "",
+          title: "Ward statistics",
+          back: true,
+          viewing: "FSH Adult Secure as Bed coordinator",
+          hero: {
+            eyebrow: "Ward statistics · Fiona Stanley Hospital · adult secure",
+            title: "FSH Adult Secure",
+            small: "14 of 18 beds in use, 78%",
+            chips: [
+              { n: 3, l: "Ready", t: "ok" },
+              { n: 1, l: "Pulled, not arrived" },
+              { n: "39.7 days", l: "Average stay" },
+              { n: 6, l: "Due out in 7 days" },
+            ],
+            actions: `<span class="hbtn">Change ward ${ic("down", 13)}</span><span class="hbtn">${ic("back", 13)}</span><span class="hbtn">${ic("chev", 13)}</span>`,
+            extra: statTabs(3),
+          },
+          body: `<div class="cols c-main-rail"><div class="stack">${panel("Bed map", "18 beds · length of stay on each occupied bed", "", `<div class="pb"><div class="sbeds">${beds.map((d) => `<span class="${d > 90 ? "long" : ""}"><b class="num">${d}d</b>${d === 33 ? '<i class="dot warn"></i>' : ""}</span>`).join("")}<span class="p">Pulled</span><span class="r">Ready</span><span class="r">Ready</span><span class="r">Ready</span><span class="c">Closed</span></div></div><div class="pf"><span class="row" style="gap:10px"><i class="sw sw-o"></i> Occupied <i class="sw sw-r"></i> Ready <i class="sw sw-c"></i> Closed ${tone("warn")} Discharge blocked</span><span style="margin-left:auto">Bed numbers are not recorded.</span></div>`)}
+      <div class="cols c-2">${panel(
+        "Length of stay",
+        "average 39.7 days",
+        seg(["Chart", "Data"]),
+        `<div class="pb">${hbars(
+          [
+            ["Under 2 weeks", "", 6],
+            ["2 weeks to 1 month", "", 2],
+            ["1 to 3 months", "", 2],
+            ["Over 3 months", "", 3, 1],
+          ],
+          6,
+          0,
+        )}</div>`,
+      )}
+        ${panel(
+          "Expected discharges",
+          "next 7 days",
+          "",
+          `<div class="pb"><div class="vb">${[
+            ["Today", 0],
+            ["Fri", 0],
+            ["Sat", 1],
+            ["Sun", 2],
+            ["Mon", 1],
+            ["Tue", 1],
+            ["Wed", 1],
+          ]
+            .map(
+              ([d, n]) =>
+                `<span><b class="num xs">${n}</b><i style="height:${n * 34 + 2}px"></i><span class="xs muted">${d}</span></span>`,
+            )
+            .join("")}</div></div>`,
+        )}</div></div>
+      <div class="rail-col stack">${panel("Beds now", "18 beds", "", `<div class="pb kpi4"><div><span class="xs muted">Empty</span><b class="num">4</b></div><div><span class="xs muted">Allocatable</span><b class="num">3</b></div><div><span class="xs muted">Open now</span><b class="num">3</b></div><div><span class="xs muted">Pending</span><b class="num">0</b></div></div><div class="pf">${tone("warn")} Oldest pulled bed: 7h 36m, not arrived</div>`)}
+      ${panel("Discharge planning", "", "", `<div class="pb kv"><span>With a date</span><b class="num">11 of 13</b><span>No date</span><b class="num warn-ink">2</b><span>Dates revised</span><b class="num">7</b><span>Ready, not gone</span><b class="num">1 · awaiting placement confirmation</b></div>`)}
+      ${panel("Referrals into this ward", "", "", `<div class="pb kv"><span>Asking now</span><b class="num">0</b><span>Acceptances standing</span><b class="num">1</b><span>Ever declined</span><b class="num">1</b><span>Pull to arrival</span><b class="num">5h 00m average</b></div>`)}</div></div>
+    ${panel("Admission roster", "14 admissions · bed numbers not recorded", `${search("ID or status", 170)}<a class="link">CSV</a>`, `<div class="pb small muted">The roster table sits here, collapsed to 5 rows with Show all.</div>`)}`,
+          foot: "The same page serves an ED, a community team and a health service, each with its own panels",
+        });
+      };
+
+      PAGES.sweekly = () =>
+        shell({
+          nav: "",
+          title: "Statistics",
+          hero: {
+            eyebrow: "Weekly report · synthetic demo data",
+            title: "Weekly operations",
+            small: "Mon 19 Oct to Sun 25 Oct",
+            chips: [
+              { n: 1, l: "New ED waits over 24h", t: "warn" },
+              { n: 47.6, l: "Out of area bed days" },
+              { n: "59%", l: "Recorded occupied bed time" },
+              { l: "Delayed discharge days not known", cls: "check" },
+            ],
+            actions: `<span class="hbtn">${sel("Last full week").replace('class="btn"', 'class="hbtn"')}</span><span class="hbtn light">${ic("print", 14)} Print</span>`,
+            extra: statTabs(6),
+          },
+          body: `<div class="cols c-3">${[
+            [
+              "ED waits first passing 24h",
+              [
+                ["Placement journeys", "1"],
+                ["Longest wait", "3d 14h"],
+              ],
+              "Counted in the week the wait passes your 24h default (Settings).",
+            ],
+            [
+              "Out of area",
+              [
+                ["Bed days", "47.6"],
+                ["People", "14"],
+              ],
+              "3 hours or more from home, or reachable only by air.",
+            ],
+            [
+              "Occupancy",
+              [
+                ["Recorded occupied bed time", "59%"],
+                ["In use now", "259 of 304"],
+              ],
+              "Closed beds stay in the count. Time pulled for arrival is left out.",
+            ],
+          ]
+            .map(([h, kv, n]) =>
+              panel(
+                h,
+                "",
+                "",
+                `<div class="pb kpi2">${kv.map(([a, b]) => `<div><span class="xs muted">${a}</span><b class="num">${b}</b></div>`).join("")}</div><div class="pf">${n}</div>`,
+              ),
+            )
+            .join("")}</div>
+    <div class="cols c-3">${panel("Declines and overrides", "", "", `<div class="pb kpi2"><div><span class="xs muted">Declines</span><b class="num">0</b></div><div><span class="xs muted">Overrides</span><b class="num">0</b></div></div><div class="pf">None recorded this week.</div>`)}
+      ${panel("Delayed discharge", "", "", `<div class="pb small"><b>Not enough history yet.</b> <span class="muted">No expected date was held for this week. Dates count only from when they were set.</span></div>`)}
+      ${panel("Counted outside Ward Flow", "pilot measures 2 and 4", "", `<div class="pb kv"><span>Calls per placed referral</span><b>Paper tally</b><span>Wrong-patient and lost changes</span><b>Incident route</b></div><div class="pf">Shown so the pack is complete; these are not counted here.</div>`)}</div>
+    ${panel(
+      "Pilot measures",
+      "this week",
+      "",
+      gl(
+        "minmax(0,1fr) 120px 120px",
+        ["Measure", ">Typical", ">Slowest 1 in 10"],
+        [
+          ["Referral to arrival · measure 1", "—", "—", "No arrivals this week"],
+          ["Request to bed pulled", "—", "—", "No beds pulled this week"],
+          ["Bed figures on time · measure 3", "0 of 22", "", "confirmed by 09:30 today"],
+          ["Missed requests", "1", "", "no ward in 2h"],
+        ].map(
+          ([a, b, c, d]) =>
+            `<div class="gr" style="min-height:44px"><div class="cell"><div class="t small">${a}</div><div class="s">${d}</div></div><b class="num small right">${b}</b><b class="num small right">${c}</b></div>`,
+        ),
+        "minmax(0,1fr) auto",
+      ),
+    )}`,
+          foot: "Period: Mon 19 Oct 00:00 to Mon 26 Oct 00:00 AWST · synthetic",
+        });
+
+      /* Popups, drawers, sheets and menus, each drawn over the page it opens from. Synthetic data only. */
+      const popHead = (icon, h, sub, extra = "") =>
+        `<div class="pop-h"><span class="pop-i">${ic(icon, 16)}</span><div class="cell"><div class="t">${h}</div>${sub ? `<div class="s">${sub}</div>` : ""}</div><span class="row" style="gap:8px;margin-left:auto">${extra}<span class="kbd">Esc</span><span class="muted">${ic("plus", 18, 'style="transform:rotate(45deg)"')}</span></span></div>`;
+      const popFoot = (l, r) =>
+        `<div class="pop-f">${l || ""}<span class="row" style="gap:8px;margin-left:auto">${r || ""}</span></div>`;
+
+      PAGES.p_alerts = () =>
+        withPop("capacity", {
+          kind: "drawer",
+          label: "Alerts",
+          html:
+            popHead("bell", "Alerts", "Bed coordinator · 12 open") +
+            `<div class="pop-b">
+  ${seg([`All ${ct(12)}`, `Act now ${ct(3)}`, `Waiting ${ct(9)}`])}
+  <div class="al">${[
+    [
+      "bad",
+      "Bed pull expired",
+      "Cadwaller, Rhys · UM100046",
+      "BTY Adult Secure · pull ended 10:32",
+      "10m overdue",
+      "Release pulled bed",
+      true,
+    ],
+    ["bad", "Multiple destinations declined", "Wren, Tobias · UM100023", "5 wards declined", "5m", "Find a bed"],
+    ["bad", "No eligible bed", "Oquinn, Priya · UM100006", "SJGM ED", "—", "Open patient"],
+  ]
+    .map(
+      ([t, h, n, s, w, b, pri]) =>
+        `<div class="al-r">${tone(t)}<div class="cell"><div class="t small">${h}</div><div class="s"><b class="ink2">${n}</b><br>${s}</div></div><div class="cell right"><div class="mono xs strong ${t}-ink">${w}</div><span class="btn sm ${pri ? "pri" : ""}" style="margin-top:6px">${b}</span></div></div>`,
+    )
+    .join("")}
+  <div class="al-g"><span class="dot warn"></span><div class="cell"><div class="t small">Transport awaiting departure <span class="tag">5</span></div><div class="s">Tremalow, Noor · Sedgeward, Merrick · and 3 more · longest 30m</div></div><span class="btn sm">Chase all</span></div>
+  <div class="al-g"><span class="dot warn"></span><div class="cell"><div class="t small">Notifications to record <span class="tag">3</span></div><div class="s">RPH Older Adult · FSH Adult Secure · Moodjar</div></div><span class="btn sm">Record</span></div>
+  <div class="al-g"><span class="dot warn"></span><div class="cell"><div class="t small">Planned arrival not recorded</div><div class="s">Initials RK · Maali (Ward 4.2) · 1h 12m overdue</div></div><span class="btn sm">Open</span></div></div>` +
+            popFoot(
+              `<span class="btn pri">Open Alerts</span>`,
+              `<span class="btn">Acknowledge visible ${ct(9)}</span>`,
+            ),
+        });
+
+      PAGES.p_activity = () =>
+        withPop("capacity", {
+          kind: "drawer",
+          label: "Activity",
+          html:
+            popHead("act", "Activity", "Synthetic events · newest first") +
+            `<div class="pop-b">
+  ${search("Search events", 300)}<div class="row chips scroll" style="gap:6px">${["All 28", "Escalations 2", "Declines 5", "Referrals 18", "Transfers 0"].map((c, i) => `<span class="chip ${i ? "" : "on"}">${c}</span>`).join("")}</div>
+  <div class="feed">${[
+    ["10:39", "warn", "Wren, Tobias", "escalated to the State bed coordination desk"],
+    ["10:37", "bad", "Wren, Tobias", "declined by RGH Adult Secure · capability mismatch"],
+    ["10:37", "warn", "Flint, Oona", "escalated to the State bed coordination desk"],
+    ["10:27", "bad", "Wren, Tobias", "declined by FSH Adult Secure · specialling unavailable"],
+    ["10:22", "info", "Coldharbour, Cyril", "referral raised · older adult, Perth Metropolitan"],
+    ["10:12", "bad", "Wren, Tobias", "declined by BTY Adult Secure · bed pulled for an earlier referral"],
+    ["10:12", "info", "Mossgrave, Tilly", "triaged"],
+    ["10:07", "info", "Davenport, Bao", "referral raised · adult, Perth Metropolitan"],
+  ]
+    .map(
+      ([t, k, n, s]) =>
+        `<div class="fd"><span class="mono xs">${t}</span>${tone(k)}<div class="small"><b>${n}</b> ${s}</div></div>`,
+    )
+    .join("")}</div></div>` +
+            popFoot(
+              `<span class="xs muted">20 events today · last 10:39</span>`,
+              `<span class="btn">See all in Alerts history</span>`,
+            ),
+        });
+
+      PAGES.p_tools = () =>
+        withPop("capacity", {
+          kind: "drawer",
+          label: "Tools",
+          html:
+            popHead("tool", "Tools", "Viewing as Bed coordinator", `<a class="link">Change view</a>`) +
+            `<div class="pop-b">
+  ${search("Find a tool", 300)}
+  ${[
+    [
+      "Do now",
+      [
+        ["clock", "Log a delay", "Choose the patient, then the reason"],
+        ["bed", "Update a bed", "Open, close or hold a bed"],
+        ["search", "Find a bed", "Ready beds by ward and road time"],
+      ],
+    ],
+    [
+      "Look up",
+      [
+        ["chart", "All figures", "Beds, flow and waits across the network"],
+        ["pin", "Catchment lookup", "Suburb or postcode to service and clinic"],
+        ["users", "On-call", "Who is on now and key lines"],
+        ["clock", "Form times", "Check a time written on a form"],
+      ],
+    ],
+    [
+      "Print and share",
+      [
+        ["copy", "Copy bed summary", "For the executive on-call email"],
+        ["print", "Downtime pack", "Print a snapshot now"],
+        ["hist", "Patient chronology", "PIR export"],
+      ],
+    ],
+  ]
+    .map(
+      ([h, items]) =>
+        `<div><span class="kicker">${h}</span><div class="tl2">${items.map(([i, a, b]) => `<div class="tl2-i"><span class="pop-i">${ic(i, 15)}</span><div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div></div>`).join("")}</div></div>`,
+    )
+    .join("")}</div>` +
+            popFoot(
+              `<span class="xs muted">Whole network · synthetic prototype</span>`,
+              `<span class="mono xs">Demo time 10:42</span>`,
+            ),
+        });
+
+      PAGES.p_search = () =>
+        withPop("capacity", {
+          kind: "palette",
+          label: "Search",
+          clear: false,
+          html: `<div class="pal-in">${ic("search", 18)}<b>Rid</b><span class="tag">Clear</span><span class="kbd" style="margin-left:auto">Esc</span></div>
+  <div class="pal-tabs">${seg([`All ${ct(45)}`, `People ${ct(24)}`, `Movements ${ct(18)}`, `Referrals ${ct(3)}`])}</div>
+  <div class="pal-b"><div class="pal-l"><span class="kicker">People · 24</span>${[
+    ["Ridgewell, Sasha", "UM100083 · born 09/06/1990 · RPH ED", 1],
+    ["Ridgeholt, Bramwen", "UM500241 · born 26/04/2000 · bed pulled, SJGM Adult Open"],
+    ["Ridgeholt, Petra", "UM500255 · born 13/04/1986"],
+    ["Ridgeholt, Isadora", "UM500248 · born 06/04/1993"],
+    ["Ridgeholt, Alaric", "UM500240 · accepted, awaiting bed"],
+  ]
+    .map(
+      ([a, b, on]) =>
+        `<div class="pal-r ${on ? "on" : ""}">${ic("users", 14)}<div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><span class="xs muted">Person</span></div>`,
+    )
+    .join("")}<a class="link">Show all 24 people</a>
+    <span class="kicker" style="margin-top:8px">Movements · 18</span>${[
+      ["Ridgeholt, Alaric", "UM500240 · accepted, awaiting bed"],
+      ["Ridgeholt, Bramwen", "UM500241 · bed pulled, SJGM Adult Open"],
+    ]
+      .map(
+        ([a, b]) =>
+          `<div class="pal-r">${ic("swap", 14)}<div class="cell"><div class="t small">${a}</div><div class="s">${b}</div></div><span class="xs muted">Movement</span></div>`,
+      )
+      .join("")}</div>
+  <div class="pal-p"><div class="row" style="gap:10px"><span class="avatar">SR</span><div class="cell"><div class="t">Ridgewell, Sasha</div><div class="s"><span class="mono">UM100083</span> · 36 y</div></div></div><div class="kv"><span>Now</span><b>RPH ED · East Metro</b><span>Next</span><b>ED to answer</b><span>Movement</span><b>None open</b><span>Team</span><b>Armadale Community Team</b></div><div class="row" style="gap:8px"><span class="btn pri sm">Open patient</span><span class="btn sm">Open referral</span></div></div></div>
+  <div class="pal-f"><span class="kbd">↑</span><span class="kbd">↓</span> move <span class="kbd">Enter</span> open <span class="kbd">Tab</span> next group<a class="link" style="margin-left:auto">Full patient search</a></div>`,
+        });
+
+      PAGES.p_help = () =>
+        withPop("capacity", {
+          kind: "drawer",
+          label: "Help",
+          html:
+            popHead("help", "Help", "Bed coordinator · this screen: Capacity") +
+            `<div class="pop-b">
+  ${search("Search Help, or ask: how do I pull a bed?", 330)}
+  ${seg(["Your desk", "This screen", "Glossary", "What's new"], 1)}
+  <div class="box"><b>Capacity</b><p class="small muted" style="margin:4px 0 0">Each ward's confirmed beds, what is ready, pulled or closed, and when it was last confirmed.</p></div>
+  <div><span class="kicker">Things you do here</span><div class="tl2">${["Ask for an update when a ward's figure is old", "Open a ward to see its beds and who is coming in", "Use the service picker in the header to look at one health service"].map((a) => `<div class="tl2-i"><span class="ok-ink">${ic("chev", 14)}</span><span class="small">${a}</span></div>`).join("")}</div></div>
+  <div><span class="kicker">Questions</span><details class="qa" open><summary>How do I put this on the meeting room TV?</summary><p class="small">Choose Open on TV. The TV is read only and updates on its own. Lock as TV keeps that browser on TV views until someone presses Unlock.</p></details><details class="qa"><summary>Why is a ward's count marked stale?</summary></details><details class="qa"><summary>What does "pulled" mean?</summary></details></div>
+  <div class="row" style="gap:8px"><span class="btn">${ic("help", 14)} Take the tour</span><span class="btn">Keyboard shortcuts</span></div></div>` +
+            popFoot(`<span class="xs muted">Ward Flow guide · updated 28 Oct</span>`),
+        });
+
+      PAGES.p_shortcuts = () =>
+        withPop("capacity", {
+          kind: "modal",
+          label: "Keyboard shortcuts",
+          style: "width:min(640px,94%)",
+          html:
+            popHead("grid", "Keyboard shortcuts", "Press ? on any screen to see these again") +
+            `<div class="pop-b"><div class="ks">${[
+              [
+                "Find",
+                [
+                  ["/", "Search from the header"],
+                  ["Ctrl K", "Search, even with single-key shortcuts off"],
+                ],
+              ],
+              [
+                "Open",
+                [
+                  ["Shift T", "Alerts (Tasks on some desks)"],
+                  ["Shift A", "Activity"],
+                  ["Shift R", "New referral"],
+                ],
+              ],
+              [
+                "Move around",
+                [
+                  ["[", "Fold the side menu to icons, or open it"],
+                  ["J  K", "Next and previous row on lists"],
+                  ["Esc", "Close what is open, or step back"],
+                ],
+              ],
+            ]
+              .map(
+                ([h, rows]) =>
+                  `<div><span class="kicker">${h}</span>${rows
+                    .map(
+                      ([k, d]) =>
+                        `<div class="ks-r">${k
+                          .split("  ")
+                          .map((x) => `<span class="kbd">${x}</span>`)
+                          .join(" ")}<span class="small">${d}</span></div>`,
+                    )
+                    .join("")}</div>`,
+              )
+              .join("")}</div></div>` +
+            popFoot(`<a class="link">More in Help</a>`, `<span class="btn">Close</span>`),
+        });
+
+      PAGES.p_demo = () =>
+        withPop("capacity", {
+          kind: "pop",
+          label: "Demo",
+          style: "top:56px;left:440px;width:400px",
+          clear: true,
+          html:
+            popHead("gear", "Demo", "Scenario, role and clock · synthetic data only") +
+            `<div class="pop-b">
+  <div><span class="kicker">Scenario</span><div class="grid2">${["Standard day", "Scarce beds", "EMHS surge", "Quiet day", "Winter surge", "ED crisis", "WA-like network"].map((s, i) => `<span class="opt ${i ? "" : "on"}">${s}${i ? "" : '<span class="xs muted">Loaded</span>'}</span>`).join("")}</div></div>
+  <div><span class="kicker">See it as</span><div class="grid2">${["Bed coordinator", "Site bed manager", "Nurse in charge", "ED clinician", "Community clinician", "Transport officer", "Executive", "Access admin"].map((s, i) => `<span class="opt ${i ? "" : "on"}">${s}</span>`).join("")}</div></div>
+  <div class="row" style="justify-content:space-between"><span class="small">Demo clock <b class="mono">10:42</b></span><span class="row" style="gap:6px"><span class="btn sm">+15 min</span><span class="btn sm">+1 hour</span><span class="btn sm">${ic("clock", 13)} Pause</span></span></div></div>` +
+            popFoot(
+              `<span class="btn sm ghost">Reset demo</span>`,
+              `<span class="btn sm">Save to file</span><span class="btn sm">Load from file</span>`,
+            ),
+        });
+
+      PAGES.p_menu = () =>
+        withPop("capacity", {
+          kind: "sheet",
+          label: "Menu",
+          html:
+            `<span class="grab"></span>` +
+            popHead("users", "Bed coordinator", "Dr S. Chen · go to a desk") +
+            `<div class="pop-b">${search("Go to a page or patient", 300)}
+  <div><span class="kicker">Act now and overdue</span><div class="tl2">${[
+    ["bad", "Act-now alerts", 3],
+    ["warn", "At a time limit", 2],
+    ["warn", "Discharges held up", 5],
+  ]
+    .map(
+      ([t, a, n]) =>
+        `<div class="tl2-i">${tone(t)}<span class="small strong" style="flex:1">${a}</span><span class="tag">${n}</span></div>`,
+    )
+    .join("")}</div></div>
+  <div><span class="kicker">Bed coordinator</span><div class="tl2">${[
+    ["home", "Home", ""],
+    ["bed", "Capacity", 26],
+    ["swap", "Movements", 70],
+    ["filter", "Waiting", 62],
+    ["siren", "All EDs", ""],
+    ["inbox", "Referrals", 7],
+    ["clip", "Handover", ""],
+  ]
+    .map(
+      ([i, a, n]) =>
+        `<div class="tl2-i">${ic(i, 16)}<span class="small" style="flex:1">${a}</span>${n ? `<span class="tag mono">${n}</span>` : ""}</div>`,
+    )
+    .join("")}</div></div>
+  <a class="link">More pages: places, work, reports and reference</a></div>`,
+        });
+
+      PAGES.p_create = () =>
+        withPop("capacity", {
+          kind: "sheet",
+          label: "Create",
+          html:
+            `<span class="grab"></span>` +
+            popHead("plus", "Create", "Start something new") +
+            `<div class="pop-b"><span class="btn pri" style="height:48px">${ic("inbox", 16)} New referral</span>
+  <div class="tl2">${[
+    ["clock", "Log a delay", "Choose the patient, then the reason"],
+    ["bed", "Update a bed", "Open, close or hold a bed"],
+    ["users", "Add a patient", "New record with a UMRN"],
+  ]
+    .map(
+      ([i, a, b]) =>
+        `<div class="tl2-i"><span class="pop-i">${ic(i, 15)}</span><div class="cell" style="flex:1"><div class="t small">${a}</div><div class="s">${b}</div></div>${ic("chev", 14)}</div>`,
+    )
+    .join("")}</div></div>`,
+        });
+
+      PAGES.p_bedsheet = () =>
+        withPop("capacity", {
+          kind: "modal",
+          label: "Bed meeting sheet",
+          style: "width:min(980px,96%);top:24px",
+          html:
+            popHead(
+              "print",
+              "Morning bed meeting · all services",
+              "As at Thu 29 Oct 10:42 · synthetic, not a record of any real day",
+              `<span class="btn sm pri">${ic("print", 13)} Print sheet</span>`,
+            ) +
+            `<div class="pop-b"><div class="bs-k">${[
+              ["Ready now", "26", "of 304 · 7 locked"],
+              ["Waiting in ED", "62", "5 over 24 hours"],
+              ["Due out today and tomorrow", "53", "5 releases held up"],
+              ["Pulled", "17", "1 expired"],
+            ]
+              .map(
+                ([a, b, c]) =>
+                  `<div><span class="xs muted">${a}</span><b class="num">${b}</b><span class="xs muted">${c}</span></div>`,
+              )
+              .join("")}</div>
+  <div class="cols c-2" style="gap:16px"><div><span class="kicker">Waiting in emergency departments</span>${gl(
+    "minmax(0,1fr) 60px 70px",
+    null,
+    [
+      ["Armadale ED", 22, "7d 1h"],
+      ["Rockingham ED", 8, "2d 14h"],
+      ["Peel ED", 8, "1d 5h"],
+      ["SJGM ED", 6, "15h 53m"],
+      ["Joondalup ED", 6, "12h 11m"],
+      ["Royal Perth ED", 5, "13h 24m"],
+    ].map(
+      ([a, b, c]) =>
+        `<div class="gr" style="min-height:34px;padding-inline:0"><span class="small">${a}</span><b class="num small right">${b}</b><span class="mono xs right">${c}</span></div>`,
+    ),
+  )}</div>
+  <div><span class="kicker">Held-up releases, today and tomorrow</span>${gl(
+    "minmax(0,1fr) minmax(0,1.2fr)",
+    null,
+    [
+      ["Dabakarn", "Awaiting accommodation"],
+      ["Mental Health Unit", "Awaiting transport"],
+      ["Moodjar", "Awaiting receiving-service acceptance"],
+      ["SJGS Adult Secure", "Awaiting clean"],
+      ["BTY Adult Secure", "Awaiting transport"],
+    ].map(
+      ([a, b]) =>
+        `<div class="gr" style="min-height:34px;padding-inline:0"><span class="small strong">${a}</span><span class="small warn-ink">${tone("warn")} ${b}</span></div>`,
+    ),
+  )}
+  <span class="kicker" style="display:block;margin-top:12px">Top delays</span>${gl(
+    "minmax(0,1fr) 40px 70px",
+    null,
+    [
+      ["Waiting on the bed coordinator", 40, "7d 1h"],
+      ["Awaiting a ward's answer", 7, "6h 40m"],
+      ["Awaiting transport", 12, "14h 01m"],
+    ].map(
+      ([a, b, c]) =>
+        `<div class="gr" style="min-height:34px;padding-inline:0"><span class="small">${a}</span><b class="num small right">${b}</b><span class="mono xs right">${c}</span></div>`,
+    ),
+  )}</div></div></div>` +
+            popFoot(
+              `<span class="xs muted">The print copy carries this preparation time.</span>`,
+              `<span class="btn">Close</span>`,
+            ),
+        });
+
+      PAGES.p_movement = () =>
+        withPop("movements", {
+          kind: "drawer",
+          label: "Movement",
+          style: "width:480px",
+          html:
+            popHead("swap", "Cadwaller, Rhys", "UM100046 · adult · male", `${tier(1)}<a class="link">Patient</a>`) +
+            `<div class="pop-b">
+  <div class="note"><span>${tri}</span><span><b>Bed pull expired 10m ago.</b> BTY Adult Secure is still held. Move the patient or release the bed.</span></div>
+  <div class="stp">${["Referred", "Review", "Accepted", "Pulled", "Handover", "Moving"].map((s, i) => `<span class="${i < 3 ? "done" : i === 3 ? "on" : ""}">${s}</span>`).join("")}</div>
+  <div class="kv"><span>From</span><b>SJGM ED</b><span>To</span><b>BTY Adult Secure</b><span>Waited</span><b class="mono">6h 50m</b><span>Legal</span><b>Form 4C · due 15:42 as typed</b><span>Transport</span><b>Not recorded</b><span>Escort</span><b>Provider organising secure transport</b></div>
+  <div><span class="kicker">Next step</span><div class="row" style="gap:8px;margin-top:6px"><span class="btn pri">Release pulled bed</span><span class="btn">Log transport</span><span class="btn ghost">More ${ic("down", 12)}</span></div></div>
+  <details class="how"><summary>Acceptance conditions</summary><p>Accepted with no conditions recorded. Add a condition from the movement record.</p></details></div>` +
+            popFoot(`<span class="xs muted">Opened 03:52</span>`, `<span class="btn">Open full record</span>`),
+        });
+
+      PAGES.p_dossier = () =>
+        withPop("ward", {
+          kind: "drawer",
+          label: "Bed 08",
+          style: "width:460px",
+          html:
+            popHead(
+              "bed",
+              "Bed 08 · Ferrowmoor, Alaric",
+              "25 y · female · 1 to 3 months",
+              `<span class="muted">${ic("back", 15)} ${ic("chev", 15)}</span>`,
+            ) +
+            `<div class="pop-b">
+  <div class="bs-k" style="grid-template-columns:repeat(4,1fr)">${[
+    ["Stay", "34 days"],
+    ["Legal", "Not recorded"],
+    ["Going out", "2 days past"],
+    ["Observation", "General"],
+  ]
+    .map(([a, b]) => `<div><span class="xs muted">${a}</span><b class="small">${b}</b></div>`)
+    .join("")}</div>
+  <div class="note"><span>${tri}</span><span><b>Ready to leave, waiting for accommodation.</b> The ward's expected date passed on Tue 27 Oct.</span></div>
+  ${seg(["Overview", "Plan to leave", "Timeline"])}
+  <div class="kv"><span>Record</span><b class="mono">UM500000</b><span>Region</span><b>South West · 3 hours or more</b><span>Diagnosis, as recorded</span><b>Schizophrenia, schizotypal and delusional disorders (F20–F29)</b><span>Admitted</span><b>09:12, 34 days ago</b></div>
+  <div><span class="kicker">Do next</span><div class="row" style="gap:8px;margin-top:6px"><span class="btn pri">Update blocker</span><span class="btn">Record that they have left</span><span class="btn ghost">More ${ic("down", 12)}</span></div><span class="xs muted">More: mark at an ED, move to another bed, raise a ward referral, change observation level.</span></div></div>` +
+            popFoot(`<a class="link">Patient page</a>`, `<span class="btn">Close</span>`),
+        });
+
+      PAGES.p_confirm = () =>
+        withPop("ward", {
+          kind: "modal",
+          label: "Confirm capacity",
+          style: "width:min(560px,94%)",
+          html:
+            popHead("check", "Confirm Dabakarn's beds", "Last confirmed 10:22 · writes to Dabakarn only") +
+            `<div class="pop-b">
+  <div class="bs-k">${[
+    ["Staffed beds", "20"],
+    ["In use", "18 · 90%"],
+    ["Ready", "1"],
+    ["Pulled", "2"],
+  ]
+    .map(([a, b]) => `<div><span class="xs muted">${a}</span><b class="num">${b}</b></div>`)
+    .join("")}</div>
+  <div class="kv"><span>Closed, not offered</span><b>1 bed</b><span>Change since last confirmed</span><b>None</b></div>
+  <div class="row" style="gap:12px;align-items:flex-end"><label class="cell" style="flex:1"><span class="small strong">Free beds you can take now</span><span class="stepbox" style="margin-top:6px"><span>−</span><b class="num">1</b><span>+</span></span></label><a class="link">Review today's expected discharges (3)</a></div></div>` +
+            popFoot(
+              `<span class="btn ghost">Cancel</span>`,
+              `<span class="btn">Confirm with morning numbers</span><span class="btn pri">Confirm 1 free bed</span>`,
+            ),
+        });
+
+      PAGES.p_edmenu = () =>
+        withPop("edboard", {
+          kind: "pop",
+          label: "Patient actions",
+          clear: true,
+          style: "top:430px;right:24px;width:300px",
+          html: `<div class="mn"><div class="mn-h"><b class="small">Slateridge, Margery</b><span class="xs muted">T3 · 1d 5h in ED</span></div>
+  ${[
+    [
+      "Record",
+      [
+        ["Record examination", 1],
+        ["Record outcome", 1],
+      ],
+    ],
+    [
+      "Referral",
+      [
+        ["Refer to a ward", 1],
+        ["Refer to a community team", 1],
+        ["Change urgency", 1],
+      ],
+    ],
+    [
+      "Patient",
+      [
+        ["View patient record", 1],
+        ["Edit presentation", 1],
+        ["Change legal status", 1],
+        ["Withdraw", 1],
+      ],
+    ],
+  ]
+    .map(
+      ([h, items]) =>
+        `<span class="kicker">${h}</span>${items.map(([a]) => `<span class="mn-i">${a}</span>`).join("")}`,
+    )
+    .join("")}
+  <details class="how" style="padding:6px 10px"><summary>Not available yet (3)</summary><p>Mark handover ready, Transport booked and No transport needed need a ward to accept first.</p></details></div>`,
+        });
+
+      PAGES.p_transport = () =>
+        withPop("edboard", {
+          kind: "modal",
+          label: "Log transport booking",
+          style: "width:min(620px,94%)",
+          html:
+            popHead(
+              "truck",
+              "Log the transport booking",
+              "Ridgeholt, Bramwen · PEEL ED → SJGM Adult Open · booked by phone",
+            ) +
+            `<div class="pop-b">
+  <div class="note"><span>${tone("warn")}</span><span><b>3 answers left:</b> provider, estimated time, escort. <a class="link">Go to the first</a></span></div>
+  <div class="form4" style="grid-template-columns:1fr 1fr">${[
+    ["Who is collecting", "Choose a provider"],
+    ["CAD transport number", "Read it off the call"],
+  ]
+    .map(([a, b]) => `<label><span class="small strong">${a}</span><span class="inp">${b}</span></label>`)
+    .join("")}</div>
+  <div class="row" style="gap:12px;align-items:flex-end"><label><span class="small strong">Estimated pick-up</span><span class="inp" style="width:120px">HH:MM</span></label>${seg(["Today", "Tomorrow"])}<span class="row" style="gap:6px">${["Now", "+15", "+30", "+1h"].map((x) => `<span class="btn sm">${x}</span>`).join("")}</span></div>
+  <div class="cols c-2" style="gap:12px"><div><span class="small strong">Escort needed?</span>${seg(["Escort required", "No escort"], -1)}</div><div><span class="small strong">Transport</span>${seg(["Voluntary", "Involuntary"], 0)}<div class="xs muted" style="margin-top:4px">Filled in from the recorded legal status. Change it if the call said otherwise.</div></div></div></div>` +
+            popFoot(
+              `<span class="btn ghost">Cancel</span>`,
+              `<span class="btn pri" style="opacity:.55">Save booking</span>`,
+            ),
+        });
+
+      PAGES.p_broadcast = () =>
+        withPop("alerts", {
+          kind: "drawer",
+          label: "Broadcast",
+          style: "width:460px",
+          html:
+            popHead("bell", "Broadcast a network alert", "Synthetic directive for the chosen desks") +
+            `<div class="pop-b">
+  <label><span class="small strong">Start from</span>${sel("Demo: metro HDU full")}</label>
+  <div class="cols c-2" style="gap:10px"><label><span class="small strong">Severity</span>${sel("Critical")}</label><label><span class="small strong">Expires</span>${sel("In 4 hours")}</label></div>
+  <label><span class="small strong">Send to</span>${sel("All inpatient wards and ED desks · 32 desks")}</label>
+  <label><span class="small strong">Title</span><span class="inp">Demo: HDU full, check discharges</span></label>
+  <label><span class="small strong">Message <span class="muted mono" style="font-weight:400">134 of 280</span></span><span class="inp" style="height:72px;align-items:flex-start;padding-top:8px">Demo alert. Not a live broadcast. Metropolitan HDU is shown full in this prototype. Check morning discharges and step-down candidates.</span></label>
+  <div><span class="kicker">Each desk will see</span><div class="box" style="margin-top:6px"><b class="small">${tri} Demo: HDU full, check discharges</b><div class="xs muted">Critical · expires in 4h 00m</div></div></div>
+  <label class="row small" style="gap:8px"><span class="chk"></span>I confirm this directive is clinically authorised for immediate statewide broadcast.</label></div>` +
+            popFoot(
+              `<span class="xs muted">Dispatched by the state bed desk coordinator</span>`,
+              `<span class="btn ghost">Cancel</span><span class="btn pri" style="opacity:.55">Send</span>`,
+            ),
+        });
+
+      PAGES.p_form = () =>
+        withPop("legal", {
+          kind: "modal",
+          label: "Record a form",
+          style: "width:min(520px,94%)",
+          html:
+            popHead("clip", "Record a form", "Use the time written on the paper form") +
+            `<div class="pop-b">
+  <label><span class="small strong">Movement</span>${sel("Choose a person on an open move")}</label>
+  <label><span class="small strong">Form</span>${sel("Choose a form type")}</label>
+  <div class="cols c-2" style="gap:10px"><label><span class="small strong">Time on the form</span><span class="inp">HH:MM</span></label><label><span class="small strong">Date on the form</span><span class="inp">dd/mm/yyyy</span></label></div>
+  <span class="xs muted">Leave the date blank for today. Ward Flow shows the time exactly as written and works out nothing from it.</span></div>` +
+            popFoot(
+              `<span class="btn ghost">Clear</span>`,
+              `<span class="btn pri" style="opacity:.55">Save form</span>`,
+            ),
+        });
+
       const GROUND =
-        "Drawn from screenshots of the running app at main bbce856 on 28 October 2026, with open pull requests #1111, #1112, #1114, #1115 and #1116 merged in locally, so their fixes (for example the forecast and wallboard fitting at 1280) are the starting point. #1109 (Help) conflicts with them and does not change these pages. Synthetic data only. The 48-hour figure on Capacity is illustrative.";
+        "Drawn from screenshots of the running app at main bbce856 on 28 and 29 October 2026, with open pull requests #1111, #1112, #1114, #1115 and #1116 merged in locally, so their fixes (for example the forecast and wallboard fitting at 1280) are the starting point. #1109 (Help) conflicts with them, so the Help popup was drawn from its own preview of #1109 on main. Synthetic data only. The 48-hour figure on Capacity is illustrative.";
       const d = (t) => `<span class="dev-tag">${t}</span>`;
       const D = d("Desktop"),
         L = d("Laptop"),
@@ -5559,6 +8580,467 @@
         keep: "The Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line and Export.",
       };
 
+      /* Review notes for the remaining pages and the popups. */
+      const N = (role, issues, fixes, keep) => ({ role, issues, fixes, keep });
+
+      NOTES.alerts = N(
+        "Every alert on the network, ordered by urgency, with the selected alert's detail and action beside the list.",
+        [
+          `${D} <b>The "Checking" strip shows 13 counters</b>, most of them 0, across two lines of the header.`,
+          `${D} <b>Five identical "Transport awaiting departure" rows</b>, each with its own Chase transport button.`,
+          `${D} The Highlight chips run off the panel ("Maali (Wa…").`,
+          `${D} <b>The detail pane has two release buttons</b>: a dashed "Release pulled bed for Cadwaller, Rhys" and a separate "Release", plus an empty "More actions" box.`,
+          `${Ph} Forecast rows are cut off ("Open adult short tomo…").`,
+        ],
+        [
+          `The checks become one dashed chip: "6 checks raised · 7 clear".`,
+          `<b>Same-kind alerts group into one row</b> ("Transport awaiting departure · 5 people") with one Chase all button.`,
+          `The Highlight chips become an Owner menu.`,
+          `<b>One Release button</b>, greyed until a reason is chosen, with a line saying why. Acknowledge, Snooze and More sit on one row.`,
+        ],
+        "Now, Broadcast, Notices and History; Urgency, Lanes and Owner views; Notify me; Copy for handover.",
+      );
+
+      NOTES.legal = N(
+        "Every Mental Health Act form on an open move, with its typed due time, for the coordinator to keep track of.",
+        [
+          `${D} <b>Long form titles wrap onto two or three lines</b> ("Order authorising reception and detention in an authorised hospital for further examination").`,
+          `${D} <b>All 27 "No time written" rows show at once</b>, each with Add the time, about 2,300 pixels in total.`,
+          `${D} "Copy for handover" and "Record and tell 67" look like figures in the header row.`,
+        ],
+        [
+          `The form number stays in its tag and the name is shortened ("Referral for examination"). The full title is in the record.`,
+          `Groups show their first rows with "Show more".`,
+          `The header separates figures (chips) from actions (buttons).`,
+          `<b>Times show only as typed</b> ("11:42 · 58m", "typed due time"), and nothing is worked out from them (D5, D-70).`,
+        ],
+        'The "Not legally checked" notice stays word for word, as D-77 requires until you decide on it. Clocks, Checklist and History are kept.',
+      );
+
+      NOTES.outofarea = N(
+        "People placed away from their home region, how long they have been away, and their plan to return.",
+        [
+          `${A} <b>Names are written first name first</b> ("Alaric Ferrowmoor"), unlike every other page.`,
+          `${D} The header strip "▮ no change away ▮ no change date passed" is hard to read.`,
+          `${D} The checking strip says "Other records without home area or travel time 200", which is not about this list.`,
+          `${D} The Home regions panel repeats each region's ward rows from the table.`,
+        ],
+        [
+          `<b>Surname first</b>, as everywhere else.`,
+          `"Since the 08:30 bed meeting" becomes a small panel: returned, left, due soon.`,
+          `The header shows the day bands as chips, plus "Discharge date passed" and "No return plan" as checks.`,
+          `Home regions becomes a bar chart that highlights its rows when chosen.`,
+        ],
+        "Away now and History, the Days away, Region and Name orders, and Plan next return.",
+      );
+
+      NOTES.oncall = N(
+        "Who to call right now, for every hospital, team and state line, with the fallback if nobody answers.",
+        [
+          `${D} <b>Seven service-line cards fill a third of the header</b>, each repeating "Until 20:00".`,
+          `${D} The filter chips wrap onto two lines, and the service legend sits separately in the table.`,
+          `${D} The page is the right shape. Its problems are mostly density.`,
+        ],
+        [
+          `Service lines become a compact strip that shrinks to the most-used lines on laptop and phone.`,
+          `Filters sit on one row, and the service colours become a switch at its end.`,
+          `The detail pane shows the line's status, both numbers, the email and the escalation order, with Copy buttons.`,
+        ],
+        "Cover at Now, 22:00, 03:00 and so on, My list, Copy who is on, the downtime card and every mock number.",
+      );
+
+      NOTES.seclusion = N(
+        "An operational view of seclusion rooms, restraint in use and recent incidents, by ward.",
+        [
+          `${D} <b>A narrow 850-pixel column</b> in the middle of a wide screen.`,
+          `${D} <b>It shows one ward at a time</b>, picked from a dropdown, so you cannot see which secure ward has a room in use.`,
+          `${D} "In use now: 0" sits above the ward picker and does not say which ward it means.`,
+        ],
+        [
+          `<b>A table of every secure ward's room status</b> (available, in use, out of service, not recorded).`,
+          `Choosing a ward opens its record-and-incident form beside the table.`,
+          `The header counts rooms in use, available, out of service and not recorded.`,
+        ],
+        "The operational-only notice, word for word. Nothing works out an order length or a legal limit.",
+      );
+
+      NOTES.governance = N(
+        "Overrides, refused actions and record access from this session, for a governance lead to review.",
+        [
+          `${D} <b>The review pane says "Choose an event" until you click</b>, so half the page is empty on arrival.`,
+          `${D} The Review column is cut off at the right edge ("Unre…"), and the What column cuts off ("Open discharge re…").`,
+          `${D} The table ends a third of the way down, with blank space below.`,
+        ],
+        [
+          `<b>The pane opens on the newest event</b>, with its details, a note and Mark reviewed / Needs follow-up.`,
+          `The columns fit, and the outcome shows with a tick, cross or circle.`,
+          `Review, Gaps by site, Audit trail, Registers and Reports move into the header as tabs.`,
+        ],
+        'The review count, PIR chronology, and "Safety incidents are not recorded here".',
+      );
+
+      NOTES.tv = N(
+        "The read-only wall screen for the bed meeting: the five figures that matter and the tables behind them.",
+        [
+          `${D} <b>The "Beds ready now" tile holds four lines of small text</b>, which the room cannot read.`,
+          `${D} Longest ED waits writes names first name first and as red links.`,
+          `${D} The Brief panel is a block of small text, with a large gap under the service table.`,
+          `${Ph} Phone shows "needs a larger screen" (correct and kept).`,
+        ],
+        [
+          `<b>Each tile is one big figure and one short line.</b> Act now and Watch tags stay.`,
+          `Three equal tables (By health service, Beds that fit, Longest ED waits), with surname first.`,
+          `The Brief is four short lines in larger type.`,
+        ],
+        "Change screen, Full screen, Lock as TV and Leave TV view; the read-only footer.",
+      );
+
+      NOTES.agenda = N(
+        "The list of people the bed meeting should discuss, with actions carried to the next meeting.",
+        [
+          `${D} <b>A narrow 850-pixel column</b>, five lists stacked one under another, about 2,000 pixels long.`,
+          `${D} <b>About 20 identical "Add action" buttons</b>, one on every row.`,
+          `${A} Names are first name first ("Verity Oakendell").`,
+        ],
+        [
+          `<b>Two columns of four lists</b> that fit on one screen.`,
+          `Each row has a small "+ Action" link, with urgency marks beside it.`,
+          `The header counts each list, with Bed meeting sheet and Start meeting.`,
+        ],
+        "The four lists and Actions from earlier meetings.",
+      );
+
+      NOTES.downtime = N(
+        "A frozen snapshot of beds, ED queue, pending moves and legal forms, to print if the system goes down.",
+        [
+          `${D} <b>All four tables show in one 8,800-pixel page</b> on screen.`,
+          `${D} The section buttons look like tags, not tabs.`,
+        ],
+        [
+          `On screen, <b>one section shows at a time</b>, with tabs and counts. The print copy still holds all four.`,
+          `Service rows act as group headers, and ready counts are marked in green.`,
+        ],
+        "New snapshot, Print or save PDF, the freeze time and the save-location advice.",
+      );
+
+      NOTES.chronology = N(
+        "A post-incident review timeline for one patient, built from recorded times only.",
+        [
+          `${D} <b>Empty until a patient is picked</b>, with two "Choose a patient" controls (a dropdown and a button) and a blank page.`,
+        ],
+        [
+          `<b>A large search box in the header</b>, and a "Recently opened" list so the common case is one click.`,
+          `A short panel says what a chronology holds.`,
+        ],
+        "Recorded and typed times only; nothing is calculated.",
+      );
+
+      NOTES.places = N(
+        "A directory of every ward, ED and community team, with beds ready and when each was last confirmed.",
+        [
+          `${D} <b>All 96 places are listed at once</b>, about 2,700 pixels.`,
+          `${D} Bed counts wrap onto two lines ("2 ready · 2 pulled · 3 closed of 24 beds").`,
+          `${A} It overlaps with Capacity's bed map and All wards. Not checked: whether you want all three kept.`,
+        ],
+        [
+          `<b>Search first</b>, in the header. Services after the first two collapse, and EDs and teams collapse into one row each.`,
+          `Beds show as a row of squares (one per bed) with the bed total underneath.`,
+          `A stale count says so on its row.`,
+        ],
+        "All, Wards, EDs and Teams; Service and Most ready orders; stars; At a glance and Needs a check.",
+      );
+
+      NOTES.community = N(
+        "The directory of community team names, which team covers a suburb, and names that read alike.",
+        [
+          `${D} <b>The heading "64 names"</b> does not say what the names are.`,
+          `${D} <b>The A to Z list scrolls inside a fixed box</b>, leaving blank page below it.`,
+          `${D} The suburb lookup, the most common task, sits in the side column.`,
+        ],
+        [
+          `Heading: "64 community teams", with a short line on where the names come from.`,
+          `<b>Suburb lookup moves to a full-width bar at the top</b>, with the "two teams cover Barragup" warning and buttons for each team.`,
+          `The A to Z list uses the page scroll, with letter headings.`,
+        ],
+        "Names that read alike, Teams by service, Catchment guide and Raise referral.",
+      );
+
+      NOTES.team = N(
+        "One community team's page: its caseload, who is in a bed, how to reach the team and who is on duty.",
+        [
+          `${D} <b>Names and UMRNs are set in bold monospace</b>, unlike every other page.`,
+          `${D} <b>The same nine people appear in two tables</b> ("In a bed" and "Admitted while already with the team").`,
+          `${D} Nine large "Open record" buttons, and "This table scrolls sideways on narrow screens" written under each table.`,
+          `${D} How to reach carries four lines of disclaimer.`,
+        ],
+        [
+          `<b>One table</b> that holds both: days in the bed, time with the team before the bed, and time since acceptance.`,
+          `Names in the normal font, UMRN in mono. The whole row opens the record.`,
+          `The disclaimers become one footnote line.`,
+          `The tabs (Sent, Waiting answer, In a bed, Expected back, Caseload) move into the header.`,
+        ],
+        "Worth attention, On duty today, Record contact, CTO register and Refer from team.",
+      );
+
+      NOTES.patient = N(
+        "One person's journey: where they are, what blocks the move, why they came, their legal status and who to call. Movement records open the same screen.",
+        [
+          `${D} <b>"Journey so far" is an almost empty bar</b> labelled "7h 3m", with "stage times not recorded".`,
+          `${D} The left column ends after two links, leaving a large gap beside the right column's four panels.`,
+          `${A} The Movement address opens the same screen titled "Patient", which is correct but not obvious.`,
+        ],
+        [
+          `<b>Journey so far becomes a timeline of what was recorded</b> (opened, asked 3 wards, examination, escalation, declines), newest first.`,
+          `The "Cannot move yet" blocker shows the three checks side by side with one action each.`,
+          `Why, Legal now and Who to call sit in the right column.`,
+        ],
+        'The 7-step stepper, the tabs, Copy handover, and "Every figure on this screen is invented".',
+      );
+
+      NOTES.addpatient = N(
+        "Create a new synthetic patient record from identity alone, after checking for a duplicate.",
+        [
+          `${D} <b>The duplicate check has its own panel</b> that holds only instructions until you type.`,
+          `${D} Both finish buttons are dashed when unavailable, so they read as placeholders.`,
+        ],
+        [
+          `The duplicate check sits under the identity fields and runs as you type.`,
+          `Buttons are greyed, not dashed, with "Needed: UMRN, date of birth, given and family name" beside them.`,
+        ],
+        "Identity only (D-77), optional gender and Aboriginal status, Recently added.",
+      );
+
+      NOTES.answer = N(
+        "The ward's page for answering bed requests and confirming its free beds.",
+        [
+          `${D} With nothing to answer, a full-width panel says so in one sentence.`,
+          `${D} The census grid shows bed numbers without saying which are ready or pulled.`,
+        ],
+        [
+          `"All answered" becomes a one-line notice.`,
+          `Census squares are coloured by state (ready, pulled, closed), with a legend.`,
+          `Confirm your beds keeps its number control and Confirm button.`,
+        ],
+        'Recent answers, and "writes to this ward only".',
+      );
+
+      NOTES.settings = N(
+        "The coordinator's rules (timings, targets, warnings, forecast alerts), display options and profile.",
+        [
+          `${D} <b>"Save to apply" looks like a button</b> but is a label. There is no save bar to show unsaved changes.`,
+          `${D} The Profile and shift tab is almost empty (two lines).`,
+          `${D} Number controls are large pills with the value floating.`,
+        ],
+        [
+          `<b>A sticky save bar</b> at the bottom: unsaved changes, Discard, Save rules and Full audit.`,
+          `Compact number steppers, with the range under each rule's name and where it shows on the right.`,
+          `The tabs move into the header. Profile and shift should join Display. Not mocked: that tab's contents.`,
+        ],
+        'Standard and Surge, every rule and range, "your defaults, not clinical standards".',
+      );
+
+      NOTES.signin = N(
+        "Pick a role, catchment and shift to preview the prototype. No account is created and there is no password field.",
+        [
+          `${D} No clear "go" button: the choice applies as you click, so nothing confirms it.`,
+          `${D} Role numbers 1 to 7 sit in boxes that look like buttons.`,
+        ],
+        [
+          `<b>An "Open as Bed coordinator" button</b> at the end of the choices.`,
+          `The number boxes go. The actions count stays.`,
+        ],
+        "No input fields, the right-hand action list with ticks and crosses, and the synthetic notice.",
+      );
+
+      NOTES.scompare = N(
+        "Wards and EDs ranked against each other, with the network mean marked.",
+        [`${D} <b>"Open a unit" repeats the menu</b> as a full grid of 22 ward buttons.`],
+        [
+          `Open a unit becomes a search button in the statistics tab row, as on the main Statistics mockup.`,
+          `Both charts show the first eight with "Show all", and mark wards more than 1 SD above the mean.`,
+        ],
+        "Chart and Data, the measure switches, Pinned wards and CSV.",
+      );
+
+      NOTES.slist = N(
+        "Every ward (or ED, team or service) in one sortable table. One template serves all four lists.",
+        [
+          `${D} The page works well. The ward list is long and the filter chips wrap onto two lines.`,
+          `${A} <b>The Teams list is nearly empty</b>: 63 of 64 teams show "Nobody in a bed".`,
+        ],
+        [
+          `Filter chips on one row. Services after the first two collapse with "Show more".`,
+          `On the Teams list, teams with nobody in a bed should fold into one "63 teams with nobody in a bed" row. Not mocked separately.`,
+        ],
+        "Every column and the By service and One list views.",
+      );
+
+      NOTES.sunit = N(
+        "One ward's statistics: bed map by length of stay, discharges, referrals and the admission roster. The ED, team and service pages share the frame.",
+        [
+          `${D} <b>Bed map tiles are large</b> and show only a day count, taking two rows for 18 beds.`,
+          `${D} The right column ends early, leaving a large blank beside Length of stay.`,
+        ],
+        [
+          `Smaller tiles, nine to a row; long stays are shaded darker.`,
+          `The right column holds Beds now, Discharge planning and Referrals into this ward, so both columns end together.`,
+        ],
+        "Change ward and the next and previous arrows, Export the figures, the roster with CSV.",
+      );
+
+      NOTES.sweekly = N(
+        "The weekly operations report for the pilot measures.",
+        [
+          `${D} <b>"Paper tally" and "Incident route" are set in large monospace</b>, as if they were figures.`,
+          `${D} "Not known" is shown the same way, as a big value.`,
+          `${D} Empty Declines and Overrides take two full cards each saying "None recorded".`,
+        ],
+        [
+          `<b>Measures counted outside Ward Flow sit in their own small panel</b>, as plain words.`,
+          `"Not enough history yet" is a sentence, not a figure.`,
+          `Declines and overrides share one card. Pilot measures become one table.`,
+        ],
+        "The week picker, Print, the period line and every measure.",
+      );
+
+      NOTES.p_alerts = N(
+        "The Alerts drawer: the alerts on every page, without leaving it.",
+        [
+          `${D} <b>Every row has a filled primary button</b> (six "Chase transport" in a row).`,
+          `${D} Names are first name first ("Rhys Cadwaller").`,
+        ],
+        [
+          `<b>Only the most urgent row gets a filled button.</b> Same-kind alerts group ("Transport awaiting departure · 5").`,
+          `Surname first.`,
+        ],
+        "Open Alerts, Acknowledge visible, and the All, Act now and Waiting filters.",
+      );
+      NOTES.p_activity = N(
+        "Activity: what has happened recently on the network.",
+        [`${A} <b>Rows lead with the UMRN</b> ("UM100023 escalated…"), so you cannot see who it is.`],
+        [`<b>Rows lead with the person's name</b>, then what happened.`, `A footer link goes to Alerts history.`],
+        "Search and the category filters.",
+      );
+      NOTES.p_tools = N(
+        "Tools: quick tasks and look-ups from any page.",
+        [
+          `${D} Every row has a chevron or a drop-down arrow, with no difference in meaning.`,
+          `${D} No search for a long list.`,
+        ],
+        [`Three groups (Do now, Look up, Print and share), with a search box.`],
+        "Change view and every tool.",
+      );
+      NOTES.p_search = N(
+        "Search across people, movements and referrals from the header.",
+        [`${D} The panel is good. With no text typed, the right half holds only a New referral button.`],
+        [
+          `Results on the left and a preview of the chosen person on the right, with Open patient and Open referral.`,
+          `Keyboard hints in the footer.`,
+        ],
+        "The All, People, Movements and Referrals tabs and Full patient search.",
+      );
+      NOTES.p_help = N(
+        "Help for the current desk and screen. Drawn from open pull request #1109's version.",
+        [
+          `${D} <b>Before #1109 there were two search boxes</b> ("Search Help" and "Ask a question"). #1109 already merges them.`,
+          `${D} A long questions list, every answer open.`,
+        ],
+        [
+          `One search box that also takes questions. Answers fold open one at a time.`,
+          `Take the tour and Keyboard shortcuts as buttons at the end.`,
+        ],
+        "Your desk, This screen, Glossary and What's new.",
+      );
+      NOTES.p_shortcuts = N(
+        "The keyboard shortcuts list.",
+        [`${D} <b>Keys and descriptions alternate down one column</b>, so it is hard to scan.`],
+        [`<b>Three columns</b> (Find, Open, Move around), each key beside its description.`],
+        "Every shortcut.",
+      );
+      NOTES.p_demo = N(
+        "Demo controls: scenario, role and clock.",
+        [`${D} A tall panel with a long explanatory paragraph.`],
+        [`Two grids (Scenario, See it as), the clock on one row, and Save and Load in the footer.`],
+        "All 7 scenarios and every role (D-77).",
+      );
+      NOTES.p_menu = N(
+        "The phone menu sheet.",
+        [`${Ph} Good. It carries the full nav list as well as the act-now shortcuts.`],
+        [`Act now and overdue first, then the desk's own pages, then a "More pages" link.`],
+        "Search and every page.",
+      );
+      NOTES.p_create = N(
+        "The phone Create sheet behind the + button.",
+        [`${Ph} Good. Only the order of the three secondary actions could be clearer.`],
+        [`New referral as the main button, then Log a delay, Update a bed and Add a patient.`],
+        "Everything.",
+      );
+      NOTES.p_bedsheet = N(
+        "The printable morning bed meeting sheet.",
+        [`${D} <b>Two columns of plain text lists</b> with no headline figures.`],
+        [`<b>Four headline figures</b>, then two tables (ED waits, held-up releases) and Top delays.`],
+        "Print sheet and the preparation time on the print copy.",
+      );
+      NOTES.p_movement = N(
+        "A movement's drawer, opened from the worklist.",
+        [`${D} <b>Opens on an "Add a condition" form</b>, while the urgent fact (the pull expired) is further down.`],
+        [
+          `<b>The urgent fact first</b>, then the stage bar, the key facts, and one main Next step.`,
+          `Acceptance conditions fold away.`,
+        ],
+        "Open full record.",
+      );
+      NOTES.p_dossier = N(
+        "One bed's record from the ward page.",
+        [
+          `${D} <b>Six or more action buttons</b> (Record that they have left, Update blocker, Mark at an ED, Move to another bed, Raise ward referral…).`,
+        ],
+        [
+          `<b>One main action</b> plus one secondary, with the rest under More.`,
+          `A notice says why the person has not left.`,
+        ],
+        "The four headline facts, the tabs and Patient page.",
+      );
+      NOTES.p_confirm = N(
+        "Confirm the ward's capacity figures.",
+        [`${D} <b>The number to confirm comes before the facts</b>, which are a monospace capital-letter list.`],
+        [`<b>Facts first</b> as four tiles, then the free-bed control, then Confirm.`],
+        "Writes to this ward only; Confirm with morning numbers.",
+      );
+      NOTES.p_edmenu = N(
+        "The actions menu on an ED board row.",
+        [`${D} <b>About 15 items</b>, several greyed with "Needs a ward to accept first".`],
+        [
+          `Only the actions you can take now, in three groups. Unavailable ones fold into "Not available yet (3)", with the reason.`,
+        ],
+        "Every action.",
+      );
+      NOTES.p_transport = N(
+        "Log a transport booking made by phone.",
+        [`${D} Good. The "3 answers left" summary sits at the bottom.`],
+        [
+          `"3 answers left" moves to the top, with a link to the first. Save booking stays greyed until all are answered.`,
+        ],
+        "All fields and the legal-status prefill.",
+      );
+      NOTES.p_broadcast = N(
+        "Broadcast a network alert to chosen desks.",
+        [`${D} Good. A long form in a narrow drawer.`],
+        [
+          `Severity and Expires side by side, and a preview of what each desk will see. Send stays greyed until the confirmation is ticked.`,
+        ],
+        "The confirmation wording and every field.",
+      );
+      NOTES.p_form = N(
+        "Record a Mental Health Act form from the paper copy.",
+        [`${D} Good. The form type comes before the movement, which reverses the natural order.`],
+        [
+          `<b>Movement first</b>, then the form, then the time and date as written.`,
+          `One line: the time is shown as written and nothing is worked out from it.`,
+        ],
+        "No legal period is calculated (D5, D-70).",
+      );
+
       const SHOTS = {};
       /* Viewer: page picker, device frame, current-app comparison, review notes. */
       const ORDER = [
@@ -5590,6 +9072,75 @@
             ["discharges", "Discharges"],
             ["wards", "All wards"],
             ["statistics", "Statistics"],
+          ],
+        ],
+        [
+          "Reference",
+          [
+            ["alerts", "Alerts"],
+            ["legal", "Legal forms"],
+            ["outofarea", "Out of area"],
+            ["oncall", "On-call"],
+            ["seclusion", "Seclusion"],
+            ["governance", "Governance"],
+          ],
+        ],
+        [
+          "Bed meeting and reports",
+          [
+            ["tv", "Bed meeting TV"],
+            ["agenda", "Meeting agenda"],
+            ["downtime", "Downtime pack"],
+            ["chronology", "Chronology"],
+          ],
+        ],
+        [
+          "Places and records",
+          [
+            ["places", "Places"],
+            ["community", "Community"],
+            ["team", "Community team"],
+            ["patient", "Patient record"],
+            ["addpatient", "Add a patient"],
+            ["answer", "Ward answer"],
+            ["settings", "Settings"],
+            ["signin", "Sign in"],
+          ],
+        ],
+        [
+          "Statistics pages",
+          [
+            ["scompare", "Compare"],
+            ["slist", "Ward list"],
+            ["sunit", "One ward"],
+            ["sweekly", "Weekly"],
+          ],
+        ],
+        [
+          "Popups and drawers",
+          [
+            ["p_alerts", "Alerts drawer"],
+            ["p_activity", "Activity"],
+            ["p_tools", "Tools"],
+            ["p_search", "Search"],
+            ["p_help", "Help"],
+            ["p_shortcuts", "Shortcuts"],
+            ["p_demo", "Demo menu"],
+            ["p_menu", "Phone menu"],
+            ["p_create", "Create"],
+          ],
+        ],
+        [
+          "Page popups",
+          [
+            ["p_bedsheet", "Bed meeting sheet"],
+            ["p_movement", "Movement drawer"],
+            ["p_dossier", "Bed record"],
+            ["p_confirm", "Confirm beds"],
+            ["p_edmenu", "ED actions"],
+            ["p_transport", "Log transport"],
+            ["p_broadcast", "Broadcast"],
+            ["p_form", "Record a form"],
           ],
         ],
       ];
