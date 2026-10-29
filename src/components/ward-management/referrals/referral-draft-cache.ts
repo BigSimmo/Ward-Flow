@@ -168,21 +168,20 @@ export function forgetReferrerContact(): void {
   referralDraftMemory.lastReferrer = null;
 }
 
-/** Content hashes of the charts seen lately, so each file is read once, not on every keystroke. */
-const chartHashes = new Map<string, string>();
+/** Cache only while the attachment object is reachable; discarded file text is not a module key. */
+const chartHashes = new WeakMap<object, { base64: string; hash: string }>();
 
-/** FNV-1a over the whole base64 text, cached by the text. A replaced file always hashes anew. */
-function chartHash(base64: string): string {
-  const known = chartHashes.get(base64);
-  if (known !== undefined) return known;
+/** FNV-1a over the whole text. Check content as well as identity so an edited object hashes anew. */
+function chartHash(base64: string, attachment: object): string {
+  const known = chartHashes.get(attachment);
+  if (known?.base64 === base64) return known.hash;
   let hash = 0x811c9dc5;
   for (let index = 0; index < base64.length; index += 1) {
     hash ^= base64.charCodeAt(index);
     hash = Math.imul(hash, 0x01000193);
   }
   const text = (hash >>> 0).toString(36);
-  if (chartHashes.size >= 16) chartHashes.delete(chartHashes.keys().next().value!);
-  chartHashes.set(base64, text);
+  chartHashes.set(attachment, { base64, hash: text });
   return text;
 }
 
@@ -190,13 +189,13 @@ function chartHash(base64: string): string {
  * H-0364 (code quality audit): the draft as text for the dirty check and the autosave compare,
  * with each chart's file content reduced to its length and a hash of the whole content. A chart
  * can be up to 8 MB of base64, and the whole draft was stringified on every keystroke. Each file
- * is hashed once and then looked up. Autosave still keeps the full draft; only the comparison
- * text is smaller. A different file, even one with the same name, size and ending, reads as a change.
+ * is hashed once per retained attachment object while its content is unchanged. Autosave still
+ * keeps the full draft; only the comparison text is smaller. A different file, even one with the same name, size and ending, reads as a change.
  */
 export function draftFingerprint(draft: unknown): string {
-  return JSON.stringify(draft, (key, value: unknown) =>
-    key === "base64" && typeof value === "string" ? `${value.length}:${chartHash(value)}` : value,
-  );
+  return JSON.stringify(draft, function (this: object, key, value: unknown) {
+    return key === "base64" && typeof value === "string" ? `${value.length}:${chartHash(value, this)}` : value;
+  });
 }
 
 /** How long after the last keystroke the draft is kept. */
