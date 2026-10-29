@@ -1,0 +1,33 @@
+/* Waiting, redesigned: the daily check as one notice line. */
+.checkLine {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: color-mix(in srgb, var(--wf-info) 8%, var(--wf-surface));
+  box-shadow: var(--wf-e1);
+}
+.checkRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+}
+.checkIcon {
+  flex: none;
+  color: var(--wf-ink-2);
+}
+.checkText {
+  flex: 1 1 320px;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-1);
+}
+.checkList {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
