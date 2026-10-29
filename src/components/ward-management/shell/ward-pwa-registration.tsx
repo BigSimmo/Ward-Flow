@@ -106,6 +106,7 @@ export function WardPwaRegistration() {
     let reloadRequested = false;
     let offered: ServiceWorker | null = null;
     let noticeId: string | null = null;
+    const lifecycle = new AbortController();
 
     const offer = (registration: ServiceWorkerRegistration, worker: ServiceWorker | null) => {
       // Only an update waits: a first install has no active worker yet and takes over at once.
@@ -144,13 +145,19 @@ export function WardPwaRegistration() {
           toastRef.current?.push({ tone: "warning", duration: 0, ...PHONE_ALERTS_MOVED_NOTICE });
         });
         if (!registration || cancelled) return;
-        offer(registration, registration.waiting);
-        registration.addEventListener("updatefound", () => {
+        const watchInstalling = () => {
           const installing = registration.installing;
-          installing?.addEventListener("statechange", () => {
+          if (!installing) return;
+          const onStateChange = () => {
             if (installing.state === "installed") offer(registration, registration.waiting ?? installing);
-          });
-        });
+          };
+          installing.addEventListener("statechange", onStateChange, { signal: lifecycle.signal });
+          onStateChange();
+        };
+        registration.addEventListener("updatefound", watchInstalling, { signal: lifecycle.signal });
+        // updatefound may have fired before register() resolved. Watch that update too.
+        watchInstalling();
+        offer(registration, registration.waiting);
       } catch {
         // No worker (private mode, blocked, or offline at first load): Ward Flow works without one.
       }
@@ -158,6 +165,7 @@ export function WardPwaRegistration() {
 
     return () => {
       cancelled = true;
+      lifecycle.abort();
       container.removeEventListener("controllerchange", onControllerChange);
       container.removeEventListener("message", onMessage);
     };

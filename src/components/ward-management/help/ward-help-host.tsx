@@ -17,6 +17,7 @@ const WardTour = dynamic(() => import("./ward-tour").then((m) => m.WardTour));
 const WardShowMe = dynamic(() => import("./ward-show-me").then((m) => m.WardShowMe));
 const WardTourAutoStart = dynamic(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart));
 const WardShortcutsSheet = dynamic(() => import("./ward-shortcuts-sheet").then((m) => m.WardShortcutsSheet));
+const WardHelpHints = dynamic(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints));
 const WardWhatsNew = dynamic(() => import("./ward-whats-new").then((m) => m.WardWhatsNew));
 
 type Open = { view: HelpView; ask?: string } | { showMe: string };
@@ -59,6 +60,7 @@ export function WardHelpHost() {
     <>
       <WardTourAutoStart onStart={startTour} />
       <WardWhatsNew />
+      <WardHelpHints />
     </>
   ) : null;
 }
