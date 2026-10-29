@@ -37,6 +37,12 @@ describe("printable Help guides from the app's content", () => {
     for (const id of ["executive", "admin", "tv"])
       expect(sheets.find((sheet) => sheet.id === id)?.shortcuts.join()).not.toContain("Shift+R");
   });
+  it("omits executive task shortcuts without changing other desks or TV", () => {
+    expect(sheets.find((sheet) => sheet.id === "executive")?.shortcuts.join()).not.toContain("Shift+T");
+    for (const id of ["coordinator", "ward", "ed"])
+      expect(sheets.find((sheet) => sheet.id === id)?.shortcuts.join()).toContain("Shift+T");
+    expect(sheets.find((sheet) => sheet.id === "tv")?.shortcuts).toEqual(["Esc: Close what is open, or step back."]);
+  });
   it("regenerates every committed printable document without a diff", async () => {
     expect(await writeCheatSheets(path.resolve("public/help"), sheets, true)).toBe(9);
   });

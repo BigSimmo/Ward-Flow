@@ -20,7 +20,10 @@ export function printHelpGuides() {
       limits: guide?.limits ?? [role.summary],
       legend: COLOUR_LEGEND.map((item) => `${item.shape}: ${item.meaning.toLocaleLowerCase("en-AU")}.`),
       shortcuts: KEYBOARD_SHORTCUTS.filter((key) =>
-        role.id === "tv" ? key.keys === "Esc" : key.keys !== "Shift+R" || ROLE_SCREENS[role.id]["referral-new"],
+        role.id === "tv"
+          ? key.keys === "Esc"
+          : (role.id !== "executive" || key.keys !== "Shift+T") &&
+            (key.keys !== "Shift+R" || ROLE_SCREENS[role.id]["referral-new"]),
       ).map((key) => `${key.keys}: ${key.action}`),
     };
   });
