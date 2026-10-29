@@ -9,6 +9,11 @@ export type MockupScreen = {
   group: string;
   /** The app address this page replaces once approved. */
   appPath: string;
+  /**
+   * The address the shell is told it is on, when that differs from `appPath`. New referral uses
+   * the board's, so the app bar does not open its own slide-out over the redesigned one.
+   */
+  shellPath?: string;
   /** Pages that draw without the app's rail and header (the TV, sign in, print packs). */
   bare?: boolean;
 };
@@ -32,7 +37,13 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
   { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
   { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/ward-flow/referrals" },
-  { slug: "new-referral", label: "New referral", group: "Coordinator", appPath: "/ward-flow/referrals/new" },
+  {
+    slug: "new-referral",
+    label: "New referral",
+    group: "Coordinator",
+    appPath: "/ward-flow/referrals/new",
+    shellPath: "/ward-flow/referrals",
+  },
   { slug: "handover", label: "Handover", group: "Coordinator", appPath: "/ward-flow/handover" },
   { slug: "ward", label: "My ward", group: "Desks", appPath: "/ward-flow/ward/rph-adult-secure" },
   { slug: "stays", label: "Stays and discharges", group: "Desks", appPath: "/ward-flow/board/rph-adult-secure" },

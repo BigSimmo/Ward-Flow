@@ -31,7 +31,7 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
   const Page = MOCKUP_PAGES[slug];
   if (!inBrowser || !screen) return null;
   const page = Page ? <Page openOnLoad={pop ?? undefined} /> : <NotDrawnYet label={screen.label} />;
-  return screen.bare ? page : <PreviewShell appPath={screen.appPath}>{page}</PreviewShell>;
+  return screen.bare ? page : <PreviewShell appPath={screen.shellPath ?? screen.appPath}>{page}</PreviewShell>;
 }
 
 function NotDrawnYet({ label }: { label: string }) {

@@ -1,0 +1,39 @@
+/* New referral, redesigned: the calmer Catchment card. */
+.catchmentStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.catchmentFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+.confirmEnd.confirmEnd {
+  margin: 0;
+  margin-inline-start: auto;
+}
+.reopen {
+  position: fixed;
+  inset-inline-end: var(--wf-s-4);
+  inset-block-end: var(--wf-s-4);
+  z-index: 10;
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  font: inherit;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}

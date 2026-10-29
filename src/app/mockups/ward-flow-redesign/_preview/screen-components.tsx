@@ -5,6 +5,7 @@ import type { ComponentType } from "react";
 import { CapacityRedesign } from "@/components/ward-redesign/capacity/capacity-redesign";
 import { EdIndexRedesign } from "@/components/ward-redesign/eds/eds-redesign";
 import { HomeRedesign } from "@/components/ward-redesign/home/home-redesign";
+import { NewReferralRedesign } from "@/components/ward-redesign/new-referral/new-referral-redesign";
 import { ReferralsRedesign } from "@/components/ward-redesign/referrals/referrals-redesign";
 import { MovementsRedesign } from "@/components/ward-redesign/movements/movements-redesign";
 import { WaitingRedesign } from "@/components/ward-redesign/waiting/waiting-redesign";
@@ -21,4 +22,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   waiting: WaitingRedesign,
   eds: EdIndexRedesign,
   referrals: ReferralsRedesign,
+  "new-referral": NewReferralRedesign,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
