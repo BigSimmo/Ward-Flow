@@ -74,7 +74,8 @@ async function firstStepLit(page: Page, id: string): Promise<boolean> {
   }).toPass({ timeout: 30_000 });
   await page.waitForLoadState("networkidle");
   const lit = await expect
-    .poll(() => page.getByTestId("ward-show-me-spot").count(), { timeout: 8_000 })
+    // Show me may first open another screen; a cold page takes a while to draw on a dev server.
+    .poll(() => page.getByTestId("ward-show-me-spot").count(), { timeout: 20_000 })
     .toBe(1)
     .then(
       () => true,
@@ -92,7 +93,7 @@ for (const device of ["desk", "phone"] as const) {
 
     for (const [name, desk] of Object.entries(DESKS)) {
       test(`${name} tasks light the first control they name`, async ({ page }) => {
-        test.setTimeout(240_000);
+        test.setTimeout(420_000);
         await signIn(page, desk);
         const dark: string[] = [];
         for (const id of LIT[device][name] ?? []) {

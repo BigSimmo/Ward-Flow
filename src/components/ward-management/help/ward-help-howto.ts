@@ -54,8 +54,8 @@ export type HowTo = {
   readonly answer: string;
   /** The desks that do this job. Others still find it, under "Done by another desk". */
   readonly desks: readonly WardTourRole[] | "all";
-  /** Where it is done: "home" (the desk's own home), a rail entry id, or "settings#<tab>". */
-  readonly go?: string;
+  /** Where it is done: "home" (the desk's own home), a rail entry id, or "settings#<tab>"; several in order. */
+  readonly go?: string | readonly string[];
   readonly showMe?: readonly ShowMeStep[];
   /**
    * The controls are drawn on a computer only (the phone screen has no such button), so a phone is
@@ -411,7 +411,8 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Use On TV on a ward's home, or Open on TV on Capacity for the bed meeting. Open the link on the TV's browser; it is read only and shows names in full.",
     desks: ["coordinator", "ward", "bed_manager"],
-    go: "capacity",
+    // Capacity's Open on TV for the desks that open Capacity; a ward's own page has its own.
+    go: ["capacity", "home"],
     computerOnly: true,
     showMe: [
       {
