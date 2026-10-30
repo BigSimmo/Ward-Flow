@@ -222,7 +222,12 @@ function rowTiming(
     };
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    return { value: durMinutes(now - movement.legalForm.dueAt), state: "Overdue", tone: "danger", stateTone: "danger" };
+    // Josh, 30 Oct 2026: the typed due time only, never a running figure (D-70).
+    return {
+      state: `Due ${formatInstantWithDay(movement.legalForm.dueAt, now)} as typed · Not legally checked`,
+      tone: "danger",
+      stateTone: "danger",
+    };
   }
   if (movement && /transport/i.test(item.title) && movement.transport?.acceptedAt !== undefined) {
     return {

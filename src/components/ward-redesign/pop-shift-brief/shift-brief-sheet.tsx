@@ -245,7 +245,9 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
           reader scanning a column takes the first words of each row, so a qualification at the end is
           the half that gets skipped. Both states are stated; silence would leave a reader unable to
           tell "nobody wrote one down" from "this sheet does not show them". */}
-        <p className={styles.rowLine}>
+        {/* Josh, 30 Oct 2026: tentative diagnoses stay on screen but never print (privacy: the paper
+            leaves the room). */}
+        <p className={`${styles.rowLine} ${mock.screenOnly}`}>
           {person.tentativeDiagnosis !== null
             ? `Tentative diagnosis: ${person.tentativeDiagnosis}.`
             : "Tentative diagnosis: none recorded."}
