@@ -32,6 +32,7 @@ export const MOCKUP_BASE = "/mockups/ward-flow-redesign";
 
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
+  { slug: "home-activity", label: "Home and Activity", group: "Coordinator", appPath: "/ward-flow" },
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
   { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
@@ -120,6 +121,7 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-capacity-ward", label: "Capacity ward panel", group: "Page popups", over: "capacity", pop: "ward" },
   { slug: "pop-movement", label: "Movement drawer", group: "Page popups", over: "movements", pop: "movement" },
   { slug: "pop-forecast-sheet", label: "Phone bed forecast", group: "Page popups", over: "capacity", pop: "forecast" },
+  { slug: "pop-home-activity", label: "Activity panel", group: "Page popups", over: "home-activity", pop: "activity" },
 ];
 
 /** Prefix routes: any address under these opens the one example drawn for them. */

@@ -16,6 +16,16 @@ import { mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";
 
+/** The app bar's and the phone dock's Activity buttons. */
+const ACTIVITY_TRIGGERS = '[data-testid="ward-bar-activity-trigger"], [data-testid="ward-phone-menu-activity"]';
+
+/**
+ * A page that draws its own Activity panel (the Home and Activity mock-up) marks itself with this
+ * attribute; the shell then sends this event instead of opening the bar's own drawer.
+ */
+const OWN_ACTIVITY_PANEL = "[data-mockup-activity-panel]";
+const OPEN_ACTIVITY_EVENT = "wf-mockup:open-activity";
+
 /**
  * Preview only. Draws a redesigned page inside the app's own rail and header, so the mock-up is
  * judged in the real chrome rather than a copy of it. The shell finds its active page, title and
@@ -43,6 +53,13 @@ export function PreviewShell({ appPath, children }: { appPath: string; children:
   }, [realRouter, toast]);
 
   const keepLinksInMockups = (event: MouseEvent<HTMLDivElement>) => {
+    // Mock-up only: the Activity button opens the page's redesigned panel when the page has one.
+    if ((event.target as Element).closest?.(ACTIVITY_TRIGGERS) && document.querySelector(OWN_ACTIVITY_PANEL)) {
+      event.preventDefault();
+      event.stopPropagation();
+      window.dispatchEvent(new Event(OPEN_ACTIVITY_EVENT));
+      return;
+    }
     const anchor = (event.target as Element).closest?.("a[href]");
     if (!anchor || event.defaultPrevented) return;
     const href = anchor.getAttribute("href") ?? "";

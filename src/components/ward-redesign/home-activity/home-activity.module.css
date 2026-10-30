@@ -1,0 +1,511 @@
+/* Home and Activity, redesigned (mock-up). The rest of Home uses today's Home styles. */
+.muted {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.empty {
+  margin: 0;
+  padding: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+.plainList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.personLink {
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+}
+/* The name opens the record; the whole row is its target. */
+.personLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.personLink:hover {
+  text-decoration: underline;
+}
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.textButton:hover {
+  text-decoration: underline;
+}
+.textButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+/* The hero's changes chip. */
+.changesChip b {
+  font-family: var(--wf-mono);
+}
+
+/* Two-line rows (Planned, Changes): who and when, then what. */
+.twoLine {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "glyph who time"
+    ". what what";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.twoLine:first-child {
+  border-top: 0;
+}
+/* A target row (Planned): amber glyph and a thin amber edge. */
+.twoLine[data-kind="target"] {
+  box-shadow: inset 3px 0 0 var(--wf-warning);
+}
+.rowGlyph {
+  grid-area: glyph;
+}
+.rowWho {
+  grid-area: who;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowTime,
+.rowTimeStrong {
+  grid-area: time;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.rowTimeStrong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.rowWhat {
+  grid-area: what;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  line-height: 18px;
+  color: var(--wf-ink-2);
+}
+.rowKind {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.alertTag {
+  display: inline-block;
+  margin-inline-start: var(--wf-s-2);
+  padding: 0 6px;
+  border-radius: var(--wf-r-tag);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.alertTag {
+  background: var(--wf-act-tint);
+  color: var(--wf-danger-ink);
+}
+.afterShift {
+  padding: 6px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.afterShift + .twoLine {
+  border-top: 0;
+}
+.listFoot {
+  padding: var(--wf-s-1) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Activity panel: one title row, compact segmented tabs, sticky header and foot. */
+.panelHeader.panelHeader {
+  padding-top: var(--wf-s-3);
+  padding-bottom: 0;
+}
+.panelTitle.panelTitle {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+}
+/* The Sheet's header-bottom slot bleeds left but stops short on the right, so the tabs widen to
+ * the header's full width themselves. */
+.panelTabs {
+  width: calc(100% + 2rem);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+.panelTabs > * {
+  width: 100%;
+}
+@media (min-width: 40rem) {
+  .panelTabs {
+    width: calc(100% + 2.5rem);
+    padding-inline: 20px;
+  }
+}
+.panelClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wf-h-md);
+  height: var(--wf-h-md);
+  margin: -6px -8px -6px 0;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.panelClose:hover {
+  background: var(--wf-hover);
+}
+.panelClose:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.panelBody {
+  padding: 0;
+}
+.panelFooter.panelFooter {
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+}
+.metaLine {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.metaLink {
+  color: var(--wf-accent-ink);
+}
+.arrived {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0 var(--wf-s-4) var(--wf-s-2);
+  padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.changeGroup h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.groupCount {
+  font-family: var(--wf-mono);
+  letter-spacing: 0;
+  color: var(--wf-ink-2);
+}
+.reviewFoot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+.reviewed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.reviewNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: center;
+  color: var(--wf-ink-3);
+}
+.tally {
+  margin-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+.tally summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.tallyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+.tallyTile {
+  display: flex;
+  flex-direction: column;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.tallyTile b {
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.chips {
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+}
+.eventRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 40px;
+  padding: 6px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: 18px;
+}
+.eventText {
+  color: var(--wf-ink-1);
+  text-decoration: none;
+}
+a.eventText::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+a.eventText:hover {
+  text-decoration: underline;
+}
+
+/* Notices: unread dot, source and time on one line, the message under it. */
+.noticeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.noticeRow {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "dot source time"
+    ". text action";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.unreadDot {
+  grid-area: dot;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+}
+.noticeSource {
+  grid-area: source;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.noticeText {
+  grid-area: text;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: 18px;
+  color: var(--wf-ink-2);
+}
+.noticeRow .textButton {
+  grid-area: action;
+  align-self: end;
+}
+.earlier {
+  border-top: 1px solid var(--wf-line);
+}
+.earlier summary {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+.earlierTime {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.noticeRead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  padding: 6px var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* Phone: compact rows that keep 48px targets without growing taller. */
+@media (max-width: 48rem) {
+  .textButton {
+    margin: -14px -8px;
+    padding: 14px 8px;
+  }
+  .tally summary,
+  .earlier summary,
+  .eventRow {
+    min-height: 48px;
+  }
+  .panelTabs [role="tab"] {
+    min-height: 48px;
+  }
+  .panelClose {
+    width: 48px;
+    height: 48px;
+  }
+  .twoLine {
+    min-height: 48px;
+  }
+
+  /* The three list tabs share one row with the More button, each at least 48px tall. */
+  .switchRow.switchRow {
+    flex-wrap: nowrap;
+  }
+  .viewSwitch.viewSwitch {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: auto;
+  }
+  .viewSwitch.viewSwitch > * {
+    flex: 1 1 auto;
+    min-height: 48px;
+    padding-inline: 8px;
+  }
+
+  /*
+   * My List on a phone (Josh, 30 Oct 2026): two lines per row. Line 1 is the name with the wait on
+   * the right; line 2 is where, then the status as a tag. The whole row stays the open target (the
+   * title's own cover), with a chevron. Scoped to this mock-up; today's rows are unchanged.
+   */
+  .compactList [class*="_phoneRow__"] {
+    align-items: center;
+    min-height: 0;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    row-gap: 0;
+  }
+  .compactList [class*="_phoneRowText__"] {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    row-gap: 2px;
+  }
+  .compactList [class*="_phoneRowText__"] > :nth-child(2) {
+    order: -1;
+    flex: 1 0 100%;
+    white-space: nowrap;
+  }
+  .compactList [class*="_phoneRowText__"] > :nth-child(2) [class*="_name__"] {
+    font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+  .compactList [class*="_phoneRowText__"] > :nth-child(3) {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] {
+    order: 2;
+    flex: 0 1 auto;
+    max-width: 72%;
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-tag);
+    background: var(--wf-surface);
+    font: 600 var(--wf-fs-12) / 18px var(--wf-font);
+  }
+  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .compactList [class*="_phoneRowText__"] > :nth-child(4) {
+    order: 3;
+    flex: 1 0 100%;
+  }
+  .compactList [class*="_phoneRowEnd__"] {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+  .compactList [class*="_phoneRowEnd__"]::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid var(--wf-ink-3);
+    border-bottom: 1.5px solid var(--wf-ink-3);
+    transform: rotate(-45deg);
+  }
+}

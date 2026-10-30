@@ -6,6 +6,7 @@ import { CapacityRedesign } from "@/components/ward-redesign/capacity/capacity-r
 import { EdIndexRedesign } from "@/components/ward-redesign/eds/eds-redesign";
 import { HandoverRedesign } from "@/components/ward-redesign/handover/handover-redesign";
 import { HomeRedesign } from "@/components/ward-redesign/home/home-redesign";
+import { HomeActivityPage } from "@/components/ward-redesign/home-activity/home-activity-page";
 import { NewReferralRedesign } from "@/components/ward-redesign/new-referral/new-referral-redesign";
 import { ReferralsRedesign } from "@/components/ward-redesign/referrals/referrals-redesign";
 import { MovementsRedesign } from "@/components/ward-redesign/movements/movements-redesign";
@@ -49,6 +50,7 @@ export type MockupPageProps = { openOnLoad?: string };
 export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps>>> = {
   capacity: CapacityRedesign,
   home: HomeRedesign,
+  "home-activity": HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingRedesign,
   eds: EdIndexRedesign,

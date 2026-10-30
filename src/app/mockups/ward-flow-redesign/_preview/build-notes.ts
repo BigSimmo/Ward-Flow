@@ -251,6 +251,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** Beds that fit as a small table (bed type by now and tomorrow), and the Checking line folded into one header chip that opens it.",
     "**Phone:** Registers and Alerts history sit under one More button beside the list tabs.",
   ],
+  "home-activity": [
+    "**Built from a copy of today's Home (with the approved Home changes)**, so the hero, Beds that fit, Placement for the person you choose, every row action and the Waiting queue work as now.",
+    "**New:** three lists, My List, Waiting and Planned. Planned is the rest of the shift in time order from times the records hold (pull time limits, planned moves, expected discharges), then later today. The header says once that targets are yours, not clinical standards; target rows carry an amber edge. No legal time is counted down.",
+    "**New:** a changes chip in the hero opens Activity on Changes; the app bar's Activity button opens the same panel. Activity has Changes, Recent activity and Notices, compact two-line rows, and the live tally folded at the end.",
+    "**New:** review is explicit and covers only the lines shown, with Undo. Opening or closing marks nothing; alerts, tasks and notices stay as they are. On a phone, My List rows are two lines with the wait on the right.",
+    "**Kept:** change lines come from today's \"since you looked\" comparison, recent events from the bar's Activity feed, and Mark read from the bar's own notice action.",
+    "**Mock-up only:** the demo opens as if you last reviewed at 09:30 (the count is read from the records since then), and Notices shows three sample notices because no notice reaches the bed coordinator in the synthetic world. The review resets on reload, and the pinned clock means a change arriving while Activity is open cannot be shown.",
+  ],
   capacity: [
     "**Figures:** every number comes from the derivations today's Capacity page uses (bed gaps, the network ward rows, the beds forecast and the forecast model). The 48-hour figure is now the real forecast, so it is no longer illustrative.",
     "**New components:** the mismatch cards with a range line, the full-width bed forecast with a 7-day bar chart and a By ward view, the bed map cards with one square per bed, and the side column.",
