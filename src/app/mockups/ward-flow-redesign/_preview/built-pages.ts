@@ -11,6 +11,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "ward",
   "stays",
   "ed-board",
+  "transport",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

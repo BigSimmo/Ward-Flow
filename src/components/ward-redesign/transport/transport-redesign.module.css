@@ -1,0 +1,28 @@
+/* Transport, redesigned. */
+
+/* Forms still to upload are marked, not only counted. */
+.missing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-warning-ink);
+}
+
+/* Columns sized so Next always fits: today's 7.5rem cuts "Arrived at ward" off at the edge. */
+.transport [class*="jobsTable"] th:nth-child(6) {
+  width: 9.5rem;
+}
+.transport [data-testid^="ward-officer-job-"] > td:nth-child(2) {
+  white-space: normal;
+}
+
+.transport [class*="formsCell"] {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+.transport [class*="formsCell"] > .missing {
+  flex-basis: 100%;
+}

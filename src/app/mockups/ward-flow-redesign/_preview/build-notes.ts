@@ -57,6 +57,11 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**To change in the real files once approved:** Medical clearance, Expects and Referred become chips on the board itself, which needs three new board filters; then the folded Lists can go.",
     '**Found while building:** the Lists write names first name first ("Noor Tremalow"). The board and D-83 put the surname first.',
   ],
+  transport: [
+    "**Built from a copy of today's Transport desk**, so Jobs and History, the escort and involuntary filters, both sort orders, the job panel, the forms pack and Copy handover all work as now.",
+    '**New:** names are surname first at every width (D-83). The title stays "Transport" (your ruling of 27 October), with "13 jobs open · 8 moving, 5 waiting" beside it instead of a repeated eyebrow.',
+    '**New:** routes read from first, then the ward ("PEEL → Maali (Ward 4.2)"), missing forms are marked under the count, and the Next column is wide enough that "Arrived at ward" is never cut off.',
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",
