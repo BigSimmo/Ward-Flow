@@ -15,7 +15,7 @@ export function noCountReleased(counts: readonly StatisticsCount[]): boolean {
 }
 
 /** Each row's label and its count as the desk may see it ("not shown", "fewer than 5", "none"). */
-export function CountList({
+function CountList({
   label,
   rows,
 }: {

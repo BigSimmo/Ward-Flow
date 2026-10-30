@@ -120,7 +120,7 @@ const ADMISSION_STAGE_LABELS: Record<AdmissionStagePosition, string> = {
  * written list of the four members: TypeScript requires every key of the union to be present, so a
  * fifth stage added to that type fails this file to compile rather than silently missing a row.
  */
-export function admissionStageTallies(
+function admissionStageTallies(
   admissions: Admission[],
 ): { position: AdmissionStagePosition; label: string; count: number }[] {
   const counts: Record<AdmissionStagePosition, number> = {
@@ -145,7 +145,7 @@ export function admissionStageTallies(
  * unit. "Ready" here is exactly the owner's ruling of 2026-09-04: `min(allocatable, empty)`, never a
  * different number wearing the same word (see `statistics-screen.tsx`'s own note on that ruling).
  */
-export function networkCapacity(
+function networkCapacity(
   units: Unit[],
   bedReleases: BedRelease[],
 ): { ready: number; empty: number; allocatable: number } {

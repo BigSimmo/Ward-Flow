@@ -4,32 +4,10 @@
 import type { ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 
-import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
+import { SrOnly, Stepper, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-redesign.module.css";
-
-/** One line under the band per tab: whether its changes wait for Save or apply at once. */
-export function ScopeLine({ kind }: { kind: "save" | "live" }) {
-  return (
-    <p className={styles.scopeLine}>
-      {kind === "save" ? (
-        // Not a checked chip: nothing is unsaved until a rule changes (device audit 11 Oct 2026).
-        <span className={styles.scopeTag}>Save to apply</span>
-      ) : (
-        <span className={styles.scopeTag}>
-          <StatusGlyph tone="success" size={8} />
-          Applies now
-        </span>
-      )}
-      <span>
-        {kind === "save"
-          ? "Rules change what every screen shows. Each save is recorded in the audit."
-          : "Preferences for this browser."}
-      </span>
-    </p>
-  );
-}
 
 /** A labelled setting: name and short line on the left, its control on the right. */
 export function SettingRow({

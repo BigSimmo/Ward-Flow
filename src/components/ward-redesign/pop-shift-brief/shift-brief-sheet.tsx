@@ -63,7 +63,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
  *  here so this component states exactly what it reads rather than importing a wider type and
  *  quietly gaining fields. Nothing in it identifies a person: the record holds no name, no date of
  *  birth and no bed, and the sheet must never look as though it does. */
-export type DailySheetPerson = {
+type DailySheetPerson = {
   key: string;
   days: number | null;
   /** Which day of the stay today is, arrival day = Day 1. An ORDINAL, unlike `days`. */
@@ -91,7 +91,7 @@ export type DailySheetPerson = {
   blockReason: string | null;
 };
 
-export type DailySheetGroups = {
+type DailySheetGroups = {
   /** Recorded as held up by something — `BED_RELEASE_BLOCKERS`, an owner-approved list about the
    *  BED, never about the person. */
   heldUp: DailySheetPerson[];
@@ -132,7 +132,7 @@ export type DailySheetGroups = {
  * already sorted soonest-expected-out first — a stable, total order, so the sheet does not
  * reshuffle between two prints of the same picture.
  */
-export function dailySheetGroups(people: readonly DailySheetPerson[]): DailySheetGroups {
+function dailySheetGroups(people: readonly DailySheetPerson[]): DailySheetGroups {
   return {
     heldUp: people.filter((person) => person.blockReason !== null),
     overdue: people.filter((person) => person.pastDate),
@@ -143,7 +143,7 @@ export function dailySheetGroups(people: readonly DailySheetPerson[]): DailyShee
 
 /** The sheet's person rows for one ward, from its occupied beds. Shared with the ward TV view so
  *  the two read the same rows. */
-export function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
+function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
   return admissionsForUnit(admissions, unitId)
     .filter(bedIsOccupied)
     .map((admission) => ({
@@ -171,7 +171,7 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
  * year and AWST on saved output. Standalone consumers retain the demonstration-day fallback
  * when no valid calendar origin is available. Never substitute the wall clock for this instant.
  */
-export function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; dayNote: string } {
+function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; dayNote: string } {
   const time = Number.isFinite(now)
     ? dayZero !== undefined && Number.isFinite(dayZero.getTime())
       ? formatSheetMoment(now, dayZero, { includeYearAndZone: true })
@@ -327,7 +327,7 @@ function outgoingTileLabel(basis: string): string {
   return /\s*today$/iu.test(basis) ? `${basis.replace(/\s*today$/iu, "")} free today` : `${basis} to free`;
 }
 
-export type WardDailySheetProps = {
+type WardDailySheetProps = {
   /** `sinceYesterday`, already scoped to this ward by the board. */
   movement?: { discharged: number; pulled: number; datesMoved: number };
   /** How many people are recorded as coming in — the board's own `buildIncoming` length, split by
@@ -396,7 +396,7 @@ function personFacts(person: DailySheetPerson): string {
   return `${person.sex}, ${person.homeRegion === null ? "home region not recorded" : `from ${person.homeRegion}`}`;
 }
 
-export function WardDailySheet({
+function WardDailySheet({
   movement,
   incomingPulled,
   incomingWaitlisted,
