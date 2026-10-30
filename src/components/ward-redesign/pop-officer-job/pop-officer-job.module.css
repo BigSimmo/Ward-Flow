@@ -1,0 +1,9 @@
+/* Officer job panel, light redesign over the desk's own panel. `display: contents` keeps the desk's layout. */
+.scope {
+  display: contents;
+}
+
+/* The four leg steps sit two by two, so "Arrived at ward" is never cut to "Arrived at w…". */
+.scope [data-testid="ward-officer-detail"] [class*="_actionRow__"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
