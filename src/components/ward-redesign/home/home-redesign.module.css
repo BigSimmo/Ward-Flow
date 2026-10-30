@@ -124,3 +124,9 @@
 .nextUp button {
   margin-top: var(--wf-s-2);
 }
+
+/* The disclosure footer keeps the page's side margin, as on every other page. */
+.footer.footer {
+  margin-inline: var(--wf-s-4);
+  width: auto;
+}

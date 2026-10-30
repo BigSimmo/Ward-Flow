@@ -74,6 +74,7 @@ import styles from "@/components/ward-management/coordinator/home.module.css";
 import { HomeEdPressure } from "@/components/ward-management/coordinator/home-ed-pressure";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
 import { BedsFitTable, PlacementNext } from "./home-parts";
+import redesign from "./home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
 import { PriorityQueue, type QueueHighlight } from "@/components/ward-management/coordinator/priority-queue";
@@ -932,7 +933,8 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
                   <HeroStat
                     inline
                     value={staleBedCounts + wardsNotReporting}
-                    label={`checks: ${staleBedCounts} stale bed ${staleBedCounts === 1 ? "count" : "counts"}, ${wardsNotReporting} ${wardsNotReporting === 1 ? "ward" : "wards"} not reporting`}
+                    // The chip says how many; opening it says which (it ran off a tablet's edge).
+                    label={staleBedCounts + wardsNotReporting === 1 ? "check to look at" : "checks to look at"}
                     tone={staleBedCounts + wardsNotReporting > 0 ? "warning" : undefined}
                     expanded={checksOpen}
                     onToggle={() => setChecksOpen((open) => !open)}
@@ -1220,6 +1222,7 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
         </div>
         <WardPrototypeFooter
           testId="ward-coordinator-governance"
+          className={redesign.footer}
           note={
             <>
               Demo coordinator view · Not approved for clinical use · Limited demo coverage: CAHS inpatient wards are

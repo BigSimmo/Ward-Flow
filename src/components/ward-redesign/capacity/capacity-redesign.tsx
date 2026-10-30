@@ -286,8 +286,17 @@ function CapacityHero({
               pressed={highlight === "open"}
               onToggle={() => onHighlight("open")}
             />
-            <HeroStat inline value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroStat inline value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
+            {/* Plain figures after the highlight chips, behind a hairline, so they do not read as
+                chips that fail to press. */}
+            <span className={styles.heroFigures}>
+              <HeroStat
+                inline
+                value={model.pulled}
+                label="Beds pulled"
+                tone={model.pulled > 0 ? "warning" : undefined}
+              />
+              <HeroStat inline value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
+            </span>
             {oldestCount ? (
               <HeroStat
                 inline

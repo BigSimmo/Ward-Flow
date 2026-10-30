@@ -104,7 +104,16 @@
 .heroStats {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: var(--wf-s-2);
+}
+.heroFigures {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  padding: 0 var(--wf-s-3);
+  border-inline: 1px solid var(--wf-hero-edge);
 }
 
 /* ── Where the mismatch is ── */
@@ -857,4 +866,17 @@
 /* The oldest-count jump sits at the right end of the hero's figures. */
 .heroJump {
   margin-inline-start: auto;
+}
+
+/* Planned admissions, reused unchanged: Book keeps its icon beside the word in the narrow column,
+   and each booking's facts wrap instead of ending in "…". */
+.footRow [data-testid="ward-planned-book"] {
+  flex: none;
+  flex-direction: row;
+  white-space: nowrap;
+}
+.footRow [data-testid^="ward-planned-"] [class*="_facts__"] {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
 }
