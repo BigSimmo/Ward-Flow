@@ -22,6 +22,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "on-call",
   "seclusion",
   "governance",
+  "bed-meeting-tv",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

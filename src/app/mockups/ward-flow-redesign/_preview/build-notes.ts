@@ -104,6 +104,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
     "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
   ],
+  "bed-meeting-tv": [
+    "**Built from a copy of today's bed meeting TV**, so Change screen, Full screen, Lock as TV, Leave TV view, the ward and ED screens, the live refresh and the read-only footer all work as now.",
+    '**New:** each tile is one big figure and one short line ("7 locked · 3 bed types short"). What the tiles used to add in small print (the ward count not confirmed, beds being made ready, referrals with no reply) is one line under the tiles, or under the controls on a TV.',
+    "**New (D-83):** Longest ED waits names people surname first. A long wait is marked with a red triangle instead of a red underline, which read as a link, in the waits list and the service table.",
+    "**New on a laptop or desktop:** By health service, Beds that fit and Longest ED waits as three equal tables, so the service table no longer runs the full width with an empty middle; then Waiting by cause beside the Brief, whose four lines sit two by two in larger type.",
+    "**On a TV:** today's 1080p layout (DR-02) is kept. With one-line tiles every panel, the Brief included, now shows in full on a 1080p screen; today's cuts the Brief off. Only the one-line footer sits just below.",
+    '**Kept:** the phone\'s "needs a larger screen" message, the Act now and Watch tags, and the read-only footer.',
+  ],
   governance: [
     "**Built from a copy of today's Governance workbench**, so the hero counts, the five header tabs (Review, Gaps by site, Audit trail, Registers, Reports), the filters, PIR chronology, Record review, Reviewed and Follow-up, and the phone layout all work as now.",
     "**Already done in today's screen:** the tabs moved into the header and outcomes show as a tick, cross or circle after the review was written, so those points needed no change.",
