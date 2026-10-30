@@ -1,5 +1,7 @@
 "use client";
 // Fork of src/components/ward-management/settings/settings-rows.tsx: a read-only rule shows its value as text.
+// Round 3: a rule away from its default says so, the row and stepper carry this folder's own classes
+// (no `[class*="_x__"]` overrides, which the shareable copy drops), and "Applies now" is plain words.
 
 import type { ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
@@ -17,7 +19,7 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
         // Not a checked chip: nothing is unsaved until a rule changes (device audit 11 Oct 2026).
         <span className={styles.scopeTag}>Save to apply</span>
       ) : (
-        <span className={styles.scopeTag}>
+        <span className={cx(styles.scopeTag, rx.scopeTagPlain)}>
           <StatusGlyph tone="success" size={8} />
           Applies now
         </span>
@@ -113,6 +115,8 @@ export function RuleRow({
   effect,
   usedBy,
   unavailableReason,
+  defaultValue,
+  defaultDisplay,
 }: {
   setting: string;
   title: string;
@@ -135,14 +139,20 @@ export function RuleRow({
   effect?: ReactNode;
   usedBy?: string;
   unavailableReason?: string;
+  /** Round 3: the default, so a rule away from it says "Default 24h" and Show changed only can find it. */
+  defaultValue?: number;
+  /** The default in words ("24h"). */
+  defaultDisplay?: string;
 }) {
   const changed = value !== saved;
+  const atDefault = defaultValue === undefined || value === defaultValue;
   return (
     <div
-      className={cx(styles.ruleRow, changed && styles.ruleChanged)}
+      className={cx(styles.ruleRow, rx.ruleRow, changed && styles.ruleChanged)}
       data-setting={setting}
       data-testid={testId}
       data-changed={changed || undefined}
+      data-at-default={atDefault}
     >
       <span className={styles.rowText}>
         <span className={styles.rowTitle}>{title}</span>
@@ -151,6 +161,7 @@ export function RuleRow({
         </span>
         <span className={styles.rangeWords} data-testid={range.id ? `${range.id}-range` : undefined}>
           Range {range.minLabel} to {range.maxLabel}
+          {!atDefault && defaultDisplay ? <span className={rx.defaultMark}> · Default {defaultDisplay}</span> : null}
         </span>
       </span>
       <span className={styles.resetCell}>
@@ -177,7 +188,7 @@ export function RuleRow({
           </span>
         ) : (
           <Stepper
-            className={styles.ruleStepper}
+            className={cx(styles.ruleStepper, rx.ruleStepper)}
             value={value}
             onChange={(next) => {
               if (!unavailableReason) onChange(next);

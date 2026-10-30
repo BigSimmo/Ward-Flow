@@ -366,6 +366,13 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["executive"],
   },
   {
+    slug: "as-executive-settings",
+    label: "Settings",
+    group: "As executive",
+    appPath: "/ward-flow/settings",
+    role: ROLE_DESKS["executive"],
+  },
+  {
     slug: "as-admin-home",
     label: "Settings",
     group: "As access admin",

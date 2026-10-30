@@ -1,15 +1,15 @@
 "use client";
 
 import { Check } from "lucide-react";
-import Link from "next/link";
 
-import { Button, buttonClass, CountCircle, StatusGlyph, cx } from "@/components/wf";
+import { Button, CountCircle, StatusGlyph, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-redesign.module.css";
 
 /**
- * The redesign's sticky save bar: what is unsaved, Discard, Save rules and Full audit. With nothing
+ * The redesign's sticky save bar: what is unsaved, Discard and Save rules. Round 3: Full audit moved to
+ * the last-change line at the top of Rules (one place), the change list wraps, and Save opens the review. With nothing
  * unsaved it says so and names the last save; Discard and Save are greyed (not dashed) with their
  * reason on hover and for screen readers.
  */
@@ -17,7 +17,6 @@ export function SettingsSaveBar({
   diffs,
   onRulesTab,
   onReview,
-  auditAvailable,
   lastSave,
   saving,
   blockReason,
@@ -27,7 +26,6 @@ export function SettingsSaveBar({
   diffs: readonly string[];
   onRulesTab: boolean;
   onReview: () => void;
-  auditAvailable: boolean;
   lastSave: string;
   saving: boolean;
   blockReason: string | undefined;
@@ -49,9 +47,7 @@ export function SettingsSaveBar({
             <CountCircle n={unsavedCount} label="unsaved" />
             {unsavedCount === 1 ? "unsaved change" : "unsaved changes"}
           </span>
-          <span className={styles.saveText} title={diffs.join(", ")}>
-            {diffs.join(", ")}
-          </span>
+          <span className={cx(styles.saveText, rx.wrapText)}>{diffs.join(", ")}</span>
         </>
       ) : (
         <span className={cx(styles.saveText, rx.saveClean)}>
@@ -64,14 +60,6 @@ export function SettingsSaveBar({
         <button type="button" className={styles.saveLink} onClick={onReview}>
           Review
         </button>
-      ) : null}
-      {auditAvailable ? (
-        <Link
-          className={buttonClass({ variant: "ghost", size: "sm", className: styles.pill })}
-          href="/ward-flow/governance"
-        >
-          Full audit
-        </Link>
       ) : null}
       <Button
         variant="sec"

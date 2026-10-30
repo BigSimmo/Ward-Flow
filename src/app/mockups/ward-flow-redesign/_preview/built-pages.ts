@@ -73,6 +73,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "as-bed-manager-seclusion",
   "as-executive-home",
   "as-executive-capacity",
+  "as-executive-settings",
   "as-admin-home",
   "as-admin-governance",
 ] as const;
