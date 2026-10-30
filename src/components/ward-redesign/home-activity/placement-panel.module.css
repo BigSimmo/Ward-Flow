@@ -1,0 +1,138 @@
+/* Home and Activity mock-up: the redesigned Placement panel's own pieces (30 October). */
+
+/* A ward card's right edge: its state word (only Selected or Referred) and the road time. */
+.cardRight {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* "No destination recorded yet." while wards fit: a status, not a heading. */
+.quietLine.quietLine {
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
+  color: var(--wf-ink-2);
+}
+
+/* The two list disclosures (override reason, cannot take): one left-aligned row with a chevron. */
+.disclosure.disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-align: left;
+}
+.chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  transition: transform 120ms ease;
+}
+.disclosure[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* The road-time caveat and what Pulled means: one small note at the list foot. */
+.listNote {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: 16px;
+}
+.inlineLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.inlineLink:hover {
+  text-decoration: underline;
+}
+.inlineLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The tier pill sits beside the name, as in the Waiting rows. */
+.tier.tier {
+  margin-inline-start: var(--wf-s-2);
+  vertical-align: 2px;
+}
+
+/* A no-bed ward's reason ("0 allocatable") reads with the bed line, not as a warning. */
+.quietReason.quietReason {
+  color: var(--wf-ink-2);
+  font-weight: 400;
+}
+
+/* Both list disclosures read the same: a quiet full-width row, words left, chevron right. */
+.disclosure.disclosure.disclosure {
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.disclosure.disclosure.disclosure::before {
+  content: none;
+}
+.inlineLink.inlineLink {
+  display: inline;
+  min-height: 0;
+  height: auto;
+  line-height: inherit;
+}
+
+/* Desktop: Override and Refer at the app's standard button height, as Activity's panel button. */
+@media (min-width: 48.0625rem) {
+  .actions.actions > :is(button, a) {
+    min-height: 36px;
+    height: 36px;
+  }
+}
+@media (max-width: 48rem) {
+  .disclosure.disclosure.disclosure {
+    min-height: 48px;
+  }
+}
+
+/* With a ward chosen there are three actions: Refer leads on its own row, Quick send and Override
+ * share the row under it, on every size, so nothing runs off a phone's edge or wraps unevenly. */
+.actions.actions:has([data-testid="ward-shortlist-quick-send"]) {
+  flex-wrap: wrap;
+}
+.actions.actions:has([data-testid="ward-shortlist-quick-send"]) > * {
+  flex: 1 1 0;
+}
+.actions.actions:has([data-testid="ward-shortlist-quick-send"]) > [data-testid="ward-shortlist-refer"] {
+  order: -1;
+  flex-basis: 100%;
+}
+
+/* Refer is the one main action, so it takes the width Override leaves (as on the phone). */
+.actions.actions {
+  width: 100%;
+}
+.actions.actions > [data-testid="ward-shortlist-refer"] {
+  flex: 1 1 auto;
+}

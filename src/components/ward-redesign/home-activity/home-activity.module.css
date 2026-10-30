@@ -1,0 +1,1068 @@
+/* Home and Activity, redesigned (mock-up). The rest of Home uses today's Home styles. */
+.muted {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.empty {
+  margin: 0;
+  padding: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+.plainList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.personLink {
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+}
+/* The name opens the record; the whole row is its target. */
+.personLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.personLink:hover {
+  text-decoration: underline;
+}
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.textButton:hover {
+  text-decoration: underline;
+}
+.textButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+/* The hero's changes chip. */
+.changesChip b {
+  font-family: var(--wf-mono);
+}
+
+/* Two-line rows (Planned, Changes): who and when, then what. */
+.twoLine {
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "glyph who time"
+    ". what what";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.twoLine:first-child {
+  border-top: 0;
+}
+/* A target row (Planned): amber glyph and a thin amber edge. */
+.twoLine[data-kind="target"] {
+  box-shadow: inset 3px 0 0 var(--wf-warning);
+}
+.rowGlyph {
+  grid-area: glyph;
+}
+.rowWho {
+  grid-area: who;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rowTime,
+.rowTimeStrong {
+  grid-area: time;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.rowTimeStrong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.rowWhat {
+  grid-area: what;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  line-height: 18px;
+  color: var(--wf-ink-2);
+}
+/* The kind of row is regular weight, so the name and the time carry the weight. */
+.rowKind {
+  font-weight: 400;
+  color: var(--wf-ink-2);
+}
+.alertTag {
+  display: inline-block;
+  margin-inline-start: var(--wf-s-2);
+  padding: 0 6px;
+  border-radius: var(--wf-r-tag);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.alertTag {
+  background: var(--wf-act-tint);
+  color: var(--wf-danger-ink);
+}
+.afterShift {
+  padding: 6px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.afterShift + .twoLine {
+  border-top: 0;
+}
+.listFoot {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Activity panel: one title row, compact segmented tabs, sticky header and foot. */
+.panelHeader.panelHeader {
+  padding-top: var(--wf-s-3);
+  padding-bottom: 0;
+}
+.panelTitle.panelTitle {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+}
+/* The Sheet's header-bottom slot bleeds left but stops short on the right, so the tabs widen to
+ * the header's full width themselves. */
+.panelTabs {
+  width: calc(100% + 2rem);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+.panelTabs > * {
+  width: 100%;
+}
+@media (min-width: 40rem) {
+  .panelTabs {
+    width: calc(100% + 2.5rem);
+    padding-inline: 20px;
+  }
+}
+.panelClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--wf-h-md);
+  height: var(--wf-h-md);
+  margin: -6px -8px -6px 0;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.panelClose:hover {
+  background: var(--wf-hover);
+}
+.panelClose:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.panelBody {
+  padding: 0;
+}
+.panelFooter.panelFooter {
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+}
+.metaLine {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.metaLink {
+  color: var(--wf-accent-ink);
+}
+.arrived {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0 var(--wf-s-4) var(--wf-s-2);
+  padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.changeGroup h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.groupCount {
+  font-family: var(--wf-mono);
+  letter-spacing: 0;
+  color: var(--wf-ink-2);
+}
+.reviewFoot {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: 100%;
+}
+.reviewed {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.reviewNote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: center;
+  color: var(--wf-ink-3);
+}
+.tally {
+  margin-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+.tally summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.tallyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+.tallyTile {
+  display: flex;
+  flex-direction: column;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.tallyTile b {
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.chips {
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+}
+/* Recent activity: time, glyph, then the text across the rest of the row. Its own areas, so the
+   shared row classes (which name grid areas) cannot drop the text into the glyph's column. */
+.eventRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(2.5rem, auto) 12px minmax(0, 1fr);
+  grid-template-areas: "time glyph text";
+  align-items: baseline;
+  align-content: center;
+  column-gap: var(--wf-s-2);
+  min-height: 40px;
+  padding: 6px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: 18px;
+}
+.eventTime {
+  grid-area: time;
+  font: 500 var(--wf-fs-12) / 18px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.eventGlyph {
+  grid-area: glyph;
+  align-self: center;
+}
+.eventText {
+  grid-area: text;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+a.eventText::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+a.eventText:hover {
+  text-decoration: underline;
+}
+
+/* Notices: unread dot, source and time on one line, the message under it. */
+.noticeHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.noticeRow {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "dot source time"
+    ". text action";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.unreadDot {
+  grid-area: dot;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-accent);
+}
+.noticeSource {
+  grid-area: source;
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.noticeText {
+  grid-area: text;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: 18px;
+  color: var(--wf-ink-2);
+}
+.noticeRow .textButton {
+  grid-area: action;
+  align-self: end;
+}
+.earlier {
+  border-top: 1px solid var(--wf-line);
+}
+.earlier summary {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+.earlierTime {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+.noticeRead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  padding: 6px var(--wf-s-4);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* Phone: compact rows that keep 48px targets without growing taller. */
+@media (max-width: 48rem) {
+  .textButton {
+    margin: -14px -8px;
+    padding: 14px 8px;
+  }
+  .tally summary,
+  .earlier summary,
+  .eventRow {
+    min-height: 48px;
+  }
+  .panelClose {
+    width: 48px;
+    height: 48px;
+  }
+  .twoLine {
+    min-height: 48px;
+  }
+
+  /* The three list tabs share one row with the More button, each at least 48px tall. */
+  .switchRow.switchRow {
+    flex-wrap: nowrap;
+  }
+  /* A slim track (36px) whose options keep a 48px hit area through an invisible cover. */
+  .viewSwitch.viewSwitch {
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+    height: 36px;
+    min-height: 0;
+    margin-block: 6px;
+    padding: 2px;
+    overflow: visible;
+    border-color: var(--wf-line);
+    box-shadow: none;
+  }
+  .viewSwitch.viewSwitch > * {
+    position: relative;
+    flex: 1 1 auto;
+    justify-content: center;
+    height: 30px;
+    min-height: 0;
+    padding-inline: 8px;
+    font-size: var(--wf-fs-13);
+  }
+  .viewSwitch.viewSwitch > *::after {
+    content: "";
+    position: absolute;
+    inset: -9px 0;
+  }
+  .viewSwitch.viewSwitch > [aria-checked="true"] {
+    font-weight: 600;
+    color: var(--wf-ink-1);
+  }
+
+  /*
+   * My List on a phone (Josh, 30 Oct 2026): two lines per row. Line 1 is the name with the wait on
+   * the right; line 2 is where, then the status as a tag. The whole row stays the open target (the
+   * title's own cover), with a chevron. Scoped to this mock-up; today's rows are unchanged.
+   */
+  .compactList :is([class*="_phoneRow__"], [class$="_phoneRow"], [class*="_phoneRow "]) {
+    align-items: center;
+    min-height: 0;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    row-gap: 0;
+  }
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    row-gap: 2px;
+  }
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(2) {
+    order: -1;
+    flex: 1 0 100%;
+    white-space: nowrap;
+  }
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :nth-child(2)
+    :is([class*="_name__"], [class$="_name"], [class*="_name "]) {
+    font: 600 var(--wf-fs-14) / 20px var(--wf-font);
+    color: var(--wf-ink-1);
+  }
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(3) {
+    order: 1;
+    flex: 1 1 0;
+    min-width: 3rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "]) {
+    order: 2;
+    flex: 0 1 auto;
+    max-width: 72%;
+    margin: 0;
+    padding: 0 6px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-tag);
+    background: var(--wf-surface);
+    font: 600 var(--wf-fs-12) / 18px var(--wf-font);
+  }
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "])
+    > span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(4) {
+    order: 3;
+    flex: 1 0 100%;
+  }
+  .compactList :is([class*="_phoneRowEnd__"], [class$="_phoneRowEnd"], [class*="_phoneRowEnd "]) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+  .compactList :is([class*="_phoneRowEnd__"], [class$="_phoneRowEnd"], [class*="_phoneRowEnd "])::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid var(--wf-ink-3);
+    border-bottom: 1.5px solid var(--wf-ink-3);
+    transform: rotate(-45deg);
+  }
+}
+
+/* Redesign: the ED access forecast moves into Planned, so its banner under the ED strip goes. */
+.scope [data-testid="home-ed-access-risk"] {
+  display: none;
+}
+
+/* The forecast heads Planned in the same two-line shape as the rows, set apart by a tint. */
+.forecastRow {
+  /* Holds the "See who" link's cover inside this row, not the whole card. */
+  position: relative;
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "glyph who time"
+    ". what what";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  border-bottom: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-warning) 7%, var(--wf-surface));
+}
+
+.forecastRow .rowWho,
+.forecastRow .rowWho b {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+/* Same weight as the names in the rows under it (a bare <b> would read as 900). */
+.forecastRow .rowWho b {
+  font-weight: inherit;
+}
+
+/* Desktop: Beds that fit and Placement stay beside the list while it scrolls, rather than leaving
+   empty space under them. Taller than the screen, the column scrolls itself. Not on phone. */
+@media (min-width: 64rem) {
+  .stickyCol {
+    position: sticky;
+    top: var(--wf-s-4);
+    align-self: start;
+    max-height: calc(100dvh - var(--wf-s-8, 32px) * 2);
+    overflow-y: auto;
+  }
+}
+
+/* Final polish: nothing on a phone row is cut off. The status comes straight after the name (it is
+   why the row is here), and where follows in full, wrapping if it needs to. */
+@media (max-width: 48rem) {
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "]) {
+    order: 1;
+    max-width: 100%;
+  }
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "])
+    > span {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(3) {
+    order: 2;
+    flex: 1 0 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
+
+/*
+ * Status glyphs on this page (Josh, 30 Oct 2026): one refined set in place of the kit's basic
+ * triangle, bar and dot. Act now is a rounded warning triangle with an exclamation mark, to decide
+ * a rounded square with a question mark, overdue or watch a filled clock. Each is a mask filled with
+ * the glyph's own colour (the danger, info and warning tokens, or the hero's), so light, dark and
+ * forced colours still follow the kit. Scoped to this page and its Activity panel; the kit is
+ * unchanged.
+ */
+:is(.scope, .glyphScope) svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) {
+  width: 12px;
+  height: 12px;
+  background-color: currentColor;
+  -webkit-mask: var(--wf-glyph) center / contain no-repeat;
+  mask: var(--wf-glyph) center / contain no-repeat;
+}
+:is(.scope, .glyphScope) svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) > * {
+  visibility: hidden;
+}
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_danger"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M8 5.4v3.6' stroke='black' stroke-width='1.9' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.8' r='1.1' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M6.6 2.3a1.6 1.6 0 0 1 2.8 0l5.5 9.6a1.6 1.6 0 0 1-1.4 2.4H2.5a1.6 1.6 0 0 1-1.4-2.4z' mask='url%28%23m%29'/%3E%3C/svg%3E");
+}
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_info"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M6.1 6.2a1.95 1.95 0 1 1 2.7 1.8c-.5.2-.8.6-.8 1.1v.3' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='8' cy='11.7' r='1.05' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M4.5 1.5h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3z' mask='url%28%23m%29'/%3E%3C/svg%3E");
+}
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_warning"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M8 4.6v3.7l2.3 1.5' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E");
+}
+@media (forced-colors: active) {
+  :is(.scope, .glyphScope) svg[class*="glyph"] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+
+/*
+ * Phone ED chips (Josh, 30 Oct 2026): slimmer and quieter. A 32px pill with a hairline border, the
+ * waiting count and the longest wait on one line, and a 48px hit area from an invisible cover. The
+ * strip sits closer to the list tabs under it.
+ */
+@media (max-width: 48rem) {
+  .scope :is([class*="_edWrap__"], [class$="_edWrap"], [class*="_edWrap "]) {
+    margin-bottom: calc(-1 * var(--wf-s-2));
+  }
+  .scope :is([class*="_edGrid__"], [class$="_edGrid"], [class*="_edGrid "]) {
+    gap: 6px;
+    padding-block: 8px;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "]) {
+    position: relative;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    min-height: 0;
+    padding: 0 10px;
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-ctl);
+    box-shadow: none;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])::after {
+    content: "";
+    position: absolute;
+    inset: -8px -3px;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-accent-tint);
+  }
+  .scope
+    :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])
+    :is([class*="_edWaitingValue__"], [class$="_edWaitingValue"], [class*="_edWaitingValue "]),
+  .scope
+    :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])
+    :is([class*="_edMono__"], [class$="_edMono"], [class*="_edMono "]) {
+    line-height: 16px;
+  }
+  .scope
+    :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])
+    :is([class*="_edLine__"], [class$="_edLine"], [class*="_edLine "]) {
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* In Activity an amber event is "worth a look", not overdue, so it is a filled dot rather than the
+   overdue clock. */
+.glyphScope svg[class*="glyph"][class*="_warning"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
+}
+
+/*
+ * v7 polish (Josh's approved plan, 30 Oct 2026). Selectors use the three-way form so they match
+ * both the dev server (file_class__hash) and the shareable bundle (file_class).
+ */
+
+/* Glyphs: 12px everywhere, 14px in the hero; a 6px gap to the text; centred on the text line. */
+:is(.scope, .glyphScope) svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) {
+  flex: none;
+  vertical-align: middle;
+}
+.scope [data-wf-hero] svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) {
+  width: 14px;
+  height: 14px;
+}
+.scope [data-wf-hero] :is([class*="_label__"], [class$="_label"], [class*="_label "]),
+.scope :is([class*="_groupHead__"], [class$="_groupHead"], [class*="_groupHead "]),
+.scope :is([class*="_segItem__"], [class$="_segItem"], [class*="_segItem "]),
+.scope :is([class*="_chip__"], [class$="_chip"], [class*="_chip "]),
+.scope :is([class*="_edLine__"], [class$="_edLine"], [class*="_edLine "]),
+.scope :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "]) {
+  align-items: center;
+  gap: 6px;
+}
+
+/* Waiting: "Form due" (times still only as typed), and the switch never cuts off "Referrals". */
+.scope :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "]) {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-2);
+}
+.scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) {
+  flex: none;
+  width: auto;
+  max-width: none;
+  overflow: visible;
+}
+.scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) > * {
+  flex: none;
+}
+.scope
+  :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "])
+  > button
+  :is([class*="_chipLabel__"], [class$="_chipLabel"], [class*="_chipLabel "]) {
+  font-size: 0;
+}
+.scope
+  :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "])
+  > button
+  :is([class*="_chipLabel__"], [class$="_chipLabel"], [class*="_chipLabel "])::before {
+  content: "Form due";
+  font-size: var(--wf-fs-13);
+}
+.scope
+  :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "])
+  > button
+  :is([class*="_chipLabel__"], [class$="_chipLabel"], [class*="_chipLabel "])::after {
+  display: none;
+}
+
+/* Tier key: one short line, "T1 most urgent → T3 least urgent". */
+.scope :is([class*="_key__"], [class$="_key"], [class*="_key "])[data-testid="ward-tier-key"] > :nth-child(2) {
+  display: none;
+}
+.scope
+  :is([class*="_key__"], [class$="_key"], [class*="_key "])[data-testid="ward-tier-key"]
+  > :nth-child(3)
+  :is([class*="_sep__"], [class$="_sep"], [class*="_sep "]) {
+  font-size: 0;
+}
+.scope
+  :is([class*="_key__"], [class$="_key"], [class*="_key "])[data-testid="ward-tier-key"]
+  > :nth-child(3)
+  :is([class*="_sep__"], [class$="_sep"], [class*="_sep "])::before {
+  content: "→";
+  margin-inline: 4px;
+  font-size: var(--wf-fs-12);
+}
+
+/* Each queue row's right side is one line: the wait, then the overdue icon. */
+.scope :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "]) {
+  display: inline-flex;
+  flex-direction: row;
+  white-space: nowrap;
+}
+.scope
+  :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "])
+  :is([class*="_word__"], [class$="_word"], [class*="_word "]) {
+  display: none;
+}
+.scope
+  :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "])
+  :is([class*="_queueWord__"], [class$="_queueWord"], [class*="_queueWord "]) {
+  font-size: 0;
+}
+
+@media (max-width: 48rem) {
+  /* Phone ED chips: 34px pills; the list tabs a 40px track in the same family; 8px between. */
+  .scope :is([class*="_edWrap__"], [class$="_edWrap"], [class*="_edWrap "]) {
+    margin-bottom: -18px;
+  }
+  .scope :is([class*="_edGrid__"], [class$="_edGrid"], [class*="_edGrid "]) {
+    padding-block: 7px;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "]) {
+    height: 34px;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])::after {
+    inset: -7px -3px;
+  }
+  .viewSwitch.viewSwitch {
+    height: 40px;
+    margin-block: 4px;
+    padding: 3px;
+    border-radius: var(--wf-r-track);
+  }
+  .viewSwitch.viewSwitch > * {
+    height: 32px;
+    border-radius: var(--wf-r-seg-item);
+  }
+  .viewSwitch.viewSwitch > *::after {
+    inset: -8px 0;
+  }
+
+  /* Phone hero: the changes line is a pill that reads as a button, closer to the figures. */
+  .scope [data-wf-hero] :is([class*="_barRow__"], [class$="_barRow"], [class*="_barRow "]) {
+    margin-top: calc(-1 * var(--wf-s-2));
+  }
+  .changesChip.changesChip.changesChip {
+    flex: 0 1 auto;
+    justify-content: center;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+    border-radius: var(--wf-r-ctl);
+    background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+    text-decoration: none;
+  }
+  .changesChip.changesChip.changesChip::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+/*
+ * v9 (coordinator's assessment, 30 Oct 2026): the amber clock means time only. Amber that is not
+ * about time (the hero's checks, "At risk" under the ring, Beds that fit's shortfalls) is the plain
+ * amber dot. Tier 1 has its own mark: a filled circle with an up chevron.
+ */
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_warning"].dotGlyph,
+.scope [data-wf-hero-lead] svg[class*="glyph"][class*="_warning"],
+.scope [data-testid="home-beds-fit"] svg[class*="glyph"][class*="_warning"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
+}
+.scope svg[class*="glyph"].tierGlyph {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M5.2 9.4 8 6.6l2.8 2.8' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M5.2 9.4 8 6.6l2.8 2.8' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.scope svg[class*="glyph"].tierGlyph > * {
+  visibility: hidden;
+}
+.scope [data-wf-hero] svg[class*="glyph"].tierGlyph {
+  color: var(--wf-hero-ink-2);
+}
+
+/* Desktop ED strip: departments with nobody waiting go quiet, so those with waits stand out. */
+.scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])[data-waiting="0"] {
+  color: var(--wf-ink-3);
+}
+.scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])[data-waiting="0"] * {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* Phone ED chips: a soft fade on the right edge says the row scrolls. */
+@media (max-width: 48rem) {
+  .scope :is([class*="_edGrid__"], [class$="_edGrid"], [class*="_edGrid "]) {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+}
+
+/* "Also in Alerts" sits on its own line under the change, aligned with its text. */
+.alertTag {
+  display: table;
+  margin: 4px 0 0;
+}
+
+/* One size for each kind of control on these pages (30 October). Every tab row matches the list
+ * tabs: a 40px track with 30px options at 13px (32px on a phone, with a 48px hit area). Every
+ * "Show more" is one centred 600 row, and every text link is 13px 600. Names in the Planned and
+ * Activity rows match Waiting's (13px, 14px on a phone, as My List's phone rows). */
+.scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) > *,
+.panelTabs.panelTabs [role="tab"] {
+  height: 30px;
+  min-height: 0;
+  padding-inline: 10px;
+  font-size: var(--wf-fs-13);
+}
+.panelTabs.panelTabs > * {
+  padding: 4px;
+}
+.scope :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
+.scope :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]),
+.moreRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  min-height: 0;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: center;
+  cursor: pointer;
+}
+.scope :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
+.scope :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]) {
+  border-top: 1px solid var(--wf-line);
+}
+.moreRow:hover {
+  text-decoration: underline;
+}
+.moreRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.scope :is([class*="_headLink__"], [class$="_headLink"], [class*="_headLink "]),
+.scope :is([class*="_footLink__"], [class$="_footLink"], [class*="_footLink "]) {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+@media (max-width: 48rem) {
+  .scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) {
+    --wf-phone-seg-band: 4px;
+  }
+  .scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) > *,
+  .panelTabs.panelTabs [role="tab"] {
+    position: relative;
+    height: 32px;
+    padding-inline: 8px;
+    font-weight: 600;
+  }
+  .panelTabs.panelTabs [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+  .panelTabs.panelTabs > * {
+    padding: 3px;
+  }
+  .scope :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
+  .scope :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]),
+  .moreRow {
+    height: 48px;
+  }
+  .rowWho {
+    font-size: var(--wf-fs-14);
+  }
+  /* The Form due chip stands as tall as the tab track beside it, keeping a 48px hit area. */
+  .scope :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "]) > button {
+    position: relative;
+    height: 40px;
+    min-height: 40px;
+  }
+  .scope :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "]) > button::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+/* Beds that fit, folded while someone is chosen: Capacity and a chevron that opens the table. */
+.foldActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.foldToggle {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.foldToggle:hover {
+  background: var(--wf-track);
+}
+.foldToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.foldToggle svg {
+  transition: transform 120ms ease;
+}
+.foldToggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .foldToggle svg {
+    transition: none;
+  }
+}
+
+/* Placement panel: its content lines up with the "Placement" title (one indent, not two), and the
+ * action bar's tint runs edge to edge across the card's foot, with room around the buttons. */
+.scope [data-testid="ward-home-placement"] {
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+.scope [data-testid="ward-home-placement"] > * {
+  margin-inline: var(--wf-s-4);
+}
+/* The scrolling body keeps the side space as padding, so the action bar can reach the card's edges
+ * without being clipped by the scroll box. */
+.scope
+  [data-testid="ward-home-placement"]
+  > :is([class*="_shortlistBody__"], [class$="_shortlistBody"], [class*="_shortlistBody "]) {
+  margin-inline: 0;
+  padding-inline: var(--wf-s-4);
+  padding-bottom: 0;
+}
+/* Why Override is unavailable: one quiet line under the buttons, from the left like the rest. */
+.scope
+  [data-testid="ward-home-placement"]
+  :is([class*="_unavailableLine__"], [class$="_unavailableLine"], [class*="_unavailableLine "]) {
+  justify-content: flex-start;
+}
+.scope
+  [data-testid="ward-home-placement"]
+  footer:is([class*="_shortlistActions__"], [class$="_shortlistActions"], [class*="_shortlistActions "]) {
+  gap: var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}

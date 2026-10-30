@@ -2,6 +2,7 @@
 export const MOCKUP_PAGE_SLUGS = [
   "capacity",
   "home",
+  "home-activity",
   "movements",
   "waiting",
   "eds",

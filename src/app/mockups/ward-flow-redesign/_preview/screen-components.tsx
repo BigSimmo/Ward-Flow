@@ -17,6 +17,9 @@ const HandoverRedesign = dynamic<MockupPageProps>(() =>
 const HomeRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/home/home-redesign").then((module) => module.HomeRedesign),
 );
+const HomeActivityPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/home-activity/home-activity-page").then((module) => module.HomeActivityPage),
+);
 const NewReferralRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/new-referral/new-referral-redesign").then((module) => module.NewReferralRedesign),
 );
@@ -292,6 +295,7 @@ export type MockupPageProps = { openOnLoad?: string };
 export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps>>> = {
   capacity: CapacityRedesign,
   home: HomeRedesign,
+  "home-activity": HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingRedesign,
   eds: EdIndexRedesign,

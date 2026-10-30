@@ -47,6 +47,7 @@ const ROLE_DESKS = {
 
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
+  { slug: "home-activity", label: "Home and Activity", group: "Coordinator", appPath: "/ward-flow" },
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
   { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
@@ -433,6 +434,13 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-state-offline", label: "Offline", group: "States", over: "home", pop: "state-offline" },
   { slug: "pop-state-toast", label: "Toast", group: "States", over: "home", pop: "state-toast" },
   { slug: "pop-state-not-wired", label: "Not wired", group: "States", over: "home", pop: "state-not-wired" },
+  {
+    slug: "pop-home-activity",
+    label: "Activity panel",
+    group: "Page popups",
+    over: "home-activity",
+    pop: "activity-panel",
+  },
 ];
 
 /** Prefix routes: any address under these opens the one example drawn for them. */
