@@ -151,13 +151,17 @@ export function BedForecast({
           )}
           <div className={styles.fcSources}>
             <p className={styles.small}>
-              <b>{sourceSummary.discharges}</b> discharges from {sourceSummary.wards} wards ·{" "}
+              {/* Final check (30 Oct): a site's small counts read "1 discharge from 1 ward", not "1 discharges". */}
+              <b>{sourceSummary.discharges}</b> {sourceSummary.discharges === 1 ? "discharge" : "discharges"} from{" "}
+              {sourceSummary.wards} {sourceSummary.wards === 1 ? "ward" : "wards"} ·{" "}
               <b>{sourceSummary.overdueNotHeldUp}</b> overdue, not held up · <b>{weekOut}</b> in the next {bars.length}{" "}
               days
             </p>
             <p className={styles.mutedXs}>
-              Not yet counted: {forecastModel.notCounted.leaveBeds} beds held for people on leave,{" "}
-              {forecastModel.notCounted.repatriations} repatriations booked.
+              Not yet counted: {forecastModel.notCounted.leaveBeds}{" "}
+              {forecastModel.notCounted.leaveBeds === 1 ? "bed" : "beds"} held for people on leave,{" "}
+              {forecastModel.notCounted.repatriations}{" "}
+              {forecastModel.notCounted.repatriations === 1 ? "repatriation" : "repatriations"} booked.
             </p>
           </div>
         </div>

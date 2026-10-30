@@ -6,7 +6,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import redesign from "@/components/ward-redesign/transport/transport-redesign.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import officer from "./as-officer-home.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { isOfficerJob, officerCancellationNotices } from "@/components/ward-management/officer/officer-jobs";
 import { useTransportCommandFeedback } from "@/components/ward-management/officer/use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1214,14 +1214,8 @@ export function AsOfficerTransportRedesign() {
                       </tbody>
                     </table>
                     {listedJobs.length < sortedJobs.length ? (
-                      <div className={officer.more}>
-                        <Button variant="ghost" size="sm" onClick={() => setShowAllJobs(true)}>
-                          Show all {sortedJobs.length} jobs
-                        </Button>
-                        <span className={officer.moreNote}>
-                          {listedJobs.length} of {sortedJobs.length} shown
-                        </span>
-                      </div>
+                      // Final check (30 Oct): the one shared Show more row, as on every other list foot.
+                      <ShowMoreRow onClick={() => setShowAllJobs(true)}>Show all {sortedJobs.length} jobs</ShowMoreRow>
                     ) : null}
                   </div>
                 )}

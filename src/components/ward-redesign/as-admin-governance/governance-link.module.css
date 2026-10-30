@@ -1,0 +1,30 @@
+/* Final check (30 Oct): "Open the Access log" drew as plain grey text inside the empty state; it is a
+   link, so it takes the accent link style, with a 48px tap area on a phone. */
+.lnk {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.lnk:hover {
+  text-decoration: underline;
+}
+
+.lnk:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-ctl);
+}
+
+@media (max-width: 48rem) {
+  /* An invisible cover gives the 48px tap area without opening up the sentence's line spacing. */
+  .lnk {
+    position: relative;
+  }
+
+  .lnk::after {
+    content: "";
+    position: absolute;
+    inset: -14px -4px;
+  }
+}

@@ -3,15 +3,16 @@
 import { ChevronDown } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { alertKindOf } from "@/components/ward-management/alerts/alerts-model";
+import { alertKindOf, minutesText } from "@/components/ward-management/alerts/alerts-model";
 import type { LinkedQueueItem } from "@/components/ward-management/alerts/alert-linked-groups";
 import type { QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
-import { Select } from "@/components/wf";
+import type { Instant } from "@/components/ward-management/ward-clock";
+import { Select, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 
 import styles from "@/components/ward-redesign/alerts/alerts-redesign.module.css";
 
 /**
- * The Checking strip as one dashed chip ("6 checks raised · 7 clear") that opens today's list in
+ * The Checking strip as one dashed chip ("6 flagged · 7 clear"; Round 2: "raised" already means alerts raised) that opens today's list in
  * place. Every check is still there, one press away; thirteen counters, most of them 0, no longer
  * take two lines of the header.
  */
@@ -22,7 +23,7 @@ export function ChecksChip({ checks, children }: { checks: readonly { n: number 
     <div className={styles.checks}>
       <button type="button" className={styles.checksChip} aria-expanded={open} onClick={() => setOpen((on) => !on)}>
         <span className={styles.checksLabel}>Checking</span>
-        <b>{raised}</b> {raised === 1 ? "check" : "checks"} raised · <b>{checks.length - raised}</b> clear
+        <b>{raised}</b> flagged · <b>{checks.length - raised}</b> clear
         <ChevronDown size={14} aria-hidden="true" className={open ? styles.flip : undefined} />
       </button>
       {open ? <div className={styles.checksList}>{children}</div> : null}
@@ -110,22 +111,53 @@ export function groupSameKind(
 /** One group row ("Transport awaiting departure · 5 people") that opens to each alert's own row. */
 export function KindGroup({
   group,
+  now,
   listClassName,
   renderEntry,
 }: {
   group: KindGroupItem;
+  now: Instant;
   listClassName: string;
   renderEntry: (entry: QueueEntry) => ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  // Round 2: the group row reads like its members: their glyph first, the oldest wait on the right.
+  const first = group.entries[0];
+  const tone: WfTone =
+    first?.item.tone === "danger"
+      ? "danger"
+      : first?.group === "act"
+        ? "danger"
+        : first?.group === "wait"
+          ? "warning"
+          : "neutral";
+  const raised = group.entries.flatMap((entry) => (entry.raised === undefined ? [] : [entry.raised]));
+  const oldest = raised.length > 0 ? Math.min(...raised) : undefined;
   return (
     <li className={styles.kindGroup} data-testid="redesign-alerts-kind-group">
       <button type="button" className={styles.kindHead} aria-expanded={open} onClick={() => setOpen((on) => !on)}>
-        <ChevronDown size={14} aria-hidden="true" className={open ? undefined : styles.folded} />
-        <b>{group.title}</b>
-        <span className={styles.kindCount}>{group.entries.length} people</span>
-        <span className={styles.kindNames}>{group.entries.map((entry) => entry.subject.displayName).join(" · ")}</span>
-        <span className={styles.kindOpen}>{open ? "Hide" : "Show each"}</span>
+        <span className={styles.kindGlyph}>
+          <StatusGlyph tone={tone} />
+        </span>
+        <span className={styles.kindText}>
+          <span className={styles.kindTitle}>
+            <b>{group.title}</b>
+            <span className={styles.kindCount}>{group.entries.length} people</span>
+          </span>
+          <span className={styles.kindNames}>
+            {group.entries.map((entry) => entry.subject.displayName).join(" · ")}
+          </span>
+        </span>
+        {oldest === undefined ? null : (
+          <span className={styles.kindAge}>
+            <SrOnly>Oldest open </SrOnly>
+            {minutesText(Math.max(0, now - oldest))}
+          </span>
+        )}
+        <span className={styles.kindOpen}>
+          <span className={styles.kindOpenWord}>{open ? "Hide" : "Show each"}</span>
+          <ChevronDown size={14} aria-hidden="true" className={open ? styles.flip : undefined} />
+        </span>
       </button>
       {open ? <ul className={listClassName}>{group.entries.map(renderEntry)}</ul> : null}
     </li>

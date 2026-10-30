@@ -88,6 +88,7 @@ import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward
 import { WAITING_VIEWS } from "@/components/ward-management/delays/waiting-href";
 import { inWaitingView, queuedReferralCount, waitingViewHint } from "@/components/ward-management/delays/waiting-views";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
+import local from "./as-ed-waiting.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./as-ed-delays-board-panels-redesign";
 import {
@@ -104,7 +105,6 @@ import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-tim
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
-
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
   "legal_breached",
@@ -1322,7 +1322,7 @@ export function AsEdDelaysBoardRedesign({
                   </tbody>
                 </table>
               </div>
-              {referralsLine}
+              <div className={local.tableFoot}>{referralsLine}</div>
             </section>
 
             {selected !== null ? (

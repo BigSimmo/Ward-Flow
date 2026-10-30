@@ -89,6 +89,7 @@ import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward
 import { WAITING_VIEWS } from "@/components/ward-management/delays/waiting-href";
 import { inWaitingView, queuedReferralCount } from "@/components/ward-management/delays/waiting-views";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
+import waitingFoot from "./waiting-foot.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { Registers } from "@/components/ward-redesign/waiting/delays-board-panels-redesign";
 import { PersonPanel } from "./delays-board-panels-redesign";
@@ -1338,7 +1339,7 @@ export function DelaysBoardRedesign({
                   </tbody>
                 </table>
               </div>
-              {referralsLine}
+              <div className={waitingFoot.tableFoot}>{referralsLine}</div>
             </section>
 
             {selected !== null ? (

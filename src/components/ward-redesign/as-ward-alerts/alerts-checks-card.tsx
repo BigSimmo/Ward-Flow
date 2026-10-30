@@ -28,7 +28,7 @@ export function ChecksCard({
           Checking <span className={styles.mono}>{total}</span> conditions
         </span>
         <span className={styles.phoneCardMeta}>
-          <b className={styles.mono}>{firing}</b> firing · handover sheets not checked
+          <b className={styles.mono}>{firing}</b> flagged · handover sheets not checked
         </span>
       </span>
       <ChevronRight size={16} aria-hidden="true" />

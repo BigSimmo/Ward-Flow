@@ -1,0 +1,7 @@
+/* Final check (30 Oct): the referrals line under the list sat on the panel's left edge with no inset;
+   on a laptop it takes the rows' own 10px inset. The phone list has no panel edge, so it is unchanged. */
+@media (min-width: 48.0625rem) {
+  .tableFoot {
+    padding: 0 10px var(--wf-s-2);
+  }
+}
