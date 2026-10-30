@@ -482,29 +482,32 @@ a.eventText:hover {
    * the right; line 2 is where, then the status as a tag. The whole row stays the open target (the
    * title's own cover), with a chevron. Scoped to this mock-up; today's rows are unchanged.
    */
-  .compactList [class*="_phoneRow__"] {
+  .compactList :is([class*="_phoneRow__"], [class$="_phoneRow"], [class*="_phoneRow "]) {
     align-items: center;
     min-height: 0;
     padding: var(--wf-s-2) var(--wf-s-3);
     row-gap: 0;
   }
-  .compactList [class*="_phoneRowText__"] {
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) {
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     column-gap: var(--wf-s-2);
     row-gap: 2px;
   }
-  .compactList [class*="_phoneRowText__"] > :nth-child(2) {
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(2) {
     order: -1;
     flex: 1 0 100%;
     white-space: nowrap;
   }
-  .compactList [class*="_phoneRowText__"] > :nth-child(2) [class*="_name__"] {
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :nth-child(2)
+    :is([class*="_name__"], [class$="_name"], [class*="_name "]) {
     font: 600 var(--wf-fs-14) / 20px var(--wf-font);
     color: var(--wf-ink-1);
   }
-  .compactList [class*="_phoneRowText__"] > :nth-child(3) {
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(3) {
     order: 1;
     flex: 1 1 0;
     min-width: 3rem;
@@ -512,7 +515,9 @@ a.eventText:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] {
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "]) {
     order: 2;
     flex: 0 1 auto;
     max-width: 72%;
@@ -523,23 +528,26 @@ a.eventText:hover {
     background: var(--wf-surface);
     font: 600 var(--wf-fs-12) / 18px var(--wf-font);
   }
-  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] > span {
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "])
+    > span {
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .compactList [class*="_phoneRowText__"] > :nth-child(4) {
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(4) {
     order: 3;
     flex: 1 0 100%;
   }
-  .compactList [class*="_phoneRowEnd__"] {
+  .compactList :is([class*="_phoneRowEnd__"], [class$="_phoneRowEnd"], [class*="_phoneRowEnd "]) {
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 6px;
   }
-  .compactList [class*="_phoneRowEnd__"]::after {
+  .compactList :is([class*="_phoneRowEnd__"], [class$="_phoneRowEnd"], [class*="_phoneRowEnd "])::after {
     content: "";
     width: 7px;
     height: 7px;
@@ -592,16 +600,21 @@ a.eventText:hover {
 /* Final polish: nothing on a phone row is cut off. The status comes straight after the name (it is
    why the row is here), and where follows in full, wrapping if it needs to. */
 @media (max-width: 48rem) {
-  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] {
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "]) {
     order: 1;
     max-width: 100%;
   }
-  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] > span {
+  .compactList
+    :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "])
+    > :is([class*="_rowOpen__"], [class$="_rowOpen"], [class*="_rowOpen "])
+    > span {
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
   }
-  .compactList [class*="_phoneRowText__"] > :nth-child(3) {
+  .compactList :is([class*="_phoneRowText__"], [class$="_phoneRowText"], [class*="_phoneRowText "]) > :nth-child(3) {
     order: 2;
     flex: 1 0 100%;
     min-width: 0;
@@ -651,14 +664,14 @@ a.eventText:hover {
  * strip sits closer to the list tabs under it.
  */
 @media (max-width: 48rem) {
-  .scope [class*="_edWrap__"] {
+  .scope :is([class*="_edWrap__"], [class$="_edWrap"], [class*="_edWrap "]) {
     margin-bottom: calc(-1 * var(--wf-s-2));
   }
-  .scope [class*="_edGrid__"] {
+  .scope :is([class*="_edGrid__"], [class$="_edGrid"], [class*="_edGrid "]) {
     gap: 6px;
     padding-block: 8px;
   }
-  .scope [class*="_edButton__"] {
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "]) {
     position: relative;
     align-items: center;
     gap: 6px;
@@ -669,20 +682,26 @@ a.eventText:hover {
     border-radius: var(--wf-r-pill);
     box-shadow: none;
   }
-  .scope [class*="_edButton__"]::after {
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])::after {
     content: "";
     position: absolute;
     inset: -8px -3px;
   }
-  .scope [class*="_edButton__"][aria-pressed="true"] {
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])[aria-pressed="true"] {
     border-color: var(--wf-accent);
     background: var(--wf-accent-tint);
   }
-  .scope [class*="_edButton__"] [class*="_edWaitingValue__"],
-  .scope [class*="_edButton__"] [class*="_edMono__"] {
+  .scope
+    :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])
+    :is([class*="_edWaitingValue__"], [class$="_edWaitingValue"], [class*="_edWaitingValue "]),
+  .scope
+    :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])
+    :is([class*="_edMono__"], [class$="_edMono"], [class*="_edMono "]) {
     line-height: 16px;
   }
-  .scope [class*="_edButton__"] [class*="_edLine__"] {
+  .scope
+    :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])
+    :is([class*="_edLine__"], [class$="_edLine"], [class*="_edLine "]) {
     align-items: center;
     gap: 4px;
   }
@@ -692,4 +711,148 @@ a.eventText:hover {
    overdue clock. */
 .glyphScope svg[class*="glyph"][class*="_warning"] {
   --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
+}
+
+/*
+ * v7 polish (Josh's approved plan, 30 Oct 2026). Selectors use the three-way form so they match
+ * both the dev server (file_class__hash) and the shareable bundle (file_class).
+ */
+
+/* Glyphs: 12px everywhere, 14px in the hero; a 6px gap to the text; centred on the text line. */
+:is(.scope, .glyphScope) svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) {
+  flex: none;
+  vertical-align: middle;
+}
+.scope [data-wf-hero] svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) {
+  width: 14px;
+  height: 14px;
+}
+.scope [data-wf-hero] :is([class*="_label__"], [class$="_label"], [class*="_label "]),
+.scope :is([class*="_groupHead__"], [class$="_groupHead"], [class*="_groupHead "]),
+.scope :is([class*="_segItem__"], [class$="_segItem"], [class*="_segItem "]),
+.scope :is([class*="_chip__"], [class$="_chip"], [class*="_chip "]),
+.scope :is([class*="_edLine__"], [class$="_edLine"], [class*="_edLine "]),
+.scope :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "]) {
+  align-items: center;
+  gap: 6px;
+}
+
+/* Waiting: "Form due" (times still only as typed), and the switch never cuts off "Referrals". */
+.scope :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "]) {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-2);
+}
+.scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) {
+  flex: none;
+  width: auto;
+  max-width: none;
+  overflow: visible;
+}
+.scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) > * {
+  flex: none;
+}
+.scope
+  :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "])
+  > button
+  :is([class*="_chipLabel__"], [class$="_chipLabel"], [class*="_chipLabel "]) {
+  font-size: 0;
+}
+.scope
+  :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "])
+  > button
+  :is([class*="_chipLabel__"], [class$="_chipLabel"], [class*="_chipLabel "])::before {
+  content: "Form due";
+  font-size: var(--wf-fs-13);
+}
+.scope
+  :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "])
+  > button
+  :is([class*="_chipLabel__"], [class$="_chipLabel"], [class*="_chipLabel "])::after {
+  display: none;
+}
+
+/* Tier key: one short line, "T1 most urgent → T3 least urgent". */
+.scope :is([class*="_key__"], [class$="_key"], [class*="_key "])[data-testid="ward-tier-key"] > :nth-child(2) {
+  display: none;
+}
+.scope
+  :is([class*="_key__"], [class$="_key"], [class*="_key "])[data-testid="ward-tier-key"]
+  > :nth-child(3)
+  :is([class*="_sep__"], [class$="_sep"], [class*="_sep "]) {
+  font-size: 0;
+}
+.scope
+  :is([class*="_key__"], [class$="_key"], [class*="_key "])[data-testid="ward-tier-key"]
+  > :nth-child(3)
+  :is([class*="_sep__"], [class$="_sep"], [class*="_sep "])::before {
+  content: "→";
+  margin-inline: 4px;
+  font-size: var(--wf-fs-12);
+}
+
+/* Each queue row's right side is one line: the wait, then the overdue icon. */
+.scope :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "]) {
+  display: inline-flex;
+  flex-direction: row;
+  white-space: nowrap;
+}
+.scope
+  :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "])
+  :is([class*="_word__"], [class$="_word"], [class*="_word "]) {
+  display: none;
+}
+.scope
+  :is([class*="_queueWait__"], [class$="_queueWait"], [class*="_queueWait "])
+  :is([class*="_queueWord__"], [class$="_queueWord"], [class*="_queueWord "]) {
+  font-size: 0;
+}
+
+@media (max-width: 48rem) {
+  /* Phone ED chips: 34px pills; the list tabs a 40px track in the same family; 8px between. */
+  .scope :is([class*="_edWrap__"], [class$="_edWrap"], [class*="_edWrap "]) {
+    margin-bottom: -18px;
+  }
+  .scope :is([class*="_edGrid__"], [class$="_edGrid"], [class*="_edGrid "]) {
+    padding-block: 7px;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "]) {
+    height: 34px;
+  }
+  .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])::after {
+    inset: -7px -3px;
+  }
+  .viewSwitch.viewSwitch {
+    height: 40px;
+    margin-block: 4px;
+    padding: 3px;
+    border-radius: var(--wf-r-pill);
+  }
+  .viewSwitch.viewSwitch > * {
+    height: 32px;
+    border-radius: var(--wf-r-pill);
+  }
+  .viewSwitch.viewSwitch > *::after {
+    inset: -8px 0;
+  }
+
+  /* Phone hero: the changes line is a pill that reads as a button, closer to the figures. */
+  .scope [data-wf-hero] :is([class*="_barRow__"], [class$="_barRow"], [class*="_barRow "]) {
+    margin-top: calc(-1 * var(--wf-s-2));
+  }
+  .changesChip.changesChip.changesChip {
+    flex: 0 1 auto;
+    justify-content: center;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+    border-radius: var(--wf-r-pill);
+    background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+    text-decoration: none;
+  }
+  .changesChip.changesChip.changesChip::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
 }

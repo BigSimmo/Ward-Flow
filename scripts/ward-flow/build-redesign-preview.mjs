@@ -32,7 +32,11 @@ const result = await build({
   platform: "browser",
   target: "es2022",
   jsx: "automatic",
-  minify: true,
+  // Readable CSS module class names (file_class), so the mock-ups' scoped stylesheets, which match
+  // classes by name, apply in the shareable copy as they do in the dev server.
+  minifyWhitespace: true,
+  minifySyntax: true,
+  minifyIdentifiers: false,
   splitting: false,
   sourcemap: false,
   tsconfig: path.join(root, "tsconfig.json"),

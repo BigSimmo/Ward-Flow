@@ -671,6 +671,9 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
+  // Shortest clear words (Josh, 30 Oct 2026); a chosen ED is still named.
+  const overdueWord = selectedEd ? `Overdue · ${selectedEd.siteCode}` : "Overdue";
+  const tierOneWord = selectedEd ? `Tier 1 · ${selectedEd.siteCode}` : "Tier 1";
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
@@ -857,7 +860,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                   />
                   <HeroStat
                     value={chips.overdueInQueue}
-                    label={chips.overdueLabel}
+                    label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
@@ -905,7 +908,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                   <HeroStat
                     inline
                     value={referralQueue.length}
-                    label="Referrals to decide"
+                    label="To decide"
                     tone={referralQueue.length > 0 ? "info" : undefined}
                     pressed={homeView === "needs" && needsFocus === "decide"}
                     onToggle={() => toggleFocus("decide")}
@@ -913,7 +916,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                   <HeroStat
                     inline
                     value={chips.overdueInQueue}
-                    label={chips.overdueLabel}
+                    label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
@@ -925,7 +928,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                   <HeroStat
                     inline
                     value={chips.tierOneInQueue}
-                    label={chips.tierOneLabel}
+                    label={tierOneWord}
                     pressed={homeView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
@@ -937,7 +940,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                     inline
                     value={staleBedCounts + wardsNotReporting}
                     // The chip says how many; opening it says which (it ran off a tablet's edge).
-                    label={staleBedCounts + wardsNotReporting === 1 ? "check to look at" : "checks to look at"}
+                    label={staleBedCounts + wardsNotReporting === 1 ? "check" : "checks"}
                     tone={staleBedCounts + wardsNotReporting > 0 ? "warning" : undefined}
                     expanded={checksOpen}
                     onToggle={() => setChecksOpen((open) => !open)}
