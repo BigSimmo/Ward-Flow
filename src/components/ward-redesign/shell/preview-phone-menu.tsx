@@ -468,8 +468,6 @@ function PhoneDock({
   );
 }
 
-export type PhoneMenuModel = ReturnType<typeof phoneMenuModel>;
-
 /**
  * The bar's Activity sheet on a phone. DR-08: closing returns focus to the dock button that opened
  * it; an open from the Menu sheet passes no opener and falls back to Menu or Back. DR-12: its list
