@@ -1,0 +1,5 @@
+/* Out of area, redesigned: Home regions as bars; a region's nearby beds open when it is chosen. */
+.page [class*="_regionGroup__"]:not(:has([aria-pressed="true"])) > ul,
+.page [class*="_regionGroup__"]:not(:has([aria-pressed="true"])) > p {
+  display: none;
+}

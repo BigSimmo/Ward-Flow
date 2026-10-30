@@ -18,6 +18,7 @@ export const MOCKUP_PAGE_SLUGS = [
   "statistics",
   "alerts",
   "legal-forms",
+  "out-of-area",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];

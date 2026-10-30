@@ -1,0 +1,1326 @@
+"use client";
+
+import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
+
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search, X } from "lucide-react";
+
+import {
+  Button,
+  Card,
+  CardFoot,
+  CheckingFoot,
+  Drawer,
+  EmptyState,
+  Hero,
+  LiveChip,
+  Segmented,
+  SrOnly,
+  StatusGlyph,
+  Tabs,
+  TextInput,
+  cx,
+  tableClasses,
+  type WfTone,
+  useIsPhone,
+  useIsTabletPortrait,
+  DeltaTwin,
+} from "@/components/wf";
+import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
+import {
+  formatInstant,
+  formatInstantWithDay,
+  formatSheetMoment,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
+import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
+import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
+import { siteByCode } from "@/components/ward-management/ward-sites";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { WardTable } from "@/components/ward-management/ward-table/ward-table";
+import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
+import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
+
+import {
+  BLANK_REPAT_DRAFT,
+  DAYS_AWAY_GROUPS,
+  RETURN_STATUS_SHORT,
+  TRAVEL_SHORT,
+  closerBedOptions,
+  daysAway,
+  dischargeOffsetDays,
+  dischargeShort,
+  dischargeText,
+  homeRegionBeds,
+  inDaysAwayGroup,
+  departureDayLabel,
+  leavesToday,
+  involuntaryReturnAnswers,
+  missingAnswers,
+  returnStatus,
+  shiftLabel,
+  shortSiteName,
+  currentShiftStart,
+  type DaysAwayGroupId,
+  type RepatDraft,
+  type ReturnStatus,
+  bedMeetingComparison,
+} from "@/components/ward-management/out-of-area/out-of-area-model";
+import { OutOfAreaPhone, type PhonePerson } from "@/components/ward-management/out-of-area/out-of-area-phone";
+import {
+  ReturnPlan,
+  TravelIcon,
+  canSendReturnPlan,
+  whoseMove,
+  type PlanPatient,
+} from "@/components/ward-management/out-of-area/out-of-area-return-plan";
+import {
+  HomeBedsCard,
+  ReadyCard,
+  ShiftCard,
+  type ReadyRow,
+  type ShiftReturnRow,
+} from "@/components/ward-management/out-of-area/out-of-area-side";
+import styles from "@/components/ward-management/out-of-area/out-of-area-board.module.css";
+import redesign from "./out-of-area-redesign.module.css";
+import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
+import { patientHref } from "@/components/ward-management/shell/ward-facade";
+import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useAddressTab } from "@/components/ward-management/ward-url-state";
+import { plural } from "@/components/ward-management/ward-plural";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
+
+/**
+ * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
+ * long way from where they live, and for how long. Rebuilt as option A, 9 October 2026.
+ *
+ * **It calls `outOfAreaLedger` and recomputes nothing.** Neither number is derived here, and the
+ * register defaults to the order the ledger returns. Sorting by days away or by name is an
+ * explicit view choice the coordinator makes; the default never ranks anybody, because a sort by
+ * elapsed time would read as a repatriation priority nobody has decided.
+ *
+ * **In whole days, via `daysInBed`.** Counted from `arrivedAt`, floored at zero, and `null` rather
+ * than a substituted fallback when there is no arrival. The length of stay carries no target and no
+ * countdown. The discharge column is a different fact: the date the WARD recorded
+ * (`expectedDischargeAt`) and the ward's own delay reason (`blockReason`), shown as they are.
+ *
+ * **The admissions come from the provider.** The optional `admissions` parameter survives so a
+ * test can render the states the seed cannot produce (nobody away, or only an unclassified count);
+ * omitting it, which is what the route does, reads live state on the same clock as `now`.
+ *
+ * **Highlights, never hides.** The hero counts, the days away strip, the home region rows and the
+ * search all mark matching rows; every person stays in the register.
+ *
+ * **Return status** reads the coordinator's recorded `RECORD_REPATRIATION` first, then the page's own
+ * unsaved draft. Drafts live in React state only and are never written to browser storage.
+ */
+
+const OUT_OF_AREA_TABS = ["now", "history"] as const;
+
+/**
+ * Only a resolved person gets a link. A UMRN is never put in a URL (it can be typed text, and the
+ * search page reads no query anyway), so a row with no person id shows its UMRN unlinked.
+ */
+function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
+  return info.patient?.id ? patientHref(info.patient.id) : null;
+}
+
+type SortOrder = "ledger" | "days" | "patient";
+type HighlightKey = "due" | "air" | "road" | "noplan" | "notagreed" | "bed" | `age:${DaysAwayGroupId}`;
+
+const STATUS_TONE: Record<ReturnStatus, WfTone> = {
+  none: "closed",
+  started: "neutral",
+  not_agreed: "neutral",
+  agreed: "neutral",
+};
+
+function isTyping(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  return target.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName);
+}
+
+/** Preview only: a fork of `OutOfAreaBoard`: surname first, a quieter hero, regions that open. */
+export function OutOfAreaRedesign({ admissions }: { admissions?: Admission[] }) {
+  const {
+    units,
+    admissions: liveAdmissions,
+    patients,
+    referrals,
+    movements,
+    dispatch,
+    dayZero,
+    rejections,
+    repatriations: liveRepatriations,
+  } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "patients",
+    "referrals",
+    "movements",
+    "dispatch",
+    "dayZero",
+    "rejections",
+    "repatriations",
+  );
+  const now = useWardFlowClock();
+  const isPhone = useIsPhone();
+  const isTabletPortrait = useIsTabletPortrait();
+  const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
+
+  const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
+  const meeting = bedMeetingComparison(admissions ?? liveAdmissions, units, now);
+  // The bed meeting can be yesterday's on an early shift, so the clock names its day when it is not today.
+  const meetingAt = formatInstantWithDay(meeting.at, now);
+
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
+  const [repatNotice, setRepatNotice] = useState<string | null>(null);
+  // v10 pass 3: a recorded return offers Undo (`UNDO_REPATRIATION`) on the layout toast.
+  const { run: runStep } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole: useRouteRole(),
+    onMessage: setRepatNotice,
+  });
+  // The panel notice is written at once, so a refusal of that step (for example a shared workspace
+  // recording the stay as gone first) replaces it with the engine's reason and restores the draft.
+  const repatCheckRef = useRef<{
+    prior: number;
+    admissionId: string;
+    record: RepatriationRecord | undefined;
+    draft?: RepatDraft;
+  } | null>(null);
+  // Disarmed only by this step's own outcome: a refusal naming this stay, or this stay's record
+  // changing in content. Changes to other stays leave it armed, and once disarmed a later refusal is never
+  // read as this step's.
+  useEffect(() => {
+    const check = repatCheckRef.current;
+    if (!check) return;
+    const refused = rejections.slice(check.prior).find((rejection) => rejection.movementId === check.admissionId);
+    if (!refused) {
+      const record = liveRepatriations?.find((candidate) => candidate.admissionId === check.admissionId);
+      // Compared by content: a shared refresh can hand back an equal record as a new object, which is
+      // not this step's outcome.
+      if (JSON.stringify(record) !== JSON.stringify(check.record)) repatCheckRef.current = null;
+      return;
+    }
+    repatCheckRef.current = null;
+    const { admissionId, draft } = check;
+    if (draft) setDrafts((current) => ({ ...current, [admissionId]: draft }));
+    setRepatNotice(`Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`);
+  }, [rejections, liveRepatriations]);
+  const [toolNote, setToolNote] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<HighlightKey | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("ledger");
+  // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
+  const [tab, setTab] = useAddressTab("tab", OUT_OF_AREA_TABS, "now");
+
+  const selectionOriginRef = useRef<HTMLElement | null>(null);
+  const detailColumnRef = useRef<HTMLDivElement | null>(null);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+
+  const people = new Map<string, ResolvedPatientInfo>(
+    entries.map((entry) => [
+      entry.admission.id,
+      resolveSubjectPatient(entry.admission, { patients, referrals, movements }),
+    ]),
+  );
+  // Redesign (D-83): every list and notice here names the person surname first.
+  const patientOf = (entry: OutOfAreaEntry): ResolvedPatientInfo => {
+    const info =
+      people.get(entry.admission.id) ?? resolveSubjectPatient(entry.admission, { patients, referrals, movements });
+    return { ...info, displayName: info.formalName };
+  };
+  const recordOf = (id: string) => repatriations.find((record) => record.admissionId === id);
+  const statusOf = (entry: OutOfAreaEntry) =>
+    returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now);
+  const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
+  const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
+
+  // Device audit 11 Oct 2026: a Return column where every row reads the same says nothing the
+  // Checking line has not; it shows only when the plan state differs between people.
+  const planVaries = new Set(entries.map(statusOf)).size > 1;
+  const sorted = [...entries];
+  if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
+  if (sortOrder === "patient") {
+    sorted.sort((a, b) => patientOf(a).displayName.localeCompare(patientOf(b).displayName, "en-AU"));
+  }
+
+  const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
+  const selectedIndex = sorted.findIndex((entry) => entry.admission.id === selectedId);
+
+  /* ---- highlight ---- */
+  const matchesHighlight = (entry: OutOfAreaEntry, key: HighlightKey | null): boolean => {
+    if (!key) return false;
+    const offset = offsetOf(entry);
+    const status = statusOf(entry);
+    if (key === "due") return offset !== null && offset < 0;
+    if (key === "air") return entry.band === "air_transport_only";
+    if (key === "road") return entry.band === "three_hours_or_more";
+    if (key === "noplan") return status === "none";
+    if (key === "notagreed") return status === "not_agreed";
+    if (key === "bed") return status === "agreed";
+    return inDaysAwayGroup(entry, now, key.slice(4) as DaysAwayGroupId);
+  };
+  const query = searchQuery.trim().toLowerCase();
+  const matchesQuery = (entry: OutOfAreaEntry): boolean => {
+    if (!query) return false;
+    const info = patientOf(entry);
+    const site = siteByCode(entry.unit.siteCode);
+    return [
+      info.displayName,
+      info.formalName,
+      info.umrn,
+      entry.admission.id,
+      entry.admission.homeRegion ?? "",
+      entry.unit.name,
+      site?.name ?? "",
+      site?.service ?? "",
+    ].some((value) => value.toLowerCase().includes(query));
+  };
+  const anyHighlight = highlight !== null || region !== null || query.length > 0;
+  const isHighlighted = (entry: OutOfAreaEntry) =>
+    matchesHighlight(entry, highlight) ||
+    (region !== null && entry.admission.homeRegion === region) ||
+    matchesQuery(entry);
+  const highlightedCount = sorted.filter(isHighlighted).length;
+  const clearHighlights = () => {
+    setHighlight(null);
+    setRegion(null);
+    setSearchQuery("");
+  };
+  const toggleHighlight = (key: HighlightKey) => setHighlight((current) => (current === key ? null : key));
+  const toggleRegion = (next: string) => setRegion((current) => (current === next ? null : next));
+
+  /* ---- counts ---- */
+  const countOf = (key: HighlightKey) => entries.filter((entry) => matchesHighlight(entry, key)).length;
+  const bedDays = entries.reduce((sum, entry) => sum + daysAway(entry, now), 0);
+  const longest = entries.reduce((max, entry) => Math.max(max, daysAway(entry, now)), 0);
+
+  const readyEntries = entries
+    .filter((entry) => {
+      const offset = offsetOf(entry);
+      return offset !== null && offset < 0;
+    })
+    .sort((a, b) => (offsetOf(a) ?? 0) - (offsetOf(b) ?? 0));
+  // P192 (Josh, 27 Oct 2026, option A): the unplanned patient longest past discharge, as the tooltip says,
+  // whatever the table order; with nobody past discharge, the earliest date due (no date last).
+  const nextUp = entries
+    .filter((entry) => statusOf(entry) === "none")
+    .sort((a, b) => (offsetOf(a) ?? Infinity) - (offsetOf(b) ?? Infinity))[0];
+
+  /* ---- selection ---- */
+  const selectPlacement = (id: string, origin?: HTMLElement) => {
+    if (origin) selectionOriginRef.current = origin;
+    setSelectedId(id);
+  };
+  const returnToOverview = () => {
+    setSelectedId(null);
+    selectionOriginRef.current?.focus();
+  };
+  const step = (delta: number) => {
+    const next = sorted[selectedIndex + delta];
+    if (next) setSelectedId(next.admission.id);
+  };
+
+  useEffect(() => {
+    if (selectedId === null || isPhone || isTabletPortrait) return;
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
+    const frame = window.requestAnimationFrame(() => {
+      detailColumnRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [selectedId, isPhone, isTabletPortrait]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && selectedId !== null) {
+        setSelectedId(null);
+        selectionOriginRef.current?.focus();
+        return;
+      }
+      if (
+        !areCharacterShortcutsEnabled() ||
+        isPhone ||
+        isTyping(event.target) ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey
+      )
+        return;
+      if (event.key === "/") {
+        event.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+      if (event.key === "j" || event.key === "k") {
+        const index = sorted.findIndex((entry) => entry.admission.id === selectedId);
+        const next = sorted[index < 0 ? 0 : index + (event.key === "j" ? 1 : -1)];
+        if (next) setSelectedId(next.admission.id);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
+  useEffect(() => {
+    if (!repatNotice) return;
+    const timer = setTimeout(() => setRepatNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [repatNotice]);
+
+  useEffect(() => {
+    if (!toolNote) return;
+    const timer = setTimeout(() => setToolNote(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toolNote]);
+
+  /* ---- the return plan ---- */
+  const draftFor = (id: string) => drafts[id] ?? BLANK_REPAT_DRAFT;
+  const updateDraft = (id: string, update: Partial<RepatDraft>) =>
+    setDrafts((current) => ({ ...current, [id]: { ...(current[id] ?? BLANK_REPAT_DRAFT), ...update } }));
+
+  function recordReturn(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const draft = draftFor(admissionId);
+    if (missingAnswers(draft, now).length > 0) return;
+    const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
+    if (
+      estimatedAt === undefined ||
+      draft.receivingWardAgreed === undefined ||
+      (draft.mode !== "road" && draft.mode !== "flight") ||
+      draft.provider === undefined ||
+      draft.transportLegalStatus === undefined
+    ) {
+      return;
+    }
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    const movementFeedback = draft.receivingWardAgreed
+      ? " Return transfer movement queued for bed placement at home health service."
+      : " Return movement pending receiving ward agreement.";
+    const recorded = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: draft.homeHospital,
+        receivingWardAgreed: draft.receivingWardAgreed,
+        mode: draft.mode,
+        provider: draft.provider,
+        cadNumber: draft.cadNumber.trim(),
+        transportLegalStatus: draft.transportLegalStatus,
+        estimatedAt,
+        ...involuntaryReturnAnswers(draft),
+      },
+      {
+        success: `${recorded}${movementFeedback}`,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[admissionId];
+      return next;
+    });
+    setRepatNotice(`${recorded}${movementFeedback}`);
+  }
+
+  function sendPlanToWard(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const draft = draftFor(admissionId);
+    if (!canSendReturnPlan(draft, now)) return;
+    const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
+    if (
+      estimatedAt === undefined ||
+      (draft.mode !== "road" && draft.mode !== "flight") ||
+      draft.provider === undefined ||
+      draft.transportLegalStatus === undefined
+    ) {
+      return;
+    }
+    const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
+    // An explicit "Agreed" answer is kept: sending the plan never records it as still pending.
+    const wardAgreed = draft.receivingWardAgreed === true;
+    const sentNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. ${
+      wardAgreed
+        ? "Return transfer movement queued for bed placement at home health service."
+        : "Return movement pending receiving ward agreement."
+    }`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: draft.homeHospital,
+        receivingWardAgreed: wardAgreed,
+        mode: draft.mode,
+        provider: draft.provider,
+        cadNumber: draft.cadNumber.trim(),
+        transportLegalStatus: draft.transportLegalStatus,
+        estimatedAt,
+        ...involuntaryReturnAnswers(draft),
+      },
+      {
+        success: sentNotice,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+      },
+    );
+    setDrafts((current) => {
+      const next = { ...current };
+      delete next[admissionId];
+      return next;
+    });
+    setRepatNotice(sentNotice);
+  }
+
+  function markWardAgreed(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    const existing = recordOf(admissionId);
+    if (!existing || existing.receivingWardAgreed) return;
+    const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
+    const agreedNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
+    repatCheckRef.current = { prior: rejections.length, admissionId, record: existing };
+    runStep(
+      {
+        type: "RECORD_REPATRIATION",
+        role: "coordinator",
+        now,
+        admissionId,
+        homeHospital: existing.homeHospital,
+        receivingWardAgreed: true,
+        mode: existing.mode,
+        provider: existing.provider,
+        cadNumber: existing.cadNumber,
+        transportLegalStatus: existing.transportLegalStatus,
+        // The recorded departure estimate stands; agreeing the return never moves it.
+        estimatedAt: existing.estimatedAt,
+        // #177: the plan's Form 4C and escort answers stand too.
+        ...(existing.form4CReceived === undefined ? {} : { form4CReceived: existing.form4CReceived }),
+        ...(existing.escortRequired === undefined ? {} : { escortRequired: existing.escortRequired }),
+      },
+      {
+        success: agreedNotice,
+        undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
+        // Undo takes back only the agreement: the sent plan stays, awaiting the receiving ward.
+        undone: `Ward agreement undone for ${patientOf(entry).displayName}. The return plan is back to awaiting the receiving ward.`,
+      },
+    );
+    setRepatNotice(agreedNotice);
+  }
+
+  // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
+  const legalOf = (entry: OutOfAreaEntry): string | undefined =>
+    stayLegalShort(entry.admission, { movements, patients, referrals });
+
+  const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
+    const info = patientOf(entry);
+    return {
+      displayName: info.displayName,
+      umrn: info.umrn,
+      profileHref: getPatientProfileHref(info),
+      legal: legalOf(entry),
+      onOrder: isOnOrder(stayLegalStatus(entry.admission, { movements, patients, referrals })),
+    };
+  };
+
+  const renderPlan = (entry: OutOfAreaEntry, header: ReactNode | undefined, idPrefix: string) => (
+    <ReturnPlan
+      entry={entry}
+      patient={planPatient(entry)}
+      daysLabel={sinceArrivalLabel(entry, now)}
+      dischargeOffset={offsetOf(entry)}
+      now={now}
+      draft={draftFor(entry.admission.id)}
+      onDraft={(update) => updateDraft(entry.admission.id, update)}
+      record={recordOf(entry.admission.id)}
+      returnMovementId={returnMovementOf(entry.admission.id)}
+      options={closerBedOptions(entry, units, now)}
+      notice={repatNotice}
+      onDismissNotice={() => setRepatNotice(null)}
+      onRecord={() => recordReturn(entry)}
+      onSendToWard={() => sendPlanToWard(entry)}
+      onMarkWardAgreed={() => markWardAgreed(entry)}
+      header={header}
+      idPrefix={idPrefix}
+    />
+  );
+
+  /* ---- tools ---- */
+  const summaryText = () => {
+    const lines = [
+      `Out of area: ${entries.length} away from home, ${plural(bedDays, "bed day", "bed days")}, longest ${plural(longest, "day", "days")}.`,
+      `${countOf("due")} past their discharge date, ${countOf("noplan")} with no return plan.`,
+      ...sorted.map((entry) => {
+        const info = patientOf(entry);
+        return `${info.displayName}, ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
+      }),
+      "Synthetic demonstration figures. Not approved for clinical use.",
+    ];
+    return lines.join("\n");
+  };
+  async function copySummary() {
+    try {
+      await copyTextToClipboard(summaryText());
+      setToolNote("Bed meeting summary copied");
+    } catch {
+      setToolNote("Copy is not available in this browser");
+    }
+  }
+
+  function exportList() {
+    const lines: (string | number)[][] = [
+      ["Admission", "UMRN", "Home region", "Unit", "Site", "Travel time", "Discharge", "Return", "Since arrival"],
+    ];
+    for (const entry of sorted) {
+      lines.push([
+        entry.admission.id,
+        patientOf(entry).umrn,
+        entry.admission.homeRegion ?? "",
+        entry.unit.name,
+        siteByCode(entry.unit.siteCode)?.name ?? "",
+        TRAVEL_BAND_LABELS[entry.band],
+        dischargeText(offsetOf(entry)),
+        RETURN_STATUS_SHORT[statusOf(entry)],
+        sinceArrivalLabel(entry, now),
+      ]);
+    }
+    try {
+      downloadCsv("ward-flow-synthetic-out-of-area.csv", lines, {
+        asAt: formatSheetMoment(now, dayZero, { includeYearAndZone: true }),
+        scope:
+          "Out-of-area admissions; the complete current ledger, regardless of search, highlights or the selected tab",
+      });
+    } catch {
+      setToolNote("Export is not available in this browser");
+    }
+  }
+
+  /* ---- right column rows ---- */
+  const shiftStart = currentShiftStart(now);
+  const shiftReturns: ShiftReturnRow[] = repatriations
+    .filter((record) => record.at >= shiftStart)
+    .map((record) => {
+      const entry = entries.find((candidate) => candidate.admission.id === record.admissionId);
+      return { record, entry };
+    })
+    .filter((row): row is { record: RepatriationRecord; entry: OutOfAreaEntry } => row.entry !== undefined)
+    .sort((a, b) => a.record.estimatedAt - b.record.estimatedAt)
+    .map(({ record, entry }) => ({
+      id: entry.admission.id,
+      name: patientOf(entry).displayName,
+      to: shortSiteName(record.homeHospital),
+      mode: record.mode === "road" ? "Road" : "Flight",
+      time: formatInstant(record.estimatedAt),
+      day: departureDayLabel(record, now),
+    }));
+  const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
+  const dueSoon = entries.filter((entry) => {
+    const offset = offsetOf(entry);
+    return offset === 0 || offset === 1;
+  }).length;
+  const regionRows = homeRegionBeds(entries, units, now);
+  const readyRows: ReadyRow[] = readyEntries.map((entry) => ({
+    id: entry.admission.id,
+    name: patientOf(entry).displayName,
+    detail: entry.admission.blockReason ?? `${entry.admission.homeRegion} · ${TRAVEL_SHORT[entry.band]}`,
+    detailIsReason: entry.admission.blockReason !== null,
+    overdue: dischargeShort(offsetOf(entry)),
+    returnShort: RETURN_STATUS_SHORT[statusOf(entry)],
+  }));
+  const startedRows = entries
+    .filter((entry) => statusOf(entry) === "started")
+    .map((entry) => ({
+      id: entry.admission.id,
+      name: patientOf(entry).displayName,
+      left: missingAnswers(draftFor(entry.admission.id), now).length,
+    }));
+
+  const counts = (
+    <p className="sr-only" data-testid="ward-out-of-area-counts">
+      <span data-testid="ward-out-of-area-count-people">
+        {entries.length} {entries.length === 1 ? "person is" : "people are"} recorded as being in a bed far from home.
+      </span>{" "}
+      <span data-testid="ward-out-of-area-count-not-banded">
+        {notBanded} more could not be placed in a band because the combined count does not separate a missing home area
+        from a missing travel-time pair.
+      </span>
+    </p>
+  );
+
+  /* ---- phone ---- */
+  if (isPhone) {
+    const phonePeople: PhonePerson[] = sorted.map((entry) => {
+      const info = patientOf(entry);
+      const record = recordOf(entry.admission.id);
+      return {
+        entry,
+        // F-06 (phone review, Oct 2026): family name first, as on the census.
+        name: info.formalName,
+        umrn: info.umrn,
+        profileHref: getPatientProfileHref(info),
+        legal: legalOf(entry),
+        daysLabel: sinceArrivalLabel(entry, now),
+        offset: offsetOf(entry),
+        status: statusOf(entry),
+        record,
+        highlighted: isHighlighted(entry),
+        who: whoseMove(draftFor(entry.admission.id), record),
+      };
+    });
+    return (
+      <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
+        <main id="main-content" className={cx(styles.main, styles.phoneMain)}>
+          <OutOfAreaPhone
+            people={phonePeople}
+            totalAway={entries.length}
+            dueCount={countOf("due")}
+            noPlanCount={countOf("noplan")}
+            highlight={highlight}
+            onHighlight={(key) => toggleHighlight(key)}
+            query={searchQuery}
+            onQuery={setSearchQuery}
+            anyHighlight={anyHighlight}
+            highlightedCount={highlightedCount}
+            onClear={clearHighlights}
+            readyIds={readyEntries.map((entry) => entry.admission.id)}
+            leavingToday={leavingToday}
+            now={now}
+            selectedId={selectedId}
+            onSelect={(id) => setSelectedId(id)}
+            onClose={() => setSelectedId(null)}
+            nextUpId={nextUp?.admission.id}
+            since={
+              <>
+                <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} /> since the {meetingAt} bed
+                meeting · <b className={styles.mono}>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"}
+              </>
+            }
+            onCopy={copySummary}
+            toolNote={toolNote}
+            renderPlan={(entry) => renderPlan(entry, undefined, "ward-out-of-area-phone-plan")}
+            shift={
+              <ShiftCard
+                idPrefix="ward-out-of-area-phone"
+                label={shiftLabel(now)}
+                returns={shiftReturns}
+                leaving={leavingToday.length}
+                dueSoon={dueSoon}
+                onPick={(id) => setSelectedId(id)}
+              />
+            }
+            beds={
+              <HomeBedsCard
+                idPrefix="ward-out-of-area-phone"
+                rows={regionRows}
+                region={region}
+                onRegion={toggleRegion}
+                notBanded={notBanded}
+              />
+            }
+          />
+          {counts}
+          <WardPrototypeFooter
+            testId="ward-out-of-area-governance"
+            note="People in a bed away from home · Synthetic demonstration figures · Not approved for clinical use"
+          />
+        </main>
+      </div>
+    );
+  }
+
+  /* ---- desktop ---- */
+  const pill = (key: HighlightKey, label: string, tone?: WfTone) => (
+    <button
+      key={key}
+      type="button"
+      className={styles.pill}
+      aria-pressed={highlight === key}
+      data-testid={`ward-out-of-area-highlight-${key}`}
+      onClick={() => toggleHighlight(key)}
+    >
+      <span className={styles.pillCount}>{countOf(key)}</span>
+      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+      {label}
+    </button>
+  );
+
+  const planCard = selected ? (
+    <Card
+      className={cx(styles.sideCard, styles.planCard)}
+      aria-labelledby="ward-out-of-area-plan-title"
+      data-testid="ward-out-of-area-subject"
+    >
+      {renderPlan(
+        selected,
+        <div className={styles.planHead}>
+          <span className={styles.planWho}>
+            <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
+              <SrOnly>Return plan for </SrOnly>
+              {planPatient(selected).displayName}
+            </h2>
+            <span className={styles.mono}>{planPatient(selected).umrn}</span>
+          </span>
+          <span role="status" className={styles.planPosition}>
+            <SrOnly>Synthetic patient </SrOnly>
+            {selectedIndex + 1} of {sorted.length}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={ChevronLeft}
+            aria-label="Inspect previous patient"
+            disabled={selectedIndex <= 0}
+            onClick={() => step(-1)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={ChevronRight}
+            aria-label="Inspect next patient"
+            disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
+            onClick={() => step(1)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={X}
+            aria-label="Return to cohort overview"
+            title="Close (Escape)"
+            onClick={returnToOverview}
+          />
+        </div>,
+        "ward-out-of-area-plan",
+      )}
+    </Card>
+  ) : null;
+
+  return (
+    <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
+      <main id="main-content" className={cx(styles.main, redesign.page)}>
+        <Hero
+          level={1}
+          eyebrow={`Out of area · Statewide · ${plural(bedDays, "bed day", "bed days")} · longest ${plural(longest, "day", "days")}`}
+          // H-0887: the page heading names the page, not only the count.
+          title={
+            <>
+              <SrOnly>Out of area:</SrOnly> {entries.length} away from home
+            </>
+          }
+          aside={
+            <span className={styles.heroActs}>
+              {/* Redesign: the bed-meeting change sits in This shift; the hero keeps the live chip. */}
+              <LiveChip state="live" onHero />
+            </span>
+          }
+          bar={<DaysAwayStrip entries={entries} now={now} highlight={highlight} onToggle={toggleHighlight} />}
+          barAside={
+            <span className={styles.heroActs}>
+              {toolNote ? (
+                <span className={styles.heroNote} role="status">
+                  {toolNote}
+                </span>
+              ) : null}
+              <Button
+                variant="light"
+                size="sm"
+                icon={Route}
+                disabledReason={nextUp ? undefined : "Everyone has a return plan."}
+                reasonDisplay="tooltip"
+                title={
+                  nextUp ? `Opens ${patientOf(nextUp).displayName}, the longest past discharge with no plan` : undefined
+                }
+                onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
+              >
+                {nextUp ? `Plan next return ${patientOf(nextUp).displayName}` : "Plan next return"}
+              </Button>
+              <Button
+                variant="onHero"
+                size="sm"
+                iconOnly
+                icon={Copy}
+                aria-label="Copy bed meeting summary"
+                title="Copy bed meeting summary"
+                onClick={copySummary}
+              />
+              <Button
+                variant="onHero"
+                size="sm"
+                iconOnly
+                icon={Download}
+                aria-label="Export list as CSV"
+                title="Export list as CSV"
+                onClick={exportList}
+              />
+            </span>
+          }
+          foot={
+            <CheckingFoot
+              items={[
+                { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
+                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
+              ]}
+            />
+          }
+        />
+
+        <div className={styles.layout}>
+          <Card
+            className={styles.registerCard}
+            aria-labelledby="ward-out-of-area-entries-title"
+            data-testid="ward-out-of-area-entries"
+          >
+            <h2 id="ward-out-of-area-entries-title" className="sr-only">
+              Away from home register
+            </h2>
+            <div className={styles.toolbar}>
+              <Tabs
+                label="Out of area view"
+                idPrefix="ward-out-of-area-view"
+                value={tab}
+                onChange={setTab}
+                items={[
+                  { id: "now", label: "Away now", count: entries.length },
+                  { id: "history", label: "History", count: repatriations.length },
+                ]}
+              />
+              {tab === "now" ? (
+                <span className={styles.toolbarTools}>
+                  <TextInput
+                    ref={searchRef}
+                    icon={Search}
+                    boxClassName={styles.searchBox}
+                    placeholder="Name, UMRN or ward"
+                    aria-label="Highlight people by name, UMRN or ward"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onClear={() => setSearchQuery("")}
+                  />
+                  <Segmented
+                    label="Sort placements"
+                    value={sortOrder}
+                    onChange={setSortOrder}
+                    items={[
+                      { id: "ledger", label: "Ledger" },
+                      { id: "days", label: "Days away" },
+                      { id: "patient", label: "Name" },
+                    ]}
+                  />
+                </span>
+              ) : null}
+            </div>
+            {counts}
+
+            {tab === "history" ? (
+              <div
+                role="tabpanel"
+                id="ward-out-of-area-view-panel-history"
+                aria-labelledby="ward-out-of-area-view-tab-history"
+              >
+                <HistoryList records={repatriations} entries={entries} patientOf={patientOf} now={now} />
+              </div>
+            ) : (
+              <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
+                <div className={styles.pills} role="group" aria-label="Highlight people">
+                  {pill("due", "Date passed", "warning")}
+                  {pill("air", "Air only")}
+                  {pill("road", TRAVEL_SHORT.three_hours_or_more)}
+                  {pill("noplan", "No plan", "closed")}
+                  {pill("notagreed", "Not agreed", "neutral")}
+                  {pill("bed", "Awaiting home bed", "neutral")}
+                </div>
+                <div className={styles.hlLine}>
+                  <span aria-live="polite">
+                    {anyHighlight ? (
+                      <>
+                        <b className={styles.mono}>{highlightedCount}</b> of {entries.length}{" "}
+                        <SrOnly>synthetic records</SrOnly> highlighted, all rows stay
+                      </>
+                    ) : (
+                      <>{entries.length} synthetic records</>
+                    )}
+                  </span>
+                  {anyHighlight ? (
+                    <Button variant="ghost" size="sm" onClick={clearHighlights}>
+                      Clear
+                    </Button>
+                  ) : null}
+                  <span className={styles.keys} aria-hidden="true" data-kbd-hint="">
+                    Press <kbd>/</kbd> to search, <kbd>J</kbd> <kbd>K</kbd> to move
+                  </span>
+                </div>
+                {entries.length === 0 ? (
+                  <p className={styles.emptyNote} data-testid="ward-out-of-area-empty">
+                    Nobody on these records is in a bed far from home.
+                  </p>
+                ) : (
+                  <WardTable
+                    className={cx(tableClasses.table, styles.table)}
+                    wrapperClassName={styles.tableScroll}
+                    testId="ward-out-of-area-table"
+                    ariaLabel="Out-of-area placement register"
+                  >
+                    <colgroup>
+                      <col className={styles.colPatient} />
+                      <col className={styles.colRegion} />
+                      <col className={styles.colPlace} />
+                      <col className={styles.colDischarge} />
+                      {planVaries ? <col className={styles.colReturn} /> : null}
+                      <col className={styles.colDays} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th scope="col">Patient</th>
+                        <th scope="col">Home region</th>
+                        <th scope="col">Placement</th>
+                        <th scope="col">Discharge</th>
+                        {planVaries ? <th scope="col">Return</th> : null}
+                        <th scope="col" className={tableClasses.num}>
+                          Days away
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.map((entry) => {
+                        const info = patientOf(entry);
+                        const href = getPatientProfileHref(info);
+                        const site = siteByCode(entry.unit.siteCode);
+                        const isSelected = entry.admission.id === selectedId;
+                        const lit = isHighlighted(entry);
+                        const offset = offsetOf(entry);
+                        const status = statusOf(entry);
+                        const record = recordOf(entry.admission.id);
+                        return (
+                          <tr
+                            key={entry.admission.id}
+                            data-testid={`ward-out-of-area-row-${entry.admission.id}`}
+                            data-highlighted={lit || undefined}
+                            data-dim={anyHighlight && !lit ? "true" : undefined}
+                            className={cx(styles.row, isSelected && tableClasses.selected)}
+                            aria-selected={isSelected}
+                            tabIndex={0}
+                            aria-label={`View placement detail for ${info.displayName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                            onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
+                            onKeyDown={(event) => {
+                              if (
+                                event.target === event.currentTarget &&
+                                (event.key === "Enter" || event.key === " ")
+                              ) {
+                                event.preventDefault();
+                                selectPlacement(entry.admission.id, event.currentTarget);
+                              }
+                            }}
+                          >
+                            <td>
+                              <span className={styles.two}>
+                                <b title={info.displayName}>{info.displayName}</b>
+                                <span className={styles.legalUmrn}>
+                                  {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
+                                      so the gap shows before a return trip is planned. The no-break space
+                                      keeps the dot with the legal text when the line wraps. */}
+                                  <span>
+                                    {legalOf(entry) ?? "Legal not recorded"}
+                                    {" ·"}{" "}
+                                  </span>
+                                  {href ? (
+                                    <Link
+                                      href={href}
+                                      className={styles.umrnLink}
+                                      onClick={(event) => event.stopPropagation()}
+                                      title={`Open profile for ${info.displayName} (${info.umrn})`}
+                                    >
+                                      {info.umrn}
+                                    </Link>
+                                  ) : (
+                                    <span className={styles.mono}>{info.umrn}</span>
+                                  )}
+                                </span>
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.two}>
+                                <span className={styles.cellText}>{entry.admission.homeRegion}</span>
+                                <span className={styles.travel} title={TRAVEL_BAND_LABELS[entry.band]}>
+                                  <TravelIcon entry={entry} />
+                                  <span aria-hidden="true">{TRAVEL_SHORT[entry.band]}</span>
+                                  <SrOnly>{TRAVEL_BAND_LABELS[entry.band]}</SrOnly>
+                                </span>
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.two}>
+                                <span className={styles.cellText} title={entry.unit.name}>
+                                  {entry.unit.name}
+                                </span>
+                                <span title={site?.name}>{site ? shortSiteName(site.code) : "Site not recorded"}</span>
+                              </span>
+                            </td>
+                            <td>
+                              <span className={styles.two}>
+                                <span className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}>
+                                  {offset === null ? (
+                                    <StatusGlyph tone="closed" size={9} />
+                                  ) : offset < 0 ? (
+                                    <StatusGlyph tone="warning" size={9} />
+                                  ) : null}
+                                  {dischargeText(offset)}
+                                </span>
+                                <span title={entry.admission.blockReason ?? undefined}>
+                                  {entry.admission.blockReason ??
+                                    (entry.admission.expectedDischargeAt === null
+                                      ? "Not set"
+                                      : dateOf(entry.admission.expectedDischargeAt, dayZero))}
+                                </span>
+                              </span>
+                            </td>
+                            {planVaries ? (
+                              <td>
+                                <ReturnCell
+                                  status={status}
+                                  record={record}
+                                  left={missingAnswers(draftFor(entry.admission.id), now).length}
+                                />
+                              </td>
+                            ) : null}
+                            <td className={cx(tableClasses.num, styles.away)}>{sinceArrivalLabel(entry, now)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </WardTable>
+                )}
+                <CardFoot
+                  meta={
+                    <span className={styles.footNote}>
+                      <StatusGlyph tone="closed" size={9} />
+                      <span>
+                        <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
+                        {entries.length === 1 ? "person" : "people"}
+                      </span>
+                    </span>
+                  }
+                >
+                  <Button variant="sec" size="sm" icon={Download} onClick={exportList} disabled={entries.length === 0}>
+                    Export list
+                  </Button>
+                </CardFoot>
+              </div>
+            )}
+          </Card>
+
+          {/* The shorter right column pins under the top bar on desktop (data-wf-rail, ward-shell.module.css).
+              It holds a stack of cards rather than one long list, so the whole rail scrolls inside itself. */}
+          <div ref={detailColumnRef} className={styles.side} data-wf-rail>
+            {selected && !isTabletPortrait ? (
+              planCard
+            ) : (
+              <>
+                <ShiftCard
+                  idPrefix="ward-out-of-area"
+                  label={shiftLabel(now)}
+                  returns={shiftReturns}
+                  leaving={leavingToday.length}
+                  dueSoon={dueSoon}
+                  onPick={(id) => selectPlacement(id)}
+                />
+                <HomeBedsCard idPrefix="ward-out-of-area" rows={regionRows} region={region} onRegion={toggleRegion} />
+                {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
+                {highlight === "due" ? null : (
+                  <ReadyCard
+                    idPrefix="ward-out-of-area"
+                    testId="ward-out-of-area-subject"
+                    bodyTestId="ward-out-of-area-subject-empty"
+                    rows={readyRows}
+                    started={startedRows}
+                    onPick={(id) => selectPlacement(id)}
+                  />
+                )}
+              </>
+            )}
+          </div>
+          {isTabletPortrait && selected ? (
+            // Tablet portrait (v10): the register keeps the width and the plan slides over it.
+            <Drawer
+              open
+              onClose={returnToOverview}
+              title={planPatient(selected).displayName}
+              description="Return plan"
+              testId="ward-out-of-area-plan-sheet"
+            >
+              {planCard}
+            </Drawer>
+          ) : null}
+        </div>
+
+        <WardPrototypeFooter
+          testId="ward-out-of-area-governance"
+          note="People in a bed away from home · Synthetic demonstration figures · Not approved for clinical use"
+        />
+      </main>
+    </div>
+  );
+}
+
+function ReturnCell({
+  status,
+  record,
+  left,
+}: {
+  status: ReturnStatus;
+  record: RepatriationRecord | undefined;
+  left: number;
+}) {
+  if (status === "none") {
+    return (
+      <span className={cx(styles.status, styles.quiet)}>
+        <StatusGlyph tone={STATUS_TONE.none} size={9} />
+        No plan
+      </span>
+    );
+  }
+  const head = status === "started" ? "Started" : status === "not_agreed" ? "Not agreed" : "Agreed";
+  const sub =
+    status === "started"
+      ? left
+        ? `${left} to answer`
+        : "Ready to record"
+      : status === "agreed"
+        ? `${shortSiteName(record!.homeHospital)}, bed to place`
+        : shortSiteName(record!.homeHospital);
+  return (
+    <span className={styles.two}>
+      <span className={styles.status}>
+        <StatusGlyph tone={STATUS_TONE[status]} size={9} />
+        {head}
+      </span>
+      <span>{sub}</span>
+    </span>
+  );
+}
+
+/** Days away, in the four display groups, on the hero. Each segment and label highlights its rows. */
+function DaysAwayStrip({
+  entries,
+  now,
+  highlight,
+  onToggle,
+}: {
+  entries: OutOfAreaEntry[];
+  now: Instant;
+  highlight: HighlightKey | null;
+  onToggle: (key: HighlightKey) => void;
+}) {
+  const groups = DAYS_AWAY_GROUPS.map((group) => ({
+    ...group,
+    key: `age:${group.id}` as HighlightKey,
+    n: entries.filter((entry) => inDaysAwayGroup(entry, now, group.id)).length,
+  }));
+  return (
+    <div className={styles.ageStrip} role="group" aria-label="Days away, highlights rows">
+      <span className={styles.ageEyebrow}>Days away</span>
+      <span className={styles.ageLabels}>
+        {groups.map((group) => (
+          <button
+            key={group.id}
+            type="button"
+            aria-pressed={highlight === group.key}
+            aria-label={`${group.label} days away: ${group.n}`}
+            onClick={() => onToggle(group.key)}
+          >
+            <i className={styles[`age_${group.id}`]} aria-hidden="true" />
+            {group.label}
+            <b>{group.n}</b>
+          </button>
+        ))}
+      </span>
+    </div>
+  );
+}
+
+function HistoryList({
+  records,
+  entries,
+  patientOf,
+  now,
+}: {
+  records: RepatriationRecord[];
+  entries: OutOfAreaEntry[];
+  patientOf: (entry: OutOfAreaEntry) => ResolvedPatientInfo;
+  now: Instant;
+}) {
+  if (records.length === 0) {
+    return (
+      <div className={styles.noMatches}>
+        <EmptyState icon={MapIcon} title="No returns recorded this session" />
+      </div>
+    );
+  }
+  return (
+    <ul className={styles.rowList}>
+      {[...records]
+        .sort((a, b) => b.at - a.at)
+        .map((record) => {
+          const entry = entries.find((candidate) => candidate.admission.id === record.admissionId);
+          const name = entry ? patientOf(entry).displayName : "Left the ledger";
+          return (
+            <li key={record.admissionId} className={styles.historyRow}>
+              <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
+              <StatusGlyph tone="success" size={10} />
+              <span className={styles.two}>
+                <b>{name}</b>
+                <span>
+                  {siteByCode(record.homeHospital)?.name ?? record.homeHospital} ·{" "}
+                  {record.receivingWardAgreed ? "ward agreed" : "ward not yet agreed"}
+                </span>
+              </span>
+              <span className={styles.sub}>Coordinator</span>
+            </li>
+          );
+        })}
+    </ul>
+  );
+}
+
+/**
+ * How long this person has been in this bed, in whole days.
+ */
+export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
+  const days = daysInBed(entry.admission, now);
+  if (days === null) return "Arrival not recorded";
+  if (days === 0) return "Under a day";
+  return `${days} ${days === 1 ? "day" : "days"}`;
+}
+
+/** The shared DeltaTwin on the hero band, read against the morning bed meeting. */
+function MeetingTwin({ was, now, atLabel }: { was: number; now: number; atLabel: string }) {
+  return (
+    <DeltaTwin
+      was={was}
+      now={now}
+      label={`${was} at the ${atLabel} bed meeting, ${now} now`}
+      surface="hero"
+      testId="ward-out-of-area-twin"
+    />
+  );
+}
