@@ -313,9 +313,13 @@ export const HOW_TOS: readonly HowTo[] = [
         body: "These counts open the rows they describe, act now first.",
       },
       {
-        target: { sel: '[data-testid="ward-handover-sign-off-checks"]' },
+        target: [
+          { sel: '[data-testid="ward-handover-sign-off-checks"]' },
+          // On a phone the checks open from Sign off, so that button stands in.
+          { sel: '[data-testid="ward-handover-phone-sign-off"]' },
+        ],
         title: "Before you sign",
-        body: "Each line here should be checked before you sign.",
+        body: "Each line in Before you sign should be checked before you sign. On a phone, Sign off opens them.",
       },
       {
         target: [
