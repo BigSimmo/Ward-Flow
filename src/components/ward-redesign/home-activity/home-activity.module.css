@@ -80,7 +80,7 @@
   grid-area: who;
   min-width: 0;
   overflow: hidden;
-  font-size: var(--wf-fs-14);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
   line-height: 20px;
   color: var(--wf-ink-1);
@@ -140,7 +140,6 @@
   border-top: 0;
 }
 .listFoot {
-  padding: var(--wf-s-1) var(--wf-s-3);
   border-top: 1px solid var(--wf-line);
 }
 
@@ -431,9 +430,6 @@ a.eventText:hover {
   .eventRow {
     min-height: 48px;
   }
-  .panelTabs [role="tab"] {
-    min-height: 48px;
-  }
   .panelClose {
     width: 48px;
     height: 48px;
@@ -586,6 +582,10 @@ a.eventText:hover {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
+}
+/* Same weight as the names in the rows under it (a bare <b> would read as 900). */
+.forecastRow .rowWho b {
+  font-weight: inherit;
 }
 
 /* Desktop: Beds that fit and Placement stay beside the list while it scrolls, rather than leaving
@@ -908,4 +908,91 @@ a.eventText:hover {
 .alertTag {
   display: table;
   margin: 4px 0 0;
+}
+
+/* One size for each kind of control on these pages (30 October). Every tab row matches the list
+ * tabs: a 40px track with 30px options at 13px (32px on a phone, with a 48px hit area). Every
+ * "Show more" is one centred 600 row, and every text link is 13px 600. Names in the Planned and
+ * Activity rows match Waiting's (13px, 14px on a phone, as My List's phone rows). */
+.scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) > *,
+.panelTabs.panelTabs [role="tab"] {
+  height: 30px;
+  min-height: 0;
+  padding-inline: 10px;
+  font-size: var(--wf-fs-13);
+}
+.panelTabs.panelTabs > * {
+  padding: 4px;
+}
+.scope :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
+.scope :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]),
+.moreRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  min-height: 0;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: center;
+  cursor: pointer;
+}
+.scope :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
+.scope :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]) {
+  border-top: 1px solid var(--wf-line);
+}
+.moreRow:hover {
+  text-decoration: underline;
+}
+.moreRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.scope :is([class*="_headLink__"], [class$="_headLink"], [class*="_headLink "]),
+.scope :is([class*="_footLink__"], [class$="_footLink"], [class*="_footLink "]) {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+@media (max-width: 48rem) {
+  .scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) {
+    --wf-phone-seg-band: 4px;
+  }
+  .scope :is([class*="_queueSeg__"], [class$="_queueSeg"], [class*="_queueSeg "]) > *,
+  .panelTabs.panelTabs [role="tab"] {
+    position: relative;
+    height: 32px;
+    padding-inline: 8px;
+    font-weight: 600;
+  }
+  .panelTabs.panelTabs [role="tab"]::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+  .panelTabs.panelTabs > * {
+    padding: 3px;
+  }
+  .scope :is([class*="_showMore__"], [class$="_showMore"], [class*="_showMore "]),
+  .scope :is([class*="_queueMore__"], [class$="_queueMore"], [class*="_queueMore "]),
+  .moreRow {
+    height: 48px;
+  }
+  .rowWho {
+    font-size: var(--wf-fs-14);
+  }
+  /* The Form due chip stands as tall as the tab track beside it, keeping a 48px hit area. */
+  .scope :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "]) > button {
+    position: relative;
+    height: 40px;
+    min-height: 40px;
+  }
+  .scope :is([class*="_queueTools__"], [class$="_queueTools"], [class*="_queueTools "]) > button::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
 }

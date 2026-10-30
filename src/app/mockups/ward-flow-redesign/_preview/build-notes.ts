@@ -261,6 +261,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the ED access forecast that sat as a banner under the ED strip is now the first Planned row, because it is the same kind of thing: people heading for a target.",
     "**New:** on a laptop or desktop, Beds that fit and Placement stay beside the list while it scrolls.",
     "**Reviewed (30 October):** the hero chip says Past target, the app's own word for waits past their target, because the ED strip uses overdue for typed form times. The ED strip names its noun (1 form due, No forms due) and an ED with nobody waiting just says No wait. The checks chip reads 2 to check, and the desktop hero says in transit, as the phone does.",
+    "**Consistent controls (30 October):** every tab row is one size (a 40px track with 30px tabs at 13px; 32px tabs on a phone with a 48px tap area), every Show more is the same centred row, every text link is 13px, and names in Planned and Activity match Waiting's.",
   ],
   capacity: [
     "**Figures:** every number comes from the derivations today's Capacity page uses (bed gaps, the network ward rows, the beds forecast and the forecast model). The 48-hour figure is now the real forecast, so it is no longer illustrative.",

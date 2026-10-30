@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 
-import { Button, Card, CardHead, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
+import { Card, CardHead, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import { targetText } from "@/components/ward-management/forecast/ed-access-risk";
@@ -110,9 +110,14 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
       )}
       {rows.length > FIRST_ROWS ? (
         <div className={styles.listFoot}>
-          <Button variant="ghost" size="sm" onClick={() => setShowAll((all) => !all)} aria-expanded={showAll}>
+          <button
+            type="button"
+            className={styles.moreRow}
+            onClick={() => setShowAll((all) => !all)}
+            aria-expanded={showAll}
+          >
             {showAll ? "Show fewer" : `Show ${rows.length - FIRST_ROWS} more`}
-          </Button>
+          </button>
         </div>
       ) : null}
     </Card>
