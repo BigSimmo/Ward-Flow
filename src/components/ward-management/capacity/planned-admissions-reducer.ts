@@ -240,6 +240,12 @@ function bookingCalendarDate(value: unknown): Date | null {
   return read.year === year && read.monthIndex === monthIndex && read.day === day ? date : null;
 }
 
+/** A persisted counter must never wrap or lose integer precision. */
+function nextSafeCounter(value: number): number | null {
+  if (!Number.isSafeInteger(value) || value < 0 || value >= Number.MAX_SAFE_INTEGER) return null;
+  return value + 1;
+}
+
 function nextPlannedAdmissionId(sequence: number): string {
   return `PA-${String(sequence).padStart(2, "0")}`;
 }
@@ -339,7 +345,8 @@ export function reducePlannedAdmissionEvent(
       // A linked patient's gender is the record's, as their age group is: the event's own value
       // is ignored. Initials only carry what the person booking picked, or nothing.
       const gender = hasPatient ? recordGender(state, event.patientId as string) : event.gender;
-      const sequence = state.plannedAdmissionSequence + 1;
+      const sequence = nextSafeCounter(state.plannedAdmissionSequence);
+      if (sequence === null) return reject(state, event, "A new booking number is not available. Nothing was changed.");
       const booked: PlannedAdmission = {
         id: nextPlannedAdmissionId(sequence),
         patientId: hasPatient ? (event.patientId ?? null) : null,
@@ -411,6 +418,9 @@ export function reducePlannedAdmissionEvent(
       // own when the change names none.
       const gender =
         planned.patientId !== null ? recordGender(state, planned.patientId) : (event.gender ?? planned.gender);
+      const changeCount = nextSafeCounter(planned.changeCount);
+      if (changeCount === null)
+        return reject(state, event, "This booking cannot record another change safely. Nothing was changed.");
       const changed: PlannedAdmission = {
         ...planned,
         reason: event.reason,
@@ -419,7 +429,7 @@ export function reducePlannedAdmissionEvent(
         expectedStayDays: event.expectedStayDays,
         legalStatus: event.legalStatus,
         changedAt: event.now,
-        changeCount: planned.changeCount + 1,
+        changeCount,
       };
       if (gender === undefined) delete changed.gender;
       else changed.gender = gender;
@@ -537,7 +547,9 @@ export function reducePlannedAdmissionEvent(
         );
       const bedKind: "locked" | "open" =
         view.security === "Secure" ? "locked" : openBedsFree(unit) > 0 ? "open" : "locked";
-      const sequence = state.admissionSequence + 1;
+      const sequence = nextSafeCounter(state.admissionSequence);
+      if (sequence === null)
+        return reject(state, event, "A new admission number is not available. Nothing was changed.");
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,
         unitId: unit.id,
