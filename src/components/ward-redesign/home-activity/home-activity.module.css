@@ -996,3 +996,73 @@ a.eventText:hover {
     inset: -4px 0;
   }
 }
+
+/* Beds that fit, folded while someone is chosen: Capacity and a chevron that opens the table. */
+.foldActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.foldToggle {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.foldToggle:hover {
+  background: var(--wf-track);
+}
+.foldToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.foldToggle svg {
+  transition: transform 120ms ease;
+}
+.foldToggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .foldToggle svg {
+    transition: none;
+  }
+}
+
+/* Placement panel: its content lines up with the "Placement" title (one indent, not two), and the
+ * action bar's tint runs edge to edge across the card's foot, with room around the buttons. */
+.scope [data-testid="ward-home-placement"] {
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+.scope [data-testid="ward-home-placement"] > * {
+  margin-inline: var(--wf-s-4);
+}
+/* The scrolling body keeps the side space as padding, so the action bar can reach the card's edges
+ * without being clipped by the scroll box. */
+.scope
+  [data-testid="ward-home-placement"]
+  > :is([class*="_shortlistBody__"], [class$="_shortlistBody"], [class*="_shortlistBody "]) {
+  margin-inline: 0;
+  padding-inline: var(--wf-s-4);
+  padding-bottom: 0;
+}
+/* Why Override is unavailable: one quiet line under the buttons, from the left like the rest. */
+.scope
+  [data-testid="ward-home-placement"]
+  :is([class*="_unavailableLine__"], [class$="_unavailableLine"], [class*="_unavailableLine "]) {
+  justify-content: flex-start;
+}
+.scope
+  [data-testid="ward-home-placement"]
+  footer:is([class*="_shortlistActions__"], [class$="_shortlistActions"], [class*="_shortlistActions "]) {
+  gap: var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}

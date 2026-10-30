@@ -128,3 +128,11 @@
   order: -1;
   flex-basis: 100%;
 }
+
+/* Refer is the one main action, so it takes the width Override leaves (as on the phone). */
+.actions.actions {
+  width: 100%;
+}
+.actions.actions > [data-testid="ward-shortlist-refer"] {
+  flex: 1 1 auto;
+}

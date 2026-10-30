@@ -70,7 +70,6 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-management/coordinator/exception-drawer";
 import styles from "@/components/ward-management/coordinator/home.module.css";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
-import { BedsFitTable } from "@/components/ward-redesign/home/home-parts";
 import redesign from "@/components/ward-redesign/home/home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
@@ -83,6 +82,7 @@ import { ActivityPanel, type ActivityTab } from "./activity-panel";
 import mock from "./home-activity.module.css";
 import { HomeActivityEdStrip } from "./home-activity-ed-strip";
 import { PlacementPrompt } from "./home-activity-parts";
+import { BedsFitCard } from "./beds-fit-card";
 import { PlacementPanel } from "./placement-panel";
 import { PlannedList, usePlannedRows } from "./planned-list";
 
@@ -1150,7 +1150,9 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
               {chosenAlert && !sheetPlacement ? (
                 <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
               ) : null}
-              {isPhone || chosenAlert ? null : <BedsFitTable now={now} bedsReady={bedsReady} />}
+              {isPhone || chosenAlert ? null : (
+                <BedsFitCard now={now} bedsReady={bedsReady} condensed={hasPanelSubject} />
+              )}
               {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
               {chosenAlert && !chosenAlert.movement ? null : placementNode}
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
