@@ -8,9 +8,6 @@ import type { ComponentType, ReactNode } from "react";
 const PopAlerts = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-alerts/pop-alerts").then((module) => module.PopAlerts),
 );
-const PopActivity = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-activity/pop-activity").then((module) => module.PopActivity),
-);
 const PopTools = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-tools/pop-tools").then((module) => module.PopTools),
 );
@@ -113,7 +110,6 @@ const PopStateNotWired = dynamic<{ page: ReactNode }>(() =>
  */
 export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ page: ReactNode }>>> = {
   alerts: PopAlerts,
-  activity: PopActivity,
   tools: PopTools,
   search: PopSearch,
   help: PopHelp,

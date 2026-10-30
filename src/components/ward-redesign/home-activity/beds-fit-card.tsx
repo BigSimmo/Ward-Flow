@@ -11,7 +11,7 @@ import { forecastByKind } from "@/components/ward-management/forecast/forecast-b
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
-import styles from "@/components/ward-redesign/home/home-redesign.module.css";
+import styles from "./home-redesign.module.css";
 import mock from "./home-activity.module.css";
 
 /** "A locked adult bed" reads "Locked adult" in a row heading. */

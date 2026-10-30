@@ -27,10 +27,7 @@ const STORE = "wf-redesign-viewer";
 /** `today` is the coordinator page whose picture of today's app applies; role views have none. */
 type Entry = { slug: string; label: string; group: string; screen: string; pop?: string; today?: string };
 const COORDINATOR_PAGES = new Map(
-  MOCKUP_SCREENS.filter((screen) => !screen.role && screen.slug !== "home-activity").map((screen) => [
-    screen.slug,
-    screen,
-  ]),
+  MOCKUP_SCREENS.filter((screen) => !screen.role).map((screen) => [screen.slug, screen]),
 );
 const ENTRIES: Entry[] = [
   ...MOCKUP_SCREENS.map((screen) => ({
@@ -38,7 +35,7 @@ const ENTRIES: Entry[] = [
     label: screen.label,
     group: screen.group,
     screen: screen.slug,
-    today: COORDINATOR_PAGES.has(screen.slug) ? screen.slug : screen.slug === "home-activity" ? "home" : undefined,
+    today: COORDINATOR_PAGES.has(screen.slug) ? screen.slug : undefined,
   })),
   ...MOCKUP_POPUPS.map((popup) => ({
     slug: popup.slug,

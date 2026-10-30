@@ -5,7 +5,7 @@ import { useEffect, type ReactNode } from "react";
 import { NOT_WIRED } from "@/components/ward-management/referrals/referral-board-parts";
 import { Button } from "@/components/wf";
 
-import { HomeReferralActionsSlot } from "@/components/ward-redesign/home/home-preview-slot";
+import { HomeReferralActionsSlot } from "@/components/ward-redesign/home-activity/home-preview-slot";
 
 /**
  * The Not wired mock-up (owner decision D4): how a control that is drawn but not connected looks.

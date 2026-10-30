@@ -4,7 +4,7 @@ import { MousePointerClick } from "lucide-react";
 
 import { Button, Card, CardHead } from "@/components/wf";
 import type { QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
-import styles from "@/components/ward-redesign/home/home-redesign.module.css";
+import styles from "./home-redesign.module.css";
 
 /**
  * Placement before anyone is chosen: a copy of the Home redesign's `PlacementNext` with a shorter

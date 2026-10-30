@@ -14,9 +14,6 @@ const EdIndexRedesign = dynamic<MockupPageProps>(() =>
 const HandoverRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/handover/handover-redesign").then((module) => module.HandoverRedesign),
 );
-const HomeRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/home/home-redesign").then((module) => module.HomeRedesign),
-);
 const HomeActivityPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/home-activity/home-activity-page").then((module) => module.HomeActivityPage),
 );
@@ -294,8 +291,7 @@ export type MockupPageProps = { openOnLoad?: string };
 /** Preview only: the redesigned page drawn for each mock-up slug. */
 export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps>>> = {
   capacity: CapacityRedesign,
-  home: HomeRedesign,
-  "home-activity": HomeActivityPage,
+  home: HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingRedesign,
   eds: EdIndexRedesign,

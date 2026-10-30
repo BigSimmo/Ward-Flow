@@ -298,10 +298,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** on a phone the bell opens the Alerts page, not this drawer; at 390 px the mock-up shows the drawer's phone layout.",
   ],
   "pop-activity": [
-    "**Built from a copy of today's Activity panel**, with the same events, notices and Mark as read.",
-    "**New:** each row leads with the person, surname first, then the record number, then what happened.",
-    "**New:** an Alerts history link in the footer, to the Alerts page (as Home's link does). It replaces the footer's Demo time pop-out; the demo time still shows in the header line.",
-    "**Kept:** search, the category filters (All, Escalations, Declines, Referrals, Transfers) and Live tally.",
+    "**Home's Activity panel** (Changes, Recent activity and Notices), opened over Home. The separate Activity drawer redesign retired on 30 October so there is one Activity design; see Home's notes for how review works.",
+    "**Still open:** on other pages the app bar's Activity button opens today's drawer; moving this panel into the shell is for the real build.",
   ],
   "pop-tools": [
     "**Built from a copy of today's Tools sheet**, so every tool opens and works as now.",
@@ -611,12 +609,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Not done here:** the filters still take two rows at 1440 px; one row needs the filter labels shortened in the real file.",
   ],
   home: [
-    "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
-    "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",
-    "**New:** Beds that fit as a small table (bed type by now and tomorrow), and the Checking line folded into one header chip that opens it.",
-    "**Phone:** Registers and Alerts history sit under one More button beside the list tabs.",
-  ],
-  "home-activity": [
+    "**One Home (Josh, 30 October):** this is the Home and Activity design; the earlier Home redesign and its separate Activity popup retired, so every review of Home sees one design.",
     "**Built from a copy of today's Home (with the approved Home changes)**, so the hero, Beds that fit, Placement for the person you choose, every row action and the Waiting queue work as now.",
     "**New:** three lists, My List, Waiting and Planned. Planned is the rest of the shift in time order from times the records hold (pull time limits, planned moves, expected discharges), then later today. The header says once that targets are yours, not clinical standards; target rows carry an amber edge. No legal time is counted down.",
     "**New:** a changes chip in the hero opens Activity on Changes; the app bar's Activity button opens the same panel. Activity has Changes, Recent activity and Notices, compact two-line rows, and the live tally folded at the end.",

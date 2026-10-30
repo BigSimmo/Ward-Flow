@@ -3,7 +3,7 @@
 import { ChevronRight, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
   alertActionFor,
@@ -70,7 +70,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-management/coordinator/exception-drawer";
 import styles from "@/components/ward-management/coordinator/home.module.css";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
-import redesign from "@/components/ward-redesign/home/home-redesign.module.css";
+import redesign from "./home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
 import { PriorityQueue, type QueueHighlight } from "@/components/ward-management/coordinator/priority-queue";
@@ -82,6 +82,7 @@ import { ActivityPanel, type ActivityTab } from "./activity-panel";
 import mock from "./home-activity.module.css";
 import { HomeActivityEdStrip } from "./home-activity-ed-strip";
 import { PlacementPrompt } from "./home-activity-parts";
+import { HomeReferralActionsSlot } from "./home-preview-slot";
 import { BedsFitCard } from "./beds-fit-card";
 import { PlacementPanel } from "./placement-panel";
 import { PlannedList, usePlannedRows } from "./planned-list";
@@ -279,7 +280,12 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
-  const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
+  // Preview only: a state mock-up's extra referral actions (Not wired). With them, Home opens on the
+  // oldest referral to decide, so its Referral placement panel shows them.
+  const referralActions = use(HomeReferralActionsSlot);
+  const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(() =>
+    referralActions ? referralQueueOrder(referrals)[0]?.id : undefined,
+  );
   const queueFocusRef = useRef<HTMLDivElement>(null);
   const [exceptionsOpen, setExceptionsOpen] = useState(false);
   // Desktop: one strip under the hero, opened from its Exceptions, Declines or New events count.
@@ -790,7 +796,10 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
           {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
           {sheetPlacement && chosenAlert ? <ChosenAlertCard entry={chosenAlert} now={now} /> : null}
           {selectedReferral ? (
-            <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
+            <>
+              <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
+              {referralActions ? <div className={redesign.referralActions}>{referralActions}</div> : null}
+            </>
           ) : (
             <PlacementPanel
               movement={deferredPanelMovement}
