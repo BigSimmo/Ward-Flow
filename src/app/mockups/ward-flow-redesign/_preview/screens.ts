@@ -134,10 +134,6 @@ const PREFIX_SCREENS: readonly (readonly [prefix: string, slug: string])[] = [
   ["/ward-flow/movements/", "patient"],
 ];
 
-export function popupBySlug(slug: string): MockupPopup | undefined {
-  return MOCKUP_POPUPS.find((popup) => popup.slug === slug);
-}
-
 export function screenBySlug(slug: string): MockupScreen | undefined {
   return MOCKUP_SCREENS.find((screen) => screen.slug === slug);
 }

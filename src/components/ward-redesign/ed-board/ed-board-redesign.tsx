@@ -81,7 +81,6 @@ import { useEdExaminationSave } from "@/components/ward-management/ed/use-ed-exa
  *   ed-screen-lists.tsx, ed-screen-inbox.tsx, ed-screen-referred.tsx   the Lists tabs
  *   ed-screen-patient-dialog.tsx the patient record dialog
  */
-export { edBayAssignments, edReferralClockLines } from "@/components/ward-management/ed/ed-screen-model";
 
 type EdScreenProps = {
   edId: string;

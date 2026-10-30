@@ -99,7 +99,6 @@ import {
   movementSearchText,
   transportRouteLabels,
 } from "@/components/ward-management/movements/movements-screen-helpers";
-export { causeOf, inServiceSuffix } from "@/components/ward-management/movements/movements-screen-helpers";
 
 const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
 const MOVEMENTS_ROUTE = "/ward-flow/movements";

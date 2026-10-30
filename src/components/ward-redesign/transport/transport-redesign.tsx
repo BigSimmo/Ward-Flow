@@ -104,16 +104,9 @@ import {
 } from "@/components/ward-management/officer/officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
-export {
-  acceptedBlockedReason,
-  enRouteBlockedReason,
-  collectedBlockedReason,
-  arrivedBlockedReason,
-} from "@/components/ward-management/officer/officer-screen-helpers";
 
 // THE JOBS THIS PHONE SCREEN SHOWS: the predicate lives in `officer-jobs.ts` so Settings' workstation
 // drawer counts the same jobs without importing this screen.
-export { isOfficerJob };
 
 /**
  * TRANSPORT PAGE A, 9 October 2026 (Josh picked direction A of the Transport mockups). The hero

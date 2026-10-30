@@ -102,8 +102,6 @@ import { DischargeWeekendPrep } from "@/components/ward-management/discharges/di
 const CHART_DAYS_AHEAD = 14;
 
 /** Moved to `./discharge-board-model` and `./discharge-board-parts`; re-exported so imports keep working. */
-export { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
-export { DischargeGroupSection } from "@/components/ward-management/discharges/discharge-board-parts";
 
 /** `initialAdmissionId`: a Tasks link (`?admissionId=`) opens that stay's detail once on arrival. */
 /** Preview only: a fork of `DischargeBoard`: person first, one action a row, barriers beside the list. */

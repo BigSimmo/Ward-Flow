@@ -131,8 +131,6 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
  * the one it cannot check.
  */
 
-export { extractOverdue } from "@/components/ward-management/alerts/alerts-model";
-
 const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
 
 type ArrangeBy = "urgency" | "lanes" | "owner";

@@ -141,20 +141,6 @@ import {
 } from "@/components/ward-management/handover/handover-scope-rules";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
-export {
-  handoverScopeLabel,
-  movementInHandoverScope,
-  movementIsUrgent,
-  resolveMovementPatient,
-  urgentMovementsOutsideScope,
-} from "@/components/ward-management/handover/handover-scope-rules";
-
-export {
-  type HandoverScope,
-  handoverScopeValue,
-  parseHandoverScope,
-} from "@/components/ward-management/handover/handover-scope";
-
 /* ================================================================== the page */
 
 type HandoverTab = "pts" | "beds" | "hist";

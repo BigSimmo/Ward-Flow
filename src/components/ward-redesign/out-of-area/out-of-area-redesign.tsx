@@ -1305,7 +1305,7 @@ function HistoryList({
 /**
  * How long this person has been in this bed, in whole days.
  */
-export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
+function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
   const days = daysInBed(entry.admission, now);
   if (days === null) return "Arrival not recorded";
   if (days === 0) return "Under a day";

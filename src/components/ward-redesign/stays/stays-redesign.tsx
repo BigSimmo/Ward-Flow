@@ -75,7 +75,6 @@ import { WardBoardWorkBand } from "@/components/ward-management/board/ward-board
 import { WardBoardPrintSections } from "@/components/ward-management/board/ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
 import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
-export { boardArrivalAllowed, movementForBoardArrival } from "@/components/ward-management/board/ward-board-model";
 
 /**
  * The line that leads an occupied /board card. A recorded bed number comes first (Josh, 21 Oct

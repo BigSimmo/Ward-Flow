@@ -121,8 +121,8 @@ const WARD_ADMITS: Readonly<Record<string, string>> = {
   "graylands-dorrington": "Adults 18–64 requiring intensive psychiatric containment and high-dependency nursing.",
 };
 
-export const VOLUNTARY_ONLY_LABEL = "Voluntary only";
-export const CLMA_LABEL = "CLMA";
+const VOLUNTARY_ONLY_LABEL = "Voluntary only";
+const CLMA_LABEL = "CLMA";
 
 const COMMUNITY_ORDER_CODES = new Set(
   officialForms.filter((form) => form.category === "Community treatment orders").map((form) => form.code),
@@ -140,7 +140,7 @@ const COMMUNITY_ORDER_CODES = new Set(
  *
  * The model records no finer per-unit authority, so every authorised unit shows the same codes.
  */
-export function wardFormsHeld(unit: Pick<Unit, "authorised" | "forensic">): string[] {
+function wardFormsHeld(unit: Pick<Unit, "authorised" | "forensic">): string[] {
   if (!unit.authorised) return [VOLUNTARY_ONLY_LABEL];
   const forms = SELECTABLE_LEGAL_FORMS.filter((form) => !COMMUNITY_ORDER_CODES.has(form.code)).map(
     (form) => `Form ${form.code}`,
