@@ -4,7 +4,7 @@
  */
 /* Wide enough for three columns side by side (unlayered, so it outranks the sheet's own width). */
 .sheet {
-  max-width: min(40rem, calc(100vw - 1rem));
+  max-width: min(46rem, calc(100vw - 1rem));
 }
 
 .columns {
@@ -34,17 +34,25 @@
   text-transform: uppercase;
 }
 
+/* No card round each column: the heading and row dividers carry it. The key column is as wide as
+   the column's widest key, so each key sits close to what it does (round 2, #1118). */
 .list {
   display: grid;
-  gap: var(--wf-s-2);
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--wf-s-3);
   margin: 0;
 }
 
 .row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--wf-s-2);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: var(--wf-s-2) 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
 }
 
 .row dt,

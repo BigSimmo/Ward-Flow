@@ -119,6 +119,19 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     .filter(Boolean)
     .join(", ");
 
+  // Round 2 (#1118): the welcome card's title and body already say who you are and the meta says
+  // how long is left, so it drops the who-line (the progress takes its place) and its own sentence.
+  const welcome = step.id === "welcome";
+  const body = welcome ? step.body.replace(/\s*This takes about [^.]*\./u, "") : step.body;
+  const progress = (
+    <div className={styles.progress}>
+      <div className={styles.bar} aria-hidden="true">
+        <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+      </div>
+      <p className={styles.meta}>{meta}</p>
+    </div>
+  );
+
   return (
     <OverlayPortal layer="modal" name="ward-tour">
       <div ref={rootRef} className={styles.layer} data-testid="ward-tour" data-device={device}>
@@ -147,7 +160,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           data-step={step.id}
         >
           <div className={styles.head}>
-            <p className={styles.who}>{who}</p>
+            {welcome ? progress : <p className={styles.who}>{who}</p>}
             <button
               type="button"
               className={styles.close}
@@ -156,22 +169,17 @@ export function WardTour({ onClose }: { onClose: () => void }) {
               title="Close"
               data-testid="ward-tour-close"
             >
-              <X aria-hidden="true" strokeWidth={2} />
+              <X aria-hidden="true" strokeWidth={1.75} />
             </button>
           </div>
           {/* Redesign (#1118): how far through, straight under the header. */}
-          <div className={styles.progress}>
-            <div className={styles.bar} aria-hidden="true">
-              <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
-            </div>
-            <p className={styles.meta}>{meta}</p>
-          </div>
+          {welcome ? null : progress}
           <p className={styles.chapter}>{step.chapter}</p>
           <h2 id="ward-tour-title" className={styles.title} aria-live="polite">
             {step.title}
           </h2>
           <p id="ward-tour-body" className={styles.body}>
-            {step.body}
+            {body}
           </p>
           {step.tryIt ? (
             <p className={styles.try}>
@@ -240,9 +248,12 @@ export function WardTour({ onClose }: { onClose: () => void }) {
             >
               {last ? "Replay" : "Skip tour"}
             </button>
-            <button type="button" className={styles.secondary} disabled={index === 0} onClick={() => go(index - 1)}>
-              Back
-            </button>
+            {/* Round 2 (#1118): no dead Back on the first card. */}
+            {index > 0 ? (
+              <button type="button" className={styles.secondary} onClick={() => go(index - 1)}>
+                Back
+              </button>
+            ) : null}
             <button
               ref={nextRef}
               type="button"

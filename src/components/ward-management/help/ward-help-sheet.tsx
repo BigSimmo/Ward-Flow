@@ -198,7 +198,18 @@ function WardHelpSheetView({
       footer={
         <div className={barStyles.drawerFoot}>
           <span>Ward Flow guide · nothing typed here is saved</span>
-          {latest ? <span>Updated {formatNewDate(latest.date)}</span> : null}
+          {/* Round 2 (#1118): the date opens What's new, so it does something rather than repeat that
+              tab. A phone has room for one line only, and What's new is a tab at the top. */}
+          {latest && view !== "new" && !phone ? (
+            <button
+              type="button"
+              className={styles.footLink}
+              onClick={() => onView("new")}
+              data-testid="ward-help-foot-new"
+            >
+              What&rsquo;s new {formatNewDate(latest.date)}
+            </button>
+          ) : null}
         </div>
       }
       footerClassName={barStyles.drawerFooter}
@@ -314,11 +325,10 @@ function WardHelpSheetView({
       {view === "screen" ? (
         help ? (
           <section className={styles.stack} aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
-            <div className={styles.card}>
-              <div className={styles.screenHead}>
-                <h3 id="ward-help-screen-title">{help.title}</h3>
-                <p className={styles.text}>{help.purpose}</p>
-              </div>
+            {/* Round 2 (#1118): a plain heading and line, not a card, for the screen this Help is about. */}
+            <div className={styles.screenHead}>
+              <h3 id="ward-help-screen-title">{help.title}</h3>
+              <p className={styles.text}>{help.purpose}</p>
             </div>
             <PointList heading="Main actions" points={phone ? (help.phoneActions ?? help.actions) : help.actions} />
             {screenTasks.length ? (
@@ -383,8 +393,10 @@ function WardHelpSheetView({
 
       {view === "glossary" ? <WardHelpGlossary termsSource={termsSource} /> : null}
 
-      {/* Redesign (#1118): the tour and the shortcuts close every view, then the Reference shelf. A
-          phone has no keyboard, so it is not offered the shortcuts (HF-14). */}
+      {/* Redesign (#1118): Reference (colour code, roles, more) is an extra, so it closes every view,
+          then the tour and the shortcuts. A phone has no keyboard, so it is not offered the shortcuts
+          (HF-14). */}
+      <WardHelpReference role={role} onClose={onClose} />
       <div className={styles.endRow} data-testid="ward-help-end">
         <button
           type="button"
@@ -407,7 +419,6 @@ function WardHelpSheetView({
           </button>
         )}
       </div>
-      <WardHelpReference role={role} onClose={onClose} />
     </Sheet>
   );
 }
@@ -442,7 +453,7 @@ function Questions({ items }: { items: readonly { question: string; answer: stri
   );
 }
 
-/** A heading and a card of short points, each behind a quiet dot. */
+/** A heading and a card of short points. Round 2 (#1118): the row dividers part them, so no dot. */
 function PointList({ heading, points, testId }: { heading: string; points: readonly string[]; testId?: string }) {
   return (
     <div className={styles.group}>
@@ -450,7 +461,6 @@ function PointList({ heading, points, testId }: { heading: string; points: reado
       <ul className={styles.card} data-testid={testId}>
         {points.map((point) => (
           <li key={point} className={styles.row}>
-            <span className={styles.point} aria-hidden="true" />
             <span className={styles.text}>{point}</span>
           </li>
         ))}

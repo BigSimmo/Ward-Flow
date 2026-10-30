@@ -40,7 +40,7 @@ export const HOW_TO_TOPICS = [
   "Finding your way",
   "Settings and display",
 ] as const;
-export type HowToTopic = (typeof HOW_TO_TOPICS)[number];
+type HowToTopic = (typeof HOW_TO_TOPICS)[number];
 
 export type HowTo = {
   readonly id: string;

@@ -41,7 +41,7 @@ function suggested(
   phone: boolean,
 ): readonly HelpSearchResult[] {
   const tasks = tasksForDesk(role).filter((howTo) => showMeAvailable(howTo, role, home, phone));
-  const here = (go: string | undefined) => howToHref(go, role, home)?.split("#")[0] === pathname;
+  const here = (go: HelpSearchResult["go"]) => howToHref(go, role, home)?.split("#")[0] === pathname;
   return [...tasks.filter((howTo) => here(howTo.go)), ...tasks.filter((howTo) => !here(howTo.go))]
     .slice(0, 3)
     .map((howTo) => ({

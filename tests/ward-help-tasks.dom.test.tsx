@@ -181,4 +181,14 @@ describe("How do I… in the Help sheet", () => {
     render(<WardHelpSheet view="tasks" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByTestId("ward-help-context").textContent).toMatch(/· this screen: Handover/);
   });
+
+  it("opens What's new from the footer's date on a computer (round 2, #1118)", () => {
+    const onView = vi.fn();
+    const { unmount } = render(<WardHelpSheet view="tasks" showMeOn onView={onView} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("ward-help-foot-new"));
+    expect(onView).toHaveBeenCalledWith("new");
+    unmount();
+    render(<WardHelpSheet view="new" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.queryByTestId("ward-help-foot-new")).toBeNull();
+  });
 });

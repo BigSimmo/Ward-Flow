@@ -657,18 +657,36 @@ export const SHORTCUT_GROUPS = ["Find", "Open", "Move around"] as const;
 export const KEYBOARD_SHORTCUTS: readonly {
   keys: string;
   action: string;
+  /** The few words the shortcuts sheet shows (round 2, #1118); `action` stays the spoken sentence. */
+  short: string;
   group: (typeof SHORTCUT_GROUPS)[number];
 }[] = [
-  { keys: "/", action: "Search, from the box in the header. On Settings it finds a setting.", group: "Find" },
-  { keys: "Ctrl+K", action: "Search, even with single-key shortcuts off. Cmd+K on a Mac.", group: "Find" },
-  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks.", group: "Open" },
-  { keys: "Shift+A", action: "Open Activity.", group: "Open" },
-  { keys: "Shift+R", action: "Start a new referral.", group: "Open" },
-  { keys: "[", action: "Fold the side menu to icons, or open it again.", group: "Move around" },
-  { keys: "Esc", action: "Close what is open, or step back.", group: "Move around" },
+  {
+    keys: "/",
+    action: "Search, from the box in the header. On Settings it finds a setting.",
+    short: "Search",
+    group: "Find",
+  },
+  {
+    keys: "Ctrl+K",
+    action: "Search, even with single-key shortcuts off. Cmd+K on a Mac.",
+    short: "Search, even with shortcuts off (⌘K on a Mac)",
+    group: "Find",
+  },
+  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks.", short: "Open Alerts or Tasks", group: "Open" },
+  { keys: "Shift+A", action: "Open Activity.", short: "Open Activity", group: "Open" },
+  { keys: "Shift+R", action: "Start a new referral.", short: "New referral", group: "Open" },
+  {
+    keys: "[",
+    action: "Fold the side menu to icons, or open it again.",
+    short: "Fold or open the side menu",
+    group: "Move around",
+  },
+  { keys: "Esc", action: "Close what is open, or step back.", short: "Close, or step back", group: "Move around" },
   {
     keys: "?",
     action: "Show these shortcuts. On Handover and Referrals, list that page's own keys.",
+    short: "Show shortcuts",
     group: "Open",
   },
 ];

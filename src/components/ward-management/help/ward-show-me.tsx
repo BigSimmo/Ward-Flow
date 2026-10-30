@@ -113,7 +113,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
               title="Close"
               data-testid="ward-show-me-close"
             >
-              <X aria-hidden="true" strokeWidth={2} />
+              <X aria-hidden="true" strokeWidth={1.75} />
             </button>
           </div>
           <div className={styles.progress}>

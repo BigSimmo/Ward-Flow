@@ -111,16 +111,6 @@
   gap: var(--wf-s-2);
 }
 
-/* A quiet dot in front of each point, aligned to the first line. */
-.point {
-  flex: none;
-  width: 5px;
-  height: 5px;
-  margin-top: 7px;
-  border-radius: 50%;
-  background: var(--wf-ink-3);
-}
-
 /* The step number in front of a job: a small framed tile, ink not colour. */
 .step {
   display: grid;
@@ -437,10 +427,12 @@
 
 /* ── This screen ─────────────────────────────────────────────────────────────────────────── */
 
+/* The screen's (or desk's) name and purpose sit on the page, not in a card, lined up with the group
+   headings (round 2, #1118). */
 .screenHead {
   display: grid;
   gap: 4px;
-  padding: var(--wf-s-3);
+  padding: 0 var(--wf-s-1);
 }
 
 .screenHead > h3 {
@@ -513,12 +505,6 @@
 @media (prefers-reduced-motion: reduce) {
   .caret {
     transition: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .point {
-    background: CanvasText;
   }
 }
 
@@ -703,13 +689,32 @@ button.goLink {
   cursor: pointer;
 }
 
-/* The foot of every view: the tour and the shortcuts, side by side, then Reference below. */
+/* The foot of every view: Reference, then the tour and the shortcuts side by side. */
 .endRow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wf-s-2);
-  padding-top: var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
+}
+
+/* The footer's What's new date, as a quiet link in the footer's own type. */
+.footLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.footLink:hover {
+  color: var(--wf-ink-1);
+}
+
+.footLink:focus-visible {
+  outline: 2px solid var(--wf-ink-1);
+  outline-offset: 2px;
 }
 
 .endRow > button {
@@ -725,11 +730,12 @@ button.linkRow {
   cursor: pointer;
 }
 
+/* Round 2 (#1118): phone rows are 44px. */
 @media (max-width: 48rem) {
   .endRow > button,
   .answerTitle,
   button.linkRow {
-    min-height: 48px;
+    min-height: 44px;
   }
 
   button.goLink {
