@@ -1,0 +1,851 @@
+/* Bed dossier drawer: a glass sheet on the right (a bottom sheet on a phone) holding solid cards.
+   v6 tokens only. No coloured stripes or edges; status is a glyph beside a word. */
+
+.drawerScrim {
+  position: fixed;
+  inset: 0;
+  background: var(--wf-scrim);
+  z-index: 80;
+  display: none;
+}
+
+.drawerScrim.show {
+  display: block;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  /* Redesign: a little wider, so the filled step, the plain step and More sit in one row. */
+  width: min(500px, 100vw);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--wf-glass);
+  -webkit-backdrop-filter: blur(28px) saturate(1.8);
+  backdrop-filter: blur(28px) saturate(1.8);
+  border-left: 1px solid var(--wf-line-2);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  z-index: 90;
+  transform: translateX(110%);
+  transition: transform var(--wf-m-base, 0.22s) var(--wf-ease, ease);
+}
+
+.drawer.show {
+  transform: translateX(0);
+}
+
+.grab {
+  display: none;
+}
+
+/* Header: badge, name and line, previous, next, close. */
+.drawerHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  flex-shrink: 0;
+}
+
+.drawerBedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-tag);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* A free bed reads as a dashed outline, the same as its tile. */
+.drawerBedBadgeReady {
+  border-style: dashed;
+  border-color: var(--wf-data-ready);
+}
+
+.drawerHeading {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.drawerTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawerKicker {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  /* Design audit DA-37: --wf-ink-3 read 4.17:1 on the translucent drawer over the dimmed page. */
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawer .pill {
+  border-radius: var(--wf-r-tag);
+}
+
+/* Fact tiles */
+.facts {
+  /* Redesign: four equal tiles whose values wrap rather than cut off ("Day 1…", "Past d…"). */
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  flex-shrink: 0;
+}
+
+.fact {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: var(--wf-r-md);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+}
+
+.factLabel {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-11);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.factValue {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.factValue svg {
+  flex-shrink: 0;
+}
+
+.factValue .ell {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.factValue :global(svg) {
+  margin-top: 3px;
+}
+
+.factValue:has(svg) {
+  align-items: flex-start;
+}
+
+/* Redesign: Patient page moves up beside the name, so the footer holds the steps in one row. */
+.headPatient {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 24px;
+  margin-top: 2px;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent);
+  text-decoration: none;
+}
+
+.headPatient:hover {
+  text-decoration: underline;
+}
+
+/* Pill tabs */
+.tabsWrap {
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  flex-shrink: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: var(--wf-s-1);
+  border-radius: var(--wf-r-track);
+  background: var(--wf-track);
+  border: 1px solid var(--wf-line);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 6%, transparent);
+}
+
+.tab {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-seg-item);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--wf-ink-1);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.tabOn {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-ink-1) 12%, transparent),
+    0 0 0 1px var(--wf-line-ctl);
+}
+
+/* Body: scrolls between the fixed head and foot. */
+.drawerBody {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  scrollbar-width: thin;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+/* Solid cards on the glass */
+.card {
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+  min-width: 0;
+}
+
+/* Audit 24-1 B-04: the person this drawer was opened for has left the bed. */
+.goneNotice {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-1);
+}
+
+.cardTitle {
+  margin: 0;
+  padding: 10px 14px 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.cardInner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 14px 12px;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.kvDt {
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.kvDd {
+  margin: 0;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ell {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.select {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  border-radius: var(--wf-r-ctl);
+  border: 1px solid var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  min-width: 0;
+}
+
+.select:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px 12px;
+}
+
+.editor .select {
+  flex: 1 1 auto;
+}
+
+/* The observation level editor: its rows line up with the full-width selects above them. */
+.editorFlush {
+  padding-inline: 0;
+}
+
+/* The observation level editor: each control carries its own visible label. */
+.field {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.fieldRow {
+  display: flex;
+  gap: 8px;
+}
+
+.done {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 12px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-success-ink);
+}
+
+.done svg {
+  flex-shrink: 0;
+}
+
+.empty {
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Timeline */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 4px 14px 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 8.5rem) minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-height: 32px;
+  font-size: var(--wf-fs-12);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.timeline li:last-child {
+  border-bottom: 0;
+}
+
+.timelineAt {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer: one primary, then the bed's other actions, then the patient page. */
+.drawerFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line-2);
+  background: var(--wf-glass-thick);
+  flex-shrink: 0;
+}
+
+.footSpacer {
+  flex: 1 1 0;
+}
+
+/* Phone: a bottom sheet about 90vh tall with rounded top corners. */
+@media (max-width: 700px) {
+  .drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 90vh;
+    height: 90dvh;
+    border: 1px solid var(--wf-line-2);
+    border-bottom: 0;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+    transform: translateY(110%);
+  }
+
+  .drawer.show {
+    transform: translateY(0);
+  }
+
+  .grab {
+    display: block;
+    flex-shrink: 0;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line-3);
+  }
+
+  .facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .drawerFoot > :global(*) {
+    flex: 1 1 auto;
+  }
+
+  .footSpacer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer {
+    transition: none;
+  }
+}
+
+/* The destination "Record that they have left" will record, always in view above the actions. */
+.footDestination {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.footDestination strong {
+  overflow: hidden;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+}
+
+.footChange {
+  flex: none;
+  height: 24px;
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.footChange:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Touch screens: tabs, selects and Change keep the 48px tap target; desktop stays compact. */
+@media (pointer: coarse) {
+  .tab,
+  .select,
+  .footChange {
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .select {
+    font-size: max(1rem, 16px);
+  }
+}
+
+/* Phone (v10 bed sheet): one scrolling sheet, no tabs. Only rendered on phone. */
+@media (max-width: 48rem) {
+  .phoneSheet {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: auto;
+    max-height: calc(100dvh - 48px);
+    border: 1px solid var(--wf-line-2);
+    border-bottom: 0;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+    background: var(--wf-glass-thick);
+    transform: translateY(0);
+  }
+
+  .phoneSheet .grab {
+    display: block;
+    flex-shrink: 0;
+    width: 36px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: var(--wf-r-pill);
+    background: var(--wf-line-3);
+  }
+
+  .phoneHead {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-3) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+    flex-shrink: 0;
+  }
+
+  .phoneHead .drawerHeading {
+    gap: 2px;
+    padding-top: var(--wf-s-1);
+  }
+
+  .phoneTitle {
+    margin: 0;
+    overflow: hidden;
+    color: var(--wf-ink-1);
+    font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .phoneChip {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    margin-top: var(--wf-s-1);
+    padding: 0 10px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-ctl);
+    background: var(--wf-surface);
+    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+    white-space: nowrap;
+  }
+
+  .phoneBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+  }
+
+  .phoneFacts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-lg);
+    background: var(--wf-surface);
+  }
+
+  .phoneFacts .fact {
+    gap: 4px;
+    padding: var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .phoneFacts .fact:nth-child(odd) {
+    border-right: 1px solid var(--wf-line);
+  }
+
+  .phoneFacts .fact:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .phoneFacts .factLabel {
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
+  }
+
+  .phoneFacts .factValue {
+    font-size: var(--wf-fs-14);
+  }
+
+  .phoneSec {
+    margin: var(--wf-s-4) 0 var(--wf-s-2);
+    color: var(--wf-ink-3);
+    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .phoneKv {
+    display: grid;
+    grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--wf-s-2) var(--wf-s-3);
+    margin: 0;
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .phoneKv .kvDd {
+    font-size: var(--wf-fs-14);
+  }
+
+  .phoneKv .select {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  /* A select on its own line under its label, so a long choice is not cut off. 16px stops iOS
+     Safari zooming the page when the select is tapped. */
+  .phoneKv .kvWide {
+    grid-column: 1 / -1;
+  }
+
+  .phoneKv .kvWide .select {
+    font-size: var(--wf-fs-16);
+  }
+
+  .phoneSheet .editor {
+    padding: var(--wf-s-2) 0 0;
+  }
+
+  .phoneSheet .timeline {
+    padding: 0;
+  }
+
+  .phoneEmpty {
+    margin: 0;
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-14);
+  }
+
+  .phoneMore {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+    margin-top: var(--wf-s-4);
+  }
+
+  .phoneMore > :global(*) {
+    min-height: var(--spacing-tap, 3rem);
+  }
+
+  .phoneFoot {
+    display: flex;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--wf-line-2);
+    background: var(--wf-glass-thick);
+    flex-shrink: 0;
+  }
+
+  .phoneFoot > :global(*) {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Print: the phone bed sheet is height-bounded with a scrolling body on screen; on paper it grows
+   to its content so no detail is clipped. */
+@media print {
+  .phoneSheet {
+    position: static;
+    max-height: none;
+    height: auto;
+    overflow: visible;
+    transform: none;
+  }
+
+  .phoneBody {
+    min-height: auto;
+    overflow: visible;
+  }
+}
+
+/* D-64: the criteria led discharge state beside "Record that they have left". */
+.footCriteria {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* Redesign (preview): one filled step, one plain step and More, with Patient page at the end. */
+.actions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.actionsPhone {
+  flex-wrap: nowrap;
+}
+
+.actionsPhone > :global(*) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.actionsPhone :global(button) {
+  width: 100%;
+  min-height: 48px;
+}
+
+/* Redesign (preview): why the person has not left yet, from what the ward recorded. */
+.notLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-3) var(--wf-s-4) 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-left-width: 3px;
+  border-radius: var(--wf-r-md, 8px);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.notLeft :global(svg),
+.notLeft > :first-child {
+  flex: none;
+  margin-top: 3px;
+}
+
+.notLeft b {
+  font-weight: 600;
+}
+
+.notLeft[data-tone="danger"] {
+  border-left-color: var(--wf-danger);
+}
+
+.notLeft[data-tone="warning"] {
+  border-left-color: var(--wf-warning);
+}
+
+.notLeft[data-tone="neutral"] {
+  border-left-color: var(--wf-line-ctl);
+}
+
+@media (max-width: 48rem) {
+  /* Redesign: the filled step takes the full width; the plain step and More share the row below. */
+  .actionsPhone {
+    flex-wrap: wrap;
+  }
+
+  .actionsPhone > :first-child {
+    flex: 1 1 100%;
+  }
+
+  .phoneBody .notLeft {
+    margin: var(--wf-s-3) 0 0;
+  }
+
+  /* Labels wrap rather than cut off ("What is holding them up"), and sit at the top of their row. */
+  .phoneKv {
+    align-items: start;
+  }
+
+  .phoneKv .kvDt {
+    white-space: normal;
+  }
+}
