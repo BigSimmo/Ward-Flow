@@ -25,14 +25,24 @@ function isShown(element: HTMLElement) {
   return window.getComputedStyle(element).display !== "none";
 }
 
+const LIVE_CARD = '[data-wf-toast-host] [data-wf-toast]:not([data-leaving="true"])';
+
 /**
  * Alt+N moves focus to the newest notice's first control (a running Undo, the action, or close),
  * so a keyboard user can reach Undo without hunting for it; Alt+N again or Escape goes back. With no
  * notice showing it opens the Recent list instead (`recentRequest` is bumped).
+ *
+ * A page can hold more than one toast region (each Ward Flow shell mounts its own provider), so only
+ * the region holding the newest notice answers; with none showing, the region that has a Recent
+ * list does (`hasRecent`).
  */
-export function useToastJumpKey(regionRef: RefObject<HTMLElement | null>) {
+export function useToastJumpKey(regionRef: RefObject<HTMLElement | null>, hasRecent: boolean) {
   const [recentRequest, setRecentRequest] = useState(0);
   const cameFrom = useRef<HTMLElement | null>(null);
+  const hasRecentRef = useRef(hasRecent);
+  useEffect(() => {
+    hasRecentRef.current = hasRecent;
+  }, [hasRecent]);
 
   useEffect(() => {
     const goBack = () => {
@@ -57,18 +67,22 @@ export function useToastJumpKey(regionRef: RefObject<HTMLElement | null>) {
       }
       if (!isToastJumpKey(event) || event.defaultPrevented) return;
       if (isTextEntry(event.target) && !inToast) return;
-      event.preventDefault();
 
-      if (inToast && region.contains(active)) {
+      if (inToast) {
+        if (!region.contains(active)) return;
+        event.preventDefault();
         goBack();
         return;
       }
-      const cards = Array.from(region.querySelectorAll<HTMLElement>('[data-wf-toast]:not([data-leaving="true"])'));
-      const newest = cards.at(-1);
+      const newest = Array.from(document.querySelectorAll<HTMLElement>(LIVE_CARD)).at(-1);
       if (!newest) {
+        if (!hasRecentRef.current) return;
+        event.preventDefault();
         setRecentRequest((count) => count + 1);
         return;
       }
+      if (!region.contains(newest)) return;
+      event.preventDefault();
       cameFrom.current = active instanceof HTMLElement && active !== document.body ? active : null;
       const primary = newest.querySelector<HTMLElement>("[data-toast-primary]");
       if (primary && isShown(primary)) {

@@ -455,7 +455,7 @@ function ToastRegion() {
   const live = toasts.filter((toast) => !toast.leaving);
   const expanded = pinned || hovered || focused;
   const layout = toastStackLayout(toasts, expanded);
-  const jump = useToastJumpKey(regionRef);
+  const jump = useToastJumpKey(regionRef, (context?.recent.length ?? 0) > 0);
   // A pinned stack folds again once it is short enough not to need folding.
   const needsPin = toastStackLayout(toasts, false).folded;
   if (pinned && !needsPin) setPinned(false);
