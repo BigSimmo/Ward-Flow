@@ -509,3 +509,31 @@ a.eventText:hover {
     transform: rotate(-45deg);
   }
 }
+
+/* Redesign: the ED access forecast moves into Planned, so its banner under the ED strip goes. */
+.scope [data-testid="home-ed-access-risk"] {
+  display: none;
+}
+
+/* The forecast heads Planned in the same two-line shape as the rows, set apart by a tint. */
+.forecastRow {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "glyph who time"
+    ". what what";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  border-bottom: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-warning) 7%, var(--wf-surface));
+}
+
+.forecastRow .rowWho,
+.forecastRow .rowWho b {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}

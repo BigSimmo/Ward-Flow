@@ -258,6 +258,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** review is explicit and covers only the lines shown, with Undo. Opening or closing marks nothing; alerts, tasks and notices stay as they are. On a phone, My List rows are two lines with the wait on the right.",
     "**Kept:** change lines come from today's \"since you looked\" comparison, recent events from the bar's Activity feed, and Mark read from the bar's own notice action.",
     "**Mock-up only:** the demo opens as if you last reviewed at 09:30 (the count is read from the records since then), and Notices shows three sample notices because no notice reaches the bed coordinator in the synthetic world. The review resets on reload, and the pinned clock means a change arriving while Activity is open cannot be shown.",
+    "**New:** the ED access forecast that sat as a banner under the ED strip is now the first Planned row, because it is the same kind of thing: people heading for a target.",
   ],
   capacity: [
     "**Figures:** every number comes from the derivations today's Capacity page uses (bed gaps, the network ward rows, the beds forecast and the forecast model). The 48-hour figure is now the real forecast, so it is no longer illustrative.",

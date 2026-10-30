@@ -809,7 +809,12 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
 
   return (
     // `data-mockup-activity-panel` tells the preview shell this page draws its own Activity panel.
-    <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="v6" data-mockup-activity-panel="">
+    <div
+      className={`${styles.screen} ${mock.scope}`}
+      data-testid="ward-coordinator"
+      data-ward-design="v6"
+      data-mockup-activity-panel=""
+    >
       <main id="main-content" className={styles.main}>
         <h1 className="sr-only">Bed coordinator</h1>
 

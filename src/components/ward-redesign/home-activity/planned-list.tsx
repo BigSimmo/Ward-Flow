@@ -5,8 +5,17 @@ import { Fragment, useMemo, useState } from "react";
 
 import { Button, Card, CardHead, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
+import { edHref } from "@/components/ward-management/shell/ward-facade";
+import { targetText } from "@/components/ward-management/forecast/ed-access-risk";
+import { forecastEdName, useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 import { shiftEndInstant } from "@/components/ward-management/ward-board-time-features";
-import { dayOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
+import {
+  dayOf,
+  formatInstant,
+  formatInstantWithDay,
+  MINUTES_PER_DAY,
+  type Instant,
+} from "@/components/ward-management/ward-clock";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 
@@ -67,6 +76,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
         // Said once here; target rows carry an amber glyph and edge, and a spoken label.
         meta={`${formatInstant(now)} to ${formatInstant(until)} · Targets are yours, not clinical standards`}
       />
+      <AccessForecastRow now={now} />
       {rows.length === 0 ? (
         <p className={styles.empty}>Nothing planned for the rest of this shift.</p>
       ) : (
@@ -105,5 +115,35 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
         </div>
       ) : null}
     </Card>
+  );
+}
+
+/**
+ * Redesign: the ED access forecast that sat as a banner under Home's ED strip, now the first Planned row,
+ * because it is the same kind of thing: people heading for a target. It reads today's forecast model.
+ */
+function AccessForecastRow({ now }: { now: Instant }) {
+  const { risk } = useForecastModel(now);
+  const first = [...risk.byEd].sort(
+    (a, b) => b.atRisk - a.atRisk || (a.firstMinutesLeft ?? 0) - (b.firstMinutesLeft ?? 0),
+  )[0];
+  if (!first || first.atRisk === 0) return null;
+  const total = risk.atRisk.length;
+  return (
+    <div className={styles.forecastRow} data-testid="home-planned-access-forecast">
+      <StatusGlyph tone="warning" size={9} className={styles.rowGlyph} />
+      <span className={styles.rowWho}>
+        <b>
+          {total} likely to pass the {targetText(risk.targetMinutes)} ED target
+        </b>
+      </span>
+      <time className={styles.rowTimeStrong}>{formatInstantWithDay(now + (first.firstMinutesLeft ?? 0), now)}</time>
+      <span className={styles.rowWhat}>
+        Forecast, before a suitable bed is due · {first.atRisk} at {forecastEdName(first.edId)} ·{" "}
+        <Link href={edHref(first.edId)} className={styles.personLink}>
+          See who
+        </Link>
+      </span>
+    </div>
   );
 }
