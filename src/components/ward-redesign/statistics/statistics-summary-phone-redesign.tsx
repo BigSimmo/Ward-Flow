@@ -64,7 +64,7 @@ type PhoneEd = {
 type PhoneTally = { id: string; label: string; count: StatisticsCount };
 
 /** The desktop page's blocked discharges, declines and pull to arrival, for the More figures sheet. */
-export type PhoneMoreFigures = {
+type PhoneMoreFigures = {
   blocked: { total: StatisticsCount; admissions: StatisticsCount; tallies: readonly PhoneTally[] };
   /** `statement` when the declines cannot be read, in the desktop card's own words. */
   declines: { total: StatisticsCount; tallies: readonly PhoneTally[] } | { statement: string };
