@@ -6,7 +6,7 @@
 // a count per day per health service, the bookings still waiting, and the forms that book,
 // change, cancel and record the arrival of one. Every write is a reducer event; this component
 // holds only the open form's draft, never in browser storage.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useId, useEffect, useMemo, useRef, useState } from "react";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { CalendarPlus } from "lucide-react";
 
@@ -153,6 +153,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
   // may take. The executive reads them as counts, with nobody named.
   const role = useRouteRole();
+  const selectedIdentityId = useId();
   const canBook = dispatchPermission(role, "BOOK_PLANNED_ADMISSION").allowed;
   const canChange = dispatchPermission(role, "CHANGE_PLANNED_ADMISSION").allowed;
   const canCancel = dispatchPermission(role, "CANCEL_PLANNED_ADMISSION").allowed;
@@ -433,6 +434,10 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
             ? "Choose a legal status first"
             : undefined;
 
+  const draftIdentity =
+    role !== "executive" && draft?.who === "patient" && draft.patientId !== ""
+      ? patientIdentityLine(patientOf({ patientId: draft.patientId }))
+      : undefined;
   const booked = agenda.length;
   const update = (patch: Partial<Draft>) => {
     setDraft((current) => applyDraftPatch(current, patch));
@@ -585,6 +590,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               onClick={submitDraft}
               disabledReason={draftMissing ?? (overrideReasonMissing ? "Choose an override reason first" : undefined)}
               data-testid="ward-planned-submit"
+              aria-describedby={draftIdentity ? selectedIdentityId : undefined}
             >
               {form?.mode === "change" ? "Save" : "Book"}
             </Button>
@@ -623,7 +629,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                       </option>
                       {getBookablePatients().map((patient) => (
                         <option key={patient.id} value={patient.id}>
-                          {patientDisplayName(patient)}
+                          {patientIdentityLine(patientOf({ patientId: patient.id }))}
                         </option>
                       ))}
                     </Select>
@@ -674,6 +680,11 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                     {genderField(false)}
                   </>
                 )}
+                {draftIdentity ? (
+                  <p className={styles.formWho} id={selectedIdentityId} data-testid="ward-planned-selected-identity">
+                    Check: {draftIdentity}
+                  </p>
+                ) : null}
                 {draft.who === "patient" && draft.patientId !== "" ? (
                   <p className={styles.formWho} data-testid="ward-planned-record-gender">
                     {recordGenderText(draft.patientId)}

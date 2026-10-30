@@ -108,6 +108,8 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
 export function CommunityScreenTransportCancelDialog({ view }: { view: CommunityScreenView }) {
   const {
     transportCancelFor,
+    movements,
+    umrnLookup,
     cancelTransportReason,
     setCancelTransportReason,
     cancelTransportBlocked,
@@ -117,6 +119,8 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
   } = view;
   const save = useWardFormSave(transportCancelFor ?? "");
   if (transportCancelFor === undefined) return null;
+  const movement = movements.find((candidate) => candidate.id === transportCancelFor);
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
   return (
     <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
@@ -131,7 +135,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
       >
         <div className={styles.modalHeader}>
           <h3 id={`ward-community-cancel-transport-title-${transportCancelFor}`} className={styles.modalTitle}>
-            Cancel this team&apos;s transport booking for {transportCancelFor}
+            Cancel this team&apos;s transport booking for {patientName}
           </h3>
           <button
             type="button"
