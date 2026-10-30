@@ -17,6 +17,7 @@ import { TransportRedesign } from "@/components/ward-redesign/transport/transpor
 import { PatientsRedesign } from "@/components/ward-redesign/patients/patients-redesign";
 import { DischargesPage } from "@/components/ward-redesign/discharges/discharges-page";
 import { WardsPage } from "@/components/ward-redesign/wards/wards-page";
+import { StatisticsPage } from "@/components/ward-redesign/statistics/statistics-page";
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -39,4 +40,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   patients: PatientsRedesign,
   discharges: DischargesPage,
   wards: WardsPage,
+  statistics: StatisticsPage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

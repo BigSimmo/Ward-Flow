@@ -80,6 +80,11 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** card text wraps ("Sir Charles Gairdner · Older adult") instead of ending in "…". The stale-count warning was already on the card and stays.',
     "**Point 21 (my pick for you to confirm):** All wards stays as the page to compare wards side by side. Capacity's bed map shows where the free beds are now, and Places becomes the directory to find a place.",
   ],
+  statistics: [
+    "**Built from a copy of today's Statistics page**, so the Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line, Samples and Export all work as now.",
+    "**New:** Bed board, Journey and Map are one switch instead of three large cards, and Open a unit is one button beside it that shows today's unit finder in place, instead of a panel repeating the menu.",
+    "**New:** summary first. Occupancy by service (with Empty to ready and Admission stages, which come with it) sits at the top, and the hospital chart lists its first 7 hospitals with Show all.",
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",
