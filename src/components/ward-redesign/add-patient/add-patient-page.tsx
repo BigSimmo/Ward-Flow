@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the add-patient mock-up is built; replaced by the redesigned page. */
+import { AddPatientRedesign } from "./add-patient-form";
+
+/** Redesigned add-a-patient mock-up: today's form, with the duplicate check under the identity fields. */
 export function AddPatientPage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <AddPatientRedesign />;
 }

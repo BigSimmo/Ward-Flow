@@ -1,20 +1,24 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - handover after 20 of 38 pages, with the plan and start steps for a new chat; Design owns._
+_Updated 2026-10-30 - all 38 pages built; next are the popups, states, phone pass and final checks; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
-branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`. No pull request is open.
+branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
+(do not merge; Josh reviews page by page).
 
 ## Start here (new chat)
 
 1. Read this file, then `design/core-pages-review-2026-10/HANDOVER-TOOLS.md` (the helper scripts, which
    lived in the old session's scratch folder and are gone).
 2. Check out branch `claude/core-pages-design-review-f5vf4g`, confirm both `origin` URLs name
-   `BigSimmo/Ward-Flow`, and run `npm ci --include=dev` if `node_modules` is missing.
+   `BigSimmo/Ward-Flow`. A cloud container may hold a shallow clone; the push guard then refuses until
+   the full history is fetched (`git fetch --unshallow origin`, which needs Josh's yes as network Git).
+   Node 24 is required: if `/opt/node24/bin` is missing, unpack the latest v24 from nodejs.org there,
+   then run `npm ci --include=dev` with it on the `PATH`.
 3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
    each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
 4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
-5. Continue at "Remaining plan" step 1 (Seclusion). Commit and push each page as it is done.
+5. Continue at "Remaining plan" step 1 (popups). Commit and push each piece as it is done.
 
 Josh's standing go-ahead: push to this branch only, no pull request, no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
@@ -82,6 +86,24 @@ screens (D-74), and apply every recommendation without waiting for answers.
 | Legal forms          | Fork split in two     | Times only as typed (point 18), 1A name shortened, Show more, header buttons        |
 | Out of area          | Fork                  | Surname first, quieter hero and checks, region beds open on choice                  |
 | On-call              | Real screen + styles  | Compact two-line service strip that scrolls on smaller screens                      |
+| Seclusion            | Fork                  | Table of every secure ward's room, header counts, ward record beside it             |
+| Governance           | Fork + styles         | Pane opens on the newest event, cells wrap, list full height                        |
+| Bed meeting TV       | Fork                  | One-line tiles, surname first, three tables (laptop); 1080p shows every panel       |
+| Meeting agenda       | Fork                  | Header counts, four lists two by two, surname first, small + Action                 |
+| Downtime pack        | Fork                  | One table at a time on screen with tabs; print keeps all four                       |
+| Chronology           | Fork                  | Header patient search, demo night's patients, what a chronology holds               |
+| Places               | Fork                  | A directory with no bed figures (point 21), search first, opens on a place          |
+| Community            | Fork                  | Live team count, full-width suburb lookup, page-scrolling A to Z                    |
+| Community team       | Fork (3 files)        | One caseload table, surname first, row opens the record                             |
+| Patient record       | Fork (2 files)        | Recorded-events timeline, surname first                                             |
+| Statistics compare   | Fork (3 files)        | Open a unit from the tab row, first 8 rows, occupancy first                         |
+| Statistics ward list | Fork                  | Chips on one row, first services and wards then Show more                           |
+| Statistics one ward  | Fork (3 files)        | Compact shaded bed map, roster first 8 rows (the admissions table)                  |
+| Statistics weekly    | Fork (2 files)        | Pilot measures in one table, Counted outside Ward Flow panel                        |
+| Add a patient        | Fork                  | Duplicate check inside Identity, live Needed list, surname first                    |
+| Ward answer          | Fork (D-89 cap)       | One-line All answered, census squares coloured by state with a key                  |
+| Settings             | Fork (3 files)        | Sticky save bar, compact steppers, Display and profile tab (real data)              |
+| Sign in              | Fork                  | Open as <role> button, no boxed role numbers                                        |
 
 Popups working so far: bed meeting sheet, try a scenario, Capacity ward panel, phone bed forecast, and the
 real movement drawer.
@@ -150,37 +172,33 @@ opening it on the first bed that needs a look instead of leaving it empty.
 
 ## Remaining plan, in order
 
-20 of 38 pages are built (table above). Each page's review notes (what is wrong, the fixes, what to keep)
-are in `_preview/review-notes.json` under its slug; follow them, and write its build notes as the others.
+All 38 pages are built (table above); each page's build notes are in `_preview/build-notes.ts`. Josh asked
+on 30 October for the pages first, then a pause for his review before the popups and states.
 
-1. **Seclusion** (was in progress, nothing written yet): `restrictive-practice/seclusion-screen.tsx` (580
-   lines) shows one ward from a picker. Make it a table of every secure ward's rooms (available, in use,
-   out of service, not recorded) with the header counting each; choosing a ward opens today's record and
-   incident form beside the table. Keep the "Operational view only" notice word for word; nothing works
-   out an order length or legal limit.
-2. **Governance** (`WardModeWorkspace mode="governance"`): the review pane opens on the newest event;
-   columns fit; outcome as tick, cross or circle; Review, Gaps by site, Audit trail, Registers, Reports as
-   header tabs. Keep the review count, PIR chronology and "Safety incidents are not recorded here".
-3. **Bed meeting:** TV (bare page, surname first), Agenda (full width, one Add action), Downtime pack,
-   Chronology (opens on the first patient).
-4. **Places and records:** Places (point 21: a directory with no bed figures), Community, Community team
-   (one caseload table), Patient record, Add a patient, Ward answer, Settings (Profile tab), Sign in (bare).
-5. **Statistics pages:** Compare, Ward list, One ward (admissions table, point 10), Weekly.
-6. **Popups (point 8):** Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu,
+**How the last 15 pages were built (30 October):** five helper agents worked in parallel in the one
+checkout, each limited to its own page folders, with every remaining slug registered first as a
+placeholder so no helper touched the shared registry. The coordinator looked at each page, kept files
+under the line cap by moving self-contained parts into sibling files, added build notes, and committed.
+Lessons: the shared dev server ran out of memory once with five helpers compiling (restart with
+`npm run ensure`), and a helper's half-saved file briefly breaks every mock-up page, because the viewer
+imports them all; retry before diagnosing.
+
+1. **Popups (point 8):** Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu,
    Create, Bed record, Confirm beds, ED actions, Log transport, Broadcast, Record a form, Ward notices,
    officer job panel, ward switcher, shift brief, Record exam, Refer to a ward, Go to a desk, Add the time,
    service picker, More pages, tour. Register each in `MOCKUP_POPUPS` (`_preview/screens.ts`) with the
    page it opens over and its `pop` name, and have the page open it from `openOnLoad`.
-7. **States (point 9)** as one "States" group: loading, empty, error, offline, toast, and a greyed control
+2. **States (point 9)** as one "States" group: loading, empty, error, offline, toast, and a greyed control
    saying exactly "Not wired in this prototype." (D4).
-8. **Phone pass** on every page built since the tablet pass (Patients onwards), at 390 px.
-9. **Final pass:** `npm run check:ward-text-size`, lint, typecheck, `npm run check:mockups`,
+3. **Phone pass** on every page built since the tablet pass (Patients onwards), at 390 px. The helpers
+   checked their own pages at 390 px; this is a second look across them all, light and dark.
+4. **Final pass:** `npm run check:ward-text-size`, lint, typecheck, `npm run check:mockups`,
    `npm run docs:update` (scripts index is stale), `npm run ward:organise:check`, knip (forks export
    things nothing imports; un-export them); update `README.md` here to describe the React mock-ups; build
    the shareable bundle (`node scripts/ward-flow/build-redesign-preview.mjs`); publish it to the existing
    artifact (https://claude.ai/artifact/GaVWBYM1Gkh8GdUtJvJapE, read it first); push.
-10. **Report to Josh:** each recommendation and what he approves, page by page, plus the open questions
-    below.
+5. **Report to Josh:** each recommendation and what he approves, page by page, plus the open questions
+   below.
 
 ## Open questions for Josh (my picks applied, to confirm on review)
 
@@ -189,9 +207,30 @@ are in `_preview/review-notes.json` under its slug; follow them, and write its b
 - Point 22: keep "Not legally checked" word for word.
 - Alerts: a "Chase all" button for a group needs a new command; not built.
 - Waiting and Home still show a countdown to recorded legal times; point 18 removed them on Legal forms.
-  Decide whether the same applies there (D-70).
+  Josh chose on 30 October to remove them there too (mock-ups only); not yet done in the Waiting and Home
+  forks, so do it in the next session.
+- Places: with no bed figures, the Most ready order is replaced by A to Z. My pick: keep A to Z.
+- Statistics compare: with both charts cut to eight rows the ward card ends early at 1440 px. Move Pinned
+  wards under the ward chart? My pick: yes, in the next pass.
+- Sign in: Open as <role> navigates to the role's home; four roles have no home of their own and open
+  Home. Confirm the button should navigate at all.
+- Settings: the review notes said not to mock the Profile tab's contents, but the plan asked for one; it is
+  built from real app data only (role, desk, scope, service, shift, appearance). Keep or drop?
+- Community team: wording for rows not accepted before the bed ("Referred during this stay", "Not
+  arrived", "Not counted") is unseen on today's data.
 
 ## Things found while building (for the real app)
+
+- Surname first still needed in shared code the mock-ups cannot reach: the downtime pack rows
+  (`use-take-downtime-pack.ts`), the community team record drawer, Add a patient's save toasts, and the
+  chronology CSV's patient line.
+- The docs facts check fails on this branch: the route count is 57 with the two mock-up routes, while
+  `docs/ward-flow/STATUS.md` and the code-map pages say 55. `npm run docs:facts:write` in the final pass
+  fixes it (those files need a claim update first).
+- Today's bed meeting TV does not fit a 1080p screen: the Brief is cut off at the foot (hidden overflow).
+  The redesign shows every panel; only the footer line sits below.
+- `?theme=dark` was not applying on any mock-up page (the rail re-applied the stored theme after mount);
+  fixed in `_preview/preview-screen.tsx` on 30 October.
 
 - Names written first name first on My ward's bed tiles and round list, its Notices, the ED board's Lists
   and access-risk card, Stays' Worth a look, Transport and Out of area (D-83 says surname first everywhere).

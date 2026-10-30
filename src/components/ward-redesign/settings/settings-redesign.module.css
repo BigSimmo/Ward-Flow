@@ -1,0 +1,133 @@
+/* Settings redesign (mock-up, 30 Oct 2026). Scoped over today's settings.module.css: module class
+ * names keep `_name__` in them, so the overrides below target them by attribute and touch nothing
+ * outside `.scope`. */
+
+/* "Save to apply" was a bordered tag that read as a button. It is plain words now. */
+.scopeWords {
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.scopeWords > strong {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* The other tabs' "Applies now" tag loses its box for the same reason. */
+.scope [class*="_scopeTag__"] {
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+/* Compact steppers on a desktop: the kit's own 36px buttons in a squared control, the value boxed
+ * between them, not floating in a wide pill. Coarse pointers keep the kit's 44px buttons. */
+@media (min-width: 48.0625rem) {
+  .scope [class*="_ruleRow__"] {
+    grid-template-columns: minmax(8rem, 1fr) 28px 9rem minmax(10.5rem, 1fr);
+    min-height: 56px;
+  }
+
+  /* Today's narrow-column rule (effect on its own line) keeps working with the narrower stepper. */
+  @container (max-width: 34rem) {
+    .scope [class*="_ruleRow__"] {
+      grid-template-columns: minmax(0, 1fr) 28px 9rem;
+    }
+  }
+
+  .scope [class*="_ruleStepper__"] > span:first-child {
+    width: auto;
+    height: var(--wf-h-md);
+    border-radius: var(--wf-r-md);
+  }
+
+  .scope [class*="_ruleStepper__"] > span:first-child > button {
+    width: 36px;
+  }
+
+  .scope [class*="_ruleStepper__"] > span:first-child > [role="spinbutton"] {
+    flex: 1 1 auto;
+    min-width: 4.5rem;
+    border-inline: 1px solid var(--wf-line);
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 48.0625rem) and (pointer: coarse) {
+  .scope [class*="_ruleStepper__"] > span:first-child > button {
+    width: 44px;
+  }
+}
+
+/* The save bar stays on the Rules tab, so where Save lives never moves. */
+.saveBar {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-1);
+}
+
+/* An unavailable Discard or Save is greyed, not dashed, so it never reads as a placeholder. */
+.saveBar button[aria-disabled="true"] {
+  border-style: solid;
+  border-color: var(--wf-line);
+}
+
+.saveCount {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.saveClean {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+}
+
+.saveMeta {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+}
+
+/* Profile and shift, inside Display. */
+.profileWho {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.profileName {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.profileName > strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--wf-s-3);
+}
+
+@media (max-width: 64rem) {
+  .profileGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -6,6 +6,35 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  "add-patient": [
+    "**Built from a copy of today's Add a patient form**, so typing, the duplicate check, Reset with Undo, Add patient and Register & start referral work as now.",
+    "**New:** the duplicate check sits under the identity fields, inside the Identity card, and runs as you type. Before anything is typed it is one quiet line saying what it checks.",
+    '**New:** the finish buttons are greyed until the form is complete, with "Needed: UMRN, date of birth, given and family name" beside them; the list shrinks as each field is filled.',
+    "**New (D-83):** names in the duplicate check read surname first.",
+    "**Kept:** identity only (D-77), optional gender and Aboriginal status, and Recently added.",
+    '**Still open:** the save toasts and the "saved outside this desk\'s view" line still read given name first, as today.',
+  ],
+  "ward-answer": [
+    "**Built from a copy of today's Ward answer view**, so answering, declining, Confirm your beds and the phone layout work as now.",
+    '**New:** with nothing to answer, the full-width Bed request panel becomes one line: "All answered. No referral is currently awaiting an answer from Dabakarn."',
+    "**New:** census squares are coloured by state (ready green, pulled blue, closed hatched amber, occupied grey), with a key giving the same counts as the header. Bed numbers go from 11 to 12 px.",
+    '**Kept:** Confirm your beds with its stepper and Confirm, Recent answers, and "Writes to Dabakarn only, never any other ward".',
+    "**Not seen:** the screen with a request waiting, because this ward has none in the synthetic world. This copy is over the 1,500-line cap under D-89.",
+  ],
+  settings: [
+    "**Built from a copy of today's Settings screen**, so rule drafts, Standard and Surge, Save with Undo, Discard, Find a setting, Go to a desk and the phone layout work as now.",
+    '**New:** a sticky save bar on the Rules tab shows how many rules changed and what changed, with Full audit, Discard and Save rules (the one filled button); with nothing changed it says "No unsaved changes".',
+    '**New:** "Save to apply" and "Applies now" are plain words, not boxes that look like buttons, and desktop number steppers are compact (touch screens keep 44 px).',
+    "**New:** Profile and shift joins Display as one tab, Display and profile. Its Profile card shows only what the app holds: desk profile, role, desk, scope, service in view, shift pattern and this browser's appearance.",
+    "**Question for you:** the review notes said not to mock the Profile tab's contents, but the plan asked for one. Keep this real-data card, or drop it?",
+  ],
+  "sign-in": [
+    "**Built from a copy of today's Sign in screen**, so catchment, shift, role, the appearance switch and the Actions and Limits tabs work as now.",
+    '**New:** an "Open as <role>" button (the one filled button) ends the choices and opens the screen the role names. It signs nobody in, stores nothing and grants nothing.',
+    "**New:** the boxed role numbers 1 to 7 are gone; the action counts stay, and number keys still pick a role.",
+    "**Kept:** no input fields, the action list with ticks and crosses, every synthetic and no-password notice, and the footer.",
+    "**Question for you:** four of the seven roles have no home of their own, so they open Home. Should the button navigate at all?",
+  ],
   community: [
     "**Built from a copy of today's Community directory**, so search, service filters, Reads alike, the letter jump, Catchment guide, Raise referral and the phone tabs work as now.",
     '**New:** the heading reads "64 community teams" (a live count), with one line under it: "Names from referral catchment documents, not verified services".',

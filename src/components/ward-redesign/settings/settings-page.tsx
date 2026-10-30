@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the settings mock-up is built; replaced by the redesigned page. */
+import { SettingsRedesign } from "./settings-screen";
+
+/** Redesigned settings mock-up: sticky save bar, compact steppers, Profile joined to Display. */
 export function SettingsPage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <SettingsRedesign />;
 }

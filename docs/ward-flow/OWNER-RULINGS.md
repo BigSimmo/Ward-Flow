@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**606 rulings/items extracted, across 38 of 44 files.**
+**607 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 349 distinct IDs
+## ID index — 350 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -257,6 +257,7 @@ safe global key across 30 files.
 | `D-86` | `decisions.md`:982 | D-86. No second approver for role grants, at pilot or otherwise (27 October 2026) |
 | `D-87` | `decisions.md`:989 | D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026) |
 | `D-88` | `decisions.md`:1001 | D-88. The public demo opens with a demo code once the front door is on (27 October 2026) |
+| `D-89` | `decisions.md`:1008 | D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -540,13 +541,13 @@ safe global key across 30 files.
 
 ## By file, newest first — 38 files
 
-### `decisions.md` (2026-09-01 – 2026-10-27 (mixed, see file))
+### `decisions.md` (2026-09-01 – 2026-10-30 (mixed, see file))
 
 **Recorded decision log.** Read the source for supersession and current scope; indexing does not grant authority.
 
 **Title:** Ward Flow — decision log
 
-88 item(s):
+89 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -636,6 +637,7 @@ safe global key across 30 files.
 - `D-86` — line 982, heading: "D-86. No second approver for role grants, at pilot or otherwise (27 October 2026)"
 - `D-87` — line 989, heading: "D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026)"
 - `D-88` — line 1001, heading: "D-88. The public demo opens with a demo code once the front door is on (27 October 2026)"
+- `D-89` — line 1008, heading: "D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026)"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
