@@ -1,9 +1,23 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - handover for the React redesign mock-ups, with the remaining plan; Design owns._
+_Updated 2026-10-30 - handover after 20 of 38 pages, with the plan and start steps for a new chat; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`. No pull request is open.
+
+## Start here (new chat)
+
+1. Read this file, then `design/core-pages-review-2026-10/HANDOVER-TOOLS.md` (the helper scripts, which
+   lived in the old session's scratch folder and are gone).
+2. Check out branch `claude/core-pages-design-review-f5vf4g`, confirm both `origin` URLs name
+   `BigSimmo/Ward-Flow`, and run `npm ci --include=dev` if `node_modules` is missing.
+3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
+   each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
+4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
+5. Continue at "Remaining plan" step 1 (Seclusion). Commit and push each page as it is done.
+
+Josh's standing go-ahead: push to this branch only, no pull request, no change to the real `/ward-flow`
+screens (D-74), and apply every recommendation without waiting for answers.
 
 ## What Josh asked for
 
@@ -26,9 +40,13 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`. No pull
   approved page is built by applying that difference to the real file.
 - **Forking:** copy the screen file, change every relative import (`./x`, `../x`, `import("./x")`) to
   `@/components/...`, rename the export, then edit. New parts go in a sibling file.
-- **Files over 1,500 lines cannot be copied whole** (the repository's line cap; adding new files to
-  `eslint-rules/max-lines-baseline.mjs` is not allowed). For those (My ward), the mock-up draws the real
-  screen with a scoped redesign stylesheet, and the build notes list the changes to make in the real file.
+- **Files over 1,500 lines:** the repository caps files at 1,500 lines. Until now big screens were either
+  split into two fork files (Legal forms, Statistics helpers) or drawn as the real screen with a scoped
+  redesign stylesheet (My ward, Patients, On-call). **Josh said on 30 October that raising the limit is
+  fine.** Before using that, record it as an owner decision (`docs/agents/native-startup/recording-decisions.md`:
+  a `docs/decisions/` entry, with the reason in the change), then add the preview fork's path to
+  `eslint-rules/max-lines-baseline.mjs` rather than trimming comments. The ratchet test
+  (`tests/max-lines-baseline.test.ts`) must still pass.
 - **Registering a page:** add the slug to `_preview/built-pages.ts`, the component to
   `_preview/screen-components.tsx`, and notes to `_preview/build-notes.ts`.
 - **Shareable copy:** `node scripts/ward-flow/build-redesign-preview.mjs` bundles the same components into
@@ -60,6 +78,10 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`. No pull
 | Discharges           | Fork                  | "59 to work now of 207 open", person first, one action a row, blocker counts beside |
 | All wards            | Fork                  | Status, Cohort and Order as menus, key and count on one line, card text wraps       |
 | Statistics           | Fork (split helpers)  | View switch with Open a unit, occupancy first, chart's first 7 rows                 |
+| Alerts               | Fork of 4 files       | Checks as one chip, Owner menu, same-kind groups, one Release plus Hand back        |
+| Legal forms          | Fork split in two     | Times only as typed (point 18), 1A name shortened, Show more, header buttons        |
+| Out of area          | Fork                  | Surname first, quieter hero and checks, region beds open on choice                  |
+| On-call              | Real screen + styles  | Compact two-line service strip that scrolls on smaller screens                      |
 
 Popups working so far: bed meeting sheet, try a scenario, Capacity ward panel, phone bed forecast, and the
 real movement drawer.
@@ -128,31 +150,53 @@ opening it on the first bed that needs a look instead of leaving it empty.
 
 ## Remaining plan, in order
 
-1. Done: Transport, Josh's 30 October feedback and the tablet pass (above). Phone pass on the built pages
-   is partly done (Capacity, Home, Handover, Referrals); finish Movements, Waiting, All EDs, ED board,
-   My ward, Stays and Transport.
-2. Stays: open the record column on the first bed that needs a look.
-3. Work and reports: Patients, Discharges (point 20), All wards (point 21), Statistics.
-4. Reference: Alerts (points 15 and 17), Legal forms (keep "Not legally checked", D-77; point 18), Out of
-   area, On-call, Seclusion (full width, every secure ward), Governance (opens on the first item).
-5. Bed meeting: TV (bare page), Agenda (full width, one Add action), Downtime pack, Chronology (opens on the
-   first patient).
-6. Places and records: Places (point 21), Community, Community team (one caseload table), Patient record,
-   Add a patient, Ward answer, Settings (Profile tab), Sign in (bare page).
-7. Statistics: Compare, Ward list, One ward (admissions table), Weekly.
-8. Popups: Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu, Create, Bed
-   record, Confirm beds, ED actions, Log transport, Broadcast, Record a form, Ward notices, officer job
-   panel, ward switcher, shift brief, Record exam, Refer to a ward, Go to a desk, Add the time, service
-   picker, More pages, tour.
-9. States (point 9), as one "States" group in the viewer.
-10. Final pass: text-size check (`npm run check:ward-text-size`), lint, typecheck, `npm run check:mockups`,
-    `npm run docs:update`, `npm run ward:organise:check`; update `README.md` here to describe the React
-    mock-ups; build the shareable bundle; publish it to the existing artifact
-    (https://claude.ai/artifact/GaVWBYM1Gkh8GdUtJvJapE, read it first); push.
-11. Report to Josh: each recommendation and what he needs to approve, page by page.
+20 of 38 pages are built (table above). Each page's review notes (what is wrong, the fixes, what to keep)
+are in `_preview/review-notes.json` under its slug; follow them, and write its build notes as the others.
+
+1. **Seclusion** (was in progress, nothing written yet): `restrictive-practice/seclusion-screen.tsx` (580
+   lines) shows one ward from a picker. Make it a table of every secure ward's rooms (available, in use,
+   out of service, not recorded) with the header counting each; choosing a ward opens today's record and
+   incident form beside the table. Keep the "Operational view only" notice word for word; nothing works
+   out an order length or legal limit.
+2. **Governance** (`WardModeWorkspace mode="governance"`): the review pane opens on the newest event;
+   columns fit; outcome as tick, cross or circle; Review, Gaps by site, Audit trail, Registers, Reports as
+   header tabs. Keep the review count, PIR chronology and "Safety incidents are not recorded here".
+3. **Bed meeting:** TV (bare page, surname first), Agenda (full width, one Add action), Downtime pack,
+   Chronology (opens on the first patient).
+4. **Places and records:** Places (point 21: a directory with no bed figures), Community, Community team
+   (one caseload table), Patient record, Add a patient, Ward answer, Settings (Profile tab), Sign in (bare).
+5. **Statistics pages:** Compare, Ward list, One ward (admissions table, point 10), Weekly.
+6. **Popups (point 8):** Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu,
+   Create, Bed record, Confirm beds, ED actions, Log transport, Broadcast, Record a form, Ward notices,
+   officer job panel, ward switcher, shift brief, Record exam, Refer to a ward, Go to a desk, Add the time,
+   service picker, More pages, tour. Register each in `MOCKUP_POPUPS` (`_preview/screens.ts`) with the
+   page it opens over and its `pop` name, and have the page open it from `openOnLoad`.
+7. **States (point 9)** as one "States" group: loading, empty, error, offline, toast, and a greyed control
+   saying exactly "Not wired in this prototype." (D4).
+8. **Phone pass** on every page built since the tablet pass (Patients onwards), at 390 px.
+9. **Final pass:** `npm run check:ward-text-size`, lint, typecheck, `npm run check:mockups`,
+   `npm run docs:update` (scripts index is stale), `npm run ward:organise:check`, knip (forks export
+   things nothing imports; un-export them); update `README.md` here to describe the React mock-ups; build
+   the shareable bundle (`node scripts/ward-flow/build-redesign-preview.mjs`); publish it to the existing
+   artifact (https://claude.ai/artifact/GaVWBYM1Gkh8GdUtJvJapE, read it first); push.
+10. **Report to Josh:** each recommendation and what he approves, page by page, plus the open questions
+    below.
+
+## Open questions for Josh (my picks applied, to confirm on review)
+
+- Point 20, Discharges: headline "59 to work now", with "of 207 open · 148 due in 2+ days" beside it.
+- Point 21: keep Places, the Capacity bed map and All wards, one job each.
+- Point 22: keep "Not legally checked" word for word.
+- Alerts: a "Chase all" button for a group needs a new command; not built.
+- Waiting and Home still show a countdown to recorded legal times; point 18 removed them on Legal forms.
+  Decide whether the same applies there (D-70).
 
 ## Things found while building (for the real app)
 
-- Names written first name first on My ward's bed tiles, its Notices, the ED board's Lists and Transport
-  (D-83 says surname first everywhere).
+- Names written first name first on My ward's bed tiles and round list, its Notices, the ED board's Lists
+  and access-risk card, Stays' Worth a look, Transport and Out of area (D-83 says surname first everywhere).
+  The forks fix the last five; My ward's tiles need the real file.
+- The New referral button in the app bar has 14 px padding on the left and 5 px on the right
+  (`ward-bar.module.css` `.primary` and `.referralPrimary`); the preview overrides it.
+- The dev server ran out of memory once after many pages compiled; `npm run ensure` restarts it.
 - Discharges shows three totals (207, 63 and 59) that need one agreed meaning.
