@@ -1,0 +1,74 @@
+/*
+ * The mock-ups' app bar fixes (Josh, 30 Oct 2026), over `ward-bar.module.css`, which is unchanged.
+ * Each class is doubled so it outranks the single-class rule it corrects, whatever order the two
+ * sheets load in. Container and media queries match the real sheet's own breakpoints.
+ */
+
+/* New referral was "poorly spaced": 14px of padding on its left and 5px on its right (the right was
+   cut for a caret segment this button no longer has), and its blue pill was 38px tall beside 36px
+   Activity, Alerts and Tools pills. Even padding, the label centred, and the neighbours' 6px inset. */
+.primaryEven.primaryEven {
+  justify-content: center;
+  padding-inline: 14px;
+}
+
+@media (min-width: 48.0625rem) {
+  .primaryEven.primaryEven::before {
+    inset: 6px 0;
+  }
+}
+
+/* Icon only (the bar's own narrow widths): the + sits centred in its pill. */
+@media (min-width: 48.0625rem) and (max-width: 860px) {
+  .primaryEven.primaryEven {
+    padding-inline: 10px;
+  }
+}
+
+@container ward-bar (max-width: 50rem) {
+  .primaryEven.primaryEven {
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 40rem) {
+  .primaryEven.primaryEven {
+    padding: 0;
+  }
+}
+
+/* From 1001px to 1300px the bar had 12px on its right against 14px on its left, so New referral
+   crowded the edge. Both sides now match. (Tablet widths keep their safe-area padding.) */
+@media (min-width: 1001px) and (max-width: 1300px) {
+  .barEven.barEven {
+    padding-inline-end: 14px;
+  }
+}
+
+/* ── shell-next (Josh, 30 Oct 2026) ───────────────────────────────────────────────────────── */
+
+/* "Statewide › Capacity": the quiet separator between the place and the page name. */
+.crumbSep {
+  flex: none;
+  margin-inline: -2px;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-16) / 1 var(--wf-font);
+}
+
+[data-band="ink"] .crumbSep {
+  color: color-mix(in srgb, currentColor 55%, transparent);
+}
+
+/* Alerts and Activity, the two tabs of the one Alerts panel. */
+.alertsTabs {
+  display: flex;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+}
+
+/* Board time stays on tablet (it was hidden at 1000px and below for want of room; the merged
+   Alerts button and the dropped Prototype pill give that room back). The time alone shows. */
+@media (min-width: 48.0625rem) and (max-width: 1000px) {
+  .clockKeep.clockKeep {
+    display: inline-flex;
+  }
+}
