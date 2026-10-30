@@ -15,6 +15,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES } from "@/components/ward-management/patients/patient-now-records";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./patient-redesign.module.css";
 
 type JourneyEvent = { at: number; tone: WfTone; text: string };
@@ -124,9 +125,9 @@ export function PatientJourneyTimeline({
         ))}
       </ol>
       {long ? (
-        <Button size="sm" variant="ghost" onClick={() => setExpanded((value) => !value)} aria-expanded={expanded}>
+        <ShowMoreRow onClick={() => setExpanded((value) => !value)} expanded={expanded}>
           {expanded ? "Show fewer" : `Show ${events.length - FIRST_ROWS} more`}
-        </Button>
+        </ShowMoreRow>
       ) : null}
     </section>
   );

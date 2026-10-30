@@ -22,31 +22,6 @@
   padding-right: var(--wf-s-2);
 }
 
-.showMore {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: 44px;
-  padding: 0 var(--wf-s-3);
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: none;
-  color: var(--wf-accent-ink);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.showMore:hover {
-  background: var(--wf-hover);
-}
-
-.showMore:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
 .showMoreCount {
   color: var(--wf-ink-3);
   font-weight: 400;
@@ -104,7 +79,7 @@
 }
 
 @media (max-width: 48rem) {
-  /* Round 2: the service rows keep the live Places phone size (hub.module.css, 3rem); Show more keeps its own 44px. */
+  /* Round 2: the service rows keep the live Places phone size (hub.module.css, 3rem). */
   .serviceRow {
     min-height: 3rem;
   }

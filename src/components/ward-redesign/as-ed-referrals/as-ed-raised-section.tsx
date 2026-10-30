@@ -14,6 +14,7 @@ import { openWardReferralFor, referredToLabel } from "@/components/ward-manageme
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { Card, StatusGlyph, TierTile, buttonClass, durMinutes } from "@/components/wf";
 
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./as-ed-raised-section.module.css";
 
 /** Rows shown before "Show more" (owner rule: long lists open on the first rows). */
@@ -120,9 +121,9 @@ export function AsEdRaisedSection({
           </table>
         )}
         {raised.length > FIRST_ROWS ? (
-          <button type="button" className={styles.more} onClick={() => setShowAll((value) => !value)}>
+          <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
             {showAll ? "Show fewer" : `Show ${raised.length - FIRST_ROWS} more`}
-          </button>
+          </ShowMoreRow>
         ) : null}
       </section>
     </Card>

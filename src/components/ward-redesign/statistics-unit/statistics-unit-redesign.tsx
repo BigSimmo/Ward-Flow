@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   BedDouble,
   CalendarClock,
-  ChevronDown,
-  ChevronUp,
   Clock,
   Download,
   FileText,
@@ -82,6 +80,7 @@ import {
   withheldBar,
 } from "@/components/ward-management/statistics/statistics-small-numbers";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "./statistics-unit.module.css";
 import { CompactBedMap } from "./statistics-unit-bed-map";
 import { ChangeWard } from "./statistics-unit-change-ward";
@@ -1296,18 +1295,9 @@ function Roster({
         </table>
       </div>
       {shown.length > ROSTER_FIRST_ROWS ? (
-        <div className={redesign.rosterMore}>
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={expanded ? ChevronUp : ChevronDown}
-            aria-expanded={expanded}
-            onClick={() => setExpanded((open) => !open)}
-            data-testid="ward-statistics-ward-roster-more"
-          >
-            {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
-          </Button>
-        </div>
+        <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
+          {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
+        </ShowMoreRow>
       ) : null}
     </StatCard>
   );

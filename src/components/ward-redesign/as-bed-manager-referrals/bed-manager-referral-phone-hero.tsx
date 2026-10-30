@@ -6,13 +6,14 @@
 import { ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef } from "react";
 
-import { Button, LiveChip, StatusGlyph, useWfBandBleed } from "@/components/wf";
+import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "@/components/ward-management/referrals/referral-board-phone.module.css";
+import local from "@/components/ward-redesign/referrals/referrals-redesign.module.css";
 
 /**
  * Referrals on the phone (v10 build guide, Referrals > Phone). Its own design at 390 wide: the hero
- * with three figures (Overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
+ * with three figures (Decision overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
  * highlight chips scrolling sideways (compact, 48px targets), then the waiting axis one tap away. Desktop never
  * renders any of this.
  */
@@ -97,10 +98,10 @@ export function BedManagerReferralPhoneHero({
       )}
       {/* Polish r2: no zero highlights over an empty queue. */}
       {count === 0 && !showBeds ? null : (
-        <div className={styles.figures} role="group" aria-label="Highlight referrals">
+        <div className={cx(styles.figures, local.figures)} role="group" aria-label="Highlight referrals">
           <Figure
             value={overdue}
-            label="Overdue"
+            label="Decision overdue"
             tone={overdue > 0 ? "danger" : "neutral"}
             pressed={highlight === "overdue"}
             onPress={() => onHighlight("overdue")}

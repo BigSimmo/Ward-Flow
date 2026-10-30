@@ -1,5 +1,5 @@
 /* Ward list, redesigned: the grouping switch and count in the card head, the highlight chips on
-   one row, and Show more under a list that opens on its first rows. */
+   one row. */
 .headTools {
   display: inline-flex;
   flex-wrap: wrap;
@@ -26,30 +26,4 @@
 
 .chips > * {
   flex: none;
-}
-
-.moreRow {
-  display: flex;
-  justify-content: center;
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-}
-
-.more {
-  white-space: nowrap;
-}
-
-/* Josh, 30 Oct 2026: phone controls keep their real size (no 48px enlargement). Show more takes
-   the row's width, and its touch area reaches the row's padding without the button growing. */
-@media (max-width: 48rem) {
-  .more {
-    position: relative;
-    width: 100%;
-  }
-
-  .more::after {
-    content: "";
-    position: absolute;
-    inset: calc(var(--wf-s-2) * -1) 0;
-  }
 }

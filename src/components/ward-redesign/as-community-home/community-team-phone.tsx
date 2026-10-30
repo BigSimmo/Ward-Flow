@@ -2,7 +2,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type RefObject } from "react";
-import { Clock, Info, Phone, Plus, Search, Shapes, Users, type LucideIcon } from "lucide-react";
+import { Info, Phone, Plus, Search, Shapes, Users, type LucideIcon } from "lucide-react";
 
 import {
   Button,
@@ -20,6 +20,7 @@ import {
 } from "@/components/wf";
 
 import css from "@/components/ward-management/community/community-team-phone.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 
@@ -265,7 +266,7 @@ export function CommunityTeamPhone({
               <li key={sample.id} className={css.rowItem}>
                 <PhoneListRow
                   name={sample.label}
-                  leading={<Clock size={16} aria-hidden="true" />}
+                  leading={<Shapes size={16} aria-hidden="true" />}
                   onSelect={() => {
                     close();
                     sample.onPress();
@@ -308,15 +309,10 @@ function PhoneGroupRows({ rows, label }: { rows: CommunityPhoneRow[]; label: str
         ))}
       </ul>
       {hidden > 0 ? (
-        <button
-          type="button"
-          className={css.more}
-          aria-expanded={open}
-          aria-label={open ? `Show fewer in ${label}` : `Show ${hidden} more in ${label}`}
-          onClick={() => setOpen((value) => !value)}
-        >
+        <ShowMoreRow expanded={open} onClick={() => setOpen((value) => !value)}>
           {open ? "Show fewer" : `Show ${hidden} more`}
-        </button>
+          <span className="sr-only"> in {label}</span>
+        </ShowMoreRow>
       ) : null}
     </div>
   );
@@ -350,9 +346,9 @@ export function CommunityWorthAttention({
             ))}
           </ul>
           {items.length > ATTENTION_SHOWN ? (
-            <button type="button" className={css.more} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
+            <ShowMoreRow expanded={open} onClick={() => setOpen((value) => !value)}>
               {open ? "Show fewer" : `Show ${items.length - ATTENTION_SHOWN} more`}
-            </button>
+            </ShowMoreRow>
           ) : null}
         </div>
       )}

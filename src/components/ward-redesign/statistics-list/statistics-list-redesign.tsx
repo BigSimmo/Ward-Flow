@@ -50,6 +50,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-phone-parts";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import index from "@/components/ward-management/statistics/statistics-index.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import list from "./statistics-list-redesign.module.css";
 import {
   useExecutiveStatistics,
@@ -317,15 +318,9 @@ function WardsIndexView({
       : `Show all ${rows.length} wards`;
   const moreButton =
     chips.size > 0 || (group === "service" ? groups.length <= FIRST_SERVICES : rows.length <= FIRST_ROWS) ? null : (
-      <Button
-        variant="ghost"
-        size="sm"
-        className={list.more}
-        aria-expanded={showMore}
-        onClick={() => setShowMore((more) => !more)}
-      >
+      <ShowMoreRow expanded={showMore} onClick={() => setShowMore((more) => !more)}>
         {moreLabel}
-      </Button>
+      </ShowMoreRow>
     );
 
   const onSort = (key: WardSortKey) => {
@@ -650,7 +645,7 @@ function WardsIndexView({
                 </tbody>
               </table>
             </div>
-            {moreButton ? <div className={list.moreRow}>{moreButton}</div> : null}
+            {moreButton}
             <CardFoot
               meta={`Ready includes beds being made ready. Highlighting never hides a ward. Stays count whole days since arrival.`}
             />

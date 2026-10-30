@@ -56,6 +56,7 @@ import {
   type ClosedTodayRow,
 } from "@/components/ward-management/search/patient-census";
 
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -487,9 +488,7 @@ export function CensusTable(props: CensusTableProps) {
                   {open && cap < groupRows.length ? (
                     <tr className={styles.moreRow}>
                       <td colSpan={cols}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <ShowMoreRow
                           onClick={
                             group.id === "ward"
                               ? props.onShowAllWard
@@ -497,7 +496,7 @@ export function CensusTable(props: CensusTableProps) {
                           }
                         >
                           Show all {groupRows.length}
-                        </Button>
+                        </ShowMoreRow>
                       </td>
                     </tr>
                   ) : null}
@@ -1269,13 +1268,9 @@ export function PhoneCensus(props: PhoneCensusProps) {
                   })}
                 </ul>
                 {full ? null : (
-                  <button
-                    type="button"
-                    className={styles.phoneShowAll}
-                    onClick={() => setAllShown((current) => new Set(current).add(group.id))}
-                  >
+                  <ShowMoreRow onClick={() => setAllShown((current) => new Set(current).add(group.id))}>
                     Show all {group.rows.length}
-                  </button>
+                  </ShowMoreRow>
                 )}
               </section>
             );

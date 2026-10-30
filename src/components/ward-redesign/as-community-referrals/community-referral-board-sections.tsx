@@ -41,7 +41,7 @@ import {
 } from "@/components/ward-management/referrals/referral-board-parts";
 import styles from "@/components/ward-management/referrals/referrals.module.css";
 import a from "@/components/ward-management/referrals/referral-board.module.css";
-import local from "./community-referrals.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import {
   ALSO_CANCELLED_LEAD,
   ALSO_REFUSED_LEAD,
@@ -705,9 +705,9 @@ export function DecidedSection({
             })}
           </ul>
           {ownTeamDesk && displayDecided.length > FIRST_DECIDED ? (
-            <Button variant="ghost" size="sm" className={local.more} onClick={() => setShowAll((value) => !value)}>
+            <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
               {showAll ? "Show fewer" : `Show ${hiddenRows} more`}
-            </Button>
+            </ShowMoreRow>
           ) : null}
         </>
       )}

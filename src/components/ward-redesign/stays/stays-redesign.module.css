@@ -91,10 +91,3 @@
   white-space: normal;
   text-overflow: clip;
 }
-
-/* Redesign (Josh, 30 Oct): the phone's fold under the first eight beds. */
-.moreBeds {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--wf-s-2);
-}

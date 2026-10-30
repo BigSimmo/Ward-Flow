@@ -76,6 +76,7 @@ import {
 import type { WardBedFilter } from "@/components/ward-management/ward/ward-telemetry-ribbon";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { declineTargetLeftNote } from "@/components/ward-management/ward/decline-target-left";
 import {
   canSubmitDecline,
@@ -656,9 +657,9 @@ export function WardHomeTab({
         })}
       </ul>
       {roundRows.length > ROUND_FIRST ? (
-        <Button variant="ghost" onClick={() => setRoundAll((all) => !all)} aria-expanded={roundAll}>
+        <ShowMoreRow onClick={() => setRoundAll((all) => !all)} expanded={roundAll}>
           {roundAll ? "Show fewer beds" : `Show more (${roundHidden} more ${roundHidden === 1 ? "bed" : "beds"})`}
-        </Button>
+        </ShowMoreRow>
       ) : null}
     </>
   );

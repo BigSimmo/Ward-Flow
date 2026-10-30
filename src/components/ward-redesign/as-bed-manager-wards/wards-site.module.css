@@ -19,10 +19,6 @@
   font-weight: 400;
   color: var(--wf-ink-3);
 }
-.more {
-  align-self: flex-start;
-  margin-top: var(--wf-s-2);
-}
 .countsOnly {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);

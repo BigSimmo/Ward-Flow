@@ -2,9 +2,9 @@
 // One ward on a phone, split out of statistics-unit-redesign.tsx to keep that file under the line cap.
 
 import { useState } from "react";
-import { Building2, ChevronDown, ChevronUp } from "lucide-react";
+import { Building2 } from "lucide-react";
 
-import { Button, PhoneListRow, Segmented, StatusGlyph, cx } from "@/components/wf";
+import { PhoneListRow, Segmented, StatusGlyph, cx } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -19,6 +19,7 @@ import {
 } from "@/components/ward-management/statistics/statistics-phone-parts";
 import { dateOf, isPastDate } from "@/components/ward-management/statistics/statistics-dates";
 import { PeopleNotListed } from "@/components/ward-management/statistics/statistics-small-numbers";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "./statistics-unit.module.css";
 import { StayKey, bandIndexOf } from "./statistics-unit-bed-map";
 
@@ -190,15 +191,9 @@ export function WardPhone({
             </PhoneList>
           )}
           {shown.length > ROSTER_FIRST_ROWS ? (
-            <Button
-              variant="ghost"
-              className={redesign.phoneMore}
-              icon={expanded ? ChevronUp : ChevronDown}
-              aria-expanded={expanded}
-              onClick={() => setExpanded((open) => !open)}
-            >
+            <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
               {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
-            </Button>
+            </ShowMoreRow>
           ) : null}
         </>
       )}

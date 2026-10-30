@@ -12,6 +12,7 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { unitHref } from "@/components/ward-management/shell/ward-facade";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./pop-ward-switcher.module.css";
 
 /** The ward the My ward mock-up draws, used when the address does not name one. */
@@ -167,9 +168,9 @@ export function WardSwitcherMock({ onClose }: { onClose: () => void }) {
               <p className={styles.group}>Elsewhere in {service}</p>
               <ul className={styles.list}>{shownElsewhere.map((candidate) => row(candidate))}</ul>
               {elsewhere.length > FIRST_ROWS ? (
-                <button type="button" className={styles.more} onClick={() => setShowAll((was) => !was)}>
+                <ShowMoreRow expanded={showAll} onClick={() => setShowAll((was) => !was)}>
                   {showAll ? "Show fewer" : `Show ${elsewhere.length - FIRST_ROWS} more`}
-                </button>
+                </ShowMoreRow>
               ) : null}
             </section>
           ) : null}

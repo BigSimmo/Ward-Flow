@@ -1,8 +1,5 @@
-/* Preview: the redesigned Ward notices. Show more under a long list. */
+/* Preview: the redesigned Ward notices. The list item that holds Show more under a long list. */
 .moreRow {
-  display: flex;
-  justify-content: center;
-  padding: var(--wf-s-2) 0;
   list-style: none;
 }
 

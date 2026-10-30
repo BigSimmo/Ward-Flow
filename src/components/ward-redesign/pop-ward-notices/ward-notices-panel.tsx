@@ -47,6 +47,7 @@ import { buzzKeys, refreshRequestIsOpen } from "@/components/ward-management/war
 // header, filter and footer, so a ward and a coordinator read one pattern.
 import drawer from "@/components/ward-management/ward-tasks-drawer.module.css";
 import styles from "@/components/ward-management/ward/ward-notification-center.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import pop from "./ward-notices.module.css";
 
 /** A list longer than this (and two more) shows these rows first, then Show more. */
@@ -328,13 +329,9 @@ export function WardNoticesPanel({
     return [
       ...rows.slice(0, FIRST_ROWS),
       <li key={`${id}-more`} className={pop.moreRow}>
-        <button
-          type="button"
-          className={drawer.btn}
-          onClick={() => setShownAll((previous) => new Set(previous).add(id))}
-        >
+        <ShowMoreRow onClick={() => setShownAll((previous) => new Set(previous).add(id))}>
           Show {rows.length - FIRST_ROWS} more
-        </button>
+        </ShowMoreRow>
       </li>,
     ];
   };

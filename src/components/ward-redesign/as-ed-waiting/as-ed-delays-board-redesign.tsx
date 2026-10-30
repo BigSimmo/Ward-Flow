@@ -101,6 +101,7 @@ import { legalCellAsTyped, phonePrefixAsTyped } from "@/components/ward-redesign
 import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -741,15 +742,13 @@ export function AsEdDelaysBoardRedesign({
           body.push(
             <tr role="row" key={`more-${group.cause}`} className={styles.more}>
               <td role="cell" colSpan={6}>
-                <button
-                  type="button"
-                  className={styles.moreBtn}
+                <ShowMoreRow
                   onClick={() => {
                     setMoreGroups((current) => ({ ...current, [group.cause]: true }));
                   }}
                 >
                   {`Show ${list.length - limit} more`}
-                </button>
+                </ShowMoreRow>
               </td>
             </tr>,
           );
@@ -789,13 +788,9 @@ export function AsEdDelaysBoardRedesign({
           body.push(
             <tr role="row" key={`more-${band.id}`} className={styles.more}>
               <td role="cell" colSpan={6}>
-                <button
-                  type="button"
-                  className={styles.moreBtn}
-                  onClick={() => setBandMore((current) => ({ ...current, [band.id]: true }))}
-                >
+                <ShowMoreRow onClick={() => setBandMore((current) => ({ ...current, [band.id]: true }))}>
                   {`Show ${list.length - limit} more ${band.title.toLowerCase()}`}
-                </button>
+                </ShowMoreRow>
               </td>
             </tr>,
           );

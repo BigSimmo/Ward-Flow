@@ -693,8 +693,14 @@ table.censusTable td * {
   font-weight: 500;
 }
 
-.moreRow td {
-  height: 44px;
+/* The one Show more row fills its cell and draws the only line above it, so the row before it
+   drops its own. */
+.moreRow.moreRow > td:is(:first-child, :last-child) {
+  height: auto;
+  padding: 0;
+}
+tr:has(+ .moreRow) > td {
+  border-bottom-color: transparent;
 }
 
 .two {

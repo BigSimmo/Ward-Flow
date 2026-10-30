@@ -674,9 +674,9 @@ function EdPresentation({
       {/* Role view (as ED clinician): the split is Time since opening's aside, so no loose line here. */}
       {edCountsDesk ? null : (
         <p className={styles.muted} data-testid="ward-statistics-ed-population">
-          {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Open journeys retain ED
-          accountability until arrival. The physical split includes recorded ED outcomes; times run from journey
-          opening.
+          {stillInEdShown} still in ED · {inTransitShown} in transit
+          <span className="sr-only"> or with a recorded departure</span>. Open journeys retain ED accountability until
+          arrival. The physical split includes recorded ED outcomes; times run from journey opening.
         </p>
       )}
       {isPhone && countsOnly ? (

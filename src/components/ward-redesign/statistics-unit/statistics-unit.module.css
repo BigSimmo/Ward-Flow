@@ -1,6 +1,6 @@
 /*
- * Ward statistics, redesigned: the compact bed map (nine small tiles to a row, shaded by stay) and
- * the roster's Show more. Tile shapes and state colours come from the app's bed-map module; this
+ * Ward statistics, redesigned: the compact bed map (nine small tiles to a row, shaded by stay).
+ * Tile shapes and state colours come from the app's bed-map module; this
  * file only sets size, the stay shading and the stay key. Tokens only.
  */
 .bedGrid {
@@ -136,29 +136,16 @@
   border-radius: 3px;
 }
 
-.rosterMore {
-  display: flex;
-  justify-content: center;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-}
-
 @media (max-width: 40rem) {
   .bedGrid {
     grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 
-/* Phone: the list switch meets the 48 px touch floor, and a long list ends in "Show more". */
+/* Phone: the list switch meets the 48 px touch floor. */
 .phoneSeg.phoneSeg :is(a, button) {
   height: 48px;
   min-height: 48px;
-}
-
-.phoneMore.phoneMore {
-  width: 100%;
-  min-height: 48px;
-  justify-content: center;
 }
 
 /* Pull to arrival at half width: the four tiles as two rows of two inside the one box. */

@@ -20,3 +20,8 @@
   font: 400 var(--wf-fs-12) / 1 var(--wf-font);
   color: var(--wf-ink-2);
 }
+
+/* The phone list's Show more row draws its own line above, so its item drops the list's divider. */
+.showMoreItem.showMoreItem {
+  border-top: 0;
+}

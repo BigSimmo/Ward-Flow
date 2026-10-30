@@ -7,12 +7,12 @@ import {
   Bell,
   CheckCircle2,
   ChevronDown,
-  Clock,
   FileText,
   Filter,
   ListChecks,
   Phone,
   RotateCcw,
+  Route,
   Search,
   Send,
   ShieldCheck,
@@ -62,6 +62,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
 
 import styles from "@/components/ward-redesign/pop-alerts/alerts-drawer.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 
 type AlertsDrawerProps = {
@@ -587,10 +588,8 @@ export function AlertsDrawer({
           {shown.map((item) => renderGroupMember(item))}
         </ul>
         {long ? (
-          <button
-            type="button"
-            className={`${styles.btn} ${styles.btnGhost} ${styles.groupMore}`}
-            aria-expanded={showAll}
+          <ShowMoreRow
+            expanded={showAll}
             onClick={() =>
               setLongGroupsShown((current) => {
                 const next = new Set(current);
@@ -601,7 +600,7 @@ export function AlertsDrawer({
             }
           >
             {showAll ? "Show fewer" : `Show ${group.items.length - GROUP_SHOW_FIRST} more`}
-          </button>
+          </ShowMoreRow>
         ) : null}
       </li>
     );
@@ -975,7 +974,7 @@ export function AlertsDrawer({
             <p className={styles.detailLine}>{detail}</p>
             {movement ? (
               <p className={styles.detailMeta}>
-                <Clock aria-hidden="true" />
+                <Route aria-hidden="true" />
                 <span>{stageCopy[movement.stage].label}</span>
                 <span aria-hidden="true">·</span>
                 <span>{originName(movement) ?? "Origin not recorded"}</span>
