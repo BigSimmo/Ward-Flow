@@ -613,7 +613,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** the headline reads '59 to work now · of 207 open' (open means not yet discharged; 59 are the ones listed to work now); the Status filter reads 'All statuses' and the list says '59 to work · 4 discharged'. '148 due in 2+ days' sits only in the list footer.",
     "**Review round (30 October):** one word, 'Held up', for a release with a blocker. The barrier panel and the day chart count bed releases, the list's own rows, so they match the hero, and a click on either highlights within Now instead of jumping to History.",
     "**Review round (30 October):** Chase opens the release on its barriers and Confirm date on its 'New expected out' control. Before the weekend or public holiday is a short notice above the list, person first. Each group shows its first 6 rows then Show more; on a wide screen the day chart sits under the barrier panel. Phone rows are three lines with the button beside the stage.",
-    "**Still open:** the day chart counts releases on closed wards, which Capacity's forecast leaves out, so a day can differ while a ward is closed.",
+    "**Agrees with Capacity:** the day chart leaves closed wards out, as Capacity's forecast does (Josh, 30 October).",
   ],
   wards: [
     "**Built from a copy of today's All wards page**, so the cards, the Table view, Occupancy by service, Counts to check and every filter work as now.",

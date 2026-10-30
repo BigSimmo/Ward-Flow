@@ -241,9 +241,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   const dayOfChart = (at: number | null) =>
     chartDays.find((candidate) => matchesHighlight({ kind: "day", day: candidate.key }, at, null, now));
   if (nowView) {
-    // Now: every open bed release in scope by its expected day (the "of 207 open"), as Capacity's
-    // forecast counts recorded discharges; the red part is the held-up ones, as the list says.
+    // Now: every open bed release in scope by its expected day, as Capacity's forecast counts
+    // recorded discharges; the red part is the held-up ones, as the list says. Closed wards are left
+    // out, as Capacity's forecast leaves them out (Josh, 30 Oct 2026), so the two pages agree.
+    const closedUnitIds = new Set(units.filter((unit) => unit.isClosed).map((unit) => unit.id));
     for (const release of openReleases) {
+      if (closedUnitIds.has(release.unitId)) continue;
       const day = dayOfChart(release.expectedAt);
       if (!day) continue;
       if (release.blocker !== null) day.blocked += 1;
