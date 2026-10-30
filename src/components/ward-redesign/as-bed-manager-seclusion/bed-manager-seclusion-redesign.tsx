@@ -53,6 +53,7 @@ import {
   type WardIncidentCategory,
 } from "@/components/ward-management/restrictive-practice/ward-restrictive-practice";
 import styles from "@/components/ward-redesign/seclusion/seclusion-redesign.module.css";
+import own from "./bed-manager-seclusion.module.css";
 
 /** The room's four states, in the order the table lists them: what needs a look first. */
 type RoomState = "in_use" | "out_of_service" | "not_recorded" | "available";
@@ -131,6 +132,9 @@ export function BedManagerSeclusionRedesign() {
   // Point 16: the record opens on the first ward that needs a look, never on an empty panel.
   const wardId = rows.some((row) => row.unit.id === chosen) ? chosen : (rows[0]?.unit.id ?? "");
   const ward = rows.find((row) => row.unit.id === wardId)?.unit;
+  // ROLE BRANCH (bed_manager), polish r2: with one secure ward at the site, the one-row table repeats
+  // the record beside it, so the page opens on that ward's record, as the ward desk's own view does.
+  const oneWard = siteName !== undefined && rows.length === 1 ? rows[0] : undefined;
   const nameOf = (admissionId: string) => {
     const stay = admissions.find((admission) => admission.id === admissionId);
     if (!stay) return "No longer on this ward";
@@ -150,135 +154,169 @@ export function BedManagerSeclusionRedesign() {
         level={1}
         eyebrow={siteName ? `Restrictive practice · ${siteName}` : "Restrictive practice"}
         title="Seclusion, restraint and incidents"
+        // Polish r2: no "as at" time; the top bar's clock already says it.
         titleMeta={
-          siteName
-            ? `${rows.length} secure ${rows.length === 1 ? "ward" : "wards"} of ${visible.length} at the site · as at ${formatInstantWithDay(now, now)}`
-            : `${rows.length} secure wards · as at ${formatInstantWithDay(now, now)}`
+          oneWard
+            ? `${oneWard.unit.name}, the one secure ward of ${visible.length} at the site`
+            : siteName
+              ? `${rows.length} secure ${rows.length === 1 ? "ward" : "wards"} of ${visible.length} at the site`
+              : `${rows.length} secure wards`
         }
-        stats={ROOM_STATES.map((entry) => (
-          <HeroStat
-            key={entry.id}
-            value={counts[entry.id]}
-            label={`Rooms ${entry.label.toLowerCase()}`}
-            tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
-          />
-        ))}
+        stats={
+          oneWard
+            ? // One ward: what is in use on it, as the ward desk's header; the room's state opens the record.
+              [
+                <HeroStat
+                  key="seclusion"
+                  value={oneWard.inUse.filter((episode) => episode.practice === "seclusion").length}
+                  label="Seclusion in use"
+                  tone={oneWard.inUse.some((episode) => episode.practice === "seclusion") ? "danger" : undefined}
+                />,
+                <HeroStat
+                  key="restraint"
+                  value={restraint}
+                  label="Restraint in use"
+                  tone={restraint > 0 ? "danger" : undefined}
+                />,
+                <HeroStat key="incidents" value={oneWard.incidents} label="Incidents, last day" />,
+              ]
+            : ROOM_STATES.map((entry) => (
+                <HeroStat
+                  key={entry.id}
+                  value={counts[entry.id]}
+                  label={`Rooms ${entry.label.toLowerCase()}`}
+                  tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
+                />
+              ))
+        }
       />
       <p className={styles.note} data-testid="seclusion-scope-note">
         Operational view only. Times are shown as they were typed, and nothing here works out an order length, a review
         or any legal limit. The legal register stays in the health service&apos;s own system.
       </p>
 
-      <div className={styles.layout}>
-        <Card data-testid="seclusion-wards" className={styles.tableCard}>
-          <CardHead
-            title="Seclusion rooms by ward"
-            meta={restraint > 0 ? `${restraint} restraint in use` : "No restraint recorded as in use"}
-            level={2}
-          />
-          {rows.length === 0 ? (
-            <CardBody>
-              <p className={styles.note}>No secure ward is in this desk&apos;s view.</p>
-            </CardBody>
-          ) : (
-            <div className={styles.tableScroll}>
-              <table className={cx(tableClasses.table, styles.table)} data-testid="seclusion-ward-table">
-                <colgroup>
-                  <col className={styles.colWard} />
-                  <col className={styles.colRoom} />
-                  <col className={styles.inUseCol} />
-                  <col className={cx(styles.colIncidents, styles.wide)} />
-                  <col className={cx(styles.colMarked, styles.wide)} />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th scope="col">Ward</th>
-                    <th scope="col">Seclusion room</th>
-                    <th scope="col" className={styles.inUseCol}>
-                      In use now
-                    </th>
-                    <th scope="col" className={cx(tableClasses.num, styles.wide)}>
-                      Incidents, last day
-                    </th>
-                    <th scope="col" className={styles.wide}>
-                      Room last marked
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const selected = row.unit.id === wardId;
-                    const state = ROOM_STATES.find((entry) => entry.id === row.state)!;
-                    return (
-                      <tr
-                        key={row.unit.id}
-                        className={cx(styles.row, selected && tableClasses.selected)}
-                        onClick={() => choose(row.unit.id)}
-                        data-testid={`seclusion-ward-row-${row.unit.id}`}
-                      >
-                        <td>
-                          <button
-                            type="button"
-                            className={styles.wardButton}
-                            aria-pressed={selected}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              choose(row.unit.id);
-                            }}
-                          >
-                            <b>{row.unit.name}</b>
-                            <span className={styles.detail}>
-                              {row.unit.siteCode} · {row.unit.lockedBeds} locked beds
-                            </span>
-                            {row.inUse.length > 0 ? (
-                              <span className={styles.phoneInUse}>
-                                {row.inUse.map((episode) => restrictivePracticeLabel(episode.practice)).join(", ")} in
-                                use
+      <div className={cx(styles.layout, oneWard && own.oneLayout)}>
+        {oneWard ? null : (
+          <Card data-testid="seclusion-wards" className={styles.tableCard}>
+            <CardHead
+              title="Seclusion rooms by ward"
+              meta={restraint > 0 ? `${restraint} restraint in use` : "No restraint recorded as in use"}
+              level={2}
+            />
+            {rows.length === 0 ? (
+              <CardBody>
+                <p className={styles.note}>No secure ward is in this desk&apos;s view.</p>
+              </CardBody>
+            ) : (
+              <div className={styles.tableScroll}>
+                <table className={cx(tableClasses.table, styles.table)} data-testid="seclusion-ward-table">
+                  <colgroup>
+                    <col className={styles.colWard} />
+                    <col className={styles.colRoom} />
+                    <col className={styles.inUseCol} />
+                    <col className={cx(styles.colIncidents, styles.wide)} />
+                    <col className={cx(styles.colMarked, styles.wide)} />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th scope="col">Ward</th>
+                      <th scope="col">Seclusion room</th>
+                      <th scope="col" className={styles.inUseCol}>
+                        In use now
+                      </th>
+                      <th scope="col" className={cx(tableClasses.num, styles.wide)}>
+                        Incidents, last day
+                      </th>
+                      <th scope="col" className={styles.wide}>
+                        Room last marked
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => {
+                      const selected = row.unit.id === wardId;
+                      const state = ROOM_STATES.find((entry) => entry.id === row.state)!;
+                      return (
+                        <tr
+                          key={row.unit.id}
+                          className={cx(styles.row, selected && tableClasses.selected)}
+                          onClick={() => choose(row.unit.id)}
+                          data-testid={`seclusion-ward-row-${row.unit.id}`}
+                        >
+                          <td>
+                            <button
+                              type="button"
+                              className={styles.wardButton}
+                              aria-pressed={selected}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                choose(row.unit.id);
+                              }}
+                            >
+                              <b>{row.unit.name}</b>
+                              <span className={styles.detail}>
+                                {/* Polish r2: the site is in the page's eyebrow, so only the beds here. */}
+                                {siteName ? "" : `${row.unit.siteCode} · `}
+                                {row.unit.lockedBeds} locked beds
                               </span>
-                            ) : null}
-                          </button>
-                        </td>
-                        <td>
-                          <span className={styles.state} data-state={row.state}>
-                            <StatusGlyph tone={state.tone} size={8} /> {state.label}
-                          </span>
-                        </td>
-                        <td className={styles.inUseCol}>
-                          {row.inUse.length === 0 ? (
-                            <span className={styles.detail}>None</span>
-                          ) : (
-                            <span className={styles.stack}>
-                              {row.inUse.map((episode) => (
-                                <span key={episode.id}>
-                                  {restrictivePracticeLabel(episode.practice)}, since{" "}
-                                  {formatInstantWithDay(episode.startedAt, now)}
+                              {row.inUse.length > 0 ? (
+                                <span className={styles.phoneInUse}>
+                                  {row.inUse.map((episode) => restrictivePracticeLabel(episode.practice)).join(", ")} in
+                                  use
                                 </span>
-                              ))}
+                              ) : null}
+                            </button>
+                          </td>
+                          <td>
+                            <span className={styles.state} data-state={row.state}>
+                              <StatusGlyph tone={state.tone} size={8} /> {state.label}
                             </span>
-                          )}
-                        </td>
-                        <td className={cx(tableClasses.num, styles.wide)}>{row.incidents}</td>
-                        <td className={styles.wide}>
-                          {row.recorded ? (
-                            <span className={styles.detail}>
-                              {row.recorded.by}, {formatInstantWithDay(row.recorded.at, now)}
-                            </span>
-                          ) : (
-                            <span className={styles.detail}>Never</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+                          </td>
+                          <td className={styles.inUseCol}>
+                            {row.inUse.length === 0 ? (
+                              <span className={styles.detail}>None</span>
+                            ) : (
+                              <span className={styles.stack}>
+                                {row.inUse.map((episode) => (
+                                  <span key={episode.id}>
+                                    {restrictivePracticeLabel(episode.practice)}, since{" "}
+                                    {formatInstantWithDay(episode.startedAt, now)}
+                                  </span>
+                                ))}
+                              </span>
+                            )}
+                          </td>
+                          <td className={cx(tableClasses.num, styles.wide)}>{row.incidents}</td>
+                          <td className={styles.wide}>
+                            {row.recorded ? (
+                              <span className={styles.detail}>
+                                {row.recorded.by}, {formatInstantWithDay(row.recorded.at, now)}
+                              </span>
+                            ) : (
+                              <span className={styles.detail}>Not recorded</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+        )}
 
-        <div ref={recordRef} className={styles.record}>
+        <div ref={recordRef} className={cx(styles.record, oneWard && own.oneRecord)}>
           {ward ? (
-            <WardCard key={ward.id} ward={ward} role={role} now={now} nameOf={nameOf} isOnWard={isOnWard(ward.id)} />
+            <WardCard
+              key={ward.id}
+              ward={ward}
+              role={role}
+              now={now}
+              nameOf={nameOf}
+              isOnWard={isOnWard(ward.id)}
+              named={!oneWard}
+            />
           ) : null}
         </div>
       </div>
@@ -293,12 +331,15 @@ function WardCard({
   now,
   nameOf,
   isOnWard,
+  named,
 }: {
   ward: Unit;
   role: WardFlowRole;
   now: Instant;
   nameOf: (admissionId: string) => string;
   isOnWard: (admissionId: string) => boolean;
+  /** False when the page's header already names the ward. */
+  named: boolean;
 }) {
   const raise = useWardRaise(role);
   // D-80: a record about one patient on one ward is made by the ward that is present. The site's bed
@@ -329,7 +370,7 @@ function WardCard({
 
   return (
     <Card data-testid="seclusion-ward-card">
-      <CardHead title={ward.name} level={2} />
+      {named ? <CardHead title={ward.name} level={2} /> : null}
       <CardBody>
         <section className={styles.section} aria-labelledby={`${ward.id}-room`}>
           <h3 id={`${ward.id}-room`} className={styles.sectionTitle}>
@@ -338,7 +379,7 @@ function WardCard({
           <p className={styles.line} data-testid="seclusion-room-status">
             {room.kind === "in_use"
               ? `In use since ${formatInstantWithDay(room.since, now)}${recordedLine ? `. Last marked ${recordedLine}` : ""}`
-              : (recordedLine ?? "Not recorded yet")}
+              : (recordedLine ?? "Not recorded")}
           </p>
           <div className={styles.controls}>
             <Button
@@ -392,7 +433,12 @@ function WardCard({
           <h3 id={`${ward.id}-use`} className={styles.sectionTitle}>
             Seclusion and restraint in use
           </h3>
-          {open.length === 0 ? (
+          {open.length === 0 && !mayRecord ? (
+            // Polish r2 (D-80): one quiet line; this desk sees it, the ward records it.
+            <p className={styles.note} data-testid="seclusion-recorded-by-ward">
+              None in use · recorded by the ward
+            </p>
+          ) : open.length === 0 ? (
             <p className={styles.note}>None recorded as in use on this ward.</p>
           ) : (
             <ul className={styles.list}>
@@ -420,7 +466,7 @@ function WardCard({
                 raise("RECORD_RESTRICTIVE_PRACTICE_START", { ...acting, admissionId, practice, startedAt })
               }
             />
-          ) : (
+          ) : open.length === 0 ? null : (
             <p className={styles.note} data-testid="seclusion-recorded-by-ward">
               Recorded by the ward.
             </p>

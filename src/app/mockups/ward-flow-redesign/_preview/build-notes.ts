@@ -133,11 +133,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-bed-manager-wards": [
     "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
     "**Removed from other sites' cards:** Enter, Stays and discharges and ask NUM, which this desk cannot use.",
+    "**Round 2:** Ready by 15:00 and Pulled become one quiet line beside the title, because they filter nothing. The Ready now chip reads 'Wards with a ready bed'. Order 'By service' reads 'By site', and the phone says 'Wards full', the Status filter's word.",
+    "**Question for you:** Occupancy by service still shows network services on a site desk. Recommend scoping it to the site.",
   ],
   "as-bed-manager-places": [
     "**As the site bed manager**, Places opens on '2 wards at your site', Dabakarn in the preview.",
     "**Changed:** a place this desk cannot open shows Open greyed with the app's own sentence; Ask to confirm becomes Confirm beds on the site's wards.",
     "**Still open:** RPH ED is not listed as one of the site's places, because this role cannot open ED pages. Should it?",
+    "**Round 2:** the site's two wards are listed once, under Your site; the network group reads 'Other wards 20'. Network totals leave the eyebrow. The preview's pills become one quiet line, with only the warning kept as a pill.",
   ],
   "as-bed-manager-ward": [
     "**As the site bed manager**, the real gating already works: Confirm numbers is offered, Raise referral is greyed, answering and placing are blocked.",
@@ -151,6 +154,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-bed-manager-referrals": [
     "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
     "**Removed:** the destination chips and statewide Beds ready (placing is the coordinator's job).",
+    "**Round 2:** with an empty queue, zero chips, the empty Waiting band and sort notes go; they return when a referral waits. The title reads 'Nothing awaiting a decision', as on the phone. The side pane says 'Read only' and who answers each referral.",
   ],
   "as-bed-manager-statistics": [
     "**As the site bed manager**, Statistics leads with Royal Perth's wards and its own ED; the hero figures are the site's.",
@@ -162,6 +166,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-bed-manager-seclusion": [
     "**As the site bed manager**, the page is headed for Royal Perth ('1 secure ward of 2 at the site').",
     "**Kept:** Mark available or out of service (this desk may), and the operational-only safeguard note.",
+    "**Round 2:** with one secure ward at the site, the page opens straight on Dabakarn's record, as the ward desk's view does. The header counts Seclusion in use, Restraint in use and Incidents, last day. 'Not recorded' is the one wording. The scope note stays word for word.",
   ],
   "as-executive-home": [
     "**As the executive**, one line under the hero explains the small-number rule once, instead of unexplained 'not shown' values in every card.",
@@ -177,10 +182,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-admin-home": [
     "**As the access admin**, Settings opens on Access as the first tab; Rules and Alerts (no use to this desk) are removed.",
     "**Still open:** the rail labels this desk 'EXECUTIVE' and has no Governance entry (shared chrome).",
+    "**Round 2:** the hero's Profile button goes. Role rows read 'Nurse in charge · FSH Adult Secure · ends in 120 days · used 1 day ago', and chips show only exceptions (Ending soon, Switched off). The phone opens on Access requests and roles.",
   ],
   "as-admin-governance": [
     "**As the access admin**, Governance opens on Review, with only Review and Audit trail; bed operations, registers, reports and the patient chronology are removed (no clinical content).",
     "**New:** an empty Review links to the record openings in Settings, Access log.",
+    "**Round 2:** with nothing to review, the zero chips, the '0 of 0' ring, the filter and table headings go; the page shows the tabs and one empty state with 'Open the Access log'. 'Patterns' and 'For follow-up' name their nouns.",
   ],
   "pop-ed-actions": [
     "**Built from a copy of today's row actions menu**: the items, labels, conditions and short reasons are the menu's own, and each item presses the board's real control.",

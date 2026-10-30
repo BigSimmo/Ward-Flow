@@ -85,6 +85,17 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import directory from "@/components/ward-redesign/places/places-redesign.module.css";
+import detail from "./places-detail.module.css";
+
+/** A place's fixed facts in words, in the list row's order. "Undesignated" accepts either sex, so it is left out. */
+function placeFacts(entry: HubEntry): string[] {
+  return [
+    entry.cohort,
+    entry.security,
+    entry.forensic === true ? "Forensic ward" : undefined,
+    entry.sexDesignation === "Undesignated" ? undefined : entry.sexDesignation,
+  ].filter((fact): fact is string => fact !== undefined);
+}
 
 /** Redesign: a directory orders by service or by name; with no bed figures there is no "Most ready". */
 type Order = "service" | "name";
@@ -225,7 +236,13 @@ export function AsBedManagerPlaces() {
     [entries, deskSite, canOpen],
   );
   const unauthorised = useMemo(() => unauthorisedWards(entries), [entries]);
-  const sections = useMemo(() => groupedResults(results), [results]);
+  // ROLE BRANCH (bed_manager), polish r2: the site's own wards head the list in their own group, so
+  // the service groups below leave them out instead of listing the same rows twice.
+  const ownShown = deskSite !== undefined && ownEntries.length > 0 && !searching && (kind === "all" || kind === "ward");
+  const sections = useMemo(() => {
+    const ownIds = new Set(ownShown ? ownEntries.map((entry) => entry.id) : []);
+    return groupedResults(results.filter((entry) => !ownIds.has(entry.id)));
+  }, [results, ownShown, ownEntries]);
   // Wards per service, read from the same grouping the list uses (a count of places, not beds).
   const wardServices = useMemo(
     () => groupedResults(entries).find((section) => section.key === "ward")?.subgroups ?? [],
@@ -236,6 +253,9 @@ export function AsBedManagerPlaces() {
       queryMatches !== undefined ? groupedResults(results.filter((entry) => queryMatches.has(entry.id))) : sections,
     [queryMatches, results, sections],
   );
+  // Polish r2: under the site's own group, the network's wards read as the other wards.
+  const sectionLabel = (section: { key: string; label: string }) =>
+    ownShown && section.key === "ward" ? "Other wards" : section.label;
   // In list order: services in their order, then EDs, then teams.
   const shownEntries = useMemo(
     () =>
@@ -245,14 +265,16 @@ export function AsBedManagerPlaces() {
     [shownSections],
   );
   // The rows on screen now (folded groups left out), for the arrow keys and the first preview.
-  const visibleEntries = shownSections.flatMap((section) =>
-    section.subgroups.length > 0
-      ? section.subgroups.flatMap((group, index) =>
-          searching || index < OPEN_SERVICES !== flipped.has(`${section.key}-${group.label}`) ? group.entries : [],
-        )
-      : kind !== "all" || searching || flipped.has(section.key)
-        ? section.entries
-        : [],
+  const visibleEntries = (ownShown ? ownEntries : []).concat(
+    shownSections.flatMap((section) =>
+      section.subgroups.length > 0
+        ? section.subgroups.flatMap((group, index) =>
+            searching || index < OPEN_SERVICES !== flipped.has(`${section.key}-${group.label}`) ? group.entries : [],
+          )
+        : kind !== "all" || searching || flipped.has(section.key)
+          ? section.entries
+          : [],
+    ),
   );
   const shownCount = shownEntries.length;
   // ROLE BRANCH (bed_manager): the oldest count the desk can act on is its own site's.
@@ -410,6 +432,13 @@ export function AsBedManagerPlaces() {
         ) : selected.kind === "ed" && canOpen(edStatisticsHref(selected.id)) ? (
           <Link href={edStatisticsHref(selected.id)}>View statistics</Link>
         ) : null}
+        {/* Review point 21: a ward's beds are read on these two pages. */}
+        {selected.kind === "ward" ? (
+          <>
+            <Link href={WARD_CAPACITY_HREF}>Bed map</Link>
+            <Link href={ALL_WARDS_HREF}>All wards</Link>
+          </>
+        ) : null}
       </div>
     );
   }
@@ -428,8 +457,10 @@ export function AsBedManagerPlaces() {
             <h2 className={styles.previewTitle}>{selected.name}</h2>
             {selected.site === undefined ? null : <p className={styles.previewSite}>{selected.site}</p>}
             <div className={styles.detailBadges}>
-              {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
-              {selected.security === undefined ? null : <span className={styles.infoPill}>{selected.security}</span>}
+              {/* Polish r2: plain facts read as text, as on the list row; only the warning is a pill. */}
+              {placeFacts(selected).length === 0 ? null : (
+                <span className={detail.facts}>{placeFacts(selected).join(" · ")}</span>
+              )}
               {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open and decides
                   who may legally be admitted, so it is stated in words. */}
               {selected.authorised === false ? (
@@ -438,11 +469,6 @@ export function AsBedManagerPlaces() {
                   Not authorised — voluntary admissions only
                 </span>
               ) : null}
-              {selected.forensic === true ? <span className={styles.infoPill}>Forensic ward</span> : null}
-              {/* "Undesignated" accepts either sex, so it is not a constraint and earns no badge. */}
-              {selected.sexDesignation === undefined || selected.sexDesignation === "Undesignated" ? null : (
-                <span className={styles.infoPill}>{selected.sexDesignation}</span>
-              )}
             </div>
           </div>
           {/* Redesign: no close button. The preview always shows a place (the first listed until one
@@ -490,17 +516,8 @@ export function AsBedManagerPlaces() {
                   )}
                 </div>
               )}
-              {/* Review point 21: beds are read on Capacity's bed map and All wards, not here. */}
-              <div className={styles.factRow}>
-                <dt>Beds</dt>
-                <dd className={directory.bedsElsewhere}>
-                  <BedDouble size={14} aria-hidden="true" />
-                  <span>
-                    On <Link href={WARD_CAPACITY_HREF}>Capacity&rsquo;s bed map</Link> and{" "}
-                    <Link href={ALL_WARDS_HREF}>All wards</Link>
-                  </span>
-                </dd>
-              </div>
+              {/* Review point 21: beds are read on Capacity's bed map and All wards. Polish r2: the
+                  list foot says so on a desk and the phone sheet links them, so no Beds row here. */}
             </dl>
           ) : selected.kind === "ed" ? (
             <div className={styles.detailSection}>
@@ -605,11 +622,8 @@ export function AsBedManagerPlaces() {
         <Hero
           level={1}
           className={styles.hubHero}
-          eyebrow={
-            isPhone
-              ? `Places · ${deskSite?.name ?? "Statewide"}`
-              : `Places · ${deskSite?.name ?? "Statewide"} · ${totals.ward} wards, ${totals.ed} EDs, ${totals.community} teams in the network`
-          }
+          // Polish r2: the network's totals are said once, on the All, Wards, EDs and Teams switch.
+          eyebrow={`Places · ${deskSite?.name ?? "Statewide"}`}
           title={
             <>
               <SrOnly>Places, </SrOnly>
@@ -618,7 +632,6 @@ export function AsBedManagerPlaces() {
                 : `${totals.all} places`}
             </>
           }
-          titleMeta={deskSite ? `${totals.all} places in the network, as place information` : undefined}
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
           // Redesign: search first, in the header. The bed chips are gone (review point 21).
           bar={isPhone ? undefined : searchBox}
@@ -640,13 +653,7 @@ export function AsBedManagerPlaces() {
 
         <div className={styles.hubShell}>
           <Card as="section" className={styles.hubLeft} aria-label="Search results">
-            {isPhone ? null : (
-              <CardHead
-                icon={Network}
-                title="The network"
-                aside={<span className={styles.headMeta}>Perth and country WA</span>}
-              />
-            )}
+            {isPhone ? null : <CardHead icon={Network} title="The network" />}
             {isPhone ? (
               /* Phone (v10): the kind switch pins under the header while the places scroll. */
               <div className={styles.phoneKindBar}>
@@ -700,7 +707,7 @@ export function AsBedManagerPlaces() {
                 ) : null}
                 {/* Phone review F-24: the hero's shorthand, spelled out once where the list starts. */}
                 <p className={styles.phoneKey} data-testid="hub-phone-key">
-                  Stale: the ward has not confirmed its count in time.
+                  Stale: not confirmed in time
                 </p>
               </div>
             ) : (
@@ -719,7 +726,7 @@ export function AsBedManagerPlaces() {
                   <Segmented
                     label="Order"
                     items={[
-                      { id: "service" as const, label: "Service" },
+                      { id: "service" as const, label: "By service" },
                       { id: "name" as const, label: "A to Z" },
                     ]}
                     value={order}
@@ -779,7 +786,7 @@ export function AsBedManagerPlaces() {
                   </button>
                 </p>
               ) : null}
-              {deskSite !== undefined && ownEntries.length > 0 && !searching && (kind === "all" || kind === "ward") ? (
+              {deskSite !== undefined && ownShown ? (
                 // ROLE BRANCH (bed_manager): the desk's own site first, open, before the network.
                 <section aria-label={`Your site, ${deskSite.name}`} className={styles.group}>
                   <div className={styles.groupHeadRow}>
@@ -791,10 +798,10 @@ export function AsBedManagerPlaces() {
                 </section>
               ) : null}
               {shownSections.map((section) => (
-                <section key={section.key} aria-label={section.label} className={styles.group}>
+                <section key={section.key} aria-label={sectionLabel(section)} className={styles.group}>
                   <div className={styles.groupHeadRow}>
                     <h2 className={styles.groupHead}>
-                      {section.label} <Count n={section.entries.length} />
+                      {sectionLabel(section)} <Count n={section.entries.length} />
                     </h2>
                   </div>
                   {section.subgroups.length > 0 ? (
