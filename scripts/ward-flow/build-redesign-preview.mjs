@@ -32,7 +32,11 @@ const result = await build({
   platform: "browser",
   target: "es2022",
   jsx: "automatic",
-  minify: true,
+  // Class names stay readable (file_name), so the scoped redesign stylesheets' `[class*="_name__"]`
+  // selectors can be widened below to match them; minified names would match nothing.
+  minifyWhitespace: true,
+  minifySyntax: true,
+  minifyIdentifiers: false,
   splitting: false,
   sourcemap: false,
   tsconfig: path.join(root, "tsconfig.json"),
@@ -51,6 +55,19 @@ const result = await build({
   logOverride: { "undefined-composes-from": "silent" },
   metafile: true,
 });
+
+// Next names a module class `file_name__hash`, this bundle `file_name`. Widen each scoped selector
+// written against Next's names so it also matches the bundle's, at the end of a class list or before
+// another class.
+const previewCssPath = path.join(out, "preview.css");
+const previewCss = await readFile(previewCssPath, "utf8");
+await writeFile(
+  previewCssPath,
+  previewCss.replace(
+    /\[class\*=(["']?)([A-Za-z0-9_-]+?)__\1\]/g,
+    (_, _quote, name) => `:is([class*="${name}__"],[class$="${name}"],[class*="${name} "])`,
+  ),
+);
 
 const globalCss = await postcss([tailwind({ base: root })]).process(
   `${await readFile(path.join(root, "src/app/globals.css"), "utf8")}\n${await readFile(
