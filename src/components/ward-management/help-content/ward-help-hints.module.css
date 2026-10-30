@@ -39,3 +39,16 @@
     bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* A notice that has just come in sits in this corner too: on a phone the card steps back while one
+   is showing, unless it holds focus, and comes back when the notice goes (notifications pass). */
+@media (max-width: 48rem) {
+  :global(html:has([data-wf-toast]:not([data-leaving="true"]))) .hint:not(:focus-within) {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.hint {
+  transition: opacity var(--wf-t-exit, 160ms) var(--wf-ease-out, ease-out);
+}

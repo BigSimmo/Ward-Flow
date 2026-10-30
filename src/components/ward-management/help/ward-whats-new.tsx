@@ -5,6 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { OverlayPortal } from "@/components/wf";
 
 import { openWardHelp } from "./ward-help-events";
+import { useCornerCardEscape } from "./use-corner-card-escape";
 import styles from "./ward-whats-new.module.css";
 import entries from "./whats-new.json";
 
@@ -93,14 +94,21 @@ export function WardWhatsNew() {
     window.addEventListener(TOUR_AUTO_STARTED_EVENT, markWhatsNewSeen);
     return () => window.removeEventListener(TOUR_AUTO_STARTED_EVENT, markWhatsNewSeen);
   }, []);
-  if (unseen.length === 0 || closed) return null;
   const close = () => {
     markWhatsNewSeen();
     setClosed(true);
   };
+  // Escape is "Got it".
+  useCornerCardEscape(unseen.length > 0 && !closed, close);
+  if (unseen.length === 0 || closed) return null;
   return (
     <OverlayPortal layer="overlay" name="ward-whats-new">
-      <section className={styles.card} aria-labelledby="ward-whats-new-title" data-testid="ward-whats-new">
+      <section
+        className={styles.card}
+        aria-labelledby="ward-whats-new-title"
+        data-testid="ward-whats-new"
+        data-wf-corner-card=""
+      >
         <h2 id="ward-whats-new-title" className={styles.title}>
           What&apos;s new
         </h2>
