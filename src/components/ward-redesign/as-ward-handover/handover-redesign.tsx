@@ -125,7 +125,7 @@ import {
   SinceLine,
   signOffWaitReason,
 } from "@/components/ward-redesign/handover/handover-redesign-parts";
-import { ownWardOf, WARD_DESK_PILLS, WardDeskEmptyGroups, WardDeskReadyBeds } from "./handover-ward-desk";
+import * as desk from "./handover-ward-desk"; // ROLE BRANCH (ward) helpers, kept apart for the line limit.
 
 const DUE_FIRST = 4; // Due by rows shown before Show more.
 
@@ -250,8 +250,8 @@ export function HandoverRedesign() {
   );
   const now = useWardFlowClock();
   const access = useEffectiveWardAccess();
-  const ownWard = ownWardOf(access, units); // ROLE BRANCH (ward): one ward named, no scope picker, empty groups folded.
-  const scopeNote = ownWard ? "Chips only highlight" : "Scope narrows, chips only highlight";
+  const ownWard = desk.ownWardOf(access, units); // ROLE BRANCH (ward): one ward named, no scope picker, empty groups folded.
+  const scopeNote = ownWard ? "" : "Scope narrows, chips only highlight"; // Ward: no scope, Highlight says the rest.
   const allRecordsLabel = ownWard?.name ?? allRecordsScopeLabel(access);
   const isPhoneWidth = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -484,6 +484,7 @@ export function HandoverRedesign() {
   );
   // Flagged urgent rows outside the scope are listed with act now, so neither leaves the sheet.
   const outsideAct = outside.filter((row) => isActNow(row, now) || isFlaggedUrgent(row, now));
+  const wardAllShown = ownWard !== undefined && rows.length === allRows.length && outsideAct.length === 0; // Ward: no scope line.
 
   /* columns */
   // Desktop with the sign-off rail beside the table (1201px and up): Standard drops Legal and obs and
@@ -842,7 +843,7 @@ export function HandoverRedesign() {
       )}
     </Popover>
   );
-  const chipControls = HANDOVER_CHIPS.map((chip) => (
+  const chipControls = desk.deskChips(HANDOVER_CHIPS, ownWard !== undefined).map((chip) => (
     <FilterChip
       key={chip.id}
       pressed={chips.has(chip.id)}
@@ -887,7 +888,7 @@ export function HandoverRedesign() {
           sinceItems={sinceItems}
           carryOver={<HandoverOpenPromises referrals={referrals} units={units} now={now} layout="phone" />}
           onCopySince={copySince}
-          chips={HANDOVER_CHIPS.map((chip) => ({
+          chips={desk.deskChips(HANDOVER_CHIPS, ownWard !== undefined).map((chip) => ({
             id: chip.id,
             label: chip.label,
             count: rows.filter((row) => chip.test(row, now)).length,
@@ -937,13 +938,10 @@ export function HandoverRedesign() {
       {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
     </Button>
   );
-  /*
-   * v10 (build guide Handover): the title is the answer. NA2-01 (audit 24 Oct 2026): it counts every
-   * row listed under Act now, Flagged urgent and Due by, the same sum the phone title uses
-   * (`handover-phone.tsx`), so the two never disagree and an Act now row is never left out. The
-   * eyebrow names the shift; five chips highlight rows; the foot holds the shift switch, the
-   * countdown and the bed meter. Sign off is the one light primary.
-   */
+  /* v10 (build guide Handover): the title is the answer. NA2-01 (audit 24 Oct 2026): it counts every row listed
+   * under Act now, Flagged urgent and Due by, the same sum the phone title uses (`handover-phone.tsx`), so the two
+   * never disagree and an Act now row is never left out. The eyebrow names the shift; five chips highlight rows; the
+   * foot holds the shift switch, the countdown and the bed meter. Sign off is the one light primary. */
   const hero = (
     <Hero
       level={1}
@@ -952,7 +950,7 @@ export function HandoverRedesign() {
       // H-0887: the page heading names the page, not only the count.
       title={
         <>
-          <SrOnly>Handover:</SrOnly> {counts.act + counts.urg + counts.due} to hand over
+          <SrOnly>Handover:</SrOnly> {desk.peopleToHandOver(counts.act + counts.urg + counts.due)}
         </>
       }
       titleMeta={scopeLabel}
@@ -1004,18 +1002,19 @@ export function HandoverRedesign() {
           role="group"
           aria-label="Handover counts"
         >
-          {(ownWard ? WARD_DESK_PILLS : (["act", "urg", "due", "bed", "mov"] as const)).map((id) => (
+          {(ownWard ? desk.WARD_DESK_PILLS : (["act", "urg", "due", "bed", "mov"] as const)).map((id) => (
             <button
               key={id}
               type="button"
               className={styles.heroPill}
               aria-pressed={pill === id}
+              aria-label={id === "act" ? desk.actNowChipLabel(counts.act, actNowAlertCount) : undefined}
               onClick={() => togglePill(id)}
             >
               <span className={styles.heroPillCount}>{counts[id]}</span>
               <StatusGlyph tone={PILL_TONE[id]} size={9} />
               {id === "act"
-                ? `Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlertCount} ${actNowAlertCount === 1 ? "alert" : "alerts"})`
+                ? "Act now"
                 : id === "urg"
                   ? "Flagged urgent"
                   : id === "due"
@@ -1073,9 +1072,8 @@ export function HandoverRedesign() {
         </div>
       }
       footAside={
-        ownWard ? (
-          <WardDeskReadyBeds ready={readyTotal} ward={ownWard.name} />
-        ) : (
+        // ROLE BRANCH (ward): the ward's ready beds are the Beds tab's own count, just below.
+        ownWard ? undefined : (
           <span className={styles.gap}>
             <span>
               <b>{readyTotal}</b> beds ready for <b>{counts.bed}</b> finding a ward
@@ -1186,36 +1184,38 @@ export function HandoverRedesign() {
         <span className={styles.label}>Highlight</span>
         <div className={styles.chips}>{chipControls}</div>
       </div>
-      <div className={styles.scopeLine} data-testid="ward-handover-scope-line">
-        <StatusGlyph tone="neutral" size={8} />
-        <span data-testid="ward-handover-scope-summary">
-          Showing <b>{scopeLabel}</b>, <b>{rows.length}</b> of {allRows.length} open
-        </span>
-        {scope.kind !== "network" ? (
-          <span data-testid="ward-handover-scope-excluded">
-            {outside.length} outside this scope
-            {outsideAct.length ? (
-              <>
-                , <b className={styles.urgentOut}>{outsideAct.length} act now or flagged urgent</b> listed under the
-                sheet
-              </>
-            ) : (
-              ", none act now or flagged urgent"
-            )}
+      {wardAllShown && !anyHighlight ? null : (
+        <div className={styles.scopeLine} data-testid="ward-handover-scope-line">
+          <StatusGlyph tone="neutral" size={8} />
+          <span data-testid="ward-handover-scope-summary">
+            Showing <b>{scopeLabel}</b>, <b>{rows.length}</b> of {allRows.length} open
           </span>
-        ) : null}
-        {anyHighlight ? (
-          <>
-            <span className={styles.spacer} />
-            <span>
-              <b>{rows.filter(isHighlighted).length}</b> highlighted, all rows stay
+          {scope.kind !== "network" ? (
+            <span data-testid="ward-handover-scope-excluded">
+              {outside.length} outside this scope
+              {outsideAct.length ? (
+                <>
+                  , <b className={styles.urgentOut}>{outsideAct.length} act now or flagged urgent</b> listed under the
+                  sheet
+                </>
+              ) : (
+                ", none act now or flagged urgent"
+              )}
             </span>
-            <Button variant="ghost" size="sm" onClick={clearHighlight}>
-              Clear
-            </Button>
-          </>
-        ) : null}
-      </div>
+          ) : null}
+          {anyHighlight ? (
+            <>
+              <span className={styles.spacer} />
+              <span>
+                <b>{rows.filter(isHighlighted).length}</b> highlighted, all rows stay
+              </span>
+              <Button variant="ghost" size="sm" onClick={clearHighlight}>
+                Clear
+              </Button>
+            </>
+          ) : null}
+        </div>
+      )}
       <div className={styles.tableScroll} tabIndex={0} role="region" aria-label="Handover patients">
         <table
           className={cx(tableClasses.table, styles.sheetTable, compact && styles.compact, fitted && styles.fitted)}
@@ -1322,7 +1322,7 @@ export function HandoverRedesign() {
           ))}
         </div>
       ) : null}
-      {ownWard ? <WardDeskEmptyGroups groups={groups} /> : null}
+      {ownWard ? <desk.WardDeskEmptyGroups groups={groups} /> : null}
       <div className={styles.tableFoot}>
         <StatusGlyph tone="neutral" size={8} />
         <span>Form times are as typed, not legally checked</span>

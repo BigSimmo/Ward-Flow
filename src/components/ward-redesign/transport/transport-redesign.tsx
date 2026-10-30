@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Copy, ListChecks, Lock, MapPin, Search, ShieldCheck, X } from "lucide-react";
 
 import {
-  Badge,
   Button,
   Card,
   CardBody,
@@ -97,11 +96,7 @@ import {
 } from "@/components/ward-management/officer/officer-screen-helpers";
 import { renderArrivalsCard } from "@/components/ward-management/officer/officer-arrivals-card";
 import { OfficerOrderNote } from "@/components/ward-management/officer/officer-order-note";
-import {
-  renderDetail,
-  renderPhoneNextStep,
-  type OfficerJobDetailContext,
-} from "@/components/ward-management/officer/officer-job-detail";
+import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
@@ -1077,8 +1072,9 @@ export function TransportRedesign() {
                                     <b>{originShortFor(movement)}</b> to {destinationLabelFor(movement)}
                                   </span>
                                 ) : (
-                                  // Redesign: from first, then the ward, as the job is driven.
-                                  <span className={styles.jobRoute}>
+                                  // Redesign: from first, then the ward, as the job is driven. The route
+                                  // wraps rather than ending in "…" when the job panel narrows the table.
+                                  <span className={cx(styles.jobRoute, redesign.routeWraps)}>
                                     <span className={styles.jobRouteFrom}>{originShortFor(movement)}</span>
                                     <span aria-hidden="true"> → </span>
                                     <SrOnly> to </SrOnly>
@@ -1319,7 +1315,10 @@ export function TransportRedesign() {
                         ) : (
                           <>
                             {" · "}
-                            {transportLegalStatusLabel(selectedJob.transport)}
+                            {/* Redesign: a bare "Not recorded" names no noun. */}
+                            {transportLegalStatusLabel(selectedJob.transport) === "Not recorded"
+                              ? "Legal status not recorded"
+                              : transportLegalStatusLabel(selectedJob.transport)}
                             {selectedJob.transport.escortRequired ? " · Escort" : ""}
                           </>
                         )}
@@ -1327,13 +1326,7 @@ export function TransportRedesign() {
                     }
                     aside={
                       <>
-                        <Badge
-                          tone={
-                            officerLeg(selectedJob.transport) ? LEG_TONE[officerLeg(selectedJob.transport)!] : "neutral"
-                          }
-                        >
-                          {transportLeg(selectedJob.transport)}
-                        </Badge>
+                        {/* Redesign: no stage chip here; the leg steps below show the stage. */}
                         <Button
                           variant="ghost"
                           size="sm"

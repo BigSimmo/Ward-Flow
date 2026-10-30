@@ -6,55 +6,29 @@
 
 .options {
   display: grid;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-1);
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.legend {
-  margin-bottom: var(--wf-s-2);
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
   padding: 0;
-  color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
-/* Each answer is a whole-row target, at least 48 px tall on every screen. */
+/* Redesign: the kit radio at its own height, one answer per line, no box round each answer. */
 .option {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 48px;
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-ctl);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-  cursor: pointer;
-}
-
-.option input {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--wf-accent);
-}
-
-.option:has(input:checked) {
-  border-color: var(--wf-accent);
-  background: var(--wf-surface-2);
-}
-
-.option:has(input:focus-visible) {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.options:disabled .option {
-  cursor: default;
-  opacity: 0.6;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
 }
 
 .note {
@@ -69,28 +43,34 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Cancel at the left; the reason sits beside Save at the right, on one row while it fits. */
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--wf-s-2);
   margin-top: var(--wf-s-4);
 }
 
-/* On a phone the button takes the whole row, so its label is never cut. */
-@media (max-width: 48rem) {
-  .actions > :first-child {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-  }
-
-  .confirm {
-    flex: 1 1 100%;
-  }
+.actions > :last-child {
+  margin-left: auto;
 }
 
+/* On a phone, when Cancel, the reason and Save do not fit on one line: the reason takes its own line
+   above, at the right, and Cancel and Save share the row under it (the sheet footer's own rule). */
 @media (max-width: 48rem) {
-  .actions button {
-    min-height: 48px;
+  .actions > span:has(> button) {
+    display: contents;
+  }
+
+  .actions > span:has(> button) > span {
+    order: -1;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .actions > span:has(> button) > button {
+    margin-left: auto;
   }
 }

@@ -139,9 +139,7 @@ export function AlertDetail({
   if (movement?.transport) {
     facts.push(["Provider", movement.transport.provider]);
     facts.push(["Escort", movement.transport.escortRequired ? "Required" : "Not required"]);
-    if (movement.transport.acceptedAt !== undefined) {
-      facts.push(["Accepted", formatInstantWithDay(movement.transport.acceptedAt, now)]);
-    }
+    // Role view (transport officer): no Accepted fact; the recorded times and Activity both carry it.
   }
   if (movement?.legalForm?.dueAt !== undefined)
     facts.push(["Form due", formatInstantWithDay(movement.legalForm.dueAt, now)]);
@@ -491,8 +489,10 @@ export function AlertDetail({
             {subject.displayName}
           </h2>
           <span className={styles.detailSub}>
-            <span className={styles.mono}>{subject.umrn}</span>
-            {subject.legalStatus ? <> · {subject.legalStatus}</> : null}
+            {/* Role view (transport officer): no leading " · " when this desk is not shown the UMRN. */}
+            {subject.umrn ? <span className={styles.mono}>{subject.umrn}</span> : null}
+            {subject.umrn && subject.legalStatus ? " · " : null}
+            {subject.legalStatus ?? null}
           </span>
         </div>
         {patientLink ? (
@@ -506,7 +506,8 @@ export function AlertDetail({
       <div className={styles.detailState}>
         <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
         <span className={styles.detailTitle}>{item.title}</span>
-        {opened !== undefined ? (
+        {/* Role view (transport officer): the age shows once, on Recorded times just below, when they show. */}
+        {opened !== undefined && (track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
           <span className={styles.quiet}>
             open <span className={styles.mono}>{minutesText(Math.max(0, now - opened))}</span>
           </span>

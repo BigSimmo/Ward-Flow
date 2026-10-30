@@ -7,3 +7,29 @@
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
+
+/* One footer row: Clear at the left, the reason beside Save at the right. It wraps only when the
+   reason and Save no longer fit beside Clear (a phone). */
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.foot > :last-child {
+  margin-left: auto;
+}
+
+/* Footer buttons keep their whole labels, as in the sheet's own footer. */
+.foot button {
+  flex-shrink: 0;
+}
+
+.draftNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}

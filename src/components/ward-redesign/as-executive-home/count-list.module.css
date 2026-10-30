@@ -31,9 +31,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The small number sentence on the phone, under the hero. */
+/* The small number sentence on the phone, under the hero: the desktop notice's box, so the two
+   look the same (Redesign). */
 .note {
   margin: var(--wf-s-3) var(--wf-s-3) 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
   font-size: var(--wf-fs-13);
   line-height: 1.45;
   color: var(--wf-ink-2);

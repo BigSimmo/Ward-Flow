@@ -50,6 +50,7 @@ import {
 } from "@/components/ward-management/handover/handover-model";
 import { wardClosedLine } from "@/components/ward-management/capacity/ward-closure";
 import styles from "@/components/ward-management/handover/handover-phone.module.css";
+import { peopleToHandOver } from "./handover-ward-desk";
 
 type HandoverPhoneProps = {
   shift: HandoverShiftId;
@@ -473,7 +474,7 @@ export function HandoverPhone({
         }
         // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
         // agrees with the two figures beneath it.
-        title={`${actCount + urgentCount + dueCount} to hand over`}
+        title={peopleToHandOver(actCount + urgentCount + dueCount)}
         sub={
           signedAt !== null
             ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready ${ownWardName ? `on ${ownWardName}` : `across ${scopeLabel.toLowerCase()}`}`
@@ -504,7 +505,7 @@ export function HandoverPhone({
           {
             id: "due",
             value: dueCount,
-            label: `Due ${formatInstantWithDay(ctx.cutoff, now)}`,
+            label: `Due by ${formatInstantWithDay(ctx.cutoff, now)}`, // The desktop chip's words.
             tone: "warning",
             pressed: pill === "due",
             onPress: () => onPill("due"),

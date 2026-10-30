@@ -1,0 +1,4 @@
+/* Role view (community clinician): the decided list's Show more, under its first rows (owner rule). */
+.more {
+  margin: var(--wf-s-2) var(--wf-s-3);
+}

@@ -31,26 +31,35 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+/* Cancel at the left; the reason sits beside Save at the right, on one row while it fits. Controls
+   keep the kit's own sizes (Josh, 30 Oct 2026). */
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
   gap: var(--wf-s-2);
+  margin-top: var(--wf-s-1);
 }
 
-/* On a phone: the button takes the whole row so its label is never cut, and every control is 48 px. */
+.actions > :last-child {
+  margin-left: auto;
+}
+
+/* On a phone, when Cancel, the reason and Save do not fit on one line: the reason takes its own line
+   above, at the right, and Cancel and Save share the row under it (the sheet footer's own rule). */
 @media (max-width: 48rem) {
-  .actions > :first-child {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
+  .actions > span:has(> button) {
+    display: contents;
   }
 
-  .confirm {
+  .actions > span:has(> button) > span {
+    order: -1;
     flex: 1 1 100%;
+    justify-content: flex-end;
   }
 
-  .choices button,
-  .actions button {
-    min-height: 48px;
+  .actions > span:has(> button) > button {
+    margin-left: auto;
   }
 }

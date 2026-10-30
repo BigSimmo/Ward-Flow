@@ -25,16 +25,19 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
     "**New:** the header counts this ward (seclusion in use, restraint in use, incidents in the last day).",
     "**Kept:** the operational-only safeguard wording, word for word.",
+    "**Round 2:** the card head drops 'Dabakarn' (the eyebrow names it). 'None in use.' and 'None recorded.'; the section reads 'Incidents, last day', as the hero does.",
   ],
   "as-ward-handover": [
     "**As the nurse in charge**, the sheet is titled for Dabakarn, with no scope picker.",
     "**New:** empty groups fold into one line, so the table opens on real rows; the footer says '1 bed ready on Dabakarn' instead of the statewide finding-a-ward bar.",
     "**Removed:** the Finding a ward chip (the coordinator's job).",
+    "**Round 2:** '1 person to hand over'. The Declined and Escalated chips go on the ward desk, because they belong to the coordinator's bed search and a ward never learns another ward's refusal (FD-23).",
   ],
   "as-ward-referrals": [
     "**As the nurse in charge**, Referrals opens on 'Nothing for Dabakarn to answer' (or 'N for Dabakarn to answer'): only this ward's own incoming lines.",
     "**Removed:** destination pills and Refused once (every line is to this ward, and a ward never learns another ward's refusal, FD-23), Next overdue, the Bed meeting list, the waiting runway and the statewide Beds ready figure.",
     "**New:** an empty queue shows one line plus a link to the people already coming and going.",
+    "**Round 2:** the empty decision panel goes, so an empty queue takes the full width. The phone hero drops Overdue, Tier 1 and Beds ready for a ward desk, as desktop does. 'No referral or bed offer for Dabakarn.'",
   ],
   "as-ward-waiting": [
     "**As the nurse in charge**, the eyebrow reads 'Waiting · coming to Dabakarn', and 'Waiting on you' becomes 'Waiting on the coordinator', because on this board 'you' meant the coordinator.",
@@ -50,6 +53,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-ward-alerts": [
     "**As the nurse in charge**, the title reads 'No alert for Dabakarn', and a quiet ward's side panel lists the checks instead of 'Pick an alert'.",
     "**Removed:** Broadcast alert (a ward never broadcasts, so it is left out rather than greyed), the owner lens and the Today chart while the ward is quiet.",
+    "**Round 2:** a quiet ward shows one line, 'Nothing in Act now or Waiting.' Next and Copy for handover go when nothing is in turn. The side panel reads 'Checked for Dabakarn'.",
   ],
   "as-ward-settings": [
     "**As the nurse in charge**, Settings opens on Display and profile, not on rules the desk cannot change. Rules read 'Read only' and the save bar is gone.",
@@ -69,6 +73,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-ed-referrals": [
     "**As the ED clinician**, Referrals opens on 'Raised from Peel ED' (9 open), because the coordinator's queue was empty for this desk. Rows show tier, surname first, time since referral and where it stands; after 8 rows, Show more.",
     "**Removed:** the Bed meeting list, 'statewide' and the median decision time; the highlight pills and runway show only while an ED review waits on this desk.",
+    "**Round 2:** the card reads 'Open referrals'. Journey is a quiet link with the person's name spoken, not eight outlined buttons. The phone figure reads 'Finding a ward', as the table does.",
   ],
   "as-ed-waiting": [
     "**As the ED clinician**, 'you' in the shared wording means the coordinator, so it now says 'Coordinator' and 'Waiting on the coordinator'.",
@@ -97,10 +102,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-community-referrals": [
     "**As the community clinician**, the board is read only, and with nothing waiting it opens on History with the latest decided referral, not an empty queue.",
     "**Removed:** the runway, statewide Beds ready, bed-type highlights and the all-zero decisions chart; 'Open the team's Waiting list' replaces the Bed meeting list.",
+    "**Round 2:** decided rows show '30 days ago' (the clock time in the tooltip), so names are not cut on a phone. The decided list shows 8 rows, then Show more. Titles and buttons match at every width.",
+    "**For the build:** the shared referral alerts show a literal 'Not recorded' as a legal chip.",
   ],
   "as-community-movements": [
     "**As the community clinician**, Midland has no journey in the demo data, so the page shows one panel saying what puts a journey there and that the team books its transport from it (D-76), with Refer from team.",
     "**Still open:** the view with journeys is unchecked by eye, because the data has none for Midland.",
+    "**Round 2:** the empty state is the kit's EmptyState, with 'Shows once a ward accepts a team referral'. The link reads 'Team's inpatients'.",
   ],
   "as-community-patient": [
     "**As the community clinician**, the record shows Emberfall, Cassia, who is on Midland's caseload (the coordinator's example is Peel's).",
@@ -117,10 +125,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the transport officer**, the phone opens on the next job (Open, then the one filled En route), then the job list; a long list shows its first 8 jobs, then Show all.",
     "**Moved:** Copy handover goes under the list on the phone, as an end-of-shift step.",
     "**Removed:** the Providers row while there is one provider (it repeated the jobs line).",
+    "**Round 2:** 'Collected' is the one word for that stage; on the phone 'Past ETA' and 'Need forms'. The job panel uses the Transport mock-up's fixed copy, so 'Arrived at ward' is never cut off.",
   ],
   "as-officer-alerts": [
     "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
     "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
+    "**Round 2:** empty Broadcast, Notices and History tabs go on this desk, and so does Copy for handover (the officer's copy is on My jobs). No stray ' · ' when the UMRN is withheld.",
   ],
   "as-bed-manager-home": [
     "**As the site bed manager**, Capacity opens on Royal Perth Hospital: 2 ready of 34, with the site's own mismatch, forecast and bed map. Before, the site's waiting list was set against all 304 network beds.",
@@ -193,13 +203,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's row actions menu**: the items, labels, conditions and short reasons are the menu's own, and each item presses the board's real control.",
     "**New:** only the actions you can take now, in three groups (Review and disposition, Transfer and handover, Legal and referral). The row's next step is the one filled button.",
     "**New:** greyed actions fold into 'Not available yet (n)', each with its short reason, who acts next and its one fix.",
-    "**Kept:** every action, including View patient record, Edit presentation and Edit plan. A bottom sheet with 48 px rows on a phone.",
+    "**Kept:** every action, including View patient record, Edit presentation and Edit plan. A bottom sheet on a phone, at the kit's row size.",
     "**Round 2:** items are verbs ('Log transport booking', 'Record no referral'), the first three get a 'Patient record' heading, and the phone rows are back to today's size.",
   ],
   "pop-log-transport": [
     "**Built from a copy of today's transport booking form**: every field, the check and the save work as now.",
     "**New:** '3 answers left' moves to the top with a link to the first one; with nothing left it reads 'Every answer given. Check them, then save.'",
-    "**New:** phone answer buttons are 48 px tall, and the pinned Save row matches the popup background in dark.",
+    "**New:** phone answer buttons keep the kit's size with a larger tap area, and the pinned Save row matches the popup background in dark.",
     "**Kept:** all fields, the legal-status prefill from Legal now, and Save greyed until every answer is in.",
     "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
   ],
@@ -207,21 +217,27 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built on today's job panel itself**, opened by choosing the first job on the desk, so steps, forms pack, copy and close are real.",
     "**New:** on wider screens the four leg steps sit two by two, so 'Arrived at ward' is no longer cut off.",
     "**Kept:** the phone panel (steps list, Mark en route pinned at the foot) is unchanged.",
+    "**Round 2:** the attribute-selector override is gone; the panel's fixes now live in the Transport mock-up's own copy of the job panel.",
   ],
   "pop-record-form": [
     "**Built from a copy of today's Record a form sheet**: validation, error summary, draft keeping, save and Undo work as now.",
     "**New:** movement first, then the form type, then the time and date as written on the paper, with one line under the time: 'Only the written time is recorded. No expiry is calculated.'",
     "**Kept:** the form type always opens blank, and no legal period is worked out (D5, D-70).",
+    "**Round 2:** one line of description, one footer row (Clear at left, the reason with Save at right), no clock icon in the time field, and 'Draft restored · Clear removes it'. 'Only the written time is recorded. No expiry is calculated.' stays word for word.",
+    "**For the build:** the date is the browser's own field, so it shows mm/dd/yyyy in some browsers. Recommend a DD/MM/YYYY text field read by the same parser.",
   ],
   "pop-record-exam": [
     "**Built from today's ED examination form**: the same four outcomes in the same words, the same 'Choose an outcome first' check and the same save, with Undo.",
-    "**New:** its own popup, each outcome a 48 px row and the button full width on a phone.",
+    "**New:** its own popup, each outcome a kit radio and the button full width on a phone.",
     "**Still open:** today Legal forms does not record the exam; it sends you to the ED board ('Record on ED'). Drawn over Legal forms as a proposal: should Legal forms record it directly, or keep the link?",
+    "**Round 2:** the title reads 'Examination outcome' with the person (surname first) under it, and the button 'Save outcome'. The four outcomes use the kit radio at its own size; their words are unchanged.",
   ],
   "pop-add-time": [
     "**Built from the side panel's 'Record the time written' form**: the same fields (date, time, region, age band), checks and save, with Undo.",
     "**New:** 'Add the time' opens it as its own popup on the person (today it opens the side panel and jumps to the form). Region and Age band have visible labels.",
     "**Kept:** 'Only the written time is recorded. No expiry is calculated.' Region and age band open as Not recorded, never guessed.",
+    "**Round 2:** the time is the same typed HH:MM field Record a form uses, read by the same parser, replacing the browser's 12-hour picker. The title is 'Add the time', the link's own name. Phone controls are back to the kit's sizes.",
+    "**For the build:** today's side-panel form still uses the browser's 12-hour time picker.",
   ],
   "pop-bed-record": [
     "**Built from a copy of today's bed drawer** with My ward's own wiring, so Record that they have left, blockers, Mark at an ED, observation level, discharge date and the confirm steps work as now. It opens on the first bed that needs a look.",
@@ -258,7 +274,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "pop-demo": [
     "**Built from a copy of today's Demo menu, panel and roles**, so scenario loads, Reset, the clock, Save and Load, and role switching work as now, confirms included.",
     "**New:** Scenario and See it as are compact two-column grids; the clock is one row; Save to file, Load from file and Reset demo sit in a pinned footer.",
-    "**New:** role paragraphs are cut to one line, Practise a placement folds into a closed row, and the header has its own close button (48 px on a phone).",
+    "**New:** role paragraphs are cut to one line, Practise a placement folds into a closed row, and the header has its own close button.",
     "**Kept:** all 8 scenarios, every role, and the safety lines word for word.",
     "**Round 2:** the 48 px phone sizes are gone, with an invisible touch area on close. The current scenario and role both read 'Current'. Practise a placement has a chevron. The safety lines stay word for word.",
   ],
@@ -278,7 +294,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "pop-ward-switcher": [
     "**Built on today's Switch ward menu's own rules**: the same access filter and the same navigation to the chosen ward.",
     "**New:** this ward sits at the top, ticked; wards at the same hospital come next, then 'Elsewhere in East Metro'. Each shows its cohort, security and 'n of N ready', from the Wards page's figures.",
-    "**New:** after 6 rows under Elsewhere, a Show more link. On a phone it is a bottom sheet with 48 px rows.",
+    "**New:** after 6 rows under Elsewhere, a Show more link. On a phone it is a bottom sheet at the kit's row size.",
     "**Still open:** today's menu lists only the same hospital (or the service when the hospital has no other ward). Showing the wider service is a proposal for Josh.",
     "**Round 2:** rows are back to 40 px, as in the Service picker; hospital names wrap; a ward named for its security does not say 'Open' twice.",
   ],
@@ -297,7 +313,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "pop-service-picker": [
     "**Built on today's Service picker's own figures and save**, so choosing a service narrows the lists and announces it as now.",
     "**New:** the 'Narrows the Capacity, Waiting and Movements lists' line shows on desktop too, and Statewide carries its total.",
-    "**New:** counts read as a bold number plus 'waiting'; a service with nobody waiting says 'None waiting'; a foot note says what the counts are. A bottom sheet with 48 px rows on a phone.",
+    "**New:** counts read as a bold number plus 'waiting'; a service with nobody waiting says 'None waiting'; a foot note says what the counts are. A bottom sheet on a phone, at the kit's row size.",
     "**Round 2:** counts read 'N waiting in ED', so the explaining footer goes; a zero is a grey figure. The header reads 'Narrows Capacity, Waiting and Movements'.",
   ],
   "pop-more-pages": [
@@ -371,20 +387,24 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   ],
   "pop-state-error": [
     "**Built from a copy of today's Ward Flow error panel**, with the boundary's title 'This ward screen could not be shown' and its description word for word.",
-    "**New:** the panel moves onto Ward Flow's own colours and buttons. Try again is the one filled button; Reload page is outlined. Both are full width and 48 px tall on a phone.",
+    "**New:** the panel moves onto Ward Flow's own colours and buttons. Try again is the one filled button; Reload page is outlined. Both are full width on a phone.",
     "**New:** it shows the fixed 'details are kept out of view' sentence, never the error text, and the heading no longer draws a focus box on arrival.",
     "**Kept:** the synthetic-prototype notice above the panel, the rail and header, and the prototype footer. Try again draws Home again, as retry does in the app.",
+    "**Round 2:** buttons are back to the kit's size and sit side by side on desktop. The fixed 'details are kept out of view' sentence is in the body font. The boundary's own wording stays word for word.",
   ],
   "pop-state-offline": [
     "**Built on today's offline notice** (`ward-offline-banner.tsx`). The browser is told it is offline while the mock-up is open, so the notice, the header's Offline chip and its amber clock dot react as in the app.",
     "**New:** the notice sits pinned under the header and takes the band's colour over Home, so header, notice and band read as one surface.",
     "**Kept:** the notice's wording exactly, and a save toast with 'Saved on this device only.' under it.",
     "**Still open:** the preview never saves, so the mock-up writes 'Saved on this device only.' in itself, as a device that is saving shows it.",
+    "**Round 2:** the offline save toast also names who the bed was pulled for. 'Saved on this device only.' is unchanged.",
   ],
   "pop-state-toast": [
     "**Built from today's Pull the bed toast**, 'Bed pulled at <ward>', shown through the app's own toast system, for the first accepted referral on Home still waiting for its bed.",
     "**Kept:** the real place, look and screen-reader announcement: a card at the bottom right on desktop, the dark pill above the dock on a phone.",
     "**Still open:** in the app this toast closes itself after 6 seconds; here it stays until closed so it can be reviewed. Nothing is saved, so the row still shows behind it.",
+    "**Round 2:** the toast names the person, surname first: 'Bed pulled at Bunbury Acute Psychiatric Unit for Underbridge, Warrick', because a save confirmation should say what was saved.",
+    "**For the build:** the shared toast covers the foot of Home on desktop and touches the dock on a phone; recommend lifting it above the dock.",
   ],
   "pop-state-not-wired": [
     "**Built on the kit button's own unavailable state** (D4): greyed with a dashed edge, a lock, and the exact sentence 'Not wired in this prototype.' from the app's one shared constant. It can be reached with the keyboard but does nothing.",
@@ -444,7 +464,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** Journey so far is a timeline of what was recorded, newest first (opened, examination, declines, escalation), each with its recorded time, read the same way as the History tab and computing nothing. Over 8 events it shows the first 6, then Show more.",
     '**New (D-83):** the name reads surname first ("Wren, Tobias") in the title and in Copy handover.',
     '**Kept:** the 7-step stepper, the tabs, Copy handover, "Every figure on this screen is invented", and all legal and privacy wording. Cannot move and the right column (Why, Legal now, Who to call) already matched the review, so they stay.',
-    "**Phone:** today's phone layout, without the timeline; record tabs are 48 px tall.",
+    "**Phone:** today's phone layout, without the timeline; record tabs keep today's size.",
   ],
   "statistics-compare": [
     "**Built from a copy of today's Compare screen**, so Chart and Data, the measure switches, Pinned wards, CSV and the phone Compare two wards sheet all work as now.",
@@ -548,6 +568,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Applied here:** bed tiles show the whole name on up to two lines; the desktop toolbar shows On TV, Raise referral and Referral form, with Notices, Shift brief and Handover in More; Ward flow opens on its busiest list instead of an empty one.",
     "**To change in the real files once approved (not drawn here):** the heading states the ward's position (\"1 bed ready, 16 occupied\") with the facts line moved into the eyebrow; Ward flow's busiest-list default set where the list choice lives.",
     '**Found while building:** bed tiles and Notices write names first name first ("Gareth Ferrowmoor"). D-83 says surname first everywhere, so this needs a fix in the real tile.',
+    "**Round 2:** a typed form time that is neither within its first warning nor passed leaves Act now and shows on that person's Admissions row, still as typed ('Form 1 ends Mon 09:00 as typed'). Times within the warning or passed stay in Act now with their words, and the header count counts the same rows. Today's demo night has no such time on Dabakarn, so the page looks unchanged; the path is checked from the code.",
   ],
   stays: [
     "**Built from a copy of today's Stays and discharges board**, so the filters, the order, the length-of-stay bands, the bed record, the shift brief and Change ward all work as now.",
@@ -570,6 +591,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** routes read from first, then the ward ("PEEL → Maali (Ward 4.2)"), missing forms are marked under the count, and the Next column is wide enough that "Arrived at ward" is never cut off.',
     "**Round 2:** the Forms cell says one thing ('3 forms missing' or 'All forms'), the title line drops '8 moving, 5 waiting' (the stage chips split it), and 'Jobs need forms' is amber at every width.",
     "**Behaviour change:** cancelled transport now shows at every width. Today it uses the phone-only card, so wider screens never show it.",
+    "**Round 2, job panel:** a copy of the real panel lays the four leg steps two by two, so 'Arrived at ward' is never cut to 'Arrived at w…'. Each fact is said once: no 'Accepted' chip in the header, the forms count as '3 to upload', unrecorded booking facts on one 'Not recorded:' line, and 'Legal status not recorded'. Routes wrap when the panel narrows the table.",
   ],
   patients: [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
@@ -644,7 +666,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's Governance workbench**, so the hero counts, the five header tabs (Review, Gaps by site, Audit trail, Registers, Reports), the filters, PIR chronology, Record review, Reviewed and Follow-up, and the phone layout all work as now.",
     "**Already done in today's screen:** the tabs moved into the header and outcomes show as a tick, cross or circle after the review was written, so those points needed no change.",
     '**New:** the review pane opens on the newest event waiting, with its facts, who opened the record and Reviewed or Follow-up, instead of "Choose an event". Closing it keeps it closed. On a phone or a portrait tablet the event still opens only when chosen, because there it covers the list.',
-    '**New:** the What and Record cells wrap instead of ending in "…", and the list runs the height of the screen. On a phone the Review, Gaps and Reviewed switch is 48 px tall.',
+    '**New:** the What and Record cells wrap instead of ending in "…", and the list runs the height of the screen.',
     '**Kept:** the review count, PIR chronology and "Safety incidents not recorded here".',
     '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
     "**Round 2:** Gaps reads 'Form gaps' ('67 form gaps across 9 sites'). The phone hero drops a line that repeated the title, tabs and footer. The phone switch is back to today's size; wrapping cells now live in copied files, not overrides.",

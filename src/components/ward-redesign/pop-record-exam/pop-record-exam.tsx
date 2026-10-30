@@ -2,10 +2,10 @@
 
 import { useState, type ReactNode } from "react";
 
-import { Button, Dialog } from "@/components/wf";
+import { Button, Dialog, Radio } from "@/components/wf";
 import { examinationBlockedReason } from "@/components/ward-management/ed/ed-blocked-reasons";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
-import { formTitle, needsExamination } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { needsExamination } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -91,12 +91,13 @@ export function PopRecordExam({ page }: { page: ReactNode }) {
       <Dialog
         open={open}
         onClose={close}
-        // Surname first (D-83).
-        title={`Examination outcome for ${patient.formalName}`}
+        // Redesign: the title is the question; the person moves to the line under it, surname first
+        // (D-83). The form's full name is on the row behind, so only its code is repeated here.
+        title="Examination outcome"
         description={
           <>
-            <span className={styles.mono}>{patient.umrn}</span>
-            {target.legalForm ? ` · Form ${target.legalForm.code}, ${formTitle(target.legalForm.code)}` : null}
+            <strong>{patient.formalName}</strong> · <span className={styles.mono}>{patient.umrn}</span>
+            {target.legalForm ? ` · Form ${target.legalForm.code}` : null}
             {ed ? ` · ${edShortName(ed)}` : null}
           </>
         }
@@ -104,33 +105,32 @@ export function PopRecordExam({ page }: { page: ReactNode }) {
         data-testid={`ward-ed-examine-form-${target.id}`}
       >
         <fieldset className={styles.options} disabled={save.pending}>
-          <legend className={styles.legend}>Outcome from the examination</legend>
+          {/* Spoken only: the dialog's title already asks the question. */}
+          <legend className={styles.srOnly}>Examination outcome for {patient.formalName}</legend>
           {OUTCOMES.map((option) => (
-            <label key={option.value} className={styles.option}>
-              <input
-                type="radio"
-                name={`examination-outcome-${target.id}`}
-                value={option.value}
-                checked={outcome === option.value}
-                onChange={() => setOutcome(option.value)}
-              />
-              {option.label}
-            </label>
+            <Radio
+              key={option.value}
+              className={styles.option}
+              name={`examination-outcome-${target.id}`}
+              value={option.value}
+              checked={outcome === option.value}
+              onChange={() => setOutcome(option.value)}
+              label={option.label}
+            />
           ))}
         </fieldset>
-        {/* The ED form's own button and reason, in the popup body so the whole label fits on a phone. */}
+        {/* One footer row, as the other Legal forms popups: Cancel, then the reason and Save. */}
         <div className={styles.actions}>
+          <Button variant="ghost" onClick={close}>
+            Cancel
+          </Button>
           <Button
             variant="pri"
-            className={styles.confirm}
             loading={save.pending}
             disabledReason={outcome ? undefined : "Choose an outcome first"}
             onClick={confirm}
           >
-            Confirm examination outcome
-          </Button>
-          <Button variant="ghost" onClick={close}>
-            Cancel
+            Save outcome
           </Button>
         </div>
         {save.pending ? (

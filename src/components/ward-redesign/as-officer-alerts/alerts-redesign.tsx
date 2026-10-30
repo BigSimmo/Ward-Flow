@@ -931,7 +931,7 @@ function AlertsWorkspace() {
         "Act now",
         actEntries,
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
-        "None firing now. The conditions checked are named in the header.",
+        "None firing now.",
         urgencyLink(0),
       )}
       {access.role === "coordinator" || access.role === "bed_manager" ? (
@@ -1041,7 +1041,7 @@ function AlertsWorkspace() {
     { id: "broadcast" as const, label: "Broadcast", count: (activeBroadcast ? 1 : 0) + livePullNows.length },
     { id: "notices" as const, label: "Notices", count: feedNotices.length },
     { id: "history" as const, label: "History", count: history.length },
-  ];
+  ].filter((tab) => access.role !== "officer" || tab.id === "now" || tab.count > 0); // Officer: no empty tabs.
 
   // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
   // chose it, says so above its actions.
@@ -1331,7 +1331,7 @@ function AlertsWorkspace() {
                         </div>
                       ) : null}
                       <div className={styles.phoneList}>{urgencyView}</div>
-                      <p className={styles.phoneNote}>Act now first · longest overdue next</p>
+                      <p className={styles.phoneNote}>{alertsOrderLine("urgency")}</p>
                     </>
                   ) : (
                     <>

@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, Building2, ChevronRight, Layers, Siren } from "lucide-react";
 
 import {
   GroupHead,
@@ -26,6 +26,7 @@ import { StatisticsNav } from "@/components/ward-management/statistics/statistic
 import { PhoneDotKey } from "@/components/ward-management/statistics/statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "@/components/ward-management/statistics/statistics-sections";
 import styles from "@/components/ward-management/statistics/statistics-phone.module.css";
+import redesign from "@/components/ward-redesign/statistics/statistics-redesign.module.css";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
@@ -192,6 +193,7 @@ function StatisticsSummaryPhoneView({
   beingMadeReady,
   occupied,
   occupiedPct,
+  totalBeds,
   waitingInEd,
   endedToday,
   wards,
@@ -208,6 +210,8 @@ function StatisticsSummaryPhoneView({
   /** Beds in use: Occupied + Pulled, the one occupancy count (`ward-occupancy.ts`). */
   occupied: number;
   occupiedPct: number;
+  /** Role view (executive): every bed, shown when the people counts are held back. */
+  totalBeds?: number;
   waitingInEd: StatisticsCount;
   endedToday: StatisticsCount;
   wards: readonly PhoneWard[];
@@ -258,8 +262,12 @@ function StatisticsSummaryPhoneView({
       as="li"
       name={ward.name}
       meta={<InUse percent={ward.percent} where={ward.hospital} />}
-      value={ward.ready}
-      time="ready"
+      // Redesign: the count and its noun on one line, not "4" over "ready".
+      value={
+        <>
+          {ward.ready} <small className={redesign.rowUnit}>ready</small>
+        </>
+      }
       href={wardStatisticsHref(ward.id)}
     />
   );
@@ -272,6 +280,11 @@ function StatisticsSummaryPhoneView({
           title={`${ready} ${ready === 1 ? "bed" : "beds"} ready now`}
           sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
           figures={[
+            // Role view (executive): with both people counts held back, one figure stood alone in a
+            // row of three; every bed (exact, like all bed counts) sits beside it.
+            ...(totalBeds !== undefined && held(waitingInEd) && held(endedToday)
+              ? [{ id: "beds", value: totalBeds, label: "Beds" }]
+              : []),
             // Phone review F-26: the big figure says what it counts, with its share beside it.
             { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
             ...(held(waitingInEd)
@@ -279,7 +292,7 @@ function StatisticsSummaryPhoneView({
               : [{ id: "ed", value: statisticsCountText(waitingInEd), label: "Open ED journeys" }]),
             ...(held(endedToday)
               ? []
-              : [{ id: "ended", value: statisticsCountText(endedToday), label: "Ended today" }]),
+              : [{ id: "ended", value: statisticsCountText(endedToday), label: "Stays ended today" }]),
           ]}
           eyebrow="Statistics · Network now"
           chip={
@@ -304,8 +317,9 @@ function StatisticsSummaryPhoneView({
             value={group}
             onChange={setGroup}
             items={[
-              { id: "hospital", label: "Hospitals", count: hospitals.length },
-              { id: "ward", label: "Wards", count: wards.length },
+              // Redesign: no counts, so the switch no longer looks like the Wards chip above it.
+              { id: "hospital", label: "By hospital" },
+              { id: "ward", label: "By ward" },
             ]}
           />
 
@@ -320,8 +334,11 @@ function StatisticsSummaryPhoneView({
                     as="li"
                     name={hospital.name}
                     meta={<InUse percent={hospital.percent} where={shortService(hospital.service)} />}
-                    value={hospital.ready}
-                    time="ready"
+                    value={
+                      <>
+                        {hospital.ready} <small className={redesign.rowUnit}>ready</small>
+                      </>
+                    }
                     onSelect={() =>
                       setSheet({
                         title: hospital.name,
@@ -355,7 +372,8 @@ function StatisticsSummaryPhoneView({
           <GroupHead
             title="Referrals today"
             variant="letter"
-            aside={referralsHeld ? "not shown" : `${statisticsCountText(referrals.raised)} raised`}
+            // Redesign: the Raised tile carries the total, so the heading does not repeat it.
+            aside={referralsHeld ? "not shown" : undefined}
             className={styles.groupHead}
           />
           {referralsHeld ? null : (
@@ -452,12 +470,18 @@ function StatisticsSummaryPhoneView({
               })
             }
           >
-            <IconTile icon={Clock} />
+            {/* Redesign: the menu's ED icon; a clock is for time only. */}
+            <IconTile icon={Siren} />
             <span className={styles.navText}>
               <b>Open ED journeys</b>
               <span>
                 {!edPresenceKnown ? (
-                  <>{statisticsCountText(waitingInEd)} open ED journeys · department totals protected</>
+                  // Role view (executive): "not shown open ED journeys" read badly and cut off.
+                  held(waitingInEd) ? (
+                    "Counts not shown"
+                  ) : (
+                    <>{statisticsCountText(waitingInEd)} open ED journeys · department totals protected</>
+                  )
                 ) : longestEd === null ? (
                   `${edsWaiting.length} of ${eds.length} departments with open ED journeys`
                 ) : (

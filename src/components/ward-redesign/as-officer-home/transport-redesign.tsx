@@ -104,7 +104,7 @@ import {
   renderDetail,
   renderPhoneNextStep,
   type OfficerJobDetailContext,
-} from "@/components/ward-management/officer/officer-job-detail";
+} from "@/components/ward-redesign/transport/officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
@@ -710,15 +710,16 @@ export function AsOfficerTransportRedesign() {
       {pillStat("requested", awaitingDeparture, "To accept", "To accept", "neutral")}
       {pillStat("accepted", crewToSend, "Crew to send", "To send", "neutral")}
       {pillStat("en_route", crewEnRoute, "Crew en route", "En route", "info")}
-      {pillStat("collected", inCustody, "On board", "On board", "info")}
-      {pillStat("late", pastEta, "Past ward ETA", "Late", pastEta > 0 ? "warning" : "neutral")}
+      {/* Redesign: the stage column's own word for the same state, so one state has one word. */}
+      {pillStat("collected", inCustody, "Collected", "Collected", "info")}
+      {pillStat("late", pastEta, "Past ward ETA", "Past ETA", pastEta > 0 ? "warning" : "neutral")}
       {/* F-23 (phone review, Oct 2026): outstanding forms take the warning glyph on phone, not the
           grey circle "0 Late" shows. A warning only: En route is never blocked. */}
       {pillStat(
         "forms",
         formsOutstanding,
         "Jobs need forms",
-        "Forms",
+        "Need forms", // Redesign: says what the count is, like To accept beside it, on one line.
         isPhone && formsOutstanding > 0 ? "warning" : "neutral",
       )}
     </>
@@ -872,7 +873,10 @@ export function AsOfficerTransportRedesign() {
                   <span className={styles.mono}>{umrnFor(topJob)}</span> ·{" "}
                 </>
               ) : null}
-              {originShortFor(topJob)} to {destinationLabelFor(topJob)}
+              {originShortFor(topJob)}
+              <span aria-hidden="true"> → </span>
+              <SrOnly> to </SrOnly>
+              {destinationLabelFor(topJob)}
             </span>
             {late(topJob) && topJob.arrivalDetails ? (
               <span className={cx(styles.nextCardLine, styles.warnText)}>
@@ -953,7 +957,12 @@ export function AsOfficerTransportRedesign() {
                   ]}
                 />
                 <span className={styles.headNote}>
-                  {panelOpen ? "Highlights never hide a job" : "Choose a patient to open their job"}
+                  {/* Role view (transport officer): no "Choose a patient" hint over a list that says it already. */}
+                  {panelOpen
+                    ? "Highlights never hide a job"
+                    : officerDesk
+                      ? null
+                      : "Choose a patient to open their job"}
                 </span>
               </div>
 
@@ -1025,7 +1034,7 @@ export function AsOfficerTransportRedesign() {
                 ) : (
                   <div className={styles.tableScroll}>
                     <table
-                      className={`${tableClasses.table} ${styles.jobsTable}`}
+                      className={`${tableClasses.table} ${styles.jobsTable} ${redesign.table}`}
                       aria-label="Outstanding transport jobs"
                     >
                       <thead>
@@ -1041,7 +1050,7 @@ export function AsOfficerTransportRedesign() {
                           <th scope="col" className={anyJobEta ? undefined : styles.etaOff}>
                             ETA
                           </th>
-                          <th scope="col" className={tableClasses.num}>
+                          <th scope="col" className={cx(tableClasses.num, redesign.nextCol)}>
                             Next
                           </th>
                         </tr>
@@ -1096,11 +1105,15 @@ export function AsOfficerTransportRedesign() {
                                   <span className={styles.jobUmrn}>{umrnFor(movement)}</span>
                                 </button>
                               </td>
-                              <td>
+                              <td className={redesign.routeCell}>
                                 {isPhone ? (
                                   // Phone (v10): from first, as the mockup's "ARM to ward" line reads.
                                   <span className={styles.jobRoute}>
-                                    <b>{originShortFor(movement)}</b> to {destinationLabelFor(movement)}
+                                    {/* Redesign: the desktop's arrow, with "to" spoken. */}
+                                    <b>{originShortFor(movement)}</b>
+                                    <span aria-hidden="true"> → </span>
+                                    <SrOnly> to </SrOnly>
+                                    {destinationLabelFor(movement)}
                                   </span>
                                 ) : (
                                   // Redesign: from first, then the ward, as the job is driven.
@@ -1152,7 +1165,7 @@ export function AsOfficerTransportRedesign() {
                                   <span className={styles.muted}>Not needed</span>
                                 ) : (
                                   <span
-                                    className={styles.formsCell}
+                                    className={cx(styles.formsCell, redesign.formsCell)}
                                     title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
                                   >
                                     <span className={styles.formDots} aria-hidden="true">

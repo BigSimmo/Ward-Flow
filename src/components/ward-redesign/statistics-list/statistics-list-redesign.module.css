@@ -39,15 +39,17 @@
   white-space: nowrap;
 }
 
+/* Josh, 30 Oct 2026: phone controls keep their real size (no 48px enlargement). Show more takes
+   the row's width, and its touch area reaches the row's padding without the button growing. */
 @media (max-width: 48rem) {
   .more {
+    position: relative;
     width: 100%;
-    min-height: var(--ward-tap, 48px);
   }
-}
 
-/* Redesign: phone controls at least 48px tall (owner rule). */
-.phoneSeg.phoneSeg :is(a, button) {
-  height: 48px;
-  min-height: 48px;
+  .more::after {
+    content: "";
+    position: absolute;
+    inset: calc(var(--wf-s-2) * -1) 0;
+  }
 }

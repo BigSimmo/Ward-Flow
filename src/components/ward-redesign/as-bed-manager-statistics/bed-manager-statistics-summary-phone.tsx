@@ -4,7 +4,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, Building2, ChevronRight, Layers, Siren } from "lucide-react";
 
 import {
   GroupHead,
@@ -28,6 +28,7 @@ import { BedManagerStatisticsNav as StatisticsNav } from "./bed-manager-statisti
 import { PhoneDotKey } from "@/components/ward-management/statistics/statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "@/components/ward-management/statistics/statistics-sections";
 import styles from "@/components/ward-management/statistics/statistics-phone.module.css";
+import redesign from "@/components/ward-redesign/statistics/statistics-redesign.module.css";
 import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
@@ -259,8 +260,12 @@ function StatisticsSummaryPhoneView({
       as="li"
       name={ward.name}
       meta={<InUse percent={ward.percent} where={siteDesk ? "" : ward.hospital} />}
-      value={ward.ready}
-      time="ready"
+      // Redesign: the count and its noun on one line, not "4" over "ready".
+      value={
+        <>
+          {ward.ready} <small className={redesign.rowUnit}>ready</small>
+        </>
+      }
       href={wardStatisticsHref(ward.id)}
     />
   );
@@ -276,7 +281,7 @@ function StatisticsSummaryPhoneView({
             // Phone review F-26: the big figure says what it counts, with its share beside it.
             { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
             { id: "ed", value: statisticsCountText(waitingInEd), label: "Open ED journeys" },
-            { id: "ended", value: statisticsCountText(endedToday), label: "Ended today" },
+            { id: "ended", value: statisticsCountText(endedToday), label: "Stays ended today" },
           ]}
           eyebrow={eyebrow}
           chip={
@@ -301,8 +306,9 @@ function StatisticsSummaryPhoneView({
               value={group}
               onChange={setGroup}
               items={[
-                { id: "hospital", label: "Hospitals", count: hospitals.length },
-                { id: "ward", label: "Wards", count: wards.length },
+                // Redesign: no counts, so the switch no longer looks like the Wards chip above it.
+                { id: "hospital", label: "By hospital" },
+                { id: "ward", label: "By ward" },
               ]}
             />
           )}
@@ -318,8 +324,11 @@ function StatisticsSummaryPhoneView({
                     as="li"
                     name={hospital.name}
                     meta={<InUse percent={hospital.percent} where={shortService(hospital.service)} />}
-                    value={hospital.ready}
-                    time="ready"
+                    value={
+                      <>
+                        {hospital.ready} <small className={redesign.rowUnit}>ready</small>
+                      </>
+                    }
                     onSelect={() =>
                       setSheet({
                         title: hospital.name,
@@ -348,12 +357,8 @@ function StatisticsSummaryPhoneView({
         </div>
 
         <section className={styles.group} aria-label="Referrals today">
-          <GroupHead
-            title="Referrals today"
-            variant="letter"
-            aside={`${statisticsCountText(referrals.raised)} raised`}
-            className={styles.groupHead}
-          />
+          {/* Redesign: the Raised tile carries the total, so the heading does not repeat it. */}
+          <GroupHead title="Referrals today" variant="letter" className={styles.groupHead} />
           <dl className={styles.tiles}>
             <div className={styles.tile}>
               <dt>
@@ -449,7 +454,8 @@ function StatisticsSummaryPhoneView({
               })
             }
           >
-            <IconTile icon={Clock} />
+            {/* Redesign: the menu's ED icon; a clock is for time only. */}
+            <IconTile icon={Siren} />
             <span className={styles.navText}>
               <b>Open ED journeys</b>
               <span>

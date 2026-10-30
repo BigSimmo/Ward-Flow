@@ -5,7 +5,7 @@ import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-deri
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users } from "lucide-react";
+import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users, X } from "lucide-react";
 
 import {
   Card,
@@ -73,6 +73,7 @@ import {
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import detail from "@/components/ward-management/statistics/statistics-detail.module.css";
 import ed from "@/components/ward-management/statistics/statistics-ed-third-edition.module.css";
+import redesign from "./ed-statistics-redesign.module.css";
 
 /**
  * ONE EMERGENCY DEPARTMENT IN DETAIL — the per-department statistics page.
@@ -453,7 +454,22 @@ function EdPresentation({
     <StatCard
       icon={Activity}
       title="Time since opening"
-      aside="Open ED journeys"
+      // Role view (as ED clinician): the aside splits the chart's journeys where they are; it
+      // repeated the hero's "Open ED journeys" and the split floated above the cards.
+      aside={
+        edCountsDesk ? (
+          <span data-testid="ward-statistics-ed-population">
+            <span aria-hidden="true">
+              {stillInEdShown} still in ED · {inTransitShown} in transit
+            </span>
+            <SrOnly>
+              {stillInEdShown} still in ED, {inTransitShown} in transit or recorded departure
+            </SrOnly>
+          </span>
+        ) : (
+          "Open ED journeys"
+        )
+      }
       id="ed-bands"
       data-testid="ward-statistics-ed-bands"
     >
@@ -481,19 +497,21 @@ function EdPresentation({
     </StatCard>
   );
   const declinesCard = (
-    <StatCard icon={Users} title="Declines" aside="Referrals from here" id="ed-declines">
+    // Role view (as ED clinician): the decline cross, as on the network page's Declines by reason;
+    // the tiles stack in the side column and drop the "Declined" the title already says.
+    <StatCard icon={edCountsDesk ? X : Users} title="Declines" aside="Referrals from here" id="ed-declines">
       <CardBody className={styles.bodyStack}>
         <div data-testid="ward-statistics-ed-declines">
-          <div className={styles.tiles} aria-hidden="true">
+          <div className={cx(styles.tiles, edCountsDesk && redesign.stackTiles)} aria-hidden="true">
             <div className={styles.tile}>
               <span className={styles.tileLabel}>
-                <StatusGlyph tone="closed" size={9} /> Declined, no suitable bed
+                <StatusGlyph tone="closed" size={9} /> {edCountsDesk ? "No suitable bed" : "Declined, no suitable bed"}
               </span>
               <span className={styles.tileValue}>{noFreeBedShown}</span>
             </div>
             <div className={styles.tile}>
               <span className={styles.tileLabel}>
-                <StatusGlyph tone="closed" size={9} /> Declined, other
+                <StatusGlyph tone="closed" size={9} /> {edCountsDesk ? "Other" : "Declined, other"}
               </span>
               <span className={styles.tileValue}>{notSuitableShown ?? "unknown"}</span>
             </div>
@@ -560,8 +578,19 @@ function EdPresentation({
           ) : null}
         </>
       }
-      eyebrowLabel="Emergency department"
-      eyebrowDetail={<span data-testid="ward-statistics-ed-site">{site ? site.name : "Hospital not recorded"}</span>}
+      // Role view (as ED clinician): the eyebrow says where this is in the app and that the desk
+      // reads counts only; the title already names the site, so the eyebrow no longer repeats it.
+      eyebrowLabel={edCountsDesk ? "Statistics" : "Emergency department"}
+      eyebrowDetail={
+        edCountsDesk ? (
+          <span data-testid="ward-statistics-people-not-listed">
+            {site ? `${site.service} · ` : ""}Counts only
+            <SrOnly>, so people are not listed</SrOnly>
+          </span>
+        ) : (
+          <span data-testid="ward-statistics-ed-site">{site ? site.name : "Hospital not recorded"}</span>
+        )
+      }
       now={now}
       paused={paused}
       onTogglePause={togglePause}
@@ -580,7 +609,9 @@ function EdPresentation({
         ],
       }}
       phone={{
-        eyebrow: site ? `${department.siteCode} · ${site.service}` : department.siteCode,
+        eyebrow:
+          (site ? `${department.siteCode} · ${site.service}` : department.siteCode) +
+          (edCountsDesk ? " · Counts only" : ""),
         title: `${shortName(department.name)} ED`,
         sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} urgent`,
         stats: (
@@ -625,34 +656,46 @@ function EdPresentation({
           />
           <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
           <HeroStat value={small(urgent)} label="Urgent" />
-          <HeroStat value={small(over24h)} label={`Over ${longHours}h`} />
+          {/* Role view (as ED clinician): marked as Longest is, since it counts the same long waits. */}
+          <HeroStat
+            value={small(over24h)}
+            label={
+              <span className={styles.flagged}>
+                {edCountsDesk && exactStatisticsCount(over24h) !== 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                {`Over ${longHours}h`}
+              </span>
+            }
+          />
           {/* Five figures at most (v10). No ward yet is the wait list's own No ward filter count,
               so the hero leaves it out; the export still carries it. */}
         </>
       }
     >
-      <p className={styles.muted} data-testid="ward-statistics-ed-population">
-        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure.
-        {/* Role view (as ED clinician): the desk's own counts need no method note, so it is cut. */}
-        {edCountsDesk
-          ? null
-          : " Open journeys retain ED accountability until arrival. The physical split includes recorded ED outcomes; times run from journey opening."}
-      </p>
+      {/* Role view (as ED clinician): the split is Time since opening's aside, so no loose line here. */}
+      {edCountsDesk ? null : (
+        <p className={styles.muted} data-testid="ward-statistics-ed-population">
+          {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Open journeys retain ED
+          accountability until arrival. The physical split includes recorded ED outcomes; times run from journey
+          opening.
+        </p>
+      )}
       {isPhone && countsOnly ? (
         <PhoneBody testId="ward-statistics-ed-phone">
           {edCountsDesk ? bandsCard : null}
           {edCountsDesk ? declinesCard : null}
-          <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />
+          {/* Role view (as ED clinician): "Counts only" is in the eyebrow, once. */}
+          {edCountsDesk ? null : <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />}
         </PhoneBody>
       ) : isPhone ? (
         personPhone
       ) : edCountsDesk ? (
         <>
-          <FlushRow layout="halves">
+          {/* Role view (as ED clinician): the chart leads and Declines is the side column, so the two
+              cards end level; "Counts only" moved to the eyebrow. */}
+          <FlushRow layout="lead2">
             {bandsCard}
             {declinesCard}
           </FlushRow>
-          <PeopleNotListed testId="ward-statistics-ed-wait-not-listed" />
         </>
       ) : (
         <>

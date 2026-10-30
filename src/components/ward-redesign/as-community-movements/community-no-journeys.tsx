@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRightLeft } from "lucide-react";
 
-import { Card, CardHead, Hero, LiveChip, buttonClass } from "@/components/wf";
+import { EmptyState, Hero, LiveChip, buttonClass } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
@@ -28,24 +28,32 @@ export function CommunityNoJourneys({ teamName }: { teamName: string }) {
             title="No journeys for the team"
             aside={<LiveChip state="live" onHero />}
           />
-          <Card aria-label="The team's journeys" data-ward-primitive="panel">
-            <CardHead icon={ArrowRightLeft} title="The team's journeys" />
-            <div className={local.empty}>
-              <p className={local.title}>A journey shows here once a ward accepts a referral the team sent.</p>
-              <p className={local.meta}>The team books its transport from the journey.</p>
-              <div className={local.actions}>
-                <Link
-                  href={raiseReferralHref({ source: "community", teamId })}
-                  className={buttonClass({ variant: "sec", size: "md" })}
-                >
-                  Refer from team
-                </Link>
-                <Link href={`/ward-flow/community/${teamId}`} className={buttonClass({ variant: "ghost", size: "md" })}>
-                  The team&rsquo;s people in a bed
-                </Link>
-              </div>
-            </div>
-          </Card>
+          {/* Redesign: the live empty state on its own (it carries its border), with no card head
+              repeating the title above it. */}
+          <section aria-label="The team's journeys">
+            <EmptyState
+              icon={ArrowRightLeft}
+              title="Shows once a ward accepts a team referral"
+              meta="The team books its transport from the journey"
+              className={local.empty}
+              action={
+                <div className={local.actions}>
+                  <Link
+                    href={raiseReferralHref({ source: "community", teamId })}
+                    className={buttonClass({ variant: "sec", size: "md" })}
+                  >
+                    Refer from team
+                  </Link>
+                  <Link
+                    href={`/ward-flow/community/${teamId}`}
+                    className={buttonClass({ variant: "ghost", size: "md" })}
+                  >
+                    Team&rsquo;s inpatients
+                  </Link>
+                </div>
+              }
+            />
+          </section>
         </div>
         <WardPrototypeFooter note="Patient journeys, transport legs and departments are invented · Not approved for clinical use" />
       </main>

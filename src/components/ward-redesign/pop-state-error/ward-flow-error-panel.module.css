@@ -1,5 +1,5 @@
 /* Preview fork of the Ward Flow error panel, on the --wf-* tokens. Layout follows the original: a
-   synthetic notice above one centred panel, the actions stacked full width. */
+   synthetic notice above one centred panel. Buttons keep the kit's own size (Josh, 30 Oct 2026). */
 .wrap {
   display: flex;
   flex-direction: column;
@@ -38,14 +38,16 @@
   text-align: center;
 }
 
+/* The kit's state mark (EmptyState's ringed circle), with the warning in the danger ink. */
 .mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
   color: var(--wf-danger);
 }
 
@@ -53,6 +55,8 @@
   margin: var(--wf-s-4) 0 0;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  /* No orphan word when the title wraps on a phone. */
+  text-wrap: balance;
 }
 
 .title:focus {
@@ -76,6 +80,12 @@
   text-align: left;
   white-space: pre-wrap;
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.fixed {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
 .digest {
@@ -106,9 +116,11 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
 }
 
+/* Side by side and centred on a desktop; stacked full width on a phone. */
 .actions {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--wf-s-2);
   margin-top: var(--wf-s-6);
 }
@@ -124,7 +136,7 @@
   .panel {
     padding: var(--wf-s-4);
   }
-  .actions > button {
-    min-height: 48px;
+  .actions {
+    flex-direction: column;
   }
 }

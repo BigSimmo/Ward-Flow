@@ -4,6 +4,7 @@ import {
   type StatisticsCount,
 } from "@/components/ward-management/statistics/statistics-small-numbers";
 
+import { SrOnly } from "@/components/wf";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 
 import styles from "./count-list.module.css";
@@ -59,9 +60,12 @@ export function ReasonCounts({
 export function SmallNumberNote({ className }: { className?: string }) {
   const under = CLINICAL_VALUES.smallNumberHidden.value;
   return (
+    // Redesign: shortened to one line at desktop width; "counts only, no names" stays for the
+    // spoken label, since the page itself lists no one.
     <p className={className} data-testid="as-executive-small-number-note">
-      Counts only, no names. Under {under} reads &ldquo;fewer than {under}&rdquo;; a figure that would give one away
-      reads &ldquo;not shown&rdquo;. Beds are exact.
+      <SrOnly>Counts only, no names. </SrOnly>
+      Under {under} shows as &ldquo;fewer than {under}&rdquo;, and a count that would give one away as &ldquo;not
+      shown&rdquo;. Beds are exact.
     </p>
   );
 }

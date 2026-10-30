@@ -13,6 +13,8 @@ import { isChunkLoadError, useReloadWhenOnline } from "@/components/ward-managem
  * and every word are the original's; the look moves from the host app's Tailwind tokens onto the
  * Ward Flow `--wf-*` tokens and the wf kit `Button` (one filled action, Try again). Two preview-only
  * changes are marked below: no console line (nothing really failed) and a `showDetail` prop.
+ * Round 2 polish: the kit's ringed icon mark, the fixed sentence in the body font (mono stays for
+ * a real message or reference), and the two buttons side by side on a desktop.
  *
  * THE RECOVERY PANEL EVERY WARD FLOW `error.tsx` RENDERS, WRITTEN ONCE.
  *
@@ -107,16 +109,21 @@ export function WardFlowErrorPanel({
           {shownDescription}
         </p>
 
-        {/* The message itself outside production; there, the console and the digest carry it. */}
-        <pre className={styles.message} data-testid="ward-flow-error-message">
-          {showDetail
-            ? error.message || "The error carried no message."
-            : `The details are kept out of view so nothing from a record is shown here. ${
-                error.digest
-                  ? "Quote the error reference below when you report this."
-                  : "When you report this, say which screen you were on and the time."
-              }`}
-        </pre>
+        {/* The message itself outside production; there, the console and the digest carry it. A real
+            message stays in mono; the fixed sentence is prose, in the body font with no box. */}
+        {showDetail ? (
+          <pre className={styles.message} data-testid="ward-flow-error-message">
+            {error.message || "The error carried no message."}
+          </pre>
+        ) : (
+          <p className={styles.fixed} data-testid="ward-flow-error-message">
+            {`The details are kept out of view so nothing from a record is shown here. ${
+              error.digest
+                ? "Quote the error reference below when you report this."
+                : "When you report this, say which screen you were on and the time."
+            }`}
+          </p>
+        )}
 
         {error.digest && (
           <p className={styles.digest} data-testid="ward-flow-error-digest">

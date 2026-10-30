@@ -5,6 +5,8 @@ import { useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react"
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { useOptionalToast } from "@/components/wf";
 
@@ -43,16 +45,23 @@ function usePretendOffline(): boolean {
  * (shell/ward-offline-banner.tsx) sits pinned under the header, where the app's banner holder puts
  * it, and a save made now shows its toast with the provider's offline note, "Saved on this device
  * only." (ward-offline-copy.ts). The header's live chip turns to Offline by itself. The toast is today's Pull the bed toast for the first accepted
- * referral still waiting for its bed, worded as the app words it.
+ * referral still waiting for its bed, worded as the app words it, plus the person's name (round 2).
  */
 export function PopStateOffline({ page }: { page: ReactNode }) {
   usePretendOffline();
   const toast = useOptionalToast();
   const { referrals, units, movements } = useWardFlowSelect("referrals", "units", "movements");
-  const unitName = useMemo(
-    () => acceptedReferralsAwaitingPull(referrals, units, movements)[0]?.unitName,
+  const first = useMemo(
+    () => acceptedReferralsAwaitingPull(referrals, units, movements)[0],
     [referrals, units, movements],
   );
+  const unitName = first?.unitName;
+  // Redesign: the toast names who the bed was pulled for, surname first (D-83), through the same
+  // name display Pull the bed uses (so discreet names still apply).
+  const patientOf = usePatientOf();
+  const nameFor = usePatientNameDisplay();
+  const who = first ? patientOf(first.referral) : undefined;
+  const name = who ? nameFor(who.formalName, who.umrn) : undefined;
 
   useEffect(() => {
     if (!toast || !unitName) return;
@@ -63,7 +72,7 @@ export function PopStateOffline({ page }: { page: ReactNode }) {
     const timer = window.setTimeout(() => {
       id = toast.push({
         tone: "success",
-        title: `Bed pulled at ${unitName}`,
+        title: name ? `Bed pulled at ${unitName} for ${name}` : `Bed pulled at ${unitName}`,
         body: WARD_OFFLINE_SAVED_NOTE,
         skipOfflineNote: true,
         duration: 0,
@@ -73,7 +82,7 @@ export function PopStateOffline({ page }: { page: ReactNode }) {
       window.clearTimeout(timer);
       if (id) toast.dismiss(id);
     };
-  }, [toast, unitName]);
+  }, [toast, unitName, name]);
 
   return (
     <>

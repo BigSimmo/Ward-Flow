@@ -148,7 +148,8 @@ export function SeclusionRedesign() {
         title="Seclusion, restraint and incidents"
         titleMeta={
           ownWard
-            ? `Room ${ROOM_STATES.find((entry) => entry.id === ownWard.state)?.label.toLowerCase() ?? ""} · as at ${formatInstantWithDay(now, now)}`
+            ? // ROLE BRANCH (ward): the room's state is the first line of the record below, so only the time here.
+              `As at ${formatInstantWithDay(now, now)}`
             : `${rows.length} secure wards · as at ${formatInstantWithDay(now, now)}`
         }
         stats={
@@ -294,7 +295,15 @@ export function SeclusionRedesign() {
 
         <div ref={recordRef} className={styles.record}>
           {ward ? (
-            <WardCard key={ward.id} ward={ward} role={role} now={now} nameOf={nameOf} isOnWard={isOnWard(ward.id)} />
+            <WardCard
+              key={ward.id}
+              ward={ward}
+              role={role}
+              now={now}
+              nameOf={nameOf}
+              isOnWard={isOnWard(ward.id)}
+              named={!ownWard}
+            />
           ) : null}
         </div>
       </div>
@@ -309,12 +318,15 @@ function WardCard({
   now,
   nameOf,
   isOnWard,
+  named,
 }: {
   ward: Unit;
   role: WardFlowRole;
   now: Instant;
   nameOf: (admissionId: string) => string;
   isOnWard: (admissionId: string) => boolean;
+  /** ROLE BRANCH (ward): false on a one-ward desk, whose eyebrow already names the ward. */
+  named: boolean;
 }) {
   const raise = useWardRaise(role);
   // D-80: a record about one patient on one ward is made by the ward that is present. The site's bed
@@ -345,7 +357,7 @@ function WardCard({
 
   return (
     <Card data-testid="seclusion-ward-card">
-      <CardHead title={ward.name} level={2} />
+      {named ? <CardHead title={ward.name} level={2} /> : null}
       <CardBody>
         <section className={styles.section} aria-labelledby={`${ward.id}-room`}>
           <h3 id={`${ward.id}-room`} className={styles.sectionTitle}>
@@ -409,7 +421,7 @@ function WardCard({
             Seclusion and restraint in use
           </h3>
           {open.length === 0 ? (
-            <p className={styles.note}>None recorded as in use on this ward.</p>
+            <p className={styles.note}>None in use.</p>
           ) : (
             <ul className={styles.list}>
               {open.map((episode) => (
@@ -445,10 +457,10 @@ function WardCard({
 
         <section className={styles.section} aria-labelledby={`${ward.id}-incidents`}>
           <h3 id={`${ward.id}-incidents`} className={styles.sectionTitle}>
-            Incidents in the last day
+            Incidents, last day
           </h3>
           {incidents.length === 0 ? (
-            <p className={styles.note}>None recorded in the last day.</p>
+            <p className={styles.note}>None recorded.</p>
           ) : (
             <ul className={styles.list} data-testid="seclusion-incidents">
               {incidents.map((incident) => (

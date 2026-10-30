@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Activity } from "lucide-react";
 
-import { BarList, CardBody, Segmented, tableClasses } from "@/components/wf";
+import { BarList, CardBody, Segmented, SrOnly, tableClasses } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import type { AdmissionStagePosition } from "@/components/ward-management/statistics/statistics-derivations";
 import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
@@ -21,10 +21,10 @@ import {
   EmptyToReadyCard,
   ServiceOccupancyCard,
   type NetworkServiceRow,
-} from "@/components/ward-management/statistics/statistics-network-cards";
+} from "@/components/ward-redesign/statistics/statistics-network-cards-redesign";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 
-import { CountList, noCountReleased } from "./count-list";
+import { noCountReleased } from "./count-list";
 
 /** The five services the network reports, in the order the overview has always shown them. */
 const NETWORK_SERVICES = [
@@ -85,14 +85,14 @@ function AdmissionStagesCardView({
       data-testid="statistics-overview-stages-chart"
     >
       {allHeld ? (
-        <CountList
-          label="Admissions by stage"
-          rows={stageTallies.map((stage, index) => ({
-            id: stage.position,
-            label: stage.label,
-            value: stagesShown[index]!,
-          }))}
-        />
+        // Redesign: when every stage is held back, a list of four "not shown" rows says one thing,
+        // so it is one line, counted live; the stages stay in the spoken label.
+        <CardBody>
+          <p className={styles.muted} data-testid="ward-statistics-overview-stages-held">
+            {`${stageTallies.length} ${stageTallies.length === 1 ? "stage" : "stages"} not shown under the small number rule`}
+            <SrOnly>{`: ${stageTallies.map((stage) => stage.label).join(", ")}`}</SrOnly>
+          </p>
+        </CardBody>
       ) : stagesView === "chart" ? (
         <CardBody>
           <BarList

@@ -1,5 +1,6 @@
 /* Role view (nurse in charge): the empty ward queue's one link, in the app's link colour. */
 .link {
+  position: relative;
   color: var(--wf-accent-ink);
   font-weight: 600;
   text-decoration: none;
@@ -9,10 +10,21 @@
   text-decoration: underline;
 }
 
+/* Phone: the link keeps its words on one line, under the sentence when it does not fit beside it. */
 @media (max-width: 30rem) {
   .link {
-    display: inline-flex;
-    align-items: center;
-    min-height: 48px;
+    display: inline-block;
   }
+}
+
+/* Today's size, with a comfortable touch area that does not show (Josh, 30 Oct 2026: no 48 px controls). */
+.link::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+/* Role view (nurse in charge): an empty ward queue takes the full width, with no decision pane beside it. */
+[data-referral-layout="queue-panel"] .single.single.single.single.single {
+  grid-template-columns: minmax(0, 1fr);
 }

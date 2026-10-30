@@ -501,5 +501,13 @@ export function wardLiveFormAlerts({
   return { liveFormAlerts };
 }
 
+/**
+ * Redesign (approved 30 Oct 2026): a typed form time outside both warnings (not within the first
+ * warning, not passed) is not Act now. It shows on the person's Admissions row instead, still as typed.
+ */
+export function isQuietFormTime(alert: { key: string; tone: string }): boolean {
+  return alert.key.startsWith("form-") && alert.tone === "neutral";
+}
+
 /** One bed on the ward screen's roster. */
 export type WardScreenBed = ReturnType<typeof wardBedRoster>["bedsList"][number];

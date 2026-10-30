@@ -2,9 +2,10 @@
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { DeskSidePanel, ownWardName } from "./ward-desk-alerts";
+import { ChecksCard } from "./alerts-checks-card";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import Link from "next/link";
-import { AlarmClock, ChevronRight, Clock, Columns3, List, Activity, Users, X } from "lucide-react";
+import { AlarmClock, ChevronRight, Clock, Columns3, List, Users, X } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import {
@@ -867,7 +868,7 @@ function AlertsWorkspace() {
       queued.kind === "single" ? (
         renderEntry(queued.entry)
       ) : queued.kind === "kind" ? (
-        <KindGroup key={queued.key} group={queued} listClassName={listClassName} renderEntry={renderEntry} />
+        <KindGroup key={queued.key} group={queued} now={now} listClassName={listClassName} renderEntry={renderEntry} />
       ) : (
         <LinkedAlertItem
           key={queued.key}
@@ -926,14 +927,18 @@ function AlertsWorkspace() {
     shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
     sectionLabels: urgencyLabels,
   });
-  const urgencyView = (
+  // ROLE BRANCH (ward): a quiet ward gets one line, not two empty groups and a sort rule over nothing.
+  const quietWard = Boolean(wardName) && allEntries.length === 0;
+  const urgencyView = quietWard ? (
+    <p className={styles.groupEmpty}>Nothing in Act now or Waiting.</p>
+  ) : (
     <>
       {groupSection(
         "act",
         "Act now",
         actEntries,
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
-        "None firing now. The conditions checked are named in the header.",
+        "None firing now.",
         urgencyLink(0),
       )}
       {access.role === "coordinator" || access.role === "bed_manager" ? (
@@ -1109,7 +1114,8 @@ function AlertsWorkspace() {
 
   const checkingList = (
     <div className={styles.checking}>
-      <span className={styles.checkingLabel}>Checking</span>
+      {/* ROLE BRANCH (ward): a quiet ward's checks sit under "Checked for …" or in the Checking sheet, already titled. */}
+      {quietWard ? null : <span className={styles.checkingLabel}>Checking</span>}
       <ul className={styles.checkList} aria-label="Conditions checked">
         {checks.map((check) => {
           const scopeId = `alerts-check-${check.key}`;
@@ -1329,14 +1335,16 @@ function AlertsWorkspace() {
                         </div>
                       ) : null}
                       <div className={styles.phoneList}>{urgencyView}</div>
-                      <p className={styles.phoneNote}>Act now first · longest overdue next</p>
+                      {quietWard ? null : <p className={styles.phoneNote}>{alertsOrderLine("urgency")}</p>}
                     </>
                   ) : (
                     <>
                       {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
-                      <p className={styles.orderNote} data-testid="ward-alerts-order-note">
-                        {alertsOrderLine(view)}
-                      </p>
+                      {quietWard && view === "urgency" ? null : (
+                        <p className={styles.orderNote} data-testid="ward-alerts-order-note">
+                          {alertsOrderLine(view)}
+                        </p>
+                      )}
                     </>
                   )}
                 </TabPanel>
@@ -1400,40 +1408,21 @@ function AlertsWorkspace() {
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
                 )}
-                <button type="button" className={styles.phoneCard} onClick={() => setPhoneChecks(true)}>
-                  <Activity size={18} aria-hidden="true" />
-                  <span className={styles.phoneCardText}>
-                    <span className={styles.phoneCardTitle}>
-                      Checking <span className={styles.mono}>{checks.length}</span> conditions
-                    </span>
-                    <span className={styles.phoneCardMeta}>
-                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
-                      sheets not checked
-                    </span>
-                  </span>
-                  <ChevronRight size={16} aria-hidden="true" />
-                </button>
+                <ChecksCard
+                  total={checks.length}
+                  firing={checks.filter((check) => check.n > 0).length}
+                  onOpen={() => setPhoneChecks(true)}
+                />
               </>
             ) : (
               /* Device audit (11 Oct 2026): on an iPad in portrait the Checking strip wraps to three lines,
                  so it becomes the phone's one-tap card there (shown by CSS in that range only). */
-              <button
-                type="button"
-                className={`${styles.phoneCard} ${styles.checkingCardPortrait}`}
-                onClick={() => setPhoneChecks(true)}
-              >
-                <Activity size={18} aria-hidden="true" />
-                <span className={styles.phoneCardText}>
-                  <span className={styles.phoneCardTitle}>
-                    Checking <span className={styles.mono}>{checks.length}</span> conditions
-                  </span>
-                  <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
-                    sheets not checked
-                  </span>
-                </span>
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
+              <ChecksCard
+                total={checks.length}
+                firing={checks.filter((check) => check.n > 0).length}
+                className={styles.checkingCardPortrait}
+                onOpen={() => setPhoneChecks(true)}
+              />
             )}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
               <div className={styles.phoneChecks}>{checkingFoot}</div>

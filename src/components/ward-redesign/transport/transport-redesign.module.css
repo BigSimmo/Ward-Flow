@@ -20,6 +20,13 @@
   white-space: normal;
 }
 
+/* The route wraps to a second line rather than ending in "…" when the job panel is open. */
+.routeWraps.routeWraps {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 /* Cancelled transport: a plain list in the page's own card. */
 .notices {
   display: flex;

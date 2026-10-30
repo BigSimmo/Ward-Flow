@@ -124,7 +124,7 @@ export function ReferralPhoneHero({
         <div className={styles.figures}>
           <div className={styles.figure} data-testid="as-ed-phone-no-ward">
             <span className={styles.figureValue}>{edHero.noWardYet}</span>
-            <span className={styles.figureLabel}>No ward yet</span>
+            <span className={styles.figureLabel}>Finding a ward</span>
           </div>
           <div className={styles.figure} data-testid="as-ed-phone-accepted">
             <span className={styles.figureValue}>{edHero.accepted}</span>

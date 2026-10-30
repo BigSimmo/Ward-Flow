@@ -8,7 +8,7 @@ import styles from "./pop-officer-job.module.css";
  * The transport officer's job panel, drawn over the Transport desk. The panel is the desk's own:
  * it opens when a job row is chosen, so this presses the first job's row once the desk has drawn,
  * exactly as a person would. Everything inside it (steps, forms pack, copy, close) is the real wiring.
- * The one design change is scoped CSS: the four leg steps sit two by two on wider screens.
+ * Its design changes belong to the Transport page's copy of the panel, which this popup draws.
  */
 export function PopOfficerJob({ page }: { page: ReactNode }) {
   useEffect(() => {

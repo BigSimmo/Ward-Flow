@@ -1,0 +1,20 @@
+/* Redesign: the job panel's own changes (forked `officer-job-detail.tsx`). */
+
+/* The four leg steps two by two, so "Arrived at ward" is never cut to "Arrived at w…". */
+.legSteps.legSteps {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Booking facts the call did not record, on one quiet line under the heading. */
+.notRecorded {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A status glyph keeps a gap from its words ("CAD to follow"). */
+.glyphLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

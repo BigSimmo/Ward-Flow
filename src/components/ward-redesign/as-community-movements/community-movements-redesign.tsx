@@ -1018,6 +1018,7 @@ export function CommunityMovementsRedesign({ openOnLoad }: { openOnLoad?: string
             <StagePipeline
               stages={openStages.filter((stage) => stage.id !== "arrived")}
               now={now}
+              accessTarget={accessTarget}
               highlight={highlight}
               onToggle={(stageId) => toggleHighlight(`stage:${stageId}`)}
             />

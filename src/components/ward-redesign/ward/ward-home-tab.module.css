@@ -593,7 +593,21 @@
   gap: var(--wf-s-2);
   min-width: 0;
 }
-.flowTitleLine > .flowWhen {
+.flowTitleLine > /* Redesign: a typed form time outside both warnings, on the person's Admissions row. */
+.flowForm {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* Redesign: the typed-time colour key, under the Admissions list that now holds those times. */
+.flowKey {
+  margin: 0;
+  padding: var(--wf-s-1) 0 var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.flowWhen {
   margin-inline-start: auto;
 }
 
