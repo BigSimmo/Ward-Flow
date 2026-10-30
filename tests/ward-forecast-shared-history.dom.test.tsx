@@ -1,9 +1,12 @@
 import { act, render, waitFor } from "@testing-library/react";
 import { useEffect } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { ForecastHistoryEntry } from "@/components/ward-management/forecast/forecast-history";
-import { sharedForecastReply } from "@/components/ward-management/forecast/forecast-shared-history";
+import {
+  sharedForecastReply,
+  useSharedForecastHistory,
+} from "@/components/ward-management/forecast/forecast-shared-history";
 import {
   useForecastHistory,
   useForecastMissReasons,
@@ -84,7 +87,171 @@ function renderWith(api: SharedAccessApi | null, seen: Seen) {
   );
 }
 
-afterEach(() => window.localStorage.clear());
+afterEach(() => {
+  window.localStorage.clear();
+  vi.restoreAllMocks();
+});
+
+type ForecastCall = NonNullable<SharedAccessApi["forecastHistory"]>;
+function deferredReply() {
+  let resolve!: (reply: unknown) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<unknown>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
+  return { promise, resolve, reject };
+}
+function historyReply(generation: number, nowGap: number) {
+  return { shared: true, generation, snapshots: [{ ...yesterday, nowGap }], reasons: [] };
+}
+function renderHistory(call: ForecastCall, generation = 0) {
+  let current!: ReturnType<typeof useSharedForecastHistory>;
+  function HistoryProbe({ world }: { world: number }) {
+    const value = useSharedForecastHistory(world);
+    useEffect(() => {
+      current = value;
+    }, [value]);
+    return null;
+  }
+  const tree = (nextCall: ForecastCall, world: number) => (
+    <SharedAccessContext.Provider
+      value={{ api: { forecastHistory: nextCall } as SharedAccessApi, actorId: "synthetic" }}
+    >
+      <HistoryProbe world={world} />
+    </SharedAccessContext.Provider>
+  );
+  const view = render(tree(call, generation));
+  return {
+    get current() {
+      return current;
+    },
+    rerender(nextCall: ForecastCall, world: number) {
+      view.rerender(tree(nextCall, world));
+    },
+    unmount: view.unmount,
+  };
+}
+
+describe("shared forecast request lifetimes", () => {
+  it("keeps an accepted write when an earlier GET finishes later", async () => {
+    const read = deferredReply();
+    const call: ForecastCall = (body) => (body ? Promise.resolve(historyReply(0, 9)) : read.promise);
+    const view = renderHistory(call);
+    await act(async () => {
+      expect(await view.current.send({ snapshot: yesterday })).toBe(true);
+    });
+    expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+    await act(async () => read.resolve(historyReply(0, 1)));
+    expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+  });
+
+  it("keeps Shared when an earlier first GET fails after an accepted write", async () => {
+    const read = deferredReply();
+    const call: ForecastCall = (body) => (body ? Promise.resolve(historyReply(0, 9)) : read.promise);
+    const view = renderHistory(call);
+    await act(async () => {
+      expect(await view.current.send({ snapshot: yesterday })).toBe(true);
+    });
+    await act(async () => read.reject(new Error("synthetic delayed read failure")));
+    expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+  });
+
+  it("does not publish an obsolete world's POST into the current world", async () => {
+    const write = deferredReply();
+    let reads = 0;
+    const call: ForecastCall = (body) => (body ? write.promise : Promise.resolve(historyReply(++reads, reads)));
+    const view = renderHistory(call, 1);
+    await waitFor(() => expect(view.current.state.status).toBe("shared"));
+    const sent = view.current.send({ snapshot: yesterday });
+    view.rerender(call, 2);
+    await waitFor(() => expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 2 }] }));
+    await act(async () => {
+      write.resolve(historyReply(1, 9));
+      expect(await sent).toBe(false);
+    });
+    expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 2 }] });
+  });
+
+  it("invalidates the shared old GET and keeps a newer deduplicated read owned until it finishes", async () => {
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    const oldRead = deferredReply();
+    const newRead = deferredReply();
+    let reads = 0;
+    const call: ForecastCall = (body) => {
+      if (body) return Promise.resolve(historyReply(0, 9));
+      return ++reads === 1 ? oldRead.promise : newRead.promise;
+    };
+    const first = renderHistory(call);
+    await act(async () => {
+      expect(await first.current.send({ snapshot: yesterday })).toBe(true);
+    });
+    const second = renderHistory(call);
+    const third = renderHistory(call);
+    await waitFor(() => expect(reads).toBe(2));
+    for (const view of [first, second, third])
+      expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+    await act(async () => oldRead.resolve(historyReply(0, 1)));
+    await act(async () => document.dispatchEvent(new Event("visibilitychange")));
+    expect(reads).toBe(2);
+    for (const view of [first, second, third])
+      expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+    await act(async () => newRead.resolve(historyReply(0, 10)));
+    for (const view of [first, second, third])
+      expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 10 }] });
+  });
+
+  it.each([null, { shared: false }, historyReply(1, 1)])(
+    "keeps current shared history when a write has no matching shared reply: %j",
+    async (reply) => {
+      const call: ForecastCall = (body) => Promise.resolve(body ? reply : historyReply(0, 9));
+      const view = renderHistory(call);
+      await waitFor(() => expect(view.current.state.status).toBe("shared"));
+      await act(async () => {
+        expect(await view.current.send({ snapshot: yesterday })).toBe(false);
+      });
+      expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+    },
+  );
+
+  it("fences an old POST across call A to B to A, even when A's function is reused", async () => {
+    const write = deferredReply();
+    let reads = 0;
+    const callA: ForecastCall = (body) => (body ? write.promise : Promise.resolve(historyReply(0, ++reads)));
+    const callB: ForecastCall = () => Promise.resolve(historyReply(0, 20));
+    const view = renderHistory(callA);
+    await waitFor(() => expect(view.current.state.status).toBe("shared"));
+    const oldSend = view.current.send;
+    const sent = oldSend({ snapshot: yesterday });
+    view.rerender(callB, 0);
+    await waitFor(() => expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 20 }] }));
+    view.rerender(callA, 0);
+    await waitFor(() => expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 2 }] }));
+    await act(async () => {
+      write.resolve(historyReply(0, 9));
+      expect(await sent).toBe(false);
+      expect(await oldSend({ snapshot: yesterday })).toBe(false);
+    });
+    expect(view.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 2 }] });
+  });
+
+  it("publishes a valid accepted write to a surviving view when its originating view leaves", async () => {
+    const read = deferredReply();
+    const write = deferredReply();
+    const call: ForecastCall = (body) => (body ? write.promise : read.promise);
+    const first = renderHistory(call);
+    const second = renderHistory(call);
+    const sent = first.current.send({ snapshot: yesterday });
+    first.unmount();
+    await act(async () => {
+      write.resolve(historyReply(0, 9));
+      expect(await sent).toBe(false);
+    });
+    expect(second.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+    await act(async () => read.resolve(historyReply(0, 1)));
+    expect(second.current.state).toMatchObject({ status: "shared", snapshots: [{ nowGap: 9 }] });
+  });
+});
 
 describe("shared forecast history (proposal 013)", () => {
   it("keeps a reply only when it is shared and counted in the same world", () => {
