@@ -99,21 +99,9 @@
   white-space: nowrap;
 }
 
-@media (max-width: 48rem) {
-  .journeyLink,
-  .journey > button {
-    min-height: var(--ward-tap, 48px);
-  }
-}
-
 /* A layout-neutral wrapper, so phone-only fixes can be scoped to this page. */
 .scope {
   display: contents;
 }
 
-/* Phone: the record tabs (Now, History, Details, Documents) reach the 48px phone control height. */
-@media (max-width: 48rem) {
-  .scope [role="tablist"] [role="tab"] {
-    min-height: var(--ward-tap, 48px);
-  }
-}
+/* Redesign (Josh, 30 Oct): controls keep today's sizes, so nothing here enlarges them to 48px. */

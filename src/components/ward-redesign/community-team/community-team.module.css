@@ -70,11 +70,3 @@
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
-
-/* Phone: the list switch (Sent, Waiting, In bed, Back, CTOs) reaches the 48px phone control height. */
-@media (max-width: 48rem) {
-  .scope [role="tablist"] [role="tab"],
-  .scope [role="radiogroup"] [role="radio"] {
-    min-height: var(--ward-tap, 48px);
-  }
-}

@@ -46,7 +46,6 @@ import {
   type ChoiceItem,
   cx,
   Field,
-  Frac,
   Hero,
   Icon,
   LiveChip,
@@ -416,7 +415,9 @@ export function AddPatientRedesign() {
     lateSubmissionRef.current = null;
     if (late && isDirty) {
       // The save already finished and the form holds new typing: say where the record is, stay here.
-      setSavedOutsideView(`${added.givenName} ${added.familyName} added, ${added.umrn}. It is now in Recent records.`);
+      setSavedOutsideView(
+        `Added ${added.familyName}, ${added.givenName} · ${added.umrn}. It is now in Recent records.`,
+      );
       return;
     }
     setSavedOutsideView(null);
@@ -424,10 +425,10 @@ export function AddPatientRedesign() {
     // record already had its "added" toast when the wait ended, so it only says it is opening.
     toast?.push(
       late
-        ? { tone: "info", title: `${added.givenName} ${added.familyName}, ${added.umrn}: record now available` }
+        ? { tone: "info", title: `${added.familyName}, ${added.givenName} · ${added.umrn}: record now available` }
         : {
             tone: "success",
-            title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
+            title: `Added ${added.familyName}, ${added.givenName} · ${added.umrn}`,
             // P143 (Josh, 8:57 PM): refer path only; in-app move, as a reload drops a demo-mode record.
             ...(prior.intent === "refer"
               ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
@@ -475,7 +476,7 @@ export function AddPatientRedesign() {
         (patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn,
       );
       if (arrived) return;
-      const saved = `${prior.givenName} ${prior.familyName} added, ${prior.umrn}`;
+      const saved = `Added ${prior.familyName}, ${prior.givenName} · ${prior.umrn}`;
       const note = "Saved. The record is outside this desk's view, so it does not open here.";
       // Clear only the submitted draft; anything typed during the wait is kept.
       if (JSON.stringify(latestRef.current.form) === JSON.stringify(prior.form)) clearForm();
@@ -738,15 +739,8 @@ export function AddPatientRedesign() {
             title="Add a patient"
             sub="Identity only · same duplicate check"
             data-testid="ward-add-patient-phone-hero"
-            // Device audit 11 Oct 2026: the landing shows no figures (a "0/4 Required" for a form that is
-            // not shown read as a result); the short form shows only its own required count.
-            figures={[
-              {
-                id: "required",
-                value: `${answeredCount}/${REQUIRED_FIELDS.length}`,
-                label: "Required",
-              },
-            ]}
+            // Redesign: the Identity card's head says "0 of 4 required" just below, so the hero shows
+            // no figure of its own and the form starts higher.
           />
         ) : null}
         <PhoneSheet
@@ -794,30 +788,9 @@ export function AddPatientRedesign() {
                   <Icon icon={ShieldCheck} size={14} />
                   Identity is saved to the record. Check for an existing record before adding.
                 </p>
-                <div className={styles.heroChips} data-testid="ward-add-patient-hero-chips">
-                  <span className={styles.heroChip}>
-                    <Frac
-                      done={answeredCount}
-                      total={REQUIRED_FIELDS.length}
-                      label="required fields"
-                      tone={answeredCount === REQUIRED_FIELDS.length ? "success" : undefined}
-                    />
-                    <span aria-hidden="true">required fields</span>
-                  </span>
-                  {/* Before anything is typed these read as a result; the duplicate count waits for
-                      input and the record count says what the check covers (device audit 11 Oct 2026). */}
-                  {hasCheckedAnything ? (
-                    <span className={styles.heroChip}>
-                      <b>{matches.length}</b> possible {matches.length === 1 ? "duplicate" : "duplicates"}
-                    </span>
-                  ) : null}
-                  <span className={styles.heroChip}>
-                    Checks <b>{patients.length}</b> records
-                  </span>
-                  <span className={styles.heroChip} data-testid="ward-add-patient-added-today">
-                    <b>{addedToday}</b> added today
-                  </span>
-                </div>
+                {/* Redesign: the chips repeated the page. The required count is the Identity card's,
+                    the record count and any possible duplicates are the duplicate check's, and the
+                    added-today count moves to Recently added, so the band keeps the one line. */}
               </div>
             }
           />
@@ -1085,8 +1058,13 @@ export function AddPatientRedesign() {
               <CardHead
                 icon={History}
                 title="Recently added"
-                aside={<span className={styles.countPill}>{recentRecords.length}</span>}
-                action={<span className={styles.muted}>recent</span>}
+                // Redesign: the list shows its own rows, so the head names the one new figure, a count
+                // with its noun, in place of a bare "7" pill beside "recent".
+                action={
+                  <span className={styles.muted} data-testid="ward-add-patient-added-today">
+                    {addedToday} added today
+                  </span>
+                }
               />
               <CardBody flush>
                 <ul className={styles.recentList}>

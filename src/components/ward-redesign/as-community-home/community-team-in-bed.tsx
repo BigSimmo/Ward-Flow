@@ -325,7 +325,11 @@ export function CommunityTeamInBedTab({ view }: { view: CommunityScreenView }) {
                           </td>
                           <td>
                             <span className={styles.cellLead}>{unitName(admission.unitId, units)}</span>
-                            <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                            {/* Redesign: the panel is "In a bed or with one pulled", so only a bed that is not
+                                simply occupied (pulled, or its person at an ED) says so. */}
+                            {bedStateLabel(admission) === "In the bed" ? null : (
+                              <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                            )}
                           </td>
                           <td>{pt?.legalStatus ?? "Not recorded"}</td>
                           <td className={styles.n}>{stayDays === null ? "Not arrived" : `${stayDays}d`}</td>

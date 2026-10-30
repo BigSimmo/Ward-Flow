@@ -132,7 +132,7 @@ import {
 import { renderArrivalSection } from "@/components/ward-management/patients/patient-now-arrival-section";
 // Role view (community clinician): the Now panel is forked beside this file with its community branch.
 import { PatientRedesignPanel } from "./patient-redesign-panel";
-import { PatientNowSummary } from "@/components/ward-management/patients/patient-now-summary";
+import { PatientNowSummary } from "@/components/ward-redesign/patient/patient-now-summary-redesign";
 import { renderTransportSection } from "@/components/ward-management/patients/patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";

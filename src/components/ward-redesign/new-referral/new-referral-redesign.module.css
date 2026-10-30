@@ -37,3 +37,24 @@
   color: var(--wf-ink-1);
   cursor: pointer;
 }
+
+/* Before you send: a long value wraps under its own column instead of being cut off. */
+.railWrap.railWrap > div {
+  align-items: start;
+}
+
+.railWrap.railWrap dd {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The rail's figure card with one figure: one column, the same type as the pair. */
+.railSingle.railSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Short labels take their own width, so a long value has room to wrap once, not four times. */
+.railWrap.railWrap > div {
+  grid-template-columns: max-content minmax(0, 1fr);
+}

@@ -501,8 +501,10 @@ export function ReferralPatientStepRedesign({
           ) : unidentified === null ? (
             <div className={styles.confirmRow}>
               {noPatientChosen ? (
+                // Redesign: the search, New patient and Not yet identified already say how, so the
+                // line says only what is true.
                 <p className={`${styles.patientSub} ${styles.patientSubWrap}`} data-testid="ward-referral-no-patient">
-                  No patient chosen. Find them by name or UMRN, add a new patient, or choose Not yet identified.
+                  No patient chosen
                 </p>
               ) : null}
               <button

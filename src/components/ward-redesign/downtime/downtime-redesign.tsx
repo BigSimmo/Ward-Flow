@@ -6,6 +6,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -57,7 +58,7 @@ import {
 } from "@/components/ward-management/reports/downtime-pack";
 import { useDowntimePackAccess } from "@/components/ward-management/reports/downtime-pack-context";
 import { nextDowntimePackAt } from "@/components/ward-management/reports/downtime-pack-schedule";
-import { useTakeDowntimePack } from "@/components/ward-management/reports/use-take-downtime-pack";
+import { useTakeDowntimePack } from "./use-take-downtime-pack-redesign";
 import { reportDay, reportMoment } from "@/components/ward-management/reports/report-parts";
 import styles from "@/components/ward-management/reports/reports.module.css";
 
@@ -170,7 +171,23 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  */
 export function DowntimeRedesign() {
   const now = useWardFlowClock();
-  const { dayZero, worldGeneration, shared } = useWardFlowSelect("dayZero", "worldGeneration", "shared");
+  const { dayZero, worldGeneration, shared, patients } = useWardFlowSelect(
+    "dayZero",
+    "worldGeneration",
+    "shared",
+    "patients",
+  );
+  // Redesign (D-83): rows name people surname first. A pack the shell took before this page opened
+  // still says "Given Family · UMRN", so each row is re-read by its UMRN; anything else stays as taken.
+  const formalByUmrn = useMemo(
+    () => new Map(patients.map((patient) => [patient.umrn, `${patient.familyName}, ${patient.givenName}`])),
+    [patients],
+  );
+  const personOf = (person: string): string => {
+    const at = person.lastIndexOf(" · ");
+    const formal = at < 0 ? undefined : formalByUmrn.get(person.slice(at + 3));
+    return formal ? `${formal} · ${person.slice(at + 3)}` : person;
+  };
   const isPhone = useIsPhone();
   const role = useRouteRole();
   const { owner, ready, unavailable } = useDowntimePackAccess();
@@ -556,7 +573,7 @@ export function DowntimeRedesign() {
               <tbody>
                 {pack.edQueue.map((line) => (
                   <tr key={line.movementId}>
-                    <th scope="row">{line.person}</th>
+                    <th scope="row">{personOf(line.person)}</th>
                     <td className={styles.edCell}>{line.ed}</td>
                     <td className={styles.time}>{at(line.openedAt)}</td>
                     <td className={styles.num}>{splitDuration(line.waitedMinutes)}</td>
@@ -613,7 +630,7 @@ export function DowntimeRedesign() {
               <tbody>
                 {pack.pendingMoves.map((line) => (
                   <tr key={line.movementId}>
-                    <th scope="row">{line.person}</th>
+                    <th scope="row">{personOf(line.person)}</th>
                     <td className={styles.edCell}>{line.from}</td>
                     <td>{line.to}</td>
                     <td>{line.stage}</td>
@@ -667,7 +684,7 @@ export function DowntimeRedesign() {
               <tbody>
                 {pack.legalForms.map((line) => (
                   <tr key={line.movementId}>
-                    <th scope="row">{line.person}</th>
+                    <th scope="row">{personOf(line.person)}</th>
                     <td>{line.form || NOT_RECORDED}</td>
                     <td>{line.legalStatus}</td>
                     <td className={styles.time}>{at(line.madeAt)}</td>
@@ -783,13 +800,13 @@ export function DowntimeRedesign() {
                   <PhoneListRow
                     key={line.movementId}
                     as="li"
-                    name={line.person}
+                    name={personOf(line.person)}
                     meta={<span className={styles.phoneMetaWrap}>{`${line.ed} · ${line.stage}`}</span>}
                     value={splitDuration(line.waitedMinutes)}
                     time="waited"
                     onSelect={() =>
                       setSheet({
-                        title: line.person,
+                        title: personOf(line.person),
                         facts: [
                           { id: "ed", label: "ED", value: line.ed },
                           { id: "arrived", label: "Arrived", value: at(line.openedAt) },
@@ -810,13 +827,13 @@ export function DowntimeRedesign() {
                   <PhoneListRow
                     key={line.movementId}
                     as="li"
-                    name={line.person}
+                    name={personOf(line.person)}
                     meta={<span className={styles.phoneMetaWrap}>{`${line.from} to ${line.to}`}</span>}
                     value={line.plannedAt === null ? "None" : formatInstantWithDay(line.plannedAt, now)}
                     time="planned"
                     onSelect={() =>
                       setSheet({
-                        title: line.person,
+                        title: personOf(line.person),
                         facts: [
                           { id: "to", label: "To", value: line.to },
                           { id: "stage", label: "Stage", value: line.stage },
@@ -835,7 +852,7 @@ export function DowntimeRedesign() {
                   <PhoneListRow
                     key={line.movementId}
                     as="li"
-                    name={line.person}
+                    name={personOf(line.person)}
                     meta={
                       <span
                         className={styles.phoneMetaWrap}
@@ -845,7 +862,7 @@ export function DowntimeRedesign() {
                     time="made"
                     onSelect={() =>
                       setSheet({
-                        title: line.person,
+                        title: personOf(line.person),
                         facts: [
                           { id: "form", label: "Form", value: line.form || NOT_RECORDED },
                           { id: "made", label: "Made", value: at(line.madeAt) },
@@ -915,8 +932,9 @@ export function DowntimeRedesign() {
                 onPress={() => jumpTo("beds")}
                 {...twin("ready")}
               />
-              <HeroChip value={totals.ed} label="Still in ED" onPress={() => jumpTo("ed")} {...twin("ed")} />
-              <HeroChip value={totals.moves} label="Moves pending" onPress={() => jumpTo("moves")} {...twin("moves")} />
+              {/* Redesign: the chips use the tables' own names, so one thing has one word. */}
+              <HeroChip value={totals.ed} label="ED queue" onPress={() => jumpTo("ed")} {...twin("ed")} />
+              <HeroChip value={totals.moves} label="Pending moves" onPress={() => jumpTo("moves")} {...twin("moves")} />
               <HeroChip value={totals.forms} label="Legal forms" onPress={() => jumpTo("forms")} {...twin("forms")} />
             </HeroChips>
           }
@@ -932,8 +950,8 @@ export function DowntimeRedesign() {
           {KEEP_A_COPY}
         </p>
 
-        {/* Redesign: one table on screen at a time, chosen here. The tabs carry the counts; the print copy
-            still holds all four tables. */}
+        {/* Redesign: one table on screen at a time, chosen here; the print copy still holds all four.
+            The hero chips just above carry each table's count, so the tabs name the tables only. */}
         <div className={redesign.tabBar} data-print-hide>
           <Tabs<Section>
             label="Downtime pack section"
@@ -942,10 +960,10 @@ export function DowntimeRedesign() {
             onChange={setSection}
             className={redesign.tabs}
             items={[
-              { id: "beds", label: "Beds ready", count: totals.ready },
-              { id: "ed", label: "ED queue", count: totals.ed },
-              { id: "moves", label: "Pending moves", count: totals.moves },
-              { id: "forms", label: "Legal forms", count: totals.forms },
+              { id: "beds", label: "Beds by ward" },
+              { id: "ed", label: "ED queue" },
+              { id: "moves", label: "Pending moves" },
+              { id: "forms", label: "Legal forms" },
             ]}
           />
           <span className={redesign.tabNote}>Print or save PDF holds all four tables.</span>

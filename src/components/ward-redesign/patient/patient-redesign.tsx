@@ -130,7 +130,7 @@ import {
 } from "@/components/ward-management/patients/patient-now-screen-helpers";
 import { renderArrivalSection } from "@/components/ward-management/patients/patient-now-arrival-section";
 import { PatientRedesignPanel } from "./patient-redesign-panel";
-import { PatientNowSummary } from "@/components/ward-management/patients/patient-now-summary";
+import { PatientNowSummary } from "@/components/ward-redesign/patient/patient-now-summary-redesign";
 import { renderTransportSection } from "@/components/ward-management/patients/patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";

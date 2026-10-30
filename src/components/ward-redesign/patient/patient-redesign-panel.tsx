@@ -184,7 +184,7 @@ export function PatientRedesignPanel(props: PatientNowPanelProps) {
         ) : mode === "ward" || mode === "ed" ? (
           <PatientWhyCard
             title="Why admitted"
-            chip={stayUnit ? stayUnit.name : undefined}
+            // Redesign (Josh, 30 Oct): the unit is the hero's eyebrow, so this card does not repeat it.
             history={resolved.liveReferral?.history}
             fallback={record.reason}
             patient={livePatient}

@@ -222,13 +222,8 @@ export function CommunityTeamInBedTab({ view }: { view: CommunityScreenView }) {
             </>
           ) : (
             <>
-              <p id="inpatientSummaryNote" className={styles.count} data-testid="ward-community-admitted-count">
-                {lists.currentlyAdmitted.length}{" "}
-                {lists.currentlyAdmitted.length === 1
-                  ? "person referred to this team is"
-                  : "people referred to this team are"}{" "}
-                in a bed or have one pulled for them.
-              </p>
+              {/* Redesign: the count is in the panel head and the tab, and an empty list has its own
+                  line below, so the sentence repeating the count is gone. */}
               {lists.currentlyAdmitted.length === 0 ? (
                 <p className={styles.emptyNote} data-testid="ward-community-admitted-empty">
                   {cannotResolve ? (
@@ -318,7 +313,11 @@ export function CommunityTeamInBedTab({ view }: { view: CommunityScreenView }) {
                           </td>
                           <td>
                             <span className={styles.cellLead}>{unitName(admission.unitId, units)}</span>
-                            <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                            {/* Redesign: the panel is "In a bed or with one pulled", so only a bed that is not
+                                simply occupied (pulled, or its person at an ED) says so. */}
+                            {bedStateLabel(admission) === "In the bed" ? null : (
+                              <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                            )}
                           </td>
                           <td>{pt?.legalStatus ?? "Not recorded"}</td>
                           <td className={styles.n}>{stayDays === null ? "Not arrived" : `${stayDays}d`}</td>
@@ -403,14 +402,18 @@ export function CommunityTeamInBedTab({ view }: { view: CommunityScreenView }) {
                */}
               {lists.currentlyAdmitted.length === 0 ? null : (
                 <>
-                  <p
-                    className={styles.absenceNotice}
-                    data-testid="ward-community-accepted-before-admission-other-groups"
-                  >
-                    Excluded: {referredDuringThisAdmission.length} referred during the current admission and{" "}
-                    {bedPulledNotYetArrived.length} with a bed pulled but no arrival. Neither establishes care before
-                    admission.
-                  </p>
+                  {/* Redesign: an Excluded box that excludes nobody is an empty panel, so it shows only
+                      when someone is excluded, in the same words. */}
+                  {referredDuringThisAdmission.length + bedPulledNotYetArrived.length === 0 ? null : (
+                    <p
+                      className={styles.absenceNotice}
+                      data-testid="ward-community-accepted-before-admission-other-groups"
+                    >
+                      Excluded: {referredDuringThisAdmission.length} referred during the current admission and{" "}
+                      {bedPulledNotYetArrived.length} with a bed pulled but no arrival. Neither establishes care before
+                      admission.
+                    </p>
+                  )}
                   <p
                     className={styles.footnote}
                     data-testid="ward-community-accepted-before-admission-not-active-claim"

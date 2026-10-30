@@ -13,11 +13,8 @@ import {
   type DrawerView,
   type WardReferralDrawerContentProps,
 } from "@/components/ward-management/referrals/ward-referral-drawer-model";
-import { useWardReferralDrawerState } from "@/components/ward-management/referrals/use-ward-referral-drawer-state";
-import {
-  ReferralDrawerHead,
-  ReferralDrawerPhoneSheetHead,
-} from "@/components/ward-management/referrals/ward-referral-drawer-head";
+import { useWardReferralDrawerState } from "./use-referral-drawer-state-redesign";
+import { ReferralDrawerHead, ReferralDrawerPhoneSheetHead } from "./referral-drawer-head-redesign";
 import {
   ReferralConfirmation,
   ReferralLetterPreview,
@@ -32,8 +29,8 @@ import {
   ReferralCloseGuard,
   ReferralDrawerFoot,
   ReferralPhoneChecklistToggle,
-  ReferralSummaryRail,
 } from "@/components/ward-management/referrals/ward-referral-drawer-rail";
+import { ReferralSummaryRail } from "./referral-drawer-rail-redesign";
 
 /** Preview only: a fork of `WardReferralDrawer` that draws the redesigned patient step. */
 export function ReferralDrawerRedesign(props: WardReferralDrawerProps) {

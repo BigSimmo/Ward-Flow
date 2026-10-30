@@ -88,7 +88,6 @@ import { CommunityScreenSentTab } from "@/components/ward-management/community/c
 import { CommunityScreenWaitingTab } from "@/components/ward-management/community/community-screen-waiting-tab";
 import { CommunityTeamInBedTab } from "./community-team-in-bed";
 import { CommunityTeamHowToReach } from "@/components/ward-redesign/community-team/community-team-contact";
-import local from "@/components/ward-redesign/community-team/community-team.module.css";
 import { CommunityScreenBackTab } from "@/components/ward-management/community/community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "@/components/ward-management/community/community-screen-caseload-tab";
 import {
@@ -99,7 +98,7 @@ import {
   CommunityScreenReferralModal,
   CommunityScreenNoteModal,
 } from "@/components/ward-management/community/community-screen-modals";
-import { CommunityScreenDrawer } from "@/components/ward-management/community/community-screen-drawer";
+import { CommunityScreenDrawer } from "@/components/ward-redesign/community-team/community-screen-drawer-redesign";
 import { useCommunityScreenDemoLists } from "@/components/ward-management/community/use-community-screen-demo-lists";
 import { useCommunityDrawerTestOpeners } from "@/components/ward-management/community/community-drawer-test-openers";
 import {
@@ -1173,11 +1172,7 @@ export function CommunityTeamRedesign(props: CommunityScreenProps) {
   const { isPhone, toastMessage, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal } = view;
 
   return (
-    <div
-      className={`${styles.screen} ${local.scope}`}
-      data-ward-design="third-edition"
-      data-testid="ward-community-screen"
-    >
+    <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
       <main id="main-content" className={styles.main}>
         {isPhone ? null : (
           <>

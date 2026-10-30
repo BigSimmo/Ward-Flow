@@ -229,23 +229,11 @@ export function CommunityTeamPhone({
                     <p className={css.empty}>{group.empty}</p>
                   ) : null
                 ) : (
-                  <ul className={css.card}>
-                    {group.rows.map((row) => (
-                      <li key={row.id} className={css.rowItem} data-testid={row.testId}>
-                        <PhoneListRow
-                          name={row.name}
-                          meta={row.meta}
-                          value={row.value}
-                          time={row.time}
-                          actNow={row.actNow}
-                          onSelect={row.onSelect}
-                          action={row.action}
-                        />
-                        {row.note ? <p className={css.rowNote}>{row.note}</p> : null}
-                        {row.controls ? <div className={css.rowControls}>{row.controls}</div> : null}
-                      </li>
-                    ))}
-                  </ul>
+                  <PhoneGroupRows
+                    key={`${current.id}:${group.id}`}
+                    rows={group.rows}
+                    label={group.title ?? current.label}
+                  />
                 )}
                 {group.after}
               </section>
@@ -288,6 +276,48 @@ export function CommunityTeamPhone({
           </ul>
         </div>
       </PhoneSheet>
+    </div>
+  );
+}
+
+/** Redesign (Josh, 30 Oct): a long phone list shows its first rows, then Show more. */
+const LIST_ROWS_SHOWN = 8;
+
+/** One list group's rows: the first eight, then Show more for the rest, so a long list stays short. */
+function PhoneGroupRows({ rows, label }: { rows: CommunityPhoneRow[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  const shown = open ? rows : rows.slice(0, LIST_ROWS_SHOWN);
+  const hidden = rows.length - LIST_ROWS_SHOWN;
+  return (
+    <div className={css.card}>
+      <ul className={css.attention}>
+        {shown.map((row) => (
+          <li key={row.id} className={css.rowItem} data-testid={row.testId}>
+            <PhoneListRow
+              name={row.name}
+              meta={row.meta}
+              value={row.value}
+              time={row.time}
+              actNow={row.actNow}
+              onSelect={row.onSelect}
+              action={row.action}
+            />
+            {row.note ? <p className={css.rowNote}>{row.note}</p> : null}
+            {row.controls ? <div className={css.rowControls}>{row.controls}</div> : null}
+          </li>
+        ))}
+      </ul>
+      {hidden > 0 ? (
+        <button
+          type="button"
+          className={css.more}
+          aria-expanded={open}
+          aria-label={open ? `Show fewer in ${label}` : `Show ${hidden} more in ${label}`}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? "Show fewer" : `Show ${hidden} more`}
+        </button>
+      ) : null}
     </div>
   );
 }
