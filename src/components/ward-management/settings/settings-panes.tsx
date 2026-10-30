@@ -337,7 +337,7 @@ export function ProfilePane({ onGoToDesk }: { onGoToDesk: () => void }) {
         <div className={styles.column}>
           <Card aria-labelledby="profile-title">
             <CardHead iconPlain id="profile-title" icon={UserRound} title="Profile" />
-            <SettingRow setting="role" title="Role" sub="From sign-in once accounts exist">
+            <SettingRow setting="role" title="Role">
               <span className={styles.readout}>{deskProfile.role}</span>
               {/* Audit settings-27: the role row leads to the desk drawer, not a dead end. */}
               <button

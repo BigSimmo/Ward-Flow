@@ -2,7 +2,10 @@
 
 <!-- last-checked: 2026-10-26 -->
 
-You run your own ward's beds and answer the referrals sent to it.
+_Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
+
+You run your own ward's beds and answer the referrals sent to it. This desk is **Nurse in charge**;
+its recorded role label remains **Ward manager**.
 
 ## What you see first
 

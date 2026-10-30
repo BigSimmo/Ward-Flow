@@ -8,9 +8,9 @@ Statistics
 
 ## Jobs you do most
 
-1. See the network. The Network page shows beds, occupancy and waits in one place.
-2. Compare. Set two wards or departments side by side.
-3. Look for pressure. Check ED waits, blocked discharges and expected discharges.
+1. See the network. Statistics shows beds, occupancy and ED waits in one place.
+2. Check beds. Open Capacity for bed counts across your network or health service.
+3. Compare. Set two wards or departments side by side.
 
 ## What you cannot do
 
