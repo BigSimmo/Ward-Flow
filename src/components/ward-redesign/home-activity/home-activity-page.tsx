@@ -75,7 +75,7 @@ import redesign from "@/components/ward-redesign/home/home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
 import { PriorityQueue, type QueueHighlight } from "@/components/ward-management/coordinator/priority-queue";
-import { ReferralPlacementPanel, ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel-lazy";
+import { ReferralPlacementPanel } from "@/components/ward-management/coordinator/shortlist-panel-lazy";
 import shortlistStyles from "@/components/ward-management/coordinator/shortlist-panel.module.css";
 
 import { useExplicitReview } from "./activity-changes";
@@ -83,6 +83,7 @@ import { ActivityPanel, type ActivityTab } from "./activity-panel";
 import mock from "./home-activity.module.css";
 import { HomeActivityEdStrip } from "./home-activity-ed-strip";
 import { PlacementPrompt } from "./home-activity-parts";
+import { PlacementPanel } from "./placement-panel";
 import { PlannedList, usePlannedRows } from "./planned-list";
 
 /*
@@ -790,7 +791,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
           {selectedReferral ? (
             <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
           ) : (
-            <ShortlistPanel
+            <PlacementPanel
               movement={deferredPanelMovement}
               now={liveNow}
               units={units}
