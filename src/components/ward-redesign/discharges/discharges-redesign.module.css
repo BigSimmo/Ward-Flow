@@ -33,3 +33,36 @@
   overflow: visible;
   text-overflow: clip;
 }
+
+/* Josh, 30 Oct: one barrier panel on screen at any width. Beside the list on a wide screen (above);
+   below that width it sits beside the day chart, and the day chart takes the whole row once it moves. */
+@media (min-width: 80rem) {
+  .barrierBottom {
+    display: none;
+  }
+  .chartsOne.chartsOne {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Two-line timing: how far past (or the band) on top, the date whole underneath, never split. */
+.timing > span {
+  display: block;
+  white-space: nowrap;
+}
+
+/* The order line, in the list's header row: quiet, and it wraps before it squeezes the count. */
+.headerNote {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: var(--wf-s-2) 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+/* Phone: the header row has no padding of its own there, so the line keeps the cards' inset. */
+@media screen and (max-width: 48rem) {
+  .headerNote {
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+}

@@ -107,6 +107,12 @@ export function StaysHero({
 
 type Figure = { key: string; label: string; value: number; led?: boolean; note?: string };
 
+/** Redesign: the label in running text, singular for one ("1 release held up", not "1 releases"). */
+function lineLabel(figure: Figure): string {
+  const label = figure.value === 1 ? figure.label.replace(/^Releases /u, "Release ") : figure.label;
+  return label.charAt(0).toLowerCase() + label.slice(1);
+}
+
 /** The figures the hero already shows, so the line below does not say them twice. */
 const IN_HERO = new Set(["availableNow", "pulled"]);
 
@@ -130,7 +136,7 @@ export function AlsoOnWard({ figures }: { figures: Figure[] }) {
               data-testid={`ward-board-figure-${figure.key}`}
               data-figure-led={figure.led ? "true" : "false"}
             >
-              <b>{figure.value}</b> {figure.label.charAt(0).toLowerCase() + figure.label.slice(1)}
+              <b>{figure.value}</b> {lineLabel(figure)}
               {figure.note ? <span className={styles.alsoNote}> {figure.note}</span> : null}
               {figure.led ? <span className={styles.alsoNote}> · shown in Going out</span> : null}
             </li>

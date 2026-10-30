@@ -66,7 +66,7 @@ import {
 import { AlsoOnWard, StaysHero } from "./stays-parts";
 import redesign from "./stays-redesign.module.css";
 import { WardBoardFlowColumn } from "@/components/ward-management/board/ward-board-flow-column";
-import { WardBoardGridColumn } from "@/components/ward-management/board/ward-board-grid-column";
+import { WardBoardGridColumn } from "./stays-grid-column"; // Redesign: phone shows 8 beds, then Show more
 import {
   LeavingDestinationField,
   WardBoardDetailPanel,
@@ -808,7 +808,8 @@ export function StaysRedesign({
         tone: "warn",
         when: `${occupant.awayAtEdHours}h ago`,
         chip: `${occupant.awayAtEdHours}h away`,
-        text: "Their patient is away at an emergency department. The bed is still held for them.",
+        // Redesign: the row already says "Away at an ED", so the line keeps only what it adds, uncut.
+        text: "Their bed is still held for them.",
         acts: [{ word: "Mark them back", say: "would record that the person in this bed is back on the ward" }],
       });
     }

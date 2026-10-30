@@ -1,4 +1,0 @@
-/* ROLE BRANCH (ward): with the second barrier panel left out, the day chart takes the whole row. */
-.chartsOne.chartsOne {
-  grid-template-columns: minmax(0, 1fr);
-}

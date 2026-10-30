@@ -110,7 +110,7 @@ export function BedManagerDischargeFilterCard({
               clearSelection();
             }}
           >
-            <option value="all">{`All statuses · ${total}`}</option>
+            <option value="all">{`All listed · ${total}`}</option>
             {WORK_ORDER.map((key) => (
               <option key={key} value={key}>
                 {`${population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}

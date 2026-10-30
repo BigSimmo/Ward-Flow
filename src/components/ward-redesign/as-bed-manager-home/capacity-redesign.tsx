@@ -35,10 +35,10 @@ import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meetin
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
-import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-sidebar";
-import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
+import { CapacityWardSidebar } from "@/components/ward-redesign/capacity/capacity-ward-sidebar";
+import { PlannedAdmissionsPanel } from "@/components/ward-redesign/capacity/planned-admissions-panel";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
-import { StepDownBoard } from "@/components/ward-management/capacity/step-down-board";
+import { StepDownBoard } from "@/components/ward-redesign/capacity/step-down-board";
 
 import { RedesignPage } from "@/components/ward-redesign/parts/redesign-page";
 import { gapWords } from "@/components/ward-redesign/parts/range-line";
@@ -51,6 +51,7 @@ import { MismatchBand } from "./mismatch-band";
 import { ScenarioDialog } from "@/components/ward-redesign/capacity/scenario-dialog";
 import { useCapacityModel, type CapacityModel } from "./use-capacity-model";
 import { OtherSitesCounts } from "./other-sites-counts";
+import { useSiteEdWaiting, type SiteEdWaiting } from "./site-ed-waiting";
 import styles from "@/components/ward-redesign/capacity/capacity-redesign.module.css";
 import site from "./capacity-site.module.css";
 
@@ -94,6 +95,8 @@ export function AsBedManagerCapacity({ openOnLoad }: { openOnLoad?: string }) {
   const toast = useOptionalToast();
   const tvOn = useWardFeatureFlag("bed-meeting-tv");
   const { now } = model;
+  // ROLE BRANCH (bed_manager, Josh 30 Oct): the site's own ED as counts, since Places does not list it.
+  const edWaiting = useSiteEdWaiting(model.site, now);
 
   const sheet = useMemo(
     () =>
@@ -107,7 +110,8 @@ export function AsBedManagerCapacity({ openOnLoad }: { openOnLoad?: string }) {
             now,
             thresholds,
             service: null,
-            nameOf: (movement) => patientOf(movement).displayName,
+            // D-83: the printed sheet names people surname first, as the coordinator's copy does.
+            nameOf: (movement) => patientOf(movement).formalName,
             referrals,
             referralLimitMinutes: configuration.referralDecisionTargetMinutes,
           })
@@ -150,6 +154,7 @@ export function AsBedManagerCapacity({ openOnLoad }: { openOnLoad?: string }) {
           onHighlight={highlightFromHero}
           onSheet={() => setPopup({ kind: "sheet" })}
           onWard={openWard}
+          edWaiting={edWaiting}
         />
       }
       footNote="Modelled network bed capacity · CAHS inpatient wards are not modelled · private live feeds are unavailable · Not approved for clinical use"
@@ -250,6 +255,7 @@ function CapacityHero({
   onHighlight,
   onSheet,
   onWard,
+  edWaiting,
 }: {
   model: CapacityModel;
   isPhone: boolean;
@@ -258,6 +264,8 @@ function CapacityHero({
   onHighlight: (highlight: Highlight) => void;
   onSheet: () => void;
   onWard: (unitId: string) => void;
+  /** ROLE BRANCH (bed_manager): the site's ED, counts only; null for every other desk. */
+  edWaiting: SiteEdWaiting | null;
 }) {
   const router = useRouter();
   const { totals, gapTotals, occupancy, live, now, oldestCount, site: deskSite, otherSiteRows } = model;
@@ -278,7 +286,7 @@ function CapacityHero({
       }
       titleMeta={
         isPhone
-          ? `${gapWords(gapTotals.gap)} for ${gapTotals.waiting} needing a bed`
+          ? `${gapWords(gapTotals.gap)} for ${gapTotals.waiting} needing a bed${edWaiting ? ` · ${edWaiting.waiting} waiting in ${edWaiting.short}` : ""}`
           : totals.pendingPreparation
             ? `${totals.pendingPreparation} being made ready`
             : undefined
@@ -330,6 +338,22 @@ function CapacityHero({
                 tone={model.pulled > 0 ? "warning" : undefined}
               />
               <HeroStat inline value={model.dueOutToday ?? "Not tracked"} label="Due out today" />
+              {/* ROLE BRANCH (bed_manager): the site's ED, counts only, with the All EDs page's word. */}
+              {edWaiting ? (
+                <HeroStat
+                  inline
+                  value={edWaiting.waiting}
+                  label={<SpelledCodes text={`Waiting in ${edWaiting.short}`} />}
+                />
+              ) : null}
+              {edWaiting && edWaiting.pastTarget > 0 ? (
+                <HeroStat
+                  inline
+                  value={edWaiting.pastTarget}
+                  label={<SpelledCodes text={`Past target in ${edWaiting.short}`} />}
+                  tone="warning"
+                />
+              ) : null}
               {deskSite ? (
                 <HeroStat inline value={elsewhereReady} label={`ready at other sites, of ${elsewhereBeds} beds`} />
               ) : null}

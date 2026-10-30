@@ -5,106 +5,17 @@ import { useId } from "react";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { DUE_SORT_OPTIONS, type DueSortMode } from "@/components/ward-management/ward-due-sort";
-import { Button, Card, Select, StatusGlyph } from "@/components/wf";
+import { Button, Card, Select } from "@/components/wf";
 import pageStyles from "@/components/ward-management/discharges/discharges-third-edition.module.css";
 import {
   type WorkStatus,
   WORK_STATUS_LABELS,
   WORK_ORDER,
   BLOCKER_CATEGORIES,
-  barrierLabel,
 } from "@/components/ward-management/discharges/discharge-board-model";
 import type { DischargeWorkspaceState } from "@/components/ward-management/discharges/use-discharge-workspace-state";
 
-/* The discharge board's barrier table, Now/History switch and filter card, moved unchanged. */
-
-/** Blocked discharges grouped by barrier, largest group first. */
-export function DischargeBarrierTable({ s }: { s: DischargeWorkspaceState }) {
-  const { population, dimmed, litFirst, unblockedCount, barrierGroups, barrierMax } = s;
-  return (
-    <table className={pageStyles.workTable} data-testid="ward-discharge-barrier-table">
-      <caption className={pageStyles.localTitle}>
-        Blocked discharges grouped by barrier, largest group first. Highlighted people come first in each group.
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">{population === "releases" ? "Ward / service" : "Patient / ward"}</th>
-          <th scope="col">Expected</th>
-          <th scope="col">Recorded blocker</th>
-        </tr>
-      </thead>
-      {barrierGroups.map((group) => (
-        <tbody key={group.id} data-testid={`ward-discharge-barrier-group-${group.id}`}>
-          <tr className={pageStyles.groupRow}>
-            <th colSpan={3} scope="rowgroup">
-              <div className={pageStyles.groupHead}>
-                <StatusGlyph tone="danger" size={9} />
-                <h3>
-                  {barrierLabel(group.id)} <span className={pageStyles.groupCount}>{group.rows.length}</span>
-                </h3>
-                <span className={pageStyles.barrierShare} aria-hidden="true">
-                  <i style={{ width: `${Math.round((group.rows.length / barrierMax) * 100)}%` }} />
-                </span>
-              </div>
-            </th>
-          </tr>
-          {litFirst(group.rows, (row) => row.lit).map((row) => (
-            <tr
-              key={row.id}
-              data-selected={row.selected}
-              data-highlighted={row.lit || undefined}
-              data-dim={dimmed(row.lit)}
-              className={pageStyles.interactiveRow}
-              tabIndex={0}
-              onClick={(e) => row.open(e.currentTarget)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  row.open(e.currentTarget);
-                }
-              }}
-            >
-              <td data-label={population === "releases" ? "Ward / service" : "Patient / ward"}>
-                <button
-                  type="button"
-                  className={pageStyles.recordButton}
-                  aria-pressed={row.selected}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    row.open(e.currentTarget);
-                  }}
-                >
-                  {row.title}
-                </button>
-                {row.mono ? <span className={pageStyles.secondaryMono}>{row.mono}</span> : null}
-                <span className={pageStyles.secondary}>{row.sub}</span>
-              </td>
-              <td data-label="Expected" className={pageStyles.timingCell}>
-                <strong className={pageStyles.due}>{row.when}</strong>
-              </td>
-              <td data-label="Recorded blocker">
-                <span className={pageStyles.blocker}>{row.blocker}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      ))}
-      <tbody data-testid="ward-discharge-barrier-group-none">
-        <tr className={pageStyles.groupRow}>
-          <th colSpan={3} scope="rowgroup">
-            <div className={pageStyles.groupHead}>
-              <StatusGlyph tone="success" size={9} />
-              <h3>
-                No barrier recorded <span className={pageStyles.groupCount}>{unblockedCount}</span>
-              </h3>
-              <span className={pageStyles.groupSub}>These are listed in the List view.</span>
-            </div>
-          </th>
-        </tr>
-      </tbody>
-    </table>
-  );
-}
+/* The Now/History switch and filter card. Redesign (Josh, 30 Oct): the Barriers table view is gone. */
 
 /** Now and History: in the hero on desktop and tablet, under it on a phone (v10). */
 export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState }) {
@@ -263,7 +174,7 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
               clearSelection();
             }}
           >
-            <option value="all">{`All statuses · ${total}`}</option>
+            <option value="all">{`All listed · ${total}`}</option>
             {WORK_ORDER.map((key) => (
               <option key={key} value={key}>
                 {`${population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}

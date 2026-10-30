@@ -33,10 +33,10 @@ import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meetin
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
-import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-sidebar";
-import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
+import { CapacityWardSidebar } from "./capacity-ward-sidebar";
+import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
-import { StepDownBoard } from "@/components/ward-management/capacity/step-down-board";
+import { StepDownBoard } from "./step-down-board";
 
 import { RedesignPage } from "../parts/redesign-page";
 import { gapWords } from "../parts/range-line";

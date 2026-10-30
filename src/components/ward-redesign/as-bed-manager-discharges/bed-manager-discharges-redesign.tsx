@@ -4,18 +4,7 @@
 
 import Link from "next/link";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import {
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  Filter,
-  List,
-  OctagonAlert,
-  Printer,
-  TrendingUp,
-  Truck,
-  X,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Copy, Filter, OctagonAlert, Printer, TrendingUp, Truck, X } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
@@ -72,10 +61,7 @@ import {
   stageTone,
 } from "@/components/ward-management/discharges/discharge-board-model";
 import { badge } from "@/components/ward-management/discharges/discharge-board-parts";
-import {
-  DischargeBarrierTable,
-  DischargePopulationSwitch,
-} from "@/components/ward-management/discharges/discharge-board-filters";
+import { DischargePopulationSwitch } from "@/components/ward-management/discharges/discharge-board-filters";
 import {
   DischargeRecordDetail,
   DischargeReleaseDetail,
@@ -146,8 +132,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     setPhoneGroupsOpen,
     phoneGroupsFolded,
     setPhoneGroupsFolded,
-    view,
-    setView,
     sortMode,
     highlight,
     setHighlight,
@@ -188,7 +172,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     highlightedCount,
     bedDaysPast,
     copySummary,
-    barrierRows,
   } = s;
   const today = dayOf(now);
   // Role view (site bed manager, D-80): the board holds its own site's releases only, so the hero names
@@ -228,7 +211,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     if (recordStatus(record) === "blocked") day.blocked += 1;
     else day.expected += 1;
   }
-  const barrierTable = <DischargeBarrierTable s={s} />;
   // Now and History: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <BedManagerDischargeFilterCard s={s} oneService={siteName !== undefined} />;
@@ -457,26 +439,25 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               <h2 id="discharge-register-heading" className={pageStyles.localTitle}>
                 {population === "releases" ? "Bed release worklist" : "Admission discharge records"}
               </h2>
-              <div className={pageStyles.viewSwitch} role="group" aria-label="Table view">
-                <button type="button" aria-pressed={view === "list"} onClick={() => setView("list")}>
-                  <List size={14} aria-hidden="true" />
-                  List
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={view === "barriers"}
-                  onClick={() => setView("barriers")}
-                  data-testid="ward-discharge-view-barriers"
-                >
-                  <OctagonAlert size={14} aria-hidden="true" />
-                  Barriers
-                </button>
-              </div>
+              {/* Redesign (Josh, 30 Oct): the List / Barriers switch is gone. Its Barriers view was a third
+                  copy of the barrier counts; the one panel beside the list keeps that job. */}
+              {/* Redesign: why the list is in its order sits in the header row, beside the count, instead of
+                  a row of its own. */}
+              {(population === "records" && guarded.status === "denied") || shown === 0 ? null : (
+                <p className={redesign.headerNote} data-testid="ward-discharge-order-note">
+                  {dischargeOrderLine({
+                    population,
+                    view: "list",
+                    sortMode,
+                    allStatuses: status === "all",
+                    highlighted: highlight !== null,
+                  })}
+                </p>
+              )}
               {highlight !== null ? (
                 <span className={pageStyles.highlightNote} data-testid="ward-discharge-highlight-note">
                   <StatusGlyph tone="info" size={9} />
-                  {view === "barriers" ? barrierRows.filter((row) => row.lit).length : highlightedCount} of{" "}
-                  {view === "barriers" ? barrierRows.length : shown} highlighted, all rows stay
+                  {highlightedCount} of {shown} highlighted, all rows stay
                   <Button size="sm" variant="ghost" onClick={() => setHighlight(null)}>
                     Clear
                   </Button>
@@ -502,17 +483,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     : `${shown} shown`}
               </span>
             </header>
-            {(population === "records" && guarded.status === "denied") || shown === 0 ? null : (
-              <p className={pageStyles.orderNote} data-testid="ward-discharge-order-note">
-                {dischargeOrderLine({
-                  population,
-                  view,
-                  sortMode,
-                  allStatuses: status === "all",
-                  highlighted: highlight !== null,
-                })}
-              </p>
-            )}
             <div
               ref={listRef}
               className={pageStyles.listBody}
@@ -526,8 +496,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 <p className={pageStyles.emptyState}>
                   No {population === "releases" ? "releases" : "records"} match these filters.
                 </p>
-              ) : view === "barriers" ? (
-                barrierTable
               ) : (
                 <table className={pageStyles.workTable}>
                   <caption className={pageStyles.localTitle}>
@@ -725,7 +693,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                     {siteName ? null : ` · ${healthServiceLabel(unit)}`}
                                   </span>
                                 </td>
-                                <td data-label="Timing" className={pageStyles.timingCell}>
+                                <td data-label="Timing" className={`${pageStyles.timingCell} ${redesign.timing}`}>
                                   {/* Device audit, 11 Oct 2026: a release past its date says how far
                                       past, with the date alone; "Now" and the clock time read as
                                       due this minute on rows one to four days late. */}
@@ -825,7 +793,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             >
               {population === "releases" ? (
                 <>
-                  <span>{releaseGroups.excludedBeyondToday} expected in 2+ days</span>
+                  <span>{releaseGroups.excludedBeyondToday} due in 2+ days, not listed</span>
                   <span data-testid="ward-discharge-completed-before-today">
                     {releaseGroups.completedBeforeToday} discharged 24h+ ago
                   </span>
@@ -848,7 +816,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               )}
             </footer>
           </Card>
-          {!isPhone && view === "list" && population === "releases" && !(selected || releaseId) ? (
+          {/* Redesign (Josh, 30 Oct): the one barrier panel. Beside the list on a wide screen; on a tablet it
+              keeps its place beside the day chart. The Barriers view is gone. */}
+          {guarded.status === "allowed" && !isPhone && !(selected || releaseId) ? (
             <div className={redesign.barrierSide}>
               <DischargeBarrierBars
                 barriers={barrierCounts}
@@ -1021,19 +991,23 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           </div>
         </div>
         {guarded.status === "allowed" && !isPhone ? (
-          <div className={pageStyles.flowCharts}>
+          <div className={`${pageStyles.flowCharts} ${redesign.chartsOne}`}>
             <DischargeDayChart
               days={chartDays}
               selected={highlight?.kind === "day" ? highlight.day : null}
               onSelect={(day) => highlightOn({ kind: "day", day })}
               onClear={() => setHighlight(null)}
             />
-            <DischargeBarrierBars
-              barriers={barrierCounts}
-              selected={highlight?.kind === "barrier" ? highlight.id : null}
-              onSelect={(id) => highlightOn({ kind: "barrier", id })}
-              onClear={() => setHighlight(null)}
-            />
+            {/* The same one barrier panel on a tablet, where the list has no room beside it; CSS shows
+                exactly one of the two places at any width. */}
+            <div className={redesign.barrierBottom}>
+              <DischargeBarrierBars
+                barriers={barrierCounts}
+                selected={highlight?.kind === "barrier" ? highlight.id : null}
+                onSelect={(id) => highlightOn({ kind: "barrier", id })}
+                onClear={() => setHighlight(null)}
+              />
+            </div>
           </div>
         ) : null}
         {guarded.status === "allowed" && population === "releases" ? (
