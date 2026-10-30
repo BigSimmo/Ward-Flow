@@ -71,7 +71,7 @@ import {
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-management/coordinator/exception-drawer";
 import styles from "@/components/ward-management/coordinator/home.module.css";
-import { HomeEdPressure } from "@/components/ward-management/coordinator/home-ed-pressure";
+import { HomeEdPressureRedesign as HomeEdPressure } from "./home-ed-pressure-redesign";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
 import { BedsFitTable, PlacementNext } from "./home-parts";
 import redesign from "./home-redesign.module.css";

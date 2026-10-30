@@ -87,22 +87,16 @@ import {
 } from "@/components/ward-management/delays/waiting-views";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
-import { PersonPanel, Registers } from "@/components/ward-management/delays/delays-board-panels";
+import { PersonPanel, Registers } from "./delays-board-panels-redesign";
 import {
   rememberReturnRow,
   rowWithAttribute,
   useReturnedView,
   useReturnToPlace,
 } from "@/components/ward-management/use-return-to-place";
-import {
-  RowTimeline,
-  WaitBar,
-  legalCell,
-  phonePrefix,
-  phoneUpdate,
-  updateCell,
-} from "@/components/ward-management/delays/delays-board-rows";
+import { RowTimeline, WaitBar, phoneUpdate, updateCell } from "@/components/ward-management/delays/delays-board-rows";
 import { TierKey } from "@/components/ward-management/tier-key";
+import { legalCellAsTyped, phonePrefixAsTyped } from "./waiting-legal-cells";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -615,7 +609,7 @@ export function DelaysBoardRedesign({
           >
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
-              {isPhone ? phonePrefix(row, thresholds) : null}
+              {isPhone ? phonePrefixAsTyped(row, now) : null}
               {[patient.umrn, transitNote(movement, now), originCode(movement)].filter(Boolean).join(" · ")}
             </span>
           </button>
@@ -645,7 +639,7 @@ export function DelaysBoardRedesign({
           </span>
         </td>
         <td role="cell" className={styles.cLegal}>
-          {legalCell(row, thresholds)}
+          {legalCellAsTyped(row, now)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
           {isPhone ? phoneUpdate(row) : updateCell(row, now)}

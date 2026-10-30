@@ -407,14 +407,15 @@ function ComparePresentation({
       ) : (
         <>
           {chooserOpen ? <UnitChooser units={units} emergencyDepartments={emergencyDepartments} /> : null}
-          {/* Redesign: both charts list their first eight, so neither column scrolls inside. */}
+          {/* Redesign: both charts list their first eight, so neither column scrolls inside. Pinned
+              wards sits under the ward chart (Josh, 30 Oct 2026), so the two columns end together. */}
           <FlushRow layout="lead2" className={compare.grid}>
             <FlushStack>
               <WardComparison rows={wardRows} asAt={asAt} />
+              <PinnedWards rows={wardRows} />
             </FlushStack>
             <FlushStack>
               <EdComparison rows={edRows} asAt={asAt} />
-              <PinnedWards rows={wardRows} />
             </FlushStack>
           </FlushRow>
         </>
