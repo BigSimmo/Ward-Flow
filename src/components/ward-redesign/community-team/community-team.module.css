@@ -1,0 +1,80 @@
+/* Redesign mock-up: the community team page's one caseload table and its quieter footnotes. */
+
+/* Names in the normal font, UMRN in mono (every other page does this). */
+.personButton {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: start;
+  cursor: pointer;
+}
+
+.personButton:hover .personName {
+  text-decoration: underline;
+}
+
+.personButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.personName {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.personMeta {
+  display: block;
+  margin-top: 2px;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.umrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The whole row opens the record. */
+.rowOpens {
+  cursor: pointer;
+}
+
+.rowOpens:hover > td {
+  background: var(--wf-hover, var(--wf-surface-2));
+}
+
+.table td {
+  vertical-align: top;
+}
+
+.table th[scope="col"] {
+  white-space: normal;
+}
+
+.table td:first-child {
+  min-width: 11rem;
+}
+
+.personName {
+  white-space: nowrap;
+}
+
+/* How to reach: the disclaimers are one footnote line under the details. */
+.contactFootnote {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Phone: the list switch (Sent, Waiting, In bed, Back, CTOs) reaches the 48px phone control height. */
+@media (max-width: 48rem) {
+  .scope [role="tablist"] [role="tab"],
+  .scope [role="radiogroup"] [role="radio"] {
+    min-height: var(--ward-tap, 48px);
+  }
+}

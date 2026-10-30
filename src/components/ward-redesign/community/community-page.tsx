@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the community mock-up is built; replaced by the redesigned page. */
+import { CommunityRedesign } from "./community-redesign";
+
+/** The redesigned community team directory, drawn by the mock-up viewer. */
 export function CommunityPage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <CommunityRedesign />;
 }

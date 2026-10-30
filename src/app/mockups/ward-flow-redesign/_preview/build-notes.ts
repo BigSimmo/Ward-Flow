@@ -6,6 +6,28 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  community: [
+    "**Built from a copy of today's Community directory**, so search, service filters, Reads alike, the letter jump, Catchment guide, Raise referral and the phone tabs work as now.",
+    '**New:** the heading reads "64 community teams" (a live count), with one line under it: "Names from referral catchment documents, not verified services".',
+    '**New:** the suburb lookup is a full-width bar above the list. Its warning ("2 teams name Barragup. Check the right one.") comes first, and each team has its own Open button plus Show in list.',
+    "**New:** the A to Z list uses the page scroll; the letter rail and column heading stick under the bar, and the shorter side column stays pinned.",
+    "**Kept:** Names that read alike, Teams by service, Catchment guide, Raise referral and the footer wording.",
+  ],
+  "community-team": [
+    "**Built from a copy of today's community team screen**, so the tabs, Record contact, CTO register, Refer from team, the record drawer and transport booking work as now.",
+    "**New:** one table instead of two. Each person's row shows unit, legal status, days in bed, time with the team before the bed and time since acceptance.",
+    '**New (D-83):** names surname first in the normal font, with the UMRN under them. A click anywhere on the row opens the record, so the nine Open record buttons and the "scrolls sideways" line are gone.',
+    "**New:** How to reach folds its caveat and recorded lines into one small footnote, in the same words.",
+    "**Kept:** Worth attention, On duty today, Record contact, CTO register, Refer from team, and the Excluded and acceptance footnotes word for word.",
+    '**Please check:** rows not accepted before the bed would read "Referred during this stay" or "Not arrived", and "Not counted" for time since acceptance. Today\'s data has none, so the wording is unseen. The record drawer is today\'s and still names the person first name first.',
+  ],
+  patient: [
+    "**Built from a copy of today's Patient screen**, so the stepper, tabs, Cannot move checks, Destination, Withdraw, Copy handover and the forms work as now.",
+    "**New:** Journey so far is a timeline of what was recorded, newest first (opened, examination, declines, escalation), each with its recorded time, read the same way as the History tab and computing nothing. Over 8 events it shows the first 6, then Show more.",
+    '**New (D-83):** the name reads surname first ("Wren, Tobias") in the title and in Copy handover.',
+    '**Kept:** the 7-step stepper, the tabs, Copy handover, "Every figure on this screen is invented", and all legal and privacy wording. Cannot move and the right column (Why, Legal now, Who to call) already matched the review, so they stay.',
+    "**Phone:** today's phone layout, without the timeline; record tabs are 48 px tall.",
+  ],
   "statistics-compare": [
     "**Built from a copy of today's Compare screen**, so Chart and Data, the measure switches, Pinned wards, CSV and the phone Compare two wards sheet all work as now.",
     "**New:** Open a unit is a button on the statistics tab row. It opens today's chooser above the charts instead of a grid of 22 wards under them; a link to the chooser still opens it.",
