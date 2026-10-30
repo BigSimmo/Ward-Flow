@@ -77,7 +77,7 @@ export function AcknowledgeVisibleButton({
       {offered.length > 0 ? (
         <button ref={triggerRef} type="button" className={classes.btn} onClick={() => setAsking(offered)}>
           <UserCheck aria-hidden="true" />
-          Acknowledge visible
+          Acknowledge eligible
           <span className={classes.count}>{offered.length}</span>
         </button>
       ) : null}
@@ -85,6 +85,7 @@ export function AcknowledgeVisibleButton({
         open={asking !== null}
         onClose={() => setAsking(null)}
         title={`Acknowledge ${count} alerts?`}
+        description="Affects the unacknowledged alerts in the current filtered list, including rows outside the viewport. Act-now alerts are excluded. Acknowledgement marks alerts as seen; it does not resolve the underlying condition."
         size="sm"
         returnFocusRef={triggerRef}
         primary={{ label: `Acknowledge ${count}`, onAction: confirm }}

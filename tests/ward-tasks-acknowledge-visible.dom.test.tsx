@@ -9,7 +9,7 @@ import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-def
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
- * P017 (Josh approved the wording 27 Oct 2026, 8:35 PM AWST): bulk "Acknowledge visible" in the
+ * P017 (Josh approved the wording 27 Oct 2026, 8:35 PM AWST): bulk "Acknowledge eligible" in the
  * Tasks drawer asks "Acknowledge {n} alerts?" first, then says "{n} alerts acknowledged." with Undo,
  * and records nothing until the Undo window ends.
  */
@@ -33,7 +33,7 @@ function renderDrawer() {
       />
     </ToastProvider>,
   );
-  const button = screen.getByRole("button", { name: /^Acknowledge visible/ });
+  const button = screen.getByRole("button", { name: /^Acknowledge eligible/ });
   const n = Number(button.textContent?.match(/(\d+)\s*$/)?.[1]);
   return { dispatch, button, n };
 }
@@ -41,7 +41,7 @@ function renderDrawer() {
 const acks = (dispatch: ReturnType<typeof vi.fn>) =>
   dispatch.mock.calls.filter(([event]) => event.type === "ACKNOWLEDGE_INBOX_ITEM");
 
-describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", () => {
+describe("Tasks drawer: Acknowledge eligible asks first and offers Undo (P017)", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
@@ -52,6 +52,9 @@ describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", 
     expect(acks(dispatch)).toHaveLength(0);
     const dialog = screen.getByRole("dialog", { name: `Acknowledge ${n} alerts?` });
     expect(within(dialog).getByRole("button", { name: `Acknowledge ${n}` })).toBeTruthy();
+    expect(dialog).toHaveTextContent("including rows outside the viewport");
+    expect(dialog).toHaveTextContent("Act-now alerts are excluded");
+    expect(dialog).toHaveTextContent("does not resolve the underlying condition");
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByRole("dialog", { name: `Acknowledge ${n} alerts?` })).toBeNull();
     act(() => vi.advanceTimersByTime(UNDO_TOAST_MS * 2));
@@ -67,7 +70,7 @@ describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", 
     fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
     act(() => vi.advanceTimersByTime(UNDO_TOAST_MS * 2));
     expect(acks(dispatch)).toHaveLength(0);
-    expect(screen.getByRole("button", { name: /^Acknowledge visible/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Acknowledge eligible/ })).toBeTruthy();
   });
 
   it("records every confirmed row once the Undo window ends", () => {
@@ -94,12 +97,14 @@ describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", 
       />
     );
     const { rerender } = render(<ToastProvider>{drawer}</ToastProvider>);
-    const n = Number(screen.getByRole("button", { name: /^Acknowledge visible/ }).textContent?.match(/(\d+)\s*$/)?.[1]);
-    fireEvent.click(screen.getByRole("button", { name: /^Acknowledge visible/ }));
+    const n = Number(
+      screen.getByRole("button", { name: /^Acknowledge eligible/ }).textContent?.match(/(\d+)\s*$/)?.[1],
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Acknowledge eligible/ }));
     fireEvent.click(screen.getByRole("button", { name: `Acknowledge ${n}` }));
     rerender(<ToastProvider>{null}</ToastProvider>);
     rerender(<ToastProvider>{drawer}</ToastProvider>);
-    expect(screen.queryByRole("button", { name: /^Acknowledge visible/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Acknowledge eligible/ })).toBeNull();
     act(() => vi.advanceTimersByTime(UNDO_TOAST_MS + 1000));
     expect(acks(dispatch)).toHaveLength(n);
   });

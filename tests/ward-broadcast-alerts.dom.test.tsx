@@ -93,6 +93,24 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     expect(confirmBtn).toBeDisabled();
   });
 
+  it("names the selected scope and requires confirmation again after scope, template or content changes", () => {
+    renderAlertsScreen();
+    fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
+    const safeguard = () => screen.getByLabelText(/I confirm this directive is clinically authorised/i);
+    const confirm = screen.getByTestId("ward-alerts-broadcast-confirm");
+    fireEvent.click(safeguard());
+    fireEvent.change(screen.getByLabelText(/^Target scope$/i), { target: { value: "forensic" } });
+    expect(safeguard()).not.toBeChecked();
+    expect(safeguard()).toHaveAccessibleName(/Frankland Centre forensic.*No external notifications are sent/);
+    expect(confirm).toBeDisabled();
+    fireEvent.click(safeguard());
+    fireEvent.change(screen.getByLabelText(/^Start from$/i), { target: { value: "wa-forensic-full-advisory" } });
+    expect(safeguard()).not.toBeChecked();
+    fireEvent.click(safeguard());
+    fireEvent.change(screen.getByLabelText(/^Directive$/i), { target: { value: "Updated synthetic directive" } });
+    expect(confirm).toBeDisabled();
+  });
+
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));

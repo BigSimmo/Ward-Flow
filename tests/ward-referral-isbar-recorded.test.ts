@@ -33,6 +33,13 @@ const lines = (recorded?: Parameters<typeof isbarText>[5]) =>
   isbarText(referral, "Synthetic Person", "UM000000", "Adult", NOW_ANCHOR, recorded).split("\n");
 
 describe("referral summary: recorded facts, not the letter's (audit CS3-02)", () => {
+  it("separates the recorded request from bed requirements without inventing advice", () => {
+    const summary = lines();
+    expect(summary).toHaveLength(5);
+    expect(summary[4]).toMatch(/^Recommendation: Recorded request: .+\. Recorded bed needs: /);
+    expect(summary[1]).not.toContain("Asking for");
+    expect(summary[4]).not.toMatch(/recommend admission|clinically indicated/i);
+  });
   it("says clearance and legal status are not recorded when only the letter has them", () => {
     expect(referral).toBeDefined();
     const [, , background, assessment] = lines();

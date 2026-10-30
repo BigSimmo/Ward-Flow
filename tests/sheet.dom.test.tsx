@@ -1,11 +1,42 @@
 import { useRef, useState } from "react";
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Sheet } from "@/components/wf/sheet";
 import { OverlayRoot } from "@/components/wf/overlay-root";
+
+it("lets a child consume Escape before dismissing its sheet", () => {
+  const close = vi.fn();
+  render(
+    <Sheet open onClose={close} title="Child popup">
+      <input
+        aria-label="Find"
+        onKeyDown={(event) => {
+          if (event.key === "Escape") event.preventDefault();
+        }}
+      />
+    </Sheet>,
+  );
+  fireEvent.keyDown(screen.getByRole("textbox", { name: "Find" }), { key: "Escape" });
+  expect(close).not.toHaveBeenCalled();
+  fireEvent.keyDown(screen.getByRole("dialog", { name: "Child popup" }), { key: "Escape" });
+  expect(close).toHaveBeenCalledOnce();
+});
+
+it("keeps its sheet open when Escape cancels a native select", () => {
+  const close = vi.fn();
+  render(
+    <Sheet open onClose={close} title="Select popup">
+      <select aria-label="Scope">
+        <option>All</option>
+      </select>
+    </Sheet>,
+  );
+  fireEvent.keyDown(screen.getByRole("combobox", { name: "Scope" }), { key: "Escape" });
+  expect(close).not.toHaveBeenCalled();
+});
 
 // jsdom (via vitest's environment) normally provides requestAnimationFrame, but
 // guard it so the Sheet's focus scheduling never throws if a runner omits it.

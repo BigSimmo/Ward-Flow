@@ -18,6 +18,16 @@ import { broadcastScopeCount } from "./global-alert-view";
 import { minutesText } from "./alerts-model";
 import styles from "./alerts.module.css";
 
+const SCOPE_LABELS: Record<BroadcastTargetScope, string> = {
+  all: "All inpatient wards and ED desks",
+  metro_adult: "Metropolitan adult units",
+  ed_liaison: "ED mental health liaison desks",
+  forensic: "Frankland Centre forensic",
+  adolescent: "CAMHS adolescent acute units",
+  older_adult: "Older adult units",
+  regional_wachs: "WACHS regional network",
+};
+
 export function BroadcastComposer({
   modalRef,
   handleCloseBroadcastModal,
@@ -123,7 +133,13 @@ export function BroadcastComposer({
           )}
 
           <Field label="Start from" id="alerts-broadcast-template">
-            <Select value={selectedTemplateId} onChange={(e) => handleSelectTemplate(e.target.value)}>
+            <Select
+              value={selectedTemplateId}
+              onChange={(e) => {
+                handleSelectTemplate(e.target.value);
+                setBroadcastConfirmed(false);
+              }}
+            >
               {WA_BROADCAST_TEMPLATES.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.name}
@@ -134,7 +150,13 @@ export function BroadcastComposer({
           </Field>
 
           <Field label="Type" id="alerts-broadcast-type">
-            <Select value={broadcastType} onChange={(e) => setBroadcastType(e.target.value as BroadcastKind)}>
+            <Select
+              value={broadcastType}
+              onChange={(e) => {
+                setBroadcastType(e.target.value as BroadcastKind);
+                setBroadcastConfirmed(false);
+              }}
+            >
               <option value="directive">Directive, wards and ED acknowledge</option>
               <option value="bed_call">Bed call, wards answer how many beds</option>
             </Select>
@@ -144,7 +166,10 @@ export function BroadcastComposer({
             <Field label="Severity" id="alerts-broadcast-severity">
               <Select
                 value={broadcastSeverity}
-                onChange={(e) => setBroadcastSeverity(e.target.value as BroadcastSeverity)}
+                onChange={(e) => {
+                  setBroadcastSeverity(e.target.value as BroadcastSeverity);
+                  setBroadcastConfirmed(false);
+                }}
               >
                 <option value="advisory">Advisory</option>
                 <option value="warning">Warning</option>
@@ -154,7 +179,10 @@ export function BroadcastComposer({
             <Field label="Expires" id="alerts-broadcast-duration">
               <Select
                 value={broadcastDurationMinutes}
-                onChange={(e) => setBroadcastDurationMinutes(Number(e.target.value))}
+                onChange={(e) => {
+                  setBroadcastDurationMinutes(Number(e.target.value));
+                  setBroadcastConfirmed(false);
+                }}
               >
                 <option value={60}>1h</option>
                 <option value={120}>2h</option>
@@ -167,7 +195,13 @@ export function BroadcastComposer({
           </div>
 
           <Field label="Target scope" id="alerts-broadcast-target">
-            <Select value={broadcastScope} onChange={(e) => setBroadcastScope(e.target.value as BroadcastTargetScope)}>
+            <Select
+              value={broadcastScope}
+              onChange={(e) => {
+                setBroadcastScope(e.target.value as BroadcastTargetScope);
+                setBroadcastConfirmed(false);
+              }}
+            >
               {/* Ops-12: each count is read from the unit list, never typed. */}
               <option value="all">All inpatient wards and ED desks, {broadcastScopeCount(units, "all")}</option>
               <option value="metro_adult">Metropolitan adult units, {broadcastScopeCount(units, "metro_adult")}</option>
@@ -188,7 +222,10 @@ export function BroadcastComposer({
           <Field label="Title" id="alerts-broadcast-title">
             <TextInput
               value={broadcastTitle}
-              onChange={(e) => setBroadcastTitle(e.target.value)}
+              onChange={(e) => {
+                setBroadcastTitle(e.target.value);
+                setBroadcastConfirmed(false);
+              }}
               placeholder="Short operational title"
             />
           </Field>
@@ -199,7 +236,10 @@ export function BroadcastComposer({
               maxLength={280}
               placeholder="Enter the flow directive"
               value={broadcastMessage}
-              onChange={(e) => setBroadcastMessage(e.target.value)}
+              onChange={(e) => {
+                setBroadcastMessage(e.target.value);
+                setBroadcastConfirmed(false);
+              }}
               data-gramm="false"
               data-enable-grammarly="false"
               spellCheck={false}
@@ -228,11 +268,11 @@ export function BroadcastComposer({
             id="alerts-broadcast-safeguard"
             checked={broadcastConfirmed}
             onChange={(e) => setBroadcastConfirmed(e.target.checked)}
-            label="I confirm this directive is clinically authorised for immediate statewide network broadcast."
+            label={`I confirm this directive is clinically authorised to be recorded for ${SCOPE_LABELS[broadcastScope]} (${broadcastScopeCount(units, broadcastScope)}). No external notifications are sent.`}
           />
         </div>
         <div className={styles.drawerFoot}>
-          <span className={styles.confirmNote}>Dispatched by the state bed desk coordinator</span>
+          <span className={styles.confirmNote}>Recorded by the state bed desk coordinator</span>
           <Button className={styles.btn} onClick={handleCloseBroadcastModal}>
             Cancel
           </Button>

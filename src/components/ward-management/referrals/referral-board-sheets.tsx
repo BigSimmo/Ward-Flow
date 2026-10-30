@@ -189,14 +189,14 @@ export type IsbarRecorded = {
  * #836: Background reads both fields the referral form's Clinical presentation card writes (Reason
  * for referral and Patient story), and a blank one is named, so "not recorded" says which field.
  */
-export function isbarText(
+function isbarSections(
   referral: Referral,
   name: string,
   umrn: string,
   demographics: string,
   now: Instant,
   recorded: IsbarRecorded = {},
-): string {
+): { heading: string; paragraphs: string[] }[] {
   const intake = referral.intake;
   const { waited, due } = waitWords(referral, now);
   const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
@@ -212,17 +212,44 @@ export function isbarText(
     reason ? `On the referral letter, ${reason.replace(/\.$/, "")}.` : "Reason for referral not recorded.",
     story ? `Patient story: ${story.replace(/\.$/, "")}.` : "Patient story not recorded.",
     `Legal status ${legal || "not recorded"}${letterLegal ? ` (on the referral letter: ${letterLegal})` : ""}.`,
-  ].join(" ");
+  ];
   const flags = intake
     ? intake.riskFlags.join(", ") || "none selected"
     : "not recorded (raised before the referral form)";
   return [
-    `Identify: ${name}, ${umrn}, ${demographics}.`,
-    `Situation: tier ${referral.urgency} referral from ${site} (${REFERRAL_SOURCE_WORDS[referral.source]}), waiting ${waited}, ${due}. Asking for ${askingForShort(referral)}.`,
-    `Background: ${background}`,
-    `Assessment: risk flags on the referral letter ${flags}. Medical clearance ${clearanceWords}.`,
-    `Recommendation: ${needWords(referral).join(", ") || "no bed needs recorded"}.`,
-  ].join("\n");
+    { heading: "Identify", paragraphs: [`${name}, ${umrn}, ${demographics}.`] },
+    {
+      heading: "Situation",
+      paragraphs: [
+        `tier ${referral.urgency} referral from ${site} (${REFERRAL_SOURCE_WORDS[referral.source]}), waiting ${waited}, ${due}.`,
+      ],
+    },
+    { heading: "Background", paragraphs: background },
+    {
+      heading: "Assessment",
+      paragraphs: [`risk flags on the referral letter ${flags}.`, `Medical clearance ${clearanceWords}.`],
+    },
+    {
+      heading: "Recommendation",
+      paragraphs: [
+        `Recorded request: ${askingForShort(referral)}.`,
+        `Recorded bed needs: ${needWords(referral).join(", ") || "not recorded"}.`,
+      ],
+    },
+  ];
+}
+
+export function isbarText(
+  referral: Referral,
+  name: string,
+  umrn: string,
+  demographics: string,
+  now: Instant,
+  recorded: IsbarRecorded = {},
+): string {
+  return isbarSections(referral, name, umrn, demographics, now, recorded)
+    .map(({ heading, paragraphs }) => `${heading}: ${paragraphs.join(" ")}`)
+    .join("\n");
 }
 
 export function IsbarSheet({
@@ -261,15 +288,16 @@ export function IsbarSheet({
       }
     >
       <dl className={styles.isbar}>
-        {text.split("\n").map((line) => {
-          const [head, ...rest] = line.split(": ");
-          return (
-            <div key={head}>
-              <dt>{head}</dt>
-              <dd>{rest.join(": ")}</dd>
-            </div>
-          );
-        })}
+        {isbarSections(referral, name, umrn, demographics, now, recorded).map(({ heading, paragraphs }) => (
+          <div key={heading}>
+            <dt>{heading}</dt>
+            <dd>
+              {paragraphs.map((paragraph) => (
+                <div key={paragraph}>{paragraph}</div>
+              ))}
+            </dd>
+          </div>
+        ))}
       </dl>
     </Sheet>
   );

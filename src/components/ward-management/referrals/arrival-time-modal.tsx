@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { AlertCircle, Clock, ShieldCheck, X } from "lucide-react";
+import { Dialog } from "@/components/wf";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import {
   ARRIVAL_MODES,
   ARRIVAL_MODE_LABELS,
@@ -73,13 +75,12 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 }
 
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
-  const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
+  const { dispatch, resolvePatientIdentity } = useWardFlowSelect("dispatch", "resolvePatientIdentity");
+  const identity = patientIdentityLine(resolvePatientIdentity(movement));
   const now = useWardFlowClock();
   const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
   const saveGate = useRoleGate()("SET_ARRIVAL_DETAILS");
-  const pullHoldMinutes = configuration.pullHoldMinutes;
-  const pullHoldLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}-hour` : `${pullHoldMinutes}-minute`;
 
   // WT-13: opens blank until someone chooses; never a travel mode standing in for a choice not made.
   // A live transport booking already names how they travel, so its provider is offered when it is one
@@ -100,6 +101,14 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [etaText, setEtaText] = useState("");
   const [etaDay, setEtaDay] = useState<"today" | "tomorrow">("today");
+  const [initial] = useState({ arrivalMode, trackingNumber, presetEta });
+  const dirty =
+    arrivalMode !== initial.arrivalMode ||
+    trackingNumber !== initial.trackingNumber ||
+    presetEta !== initial.presetEta ||
+    etaText !== "" ||
+    etaDay !== "today";
+  const [discarding, setDiscarding] = useState(false);
   const typedEta = etaText.trim() ? instantFromEstimatedTimeInputs(etaText, etaDay, now) : undefined;
   const etaTypedBadly = etaText.trim() !== "" && typedEta === undefined;
   const etaMinutes = etaText.trim() ? typedEta : presetEta;
@@ -114,7 +123,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
     };
   }, []);
   const dismiss = () => {
-    if (!pending.current) onClose();
+    if (pending.current) return;
+    if (dirty) setDiscarding(true);
+    else onClose();
   };
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -190,6 +201,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${baseId}-arrival-modal-title`}
+        aria-describedby={`${baseId}-arrival-person`}
         tabIndex={-1}
         className={styles.dialog}
       >
@@ -212,11 +224,12 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          <p id={`${baseId}-arrival-person`}>For {identity}</p>
           <div className={styles.note}>
             <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
             <span>
-              Saving this plan records how they are arriving, any tracking number, and the estimated ward time. That
-              clears the {pullHoldLabel} pull clock. A late notice may be raised when the saved ETA is already past the{" "}
+              Saving this plan records how they are arriving, any tracking number, and the estimated ward time. The
+              recorded pull time limit still applies. A late notice may be raised when the saved ETA is already past the{" "}
               {LATE_ARRIVAL_GRACE_MINUTES}-minute grace window ({OPERATIONAL_DEFAULT_LABEL}) — it is sent to the
               referrer and the accepting ward.
             </span>
@@ -358,6 +371,15 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             {saveGate.note}
           </div>
         </form>
+        <Dialog
+          open={discarding}
+          onClose={() => setDiscarding(false)}
+          title="Discard arrival plan changes?"
+          description={`The unsaved changes for ${identity} will be lost.`}
+          size="sm"
+          primary={{ label: "Discard changes", onAction: onClose }}
+          secondary={[{ label: "Keep editing", onAction: () => setDiscarding(false) }]}
+        />
       </div>
     </div>
   );

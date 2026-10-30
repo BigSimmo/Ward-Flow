@@ -294,6 +294,10 @@ export function Sheet({
       // stop propagation.
       if (!isTopmostSheet(sheetId)) return;
       if (event.key === "Escape") {
+        // A child widget may consume Escape to dismiss its own popup first. Native selects
+        // also use Escape to cancel their menu without dismissing the containing sheet.
+        if (event.defaultPrevented || (event.target instanceof HTMLElement && event.target.tagName === "SELECT"))
+          return;
         event.preventDefault();
         onCloseRef.current();
         return;

@@ -37,6 +37,13 @@ export function TvLockControl({ href, className, shared }: { href: string; class
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const attempt = useRef(0);
+  useEffect(
+    () => () => {
+      attempt.current += 1;
+    },
+    [],
+  );
 
   // Follow this tab's picker, so a reload comes back to the screen last chosen. Only a change of this
   // tab's own address writes, so two TV tabs never keep overwriting each other's stored address.
@@ -48,6 +55,8 @@ export function TvLockControl({ href, className, shared }: { href: string; class
   }, [href]);
 
   const close = () => {
+    // Closing or unmounting cancels the continuation, even if password checking finishes later.
+    attempt.current += 1;
     setAsking(false);
     setPassword("");
     setError(null);
@@ -56,6 +65,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
 
   const unlock = async () => {
     if (busy) return;
+    const currentAttempt = ++attempt.current;
     setBusy(true);
     setError(null);
     try {
@@ -65,20 +75,38 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         setPassword("");
         await reauthenticate(entered);
       }
-      writeLock(null);
+      if (currentAttempt !== attempt.current) return;
+      if (!writeLock(null)) {
+        setError("This browser could not unlock the TV. Check site storage and try again.");
+        setBusy(false);
+        return;
+      }
       close();
     } catch {
-      setError("That password was not accepted. Try again.");
+      if (currentAttempt !== attempt.current) return;
+      setError("Sign-in could not be confirmed. Check your password and connection, then try again.");
       setBusy(false);
     }
   };
 
   if (locked === null) {
     return (
-      <button type="button" className={className} onClick={() => lockTv(href)} data-testid="tv-lock">
-        <Lock aria-hidden="true" />
-        Lock as TV
-      </button>
+      <>
+        <button
+          type="button"
+          className={className}
+          onClick={() => {
+            setError(
+              lockTv(href) ? null : "This browser could not keep the TV lock. Check site storage and try again.",
+            );
+          }}
+          data-testid="tv-lock"
+        >
+          <Lock aria-hidden="true" />
+          Lock as TV
+        </button>
+        {error ? <span role="alert">{error}</span> : null}
+      </>
     );
   }
 
@@ -123,6 +151,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
           <Field label="Password" error={error ?? undefined}>
             <TextInput
               type="password"
+              disabled={busy}
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -134,6 +163,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
             In the shared workspace this asks for your password. This demonstration has none, so unlock to carry on.
           </p>
         )}
+        {!needsPassword && error ? <p role="alert">{error}</p> : null}
       </Dialog>
     </>
   );
