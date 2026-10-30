@@ -92,6 +92,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the detail panel has one Release (for the pulled bed), with "Choose a reason first" written under it until a reason is chosen. The second button that also said Release meant handing the alert back, so it now says Hand back, on one row with More actions.',
     "**Not done here:** a Chase all button for a group. Each person's Chase transport is inside the group; one button acting on all five needs a new command, so it waits for your yes.",
   ],
+  "legal-forms": [
+    "**Built from a copy of today's Legal forms page** (split into two files to stay under the line cap), so Clocks, Checklist, History, Record a form, Add the time and Record and tell all work as now.",
+    '**Kept word for word (point 22, D-77):** the "Not legally checked" notice. My pick is to keep it; say if you decide otherwise.',
+    "**New (point 18, D5, D-70):** times show only as typed: \"Ends 11:42, as typed on the form\". The countdown, the band word and the progress bar that were worked out from the typed time are gone, here and on the phone. The rows' warning glyph and the Act now edge are today's own rules and stay.",
+    '**New:** the form number stays in its tag and Form 1A\'s name is shortened to "Referral for examination" (the full title is in the record and the tooltip). Time not written shows its first 6 rows with Show more. Copy for handover and Record and tell are drawn as buttons, apart from the figures.',
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",

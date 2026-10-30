@@ -1,0 +1,53 @@
+/* Legal forms, redesigned: actions read as buttons, and the long group folds. */
+.heroAction.heroAction {
+  min-height: 36px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-hero-edge);
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  font-weight: 600;
+}
+/* Figures first, then the two actions pushed to the end of the row. */
+.firstAction.firstAction {
+  margin-inline-start: auto;
+}
+
+.more {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  cursor: pointer;
+}
+.more:hover {
+  background: var(--wf-surface-2);
+}
+@media (max-width: 48rem) {
+  .more {
+    min-height: 48px;
+  }
+}
+
+/* Next to end: the name in full, the typed time with a quiet "as typed". */
+.nextCard.nextCard * {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+.typed {
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-hero-ink-3);
+}
+.nextCard.nextCard {
+  column-gap: var(--wf-s-4);
+}
