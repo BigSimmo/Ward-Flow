@@ -24,9 +24,20 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
     () => true,
     () => false,
   );
+  // The rail re-applies the stored theme on mount and again once its store hydrates, so the frame
+  // holds its own theme whenever the root drifts from it. Nothing is saved.
   useEffect(() => {
-    if (theme) applyThemeToDocument(theme);
-  }, [theme]);
+    if (!theme || !inBrowser) return;
+    const root = document.documentElement;
+    const hold = () => {
+      if (root.getAttribute("data-theme") !== theme || root.classList.contains("dark") !== (theme === "dark"))
+        applyThemeToDocument(theme);
+    };
+    hold();
+    const observer = new MutationObserver(hold);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-theme", "class"] });
+    return () => observer.disconnect();
+  }, [theme, inBrowser]);
   const screen = screenBySlug(slug);
   const Page = MOCKUP_PAGES[slug];
   if (!inBrowser || !screen) return null;

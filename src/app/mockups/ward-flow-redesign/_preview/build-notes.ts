@@ -104,6 +104,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
     "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
   ],
+  seclusion: [
+    "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",
+    "**New:** one table of every secure ward's seclusion room (in use, available, out of service or not recorded), with what is in use, the last day's incident count and who last marked the room. The header counts rooms in each state. Rows needing a look come first.",
+    "**New:** choosing a ward opens its record beside the table, on the first ward that needs a look rather than an empty panel. On a phone the record sits under the table and the page scrolls to it.",
+    "**Which wards:** a secure ward here is one with locked beds, plus any ward with something recorded, so no record is hidden. Please confirm that is the right list.",
+    "**Kept word for word:** the Operational view only notice. Nothing works out an order length, a review or a legal limit; times show as typed.",
+    "**Demo night:** nothing is recorded yet, so every room starts as Not recorded. Marking a room or recording a start updates the table and header at once.",
+  ],
   "on-call": [
     "**Today's On-call page, with a redesign stylesheet on top.** The review found it the right shape, so cover at Now, 22:00 and later, My list, Copy who is on, the downtime card, the directory and the detail pane (status, both numbers, email and escalation order, with Copy buttons) all work as now.",
     '**New:** the seven service lines are a compact two-line strip (line and number). "Until 20:00" shows on the chosen line and in its detail, rather than repeated on every card. On a laptop or phone the strip scrolls sideways instead of squeezing.',

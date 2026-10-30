@@ -22,6 +22,7 @@ import { AlertsRedesign } from "@/components/ward-redesign/alerts/alerts-redesig
 import { LegalFormsPage } from "@/components/ward-redesign/legal-forms/legal-forms-page";
 import { OutOfAreaPage } from "@/components/ward-redesign/out-of-area/out-of-area-page";
 import { OnCallRedesign } from "@/components/ward-redesign/on-call/on-call-redesign";
+import { SeclusionRedesign } from "@/components/ward-redesign/seclusion/seclusion-redesign";
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -49,4 +50,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsPage,
   "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
+  seclusion: SeclusionRedesign,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;
