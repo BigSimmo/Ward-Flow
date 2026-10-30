@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the statistics-list mock-up is built; replaced by the redesigned page. */
+import { StatisticsListRedesign } from "./statistics-list-redesign";
+
+/** Every ward in one table, as the app's `/ward-flow/statistics/wards` opens. */
 export function StatisticsListPage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <StatisticsListRedesign />;
 }

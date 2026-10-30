@@ -6,6 +6,20 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  "statistics-compare": [
+    "**Built from a copy of today's Compare screen**, so Chart and Data, the measure switches, Pinned wards, CSV and the phone Compare two wards sheet all work as now.",
+    "**New:** Open a unit is a button on the statistics tab row. It opens today's chooser above the charts instead of a grid of 22 wards under them; a link to the chooser still opens it.",
+    "**New:** both charts show the first eight rows, with Show all. Wards and EDs more than one standard deviation above the mean get an amber dot. The Data tables and phone charts follow the same rule.",
+    "**New:** Occupancy is the first ward measure and the first Data column, from the app's existing beds-in-use count, so this page matches the main Statistics page. The CSV now includes it too, so it differs from today's export.",
+    "**Question for you:** with both charts cut to eight rows, the ward card ends about 150 px above the ED and Pinned column at 1440. Should Pinned wards move under the ward chart?",
+  ],
+  "statistics-list": [
+    "**Built from a copy of today's All wards screen**, so every column, sorting, By service and One list, and the highlight chips work as now.",
+    "**New:** the highlight chips sit on one row (they scroll sideways on a narrow card), and the By service / One list switch and the ward count move into the card heading.",
+    '**New:** By service opens on the first two services, then "Show 3 more services, 11 wards"; One list opens on the first eight wards. Pressing a chip shows every ward, because highlighting never hides one.',
+    "**New:** Discharges held up shows its first eight wards, with Show all. Phone switches are 48 px tall.",
+    '**Still open:** folding the empty teams into one "teams with nobody in a bed" row is not built here.',
+  ],
   downtime: [
     "**Built from a copy of today's Downtime pack screen**, so New snapshot, Print or save PDF, the freeze time, the stale line and the phone layout work as now.",
     "**New:** on screen one table shows at a time. Tabs with counts (Beds ready, ED queue, Pending moves, Legal forms) replace the jump buttons, and the header chips switch tabs too.",

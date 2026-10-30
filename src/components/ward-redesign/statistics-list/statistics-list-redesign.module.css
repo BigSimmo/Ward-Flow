@@ -1,0 +1,53 @@
+/* Ward list, redesigned: the grouping switch and count in the card head, the highlight chips on
+   one row, and Show more under a list that opens on its first rows. */
+.headTools {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.chipRow {
+  padding-top: 0;
+}
+
+/* One row: on a narrow card the chips scroll sideways rather than wrapping onto a second line. */
+.chips {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.chips > * {
+  flex: none;
+}
+
+.moreRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.more {
+  white-space: nowrap;
+}
+
+@media (max-width: 48rem) {
+  .more {
+    width: 100%;
+    min-height: var(--ward-tap, 48px);
+  }
+}
+
+/* Redesign: phone controls at least 48px tall (owner rule). */
+.phoneSeg.phoneSeg :is(a, button) {
+  height: 48px;
+  min-height: 48px;
+}

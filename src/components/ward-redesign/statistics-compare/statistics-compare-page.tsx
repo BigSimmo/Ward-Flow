@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the statistics-compare mock-up is built; replaced by the redesigned page. */
+import { StatisticsCompareRedesign } from "./statistics-compare-redesign";
+
+/** Ward and ED comparisons, as the app's `/ward-flow/statistics/compare` opens. */
 export function StatisticsComparePage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <StatisticsCompareRedesign />;
 }
