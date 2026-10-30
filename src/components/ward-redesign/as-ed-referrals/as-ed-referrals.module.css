@@ -1,0 +1,4 @@
+/* Role view (as ED clinician): the queue takes the full width when no decision pane is shown. */
+[data-referral-layout="queue-panel"] .single.single.single.single.single {
+  grid-template-columns: minmax(0, 1fr);
+}

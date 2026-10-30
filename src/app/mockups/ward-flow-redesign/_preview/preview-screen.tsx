@@ -17,6 +17,7 @@ import {
 } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { TOUR_AUTO_DONE_STORAGE_KEY } from "@/components/ward-management/help/ward-tour-auto-start";
 import { markWhatsNewSeen } from "@/components/ward-management/help/ward-whats-new";
+import { HELP_HINTS_KEY } from "@/components/ward-management/help-content/ward-help-hints";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
 
 import { screenBySlug } from "./screens";
@@ -88,16 +89,23 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
  * server it also sets the real app's own desk and role-access switch in the same browser.
  */
 const TOUR_ROLES = "coordinator,bed_manager,ward,ed,community,officer,executive,admin";
+// Every page's first-visit hint, read, for every desk ("role:topic", the hints' own key form).
+const HINT_TOPICS =
+  "command capacity movements referrals handover ward ed community officer statistics governance settings legal-forms downtime patient ed-board community-team bed-meeting-agenda";
+const HINTS_SEEN = TOUR_ROLES.split(",")
+  .flatMap((role) => HINT_TOPICS.split(" ").map((topic) => `${role}:${topic}`))
+  .join(",");
 
 function usePreviewDesk(role: WardAccess | undefined): boolean {
   const desk = role ?? STATEWIDE_COORDINATOR;
   const { access } = useWardAccessSnapshot();
   const roleAccessOn = useWardFeatureFlag("role-access");
   useLayoutEffect(() => {
-    // The tour and the What's new note offer themselves on a desk's first visit; a mock-up is
+    // The tour, the What's new note and each page's help hint offer themselves on a desk's first visit; a mock-up is
     // judged without them on top.
     try {
       localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, TOUR_ROLES);
+      localStorage.setItem(HELP_HINTS_KEY, HINTS_SEEN);
     } catch {
       // Blocked storage: the tour then never offers itself anyway.
     }
