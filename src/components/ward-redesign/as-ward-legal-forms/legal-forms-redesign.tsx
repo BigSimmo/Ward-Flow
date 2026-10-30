@@ -72,7 +72,7 @@ import {
   LegalFormsAdmitted,
   WARD_RECORDS_ADMITTED,
 } from "@/components/ward-management/legal-forms/legal-forms-admitted";
-import { FocusPanel, type FocusTab } from "@/components/ward-management/legal-forms/legal-forms-panel";
+import { FocusPanel, type FocusTab } from "@/components/ward-redesign/legal-forms/legal-forms-panel-redesign";
 import {
   ExtendSheet,
   RecordFormSheet,
@@ -119,6 +119,11 @@ import {
   ChecklistView,
   GAP_LABEL,
 } from "@/components/ward-redesign/legal-forms/legal-form-rows-redesign";
+import {
+  TYPED_TIME_KEY,
+  standingSuffix,
+  typedTimeStanding,
+} from "@/components/ward-redesign/legal-forms/typed-time-words";
 
 /** Redesign: rows shown under Time not written before Show more. */
 const NO_TIME_FIRST = 6;
@@ -366,6 +371,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // Admitted on a form group says so, so the greyed button is left out rather than repeated.
   const recordOffered = !(routeRole === "ward" && admitted.length === 0);
   const nextStanding = next ? clockStanding(next, now, thresholds) : "none";
+  const nextTyped = next ? typedTimeStanding(next, now, thresholds) : undefined;
+  // Josh's lesson 3 (30 Oct): every count names its noun ("1 form to act on", not "1 Act now").
+  const forms = (count: number) => (count === 1 ? "form" : "forms");
   const closedWithForms = movements
     .filter((movement) => !isOpen(movement) && movement.legalForm !== undefined)
     .sort((a, b) => (b.closure?.at ?? b.openedAt) - (a.closure?.at ?? a.openedAt));
@@ -845,6 +853,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   {highlightCount} of {rows.length} highlighted, all rows stay
                 </p>
               ) : null}
+              {view === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
               {view === "clocks" ? (
                 <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
                   {rows.length === 0 ? (
@@ -854,7 +863,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <div className={styles.groupHead}>
                         <span>Expiry typed</span>
                         <span className={styles.groupCount}>{withDeadline.length}</span>
-                        <span className={styles.groupOrder}>least time left</span>
+                        <span className={styles.groupOrder}>soonest typed end first</span>
                       </div>
                       <ul className={styles.phoneList}>
                         {withDeadline.map((movement) => (
@@ -864,13 +873,22 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <div className={styles.groupHead}>
                         <span>Time not written</span>
                         <span className={styles.groupCount}>{noDeadline.length}</span>
-                        <span className={styles.groupOrder}>most period used</span>
+                        <span className={styles.groupOrder}>longest open first</span>
                       </div>
+                      {/* Redesign: the phone list follows the long-list rule too (27 rows ran the
+                          page to 3,000px): the first rows, then Show more, as on desktop. */}
                       <ul className={styles.phoneList}>
-                        {noDeadline.map((movement) => (
+                        {(noTimeAll ? noDeadline : noDeadline.slice(0, NO_TIME_FIRST)).map((movement) => (
                           <PhoneFormRow key={movement.id} {...rowProps(movement)} />
                         ))}
                       </ul>
+                      {noDeadline.length > NO_TIME_FIRST ? (
+                        <button type="button" className={redesign.more} onClick={() => setNoTimeAll((all) => !all)}>
+                          {noTimeAll
+                            ? "Show fewer"
+                            : `Show ${noDeadline.length - NO_TIME_FIRST} more with no time written`}
+                        </button>
+                      ) : null}
                     </>
                   )}
                 </section>
@@ -935,7 +953,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       >
                         <span className={styles.nextEyebrow}>
                           <StatusGlyph tone={STANDING_TONE[nextStanding]} size={9} />
-                          {nextStanding === "passed" ? "Passed" : "Next to end"}
+                          {/* Decision 1: the colour's words beside its glyph ("Next to end · within 1h"). */}
+                          {nextStanding === "passed"
+                            ? "Passed"
+                            : `Next to end${nextTyped ? standingSuffix(nextTyped) : ""}`}
                         </span>
                         <span className={styles.nextName}>
                           {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
@@ -964,7 +985,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <HeroStat
                       inline
                       value={actNow}
-                      label="Act now"
+                      label={`${forms(actNow)} to act on`}
                       tone="danger"
                       pressed={highlight?.kind === "act"}
                       onToggle={() => toggleHighlight({ kind: "act" })}
@@ -972,7 +993,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <HeroStat
                       inline
                       value={reminders.withinSoon}
-                      label={`Within ${formatReminderHours(reminders.soonHours)}`}
+                      label={`${forms(reminders.withinSoon)} within ${formatReminderHours(reminders.soonHours)}`}
                       tone="warning"
                       pressed={highlight?.kind === "soon"}
                       onToggle={() => toggleHighlight({ kind: "soon" })}
@@ -980,7 +1001,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <HeroStat
                       inline
                       value={noDeadline.length}
-                      label="Time not written"
+                      label={`${forms(noDeadline.length)}, time not written`}
                       tone="neutral"
                       pressed={highlight?.kind === "none"}
                       onToggle={() => toggleHighlight({ kind: "none" })}
@@ -1039,7 +1060,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       {highlight
                         ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
                         : view === "clocks"
-                          ? "Act now first, then least time left"
+                          ? TYPED_TIME_KEY
                           : null}
                     </span>
                   }

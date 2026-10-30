@@ -12,7 +12,7 @@ import { X } from "lucide-react";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import {
   BLOCKERS_MEANING_NOTHING_IS_BLOCKING,
@@ -40,6 +40,7 @@ import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 import { ago, originLabel } from "@/components/ward-management/delays/delays-board-rows";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 
 export function PersonPanel({
   row,
@@ -61,6 +62,8 @@ export function PersonPanel({
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
   const { movement, cause } = row;
   const typedEnd = movement.legalForm === undefined ? undefined : currentLegalDueAt(movement);
+  const thresholds = useDueSoonThresholds();
+  const typedStanding = typedTimeStanding(movement, now, thresholds);
   const patient = patientOf(movement);
   const escalation = movement.escalation;
   const triedUnits = (escalation?.triedUnitIds ?? [])
@@ -169,14 +172,18 @@ export function PersonPanel({
           </p>
         ) : null}
 
-        {/* Redesign (point 18, Josh 30 Oct 2026): the recorded form time as typed, as Legal forms
-            shows it. No countdown, "overdue" or due-soon colour is worked out from it. */}
+        {/* Redesign (point 18 and decision 1, Josh 30 Oct 2026): the recorded form time as typed, as
+            Legal forms shows it. No countdown; its colour compares the typed time with the user's
+            warning settings and always carries its words. */}
         {legalForm !== undefined && typedEnd !== undefined ? (
           <div className={`${styles.inset} ${styles.clock}`} data-testid={`delays-legal-clock-${movement.id}`}>
             <div className={styles.grow}>
-              <b>{`${legalFormName(legalForm)} ends ${formatInstantWithDay(typedEnd, now)}`}</b>
+              <b>
+                {typedStanding.word ? <Glyph tone={typedStanding.tone} /> : null}
+                {`${legalFormName(legalForm)} ends ${formatInstantWithDay(typedEnd, now)}`}
+              </b>
               <span className={styles.mute}>
-                As typed on the form <LegalLimitsNotChecked variant="tag" />
+                As typed on the form{standingSuffix(typedStanding)} <LegalLimitsNotChecked variant="tag" />
               </span>
             </div>
           </div>

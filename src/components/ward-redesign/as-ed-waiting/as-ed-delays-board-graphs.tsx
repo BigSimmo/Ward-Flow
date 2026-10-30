@@ -44,6 +44,7 @@ import { useWaitingWords } from "./as-ed-waiting-words";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 type Graph = "spread" | "runway" | "matrix";
 
 const SHORT_CAUSE: Record<DelayCause, string> = {
@@ -101,6 +102,7 @@ function LaneLabel({ label, count, over8 }: { label: string; count: number; over
 
 function Spread({
   rows,
+  now,
   shown,
   filters,
   catchments,
@@ -109,7 +111,7 @@ function Spread({
   onFilters,
   onPick,
   onTip,
-}: Pick<Props, "rows" | "shown" | "filters" | "catchments" | "selectedId" | "onFilters" | "onPick"> & {
+}: Pick<Props, "rows" | "now" | "shown" | "filters" | "catchments" | "selectedId" | "onFilters" | "onPick"> & {
   lanes: "owner" | "origin";
   onTip: (event: React.MouseEvent | null, body?: ReactNode) => void;
 }) {
@@ -234,8 +236,8 @@ function Spread({
                           {row.dueIn !== undefined && row.movement.legalForm ? (
                             <>
                               <br />
-                              {`Form ${row.movement.legalForm.code} ${row.dueIn < 0 ? "overdue" : "due in"} `}
-                              <span className={styles.num}>{splitDuration(Math.abs(row.dueIn))}</span>
+                              {/* Decision 1 (Josh, 30 Oct): the typed time with its warning words, no countdown. */}
+                              {`Form ${row.movement.legalForm.code} ends ${formatInstantWithDay(now + row.dueIn, now)} as typed${standingSuffix(typedTimeStanding(row.movement, now, thresholds))}`}
                             </>
                           ) : null}
                         </>,

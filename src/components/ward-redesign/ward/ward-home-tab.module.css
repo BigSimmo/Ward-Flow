@@ -585,7 +585,20 @@
   min-width: 0;
 }
 
+/* Redesign: the title and its time share the first line; the time keeps its size. */
+.flowTitleLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+.flowTitleLine > .flowWhen {
+  margin-inline-start: auto;
+}
+
 .flowTitle {
+  min-width: 0;
   overflow: hidden;
   font-size: var(--wf-fs-13);
   font-weight: 600;
@@ -935,6 +948,10 @@ label.todoMain:has(.todoTick:focus-visible) {
   grid-column: 2;
   max-width: none;
   text-align: left;
+  /* Redesign: a wordy note reads in the text face (figures stay tabular), so "Ends 11:42 as typed ·
+     within 1h" fits on one line instead of breaking in the narrow monospace column. */
+  font-family: var(--wf-font);
+  overflow-wrap: normal;
 }
 
 .paneHead {

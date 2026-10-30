@@ -47,7 +47,36 @@
 .legalTypedTime > span {
   white-space: nowrap;
 }
+/* Decision 1: the glyph sits on the time it colours, its words on the line under it. */
+.legalTypedEnds {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
 .legalTypedWord {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
+}
+
+/* Decision 1: the tier key and the colour key for typed legal times share one quiet line. */
+.keyRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  column-gap: var(--wf-s-4);
+}
+.typedKey {
+  margin: 0;
+  padding: var(--wf-s-1) var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* Phone: the typed legal time's own line inside the clipped record line, allowed to wrap. */
+.phLegalLine {
+  display: block;
+  white-space: normal;
 }

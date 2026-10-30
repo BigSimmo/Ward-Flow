@@ -11,7 +11,8 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import Link from "next/link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
+import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "@/components/ward-management/ward/ward-departure-log";
 import { wardSafeRejectionReason } from "@/components/ward-management/ward/ward-rejection-text";
@@ -130,7 +131,7 @@ interface WardHomeTabProps {
     title: string;
     countdown: string;
     text: string;
-    tone: "critical" | "warning" | "info";
+    tone: "critical" | "warning" | "info" | "neutral";
     actionLabel?: string;
     actionTarget?: "answer" | "arrival" | "discharges";
     movementId?: string;
@@ -806,7 +807,14 @@ export function WardHomeTab({
       title: alert.title,
       detail: alert.text,
       meta: alert.countdown,
-      tone: alert.tone === "critical" ? "danger" : alert.tone === "warning" ? "warning" : "info",
+      tone:
+        alert.tone === "critical"
+          ? "danger"
+          : alert.tone === "warning"
+            ? "warning"
+            : alert.tone === "neutral"
+              ? "neutral"
+              : "info",
       action: alert.actionLabel
         ? {
             label: alert.actionLabel,
@@ -1068,7 +1076,12 @@ export function WardHomeTab({
       <li key={row.key} className={styles.flowRow}>
         <StatusGlyph tone={row.tone} size={9} />
         <span className={styles.flowMain}>
-          <span className={styles.flowTitle}>{row.title}</span>
+          {/* Redesign: the time belongs to the bed or person it dates, so it sits on their line and
+              the detail under them has the row's full width (it was cut to "Awaiting…"). */}
+          <span className={styles.flowTitleLine}>
+            <span className={styles.flowTitle}>{row.title}</span>
+            {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
+          </span>
           <span className={styles.flowDetail}>{row.detail}</span>
           {row.movementId && lastActionRejection?.movementId === row.movementId ? (
             <span className={styles.noticeProminent} role="alert">
@@ -1077,7 +1090,6 @@ export function WardHomeTab({
             </span>
           ) : null}
         </span>
-        {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
         {row.placement ? (
           <Button
             variant="pri"
@@ -1676,10 +1688,16 @@ export function WardHomeTab({
           <span>
             <b>{checksDone}</b> of {shiftChecks.length} checks done
           </span>
-          {/* Audit 11 Oct 2026: one footnote for the form times, not a tag crowding Act now. */}
-          {liveFormAlerts.length > 0 ? (
-            <span className={styles.legalTag}>
-              Form times <LegalLimitsNotChecked variant="tag" />
+          {/* Audit 11 Oct 2026: one footnote for the form times, not a tag crowding Act now. Decision 1
+              (Josh, 30 Oct 2026): it is the one colour key the Legal forms and Waiting pages carry too,
+              ending "Not legally checked."; the full notice stays in its tooltip. */}
+          {liveFormAlerts.some((alert) => alert.key.startsWith("form-")) ? (
+            <span
+              className={styles.legalTag}
+              data-testid="legal-limits-not-checked"
+              title={LEGAL_LIMITS_NOT_CHECKED_NOTICE}
+            >
+              {TYPED_TIME_KEY}
             </span>
           ) : null}
         </div>

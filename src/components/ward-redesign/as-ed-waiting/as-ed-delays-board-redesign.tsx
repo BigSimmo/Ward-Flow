@@ -94,9 +94,13 @@ import {
   useReturnedView,
   useReturnToPlace,
 } from "@/components/ward-management/use-return-to-place";
-import { RowTimeline, WaitBar, phoneUpdate, updateCell } from "@/components/ward-management/delays/delays-board-rows";
+import { WaitBar, phoneUpdate, updateCell } from "@/components/ward-management/delays/delays-board-rows";
+import { RowTimeline } from "@/components/ward-redesign/waiting/waiting-row-timeline";
 import { TierKey } from "@/components/ward-management/tier-key";
 import { legalCellAsTyped, phonePrefixAsTyped } from "@/components/ward-redesign/waiting/waiting-legal-cells";
+import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -445,6 +449,8 @@ export function AsEdDelaysBoardRedesign({
   const split = useMemo(() => waitingSplit(rows.map((row) => row.movement)), [rows]);
   const heroTitle = [`${split.waiting} waiting in ED`, ...notWaitingParts(split)].join(", ");
   const silentCount = rows.filter((row) => row.silent).length;
+  // Decision 1: the colour key shows only when a row carries a typed legal time for it to explain.
+  const anyTypedTime = rows.some((row) => currentLegalDueAt(row.movement) !== undefined);
   const urgentMinutes = thresholds.urgentMinutes;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
   const dueSoonLabel = `Form due (as written) within ${windowText(urgentMinutes)}`;
@@ -611,7 +617,7 @@ export function AsEdDelaysBoardRedesign({
           >
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
-              {isPhone ? phonePrefixAsTyped(row, now) : null}
+              {isPhone ? phonePrefixAsTyped(row, now, thresholds) : null}
               {/* Role view (as ED clinician): every row is this ED's, so its code is left off. */}
               {[patient.umrn, transitNote(movement, now), words.edDesk ? undefined : originCode(movement)]
                 .filter(Boolean)
@@ -644,7 +650,7 @@ export function AsEdDelaysBoardRedesign({
           </span>
         </td>
         <td role="cell" className={styles.cLegal}>
-          {legalCellAsTyped(row, now)}
+          {legalCellAsTyped(row, now, thresholds)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
           {isPhone ? phoneUpdate(row) : updateCell(row, now)}
@@ -1260,7 +1266,12 @@ export function AsEdDelaysBoardRedesign({
                 role={sideScroll.before || sideScroll.after ? "region" : undefined}
                 aria-label={sideScroll.before || sideScroll.after ? "Waiting list, scrolls sideways" : undefined}
               >
-                <TierKey />
+                {/* Decision 1 (Josh, 30 Oct 2026): the one colour key for typed legal times sits beside
+                    the tier key, on the list it explains. */}
+                <div className={waitingKeys.keyRow}>
+                  <TierKey />
+                  {anyTypedTime ? <p className={waitingKeys.typedKey}>{TYPED_TIME_KEY}</p> : null}
+                </div>
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />

@@ -15,7 +15,6 @@ import {
 } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import {
-  STANDING_TONE,
   clockStanding,
   durText,
   formTitle,
@@ -25,6 +24,7 @@ import {
   type RecordGap,
 } from "@/components/ward-management/legal-forms/legal-forms-view";
 import styles from "@/components/ward-management/legal-forms/legal-forms.module.css";
+import { standingSuffix, typedTimeStanding } from "./typed-time-words";
 
 /**
  * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work for each
@@ -101,14 +101,20 @@ export function FormRow({
   }
   const classification = legalFormRowClassification(movement, now, thresholds);
   const standing = clockStanding(movement, now, thresholds);
-  const reason = legalDeadlineText(movement, now);
+  const typed = typedTimeStanding(movement, now, thresholds);
+  const dueAt = currentLegalDueAt(movement);
+  // Decision 1 (Josh, 30 Oct): the spoken line says the typed time and its warning too, never a countdown.
+  const reason =
+    dueAt !== undefined && !formProgression(movement)
+      ? `Ends ${formatInstantWithDay(dueAt, now)} as typed${standingSuffix(typed)}`
+      : legalDeadlineText(movement, now);
   const facts = recordedFacts(movement);
   const done = facts.filter((fact) => fact.at !== undefined).length;
   const missing = facts.filter((fact) => fact.at === undefined).map((fact) => TO_RECORD_WORD[fact.gap]);
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
   // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
   const progression = formProgression(movement);
-  const hasDue = currentLegalDueAt(movement) !== undefined;
+  const hasDue = dueAt !== undefined;
 
   return (
     <DataRow
@@ -158,15 +164,14 @@ export function FormRow({
           </>
         ) : hasDue ? (
           <>
-            {/* Redesign (point 18, D5, D-70): the typed time only, said to be typed, with no countdown
-                or bar. The glyph keeps today's due-soon colour from the typed time (open for Josh). */}
+            {/* Decision 1 (Josh, 30 Oct; D5, D-70): the typed time, said to be typed, with no countdown.
+                Its colour compares the typed time with the user's warning settings and always comes
+                with its words ("within 1h", "within 3h", "passed"). */}
             <span className={styles.leftLine}>
-              <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-              <strong className={styles.leftValue}>
-                Ends {formatInstantWithDay(currentLegalDueAt(movement)!, now)}
-              </strong>
+              <StatusGlyph tone={typed.tone} size={9} />
+              <strong className={styles.leftValue}>Ends {formatInstantWithDay(dueAt!, now)}</strong>
             </span>
-            <span className={styles.sub}>as typed on the form</span>
+            <span className={styles.sub}>as typed{standingSuffix(typed)}</span>
           </>
         ) : (
           <>
@@ -220,7 +225,7 @@ export function FormRow({
 }
 
 /**
- * Phone row (v10): the code chip, the name, the form and where, with the time left at the end.
+ * Phone row (v10): the code chip, the name, the form and where, with the typed end time at the end.
  * The whole row opens the form sheet; an act now row takes the thin red edge, a dimmed row recedes
  * by colour only.
  */
@@ -228,10 +233,12 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
   const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm!;
   const standing = clockStanding(movement, now, thresholds);
+  const typed = typedTimeStanding(movement, now, thresholds);
   const facts = recordedFacts(movement);
   const missing = facts.filter((fact) => fact.at === undefined).length;
   const where = wardName ? `${edName} to ${wardName}` : edName;
-  const hasDue = currentLegalDueAt(movement) !== undefined;
+  const dueAt = currentLegalDueAt(movement);
+  const hasDue = dueAt !== undefined;
   return (
     <PhoneListRow
       as="li"
@@ -250,13 +257,13 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
           </span>
         </>
       }
-      // Josh's no-wrap rule: the time and its word sit on one line ("1h 00m left"), not stacked.
+      // Josh's no-wrap rule: the time and "as typed" sit on one line, not stacked.
       value={
         hasDue ? (
           <span className={styles.leftLine}>
-            <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
+            <StatusGlyph tone={typed.tone} size={9} />
             {/* Point 18: the typed time, not a countdown. */}
-            {formatInstantWithDay(currentLegalDueAt(movement)!, now)}
+            {formatInstantWithDay(dueAt!, now)}
             <span className={styles.phoneTimeWord}>as typed</span>
           </span>
         ) : (
@@ -266,7 +273,13 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
           </span>
         )
       }
-      aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
+      // Decision 1: the colour's words sit under the typed time ("within 1h"), never colour alone.
+      time={hasDue ? typed.word : undefined}
+      aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${
+        hasDue
+          ? `ends ${formatInstantWithDay(dueAt!, now)} as typed${standingSuffix(typed)}`
+          : legalDeadlineText(movement, now)
+      }`}
       onSelect={() => onSelect(movement)}
     />
   );

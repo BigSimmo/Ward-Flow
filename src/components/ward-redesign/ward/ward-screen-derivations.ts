@@ -19,7 +19,6 @@ import {
   formatInstant,
   formatInstantWithDay,
   formatRemaining,
-  minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
@@ -42,6 +41,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardReferralInboxEntry } from "@/components/ward-management/referrals/referral-inbox";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
 import { isConstantObservation } from "@/components/ward-management/ward-observation";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 
 /** The bed roster the Bed board and bed list draw, derived from this ward's records. */
 type WardBedRosterInputs = {
@@ -444,7 +444,7 @@ export function wardLiveFormAlerts({
     ...accepted.flatMap((movement) => {
       const alerts: Array<{
         key: string;
-        tone: "critical" | "warning" | "info";
+        tone: "critical" | "warning" | "info" | "neutral";
         title: string;
         countdown: string;
         text: string;
@@ -455,13 +455,16 @@ export function wardLiveFormAlerts({
       const patientName = resolvePatientIdentity(movement).formalName;
       const dueAt = currentLegalDueAt(movement);
       if (dueAt !== undefined) {
-        const remaining = minutesUntil(dueAt, now);
+        // Decision 1 (Josh, 30 Oct 2026): the same two levels as Legal forms and Waiting. Red within
+        // the second warning or passed, amber within the first, no colour otherwise (the source made
+        // every typed time amber at least), and the colour always carries its words. No countdown.
+        const standing = typedTimeStanding(movement, now, thresholds);
         alerts.push({
           key: `form-${movement.id}`,
-          tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
-          title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
-          // Redesign: the recorded due time as typed, never a countdown worked out from it.
-          countdown: `Due ${formatInstantWithDay(dueAt, now)} as typed`,
+          tone: standing.urgent ? "critical" : standing.word ? "warning" : "neutral",
+          // One word for the typed time on every page: "ends", as Legal forms and Waiting say it.
+          title: movement.legalForm ? `Form ${movement.legalForm.code} end time` : "Legal form end time",
+          countdown: `Ends ${formatInstantWithDay(dueAt, now)} as typed${standingSuffix(standing)}`,
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
           text: `${patientName}.`,
           actionLabel: "Open arrival",

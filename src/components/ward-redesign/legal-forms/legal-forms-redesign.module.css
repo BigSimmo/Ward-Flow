@@ -50,4 +50,7 @@
 }
 .nextCard.nextCard {
   column-gap: var(--wf-s-4);
+  /* Decision 1: the eyebrow carries the colour's words ("Next to end · within 1h"), so the card
+     takes the width its text needs instead of overlapping the time. */
+  max-width: none;
 }
