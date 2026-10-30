@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - all 38 pages built; next are the popups, states, phone pass and final checks; Design owns._
+_Updated 2026-10-30 - all 38 pages built; Josh approved every recommendation; next is the popup and state swarm; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -18,7 +18,8 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown i
 3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
    each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
 4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
-5. Continue at "Remaining plan" step 1 (popups). Commit and push each piece as it is done.
+5. Continue at "Remaining plan" step 0, then follow "Swarm plan for the popups and states". Commit and push
+   each piece as it is done.
 
 Josh's standing go-ahead: push to this branch only, no pull request, no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
@@ -146,6 +147,32 @@ compare wards; Places is the directory to find a place and open it, with no bed 
 rule, 22 October). Stays' bed record column stays on screen (ruling of 30 August); point 16 is met by
 opening it on the first bed that needs a look instead of leaving it empty.
 
+## Swarm plan for the popups and states
+
+Josh asked for multiple agents in parallel. The pattern that worked for the last 15 pages:
+
+1. **Coordinator first, alone:** add a way for the preview shell to open a shell overlay by `pop` name
+   (`_preview/preview-shell.tsx`; the shell overlays are the real ones the app bar and rail open). Then
+   register every popup in `MOCKUP_POPUPS` (`_preview/screens.ts`) and give each a placeholder in its own
+   folder (`src/components/ward-redesign/pop-<name>/`), so no helper edits a shared file. Commit that.
+2. **Five helpers in parallel** (one Agent call each, in the background), each limited to its own
+   `pop-*` folders and working from the helper brief in `HANDOVER-TOOLS.md`:
+   - A, shell overlays 1: Alerts drawer, Activity, Tools, Search, Help, Shortcuts.
+   - B, shell overlays 2: Demo menu, phone Menu, Create, ward switcher, shift brief, Go to a desk, service
+     picker, More pages, tour.
+   - C, bed actions: Bed record, Confirm beds, Broadcast, Ward notices, Refer to a ward.
+   - D, ED, transport and legal: ED actions, Log transport, officer job panel, Record a form, Record exam,
+     Add the time.
+   - E, states (point 9) as one "States" group: loading, empty, error, offline, toast, and a greyed control
+     saying exactly "Not wired in this prototype." (D4).
+     Each popup's review notes are in `_preview/review-notes.json` under `pop-<name>` where they exist.
+3. **Coordinator, as each helper reports:** look at its work at 1440 and 390 px, keep files under the cap
+   (move self-contained parts into sibling files; D-89 only when a split would break the match with the
+   real file), add build notes with `add_notes.py`, commit, push.
+4. **Watch-outs:** the shared dev server ran out of memory once with five helpers (restart with
+   `npm run ensure`); a helper's half-saved file briefly breaks every mock-up page, so retry before
+   diagnosing; the push guard lints the working tree, so a push can fail once while helpers are mid-edit.
+
 ## Josh's 30 October feedback
 
 1. **Referrals, phone:** the highlight chips run off the edge ("0 Com…"). Make them wrap or fit.
@@ -183,6 +210,9 @@ Lessons: the shared dev server ran out of memory once with five helpers compilin
 `npm run ensure`), and a helper's half-saved file briefly breaks every mock-up page, because the viewer
 imports them all; retry before diagnosing.
 
+0. **First, two small approved fixes:** remove the countdowns to recorded legal times from the Waiting
+   and Home forks (show the time as typed, as Legal forms does), and move Pinned wards under the ward
+   chart on Statistics compare.
 1. **Popups (point 8):** Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu,
    Create, Bed record, Confirm beds, ED actions, Log transport, Broadcast, Record a form, Ward notices,
    officer job panel, ward switcher, shift brief, Record exam, Refer to a ward, Go to a desk, Add the time,
@@ -200,7 +230,13 @@ imports them all; retry before diagnosing.
 5. **Report to Josh:** each recommendation and what he approves, page by page, plus the open questions
    below.
 
-## Open questions for Josh (my picks applied, to confirm on review)
+## Josh's answers (30 October, evening)
+
+Josh agreed with **every recommendation**: all picks below stand, and the items marked "to do" are now
+approved work. Still open only: one agreed meaning for the three Discharges totals, and "Chase all" for
+grouped alerts (needs a new command, so it stays unbuilt).
+
+## Open questions for Josh (all answered yes on 30 October; kept for the record)
 
 - Point 20, Discharges: headline "59 to work now", with "of 207 open · 148 due in 2+ days" beside it.
 - Point 21: keep Places, the Capacity bed map and All wards, one job each.

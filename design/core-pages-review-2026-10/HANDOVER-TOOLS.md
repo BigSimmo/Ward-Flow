@@ -1,6 +1,6 @@
 # Redesign mock-ups: helper scripts
 
-_Updated 2026-10-30 - the helper scripts behind the React redesign mock-ups, kept for a new chat; Design owns._
+_Updated 2026-10-30 - the helper scripts, the build-notes script and the parallel helper brief, kept for a new chat; Design owns._
 
 These lived in the session's scratch folder, which does not survive. Copy them into a scratch folder
 (not the repository) and change the paths at the top of each. None of them is a repository script; none
@@ -316,3 +316,111 @@ const { chromium } = require("playwright");
   await b.close();
 })();
 ```
+
+### `add_notes.py`
+
+Adds build notes for several slugs at once from a JSON file of `{slug: [notes]}`.
+
+```python
+# usage: python3 add_notes.py <notes.json>  -- inserts {slug: [notes]} before the first existing entry
+import json, sys
+f = "/home/user/Ward-Flow/src/app/mockups/ward-flow-redesign/_preview/build-notes.ts"
+notes = json.load(open(sys.argv[1]))
+t = open(f).read()
+anchor = "export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {\n"
+assert anchor in t
+block = ""
+for slug, lines in notes.items():
+    key = slug if slug.isidentifier() else json.dumps(slug)
+    assert f"\n  {key}: [" not in t, slug
+    block += f"  {key}: [\n" + "".join(f"    {json.dumps(l, ensure_ascii=False)},\n" for l in lines) + "  ],\n"
+t = t.replace(anchor, anchor + block, 1)
+open(f, "w").write(t)
+print("added", list(notes))
+```
+
+Copy the brief below into the scratch folder as `BRIEF.md`, replace `<scratch>` with that folder's
+path, and point each helper at it. It was written for pages; for popups, change "page" to "popup", the
+folder to `src/components/ward-redesign/pop-<name>/`, and say which page or shell control opens it.
+
+### Helper brief (for parallel helper agents)
+
+You are one of several helpers building React mock-ups in parallel in ONE shared checkout at
+`/home/user/Ward-Flow` (branch `claude/core-pages-design-review-f5vf4g`). The coordinator commits and
+pushes. Ward Flow is a psychiatric bed-flow prototype on 100% synthetic data.
+
+#### Hard limits (break none)
+
+- Edit ONLY files inside your own page folders: `src/components/ward-redesign/<slug>/` for the slugs
+  you were given. Never edit anything else: not `_preview/*`, not `src/components/ward-management/*`
+  (the real app, which must not change), not package files, not other helpers' folders.
+- No git commands at all (no add, commit, stash, checkout, reset). No network, no providers.
+- Never stop or restart processes you did not start, except: if `http://localhost:3377` is down, run
+  `cd /home/user/Ward-Flow && PATH=/opt/node24/bin:$PATH npm run ensure` once.
+- Synthetic data only. Do not invent figures: every number comes from the real app state.
+- Do not change on-screen safeguard wording (legal, privacy, "not for clinical use", operational-only
+  notices) and never compute legal deadlines or countdowns from recorded legal times (show times as typed).
+
+#### How the mock-ups work
+
+- Viewer: `http://localhost:3377/mockups/ward-flow-redesign/<slug>` (add `?theme=dark` for dark). It
+  mounts the real `WardFlowProvider` (clock fixed at 10:42), the real rail and app bar, and draws the
+  component registered for the slug. Each of your slugs is already registered to the export in
+  `src/components/ward-redesign/<slug>/<slug>-page.tsx` (currently a placeholder). KEEP that file name
+  and export name; make it render your redesigned page (with no props).
+- Each slug's app address is in `src/app/mockups/ward-flow-redesign/_preview/screens.ts` (`appPath`).
+  Find the real screen from `src/app/<appPath>/page.tsx` (dynamic segments are folders like
+  `[unitId]`). Look at today's screen at `http://localhost:3377<appPath>`.
+- The review notes for each slug (what is wrong, the fixes, what to keep) are in
+  `src/app/mockups/ward-flow-redesign/_preview/review-notes.json` under the slug. Follow them.
+- Owner rules beat the notes: surname first everywhere ("Surname, First": use the resolved patient's
+  `formalName` instead of `displayName`, D-83); one filled (primary) button per row or panel; no empty
+  panels (open on the first useful item); long lists (> ~8 rows) show the first rows then "Show more";
+  text never under 12 px (use `--wf-fs-12` and up); phone controls at least 48 px tall at 390 px wide;
+  real wiring (buttons keep working as in the app).
+
+#### Building a page ("fork")
+
+1. Copy the real screen file into your folder and turn its relative imports into `@/components/...`:
+   `python3 <scratch>/fork.py <src rel to repo> <dest rel to repo>`
+   (run from `/home/user/Ward-Flow`). Rename the export (e.g. `HubScreen` -> `HubRedesign`), then apply
+   the design changes. Copy its CSS module too if you restyle it, and point the import at your copy.
+   Comparing the fork with the original must show exactly the design change, so keep unrelated code as is.
+2. Alternative for a screen that only needs light restyling: render the real screen inside a wrapper
+   div with a scoped CSS module that overrides its classes with attribute selectors like
+   `.scope [class*="_rowName__"] { ... }` (module class names keep `_name__` in them).
+3. Your `<slug>-page.tsx` must render a page with a `<main id="main-content">` (most real screens
+   already have one) and keep the synthetic-data footer the real screen shows
+   (`WardPrototypeFooter` from `@/components/ward-management/shell/ward-prototype-footer`).
+4. Do not export anything nothing imports (knip): only the `<slug>-page.tsx` export is imported from outside.
+5. Files over 1,500 lines: allowed for forks (owner approved). If a file passes 1,500 lines, say so in
+   your report with its path and line count; ignore only that one `max-lines` lint error.
+
+#### Checks you must run (from /home/user/Ward-Flow, `export PATH=/opt/node24/bin:$PATH`)
+
+- `npx prettier --write src/components/ward-redesign/<slug>`
+- `npx eslint --max-warnings 0 src/components/ward-redesign/<slug>` (must be clean, except a max-lines note above)
+- Typecheck only if you changed types heavily: `npm run typecheck` is slow and shared, so prefer
+  relying on eslint plus the browser; the coordinator runs the full typecheck.
+- Look at the page in a browser at 1440, 820 and 390 px, light, plus 1440 dark. Helper (uses the
+  system Node and Playwright; run exactly like this):
+  `cd <scratch> && PATH=/usr/local/bin:/usr/bin:/bin NODE_PATH=$(PATH=/usr/local/bin:/usr/bin:/bin npm root -g) timeout 250 node qa.js <slug> <width> [dark]`
+  It writes `qa/<slug>-<width>-<theme>.png` (full page) and prints a rough report (cut-off text, tiny
+  text, small phone targets, off-screen). Ignore report lines about the app bar ("Board time",
+  "Synthetic prototype", "Search", "Statewide", nav counts). View the PNG with the Read tool; tall
+  shots can be split with `python3 split.py qa/<file>.png` (writes `.p0.png`, `.p1.png`...).
+  Use your OWN filenames for any extra scripts (prefix with your slug) so helpers do not clash.
+- Fix what looks wrong: overlaps, content under the phone dock, cut-off text, horizontal scroll.
+- The dev server compiles on first load, so the first request can take a minute or return a 500 once;
+  retry once before diagnosing.
+
+#### Your final report (keep it short; it is all the coordinator sees)
+
+For each slug:
+
+- `files`: the files you created or changed (all inside your folders).
+- `build_notes`: 3 to 6 short markdown strings in this house style (plain Australian English, no
+  jargon), like: "**Built from a copy of today's X screen**, so A, B and C work as now.",
+  "**New:** ...", "**Kept:** ...", "**Still open:** ..." (anything you could not do, or a question for Josh).
+- `checked`: which widths/themes you looked at and anything left imperfect.
+- Any file over 1,500 lines (path, count). Anything you were unsure about.
