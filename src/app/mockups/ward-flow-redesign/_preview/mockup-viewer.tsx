@@ -11,6 +11,7 @@ import styles from "./mockup-viewer.module.css";
 
 type Device = "desktop" | "laptop" | "tablet" | "phone";
 type Theme = "system" | "light" | "dark";
+type View = "redesign" | "today";
 type NoteLine = { devices?: string[]; text: string };
 type ReviewNote = { role: string; issues: NoteLine[]; fixes: NoteLine[]; keep?: string };
 
@@ -23,13 +24,21 @@ const DEVICES: Record<Device, { width: number; height: number; label: string }> 
 };
 const STORE = "wf-redesign-viewer";
 
-type Entry = { slug: string; label: string; group: string; screen: string; pop?: string };
+/** `today` is the coordinator page whose picture of today's app applies; role views have none. */
+type Entry = { slug: string; label: string; group: string; screen: string; pop?: string; today?: string };
+const COORDINATOR_PAGES = new Map(
+  MOCKUP_SCREENS.filter((screen) => !screen.role && screen.slug !== "home-activity").map((screen) => [
+    screen.slug,
+    screen,
+  ]),
+);
 const ENTRIES: Entry[] = [
   ...MOCKUP_SCREENS.map((screen) => ({
     slug: screen.slug,
     label: screen.label,
     group: screen.group,
     screen: screen.slug,
+    today: COORDINATOR_PAGES.has(screen.slug) ? screen.slug : screen.slug === "home-activity" ? "home" : undefined,
   })),
   ...MOCKUP_POPUPS.map((popup) => ({
     slug: popup.slug,
@@ -37,6 +46,7 @@ const ENTRIES: Entry[] = [
     group: popup.group,
     screen: popup.over,
     pop: popup.pop,
+    today: COORDINATOR_PAGES.has(popup.over) ? popup.over : undefined,
   })),
 ];
 const GROUPS = [...new Set(ENTRIES.map((entry) => entry.group))];
@@ -77,6 +87,7 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
   const [slug, setSlug] = useState(slugFromAddress);
   const [device, setDevice] = useState<Device>(savedDevice);
   const [theme, setTheme] = useState<Theme>("system");
+  const [view, setView] = useState<View>("redesign");
   const [fit, setFit] = useState(true);
   const [stageWidth, setStageWidth] = useState(1000);
   const stage = useRef<HTMLDivElement>(null);
@@ -114,6 +125,8 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
     mode === "next"
       ? `${MOCKUP_BASE}/${entry.screen}${query.size ? `?${query}` : ""}`
       : `frame.html?${new URLSearchParams({ screen: entry.screen, ...Object.fromEntries(query) })}`;
+  const todayPage = entry.today ? COORDINATOR_PAGES.get(entry.today) : undefined;
+  const showToday = view === "today";
   const note = NOTES[entry.slug];
   const build = BUILD_NOTES[entry.slug];
 
@@ -129,6 +142,15 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
           </p>
         </div>
         <div className={styles.controls}>
+          <Segmented
+            label="Version"
+            items={[
+              { id: "redesign" as const, label: "Redesign" },
+              { id: "today" as const, label: "Today" },
+            ]}
+            value={view}
+            onChange={setView}
+          />
           <Segmented
             label="Device"
             items={(Object.keys(DEVICES) as Device[]).map((id) => ({ id, label: DEVICES[id].label }))}
@@ -187,7 +209,9 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
               </a>
             ) : null}
           </div>
-          {mode === "next" ? (
+          {showToday ? (
+            <TodayView mode={mode} entry={entry} page={todayPage} device={device} width={size.width * scale} />
+          ) : mode === "next" ? (
             <div className={styles.openBox}>
               <p>
                 The app does not allow its pages inside a frame, so here each page opens on its own at this
@@ -248,6 +272,56 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
         </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * Today's app beside the redesign. The shareable copy shows a full-length picture of today's page,
+ * taken from the same synthetic world in light at each device width; the Next route opens the page.
+ */
+function TodayView(props: {
+  mode: "next" | "static";
+  entry: Entry;
+  page: (typeof MOCKUP_SCREENS)[number] | undefined;
+  device: Device;
+  width: number;
+}) {
+  const { mode, entry, page, device, width } = props;
+  if (!page) {
+    return (
+      <div className={styles.openBox}>
+        <p>
+          Today&apos;s app is pictured as the coordinator only. To compare this role&apos;s view, open the
+          coordinator&apos;s page of the same name.
+        </p>
+      </div>
+    );
+  }
+  const popupNote = entry.pop ? <p className={styles.todayNote}>Today&apos;s page, without the popup open.</p> : null;
+  if (mode === "next") {
+    return (
+      <div className={styles.openBox}>
+        <p>Today&apos;s page opens on its own, in the live prototype&apos;s synthetic world.</p>
+        {popupNote}
+        <a className={styles.openLink} href={page.appPath}>
+          Open today&apos;s {page.label}
+        </a>
+      </div>
+    );
+  }
+  return (
+    <>
+      {popupNote}
+      <div className={styles.todayBox} style={{ width }}>
+        {/* A static picture of today's page; next/image needs the app's image server, which the shareable copy has not. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          className={styles.todayImage}
+          src={`today/${page.slug}-${DEVICES[device].width}.jpg`}
+          alt={`Today's ${page.label} page at ${DEVICES[device].width} pixels wide`}
+        />
+      </div>
+    </>
   );
 }
 

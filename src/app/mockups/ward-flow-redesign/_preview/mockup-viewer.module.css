@@ -190,3 +190,22 @@
   font-weight: 600;
   text-decoration: none;
 }
+.todayBox {
+  max-height: 80vh;
+  margin-inline: auto;
+  overflow: auto;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-canvas);
+  box-shadow: var(--wf-e2);
+}
+.todayImage {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.todayNote {
+  margin: 0 0 var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}

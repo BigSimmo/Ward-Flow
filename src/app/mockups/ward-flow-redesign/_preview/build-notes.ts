@@ -14,11 +14,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-ward-stays": [
     "**As the nurse in charge**, Stays is Dabakarn's own. Change ward is gone: a ward desk cannot open other wards, so it listed nothing it could use.",
     "**Kept:** Before handover with They have left and Record a blocker.",
-    "**Still open:** the phone shows all 20 bed tiles with no Show more (the coordinator's copy).",
+    "**Round 2:** the phone shows the first 8 beds, then 'Show 12 more beds'; a bed you chose past the fold stays drawn so its sheet still works.",
   ],
   "as-ward-discharges": [
     "**As the nurse in charge**, the header reads 'Bed release · Dabakarn' instead of 'all services'.",
     "**Removed:** the Service and Ward filters (one choice each), the ward name under every person, and the second 'Blocked by barrier' panel that repeated the first.",
+    "**Round 2:** one barrier panel and the shared Discharges changes (see Discharges).",
   ],
   "as-ward-seclusion": [
     "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
@@ -86,6 +87,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the ED clinician**, Statistics is Peel ED's own page, as the real menu opens it (D-80), not the network hub.",
     "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
     "**Removed:** three panels that only said people are not listed; that sentence is said once.",
+    "**Round 2:** the chart leads and Declines is the side column, so both cards end level. '8 still in ED · 1 in transit' is the chart's aside, and 'Counts only' sits once in the eyebrow. Over 24h carries the amber dot, as Longest does.",
   ],
   "as-community-home": [
     "**As the community clinician**, the page opens on the team's own In a bed list: the people it follows into hospital.",
@@ -108,6 +110,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-community-statistics": [
     "**As the community clinician**, Statistics opens Midland's own team page as counts, where the real menu sends this desk.",
     "**New:** one 'Coming back to the team' card with only the new counts replaces two cards that repeated the hero.",
+    "**Round 2:** the hero keeps In a bed and With a discharge date; the follow-up figures move into the card as six tiles (2 × 3 on the phone). 'Counts only' sits in the eyebrow, as on the ED desk.",
+    "**Still open:** the app bar says 'Statewide' on Midland's own page (shared chrome).",
   ],
   "as-officer-home": [
     "**As the transport officer**, the phone opens on the next job (Open, then the one filled En route), then the job list; a long list shows its first 8 jobs, then Show all.",
@@ -122,6 +126,9 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the site bed manager**, Capacity opens on Royal Perth Hospital: 2 ready of 34, with the site's own mismatch, forecast and bed map. Before, the site's waiting list was set against all 304 network beds.",
     "**New:** an Other sites card, bed counts only, and 'Confirm beds on <ward>' in place of the coordinator's Ask the ward.",
     "**Still open:** the rail's 'Capacity 26' and a first-visit hint still use the network's figure and wording (shared chrome).",
+    "**Round 2:** the hero adds '5 waiting in RPH ED' (counts only, no names), from the All EDs page's own figures. 'Past target in RPH ED' shows only when someone is past target.",
+    "**Round 2:** uses Capacity's copied ward panel, Planned admissions and Step down board, so their links are checked against this desk and names are surname first.",
+    "**Question for you:** the rail says 'Waiting 6' (every ED this desk covers) beside the hero's '5 waiting in RPH ED'. The hero names its ED so the two read apart. Is that acceptable?",
   ],
   "as-bed-manager-wards": [
     "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
@@ -139,7 +146,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-bed-manager-discharges": [
     "**As the site bed manager**, Discharges opens on Royal Perth's own releases ('Bed release · Royal Perth Hospital').",
     "**Removed:** the Service filter and the service name after each ward (one site, one service).",
-    "**Still open:** 'Blocked by barrier' appears twice and the Barriers view is a third copy (the coordinator's copy). Keep the one beside the list.",
+    "**Round 2:** one barrier panel beside the list, as on Discharges.",
   ],
   "as-bed-manager-referrals": [
     "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
@@ -149,6 +156,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the site bed manager**, Statistics leads with Royal Perth's wards and its own ED; the hero figures are the site's.",
     "**Removed:** sections and links this desk cannot open, other EDs' false zeros, and the network placement figures.",
     "**Still open:** the shared counts hook treats this desk as full detail although its grant is counts; the copy applies counts only.",
+    "**Round 2:** with one ED, Open ED journeys is one row of five figures. The one-site 'Site codes' key, the ward filter (two wards) and the title's meta are gone. The first tab reads 'Site', not 'Network'.",
+    "**Still open:** the rail's 'Capacity 26' is the network figure on a site desk (shared chrome).",
   ],
   "as-bed-manager-seclusion": [
     "**As the site bed manager**, the page is headed for Royal Perth ('1 secure ward of 2 at the site').",
@@ -158,6 +167,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the executive**, one line under the hero explains the small-number rule once, instead of unexplained 'not shown' values in every card.",
     "**Removed:** hero chips that only said 'not shown'; withheld charts become plain label and value lists.",
     "**Kept:** beds, occupancy and the ward and ED tables, exact as released.",
+    "**Round 2:** Empty to ready and Occupancy by health service match Statistics. When every Admission stages count is held back, the card is one line. The phone adds a 304 Beds figure beside Beds in use.",
+    "**Still open:** the rail's 'Handover in 4h 18m' shows on a desk that hands nothing over (shared chrome).",
   ],
   "as-executive-capacity": [
     "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
@@ -407,13 +418,15 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** both charts show the first eight rows, with Show all. Wards and EDs more than one standard deviation above the mean get an amber dot. The Data tables and phone charts follow the same rule.",
     "**New:** Occupancy is the first ward measure and the first Data column, from the app's existing beds-in-use count, so this page matches the main Statistics page. The CSV now includes it too, so it differs from today's export.",
     "**Question for you:** with both charts cut to eight rows, the ward card ends about 150 px above the ED and Pinned column at 1440. Should Pinned wards move under the ward chart?",
+    "**Round 2:** phone switches and Show all are back to their normal size, with an invisible larger touch area (your ruling, 30 October). The 'Blockers' measure reads 'Held up', the same word as the other statistics pages. Chart names drop a trailing 'ED' so they stay on one line; the spoken label keeps the full name.",
+    "**Kept:** 'Open' as the ward type, because it is the clinical term and part of ward names.",
   ],
   "statistics-list": [
     "**Built from a copy of today's All wards screen**, so every column, sorting, By service and One list, and the highlight chips work as now.",
     "**New:** the highlight chips sit on one row (they scroll sideways on a narrow card), and the By service / One list switch and the ward count move into the card heading.",
     '**New:** By service opens on the first two services, then "Show 3 more services, 11 wards"; One list opens on the first eight wards. Pressing a chip shows every ward, because highlighting never hides one.',
-    "**New:** Discharges held up shows its first eight wards, with Show all. Phone switches are 48 px tall.",
     '**Still open:** folding the empty teams into one "teams with nobody in a bed" row is not built here.',
+    "**Round 2:** the phone title reads 'All wards', as on desktop; it said '14 wards over 85%', which the toggle under it already shows. Phone rows say 'held up' and show only parts that are not nought.",
   ],
   downtime: [
     "**Built from a copy of today's Downtime pack screen**, so New snapshot, Print or save PDF, the freeze time, the stale line and the phone layout work as now.",
@@ -501,6 +514,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the same full-width hero as Ward home. It still carries everything the old card did: the ward name, site, locked split, Ready now and the band figures, the being-made-ready and constraint sentences, and the As at time.",
     "**New:** the ten day figures are one Also on this ward line, without the two the hero already shows. Worth a look and Your part in tomorrow's forecast sit in one notice. Bed cards are five to a row and names wrap.",
     "**The record column:** it stays on screen, as your ruling of 30 August keeps it, and now opens on the first bed that needs a look instead of sitting empty (point 16). Close leaves it empty for the rest of the visit.",
+    "**Round 2:** the phone shows the first 8 beds, then Show more. Away-at-an-ED rows say 'Their bed is still held for them.' in full, and '1 release held up' is singular.",
   ],
   "ed-board": [
     "**Built from a copy of today's ED board**, so the ED peer strip, the access-target card, the filter chips, Record exam, Log transport booking, the row menus, the patient record and On TV all work as now.",
@@ -523,7 +537,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's Discharges page**, so the five filters, Now and History, Copy counts, Print list, Blocked first order and the release panel all work as now.",
     '**The totals (point 20, my pick for you to confirm):** the headline counts the rows listed, "59 to work now", with "of 207 open · 148 due in 2+ days, not listed" beside it. From the code: 207 is every release not yet gone; 59 are those due by tomorrow, past their date or held up; the filter\'s 63 is those 59 plus 4 discharged in the last day.',
     "**New:** each row leads with the person, then the ward and service, and has one action named for what it needs (Chase, Confirm date, Open). Each opens the release panel, where today's real actions are recorded.",
-    "**New:** on wide screens the blocker counts sit beside the list; choosing one lights its rows. The Barriers tab still gives the full table.",
+    "**Round 2:** one barrier panel. The List / Barriers switch and its table are gone, because they were a third copy of the same counts. On a tablet the panel sits beside the day chart instead.",
+    "**Round 2:** the Status filter reads 'All listed · 63' (the 59 plus 4 discharged in the last day), and the footer says '148 due in 2+ days, not listed'. Each row shows the timing on top and the whole date underneath.",
   ],
   wards: [
     "**Built from a copy of today's All wards page**, so the cards, the Table view, Occupancy by service, Counts to check and every filter work as now.",
@@ -535,6 +550,9 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's Statistics page**, so the Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line, Samples and Export all work as now.",
     "**New:** Bed board, Journey and Map are one switch instead of three large cards, and Open a unit is one button beside it that shows today's unit finder in place, instead of a panel repeating the menu.",
     "**New:** summary first. Occupancy by service (with Empty to ready and Admission stages, which come with it) sits at the top, and the hospital chart lists its first 7 hospitals with Show all.",
+    "**Round 2:** Empty to ready's key is one plain line ('26 ready · 19 closed · 1 being made ready'), because the old coloured key described bars that are not drawn. 'Allocatable' reads 'Confirmed by ward'. The '85% line' aside is gone; each service tile already says it.",
+    "**Round 2, phone:** 'Stays ended today'; the switch reads 'By hospital / By ward' without counts; the ED row uses the ED icon, because a clock is for time.",
+    "**For the build:** the statistics tab chips are cut off at the phone's right edge. That is the shared statistics menu on all four phone statistics pages.",
   ],
   alerts: [
     "**Built from a copy of today's Alerts page**, so Now, Broadcast, Notices and History, the Urgency, Lanes and Owner views, Notify me, Copy for handover and every row action work as now.",
@@ -620,6 +638,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Reused unchanged:** the hero parts, Ready beds by road time, the ward panel that opens from a bed map card, Planned admissions and the Step down board.",
     "**Working actions:** Ask the ward sends the app's own request for a ward update; Try a scenario uses the app's scenario sum and saves nothing; the hero's ready figures and the Highlight chips light the matching wards.",
     "**Changed from the HTML mock-up:** the bed map has Grid and Rows. The Table layout is dropped because All wards is that table, so each ward is listed once.",
-    '**Still open:** Planned admissions writes a typed name first name first ("Feodora Blennerhast"). That comes from the shared planned admissions panel, so it is fixed there, not on this page.',
+    "**Round 2:** the ward panel's Open ward and Discharge board links show only when this desk can open them. Planned admissions and the Step down board name people surname first, and Book has its icon beside the word.",
+    "**For the build:** the real Planned admissions Book button stacks its icon over the word; the fix is one line.",
   ],
 };
