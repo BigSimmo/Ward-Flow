@@ -2,6 +2,8 @@
 
 <!-- last-checked: 2026-10-26 -->
 
+_Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
+
 One printable page for each desk. Each guide says what the desk sees first, the jobs it does most,
 what it cannot do, and how to tell that a change was saved.
 
@@ -12,7 +14,7 @@ Re-check every guide after clinician testing, and whenever a step on screen chan
 
 | Desk                                | Guide                                              | Lands on    |
 | ----------------------------------- | -------------------------------------------------- | ----------- |
-| Bed coordinator                     | [flow-coordinator.md](flow-coordinator.md)         | My list     |
+| Bed coordinator                     | [flow-coordinator.md](flow-coordinator.md)         | Home        |
 | Site bed manager                    | [site-bed-manager.md](site-bed-manager.md)         | Capacity    |
 | Ward (nurse in charge)              | [ward.md](ward.md)                                 | My ward     |
 | ED mental health clinician          | [emergency-department.md](emergency-department.md) | My ED board |

@@ -7,7 +7,6 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useRef, useState } from "react";
 import { useModalFocus } from "@/components/wf";
 import type { CancelTransportReason } from "@/components/ward-management/ward-change-reasons";
@@ -112,8 +111,7 @@ export function useCommunityScreenTransport({ raise, teamId }: { raise: WardRais
 
   const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
   const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
-  useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
-  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, closeTransportCancel);
+  // Each transport dialog owns focus and dismissal beside its draft and save state.
 
   // Audit 24-3 SV-2: each dialog closes only once its save is accepted. The dialog's own
   // `useWardFormSave` keeps the answers and says why when it is refused or not confirmed.

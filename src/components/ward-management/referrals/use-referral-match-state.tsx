@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState, type Dispatch } from "react";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { type WardRequestWithdrawalReason } from "@/components/ward-management/ward-change-reasons";
@@ -216,7 +217,10 @@ export function useReferralMatchState({
   const wholeWithdrawControl =
     presentation.kind !== "unavailable" && presentation.canWithdraw && (!scopedRecorder || senderCanWithdraw) ? (
       <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
-        <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
+        <summary className={styles.moreActionsSummary}>
+          <ChevronRight size={14} aria-hidden="true" />
+          Record referrer cancellation
+        </summary>
         <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
           {!scopedRecorder ? (
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">

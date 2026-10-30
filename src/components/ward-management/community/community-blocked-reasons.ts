@@ -16,7 +16,7 @@ export const COMMUNITY_DECLINE_REASON_UNCHOSEN =
   "Choose the reason this team cannot take this referral before declining it.";
 
 /** Shown while no cancel-transport reason is chosen. See `cancelTransportBlockedReason`. */
-export const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first. The provider is told.";
+export const CANCEL_TRANSPORT_UNCHOSEN = "Choose why the transport job is being cancelled first.";
 
 /**
  * Why "Decline referral" is unavailable, or `undefined` once a reason is chosen — the same "state a
@@ -29,7 +29,7 @@ export function communityDeclineBlockedReason(reason: CommunityDeclineReason | u
 
 /**
  * Why "Confirm cancel" on a booked transport job is unavailable, or `undefined` once a reason is
- * chosen. The provider is told why, so a reason nobody chose must never be sent.
+ * chosen. The recorded cancellation needs the team's own reason; provider contact is made by phone.
  */
 export function cancelTransportBlockedReason(reason: CancelTransportReason | undefined): string | undefined {
   return reason === undefined ? CANCEL_TRANSPORT_UNCHOSEN : undefined;

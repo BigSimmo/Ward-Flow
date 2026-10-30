@@ -14,11 +14,15 @@ import {
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
 import { useState } from "react";
+import { Dialog } from "@/components/wf";
+import { BLANK_TRANSPORT_DRAFT } from "./community-screen-helpers";
+import { legalNowTransportStatus } from "@/components/ward-management/ward-transport-checks";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import styles from "./community.module.css";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -36,6 +40,50 @@ function TransportSaveAnswer({ save, testId }: { save: WardFormSave; testId: str
       {save.error}
     </p>
   ) : null;
+}
+
+/** The same Close/Escape contract for both drafts, beside each form's actual save state. */
+function useTransportDismiss(scope: string | undefined, dirty: boolean, save: WardFormSave, close: () => void) {
+  const [discarding, setDiscarding] = useState(false);
+  const [owner, setOwner] = useState(scope);
+  if (owner !== scope) {
+    setOwner(scope);
+    setDiscarding(false);
+  }
+  const finish = () => {
+    setDiscarding(false);
+    close();
+  };
+  return {
+    discarding,
+    finish,
+    keep: () => setDiscarding(false),
+    dismiss: () => {
+      if (save.pending && !save.error) return;
+      if (dirty && !save.pending && !save.error) setDiscarding(true);
+      else finish();
+    },
+  };
+}
+
+function TransportDiscardConfirmation({
+  dismissal,
+  patientName,
+}: {
+  dismissal: ReturnType<typeof useTransportDismiss>;
+  patientName: string;
+}) {
+  return (
+    <Dialog
+      open={dismissal.discarding}
+      onClose={dismissal.keep}
+      title="Discard transport changes?"
+      description={`The unsaved changes for ${patientName} will be lost.`}
+      size="sm"
+      primary={{ label: "Discard changes", onAction: dismissal.finish }}
+      secondary={[{ label: "Keep editing", onAction: dismissal.keep }]}
+    />
+  );
 }
 
 /** Logs a transport booking made by phone, with the one transport booking form (A34). Renders nothing until one is opened. */
@@ -59,8 +107,18 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     setReasonFor(transportBookFor);
     setLegalReason("");
   }
-  if (transportBookFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportBookFor);
+  const recordedLegal = movement ? legalNowTransportStatus(movement) : undefined;
+  const dirty =
+    legalReason !== "" ||
+    Object.entries(transportDraft).some(
+      ([key, value]) =>
+        value !== BLANK_TRANSPORT_DRAFT[key as keyof typeof BLANK_TRANSPORT_DRAFT] &&
+        !(key === "transportLegalStatus" && value === recordedLegal),
+    );
+  const dismissal = useTransportDismiss(transportBookFor, dirty, save, closeTransportBook);
+  useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, dismissal.dismiss);
+  if (transportBookFor === undefined) return null;
   // The patient's name, as every other screen shows it. The movement id is never a person's name.
   const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
   return (
@@ -79,7 +137,13 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
           <h3 id={`ward-community-book-transport-title-${transportBookFor}`} className={styles.modalTitle}>
             Log the transport booking made by phone for {patientName}
           </h3>
-          <button type="button" className={styles.modalCloseBtn} onClick={closeTransportBook} aria-label="Close dialog">
+          <button
+            type="button"
+            className={styles.modalCloseBtn}
+            onClick={dismissal.dismiss}
+            disabled={save.pending && !save.error}
+            aria-label="Close dialog"
+          >
             &times;
           </button>
         </div>
@@ -96,9 +160,15 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
             pending={save.pending}
             error={save.error}
             onSubmit={(booking) => submitBookTransport(transportBookFor, booking, save.submit)}
-            onCancel={closeTransportBook}
+            onCancel={dismissal.dismiss}
           />
+          {save.pending && save.error ? (
+            <p className={styles.transportHint}>
+              This booking may still be confirmed. Close this dialog to use Retry in the connection bar.
+            </p>
+          ) : null}
         </div>
+        <TransportDiscardConfirmation dismissal={dismissal} patientName={patientName} />
       </div>
     </div>
   );
@@ -108,6 +178,8 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
 export function CommunityScreenTransportCancelDialog({ view }: { view: CommunityScreenView }) {
   const {
     transportCancelFor,
+    movements,
+    umrnLookup,
     cancelTransportReason,
     setCancelTransportReason,
     cancelTransportBlocked,
@@ -116,10 +188,21 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
     submitCancelTransport,
   } = view;
   const save = useWardFormSave(transportCancelFor ?? "");
+  // A held offline command needs the connection bar's Retry. Once its error is shown,
+  // permit an explicit close while keeping submission locked to the original command.
+  const saving = save.pending && !save.error;
+  const dismissal = useTransportDismiss(
+    transportCancelFor,
+    cancelTransportReason !== undefined,
+    save,
+    closeTransportCancel,
+  );
+  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, dismissal.dismiss);
   if (transportCancelFor === undefined) return null;
+  const movement = movements.find((candidate) => candidate.id === transportCancelFor);
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
   return (
-    <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
+    <div className={styles.modalBackdrop} role="presentation">
       <div
         ref={transportCancelDialogRef}
         className={styles.modalDialog}
@@ -127,16 +210,16 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
         aria-modal="true"
         aria-labelledby={`ward-community-cancel-transport-title-${transportCancelFor}`}
         data-testid={`ward-community-cancel-transport-dialog-${transportCancelFor}`}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
           <h3 id={`ward-community-cancel-transport-title-${transportCancelFor}`} className={styles.modalTitle}>
-            Cancel this team&apos;s transport booking for {transportCancelFor}
+            Cancel this team&apos;s transport booking for {patientName}
           </h3>
           <button
             type="button"
             className={styles.modalCloseBtn}
-            onClick={closeTransportCancel}
+            onClick={dismissal.dismiss}
+            disabled={saving}
             aria-label="Close dialog"
           >
             &times;
@@ -148,7 +231,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               className={styles.declineLabel}
               htmlFor={`ward-community-cancel-transport-reason-${transportCancelFor}`}
             >
-              Why is the job being cancelled? The provider is told.
+              Why is the job being cancelled?
               <select
                 id={`ward-community-cancel-transport-reason-${transportCancelFor}`}
                 className={styles.declineSelect}
@@ -171,6 +254,10 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
                 ))}
               </select>
             </label>
+            <p className={styles.transportHint}>
+              Cancel the booking with the provider by phone. This records the cancellation for the transport officer and
+              receiving ward.
+            </p>
             <button
               type="button"
               className={styles.transportConfirmButton}
@@ -183,7 +270,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               }
               title={cancelTransportBlocked}
               onClick={
-                cancelTransportBlocked === undefined
+                cancelTransportBlocked === undefined && !save.pending
                   ? () => submitCancelTransport(transportCancelFor, save.submit)
                   : ignoreUnavailableActivation
               }
@@ -196,8 +283,14 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               </span>
             )}
             <TransportSaveAnswer save={save} testId={`ward-community-cancel-transport-failure-${transportCancelFor}`} />
+            {save.pending && save.error ? (
+              <p className={styles.transportHint}>
+                This cancellation may still be confirmed. Close this dialog to use Retry in the connection bar.
+              </p>
+            ) : null}
           </div>
         </div>
+        <TransportDiscardConfirmation dismissal={dismissal} patientName={patientName} />
       </div>
     </div>
   );

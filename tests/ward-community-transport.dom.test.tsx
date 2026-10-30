@@ -206,6 +206,8 @@ describe("community admitted table — transport booking and cancel", () => {
 
     fireEvent.click(screen.getByTestId(`ward-community-cancel-transport-${movementId}`));
     const dialog = screen.getByTestId(`ward-community-cancel-transport-dialog-${movementId}`);
+    expect(within(dialog).getByRole("heading")).not.toHaveTextContent(movementId);
+    expect(within(dialog).getByRole("heading")).toHaveTextContent("Cancel this team's transport booking for");
     fireEvent.change(within(dialog).getByTestId(`ward-community-cancel-transport-reason-${movementId}`), {
       target: { value: "provider_unavailable" },
     });

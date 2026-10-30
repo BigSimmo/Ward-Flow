@@ -4937,11 +4937,25 @@
 .moreActionsSummary {
   display: flex;
   align-items: center;
+  gap: var(--wf-s-2);
   min-height: var(--wf-h-md);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   font-weight: 500;
   cursor: pointer;
+}
+
+.moreActionsSummary > svg {
+  flex-shrink: 0;
+}
+
+.moreActions[open] > .moreActionsSummary > svg {
+  transform: rotate(90deg);
+}
+
+.moreActionsSummary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
 }
 
 /* B4 (review 12 Oct 2026): in the desktop register panel the decide buttons sit in a bar pinned to
