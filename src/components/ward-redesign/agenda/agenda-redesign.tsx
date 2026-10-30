@@ -104,7 +104,7 @@ function BedMeetingAgenda() {
             now,
             thresholds,
             service: null,
-            nameOf: (movement) => patientOf(movement).displayName,
+            nameOf: (movement) => patientOf(movement).formalName,
             referrals,
             referralLimitMinutes: configuration.referralDecisionTargetMinutes,
           })

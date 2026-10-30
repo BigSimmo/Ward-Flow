@@ -515,7 +515,7 @@ export function StaysRedesign({
     const resolved = resolvePatientIdentity
       ? resolvePatientIdentity(subject)
       : resolveSubjectPatient(subject, { patients, movements });
-    return resolved.patient ? resolved.displayName : "the patient (name not recorded)";
+    return resolved.patient ? resolved.formalName : "the patient (name not recorded)";
   };
   /** Redesign (D-83): a list names the person surname first; sentences keep the spoken order. */
   const listNameFor = (admissionId: string | undefined): string => {

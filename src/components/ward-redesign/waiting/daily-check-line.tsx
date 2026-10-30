@@ -49,7 +49,7 @@ export function DailyCheckLine() {
   const checked = dailyCheckRecord(inboxCompletions, now);
   const who = (subject: Parameters<typeof patientOf>[0]) => {
     const person = patientOf(subject);
-    return `${person.displayName} · ${person.umrn}`;
+    return `${person.formalName} · ${person.umrn}`;
   };
   const requests = `${items.length} ${items.length === 1 ? "bed request" : "bed requests"}`;
 

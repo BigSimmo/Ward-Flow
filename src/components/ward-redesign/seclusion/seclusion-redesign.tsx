@@ -125,7 +125,7 @@ export function SeclusionRedesign() {
   const nameOf = (admissionId: string) => {
     const stay = admissions.find((admission) => admission.id === admissionId);
     if (!stay) return "No longer on this ward";
-    const name = patientOf(stay).displayName;
+    const name = patientOf(stay).formalName;
     return stay.state === "occupied" ? name : `${name} (left the ward, end not recorded)`;
   };
   const choose = (id: string) => {
@@ -601,7 +601,7 @@ function StartForm({
           <option value="">Choose a patient</option>
           {stays.map((stay) => (
             <option key={stay.id} value={stay.id}>
-              {patientOf(stay).displayName}
+              {patientOf(stay).formalName}
             </option>
           ))}
         </Select>

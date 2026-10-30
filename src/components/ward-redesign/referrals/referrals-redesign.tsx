@@ -396,7 +396,7 @@ function ReferralBoardRedesign({
   // One state object, so the resolver's identity-keyed index is built once per render, not per row.
   const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const nameOf = useCallback(
-    (referral: Referral) => resolveSubjectPatient(referral, resolverState).displayName,
+    (referral: Referral) => resolveSubjectPatient(referral, resolverState).formalName,
     [resolverState],
   );
 
@@ -527,7 +527,7 @@ function ReferralBoardRedesign({
   );
   const meetingRows: MeetingRow[] = queued.map((referral) => {
     const person = resolveSubjectPatient(referral, resolverState);
-    return { referral, name: person.displayName, umrn: person.umrn };
+    return { referral, name: person.formalName, umrn: person.umrn };
   });
   const selectedPriority = selectedReferral ? getReferralPriority(selectedReferral, now) : undefined;
   // Audit 1 (CS-15, Josh 20 Oct): the toast names the person decided on, and the detail stays on
@@ -1341,7 +1341,7 @@ function ReferralBoardRedesign({
                   open={sheet === "summary"}
                   onClose={() => setSheet(null)}
                   referral={selectedReferral}
-                  name={selectedPatientInfo.displayName}
+                  name={selectedPatientInfo.formalName}
                   umrn={selectedUmrn}
                   demographics={demographicLabel(selectedReferral)}
                   now={now}

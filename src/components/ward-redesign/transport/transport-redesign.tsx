@@ -154,7 +154,7 @@ export function TransportRedesign() {
   // fall back to their own "This patient" wording instead of printing a placeholder mid-sentence.
   const resolvedPatientName = (movement: Movement): string | undefined => {
     const info = resolveSubjectPatient(movement, { patients, referrals, movements });
-    return info.patient ? info.displayName : undefined;
+    return info.patient ? info.formalName : undefined;
   };
   // D-39: the patient's UMRN is shown wherever the WF journey number used to be.
   const umrnLookup = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
@@ -175,7 +175,7 @@ export function TransportRedesign() {
   const identityFor = (movement: Movement) => {
     const info = resolveSubjectPatient(movement, { patients, referrals, movements });
     return {
-      name: info.patient ? info.displayName : "Name not recorded",
+      name: info.patient ? info.formalName : "Name not recorded",
       umrn: info.umrn,
       dob: info.patient?.dateOfBirth ? formatDateOfBirth(info.patient.dateOfBirth) : "not recorded",
     };

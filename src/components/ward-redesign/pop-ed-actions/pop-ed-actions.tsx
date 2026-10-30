@@ -88,7 +88,7 @@ export function PopEdActions({ page }: { page: ReactNode }) {
       patient,
       items: edActionItems({
         movement,
-        who: patient.displayName,
+        who: patient.formalName,
         patientId: patient.patient?.id,
         referrals,
         department,

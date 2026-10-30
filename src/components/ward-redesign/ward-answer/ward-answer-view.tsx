@@ -325,11 +325,11 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
   // Audit 24-1 D-01: a shown or linked request that leaves elsewhere keeps its place (no swap).
   const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
   const linked = answerSelection.name ? undefined : movements.find((m) => m.id === (initialMovementId ?? null));
-  const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).displayName);
+  const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).formalName);
   const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
   const pick = (index: number, movement = incoming[index]) =>
-    setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).displayName });
+    setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).formalName });
   if (activeMovement && answerSelection.id !== activeMovement.id) pick(activeAnswerIndex, activeMovement);
   const selectAnswer = (index: number) => {
     setAnsweredHereId(undefined);
@@ -424,7 +424,7 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
         ...(withExtendedHold ? { extendedHold: true as const } : {}),
       },
       {
-        success: `Accepted ${accepted ? `${resolvePatientIdentity(accepted).displayName} ` : ""}in principle.`,
+        success: `Accepted ${accepted ? `${resolvePatientIdentity(accepted).formalName} ` : ""}in principle.`,
         undo: (at) => ({
           type: "UNDO_ACCEPT_IN_PRINCIPLE",
           role: "ward",
@@ -861,7 +861,7 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                             <span className={styles.phoneFoldText}>
                               {/* Josh, 22 Oct 2026: a ward sees who is coming before it answers. */}
                               <span className={styles.phoneFoldTitle}>
-                                {resolvePatientIdentity(activeMovement).displayName}
+                                {resolvePatientIdentity(activeMovement).formalName}
                               </span>
                               <span className={styles.phonePatientLine}>
                                 {resolvePatientIdentity(activeMovement).umrn}
@@ -888,7 +888,7 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                           <div className={styles.patientDossierBanner}>
                             <div>
                               <div className={styles.patientNameLine}>
-                                {resolvePatientIdentity(activeMovement).displayName} &middot;{" "}
+                                {resolvePatientIdentity(activeMovement).formalName} &middot;{" "}
                                 {resolvePatientIdentity(activeMovement).umrn}
                               </div>
                               <div className={styles.patientMetaLine}>
@@ -1660,7 +1660,7 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
       {acceptModalMovement ? (
         <WardAcceptDialog
           movement={acceptModalMovement}
-          patientName={resolvePatientIdentity(acceptModalMovement).displayName}
+          patientName={resolvePatientIdentity(acceptModalMovement).formalName}
           unitName={unit.name}
           now={now}
           extended={extendedHoldFor(acceptModalMovement.id)}
