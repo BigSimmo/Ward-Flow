@@ -789,7 +789,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
         <h2 className={styles.needsYouTitle}>Tier 1 now</h2>
         {attentionCore.length > 0 ? (
           <span className={styles.needsYouMeta}>
-            {attentionCore.length} of {tierOneOpen.length} Tier 1 open journeys
+            {attentionCore.length} of {tierOneOpen.length} Tier 1<span className="sr-only"> open journeys</span>
           </span>
         ) : null}
         {/* B4: the full list of what needs the coordinator, in Delays' Needs me now view. */}

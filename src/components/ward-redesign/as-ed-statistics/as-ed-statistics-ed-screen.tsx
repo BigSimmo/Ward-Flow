@@ -632,7 +632,8 @@ function EdPresentation({
       }
     >
       <p className={styles.muted} data-testid="ward-statistics-ed-population">
-        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure.
+        {stillInEdShown} still in ED · {inTransitShown} in transit
+        <span className="sr-only"> or with a recorded departure</span>.
         {/* Role view (as ED clinician): the desk's own counts need no method note, so it is cut. */}
         {edCountsDesk
           ? null

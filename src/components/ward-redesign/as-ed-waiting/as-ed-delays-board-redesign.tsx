@@ -453,7 +453,7 @@ export function AsEdDelaysBoardRedesign({
   const anyTypedTime = rows.some((row) => currentLegalDueAt(row.movement) !== undefined);
   const urgentMinutes = thresholds.urgentMinutes;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
-  const dueSoonLabel = `Form due (as written) within ${windowText(urgentMinutes)}`;
+  const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
   // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
   const scope = useServiceScope();
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
@@ -950,7 +950,8 @@ export function AsEdDelaysBoardRedesign({
           }}
           data-testid={`delays-view-${view}`}
         >
-          {words.viewLabel(view, thresholds)}{" "}
+          {/* Josh, 30 Oct 2026: no "(as written)" on form labels. */}
+          {words.viewLabel(view, thresholds).replace(" (as written)", "")}{" "}
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}

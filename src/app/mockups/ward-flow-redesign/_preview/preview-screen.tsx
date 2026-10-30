@@ -22,6 +22,8 @@ import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-manage
 
 import { screenBySlug } from "./screens";
 import { PreviewShell } from "./preview-shell";
+// The proposed kit standard (one size per control), drawn only while a mock-up is on screen.
+import "@/components/ward-redesign/parts/kit-standard.css";
 import { MOCKUP_PAGES } from "./screen-components";
 import { MOCKUP_POPUP_COMPONENTS } from "./popup-components";
 
@@ -36,6 +38,11 @@ export type PreviewTheme = "light" | "dark" | null;
  * frame only and never saved.
  */
 export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string | null; theme: PreviewTheme }) {
+  // Switches on the kit standard sheet; it is keyed to this attribute so it never reaches the app.
+  useEffect(() => {
+    document.documentElement.setAttribute("data-mockup-kit", "");
+    return () => document.documentElement.removeAttribute("data-mockup-kit");
+  }, []);
   const inBrowser = useSyncExternalStore(
     subscribeNothing,
     () => true,

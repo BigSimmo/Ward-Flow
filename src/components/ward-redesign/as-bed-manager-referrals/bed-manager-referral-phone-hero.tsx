@@ -95,7 +95,7 @@ export function BedManagerReferralPhoneHero({
       <div className={styles.figures} role="group" aria-label="Highlight referrals">
         <Figure
           value={overdue}
-          label="Overdue"
+          label="Decision overdue"
           tone={overdue > 0 ? "danger" : "neutral"}
           pressed={highlight === "overdue"}
           onPress={() => onHighlight("overdue")}

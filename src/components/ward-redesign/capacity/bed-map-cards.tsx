@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Clock } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
-import { Card, CardHead, FilterChip, Segmented, durMinutes } from "@/components/wf";
+import { Card, CardHead, FilterChip, Segmented, StatusGlyph, durMinutes } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import type { NetworkWardRow } from "@/components/ward-management/capacity/capacity-derivations";
@@ -212,7 +212,7 @@ function WardCard({
       <span className={styles.wardNote}>
         {!fresh && row ? (
           <span className={styles.warnInk}>
-            <Clock size={12} aria-hidden="true" /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
+            <StatusGlyph tone="warning" size={9} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
           </span>
         ) : notes.length ? (
           notes.join(" · ")

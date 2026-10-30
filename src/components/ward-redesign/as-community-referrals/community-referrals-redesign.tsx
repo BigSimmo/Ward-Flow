@@ -211,7 +211,7 @@ const REFERRAL_DECLINE_CONTROL =
  * option A): phone and desktop read the same type chips, Ward bed · ED · More than one · Community.
  */
 const HIGHLIGHT_LABELS: readonly (readonly [Exclude<HighlightKey, "refused">, string])[] = [
-  ["overdue", "Overdue"],
+  ["overdue", "Decision overdue"],
   ["tier1", "Tier 1"],
   ["ward", "Ward bed"],
   ["ed", "ED"],
