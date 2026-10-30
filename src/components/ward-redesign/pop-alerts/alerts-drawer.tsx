@@ -203,8 +203,8 @@ function rowIcon(item: InboxItem) {
 
 /**
  * The value and state shown at the right of a row, read from the movement's own recorded times.
- * Nothing here is a computed deadline: an overdue row counts up from the time the record holds,
- * and a waiting transport counts up from when it was accepted.
+ * Nothing here is a computed deadline: a legal row shows its typed time, a pulled bed counts up from
+ * the time the record holds, and a waiting transport counts up from when it was accepted.
  */
 function rowTiming(
   item: InboxItem,
@@ -222,7 +222,14 @@ function rowTiming(
     };
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    return { value: durMinutes(now - movement.legalForm.dueAt), state: "Overdue", tone: "danger", stateTone: "danger" };
+    // Mock-up (Josh, 30 Oct 2026): the typed form time, as Waiting shows it; no running figure.
+    return {
+      value: `Due ${formatInstantWithDay(movement.legalForm.dueAt, now)}`,
+      word: "as typed",
+      state: "Not legally checked",
+      tone: "danger",
+      stateTone: "danger",
+    };
   }
   if (movement && /transport/i.test(item.title) && movement.transport?.acceptedAt !== undefined) {
     return {

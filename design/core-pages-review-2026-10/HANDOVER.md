@@ -302,7 +302,10 @@ Josh approved a split with the Home and Activity chat (branch `claude/home-activ
   work and the scratch folder survive; stopped helpers can be resumed from their transcripts.
 - A waiting loop that uses `pgrep -f "<text>"` matches its own command line and never ends.
 
-### Questions for Josh from round 2
+### Questions for Josh from round 2 (all answered yes on 30 October)
+
+Josh agreed every recommendation below. Done here: 1 (Alerts drawer) and 3 (shift brief). 2 (Waiting)
+belongs to the Home and Activity chat. 4 and 5 need no change.
 
 1. Alerts drawer legal-form rows show a running "10m Overdue" from the typed time (as the live app does).
    Recommend "Due 10:32 as typed · Not legally checked" with no running figure.

@@ -302,7 +302,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Today's Shift brief dialog, unchanged**, opened for Dabakarn over My ward (where its Shift brief button is), so Copy, Print and Close work as now.",
     "**Still open:** no design changes, because there were no review notes for it. Josh to say what to change.",
     "**Round 2:** tiles say when ('Pulled now', 'Left in 24h', 'Pulled in 24h'), so two figures no longer share a label. The stamp is one short line; the full 'not a record of any real day' wording stays in the brief.",
-    "**Questions for you:** the 'Pulled now' tile and the 'Bed already given away' row show the same figure (recommend dropping one); and should tentative diagnoses appear on a printed brief?",
+    "**Your answer (30 October):** no tentative diagnosis on the printed brief (privacy); the board's own panel still shows it. Still open: the 'Pulled now' tile and the 'Bed already given away' row show the same figure (recommend dropping one).",
   ],
   "pop-desk": [
     "**Built from a copy of today's Go to a desk drawer**, so search, recents, the statewide tiles and opening a desk work as now.",
@@ -336,7 +336,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** Open Alerts, Acknowledge visible, and the All, Act now, Waiting and Running filters. No 'Chase all' (it needs a new command).",
     "**Still open:** on a phone the bell opens the Alerts page, not this drawer; at 390 px the mock-up shows the drawer's phone layout.",
     "**Round 2:** a bed pull past its limit says 'Past pull limit', because 'overdue' means form times. '12 of 12 alerts' shows only while a filter narrows the list; an empty filter's zero goes grey.",
-    "**Question for you:** legal-form rows still show an elapsed '10m Overdue' worked out from the typed time, as the live app does. Recommend 'Due 10:32 as typed · Not legally checked', with no running figure.",
+    "**Your answer (30 October):** legal-form rows show 'Due 10:32 as typed · Not legally checked', with no running figure, as Waiting does. Today's app counts up an elapsed '10m Overdue' from the typed time.",
   ],
   "pop-activity": [
     "**Built from a copy of today's Activity panel**, with the same events, notices and Mark as read.",

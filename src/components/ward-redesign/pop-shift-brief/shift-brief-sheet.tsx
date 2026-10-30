@@ -25,7 +25,6 @@ import {
   stayDayNumber,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
-import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
@@ -75,8 +74,6 @@ export type DailySheetPerson = {
   /** `null` for an admission created by an ED arrival - Task 17, 2026-08-30. The sheet says so in
    *  words; it never omits the person and never guesses a region. */
   homeRegion: string | null;
-  /** Already phrased by `tentativeDiagnosisPhrase`, never a bare block code. */
-  tentativeDiagnosis: string | null;
   /**
    * Whole hours at an emergency department, or `null` while the person is on the ward.
    *
@@ -157,7 +154,6 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
       pastDate: isPastExpectedDischarge(admission, now),
       sex: admission.sex,
       homeRegion: admission.homeRegion,
-      tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
       awayAtEdHours:
         admission.awayAtEmergencyDepartmentSince === null
           ? null
@@ -228,7 +224,7 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
         </p>
         {/*
          * DIRECTLY AFTER THE LEAD, and above everything else about them, because it changes what
-         * every line below it means: a day count, a discharge plan and a diagnosis all read
+         * every line below it means: a day count and a discharge plan both read
          * differently about somebody who is not on the ward. Only for the people it applies to, and
          * it says the bed is still theirs in the same breath: "away" on a bed sheet otherwise reads
          * as "so the bed is free", and it is not — the ward is holding it.
@@ -241,15 +237,8 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
           </p>
         )}
         <p className={styles.rowLine}>{personFacts(person)}</p>
-        {/* "Tentative" leads the line, as it does on the board's own panel and for the same reason: a
-          reader scanning a column takes the first words of each row, so a qualification at the end is
-          the half that gets skipped. Both states are stated; silence would leave a reader unable to
-          tell "nobody wrote one down" from "this sheet does not show them". */}
-        <p className={styles.rowLine}>
-          {person.tentativeDiagnosis !== null
-            ? `Tentative diagnosis: ${person.tentativeDiagnosis}.`
-            : "Tentative diagnosis: none recorded."}
-        </p>
+        {/* Mock-up (Josh, 30 Oct 2026): no tentative diagnosis on the shift brief, because the brief is
+          printed and a printed sheet can be left lying around. The board's own panel still shows it. */}
         {person.blockReason !== null && <p className={styles.rowLine}>Held up by: {person.blockReason}.</p>}
         {person.pastDate && person.expectedDays !== null && (
           <p className={styles.rowLine}>
