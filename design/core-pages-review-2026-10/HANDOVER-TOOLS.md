@@ -302,6 +302,82 @@ const { chromium } = require("playwright");
 })();
 ```
 
+### `today-capture.js`
+
+Pictures of today's app for the viewer's Today switch. One browser, widths 1440, 1280, 820 and 390,
+light, full page, JPEG. Write them into `output/redesign-preview/today/` (not committed) and publish
+them with the shareable copy's `files` map.
+
+```bash
+mkdir -p output/redesign-preview/today
+node today-capture.js output/redesign-preview/today home=/ward-flow capacity=/ward-flow/capacity movements=/ward-flow/movements waiting=/ward-flow/waiting eds=/ward-flow/ed referrals=/ward-flow/referrals handover=/ward-flow/handover ward=/ward-flow/ward/rph-adult-secure stays=/ward-flow/board/rph-adult-secure ed-board=/ward-flow/ed/peel-ed transport=/ward-flow/transport/officer patients=/ward-flow/search discharges=/ward-flow/discharges wards=/ward-flow/wards statistics=/ward-flow/statistics alerts=/ward-flow/alerts legal-forms=/ward-flow/legal-forms out-of-area=/ward-flow/out-of-area on-call=/ward-flow/on-call seclusion=/ward-flow/seclusion governance=/ward-flow/governance places=/ward-flow/hub community=/ward-flow/community patient=/ward-flow/people/196zcp24w5t0 add-patient=/ward-flow/people/new settings=/ward-flow/settings sign-in=/ward-flow-sign-in statistics-compare=/ward-flow/statistics/compare statistics-list=/ward-flow/statistics/wards statistics-weekly=/ward-flow/statistics/weekly new-referral=/ward-flow/referrals/new bed-meeting-tv=/ward-flow/bed-meeting agenda=/ward-flow/bed-meeting/agenda downtime=/ward-flow/reports/downtime chronology=/ward-flow/reports/chronology community-team=/ward-flow/community/midland ward-answer=/ward-flow/ward/rph-adult-secure/answer statistics-unit=/ward-flow/statistics/ward/fsh-adult-secure
+```
+
+```js
+// usage: node today-capture.js <outDir> <slug=appPath>... ; widths 1440 1280 820 390, light, full page, JPEG.
+// Visits one mock-up first so the same origin marks the tour, What's new and hints as seen (coordinator desk).
+const { chromium } = require("playwright");
+const BASE = "http://localhost:3377";
+const WIDTHS = (process.env.WIDTHS || "1440 1280 820 390").split(" ").map(Number);
+(async () => {
+  const [, , outDir, ...pairs] = process.argv;
+  const b = await chromium.launch();
+  for (const width of WIDTHS) {
+    const ctx = await b.newContext({
+      viewport: { width, height: width <= 430 ? 844 : width <= 820 ? 1180 : 900 },
+      isMobile: width <= 430,
+      hasTouch: width <= 820,
+      colorScheme: "light",
+    });
+    const p = await ctx.newPage();
+    await p
+      .goto(BASE + "/mockups/ward-flow-redesign/home", { waitUntil: "networkidle", timeout: 300000 })
+      .catch(() => {});
+    await p.waitForTimeout(3000);
+    for (const pair of pairs) {
+      const [slug, path] = pair.split("=");
+      const out = `${outDir}/${slug}-${width}.jpg`;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await p.goto(BASE + path, { waitUntil: "networkidle", timeout: 300000 });
+          await p.waitForFunction(
+            () => (document.querySelector("main")?.innerText || document.body.innerText || "").length > 40,
+            null,
+            { timeout: 90000 },
+          );
+          await p.waitForTimeout(1500);
+          await p.evaluate(() => {
+            for (const el of document.querySelectorAll("*")) {
+              const cs = getComputedStyle(el);
+              if (
+                (cs.overflowY === "auto" || cs.overflowY === "scroll") &&
+                el.scrollHeight > el.clientHeight + 40 &&
+                el.clientWidth > innerWidth * 0.5
+              ) {
+                for (let q = el; q; q = q.parentElement) {
+                  q.style.height = "auto";
+                  q.style.maxHeight = "none";
+                  q.style.overflow = "visible";
+                }
+              }
+            }
+          });
+          await p.waitForTimeout(300);
+          await p.screenshot({ path: out, fullPage: true, type: "jpeg", quality: 72 });
+          console.log("ok", out);
+          break;
+        } catch (e) {
+          console.log("retry", attempt, slug, width, String(e).slice(0, 120));
+          await p.waitForTimeout(30000);
+        }
+      }
+    }
+    await ctx.close();
+  }
+  await b.close();
+})();
+```
+
 ### `probe.js`
 
 ```js
