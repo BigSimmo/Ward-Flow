@@ -1,0 +1,145 @@
+/*
+ * Ward statistics, redesigned: the compact bed map (nine small tiles to a row, shaded by stay) and
+ * the roster's Show more. Tile shapes and state colours come from the app's bed-map module; this
+ * file only sets size, the stay shading and the stay key. Tokens only.
+ */
+.bedGrid {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bedTile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 0;
+  height: 2.75rem;
+  padding: 4px 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+}
+
+.bedGlyph {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  color: var(--wf-ink-3);
+}
+
+.bedDays {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+}
+
+.bedWord {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bedBlocked {
+  position: absolute;
+  bottom: 6px;
+  right: 4px;
+  display: flex;
+  color: var(--wf-warning);
+}
+
+/* Stay shading: the four stay bands, lightest to darkest. On leave keeps its dashed edge. */
+.bedTile[data-stay-band="0"],
+.staySwatch[data-stay-band="0"] {
+  background: color-mix(in srgb, var(--wf-data-1) 8%, var(--wf-surface));
+}
+
+.bedTile[data-stay-band="1"],
+.staySwatch[data-stay-band="1"] {
+  background: color-mix(in srgb, var(--wf-data-1) 18%, var(--wf-surface));
+}
+
+.bedTile[data-stay-band="2"],
+.staySwatch[data-stay-band="2"] {
+  background: color-mix(in srgb, var(--wf-data-1) 28%, var(--wf-surface));
+}
+
+.bedTile[data-stay-band="3"],
+.staySwatch[data-stay-band="3"] {
+  background: color-mix(in srgb, var(--wf-data-1) 42%, var(--wf-surface));
+}
+
+.bedTile[data-stay-band="3"] .bedDays {
+  font-weight: 700;
+}
+
+.bedFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-4);
+}
+
+.stayKey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.stayKeyLabel {
+  color: var(--wf-ink-3);
+}
+
+.stayKeyItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.staySwatch {
+  display: inline-block;
+  width: 0.875rem;
+  height: 0.875rem;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--wf-data-1) 30%, var(--wf-line-2));
+  border-radius: 3px;
+}
+
+.rosterMore {
+  display: flex;
+  justify-content: center;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+@media (max-width: 40rem) {
+  .bedGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+
+/* Phone: the list switch meets the 48 px touch floor, and a long list ends in "Show more". */
+.phoneSeg.phoneSeg :is(a, button) {
+  height: 48px;
+  min-height: 48px;
+}
+
+.phoneMore.phoneMore {
+  width: 100%;
+  min-height: 48px;
+  justify-content: center;
+}

@@ -1,0 +1,116 @@
+/*
+ * Weekly operations report, redesigned: declines and overrides in one card, a sentence where there
+ * is not enough history, and the pilot measures as one table beside a small panel for the measures
+ * counted outside Ward Flow. Tokens only; the report's own module still sets tables and print.
+ */
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  align-items: stretch;
+}
+
+.sentence {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.decisionBlocks {
+  display: flex;
+  flex-direction: column;
+}
+
+.decisionBlock + .decisionBlock {
+  border-top: 1px solid var(--wf-line);
+}
+
+.decisionHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.decisionHead b {
+  font-weight: 600;
+}
+
+.pilotGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(min(320px, 100%), 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.pilotSide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.measureTable tbody + tbody {
+  border-top: 2px solid var(--wf-line-2);
+}
+
+.measureName {
+  min-width: 11rem;
+}
+
+/* A figure row under a measure's first row starts mid-table, so it keeps the inner cell padding. */
+.measureTable tbody tr + tr td:first-child {
+  padding-left: var(--wf-s-3);
+}
+
+.measureTitle {
+  display: block;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.measureMeta {
+  display: block;
+  margin-top: 2px;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.outsideList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  list-style: none;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.outsideList b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+/* Phone: the week switch meets the 48 px touch floor. */
+.phoneSeg.phoneSeg :is(a, button) {
+  height: 48px;
+  min-height: 48px;
+}
+
+@media (max-width: 64rem) {
+  .pilotGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

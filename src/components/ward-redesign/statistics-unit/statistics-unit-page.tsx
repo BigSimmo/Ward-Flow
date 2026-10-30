@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the statistics-unit mock-up is built; replaced by the redesigned page. */
+import { StatisticsUnitRedesign } from "./statistics-unit-redesign";
+
+/** One ward's statistics, as the app's `/ward-flow/statistics/ward/fsh-adult-secure` opens. */
 export function StatisticsUnitPage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <StatisticsUnitRedesign unitId="fsh-adult-secure" />;
 }

@@ -1,6 +1,8 @@
 "use client";
 
-/** Placeholder while the chronology mock-up is built; replaced by the redesigned page. */
+import { ChronologyRedesign } from "./chronology-redesign";
+
+/** Patient chronology redesign: the mock-up has no record id in its address, so it opens on the start page. */
 export function ChronologyPage() {
-  return <main id="main-content">This page is being rebuilt.</main>;
+  return <ChronologyRedesign />;
 }

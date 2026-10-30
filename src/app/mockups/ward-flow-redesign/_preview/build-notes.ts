@@ -6,6 +6,46 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  downtime: [
+    "**Built from a copy of today's Downtime pack screen**, so New snapshot, Print or save PDF, the freeze time, the stale line and the phone layout work as now.",
+    "**New:** on screen one table shows at a time. Tabs with counts (Beds ready, ED queue, Pending moves, Legal forms) replace the jump buttons, and the header chips switch tabs too.",
+    "**Print still holds all four tables.** The other tables are hidden on screen only; checked in print mode at 1440 and 390 px.",
+    "**New:** service rows read as group headers, and every ready count is marked green.",
+    "**Kept:** New snapshot, Print or save PDF, the freeze time, the save-location advice and all safeguard and print wording.",
+    "**Still open (D-83):** pack rows still name people first name first. The name is built in the shared `use-take-downtime-pack.ts`, so surname first is a one-line change there when this page is built into the app.",
+  ],
+  chronology: [
+    "**Built from a copy of today's Patient chronology screen**, so once a patient is chosen the real chronology, filters, side panel, Print and Download CSV work as now.",
+    "**New:** one large patient search in the header replaces the dropdown and the second Choose a patient button. It matches surname, first name or UMRN; arrow keys and Enter choose. The typed text never leaves the box.",
+    "**New:** with nobody chosen, the page lists Patients on this demo night (first 6, then Show more), surname first. Ward Flow keeps no recently-opened list, and the page says so rather than pretending.",
+    "**New:** a short panel says what a chronology holds: records, the audit trail (coordinator only), the session log, times as recorded or typed, and the output.",
+    "**Kept:** recorded and typed times only; nothing is calculated.",
+    "**Still open:** the CSV's patient line keeps today's first-name-first export format, as it is a file format rather than the screen.",
+  ],
+  places: [
+    "**Built from a copy of today's Places screen**, so search (the / shortcut, arrows, Enter, Escape), stars, Ask to confirm, View statistics, Open and the phone preview sheet work as now.",
+    "**Point 21:** Places is now a directory with no bed figures of its own. Bed squares, ready and pulled counts, the header bed chips, Ready beds only and the network bed bar are gone; rows and the preview point to Capacity's bed map and All wards.",
+    "**New:** search sits first, in the header. Services after the first two fold, and in All the EDs and teams fold to one row each. Long groups show 8 rows, then Show more.",
+    "**New:** the preview opens on the first place listed, so the right side is never empty. A stale count says Stale count on its row.",
+    "**Kept:** All, Wards, EDs and Teams; Service order; stars; At a glance; Needs a check (stale counts only, in the existing words). Wards by service now counts wards, not beds.",
+    "**Question for you:** with no beds shown, the Most ready order is replaced by A to Z. Is that right, or should Most ready stay?",
+  ],
+  "statistics-unit": [
+    "**Built from a copy of today's ward statistics screen**, so Change ward, the next and previous arrows, Export the figures, the roster search, filters and CSV, and the phone view work as now.",
+    "**New:** the bed map uses small tiles, nine to a row, shaded darker the longer the stay (the four Length of stay bands), with a small key. The tiles still come from the app's own bed-state count.",
+    "**New:** the right column holds Beds now, Discharge planning and Referrals into ward; Discharge barriers moves under the two charts, so both columns end closer together.",
+    "**Point 10:** the admission roster is the admissions table, built only from the ward's real synthetic admissions. It shows the first 8 rows, then Show more; CSV still exports every matching row.",
+    '**Kept:** every figure, the legend, the screen-reader wording and the executive "people not listed" privacy notice.',
+    "**Still open:** the Referrals card ends with some empty space, and the phone bed strip is not yet shaded by stay.",
+  ],
+  "statistics-weekly": [
+    "**Built from a copy of today's weekly report**, so the week picker, Print, the period line and every measure work as now, all from the app's own weekly and pilot measures.",
+    "**New:** declines and overrides share one card, one line each with placement and referral counts (reasons listed only when there are some), with Occupancy beside it.",
+    "**New:** the pilot measures are one table, one group of rows per measure. Beside it, Counted outside Ward Flow says plainly that calls per placed referral use a paper tally and wrong-patient or lost changes go through the incident route; Where the time goes sits under it.",
+    '**New:** when no expected date was held for the week, Delayed discharge says "Not enough history yet…" instead of two Not known figures. The demo data never reaches that case, so it is built but not yet seen on screen.',
+    "**Kept:** all disclosure and synthetic-data wording, the waits table and the phone cards.",
+    "**Still open:** on a phone, declines and overrides are still two cards.",
+  ],
   movements: [
     "**Built from a copy of today's Movements screen**, so the timeline, worklist, drawer and every action work as they do now.",
     '**New:** the stage pipeline under the hero (each stage\'s count and oldest wait; choosing one highlights its rows), Tier 1 now in the side column above Transport now, every timeline name in full, and worklist rows that wrap instead of ending in "…".',

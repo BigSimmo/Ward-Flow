@@ -1,0 +1,122 @@
+/* Places redesign: a directory. Search in the header; rows carry no bed figures (review point 21). */
+
+.heroSearch {
+  flex: 1 1 32rem;
+  max-width: 44rem;
+  min-width: 0;
+}
+
+.heroSearch input {
+  min-height: 48px;
+  font-size: var(--wf-fs-15);
+}
+
+/* Two columns: the place, and when its bed count was last confirmed. */
+.listHead,
+.rowMain {
+  grid-template-columns: minmax(0, 1fr) 150px;
+}
+
+.rowConfirmed {
+  justify-content: flex-end;
+  padding-right: var(--wf-s-2);
+}
+
+.showMore {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.showMore:hover {
+  background: var(--wf-hover);
+}
+
+.showMore:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.showMoreCount {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.bedsNote,
+.bedsElsewhere {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.bedsNote a,
+.bedsElsewhere a {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+.serviceList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.serviceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / 1.2 var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.serviceRow:hover {
+  background: var(--wf-hover);
+}
+
+.serviceRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.serviceCount {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+@media (max-width: 48rem) {
+  .showMore,
+  .serviceRow {
+    min-height: 48px;
+  }
+
+  .listHead,
+  .rowMain {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}
+
+.bedsNote > span {
+  min-width: 0;
+}
