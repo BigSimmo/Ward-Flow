@@ -107,9 +107,10 @@
   line-height: 18px;
   color: var(--wf-ink-2);
 }
+/* The kind of row is regular weight, so the name and the time carry the weight. */
 .rowKind {
-  font-weight: 600;
-  color: var(--wf-ink-1);
+  font-weight: 400;
+  color: var(--wf-ink-2);
 }
 .alertTag {
   display: inline-block;
@@ -564,6 +565,8 @@ a.eventText:hover {
 
 /* The forecast heads Planned in the same two-line shape as the rows, set apart by a tint. */
 .forecastRow {
+  /* Holds the "See who" link's cover inside this row, not the whole card. */
+  position: relative;
   display: grid;
   grid-template-columns: 10px minmax(0, 1fr) auto;
   grid-template-areas:
@@ -855,4 +858,54 @@ a.eventText:hover {
     position: absolute;
     inset: -4px 0;
   }
+}
+
+/*
+ * v9 (coordinator's assessment, 30 Oct 2026): the amber clock means time only. Amber that is not
+ * about time (the hero's checks, "At risk" under the ring, Beds that fit's shortfalls) is the plain
+ * amber dot. Tier 1 has its own mark: a filled circle with an up chevron.
+ */
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_warning"].dotGlyph,
+.scope [data-wf-hero-lead] svg[class*="glyph"][class*="_warning"],
+.scope [data-testid="home-beds-fit"] svg[class*="glyph"][class*="_warning"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
+}
+.scope svg[class*="glyph"].tierGlyph {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M5.2 9.4 8 6.6l2.8 2.8' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M5.2 9.4 8 6.6l2.8 2.8' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+.scope svg[class*="glyph"].tierGlyph > * {
+  visibility: hidden;
+}
+.scope [data-wf-hero] svg[class*="glyph"].tierGlyph {
+  color: var(--wf-hero-ink-2);
+}
+
+/* Desktop ED strip: departments with nobody waiting go quiet, so those with waits stand out. */
+.scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])[data-waiting="0"] {
+  color: var(--wf-ink-3);
+}
+.scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])[data-waiting="0"] * {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+/* Phone ED chips: a soft fade on the right edge says the row scrolls. */
+@media (max-width: 48rem) {
+  .scope :is([class*="_edGrid__"], [class$="_edGrid"], [class*="_edGrid "]) {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+}
+
+/* "Also in Alerts" sits on its own line under the change, aligned with its text. */
+.alertTag {
+  display: table;
+  margin: 4px 0 0;
 }

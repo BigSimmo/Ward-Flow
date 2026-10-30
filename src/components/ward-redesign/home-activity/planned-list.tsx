@@ -75,7 +75,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
         id="home-planned-title"
         title="Planned"
         // Said once here; target rows carry an amber glyph and edge, and a spoken label.
-        meta={`${formatInstant(now)} to ${formatInstant(until)} · Targets are yours, not clinical standards`}
+        meta={`${formatInstant(now)}–${formatInstant(until)} · your default targets`}
       />
       <AccessForecastRow now={now} />
       {rows.length === 0 ? (
@@ -101,7 +101,7 @@ export function PlannedList({ now, rows }: { now: Instant; rows: readonly Planne
                 <time className={styles.rowTimeStrong}>{formatInstant(row.at)}</time>
                 <span className={styles.rowWhat}>
                   {row.kind === "target" ? <SrOnly>Your target, not a clinical standard: </SrOnly> : null}
-                  <b className={styles.rowKind}>{row.what}</b> · {row.where}
+                  <span className={styles.rowKind}>{row.what}</span> · {row.where}
                 </span>
               </li>
             </Fragment>
@@ -140,7 +140,7 @@ function AccessForecastRow({ now }: { now: Instant }) {
       </span>
       <time className={styles.rowTimeStrong}>{formatInstantWithDay(now + (first.firstMinutesLeft ?? 0), now)}</time>
       <span className={styles.rowWhat}>
-        Forecast, before a suitable bed is due · {first.atRisk} at {forecastEdName(first.edId)} ·{" "}
+        Forecast · {first.atRisk} at {forecastEdName(first.edId)} ·{" "}
         <Link href={edHref(first.edId)} className={styles.personLink}>
           See who
         </Link>

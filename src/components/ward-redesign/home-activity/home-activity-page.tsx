@@ -64,13 +64,14 @@ import {
   OccupancyRing,
   Segmented,
   Sheet,
+  StatusGlyph,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-management/coordinator/exception-drawer";
 import styles from "@/components/ward-management/coordinator/home.module.css";
 import { HomeEdPressure } from "@/components/ward-management/coordinator/home-ed-pressure";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
-import { BedsFitTable, PlacementNext } from "@/components/ward-redesign/home/home-parts";
+import { BedsFitTable } from "@/components/ward-redesign/home/home-parts";
 import redesign from "@/components/ward-redesign/home/home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
@@ -81,6 +82,7 @@ import shortlistStyles from "@/components/ward-management/coordinator/shortlist-
 import { useExplicitReview } from "./activity-changes";
 import { ActivityPanel, type ActivityTab } from "./activity-panel";
 import mock from "./home-activity.module.css";
+import { PlacementPrompt } from "./home-activity-parts";
 import { PlannedList, usePlannedRows } from "./planned-list";
 
 /*
@@ -928,7 +930,13 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                   <HeroStat
                     inline
                     value={chips.tierOneInQueue}
-                    label={tierOneWord}
+                    // Its own mark (highest tier), so no chip reuses the Act now triangle.
+                    label={
+                      <>
+                        <StatusGlyph tone="neutral" size={10} className={mock.tierGlyph} />
+                        {tierOneWord}
+                      </>
+                    }
                     pressed={homeView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
@@ -940,8 +948,15 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                     inline
                     value={staleBedCounts + wardsNotReporting}
                     // The chip says how many; opening it says which (it ran off a tablet's edge).
-                    label={staleBedCounts + wardsNotReporting === 1 ? "check" : "checks"}
-                    tone={staleBedCounts + wardsNotReporting > 0 ? "warning" : undefined}
+                    // Amber dot, not the clock: a check is not about time.
+                    label={
+                      <>
+                        {staleBedCounts + wardsNotReporting > 0 ? (
+                          <StatusGlyph tone="warning" size={10} className={mock.dotGlyph} />
+                        ) : null}
+                        {staleBedCounts + wardsNotReporting === 1 ? "check" : "checks"}
+                      </>
+                    }
                     expanded={checksOpen}
                     onToggle={() => setChecksOpen((open) => !open)}
                   />
@@ -1138,7 +1153,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
               {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
               {chosenAlert && !chosenAlert.movement ? null : placementNode}
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
-                <PlacementNext next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
+                <PlacementPrompt next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
               ) : null}
             </div>
           </div>
