@@ -20,7 +20,7 @@ import { useWardNetwork } from "../ward-flow-provider";
 import { showWardHowTo, type HelpView } from "./ward-help-events";
 import { howToHref } from "./ward-help-href";
 import { canShowMe, HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
-import { tasksForDesk, WardHelpTasks } from "./ward-help-task-list";
+import { showMeAvailable, tasksForDesk, WardHelpTasks } from "./ward-help-task-list";
 import { recordHowToUsed } from "./ward-help-usage";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
@@ -151,7 +151,10 @@ function WardHelpSheetView({
   );
   const jobShowMe = (id: string | undefined) => {
     const howTo = id ? HOW_TOS.find((candidate) => candidate.id === id) : undefined;
-    return showMeOn && howTo && canShowMe(howTo, phone) && (howTo.desks === "all" || howTo.desks.includes(role))
+    return showMeOn &&
+      howTo &&
+      showMeAvailable(howTo, role, deskHref, phone) &&
+      (howTo.desks === "all" || howTo.desks.includes(role))
       ? howTo
       : undefined;
   };

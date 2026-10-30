@@ -14,8 +14,8 @@ import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
-import { canShowMe, HOW_TOS } from "./ward-help-howto";
-import { tasksForDesk } from "./ward-help-task-list";
+import { HOW_TOS } from "./ward-help-howto";
+import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 
 /** How-tos whose controls a phone screen does not draw: on a phone they open, not Show me. */
 const COMPUTER_ONLY = new Set(HOW_TOS.filter((howTo) => howTo.computerOnly).map((howTo) => howTo.id));
@@ -40,7 +40,7 @@ function suggested(
   home: string | undefined,
   phone: boolean,
 ): readonly HelpSearchResult[] {
-  const tasks = tasksForDesk(role).filter((howTo) => canShowMe(howTo, phone));
+  const tasks = tasksForDesk(role).filter((howTo) => showMeAvailable(howTo, role, home, phone));
   const here = (go: string | undefined) => howToHref(go, role, home)?.split("#")[0] === pathname;
   return [...tasks.filter((howTo) => here(howTo.go)), ...tasks.filter((howTo) => !here(howTo.go))]
     .slice(0, 3)
@@ -115,9 +115,16 @@ export function WardHelpSearch({
     if (restoreFocus) requestAnimationFrame(() => opener.current?.focus());
   }
 
+  /** Show me plays for this result: this desk's own task, drawn on this device, on a screen it may open. */
+  function walks(result: HelpSearchResult, mine: boolean): boolean {
+    if (!showMeOn || !result.howToId || !mine) return false;
+    if (phone && COMPUTER_ONLY.has(result.howToId)) return false;
+    return !result.go || howToHref(result.go, role, home) !== undefined;
+  }
+
   function act(result: HelpSearchResult) {
     const mine = !result.desks || result.desks.includes(role);
-    if (showMeOn && result.howToId && mine && !(phone && COMPUTER_ONLY.has(result.howToId))) {
+    if (result.howToId && walks(result, mine)) {
       close(false);
       showWardHowTo(result.howToId);
       return;
@@ -176,7 +183,7 @@ export function WardHelpSearch({
           <strong>{result.title}</strong>
           <span className={styles.detail}>{result.detail}</span>
         </span>
-        {showMeOn && result.howToId && mine && !(phone && COMPUTER_ONLY.has(result.howToId)) ? (
+        {walks(result, mine) ? (
           <span className={styles.action}>Show me</span>
         ) : href ? (
           <span className={styles.action}>Open</span>

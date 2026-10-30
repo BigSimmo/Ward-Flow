@@ -54,7 +54,7 @@ export function HowToRow({
   const href = actions ? howToHref(howTo.go, role, home) : undefined;
   // Go there is offered only when the job is done somewhere else.
   const goThere = href && href.split("#")[0] !== pathname ? href : undefined;
-  const showMe = actions && showMeOn && canShowMe(howTo, phone);
+  const showMe = actions && showMeOn && showMeAvailable(howTo, role, home, phone);
   // A phone screen without the button says where the job is done instead of offering Show me.
   const computerOnly = actions && showMeOn && phone && Boolean(howTo.computerOnly);
   const steps = showMeOn && showMe ? stepsLabel(howTo) : computerOnly ? "On a computer" : undefined;
@@ -118,6 +118,14 @@ export function HowToRow({
       ) : null}
     </li>
   );
+}
+
+/**
+ * Whether Show me can walk this task for this desk on this device: it has steps the device draws,
+ * and any screen it opens is one this desk may open (else it could only say "not on the screen").
+ */
+export function showMeAvailable(howTo: HowTo, role: WardTourRole, home: string | undefined, phone: boolean): boolean {
+  return canShowMe(howTo, phone) && (!howTo.go || howToHref(howTo.go, role, home) !== undefined);
 }
 
 /** This desk's tasks: those for every desk, and those named for it. */

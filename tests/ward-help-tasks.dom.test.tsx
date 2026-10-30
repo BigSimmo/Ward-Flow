@@ -132,6 +132,13 @@ describe("How do I… task list", () => {
     expect(within(screen.getByTestId("ward-help-task-answer-sign-off-handover")).getByText("3 steps")).toBeTruthy();
   });
 
+  it("offers no Show me for a task on a screen this desk cannot open", () => {
+    renderTasks({ role: "executive", home: "/ward-flow/statistics", openTask: "downtime" });
+    const row = screen.getByTestId("ward-help-task-answer-downtime");
+    expect(within(row).queryByTestId("ward-help-task-show-me")).toBeNull();
+    expect(within(row).queryByText("1 step")).toBeNull();
+  });
+
   it("reads as answers only, with no step counts, when Show me is off", () => {
     renderTasks({ showMeOn: false, openTask: "pull-bed" });
     expect(screen.queryByText("2 steps")).toBeNull();
