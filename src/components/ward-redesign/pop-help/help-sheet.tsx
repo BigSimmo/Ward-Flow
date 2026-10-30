@@ -291,7 +291,7 @@ function WardHelpSheetView({
 
       {/* Mock-up: Reference (colour code, roles, more) is an extra, so it moves from above the content
           to the end of every view, just before the tour and the shortcuts. */}
-      <div className={styles.utilityRow}>
+      <div className={local.utilityRow}>
         <WardHelpReference role={role} onClose={onClose} />
       </div>
 
