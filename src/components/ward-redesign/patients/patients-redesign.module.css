@@ -1,0 +1,15 @@
+/* Patients, redesigned: a scoped stylesheet over today's screen (see patients-redesign.tsx). */
+
+/* "Sent to 1 pla…" and "RPH Com…" wrap instead of cutting off. */
+.patients table td,
+.patients table td * {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* The highlight chips wrap instead of running off the card's edge (Josh, 30 Oct). */
+.patients [class*="_chipBar__"] {
+  flex-wrap: wrap;
+  overflow-x: visible;
+}
