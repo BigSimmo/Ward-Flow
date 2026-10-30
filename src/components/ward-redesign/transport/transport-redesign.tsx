@@ -701,7 +701,8 @@ export function TransportRedesign() {
         formsOutstanding,
         "Jobs need forms",
         "Forms",
-        isPhone && formsOutstanding > 0 ? "warning" : "neutral",
+        // Redesign: amber at every width, as the rows' own form marks are.
+        formsOutstanding > 0 ? "warning" : "neutral",
       )}
     </>
   );
@@ -712,7 +713,7 @@ export function TransportRedesign() {
       {nextArrival ? (
         <span className={styles.nextArrival} title="Next expected arrival">
           <Icon icon={Clock} size={14} />
-          Next <b>{formatInstantWithDay(nextArrival.at, now)}</b>
+          Next arrival <b>{formatInstantWithDay(nextArrival.at, now)}</b>
           <span className={styles.nextArrivalPlace}>{destinationLabelFor(nextArrival.movement)}</span>
         </span>
       ) : null}
@@ -753,11 +754,8 @@ export function TransportRedesign() {
   const formsVary =
     jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
   useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
-  const movingJobs = jobs.filter((movement) => {
-    const leg = transportLeg(movement.transport);
-    return leg === "En route" || leg === "Collected";
-  }).length;
-  const jobsLine = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} open · ${movingJobs} moving, ${jobs.length - movingJobs} waiting`;
+  // Redesign: the count only. The stage chips below already split it, and "waiting" means an ED wait elsewhere.
+  const jobsLine = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} open`;
 
   return (
     <div className={`${styles.screen} ${redesign.transport}`} data-testid="ward-officer-screen" data-ward-design="v8">
@@ -791,7 +789,6 @@ export function TransportRedesign() {
                   const leg = transportLeg(movement.transport);
                   return leg === "En route" || leg === "Collected";
                 }).length;
-                const waiting = providerJobs.length - moving;
                 const isSelected = providerHighlight === provider;
                 return (
                   <button
@@ -801,11 +798,12 @@ export function TransportRedesign() {
                     onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
                     title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
                     aria-pressed={isSelected}
+                    // Redesign: the job count on screen; how many are moving is in the spoken label.
+                    aria-label={`${provider}, ${providerJobs.length} ${providerJobs.length === 1 ? "job" : "jobs"}, ${moving} moving`}
                   >
                     <span className={styles.fleetName}>{provider.replace(/ service$/, "")}</span>
-                    <SrOnly>{provider.endsWith(" service") ? " service" : ""}</SrOnly>
                     <span className={styles.fleetCounts}>
-                      {moving} moving, {waiting} waiting
+                      {providerJobs.length} {providerJobs.length === 1 ? "job" : "jobs"}
                     </span>
                   </button>
                 );
@@ -815,18 +813,22 @@ export function TransportRedesign() {
         />
 
         {cancellations.length > 0 ? (
-          <section
-            className={styles.nextCard}
-            aria-label="Cancelled transport"
-            data-testid="officer-cancellation-notices"
-          >
-            <h2 className={styles.eyebrow}>Cancelled transport</h2>
-            <ul>
-              {cancellations.map((notice) => (
-                <li key={notice.id}>{notice.sentence}</li>
-              ))}
-            </ul>
-          </section>
+          // Redesign: the page's own card and heading, at every width (the source's phone-only
+          // Next action card style hid these notices on wider screens).
+          <Card aria-labelledby="officer-cancellation-heading" data-testid="officer-cancellation-notices">
+            <CardHead
+              id="officer-cancellation-heading"
+              title="Cancelled transport"
+              meta={`${cancellations.length} ${cancellations.length === 1 ? "notice" : "notices"}`}
+            />
+            <CardBody>
+              <ul className={redesign.notices}>
+                {cancellations.map((notice) => (
+                  <li key={notice.id}>{notice.sentence}</li>
+                ))}
+              </ul>
+            </CardBody>
+          </Card>
         ) : null}
 
         {topJob && topJob.transport ? (
@@ -997,7 +999,7 @@ export function TransportRedesign() {
                 ) : (
                   <div className={styles.tableScroll}>
                     <table
-                      className={`${tableClasses.table} ${styles.jobsTable}`}
+                      className={`${tableClasses.table} ${styles.jobsTable} ${redesign.table}`}
                       aria-label="Outstanding transport jobs"
                     >
                       <thead>
@@ -1013,7 +1015,7 @@ export function TransportRedesign() {
                           <th scope="col" className={anyJobEta ? undefined : styles.etaOff}>
                             ETA
                           </th>
-                          <th scope="col" className={tableClasses.num}>
+                          <th scope="col" className={cx(tableClasses.num, redesign.nextCol)}>
                             Next
                           </th>
                         </tr>
@@ -1068,7 +1070,7 @@ export function TransportRedesign() {
                                   <span className={styles.jobUmrn}>{umrnFor(movement)}</span>
                                 </button>
                               </td>
-                              <td>
+                              <td className={redesign.routeCell}>
                                 {isPhone ? (
                                   // Phone (v10): from first, as the mockup's "ARM to ward" line reads.
                                   <span className={styles.jobRoute}>
@@ -1124,7 +1126,7 @@ export function TransportRedesign() {
                                   <span className={styles.muted}>Not needed</span>
                                 ) : (
                                   <span
-                                    className={styles.formsCell}
+                                    className={cx(styles.formsCell, redesign.formsCell)}
                                     title={`${forms} of ${PACK_SLOTS.length} forms recorded`}
                                   >
                                     <span className={styles.formDots} aria-hidden="true">
@@ -1136,14 +1138,15 @@ export function TransportRedesign() {
                                         />
                                       ))}
                                     </span>
-                                    <span data-complete={forms === PACK_SLOTS.length ? "true" : undefined}>
-                                      {forms} of {PACK_SLOTS.length}
-                                    </span>
-                                    {forms < PACK_SLOTS.length ? (
+                                    {/* Redesign: one text beside the dots, naming its noun; "of 4" is in the title. */}
+                                    {forms === PACK_SLOTS.length ? (
+                                      <span data-complete="true">All forms</span>
+                                    ) : (
                                       <span className={redesign.missing}>
-                                        <StatusGlyph tone="warning" size={8} /> {PACK_SLOTS.length - forms} missing
+                                        {PACK_SLOTS.length - forms} {PACK_SLOTS.length - forms === 1 ? "form" : "forms"}{" "}
+                                        missing
                                       </span>
-                                    ) : null}
+                                    )}
                                   </span>
                                 )}
                               </td>

@@ -102,7 +102,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
                 <th scope="col">Person</th>
                 <th scope="col">Needs</th>
                 <th scope="col">Passes {hours} target</th>
-                <th scope="col">Earliest suitable release on record</th>
+                <th scope="col">Earliest release on record</th>
                 <th scope="col">
                   <span className="sr-only">Action</span>
                 </th>

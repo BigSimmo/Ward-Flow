@@ -521,17 +521,22 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** one table. The Lists section under it repeated the same nine people, so on desktop it folds behind one closed row; nothing in it is lost. The Form column shows the form number, with the description in the record and the tooltip. Statewide capacity and Seen in the last 24 hours are one footer line.",
     "**To change in the real files once approved:** Medical clearance, Expects and Referred become chips on the board itself, which needs three new board filters; then the folded Lists can go.",
     '**Found while building:** the Lists write names first name first ("Noor Tremalow"). The board and D-83 put the surname first.',
+    "**Round 2:** the phone hero buttons and the Lists row are back to today's sizes (your ruling, 30 October). The Lists row reads 'Lists by step' with each list's count, and the risk table header reads 'Earliest release on record', so it stays on one line.",
+    "**Proposals for you:** move 'May pass the access target' under the board, and drop the repeated Find a bed buttons (an ED desk does not find beds itself), making the name the link.",
   ],
   transport: [
     "**Built from a copy of today's Transport desk**, so Jobs and History, the escort and involuntary filters, both sort orders, the job panel, the forms pack and Copy handover all work as now.",
     '**New:** names are surname first at every width (D-83). The title stays "Transport" (your ruling of 27 October), with "13 jobs open · 8 moving, 5 waiting" beside it instead of a repeated eyebrow.',
     '**New:** routes read from first, then the ward ("PEEL → Maali (Ward 4.2)"), missing forms are marked under the count, and the Next column is wide enough that "Arrived at ward" is never cut off.',
+    "**Round 2:** the Forms cell says one thing ('3 forms missing' or 'All forms'), the title line drops '8 moving, 5 waiting' (the stage chips split it), and 'Jobs need forms' is amber at every width.",
+    "**Behaviour change:** cancelled transport now shows at every width. Today it uses the phone-only card, so wider screens never show it.",
   ],
   patients: [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
     "**Today's Patients page, with a redesign stylesheet on top.** The review kept almost all of it, so the search with date of birth, the stage chips, highlights, the groups with Show all, and This shift all work as now.",
     '**New:** table cells wrap instead of ending in "…" ("Sent to 1 place", "RPH Community"), and the highlight chips wrap instead of running off the edge.',
     "**Tablet:** today's tablet table already drops the Heading to column and reads well, so it is unchanged.",
+    "**Round 2:** the phone groups sit 3 by 2, so no label ends in '…'; phone lines wrap, so legal wording and places show in full. 'Show 20 not active records' is the same plain link as each group's Show all.",
   ],
   discharges: [
     "**Built from a copy of today's Discharges page**, so the five filters, Now and History, Copy counts, Print list, Blocked first order and the release panel all work as now.",
@@ -545,6 +550,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** Status, Cohort and Order are three menus beside the service tabs, so the controls take two short rows instead of four. The bed key and the ward count share one line above the cards.",
     '**New:** card text wraps ("Sir Charles Gairdner · Older adult") instead of ending in "…". The stale-count warning was already on the card and stays.',
     "**Point 21 (my pick for you to confirm):** All wards stays as the page to compare wards side by side. Capacity's bed map shows where the free beds are now, and Places becomes the directory to find a place.",
+    "**Round 2:** the count reads '22 wards', or '3 of 22 wards highlighted' when filtered. Names drop ' — open' (the security label shows it) and wrap. Bed strips sit at each card's foot, so they line up across a row.",
   ],
   statistics: [
     "**Built from a copy of today's Statistics page**, so the Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line, Samples and Export all work as now.",
@@ -572,6 +578,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New (D-83):** every list and notice names the person surname first; the Name order now sorts by surname.",
     '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
     "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
+    "**Round 2:** the phone hero matches the wide screen. Phone cards read 'Date passed 3 days ago · 6 days away'. Names use the record's formal name (surname first) directly.",
   ],
   agenda: [
     "**Built from a copy of today's meeting agenda**, so the four lists, Actions from earlier meetings, Done with its Undo, and recording an action (pick-list, owner, due time) all work as now.",
@@ -603,12 +610,16 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Which wards:** a secure ward here is one with locked beds, plus any ward with something recorded, so no record is hidden. Please confirm that is the right list.",
     "**Kept word for word:** the Operational view only notice. Nothing works out an order length, a review or a legal limit; times show as typed.",
     "**Demo night:** nothing is recorded yet, so every room starts as Not recorded. Marking a room or recording a start updates the table and header at once.",
+    "**Round 2:** the phone hero shows In use, Out of service and Not recorded (it missed '7 Not recorded', the only figure that is not nought); Available moves into the phone title line. Short labels such as 'In use', with 'Seclusion rooms' spoken.",
+    "**Proposals for you:** amber with words for out of service, and one line instead of a table of empty rows until something is recorded.",
   ],
   "on-call": [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
     "**Today's On-call page, with a redesign stylesheet on top.** The review found it the right shape, so cover at Now, 22:00 and later, My list, Copy who is on, the downtime card, the directory and the detail pane (status, both numbers, email and escalation order, with Copy buttons) all work as now.",
     '**New:** the seven service lines are a compact two-line strip (line and number). "Until 20:00" shows on the chosen line and in its detail, rather than repeated on every card. On a laptop or phone the strip scrolls sideways instead of squeezing.',
     "**Not done here:** the filters still take two rows at 1440 px; one row needs the filter labels shortened in the real file.",
+    "**Round 2:** 'Ending soon' is the one wording in the hero, filters and phone. The filter row starts 'Highlight in Hospitals', so its counts are not read against the whole page. Phone place lines, hospital names and chips wrap.",
+    "**Proposals for you:** an accent-tint pressed state for the selected line in dark, and two rows of four for the strip below 1280 px so no line is hidden.",
   ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",

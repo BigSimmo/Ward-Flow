@@ -393,7 +393,7 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
   // The statewide rail. Phone (v10) opens it as a sheet from one link row under the list.
   const rail = (
     <aside className={styles.rail} data-wf-rail="1121" aria-label="Statewide by service">
-      <Card as="section" className={styles.railCard} aria-labelledby="ward-service-occupancy">
+      <Card as="section" className={cx(styles.railCard, redesign.wrapText)} aria-labelledby="ward-service-occupancy">
         <div className={styles.serviceHead}>
           <h2 id="ward-service-occupancy" className={styles.railTitle}>
             Occupancy by service
@@ -420,7 +420,7 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
         <p className={styles.railNote}>Press a service to highlight its wards.</p>
       </Card>
 
-      <Card as="section" className={styles.railCard} aria-labelledby="ward-counts-to-check">
+      <Card as="section" className={cx(styles.railCard, redesign.wrapText)} aria-labelledby="ward-counts-to-check">
         <div className={styles.serviceHead}>
           <h2 id="ward-counts-to-check" className={styles.railTitle}>
             Counts to check <Count n={staleRows.length} />
@@ -473,16 +473,21 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
           stats={
             isPhone ? (
               <>
+                {/* Redesign: each figure names its noun, with the menu's own words ("Full", "Ready by"). */}
                 <HeroStat
                   value={noReadyCount}
-                  label="No bed ready"
+                  label={
+                    <>
+                      Wards full<SrOnly>, no bed ready</SrOnly>
+                    </>
+                  }
                   tone={noReadyCount > 0 ? "warning" : undefined}
                   pressed={status === "full"}
                   onToggle={() => setStatus(status === "full" ? "all" : "full")}
                 />
                 <HeroStat
                   value={readyNow + freeingByShiftEnd}
-                  label={`By ${formatInstantWithDay(shiftEnd, now)}`}
+                  label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
                   tone="info"
                 />
                 <HeroStat
@@ -545,13 +550,9 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
           foot={
             isPhone ? undefined : (
               <CheckingFoot
+                // Redesign: stale counts are the hero's own chip (which also filters) and the rail's
+                // Counts to check, so the checking line no longer repeats the figure.
                 items={[
-                  {
-                    id: "stale",
-                    label: "Stale bed counts",
-                    value: staleCount,
-                    tone: staleCount > 0 ? "warning" : undefined,
-                  },
                   {
                     id: "near-full",
                     label: `Near full, ${NEAR_FULL * 100}% and over`,
@@ -580,7 +581,7 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
                   boxClassName={redesign.menu}
                 >
                   <option value="all">Any status</option>
-                  <option value="has-ready">Has ready</option>
+                  <option value="has-ready">Has a ready bed</option>
                   <option value="full">Full</option>
                   <option value="stale">Stale count</option>
                 </Select>
@@ -711,9 +712,10 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
               {isPhone ? <b className={styles.phoneListTitle}>Every ward</b> : null}
               {isFiltered ? (
                 <>
+                  {/* Redesign: a short label; that every ward stays is said to screen readers only. */}
                   <span>
                     <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
-                    highlighted. All wards stay.
+                    highlighted<SrOnly>. All wards stay.</SrOnly>
                   </span>
                   {lit.length === 0 ? <span>No match.</span> : null}
                   {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
@@ -725,8 +727,9 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
                 </>
               ) : isPhone ? null : (
                 // shell-15: the phone shows no "22 of 22" while nothing is filtered.
+                // Redesign: "22 wards", since "22 of 22" says nothing while nothing is filtered.
                 <span>
-                  <b className={styles.num}>{placed.length}</b> of <b className={styles.num}>{placed.length}</b> wards
+                  <b className={styles.num}>{placed.length}</b> {placed.length === 1 ? "ward" : "wards"}
                 </span>
               )}
             </p>
@@ -745,7 +748,7 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
         <div className={styles.layout}>
           <div className={styles.wardsColumn}>
             {placed.length === 0 ? (
-              <Card className={styles.emptyCard}>
+              <Card className={cx(styles.emptyCard, redesign.wrapText)}>
                 <EmptyState icon={Search} title="No wards recorded" meta="The network has no placed wards." />
               </Card>
             ) : isPhone ? (
@@ -835,6 +838,11 @@ export function WardsRedesign({ units: unitsOverride }: { units?: Unit[] }) {
   );
 }
 
+/** Redesign: "Maali (Ward 4.2)", not "Maali (Ward 4.2) — open"; the security label already says it. */
+function shortWardName(unit: Pick<Unit, "name">): string {
+  return unit.name.split(" — ")[0];
+}
+
 function slug(service: HealthService): string {
   return service.toLowerCase().split(" ").join("-");
 }
@@ -885,18 +893,19 @@ function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?:
       data-acuity={unitHasLockedBeds(unit) ? "high" : "standard"}
     >
       <div className={styles.cardHead}>
-        <h3 className={styles.wardTitle} title={unit.name}>
-          {unit.name}
+        <h3 className={cx(styles.wardTitle, redesign.wrapLine)} title={unit.name}>
+          {shortWardName(unit)}
         </h3>
         <SecurityLabel unit={unit} />
       </div>
       <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
         {row.service} · {row.siteShort} · {cohortLabel(unit)}
       </p>
+      {/* Redesign: the strip and all below it sit at the card's foot, so strips line up across a row. */}
       <BedStrip
         counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
         wardName={unit.name}
-        className={styles.strip}
+        className={cx(styles.strip, redesign.stripFoot)}
       />
       <div className={styles.figures}>
         <OccupancyFigure row={row} />
@@ -906,7 +915,7 @@ function WardCard({ row, now, dim = false }: { row: WardRow; now: Instant; dim?:
           <b className={styles.num}>{row.incoming}</b> in
         </span>
       </div>
-      <div className={styles.cardFoot}>
+      <div className={cx(styles.cardFoot, redesign.cardFoot)}>
         <Confirmed row={row} now={now} />
         <WardProfile row={row} />
         {/* Audit 11 Oct 2026: the whole card is the Enter target, so 22 repeated buttons go. */}
@@ -1083,7 +1092,7 @@ function WardPhoneList({
                       onClick={() => onOpen(row)}
                     >
                       <span className={styles.phoneRowText}>
-                        <span className={styles.phoneRowName}>{row.unit.name}</span>
+                        <span className={cx(styles.phoneRowName, redesign.wrapLine)}>{shortWardName(row.unit)}</span>
                         <span className={styles.phoneRowSub}>
                           {row.stale ? (
                             <>
@@ -1212,7 +1221,7 @@ function WardTable({ rows, now, isDim }: { rows: WardRow[]; now: Instant; isDim:
               data-dim={isDim(row) ? "true" : undefined}
             >
               <span role="cell" className={styles.wardCell}>
-                <span className={styles.wardTitle}>{row.unit.name}</span>
+                <span className={styles.wardTitle}>{shortWardName(row.unit)}</span>
                 <span className={styles.meta}>
                   {row.siteShort} · {cohortLabel(row.unit)}
                 </span>

@@ -210,7 +210,7 @@
 .keys {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
+  gap: var(--wf-s-1);
   flex: 1 1 auto;
   min-width: 0;
   white-space: normal;
@@ -222,7 +222,7 @@
   gap: 1px;
   min-width: 0;
   /* Redesign: each service line is two lines (line, number), so the strip is compact. */
-  padding: 5px 8px;
+  padding: var(--wf-s-1) var(--wf-s-2);
   box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
   border-radius: var(--wf-r-md);
@@ -359,7 +359,7 @@
 
 /* Redesign: the directory filters sit closer together. */
 .dirHead2 .chip {
-  padding-inline: 8px;
+  padding-inline: var(--wf-s-2);
 }
 
 .chip > span {
@@ -1564,10 +1564,9 @@
   gap: 8px;
   /* Bleeds by the phone page's own 12px gutter (main), not 16px, so the row never runs 4px past
      the screen and scrolls the page sideways (header audit, 27 Oct 2026). */
-  margin: 0 calc(-1 * var(--wf-s-3));
-  padding: 2px var(--wf-s-3);
-  overflow-x: auto;
-  scrollbar-width: none;
+  /* Redesign: the chips wrap onto a second row instead of running off under the call button. */
+  flex-wrap: wrap;
+  padding: 2px 0;
 }
 
 .phoneChips > * {
@@ -1657,12 +1656,14 @@
   cursor: pointer;
 }
 
+/* Redesign: a hospital name wraps to a second line rather than ending in "…". */
 .phoneGroupHead b {
   min-width: 0;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: var(--wf-lh-14);
+  overflow: visible;
+  white-space: normal;
+  text-align: left;
 }
 
 .phoneGroupCount {
@@ -1759,6 +1760,13 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Redesign: the place wraps inside its own span beside the time, so nobody to call is cut off
+   with "…" and no line starts with a stray "·". */
+.phoneRowSubWrap {
+  overflow: visible;
+  white-space: normal;
 }
 
 .phoneRowEnd {

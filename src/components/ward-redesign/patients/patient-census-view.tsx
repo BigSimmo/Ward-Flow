@@ -418,7 +418,10 @@ export function CensusTable(props: CensusTableProps) {
               <tr>
                 <th scope="col">Tier</th>
                 <th scope="col">Patient</th>
-                <th scope="col">Where now</th>
+                {/* Redesign: one word, so the header stays on one line like the others. */}
+                <th scope="col" aria-label="Where now">
+                  Where
+                </th>
                 {showTo ? <th scope="col">Heading to</th> : null}
                 <th scope="col">Next step</th>
                 <th scope="col">Legal</th>
@@ -595,10 +598,17 @@ const CensusTableRow = memo(function CensusTableRow({
       </td>
       {showTo ? (
         <td>
-          <span className={styles.two}>
-            <b>{row.to}</b>
-            <span>{row.toSub}</span>
-          </span>
+          {/* Redesign: inside "No ward asked yet" the group heading already says it; a dash, not "No ward yet". */}
+          {row.group === "ask" ? (
+            <span className={styles.two} aria-label={row.to}>
+              <b aria-hidden="true">—</b>
+            </span>
+          ) : (
+            <span className={styles.two}>
+              <b>{row.to}</b>
+              <span>{row.toSub}</span>
+            </span>
+          )}
         </td>
       ) : null}
       <td>
@@ -1231,14 +1241,17 @@ export function PhoneCensus(props: PhoneCensusProps) {
                               </span>
                               {row.confidential ? <span className={styles.restricted}>Restricted</span> : null}
                             </b>
-                            <span className={styles.phoneMeta}>
+                            <span className={cx(styles.phoneMeta, styles.phoneMetaWrap)}>
                               <span className={styles.mono}>
                                 <Marked text={row.umrn} needle={props.needle} />
                               </span>{" "}
                               {/* Date of birth tells near-spelling names apart while a search runs. */}
-                              {searching ? <span>· {dobText(row.dob)} </span> : null}· {row.where}
+                              {searching ? <span>· {dobText(row.dob)} </span> : null}
+                              {/* Redesign: the step line below already says "In transit"; say it once. */}
+                              {row.next.startsWith(row.where) ? null : <>· {row.where}</>}
                             </span>
-                            <span className={styles.phoneMeta}>
+                            {/* Redesign: wraps, so a legal line and a place are never cut with "…". */}
+                            <span className={cx(styles.phoneMeta, styles.phoneMetaWrap)}>
                               {row.next}
                               {row.formCode ? ` · Form ${row.formCode}` : ""}
                             </span>
@@ -1267,13 +1280,14 @@ export function PhoneCensus(props: PhoneCensusProps) {
               </section>
             );
           })}
+          {/* Redesign: the same plain link as each group's "Show all", at the foot of the list. */}
+          {offCount > 0 && !offInList ? (
+            <button type="button" className={styles.phoneShowAll} onClick={() => setOffShown(true)}>
+              Show {offCount} not active records
+            </button>
+          ) : null}
         </div>
       )}
-      {props.tab === "now" && rows.length > 0 && offCount > 0 && !offInList ? (
-        <button type="button" className={styles.phoneOffMore} onClick={() => setOffShown(true)}>
-          Show {offCount} not active records
-        </button>
-      ) : null}
       <PhoneSheet
         open={open !== null}
         onClose={() => {
