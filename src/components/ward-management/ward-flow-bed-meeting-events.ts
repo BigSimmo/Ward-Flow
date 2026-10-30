@@ -1,4 +1,4 @@
-import type { AuditDecision } from "./ward-audit";
+import { finiteInstant, type AuditDecision } from "./ward-audit";
 import {
   BED_MEETING_ACTION_KIND_IDS,
   BED_MEETING_ACTION_OWNERS,
@@ -45,6 +45,10 @@ export function reduceBedMeetingEvent(
   helpers: BedMeetingHelpers,
 ): WardFlowState {
   const { reject } = helpers;
+  if (finiteInstant(event.now) === null) {
+    decision.reasonCode = "invalid-payload";
+    return reject(state, event, "The recorded time must be a finite number");
+  }
   const { subject } = event;
   const record =
     subject.kind === "movement" ? helpers.findMovement(state, subject.id) : helpers.findAdmission(state, subject.id);
@@ -63,6 +67,10 @@ export function reduceBedMeetingEvent(
       }
       if (event.owner === "ward" && (event.unitId === undefined || !helpers.findUnit(state, event.unitId))) {
         return reject(state, event, `${event.type} names a ward owner without a known ward`);
+      }
+      if (finiteInstant(event.dueAt) === null) {
+        decision.reasonCode = "invalid-payload";
+        return reject(state, event, "The due time must be a finite number");
       }
       if (event.dueAt <= event.now) return reject(state, event, "The due time must be later than now");
       if (open) return reject(state, event, `This ${subject.kind} already has that action open`);
