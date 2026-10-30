@@ -1,11 +1,12 @@
 "use client";
 
-import { ReferralsRedesign } from "@/components/ward-redesign/referrals/referrals-redesign";
+import { BedManagerReferralsRedesign } from "./bed-manager-referrals-redesign";
 
 /**
  * As site bed manager: the Referrals mock-up as this role sees it. The preview takes the role's desk
- * before drawing (`role` in `screens.ts`), so the page shows only what the role may open.
+ * before drawing (`role` in `screens.ts`), so the page shows only what the role may open. The fork
+ * beside this file holds the bed manager's branches (`siteManager`), each marked where it differs.
  */
 export function AsBedManagerReferralsPage() {
-  return <ReferralsRedesign />;
+  return <BedManagerReferralsRedesign />;
 }
