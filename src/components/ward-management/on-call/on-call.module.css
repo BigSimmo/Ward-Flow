@@ -1314,33 +1314,6 @@
   outline-offset: -2px;
 }
 
-/* Status line for copy and call: visible, quiet and short-lived. */
-.toast {
-  position: fixed;
-  left: 50%;
-  bottom: var(--wf-s-4);
-  z-index: 40;
-  margin: 0;
-  padding: 0 16px;
-  min-height: 0;
-  max-width: calc(100% - 2rem);
-  transform: translateX(-50%);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-ink-1);
-  color: var(--wf-surface);
-  font: 500 var(--wf-fs-13) / 40px var(--wf-font);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--wf-m-fast);
-}
-
-.toastOn {
-  opacity: 1;
-}
-
 /* ---------- downtime card ---------- */
 .downtimeTable td {
   height: 44px;
@@ -1921,9 +1894,6 @@
   .main {
     padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
   }
-  .toast {
-    bottom: calc(var(--wf-s-4) + env(safe-area-inset-bottom, 0px));
-  }
   .lineRow {
     grid-template-columns: minmax(0, 1fr) auto var(--ward-tap, 3rem);
     min-height: 56px;
@@ -1960,7 +1930,6 @@
 }
 
 @media print {
-  .toast,
   .rowActions,
   .favouriteButton {
     display: none;
@@ -1985,51 +1954,6 @@
   }
   .key[aria-pressed="true"] {
     outline: 2px solid CanvasText;
-  }
-}
-
-/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
-@media (max-width: 48rem) {
-  .toast {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
-    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
-    --toast-ring: light-dark(transparent, var(--wf-line-2));
-    position: fixed;
-    top: auto;
-    right: 12px;
-    bottom: 92px;
-    left: 12px;
-    width: fit-content;
-    max-width: calc(100% - 24px);
-    margin: 0 auto;
-    transform: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    box-sizing: border-box;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--wf-r-lg);
-    background: var(--toast-bg);
-    box-shadow:
-      0 0 0 1px var(--toast-ring),
-      var(--wf-e2);
-    color: var(--toast-ink);
-    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-    text-align: left;
-    white-space: normal;
-    line-height: 18px;
-    overflow: visible;
-  }
-  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
-  :global(html:has([role="dialog"][aria-modal="true"])) .toast {
-    bottom: 136px;
   }
 }
 

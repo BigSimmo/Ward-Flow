@@ -426,22 +426,6 @@
   border-radius: 2px;
 }
 
-.actionToast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  max-width: 400px;
-  padding: 12px 18px;
-  background: var(--ink);
-  color: var(--surface);
-  border-radius: var(--r2);
-  font-size: var(--t-1);
-  font-family: var(--body);
-  box-shadow: var(--float);
-  z-index: 99999;
-  border-left: 4px solid var(--gilt);
-}
-
 /* Responsive */
 @media (max-width: 62.5rem) {
   .pageGrid {

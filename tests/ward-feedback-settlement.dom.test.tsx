@@ -243,11 +243,13 @@ describe("escalation feedback", () => {
   it.each(["accepted", "refused", "failed", "cancelled"] as const)("waits for its own %s outcome", async (status) => {
     const command = deferred<WardCommandOutcome>();
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Override dispatch={() => command.promise}>
-          <DelaysScreen />
-        </Override>
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Override dispatch={() => command.promise}>
+            <DelaysScreen />
+          </Override>
+        </WardFlowProvider>
+      </ToastProvider>,
     );
     showEveryDelayRow();
     const movement = seedWardFlowState().movements.find((entry) => isOpen(entry) && !entry.escalation)!;

@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
@@ -12,6 +12,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useActionToast } from "@/components/ward-management/ward-action-toast";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -64,23 +65,9 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
     [allMovements, service, units],
   );
 
-  // Prototype notices (owner rule D4).
-  const [notice, setNotice] = useState<string | null>(null);
-  // One timer for the latest notice, so an earlier one cannot clear a newer confirmation early.
-  const noticeTimer = useRef<number | undefined>(undefined);
-  const showNotice = (text: string) => {
-    setNotice(text);
-    window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => {
-      setNotice(null);
-    }, 4000);
-  };
-  useEffect(
-    () => () => {
-      window.clearTimeout(noticeTimer.current);
-    },
-    [],
-  );
+  // Prototype notices (owner rule D4), in the shared toast region. The latest replaces the last; a
+  // refusal or an escalation not confirmed stays until it is closed.
+  const showNotice = useActionToast({ testId: "delays-notice", tone: "info" });
 
   const open = useMemo(() => movements.filter(isOpen), [movements]);
   const openNetworkWide = useMemo(
@@ -139,7 +126,7 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   const escalationPendingRef = useRef(new Set<string>());
   const escalate = async (movement: Movement) => {
     if (!escalationGate.allowed) {
-      showNotice(escalationGate.reason ?? "Coordinator only");
+      showNotice({ warning: escalationGate.reason ?? "Coordinator only" });
       return;
     }
     if (escalationPendingRef.current.has(movement.id)) return;
@@ -155,10 +142,10 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
       showNotice(
         outcome?.status === "accepted" && outcome.isCurrent?.() !== false
           ? `Escalated to ${ESCALATION_CONTACT}.`
-          : "Escalation not confirmed. Review the movement before trying again.",
+          : { warning: "Escalation not confirmed. Review the movement before trying again." },
       );
     } catch {
-      showNotice("Escalation not confirmed. Review the movement before trying again.");
+      showNotice({ warning: "Escalation not confirmed. Review the movement before trying again." });
     } finally {
       escalationPendingRef.current.delete(movement.id);
     }
@@ -178,11 +165,6 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           }}
         />
       )}
-      {notice ? (
-        <div className={styles.toastNotice} role="status" aria-live="polite">
-          {notice}
-        </div>
-      ) : null}
       {showMissedRequests ? <MissedRequestsPanel /> : null}
     </>
   );

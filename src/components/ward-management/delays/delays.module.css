@@ -807,23 +807,6 @@
    WARD FLOW DELAYS & BOTTLENECK CONTROL — PERFECTED MASTER EXTENSIONS
    ═══════════════════════════════════════════════════════════════════════ */
 
-.toastNotice {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: var(--z-toast);
-  background: var(--ink);
-  color: var(--text-inverse, var(--ward-canvas));
-  padding: 10px 16px;
-  border-radius: var(--r2, 6px);
-  box-shadow: var(--float);
-  font-size: var(--t-1);
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 /* ─── DUAL-HORIZON ACTION RUNWAY (Option 1) ─────────────────────── */
 
 .dossierSection {
@@ -1241,49 +1224,5 @@
 
   .screen[data-ward-page="delays"] .tabNum {
     padding-inline: var(--wf-s-1);
-  }
-}
-
-/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
-@media (max-width: 48rem) {
-  .toastNotice {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
-    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
-    --toast-ring: light-dark(transparent, var(--wf-line-2));
-    position: fixed;
-    top: auto;
-    right: 12px;
-    bottom: 92px;
-    left: 12px;
-    width: fit-content;
-    max-width: calc(100% - 24px);
-    margin: 0 auto;
-    transform: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    box-sizing: border-box;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--wf-r-lg);
-    background: var(--toast-bg);
-    box-shadow:
-      0 0 0 1px var(--toast-ring),
-      var(--wf-e2);
-    color: var(--toast-ink);
-    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-    text-align: left;
-    white-space: normal;
-    z-index: var(--z-toast);
-  }
-  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
-  :global(html:has([role="dialog"][aria-modal="true"])) .toastNotice {
-    bottom: 136px;
   }
 }
