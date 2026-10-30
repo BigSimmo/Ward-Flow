@@ -17,8 +17,8 @@ import {
   withdrawReferralBlockedReason,
 } from "@/components/ward-management/ed/ed-blocked-reasons";
 
-/** The menu's three groups, as `EdActionsMenu` names them. */
-export const ED_ACTION_GROUPS = ["Review & disposition", "Transfer & handover", "Legal & referral"] as const;
+/** The menu's three groups, as `EdActionsMenu` names them. Redesign: "and" in plain words, not "&". */
+export const ED_ACTION_GROUPS = ["Review and disposition", "Transfer and handover", "Legal and referral"] as const;
 
 export type EdActionItem = {
   key: string;
@@ -155,7 +155,8 @@ export function edActionItems({
   add({
     key: "transport",
     // Owner's third ruling, 17 Sept 2026: this logs a booking already made by phone.
-    label: "Transport booked",
+    // Redesign: a verb, as the step's own fix label and popup say ("Transport booked" today).
+    label: "Log transport booking",
     testId: `ward-ed-book-transport-toggle-${id}`,
     primary: primaryAction === "transport",
     blocked: transportBlocked,
@@ -171,9 +172,10 @@ export function edActionItems({
       testId: `ward-ed-arrival-plan-toggle-${id}`,
     });
   if (movement.transport === undefined && transportNeedState(movement) === "not_recorded")
-    add({ key: "no-transport", label: "No transport needed", testId: `ward-ed-no-transport-needed-${id}` });
+    // Redesign: action words, not states ("No transport needed", "No referral raised" today).
+    add({ key: "no-transport", label: "Record no transport needed", testId: `ward-ed-no-transport-needed-${id}` });
   if (movement.referralId === undefined && movementReferralLink(movement, [...referrals]).kind === "not_recorded")
-    add({ key: "no-referral", label: "No referral raised", testId: `ward-ed-no-referral-raised-${id}` });
+    add({ key: "no-referral", label: "Record no referral", testId: `ward-ed-no-referral-raised-${id}` });
   add({ key: "urgency", label: "Change urgency", testId: `ward-change-urgency-toggle-${id}` });
   add({ key: "legal-status", label: "Change legal status", testId: `ward-change-legal-status-toggle-${id}` });
   add({

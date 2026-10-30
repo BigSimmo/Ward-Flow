@@ -5,7 +5,7 @@
 // form on the left and a preview of what each desk will see on the right, beside the confirmation
 // and Dispatch, which stays greyed (with its reason) until the box is ticked.
 import type { RefObject } from "react";
-import { Radio, X } from "lucide-react";
+import { Lock, Radio, X } from "lucide-react";
 
 import { Button, Checkbox, Field, IconTile, Kbd, Select, StatusGlyph, TextInput, Textarea } from "@/components/wf";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -136,10 +136,11 @@ export function BroadcastComposerRedesign({
               Broadcast network alert
             </h2>
             <p id="broadcast-desc" className={styles.drawerSubtitle}>
-              Records a synthetic directive for the chosen scope. No external alert is sent.
+              Records a synthetic directive. No external alert is sent.
             </p>
           </div>
-          <Kbd>esc</Kbd>
+          {/* Redesign: the key named as Tools and Help name it. */}
+          <Kbd>Esc</Kbd>
           <Button
             ref={modalCloseRef}
             iconOnly
@@ -209,22 +210,13 @@ export function BroadcastComposerRedesign({
                 value={broadcastScope}
                 onChange={(e) => setBroadcastScope(e.target.value as BroadcastTargetScope)}
               >
-                {/* Ops-12: each count is read from the unit list, never typed. */}
-                <option value="all">All inpatient wards and ED desks, {broadcastScopeCount(units, "all")}</option>
-                <option value="metro_adult">
-                  Metropolitan adult units, {broadcastScopeCount(units, "metro_adult")}
-                </option>
-                <option value="ed_liaison">
-                  ED mental health liaison desks, {broadcastScopeCount(units, "ed_liaison")}
-                </option>
-                <option value="forensic">Frankland Centre forensic, {broadcastScopeCount(units, "forensic")}</option>
-                <option value="adolescent">
-                  CAMHS adolescent acute units, {broadcastScopeCount(units, "adolescent")}
-                </option>
-                <option value="older_adult">Older adult units, {broadcastScopeCount(units, "older_adult")}</option>
-                <option value="regional_wachs">
-                  WACHS regional network, {broadcastScopeCount(units, "regional_wachs")}
-                </option>
+                {/* Redesign: names only. The count (read from the unit list, Ops-12) is said once, on the
+                    preview's "Goes to" line. */}
+                {(Object.keys(SCOPE_NAMES) as BroadcastTargetScope[]).map((scope) => (
+                  <option key={scope} value={scope}>
+                    {SCOPE_NAMES[scope]}
+                  </option>
+                ))}
               </Select>
             </Field>
 
@@ -252,7 +244,8 @@ export function BroadcastComposerRedesign({
           </div>
 
           <aside className={pop.side} aria-label="Preview and confirmation">
-            <span className={styles.drawerSectionTitle}>Preview on every desk</span>
+            {/* Redesign: true for any scope, not only every desk. */}
+            <span className={styles.drawerSectionTitle}>What each desk sees</span>
             {/* What each desk in the scope sees in its broadcast banner, from the draft as typed. */}
             <div className={pop.preview} data-tone={severityTone}>
               <div className={pop.previewHead}>
@@ -262,9 +255,11 @@ export function BroadcastComposerRedesign({
               </div>
               <strong className={pop.previewTitle}>{broadcastTitle.trim() || "Untitled directive"}</strong>
               <p className={pop.previewMessage}>{broadcastMessage.trim() || "No directive typed yet."}</p>
+              {/* Redesign: the sender moves here from the footer, as desks see it. The Type list already
+                  says who answers; a bed call names its severity, which its kind line does not. */}
               <p className={pop.previewFoot}>
-                {severityLabel(broadcastSeverity)} ·{" "}
-                {broadcastType === "bed_call" ? "wards answer how many beds" : "wards and ED desks acknowledge"}
+                {broadcastType === "bed_call" ? `${severityLabel(broadcastSeverity)} · ` : null}
+                Dispatched by the state bed desk coordinator
               </p>
             </div>
             <p className={pop.reach}>
@@ -277,10 +272,16 @@ export function BroadcastComposerRedesign({
               onChange={(e) => setBroadcastConfirmed(e.target.checked)}
               label="I confirm this directive is clinically authorised for immediate statewide network broadcast."
             />
+            {/* Redesign: what Dispatch waits for sits here, beside the step that clears it. */}
+            {dispatchWaitsFor ? (
+              <p className={pop.waits} id="alerts-broadcast-waits">
+                <Lock size={14} aria-hidden="true" />
+                {dispatchWaitsFor}
+              </p>
+            ) : null}
           </aside>
         </div>
         <div className={cx(styles.drawerFoot, pop.foot)}>
-          <span className={styles.confirmNote}>Dispatched by the state bed desk coordinator</span>
           <Button className={styles.btn} onClick={handleCloseBroadcastModal}>
             Cancel
           </Button>
@@ -290,6 +291,7 @@ export function BroadcastComposerRedesign({
             className={styles.btn}
             data-testid="ward-alerts-broadcast-confirm"
             disabledReason={dispatchWaitsFor}
+            reasonDisplay="tooltip"
             onClick={handleDispatchBroadcast}
           >
             Dispatch

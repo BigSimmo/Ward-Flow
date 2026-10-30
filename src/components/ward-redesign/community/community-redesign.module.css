@@ -495,13 +495,6 @@
   white-space: nowrap;
 }
 
-.oneOf {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
 .lookupNote {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
@@ -634,89 +627,6 @@
   gap: var(--wf-s-1);
   min-width: 2rem;
   color: var(--wf-ink-2);
-}
-
-/* ---- Catchment guide drawer ---- */
-
-.guide {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-4);
-  color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.guideSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  padding-bottom: var(--wf-s-4);
-  border-bottom: 1px solid var(--wf-line-2);
-}
-
-.guideSection:last-child {
-  border-bottom: 0;
-}
-
-.guideHead {
-  margin: 0;
-  color: var(--wf-ink-2);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.guideList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-
-.guideList div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  white-space: nowrap;
-}
-
-.guideList dt {
-  color: var(--wf-ink-2);
-}
-
-.guideList dd {
-  margin: 0;
-  font-weight: 600;
-}
-
-.guideLegend {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.guideLegend li {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  white-space: nowrap;
-}
-
-.guideLegend span {
-  color: var(--wf-ink-2);
-}
-
-.guideActions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-}
-
-.guideActions > * {
-  justify-content: flex-start;
 }
 
 /* ---- Phone ---- */
@@ -1234,16 +1144,9 @@
     border-radius: var(--wf-r-ctl);
   }
 
+  /* Round 2: the suburb chips wrap rather than run off the right edge with no hint. */
   .picks {
-    flex-wrap: nowrap;
-    margin: 0 calc(-1 * var(--wf-s-3));
-    padding: 2px var(--wf-s-3);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .picks::-webkit-scrollbar {
-    display: none;
+    flex-wrap: wrap;
   }
 
   .picks > button {
@@ -1300,7 +1203,7 @@
     align-items: center;
   }
 
-  /* Redesign: on a phone the team buttons wrap under the team name, at full tap height. */
+  /* Redesign: on a phone the team buttons sit on a line under the team name, at today's size. */
   .lookupRow {
     flex-wrap: wrap;
     padding-block: var(--wf-s-3);
@@ -1310,16 +1213,6 @@
     flex: 1 1 100%;
     flex-wrap: wrap;
     justify-content: flex-start;
-  }
-
-  .lookupRow > .lookupAside > a {
-    flex: 1 0 auto;
-    justify-content: center;
-  }
-
-  .lookupAside > a,
-  .lookupAside > button {
-    min-height: var(--ward-tap, 48px);
   }
 
   .lookupWarn {
@@ -1383,12 +1276,6 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-}
-
-/* v10 phone catchment guide: the pinned "Look up a suburb" runs the width of the sheet foot. */
-.guideFootAction {
-  width: 100%;
-  justify-content: center;
 }
 
 /* Device audit 11 Oct 2026, phone: the letter heads stick under the view switch while 64 names
@@ -1496,16 +1383,5 @@
   .main :has(> .heroChips) {
     flex-basis: 100%;
     order: 3;
-  }
-}
-
-/* Redesign: the phone view switch and suburb chips reach the 48px phone control height. */
-@media (max-width: 48rem) {
-  .phonePanes :global([role="radiogroup"]) > :global([role="radio"]) {
-    min-height: var(--ward-tap, 48px);
-  }
-
-  .picks > button {
-    min-height: var(--ward-tap, 48px);
   }
 }

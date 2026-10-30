@@ -43,11 +43,12 @@
   list-style: none;
   border-top: 1px solid var(--wf-line);
 }
+/* Round 2: the group row reads like the rows around it: glyph, title and names, the oldest wait on the
+   right, then Show each. */
 .kindHead {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-3);
+  gap: var(--wf-s-3);
   width: 100%;
   min-height: 52px;
   padding: var(--wf-s-2) var(--wf-s-4);
@@ -62,20 +63,93 @@
 .kindHead:hover {
   background: var(--wf-surface-2);
 }
-.folded {
-  transform: rotate(-90deg);
+.kindHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.kindGlyph {
+  display: inline-flex;
+  flex: 0 0 1rem;
+}
+.kindText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.kindTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
 }
 .kindCount {
-  font-weight: 600;
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
 }
 .kindNames {
-  flex: 1 1 16rem;
-  color: var(--wf-ink-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.kindAge {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .kindOpen {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-1);
   font-weight: 600;
   color: var(--wf-accent-ink);
+}
+
+/* Phone: the owner highlight is the desktop's menu, full width under the tabs. */
+.phoneOwner {
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}
+.phoneOwner .ownerMenu {
+  width: 100%;
+}
+
+/* A missing UMRN reads as words, not as a number. */
+.umrnMissing {
+  color: var(--wf-ink-2);
+  font-weight: 400;
+}
+
+/* Forecast group (copied forecast-alerts-group.tsx): the action stacks under the text on phone. */
+.captionLink {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+@media (max-width: 48rem) {
+  li.forecastRow {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  /* Phone: the group row lines up with the phone rows (alerts.module.css .phoneRow), and Show each
+     folds to its chevron so the names keep the width. */
+  .kindHead {
+    gap: 10px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+  .kindGlyph {
+    flex-basis: 14px;
+  }
+  .kindOpenWord {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
 
 /* Detail pane: the take or hand-back button, Acknowledge and More on one row. */
@@ -93,18 +167,25 @@
 }
 
 /* The release row stacks: reason, then the full-width Release with its "why" line under it. */
-.detailActions [class*="_releaseRow__"] {
-  display: flex;
-  flex-direction: column;
+.releaseRow {
   align-items: stretch;
 }
-.detailActions [class*="_releaseRow__"] > * {
+.releaseRow > * {
   max-width: none;
 }
-.detailActions [class*="_withReason__"] {
+.releaseAction {
+  display: flex;
+  flex-direction: column;
+}
+.releaseAction > span {
+  display: flex;
   flex-direction: column-reverse;
   align-items: stretch;
   gap: var(--wf-s-1);
+}
+.releaseAction button {
+  width: 100%;
+  justify-content: center;
 }
 .actionsRow.actionsRow > button {
   width: auto;

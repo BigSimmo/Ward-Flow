@@ -282,11 +282,21 @@ export function BedRecordDrawer({
         .filter(Boolean)
         .join(" · ") || "On this ward";
 
+  // Redesign: the expected date is a day, not a moment, so it reads "2 days ago" rather than "10:42, 2 days ago".
+  const expectedDay = (() => {
+    const at = admission?.expectedDischargeAt;
+    if (at == null || !Number.isFinite(at)) return bedItem?.expectedDischargeLabel ?? null;
+    const days = dayOf(at) - dayOf(now);
+    if (days === 0) return "Today";
+    if (days === -1) return "Yesterday";
+    if (days === 1) return "Tomorrow";
+    return days < 0 ? `${-days} days ago` : `In ${days} days`;
+  })();
   const expectedPlan = bedItem?.pastDate
-    ? bedItem.expectedDischargeLabel
-      ? `Past the ward's own date (${bedItem.expectedDischargeLabel})`
+    ? expectedDay
+      ? `Past the ward's own date (${expectedDay})`
       : "Past the ward's own date"
-    : (bedItem?.expectedDischargeLabel ?? "No date set");
+    : (expectedDay ?? "No date set");
 
   const goingOut = (() => {
     if (bedItem?.pastDate) return "Past date";
@@ -695,6 +705,8 @@ export function BedRecordDrawer({
           actions={bedActions}
           mainId={mainId}
           notLeftPlan={expectedPlan}
+          goingOut={goingOut}
+          observationShort={observationShort}
         />
         {confirmDialog}
       </>
@@ -851,7 +863,10 @@ export function BedRecordDrawer({
                           <span className={styles.mono}>{bedItem.umrn}</span>
                         </Row>
                       ) : null}
-                      {bedItem?.gender ? <Row label="Bed placement">{bedItem.gender}</Row> : null}
+                      {/* Redesign: only when it differs from the sex the head already shows. */}
+                      {bedItem?.gender && bedItem.gender !== bedItem.sex ? (
+                        <Row label="Bed placement">{bedItem.gender}</Row>
+                      ) : null}
                       {bedItem?.suburb || bedItem?.homeRegion ? (
                         <Row label={bedItem.suburb ? "Suburb" : "Region"}>
                           {[bedItem.suburb, bedItem.homeRegion].filter(Boolean).join(", ")}
@@ -867,16 +882,14 @@ export function BedRecordDrawer({
                     <dl className={styles.kv}>
                       <Row label="Tentative diagnosis">{bedItem?.tentativeDiagnosis ?? "None recorded"}</Row>
                       <Row label="Admitted">
-                        {[
-                          admittedAt != null ? formatInstantWithDay(admittedAt, now) : null,
-                          stayDays === null
-                            ? "length of stay not recorded"
-                            : `${stayDays} day${stayDays === 1 ? "" : "s"} here`,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ")}
+                        {/* Redesign: the stay length is the Stay tile; this row gives when. */}
+                        {admittedAt != null ? formatInstantWithDay(admittedAt, now) : "Not recorded"}
                       </Row>
-                      {bedItem?.legalStatusLabel ? <Row label="Legal status">{bedItem.legalStatusLabel}</Row> : null}
+                      {/* Redesign: only when the Legal tile shortens it ("Form 6A", "CTO"). */}
+                      {bedItem?.legalStatusLabel &&
+                      shortLegal(bedItem.legalStatusLabel) !== bedItem.legalStatusLabel ? (
+                        <Row label="Legal status">{bedItem.legalStatusLabel}</Row>
+                      ) : null}
                     </dl>
                   </Section>
                   <Section title="This shift">

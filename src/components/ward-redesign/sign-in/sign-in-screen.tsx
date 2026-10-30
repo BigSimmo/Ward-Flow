@@ -25,7 +25,7 @@ import {
   type SignInAction,
   type SignInRefused,
   type SignInRoleId,
-} from "@/components/ward-flow-sign-in/ward-flow-sign-in-data";
+} from "./sign-in-data";
 import styles from "./sign-in-screen.module.css";
 
 /**
@@ -281,7 +281,7 @@ export function SignInRedesign() {
               label="Shift"
               size="md"
               className={styles.fullSegmented}
-              items={SHIFT_ROSTER_OPTIONS.map((option) => ({ id: option.id, label: option.id }))}
+              items={SHIFT_ROSTER_OPTIONS.map((option) => ({ id: option.id, label: option.word }))}
               value={selectedShift}
               onChange={(id) => {
                 setSelectedShift(id);
@@ -295,7 +295,7 @@ export function SignInRedesign() {
               <h2 id="sec-role" className={styles.label}>
                 Your role
               </h2>
-              <span className={styles.labelMeta}>Actions named, of {SIGN_IN_ACTIONS.length}</span>
+              {/* Round 2: no "Actions named, of 13" aside; each row says "10 of 13". */}
             </div>
             <div className={styles.roleList} id={roleGroupId} role="group" aria-labelledby="sec-role">
               {SIGN_IN_ROLES.map((candidate) => {
@@ -333,7 +333,7 @@ export function SignInRedesign() {
               Go in
             </h2>
             <span className={styles.goContext}>
-              {catchment.id} · {shift.id} shift
+              {catchment.id} · {shift.word} shift
             </span>
             <Link
               className={buttonClass({ variant: "pri", className: styles.goButton })}
@@ -355,9 +355,7 @@ export function SignInRedesign() {
               </h2>
               <p className={styles.subtitle}>Opens {role.opens}</p>
             </div>
-            <span className={styles.labelMeta}>
-              {catchment.id} · {shift.id} shift
-            </span>
+            {/* Round 2: the catchment and shift show once, above the Open button. */}
           </div>
 
           <Tabs

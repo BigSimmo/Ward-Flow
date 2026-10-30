@@ -20,9 +20,9 @@ const ED_ID = "peel-ed";
 const ED_PART_NAMES = { cad: "transport-cad-number", legal: "transport-legal-status" } as const;
 
 /**
- * "Transport booked", drawn over the ED board: the popup that logs a booking already made by phone.
- * Opened on the first person at this department whose bed is pulled and who has no booking yet, as
- * the row menu's "Transport booked" would open it. Saving records `BOOK_TRANSPORT` exactly as the
+ * "Log transport booking" (today "Transport booked"), drawn over the ED board: the popup that logs a
+ * booking already made by phone. Opened on the first person at this department whose bed is pulled
+ * and who has no booking yet, as the row menu's item would open it. Saving records `BOOK_TRANSPORT` exactly as the
  * board does; Cancel closes it.
  */
 export function PopLogTransport({ page }: { page: ReactNode }) {
@@ -52,8 +52,9 @@ export function PopLogTransport({ page }: { page: ReactNode }) {
         open={open}
         onClose={close}
         closeOnScrim={false}
-        title={`Log the transport booking made by phone for ${name}`}
-        description="Read each answer off the call with the provider."
+        // Redesign: a one-line title; who and how move to the line under it.
+        title="Log transport booking"
+        description={`${name} · booked by phone. Read each answer off the call with the provider.`}
         size="md"
         data-testid={`ward-ed-book-transport-${target.id}`}
       >

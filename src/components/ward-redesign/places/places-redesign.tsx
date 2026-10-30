@@ -76,7 +76,7 @@ import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-bu
 import { KIND_WORD_LONG } from "@/components/ward-management/hub/hub-screen-helpers";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
-import { PlaceRow } from "./place-row";
+import { PlaceRow, SECURITY_WORD } from "./place-row";
 import directory from "./places-redesign.module.css";
 
 /** Redesign: a directory orders by service or by name; with no bed figures there is no "Most ready". */
@@ -361,12 +361,38 @@ export function PlacesRedesign() {
             data-testid={key === "community" ? "hub-teams-fold" : undefined}
           >
             <ChevronDown className={styles.foldIcon} size={14} aria-hidden="true" />
-            <span className={styles.subGroupName}>{label}</span>
+            <span className={directory.foldName}>{label}</span>
             <span className={styles.subGroupCount}>{meta}</span>
           </button>
         </h3>
         {open ? <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} /> : null}
       </div>
+    );
+  }
+
+  /** Round 2: in All, a section (EDs or teams) whose heading is its own fold row, with the count once. */
+  function renderSectionFold(key: string, label: string, entries: HubEntry[]) {
+    const open = searching || flipped.has(key);
+    return (
+      <section key={key} aria-label={label} className={styles.group}>
+        <div className={styles.groupHeadRow}>
+          <h2 className={cx(styles.groupHead, directory.sectionHead)}>
+            <button
+              type="button"
+              className={directory.sectionFold}
+              aria-expanded={open}
+              aria-controls={`hub-fold-${key}`}
+              onClick={() => toggleFold(key)}
+              disabled={searching}
+              data-testid={key === "community" ? "hub-teams-fold" : undefined}
+            >
+              <ChevronDown className={directory.sectionFoldIcon} size={14} aria-hidden="true" />
+              {label} <Count n={entries.length} />
+            </button>
+          </h2>
+        </div>
+        {open ? <GroupList id={`hub-fold-${key}`} entries={entries} renderRow={renderRow} /> : null}
+      </section>
     );
   }
 
@@ -401,7 +427,9 @@ export function PlacesRedesign() {
             {selected.site === undefined ? null : <p className={styles.previewSite}>{selected.site}</p>}
             <div className={styles.detailBadges}>
               {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
-              {selected.security === undefined ? null : <span className={styles.infoPill}>{selected.security}</span>}
+              {selected.security === undefined ? null : (
+                <span className={styles.infoPill}>{SECURITY_WORD[selected.security]}</span>
+              )}
               {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open and decides
                   who may legally be admitted, so it is stated in words. */}
               {selected.authorised === false ? (
@@ -642,20 +670,17 @@ export function PlacesRedesign() {
                     <span className={styles.phoneCheckText}>
                       <b>Check first: {checkFirst[0].entry.name}</b>
                       <span>
-                        Stale count
                         {checkFirst[0].entry.confirmedAt === undefined
-                          ? ""
-                          : `, confirmed ${durMinutes(now - checkFirst[0].entry.confirmedAt)} ago`}
+                          ? "Bed count not confirmed"
+                          : `Bed count confirmed ${durMinutes(now - checkFirst[0].entry.confirmedAt)} ago`}
                         {checkFirst.length > 1 ? `. ${checkFirst.length - 1} more need a check.` : "."}
                       </span>
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
                 ) : null}
-                {/* Phone review F-24: the hero's shorthand, spelled out once where the list starts. */}
-                <p className={styles.phoneKey} data-testid="hub-phone-key">
-                  Stale: the ward has not confirmed its count in time.
-                </p>
+                {/* Round 2: the Stale legend sentence is gone; the card above and each row's own
+                    words say it, and the row's spoken label explains it. */}
               </div>
             ) : (
               <div className={styles.controls}>
@@ -733,53 +758,44 @@ export function PlacesRedesign() {
                   </button>
                 </p>
               ) : null}
-              {shownSections.map((section) => (
-                <section key={section.key} aria-label={section.label} className={styles.group}>
-                  <div className={styles.groupHeadRow}>
-                    <h2 className={styles.groupHead}>
-                      {section.label} <Count n={section.entries.length} />
-                    </h2>
-                  </div>
-                  {section.subgroups.length > 0 ? (
-                    section.subgroups.map((group, index) =>
-                      renderFold(
-                        `${section.key}-${group.label}`,
-                        group.label,
-                        `${group.entries.length} ${group.entries.length === 1 ? "ward" : "wards"}`,
-                        group.entries,
-                        index < OPEN_SERVICES,
-                      ),
-                    )
-                  ) : kind === "all" ? (
-                    // In All, EDs and teams fold to one row each; their own switch lists them in full.
-                    renderFold(
-                      section.key,
-                      section.key === "ed"
-                        ? `${section.entries.length} emergency departments`
-                        : `${section.entries.length} community teams`,
-                      section.key === "ed" ? "Each opens its department page" : "No beds",
-                      section.entries,
-                      false,
-                    )
-                  ) : (
-                    <GroupList id={`hub-list-${section.key}`} entries={section.entries} renderRow={renderRow} />
-                  )}
-                </section>
-              ))}
+              {shownSections.map((section) =>
+                // Round 2: in All, the EDs' and teams' heading is itself the fold row, so the count shows once.
+                kind === "all" && section.subgroups.length === 0 ? (
+                  renderSectionFold(section.key, section.label, section.entries)
+                ) : (
+                  <section key={section.key} aria-label={section.label} className={styles.group}>
+                    <div className={styles.groupHeadRow}>
+                      <h2 className={styles.groupHead}>
+                        {section.label} <Count n={section.entries.length} />
+                      </h2>
+                    </div>
+                    {section.subgroups.length > 0 ? (
+                      section.subgroups.map((group, index) =>
+                        renderFold(
+                          `${section.key}-${group.label}`,
+                          group.label,
+                          `${group.entries.length} ${group.entries.length === 1 ? "ward" : "wards"}`,
+                          group.entries,
+                          index < OPEN_SERVICES,
+                        ),
+                      )
+                    ) : (
+                      <GroupList id={`hub-list-${section.key}`} entries={section.entries} renderRow={renderRow} />
+                    )}
+                  </section>
+                ),
+              )}
             </div>
-            <div className={styles.listFoot}>
-              <span className={styles.shownCount}>
-                <b>{searching ? `${shownCount} of ${totals.all}` : `${results.length} of ${totals.all}`}</b>{" "}
-                {searching ? "match" : "listed"}
-              </span>
-              <span className={directory.bedsNote}>
-                <BedDouble size={14} aria-hidden="true" />
-                <span>
-                  Beds are on <Link href={WARD_CAPACITY_HREF}>Capacity&rsquo;s bed map</Link> and{" "}
-                  <Link href={ALL_WARDS_HREF}>All wards</Link>
+            {/* Round 2: the count shows only when a search or tab narrows the list (the hero says 96), and
+                the beds pointer lives once, as the preview's Beds row. */}
+            {searching || kind !== "all" ? (
+              <div className={styles.listFoot}>
+                <span className={styles.shownCount}>
+                  <b>{searching ? `${shownCount} of ${totals.all}` : `${results.length} of ${totals.all}`}</b>{" "}
+                  {searching ? "match" : "listed"}
                 </span>
-              </span>
-            </div>
+              </div>
+            ) : null}
           </Card>
 
           <aside className={styles.hubRight} aria-label="At a glance" data-wf-rail>
@@ -824,7 +840,7 @@ export function PlacesRedesign() {
                     </ul>
                   )}
                   {attention.length > 4 ? (
-                    <p className={styles.nothing}>{attention.length - 4} more marked Stale count in the list.</p>
+                    <p className={styles.nothing}>{attention.length - 4} more marked Stale in the list.</p>
                   ) : null}
                   {/* ⚠️ NAMED, NOT COUNTED: the value is knowing WHICH ward cannot take an involuntary patient. */}
                   {unauthorised.length === 0 ? null : (

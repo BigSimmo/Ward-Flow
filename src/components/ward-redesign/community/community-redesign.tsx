@@ -55,6 +55,7 @@ import {
 } from "@/components/ward-management/ward-catchment";
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 
+import guideStyles from "./community-guide.module.css";
 import styles from "./community-redesign.module.css";
 
 /**
@@ -454,7 +455,8 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow={isPhone ? "Community · Statewide" : "Community · Team directory"}
+          // Round 2: one eyebrow on every device, as on Places.
+          eyebrow="Community · Statewide"
           // Device audit 11 Oct 2026: one title on every device; Read alike is its own figure below.
           title={
             <>
@@ -478,7 +480,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 />
                 <HeroStat
                   value={sharedSuburbs.suburbs}
-                  label="Two names"
+                  label="Shared suburbs"
                   pressed={sharedSuburbOnly}
                   onToggle={() => setSharedSuburbOnly((value) => !value)}
                 />
@@ -497,7 +499,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 <HeroStat
                   inline
                   value={sharedSuburbs.suburbs}
-                  label="Suburbs with two names"
+                  label="Shared suburbs"
                   pressed={sharedSuburbOnly}
                   onToggle={() => setSharedSuburbOnly((value) => !value)}
                 />
@@ -507,12 +509,12 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
           foot={
             isPhone ? undefined : (
               <CheckingFoot
+                // Round 2: the title carries the team count and the title line says the names are not
+                // verified, so the foot keeps only what they do not say.
                 items={[
-                  { id: "names", label: "Team names", value: allTeams.length },
                   { id: "services", label: "Health services", value: serviceCounts.size },
                   { id: "suburbs", label: "Suburbs mapped", value: suburbsMapped },
                 ]}
-                notChecked={["verified services, these are recorded names"]}
               />
             )
           }
@@ -532,16 +534,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 >
                   {isPhone ? "Guide" : "Catchment guide"}
                 </Button>
-                {isPhone ? null : (
-                  <Link
-                    href="/ward-flow/referrals"
-                    className={buttonClass({ variant: "onHero" })}
-                    data-testid="community-action-referral-board"
-                  >
-                    <Icon icon={ArrowRight} size={16} />
-                    Referrals
-                  </Link>
-                )}
+                {/* Round 2: no Referrals link here; the menu opens the board. */}
                 <Link
                   href="/ward-flow/referrals/new"
                   className={buttonClass({ variant: "light" })}
@@ -591,7 +584,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 // Suburb leads: "which team covers this suburb" is the phone job.
                 { id: "suburb" as const, label: "Suburb" },
                 { id: "az" as const, label: "A to Z" },
-                { id: "alike" as const, label: "Alike" },
+                { id: "alike" as const, label: "Read alike" },
                 { id: "services" as const, label: "Services" },
               ]}
             />
@@ -624,8 +617,13 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 eyebrow
                 aside={
                   <p className={styles.resultLine} aria-live="polite" data-testid="community-gateway-result-line">
-                    <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team names
-                    {filtersActive ? <span className={styles.resultHint}>, all names stay</span> : null}
+                    {/* Round 2: the count shows only when a filter narrows it; the title already says 64. */}
+                    {filtersActive ? (
+                      <>
+                        <strong>{filteredTeams.length}</strong> of {allTeams.length} synthetic team names
+                        <span className={styles.resultHint}>, all names stay</span>
+                      </>
+                    ) : null}
                   </p>
                 }
               />
@@ -656,7 +654,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 onChange={setServiceFilter}
               />
               <FilterChip pressed={alikeOnly} onPressedChange={setAlikeOnly} tone="warning">
-                Reads alike
+                Read alike
               </FilterChip>
               {filtersActive ? (
                 <Button
@@ -780,7 +778,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
             >
               <CardHead
                 id="community-gateway-family-title"
-                title="Names that read alike"
+                title="Read alike"
                 eyebrow
                 aside={
                   <span className={styles.headNote}>
@@ -883,7 +881,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
               <Button
                 variant="pri"
                 icon={MapPin}
-                className={styles.guideFootAction}
+                className={guideStyles.guideFootAction}
                 onClick={() => {
                   setDrawerOpen(false);
                   setPhonePane("suburb");
@@ -899,12 +897,12 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
             ) : undefined
           }
         >
-          <div className={styles.guide}>
-            <section className={styles.guideSection} aria-labelledby="community-guide-source">
-              <h3 id="community-guide-source" className={styles.guideHead}>
+          <div className={guideStyles.guide}>
+            <section className={guideStyles.guideSection} aria-labelledby="community-guide-source">
+              <h3 id="community-guide-source" className={guideStyles.guideHead}>
                 Source
               </h3>
-              <dl className={styles.guideList}>
+              <dl className={guideStyles.guideList}>
                 <div>
                   <dt>Table</dt>
                   <dd>S2015 catchment rows</dd>
@@ -927,11 +925,11 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 health catchment documents. This directory has not been verified with the services.
               </p>
             </section>
-            <section className={styles.guideSection} aria-labelledby="community-guide-similar">
-              <h3 id="community-guide-similar" className={styles.guideHead}>
+            <section className={guideStyles.guideSection} aria-labelledby="community-guide-similar">
+              <h3 id="community-guide-similar" className={guideStyles.guideHead}>
                 Similar names
               </h3>
-              <ul className={styles.guideLegend}>
+              <ul className={guideStyles.guideLegend}>
                 <li>
                   <StatusGlyph tone="warning" size={9} />
                   <strong>Reads like N</strong>
@@ -951,11 +949,11 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
             </section>
             {/* v10 phone: the guide is reading only; its actions live on the page and in the foot. */}
             {isPhone ? null : (
-              <section className={styles.guideSection} aria-labelledby="community-guide-actions">
-                <h3 id="community-guide-actions" className={styles.guideHead}>
+              <section className={guideStyles.guideSection} aria-labelledby="community-guide-actions">
+                <h3 id="community-guide-actions" className={guideStyles.guideHead}>
                   Actions
                 </h3>
-                <div className={styles.guideActions}>
+                <div className={guideStyles.guideActions}>
                   <Link href="/ward-flow/referrals/new" className={buttonClass({ variant: "sec" })}>
                     <Icon icon={Plus} size={16} />
                     Raise referral
@@ -1416,12 +1414,7 @@ function SuburbLookup({
                         </span>
                       </span>
                       <span className={styles.lookupAside}>
-                        {clinics.length > 1 ? (
-                          <span className={styles.oneOf}>
-                            <StatusGlyph tone="warning" size={9} />
-                            One of {clinics.length}
-                          </span>
-                        ) : null}
+                        {/* Round 2: no per-row "One of 2"; the line above the teams says it once. */}
                         {team ? (
                           <>
                             {/* Redesign: each team the suburb names gets its own button to its page. */}
@@ -1429,8 +1422,9 @@ function SuburbLookup({
                               href={communityTeamHref(team)}
                               className={buttonClass({ variant: "sec", size: "sm" })}
                               onClick={() => recordVisit(team.name)}
+                              aria-label={`Open ${clinic}`}
                             >
-                              Open {clinic}
+                              Open
                               <Icon icon={ChevronRight} size={14} />
                             </Link>
                             <Button variant="ghost" size="sm" onClick={() => onShowInList(team)}>

@@ -99,8 +99,7 @@
   min-width: 0;
 }
 
-.titleRow > :last-child,
-.reachHead > :last-child {
+.titleRow > :last-child {
   margin-left: auto;
 }
 
@@ -412,7 +411,7 @@
 .panelHeading {
   margin: var(--wf-s-3) 0 var(--wf-s-1);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
@@ -628,8 +627,7 @@
   .roleBrief,
   .goContext,
   .itemWords,
-  .itemNoteLine,
-  .reachHead > .labelMeta {
+  .itemNoteLine {
     white-space: normal;
     overflow-wrap: break-word;
   }

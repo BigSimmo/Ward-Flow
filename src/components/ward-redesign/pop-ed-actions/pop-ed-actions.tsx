@@ -175,7 +175,11 @@ function ActionList({
   const blocked = items.filter((item) => item.blocked);
   return (
     <>
-      <div role="group" aria-label="Record" className={cx(styles.group, styles.firstGroup)}>
+      {/* Redesign: the record items take a heading like every other group. */}
+      <div role="group" aria-label="Patient record" className={cx(styles.group, styles.firstGroup)}>
+        <span aria-hidden="true" className={styles.groupLabel}>
+          Patient record
+        </span>
         {RECORD_ITEMS.map((label) => (
           <button
             key={label}

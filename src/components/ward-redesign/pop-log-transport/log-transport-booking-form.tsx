@@ -328,7 +328,8 @@ export function LogTransportBookingForm({
         </p>
       )}
 
-      <Field label={`Who is collecting ${patientName}`} id={did("provider")}>
+      {/* Redesign: the person is named once, under the popup's title. */}
+      <Field label="Who is collecting" id={did("provider")}>
         <Select
           data-testid={tid("provider")}
           disabled={pending}
@@ -355,8 +356,8 @@ export function LogTransportBookingForm({
       <Field
         label="CAD transport number"
         id={did("cad")}
+        // Redesign: "read it off the call" is said once, under the popup's title.
         error={cadProblem ? <span data-testid={tid("cad-problem")}>{cadNumberSentence(cadProblem)}</span> : undefined}
-        help="Read it off the call with the provider."
       >
         <TextInput
           data-testid={tid("cad")}
@@ -436,7 +437,9 @@ export function LogTransportBookingForm({
       ) : null}
 
       <fieldset className={styles.question} data-testid={tid("escort")} disabled={pending}>
-        <legend className={styles.legend}>Does {patientName} need an escort?</legend>
+        <legend className={styles.legend}>
+          Escort needed?<span className="sr-only"> For {patientName}.</span>
+        </legend>
         <span className={styles.choice}>
           {ESCORT_ANSWERS.map((answer) => (
             <label key={answer.label} className={styles.choiceItem}>
@@ -473,11 +476,11 @@ export function LogTransportBookingForm({
           ))}
         </span>
         {record ? (
+          // Redesign: "Legal now" said once.
           <p className={styles.note}>
-            Legal now: {legalNowText(record)}.
             {LEGAL_STATUS_FROM_LEGAL_NOW && legalNow !== undefined && answers.transportLegalStatus === legalNow
-              ? " Filled in from Legal now. Change it if the call said otherwise."
-              : null}
+              ? `From Legal now: ${legalNowText(record)} · change if the call differs.`
+              : `Legal now: ${legalNowText(record)}.`}
           </p>
         ) : null}
       </fieldset>
@@ -516,7 +519,19 @@ export function LogTransportBookingForm({
         </Field>
       ) : null}
 
+      {/* Redesign: the dialog footer order the app uses (Cancel, then the primary at the end), with
+          the short reason Save waits for beside it. */}
       <div className={styles.actions}>
+        {leftNames.length > 0 && blockedReason === undefined ? (
+          <span className={styles.actionsWait} aria-hidden="true">
+            {leftNames.length} {leftNames.length === 1 ? "answer" : "answers"} left
+          </span>
+        ) : null}
+        {onCancel ? (
+          <Button data-testid={tid("cancel")} disabled={pending} onClick={onCancel}>
+            Cancel
+          </Button>
+        ) : null}
         <Button
           variant="pri"
           data-testid={tid("confirm")}
@@ -535,11 +550,6 @@ export function LogTransportBookingForm({
         >
           Save transport booking
         </Button>
-        {onCancel ? (
-          <Button data-testid={tid("cancel")} disabled={pending} onClick={onCancel}>
-            Cancel
-          </Button>
-        ) : null}
         {blocked ? (
           <span id={`${did("confirm")}-blocked`} className="sr-only">
             {blocked}

@@ -5,3 +5,71 @@
   padding: var(--wf-s-2) 0;
   list-style: none;
 }
+
+/* Redesign: with the sentence gone, the sound switch sits at the end of the footer. */
+.footEnd.footEnd {
+  justify-content: flex-end;
+}
+
+/* Redesign: notices of the same kind share one row, one line per person (as the Alerts drawer mock-up). */
+.groupList {
+  display: grid;
+  margin: 0;
+  padding: 0 0 0 calc(var(--wf-h-sm) + var(--wf-s-3));
+  list-style: none;
+}
+
+.groupMember {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.memberText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.memberWho {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+.memberWho strong {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.memberWhen {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* On a phone the shared rows indent their detail 30 px; the people line up with it. */
+@media (max-width: 48rem) {
+  .groupList {
+    padding-left: 30px;
+  }
+
+  /* A long name keeps its whole surname: the record number wraps under it instead. */
+  .memberWho {
+    flex-wrap: wrap;
+    row-gap: 0;
+    white-space: normal;
+  }
+}

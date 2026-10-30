@@ -187,12 +187,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** only the actions you can take now, in three groups (Review and disposition, Transfer and handover, Legal and referral). The row's next step is the one filled button.",
     "**New:** greyed actions fold into 'Not available yet (n)', each with its short reason, who acts next and its one fix.",
     "**Kept:** every action, including View patient record, Edit presentation and Edit plan. A bottom sheet with 48 px rows on a phone.",
+    "**Round 2:** items are verbs ('Log transport booking', 'Record no referral'), the first three get a 'Patient record' heading, and the phone rows are back to today's size.",
   ],
   "pop-log-transport": [
     "**Built from a copy of today's transport booking form**: every field, the check and the save work as now.",
     "**New:** '3 answers left' moves to the top with a link to the first one; with nothing left it reads 'Every answer given. Check them, then save.'",
     "**New:** phone answer buttons are 48 px tall, and the pinned Save row matches the popup background in dark.",
     "**Kept:** all fields, the legal-status prefill from Legal now, and Save greyed until every answer is in.",
+    "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
   ],
   "pop-officer-job": [
     "**Built on today's job panel itself**, opened by choosing the first job on the desk, so steps, forms pack, copy and close are real.",
@@ -219,23 +221,27 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** one filled button chosen by the stay (held up: Update blocker; away at an ED: Mark them back; due out or past date: Record that they have left; settled: none), with one plain button and More beside it.",
     "**New:** a 'Why they have not left' notice under the four facts, from what the ward recorded. Surname first; the fact tiles wrap instead of cutting off; Patient page sits beside the name. The drawer is 500 px wide (was 460) so the three buttons fit.",
     "**Kept:** the four headline facts, the Overview, Plan to leave and Timeline tabs, Patient page, and the paper-authority and criteria notes.",
+    "**Round 2:** phone and desktop show the same four tiles (Stay, Legal, Going out, Observation); a community treatment order shows as 'CTO'. The planned leaving date reads as a day, not a time. Rows show only when they add something. The vital signs sentence stays word for word.",
   ],
   "pop-confirm-beds": [
     "**Built from a copy of today's Confirm capacity figures dialog**, with the same two confirm handlers, so it saves the beds and the morning numbers as now, now in the shared dialog.",
     "**New:** four fact tiles first (Staffed beds, In use, Ready, Closed), Pulled and Open-and-vacant in one quiet line, then a − / + control for the free beds showing the change as you go.",
     "**New:** one filled button: 'Confirm beds and morning numbers (09:30)' while they are due, with 'Confirm beds only' beside Cancel.",
     "**Kept:** 'Writes to Dabakarn only — never any other ward', 'Currently confirmed … at …', and Review today's expected discharges (which now goes to Stays and discharges).",
+    "**Round 2:** the section is 'Beds free to offer', the tiles' own words. 'Writes to Dabakarn only — never any other ward' stays word for word. The three buttons sit on one row on desktop, and the number box matches the − and + buttons.",
   ],
   "pop-broadcast": [
     "**Built from a copy of today's broadcast composer** and the Alerts screen's draft and Dispatch, drawn over Alerts where it lives, so it sends the same network alert as now.",
     "**New:** a wider dialog in the middle of the screen: the form on the left (Severity and Expires side by side), and on the right a preview of what each desk will see, with who it goes to and the desk count.",
     "**New:** Dispatch stays greyed until the box is ticked and says what is left ('Tick the confirmation first.').",
     "**Kept:** every field, the template list and the confirmation wording. One column, full screen, on a phone.",
+    "**Round 2:** the count is said once, on 'Goes to'. 'What each desk sees' replaces 'Preview on every desk'. The subtitle keeps the safeguard words: 'Records a synthetic directive. No external alert is sent.' The two-column dialog now always draws.",
   ],
   "pop-ward-notices": [
     "**Built from a copy of today's Notices panel**, opened as now (right-hand sheet on a computer, tall sheet on a phone), with My ward's own Confirm numbers and Acknowledge.",
     "**New:** names are surname first; only Act now rows keep a filled button (a Check row's Open transfer is plain); a list longer than 8 shows its first 6, then Show more.",
     "**Kept:** the filters, the Needs attention and From the coordinator sections, and the buzz sound switch.",
+    "**Round 2:** notices of the same kind share one row with a line per person, as the Alerts drawer does. 'Overdue' is kept for legal form times; morning numbers say 'Late' and arrivals 'Late arrival'. Focus starts on Close.",
   ],
   "pop-refer-ward": [
     "**Built from the ED row's own Refer to a ward link**, read into the same request the app bar opens, for the first person on the Peel ED board whose next step is Refer to a ward: ward chosen, sent from Peel ED, patient and referral filled in.",
@@ -392,6 +398,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** census squares are coloured by state (ready green, pulled blue, closed hatched amber, occupied grey), with a key giving the same counts as the header. Bed numbers go from 11 to 12 px.",
     '**Kept:** Confirm your beds with its stepper and Confirm, Recent answers, and "Writes to Dabakarn only, never any other ward".',
     "**Not seen:** the screen with a request waiting, because this ward has none in the synthetic world. This copy is over the 1,500-line cap under D-89.",
+    "**Round 2:** with nothing to answer, the notice is 'Requests land here as they are sent.' Figures show once. Confirm your beds leads with Confirmed free, then Ready. 'Only a ready bed can take a request' shows only while a request is open.",
   ],
   settings: [
     "**Built from a copy of today's Settings screen**, so rule drafts, Standard and Surge, Save with Undo, Discard, Find a setting, Go to a desk and the phone layout work as now.",
@@ -406,6 +413,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the boxed role numbers 1 to 7 are gone; the action counts stay, and number keys still pick a role.",
     "**Kept:** no input fields, the action list with ticks and crosses, every synthetic and no-password notice, and the footer.",
     "**Question for you:** four of the seven roles have no home of their own, so they open Home. Should the button navigate at all?",
+    "**Round 2:** places use the menu's names, the ward role is 'Ward manager', and shifts are Day / Evening / Night from the app's own pattern, so they match the rail.",
+    "**Proposals for you:** list the app's eight desks instead of seven roles, and open the matching role mock-up from Open as.",
   ],
   community: [
     "**Built from a copy of today's Community directory**, so search, service filters, Reads alike, the letter jump, Catchment guide, Raise referral and the phone tabs work as now.",
@@ -413,6 +422,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the suburb lookup is a full-width bar above the list. Its warning ("2 teams name Barragup. Check the right one.") comes first, and each team has its own Open button plus Show in list.',
     "**New:** the A to Z list uses the page scroll; the letter rail and column heading stick under the bar, and the shorter side column stays pinned.",
     "**Kept:** Names that read alike, Teams by service, Catchment guide, Raise referral and the footer wording.",
+    "**Round 2:** the hero drops its Referrals link (the menu opens the board). 'Shared suburbs' and 'Read alike' are the one label each. Phone suburb chips wrap instead of running off the edge.",
   ],
   "community-team": [
     "**Built from a copy of today's community team screen**, so the tabs, Record contact, CTO register, Refer from team, the record drawer and transport booking work as now.",
@@ -460,6 +470,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** a short panel says what a chronology holds: records, the audit trail (coordinator only), the session log, times as recorded or typed, and the output.",
     "**Kept:** recorded and typed times only; nothing is calculated.",
     "**Still open:** the CSV's patient line keeps today's first-name-first export format, as it is a file format rather than the screen.",
+    "**Round 2:** the phone eyebrow is just 'Generated 10:42'. 356 shows once ('6 of 356'). Show more is offered once, then points to the search, because 356 rows would take about 30 presses. The filter says 'Ward manager', the app's role name.",
   ],
   places: [
     "**Built from a copy of today's Places screen**, so search (the / shortcut, arrows, Enter, Escape), stars, Ask to confirm, View statistics, Open and the phone preview sheet work as now.",
@@ -468,6 +479,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the preview opens on the first place listed, so the right side is never empty. A stale count says Stale count on its row.",
     "**Kept:** All, Wards, EDs and Teams; Service order; stars; At a glance; Needs a check (stale counts only, in the existing words). Wards by service now counts wards, not beds.",
     "**Question for you:** with no beds shown, the Most ready order is replaced by A to Z. Is that right, or should Most ready stay?",
+    "**Round 2:** in All, the EDs' and teams' heading is itself the fold row, so the count shows once. 'Stale 5h' sits beside its two lines on a phone. Security reads 'Open ward' / 'Locked ward', because 'Open' sat next to Open buttons.",
   ],
   "statistics-unit": [
     "**Built from a copy of today's ward statistics screen**, so Change ward, the next and previous arrows, Export the figures, the roster search, filters and CSV, and the phone view work as now.",
@@ -587,6 +599,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New (point 17):** three or more alerts of one recorded kind in a row become one group row ("Transport awaiting departure · 5 people"), opened with Show each. It groups by kind only, never by wording, and each alert keeps its own row and action inside.',
     '**New:** the detail panel has one Release (for the pulled bed), with "Choose a reason first" written under it until a reason is chosen. The second button that also said Release meant handing the alert back, so it now says Hand back, on one row with More actions.',
     "**Not done here:** a Chase all button for a group. Each person's Chase transport is inside the group; one button acting on all five needs a new command, so it waits for your yes.",
+    "**Round 2:** one word for checks ('8 flagged · 4 clear'). Group rows lead with the same urgency dot as their members and put the oldest wait on the right. On a phone, the owner chips become the desktop's owner menu and Checking opens straight onto its list.",
+    "**Question for you:** Owner appears twice (an Arrange by view and the Highlight menu). Recommend keeping the view and dropping the menu on desktop.",
   ],
   "legal-forms": [
     "**Built from a copy of today's Legal forms page** (split into two files to stay under the line cap), so Clocks, Checklist, History, Record a form, Add the time and Record and tell all work as now.",
@@ -626,6 +640,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the What and Record cells wrap instead of ending in "…", and the list runs the height of the screen. On a phone the Review, Gaps and Reviewed switch is 48 px tall.',
     '**Kept:** the review count, PIR chronology and "Safety incidents not recorded here".',
     '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
+    "**Round 2:** Gaps reads 'Form gaps' ('67 form gaps across 9 sites'). The phone hero drops a line that repeated the title, tabs and footer. The phone switch is back to today's size; wrapping cells now live in copied files, not overrides.",
   ],
   seclusion: [
     "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",
