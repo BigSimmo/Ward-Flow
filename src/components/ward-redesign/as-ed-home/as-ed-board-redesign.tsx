@@ -29,8 +29,6 @@ import { SinceLastLookPill } from "@/components/ward-management/since-last-look-
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
-import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "@/components/ward-management/ed/ed-screen-actions";
 import { EdBoardSection } from "@/components/ward-management/ed/ed-screen-board";
 import { EdAccessRiskCard } from "@/components/ward-redesign/ed-board/ed-access-risk-redesign";
@@ -481,12 +479,7 @@ export function AsEdBoardRedesign({ edId }: EdScreenProps) {
             { id: "leaving", label: "Leaving for a ward", value: leavingForWard },
             { id: "target", label: "Access target", value: waitLine(accessTarget) },
           ]}
-          // Option B (Josh, 13 Oct 2026): one referral flow. Raise referral opens the referral
-          // slide-out from this department; the inline form below now only raises a movement from a
-          // referral already in this department's inbox.
-          onRaiseReferral={() =>
-            openReferralSheet(raiseReferralHref({ source: "ed_medical", originEdId: thisEdId, refer: "ward" }))
-          }
+          // ROLE BRANCH (ed): no hero Raise referral; the app bar's New referral is the one way in (30 Oct).
         />
 
         <EdRaiseIntoMovementSection ctx={ctx} />

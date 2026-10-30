@@ -119,7 +119,7 @@ import {
   type ThemeChoice,
 } from "@/components/ward-management/settings/settings-panes";
 import { useRowDensity, type RowDensity } from "@/components/ward-management/settings/row-density";
-import { RuleRow, SettingRow } from "@/components/ward-management/settings/settings-rows";
+import { RuleRow, SettingRow } from "@/components/ward-redesign/settings/settings-rows";
 import {
   SETTINGS_TABS,
   findSettings,
@@ -145,7 +145,7 @@ import {
   shortDuration,
   wardsText,
 } from "@/components/ward-management/settings/settings-screen-model";
-import { SettingsTargetsColumn } from "@/components/ward-management/settings/settings-targets-column";
+import { SettingsTargetsColumn } from "@/components/ward-redesign/settings/settings-targets-column";
 import {
   copyExecutiveSettingsDiagnostics,
   SettingsSourceHost,
@@ -800,7 +800,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         <p className={styles.scopeLine}>
           <span className={styles.scopeTag}>Read only</span>
           {/* Role view (nurse in charge): the rules this ward's screens read, set by the coordinator. */}
-          <span>{readsRulesOnly ? "The rules your ward's screens use." : "Public rules for executive reporting."}</span>
+          <span>
+            {readsRulesOnly
+              ? "The rules your ward's screens use, set by the coordinator."
+              : "Public rules for executive reporting."}
+          </span>
         </p>
       ) : (
         <p className={cx(styles.scopeLine, rx.scopeWords)}>
@@ -808,7 +812,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           <span>Rules change what every screen shows. Each save is recorded in the audit.</span>
         </p>
       )}
-      {configurationBlockReason ? <p role="status">{configurationBlockReason}</p> : null}
+      {/* Role view (nurse in charge): the read-only line above already says who sets the rules, so the
+          bare "Coordinator only" status under it is left out; each value still carries the reason. */}
+      {configurationBlockReason && !readsRulesOnly ? <p role="status">{configurationBlockReason}</p> : null}
       <div className={styles.columns}>
         <div className={styles.column}>
           <Card aria-labelledby="timings-title" data-setting="surge">

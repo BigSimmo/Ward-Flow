@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { BedDouble, Clock, Hospital, Printer, ShieldAlert, XCircle } from "lucide-react";
+import { BedDouble, Clock, Hospital, Printer, XCircle } from "lucide-react";
 
 import {
   Button,
@@ -324,7 +324,8 @@ function WeeklyReportView({
                 <HeroStat value={report.edWaits.count} label={`New ED waits ${longHoursLabel}+`} />
                 {/* Phone review F-26 and F-33: each figure names its unit and what it averages. */}
                 <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-                <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
+                {/* Redesign: a shorter label so it fits one line at 390px; the card below has the full words. */}
+                <HeroStat value={occupancyText} label="Occupied bed time" />
               </>
             ),
           }}
@@ -361,10 +362,14 @@ function WeeklyReportView({
           onTogglePause={togglePause ?? undefined}
         />
 
-        <p className={styles.disclosure} data-testid="ward-weekly-period">
-          Period: {outputMoment(week.start)} (inclusive) to {outputMoment(week.end)} (exclusive).
-          {week.countedEnd < week.end ? <> Counted to {outputMoment(week.countedEnd)} (exclusive).</> : null}
-        </p>
+        {/* Redesign: the phone already gives the week in the hero and under the week switch, so the
+            exact period line is kept for desktop and print. */}
+        {isPhone ? null : (
+          <p className={styles.disclosure} data-testid="ward-weekly-period">
+            Period: {outputMoment(week.start)} (inclusive) to {outputMoment(week.end)} (exclusive).
+            {week.countedEnd < week.end ? <> Counted to {outputMoment(week.countedEnd)} (exclusive).</> : null}
+          </p>
+        )}
 
         {isPhone ? (
           <PhoneBody testId="ward-weekly-phone">
@@ -380,12 +385,15 @@ function WeeklyReportView({
               ]}
             />
             <p className={phone.note} data-testid="ward-weekly-range">
-              {weekLabel(week, dayZero)} · generated {outputMoment(now)}
+              {/* Redesign: the hero sub already names the week, so this line says only when it was made. */}
+              {week.countedEnd < week.end ? `Counted to ${outputMoment(week.countedEnd)} · ` : ""}
+              Generated {outputMoment(now)}
             </p>
             <PhoneCard
               icon={Clock}
+              // Redesign: the aside "In the week it passed 24h" was cut off at 390px and repeats the title's
+              // "first passing", so the title carries it alone.
               title={`ED waits first passing ${phoneTargetText}`}
-              aside={`In the week it passed ${longHoursLabel}`}
             >
               <PhoneFacts
                 flush
@@ -439,21 +447,15 @@ function WeeklyReportView({
                 </p>
               ) : null}
             </PhoneCard>
-            <PhoneCard icon={XCircle} title="Declines" aside="Placement and referral">
+            {/* Redesign (Josh, 30 Oct 2026): declines and overrides share one card, as on desktop. */}
+            <PhoneCard icon={XCircle} title="Declines and overrides" aside="Placement and referral">
               <PhoneFacts
                 flush
                 facts={[
-                  { id: "placement", label: "Placement", value: report.declines.placement },
-                  { id: "referral", label: "Referral", value: report.declines.referral },
-                ]}
-              />
-            </PhoneCard>
-            <PhoneCard icon={ShieldAlert} title="Overrides" aside="Placement and referral">
-              <PhoneFacts
-                flush
-                facts={[
-                  { id: "placement", label: "Placement", value: report.overrides.placement },
-                  { id: "referral", label: "Referral", value: report.overrides.referral },
+                  { id: "declined-placement", label: "Placement declines", value: report.declines.placement },
+                  { id: "declined-referral", label: "Referral declines", value: report.declines.referral },
+                  { id: "override-placement", label: "Placement overrides", value: report.overrides.placement },
+                  { id: "override-referral", label: "Referral overrides", value: report.overrides.referral },
                 ]}
               />
             </PhoneCard>

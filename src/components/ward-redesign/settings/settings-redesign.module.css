@@ -131,3 +131,12 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* A read-only rule: its value as plain text where the stepper sat, no empty control. */
+.ruleReadValue {
+  display: block;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

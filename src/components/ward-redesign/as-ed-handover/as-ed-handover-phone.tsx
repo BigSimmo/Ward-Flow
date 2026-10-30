@@ -12,7 +12,6 @@ import { useRouter } from "next/navigation";
 import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, Timer } from "lucide-react";
 import {
   Button,
-  Drawer,
   FactGrid,
   FilterChip,
   Icon,
@@ -71,12 +70,10 @@ type HandoverPhoneProps = {
   signedAt: Instant | null;
   onCopySummary: () => void;
   copied: boolean;
-  onShowSignOff: () => void;
   onPick: (movementId: string) => void;
   drawerOpen: boolean;
   onCloseDrawer: () => void;
   flowPanel: ReactNode | null;
-  signOffPanel: ReactNode;
   /** Act-now patients the scope leaves out, so narrowing never hides them from the handover. */
   outsideAct: HandoverRow[];
   /** The patient whose ISBAR is open, if any. */
@@ -415,12 +412,10 @@ export function AsEdHandoverPhone({
   signedAt,
   onCopySummary,
   copied,
-  onShowSignOff,
   onPick,
   drawerOpen,
   onCloseDrawer,
   flowPanel,
-  signOffPanel,
   outsideAct,
   selected,
   onCopyIsbar,
@@ -475,10 +470,10 @@ export function AsEdHandoverPhone({
         title={`${actCount + urgentCount + dueCount} to hand over`}
         sub={
           edDesk
-            ? // The eyebrow already names the department, so the line says only a recorded sign off.
+            ? // ROLE BRANCH (ed): this desk cannot sign off, so the one line says who does, or when it was signed.
               signedAt !== null
-              ? `Signed ${formatInstantWithDay(signedAt, now)}`
-              : undefined
+              ? `Signed off ${formatInstantWithDay(signedAt, now)}`
+              : "Coordinator or ward signs off"
             : signedAt !== null
               ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready across ${scopeLabel.toLowerCase()}`
               : `${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready across ${scopeLabel.toLowerCase()}`
@@ -692,15 +687,6 @@ export function AsEdHandoverPhone({
         >
           {copied ? "Copied" : "Copy summary"}
         </Button>
-        <Button
-          variant="pri"
-          icon={Check}
-          className={styles.stickyButton}
-          onClick={onShowSignOff}
-          data-testid="ward-handover-phone-sign-off"
-        >
-          {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
-        </Button>
         <SrOnly role="status">{copied ? "Summary copied" : ""}</SrOnly>
       </div>
 
@@ -752,16 +738,7 @@ export function AsEdHandoverPhone({
           onCopy={() => onCopyIsbar(selected)}
           patientHref={patientHrefOf(selected)}
         />
-      ) : (
-        <Drawer
-          open={drawerOpen && !flowPanel}
-          onClose={onCloseDrawer}
-          title="Sign off"
-          testId="ward-handover-phone-drawer"
-        >
-          {signOffPanel}
-        </Drawer>
-      )}
+      ) : null}
     </div>
   );
 }

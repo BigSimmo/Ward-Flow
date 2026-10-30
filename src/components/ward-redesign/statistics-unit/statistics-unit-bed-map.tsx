@@ -25,7 +25,7 @@ const CELL_WORDS: Record<BedMapKind, string> = {
 };
 
 /** Which of the roster's own stay bands a whole-day stay falls in (the rule `stayBand` uses). */
-function bandIndexOf(days: number): number {
+export function bandIndexOf(days: number): number {
   const index = STAY_BANDS.findIndex((band) => band.upToDays === null || days < band.upToDays);
   return index === -1 ? STAY_BANDS.length - 1 : index;
 }
@@ -101,17 +101,7 @@ export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string
         ))}
       </ol>
       <div className={styles.bedFoot}>
-        {countsOnly ? null : (
-          <ul className={styles.stayKey} aria-hidden="true">
-            <li className={styles.stayKeyLabel}>Stay</li>
-            {STAY_BANDS.map((band, index) => (
-              <li key={band.id} className={styles.stayKeyItem}>
-                <span className={styles.staySwatch} data-stay-band={index} />
-                {band.label}
-              </li>
-            ))}
-          </ul>
-        )}
+        {countsOnly ? null : <StayKey />}
         <p className={base.note}>
           {countsOnly
             ? "Grouped by state. Bed numbers are not recorded."
@@ -122,5 +112,20 @@ export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string
         </p>
       </div>
     </div>
+  );
+}
+
+/** The four stay shades, lightest to darkest, with the roster's own band words. Shared with the phone strip. */
+export function StayKey() {
+  return (
+    <ul className={styles.stayKey} aria-hidden="true">
+      <li className={styles.stayKeyLabel}>Stay</li>
+      {STAY_BANDS.map((band, index) => (
+        <li key={band.id} className={styles.stayKeyItem}>
+          <span className={styles.staySwatch} data-stay-band={index} />
+          {band.label}
+        </li>
+      ))}
+    </ul>
   );
 }

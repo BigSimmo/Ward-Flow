@@ -92,7 +92,11 @@ import {
 } from "@/components/ward-management/statistics/statistics-small-numbers";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import redesign from "@/components/ward-redesign/statistics-unit/statistics-unit.module.css";
-import { CompactBedMap } from "@/components/ward-redesign/statistics-unit/statistics-unit-bed-map";
+import {
+  CompactBedMap,
+  StayKey,
+  bandIndexOf,
+} from "@/components/ward-redesign/statistics-unit/statistics-unit-bed-map";
 import { ChangeWard } from "@/components/ward-redesign/statistics-unit/statistics-unit-change-ward";
 import ward from "@/components/ward-management/statistics/statistics-ward.module.css";
 
@@ -427,8 +431,6 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
     site,
     statistics,
     capacity,
-    pendingPreparation,
-    openBeds,
     emptyBeds,
     allocatableBeds,
     wardOccupancy,
@@ -547,21 +549,26 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
       }}
       stats={
         <>
-          {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
-              out; the export still carries it. */}
+          {/* ROLE BRANCH (ward): the bed totals live here once (Josh, 30 Oct 2026). Beds now is gone: its
+              Empty and Allocatable join the hero, Pending is the legend's "Being made ready", Open now
+              (Ready less Being made ready) reads from those two, and the oldest pull is said on Pulled. Average stay and Due
+              out are on their own cards, so the hero keeps five bed figures. */}
           <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
           <HeroStat
             value={wardOccupancy.pulled}
             label={
               <span className={styles.flagged}>
                 {wardOccupancy.pulled > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                Pulled, not arrived
+                {oldestPulled === null ? "Pulled, not arrived" : `Pulled, oldest ${durMinutes(oldestPulled)}`}
               </span>
             }
           />
           <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
-          {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
-          <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
+          <HeroStat
+            value={<span data-testid="ward-stat-capacity-allocatable">{allocatableBeds}</span>}
+            label="Allocatable"
+          />
+          <HeroStat value={<span data-testid="ward-stat-capacity-empty">{emptyBeds}</span>} label="Empty" />
         </>
       }
     >
@@ -569,9 +576,9 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
         slots.phone
       ) : (
         <>
-          {/* Redesign: the compact bed map, its two charts and the discharge barriers on the left; the
-          bed, planning and referral figures on the right. Each column's last card takes the spare
-          height, so both columns end on the same line. */}
+          {/* ROLE BRANCH (ward): the bed map, length of stay and discharge barriers on the left; discharge
+              planning, expected discharges and referrals on the right, so both columns are near one
+              height and no card ends in blank space. */}
           <FlushRow layout="lead2" data-testid="ward-statistics-ward-measures">
             <FlushStack>
               <StatCard
@@ -583,77 +590,11 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
               >
                 <CardBody className={styles.bodyStack}>{slots.bedMap}</CardBody>
               </StatCard>
-              <FlushRow layout="halves" className={ward.chartRow}>
-                {slots.stay}
-                <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
-                  <CardBody className={styles.bodyStack}>
-                    <p className={ward.headFigure}>Next 7 days</p>
-                    <ColumnChart
-                      label="Expected discharges by day, next 7 days"
-                      columns={dueByDay.map((day) => ({
-                        id: String(day.offset),
-                        label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
-                        ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
-                      }))}
-                    />
-                  </CardBody>
-                </StatCard>
-              </FlushRow>
+              {slots.stay}
               <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
             </FlushStack>
 
-            {/* Redesign: the right column holds Beds now, Discharge planning and Referrals into this
-                ward, so both columns end together. */}
             <FlushStack>
-              <StatCard
-                icon={BedDouble}
-                title="Beds now"
-                aside={`${unit.beds} beds`}
-                id="ward-beds"
-                data-testid="ward-statistics-ward-beds-now"
-              >
-                {/* Ready, pulled and closed are in the hero and the bed map legend, so this card keeps
-                    only the figures found nowhere else (UX audit 21 Oct 2026). */}
-                <CardBody className={styles.bodyStack}>
-                  <dl className={styles.tiles} aria-label="Current bed figures">
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Empty</dt>
-                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
-                        {emptyBeds}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Allocatable</dt>
-                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
-                        {allocatableBeds}
-                        {allocatableBeds === 0 && <small>no free bed</small>}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Open now</dt>
-                      <dd className={styles.tileValue}>{openBeds}</dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Pending</dt>
-                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-pending-preparation">
-                        {pendingPreparation}
-                      </dd>
-                    </div>
-                  </dl>
-                  {oldestPulled === null ? null : (
-                    <p className={ward.factLine}>
-                      <span className={styles.flagged}>
-                        <StatusGlyph tone="warning" size={9} />
-                        Oldest pulled bed
-                      </span>
-                      <span>
-                        <b>{durMinutes(oldestPulled)}</b> not arrived
-                      </span>
-                    </p>
-                  )}
-                </CardBody>
-              </StatCard>
-
               <StatCard
                 icon={FileText}
                 title="Discharge planning"
@@ -743,10 +684,25 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
                   </div>
                 </CardBody>
               </StatCard>
+              <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
+                <CardBody className={styles.bodyStack}>
+                  <p className={ward.headFigure}>
+                    <b>{small(dueThisWeek)}</b> due in the next 7 days
+                  </p>
+                  <ColumnChart
+                    height={200}
+                    label="Expected discharges by day, next 7 days"
+                    columns={dueByDay.map((day) => ({
+                      id: String(day.offset),
+                      label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
+                      ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
+                    }))}
+                  />
+                </CardBody>
+              </StatCard>
               <StatCard
                 icon={Users}
                 title="Referrals into ward"
-                aside="Recorded for this ward"
                 id="ward-referrals"
                 data-testid="ward-statistics-ward-referrals-panel"
               >
@@ -763,7 +719,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
                         <dd className={styles.figureValue} data-testid="ward-stat-referrals-accepted">
                           {small(referrals.everAccepted)}
                         </dd>
-                        <dt className={styles.figureLabel}>Acceptances still standing</dt>
+                        <dt className={styles.figureLabel}>Accepted</dt>
                       </div>
                       <div className={styles.figure}>
                         <dd className={styles.figureValue} data-testid="ward-stat-referrals-declined">
@@ -776,9 +732,10 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
                       </div>
                     </dl>
                     <SrOnly>
-                      Asking now counts referrals waiting on this ward right now. Acceptances still standing includes
-                      arrivals, but excludes withdrawn acceptances. Ever declined counts recorded declines. One movement
-                      can appear in both accepted and declined counts, so the three do not add up.
+                      Asking now counts referrals waiting on this ward right now. Accepted counts acceptances still
+                      standing, including arrivals but not withdrawn acceptances. Ever declined counts recorded
+                      declines. One movement can appear in both accepted and declined counts, so the three do not add
+                      up.
                     </SrOnly>
                   </section>
                   {statistics.averageEmptyBedMinutes !== null || positive(statistics.emptyBedIncoherentCount) ? (
@@ -895,15 +852,25 @@ function WardPhone({
     <PhoneBody testId="ward-statistics-ward-phone">
       <div className={phone.bedCard} data-testid="ward-statistics-ward-phone-beds">
         <ul className={phone.bedStrip} aria-label={`${unit.name}, ${unit.beds} beds by state`}>
-          {map.cells.map((cell, index) => (
-            <li
-              key={index}
-              className={phone.bed}
-              data-kind={cell.kind}
-              title={BED_MAP_LABELS[cell.kind]}
-              aria-label={BED_MAP_LABELS[cell.kind]}
-            />
-          ))}
+          {/* Redesign: a bed someone is in is shaded by stay, the desktop map's four bands. A counts-only
+              desk sees bed states alone, as on desktop. */}
+          {map.cells.map((cell, index) => {
+            const stay = countsOnly ? null : cell.stayDays;
+            const label =
+              stay === null
+                ? BED_MAP_LABELS[cell.kind]
+                : `${BED_MAP_LABELS[cell.kind]}, ${stay} ${stay === 1 ? "day" : "days"}`;
+            return (
+              <li
+                key={index}
+                className={cx(phone.bed, redesign.phoneBed)}
+                data-kind={cell.kind}
+                data-stay-band={stay === null ? undefined : bandIndexOf(stay)}
+                title={label}
+                aria-label={label}
+              />
+            );
+          })}
         </ul>
         <ul className={phone.bedLegend} aria-label="Beds by state">
           {PHONE_BED_LEGEND.map((entry) => (
@@ -913,6 +880,7 @@ function WardPhone({
             </li>
           ))}
         </ul>
+        {countsOnly ? null : <StayKey />}
       </div>
       {countsOnly ? (
         // The three lists are one row per admission, and their tab counts only count those rows.

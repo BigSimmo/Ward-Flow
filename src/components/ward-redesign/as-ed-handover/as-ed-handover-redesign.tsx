@@ -12,6 +12,7 @@ import {
   Clock,
   Columns3,
   Keyboard,
+  Lock,
   MonitorPlay,
   MoreHorizontal,
   Printer,
@@ -25,12 +26,10 @@ import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
-import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -94,7 +93,6 @@ import {
   summaryText,
   toHandoverRow,
   toHandoverWard,
-  wardIsStale,
   STAGE_LABEL,
   nextStep,
   type HandoverChip,
@@ -106,11 +104,7 @@ import {
   type HeldHandover,
   handoverSignedBefore,
 } from "@/components/ward-management/handover/handover-model";
-import {
-  HandoverFlowPanel,
-  HandoverSignOffPanel,
-  type SignOffCheck,
-} from "@/components/ward-management/handover/handover-panels";
+import { HandoverFlowPanel } from "@/components/ward-management/handover/handover-panels";
 import { HandoverBeds } from "@/components/ward-management/handover/handover-beds";
 import { LongStaySummary } from "@/components/ward-management/handover/long-stay-summary";
 // Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
@@ -120,12 +114,7 @@ import { AsEdHandoverPhone as HandoverPhone } from "./as-ed-handover-phone";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import styles from "@/components/ward-management/handover/handover-refined.module.css";
 import phoneChips from "@/components/ward-redesign/handover/handover-redesign.module.css";
-import {
-  ShowMoreRow,
-  SignOffBar,
-  SinceLine,
-  signOffWaitReason,
-} from "@/components/ward-redesign/handover/handover-redesign-parts";
+import { ShowMoreRow, SinceLine } from "@/components/ward-redesign/handover/handover-redesign-parts";
 
 const DUE_FIRST = 4; // Due by rows shown before Show more.
 
@@ -134,16 +123,11 @@ import {
   handoverScopeValue,
   parseHandoverScope,
 } from "@/components/ward-management/handover/handover-scope";
-import {
-  HandoverHistory,
-  HandoverScopeControl,
-  StatusCheckIcon,
-} from "@/components/ward-management/handover/handover-page-parts";
+import { HandoverHistory, HandoverScopeControl } from "@/components/ward-management/handover/handover-page-parts";
 import {
   allRecordsScopeLabel,
   handoverScopeLabel,
   movementInHandoverScope,
-  recordHandoverSignOff,
   resolveAdmissionPatient,
 } from "@/components/ward-management/handover/handover-scope-rules";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -187,7 +171,6 @@ const GROUP_TONE = {
 const KEYS: [string, string][] = [
   ["J K", "Step through patients"],
   ["P", "Print handover"],
-  ["S", "Sign off"],
   ["M", "Start or stop the meeting timer"],
   ["Esc", "Close or go back"],
 ];
@@ -228,10 +211,8 @@ export function AsEdHandoverRedesign() {
     patients,
     admissions,
     bedReleases,
-    dispatch,
     dayZero,
     handoverSignOffs,
-    rejections,
     configuration,
     inboxSnoozes,
   } = useWardFlowSelect(
@@ -241,10 +222,8 @@ export function AsEdHandoverRedesign() {
     "patients",
     "admissions",
     "bedReleases",
-    "dispatch",
     "dayZero",
     "handoverSignOffs",
-    "rejections",
     "configuration",
     "inboxSnoozes",
   );
@@ -304,7 +283,6 @@ export function AsEdHandoverRedesign() {
   const [singleKeyShortcutsEnabled, setSingleKeyShortcutsEnabled] = useCharacterShortcutsPreference();
   const shortcutScopeRef = useRef<HTMLElement | null>(null);
   const keysTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const signOffRef = useRef<HTMLDivElement | null>(null);
 
   useDirtyStateGuard({ isDirty: meetingStartedAt !== null });
 
@@ -479,21 +457,12 @@ export function AsEdHandoverRedesign() {
       () => announceToWardShell("Copy was blocked by the browser."),
     );
   }, [sinceItems, newSince, now, scopeLabel]);
-  // Audit S-31: a ward is stale on the sign-off when either its feed or its ward-confirmed count is
-  // past that figure's own limit, the rule the Wards page counts by (allocatable), so sign-off can
-  // never say every feed is current while Wards shows a stale ward.
-  const staleWards = wards.filter(
-    (ward) =>
-      wardIsStale(ward, now) || now - ward.unit.allocatable.confirmedAt > ward.unit.allocatable.staleAfterMinutes,
-  );
   // Flagged urgent rows outside the scope are listed with act now, so neither leaves the sheet.
   const outsideAct = outside.filter((row) => isActNow(row, now) || isFlaggedUrgent(row, now));
 
   /* columns */
-  // Desktop with the sign-off rail beside the table (1201px and up): Standard drops Legal and obs and
-  // fits the rest to the card, so Due and Next step are on screen rather than scrolled off (device
-  // audit 11 Oct 2026). Full and custom columns keep their own set.
-  const railBeside = useMediaQuery("(min-width: 75.0625rem)");
+  // Desktop: Standard drops Legal and obs and fits the rest to the card, so Due and Next step are on
+  // screen rather than scrolled off (device audit 11 Oct 2026). Full and custom columns keep their own set.
   // iPad landscape (1001px and up) fits the Standard columns to the card too, so Next step is not cut
   // at the card edge behind a sideways scroll (layout sweep 25 Oct 2026).
   const fitsCard = useMediaQuery("(min-width: 62.5625rem)");
@@ -506,9 +475,6 @@ export function AsEdHandoverRedesign() {
 
   /* selection */
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
-  // The rail's own Sign off shows only when the rail is on screen beside the Patients table and is
-  // not holding a picked patient's flow; everywhere else the hero button is the way in.
-  const signOffInRail = railBeside && !wide && tab === "pts" && !selected;
   const pick = (id: string) => {
     setSelectedId(id);
     if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
@@ -531,46 +497,10 @@ export function AsEdHandoverRedesign() {
   );
 
   /* sign-off */
-  const routeRole = useRouteRole();
-  const gate = useRoleGate();
-  const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
+  // ROLE BRANCH (ed): an ED desk never signs a handover off (RECORD_HANDOVER_SIGN_OFF is coordinator or
+  // ward only), so the checklist, rail, sticky bar, hero button and S shortcut are left out (Josh, 30 Oct
+  // 2026). One quiet line in the hero foot says who signs off, or when it was signed.
   const signedAt = handoverSignedBefore(handoverSignOffs, shiftAt);
-  const signedBy =
-    signedAt === null ? null : ([...handoverSignOffs].reverse().find((record) => record.at === signedAt)?.by ?? null);
-  // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
-  const { run: runStep } = useUndoableStep({
-    dispatch,
-    rejections,
-    now,
-    routeRole,
-    onMessage: announceToWardShell,
-  });
-  const handleSignOff = useCallback(() => {
-    // Records contain role and time only, so only the current sign-off window can be signed.
-    if (!signOffGate.allowed || shiftAt <= now || shiftAt !== handoverAt(defaultHandoverShift(now), now)) return;
-    const recorded = recordHandoverSignOff(
-      (event) =>
-        runStep(event, {
-          // Audit S-31: one short toast; the panel's own line carries the time and the record.
-          success: "Handover signed off.",
-          undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now: at }),
-          undone: "Sign-off undone.",
-        }),
-      now,
-      routeRole,
-    );
-    if (recorded === null) announceToWardShell("Sign-off is not recorded.");
-  }, [runStep, now, routeRole, shiftAt, signOffGate.allowed]);
-  const handleUndoSignOff = useCallback(() => {
-    runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now }, { success: "Sign-off undone." });
-  }, [runStep, now, routeRole]);
-  const showSignOff = () => {
-    setSheetOpen(false);
-    setTab("pts");
-    setSelectedId(null);
-    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
-    window.requestAnimationFrame(() => signOffRef.current?.querySelector<HTMLElement>("button")?.focus());
-  };
 
   /* meeting timer: session only, the length goes to History */
   const toggleMeeting = useCallback(() => {
@@ -607,10 +537,6 @@ export function AsEdHandoverRedesign() {
   );
 
   /* keyboard */
-  const showSignOffRef = useRef(showSignOff);
-  useEffect(() => {
-    showSignOffRef.current = showSignOff;
-  });
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
@@ -631,9 +557,6 @@ export function AsEdHandoverRedesign() {
       if (key === "p") {
         event.preventDefault();
         setSheetOpen(true);
-      } else if (key === "s") {
-        event.preventDefault();
-        showSignOffRef.current();
       } else if (key === "m") {
         event.preventDefault();
         toggleMeeting();
@@ -649,77 +572,6 @@ export function AsEdHandoverRedesign() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [drawerOpen, selectedId, present, sheetOpen, isPhoneWidth, singleKeyShortcutsEnabled, toggleMeeting, tab, step]);
 
-  /* sign-off checks */
-  const actRows = rows.filter((row) => groupOf(row, now, cutoff) === "act");
-  // Flagged urgent rows need an owner too; they are counted on their own line.
-  const urgentRows = rows.filter((row) => groupOf(row, now, cutoff) === "urg");
-  const actOwnedRows = [...actRows, ...urgentRows];
-  const actOwned = actOwnedRows.every((row) => row.owner !== "No owner recorded");
-  // A flagged urgent row left off Alerts' act-now list (snoozed there) can still be past its time.
-  const actPassed = actOwnedRows.filter(
-    (row) =>
-      (row.pullExpiresAt !== undefined && row.pullExpiresAt <= now) ||
-      (row.formDueAt !== undefined && row.formDueAt <= now),
-  ).length;
-  const signChecks: SignOffCheck[] = [
-    {
-      id: "act",
-      // A4-27 (audit round 2): an act-now row whose bed pull or form time has passed is not settled,
-      // whoever owns it, so the tick stays open until that time is dealt with.
-      done: actOwned && actPassed === 0,
-      text: `${actRows.length} act now${urgentRows.length > 0 ? ` and ${urgentRows.length} flagged urgent` : ""}, ${actPassed > 0 ? `${actPassed} past ${actPassed === 1 ? "its" : "their"} time` : actOwned ? "each has an owner" : "some have no owner"}`,
-    },
-    { id: "due", done: true, text: `${counts.due} due by ${formatInstantWithDay(cutoff, now)} listed` },
-    staleWards.length
-      ? {
-          id: "feeds",
-          done: false,
-          text:
-            staleWards.length === 1
-              ? `${staleWards[0]!.name} counts are stale`
-              : `${staleWards.length} wards with stale counts: ${staleWards.map((ward) => ward.name).join(", ")}`,
-          // The phone keeps its own Beds tab and has no print sheet, so these links are desktop only.
-          action: isPhoneWidth
-            ? undefined
-            : {
-                label: "Check beds",
-                onClick: () => {
-                  setDrawerOpen(false);
-                  setTab("beds");
-                },
-              },
-        }
-      : { id: "feeds", done: true, text: "Every ward feed is current" },
-    preparedAt !== null
-      ? { id: "print", done: true, text: `Copy prepared for printing ${formatInstantWithDay(preparedAt, now)}` }
-      : // Print and the meeting timer live once, in the hero (device audit 11 Oct 2026).
-        { id: "print", done: false, text: "No copy prepared for printing yet" },
-    meetings.length
-      ? { id: "meet", done: true, text: `Meeting timed, ${meetings[0]!.minutes} min` }
-      : { id: "meet", done: false, text: "Meeting not timed" },
-  ];
-  const nextShift = shiftAt === handoverAt(defaultHandoverShift(now), now);
-  const canSignOff = signOffGate.allowed && !passed && nextShift;
-  const cannotSignReason = signOffGate.reason ?? signOffWaitReason(passed, nextShift);
-
-  const signOffPanel = (
-    <div ref={signOffRef}>
-      <HandoverSignOffPanel
-        title={`Sign off ${formatInstantWithDay(shiftAt, now)} handover`}
-        subtitle={`${shiftInfo.label} · ${scopeLabel}`}
-        checks={signChecks}
-        signedAt={signedAt}
-        signedBy={signedBy}
-        viewerRole={routeRole}
-        now={now}
-        canSignOff={canSignOff}
-        cannotSignReason={cannotSignReason}
-        onSignOff={handleSignOff}
-        onUndoSignOff={handleUndoSignOff}
-      />
-      {!passed ? signOffGate.note : null}
-    </div>
-  );
   const flowPanel = selected ? (
     <HandoverFlowPanel
       row={selected}
@@ -734,21 +586,22 @@ export function AsEdHandoverRedesign() {
     />
   ) : null;
 
-  /* iPad portrait: the rail (sign off, or the open patient) as a slide-over. */
-  const portraitRail = (signedLine: string | null, checksDone: number) => (
-    <PortraitRail
-      title={selected ? selected.name : "Sign off"}
-      summary={selected ? "Patient flow" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)}
-      open={drawerOpen}
-      onOpenChange={(open) => {
-        // The trigger opens the rest state (sign off); closing returns to it.
-        setSelectedId(null);
-        setDrawerOpen(open);
-      }}
-    >
-      {flowPanel ?? signOffPanel}
-    </PortraitRail>
-  );
+  /* iPad portrait: the open patient as a slide-over. ROLE BRANCH (ed): no sign-off rest state, so it
+     shows only while a patient is open. */
+  const portraitRail =
+    selected && flowPanel ? (
+      <PortraitRail
+        title={selected.name}
+        summary="Patient flow"
+        open={drawerOpen}
+        onOpenChange={(open) => {
+          setSelectedId(null);
+          setDrawerOpen(open);
+        }}
+      >
+        {flowPanel}
+      </PortraitRail>
+    ) : null;
 
   const togglePill = (next: HandoverPill) => {
     setPill((current) => (current === next ? null : next));
@@ -874,12 +727,10 @@ export function AsEdHandoverRedesign() {
           signedAt={signedAt}
           onCopySummary={copySummary}
           copied={copied}
-          onShowSignOff={showSignOff}
           onPick={pick}
           drawerOpen={drawerOpen}
           onCloseDrawer={() => setDrawerOpen(false)}
           flowPanel={flowPanel}
-          signOffPanel={signOffPanel}
           outsideAct={scope.kind !== "network" ? outsideAct : []}
           selected={selected}
           onCopyIsbar={copyIsbar}
@@ -927,23 +778,12 @@ export function AsEdHandoverRedesign() {
   );
 
   const shiftClock = formatInstantWithDay(shiftAt, now);
-  const signOffButton = (
-    <Button
-      variant="light"
-      size="sm"
-      icon={StatusCheckIcon(signedAt !== null)}
-      onClick={showSignOff}
-      data-testid="ward-handover-hero-sign-off"
-    >
-      {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
-    </Button>
-  );
   /*
    * v10 (build guide Handover): the title is the answer. NA2-01 (audit 24 Oct 2026): it counts every
    * row listed under Act now, Flagged urgent and Due by, the same sum the phone title uses
    * (`handover-phone.tsx`), so the two never disagree and an Act now row is never left out. The
    * eyebrow names the shift; five chips highlight rows; the foot holds the shift switch, the
-   * countdown and the bed meter. Sign off is the one light primary.
+   * countdown and, for this desk, who signs off.
    */
   const hero = (
     <Hero
@@ -993,9 +833,6 @@ export function AsEdHandoverRedesign() {
               </Button>
             )}
           />
-          {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
-              drawer and this opens it. */}
-          {signOffInRail || tab === "pts" ? null : signOffButton}
         </>
       }
       bar={
@@ -1070,6 +907,11 @@ export function AsEdHandoverRedesign() {
                 Starts in <b>{durMinutes(shiftAt - now)}</b>
               </>
             )}
+          </span>
+          {/* ROLE BRANCH (ed): the one quiet line on sign-off, beside the countdown it belongs to. */}
+          <span className={styles.countdown} data-testid="ward-handover-sign-off-note">
+            <Icon icon={Lock} size={14} />
+            {signedAt !== null ? `Signed off ${formatInstantWithDay(signedAt, now)}` : "Coordinator or ward signs off"}
           </span>
         </div>
       }
@@ -1399,15 +1241,13 @@ export function AsEdHandoverRedesign() {
       </TabPanel>
     );
   } else if (portrait) {
-    const signedLine = signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null;
-    const checksDone = signChecks.filter((check) => check.done).length;
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
         <div className={styles.portraitTools}>
           <span className={styles.portraitNote}>
             <b>{rows.length}</b> of {allRows.length} open · {scopeLabel}
           </span>
-          {portraitRail(signedLine, checksDone)}
+          {portraitRail}
         </div>
         <PortraitList
           label="Handover patients"
@@ -1440,11 +1280,11 @@ export function AsEdHandoverRedesign() {
   } else {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
-        <div className={`${styles.split} ${wide ? styles.splitFull : ""}`}>
+        <div className={`${styles.split} ${wide || !flowPanel ? styles.splitFull : ""}`}>
           {table}
-          {wide ? null : (
-            <aside className={styles.side} aria-label={selected ? "Patient flow" : "Sign off"} data-wf-rail="1201">
-              {flowPanel ?? signOffPanel}
+          {wide || !flowPanel ? null : (
+            <aside className={styles.side} aria-label="Patient flow" data-wf-rail="1201">
+              {flowPanel}
             </aside>
           )}
         </div>
@@ -1457,18 +1297,6 @@ export function AsEdHandoverRedesign() {
       <SinceLine since={formatInstantWithDay(newSince, now)} items={sinceItems} />
     </div>
   ) : null;
-  const signBar =
-    tab === "pts" && !sheetOpen ? (
-      <SignOffBar
-        title={`Sign off ${shiftClock} handover`}
-        checks={signChecks}
-        signedLine={signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null}
-        cannotSignReason={canSignOff ? undefined : cannotSignReason}
-        onSignOff={handleSignOff}
-        onOpenPanel={showSignOff}
-      />
-    ) : null;
-
   return (
     <main
       ref={shortcutScopeRef}
@@ -1483,10 +1311,13 @@ export function AsEdHandoverRedesign() {
       {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} />}
       {sheetOpen ? null : toolbar}
       {body}
-      {signBar}
       {wide && !portrait ? (
-        <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title={selected ? selected.name : "Sign off"}>
-          {flowPanel ?? signOffPanel}
+        <Drawer
+          open={drawerOpen && flowPanel !== null}
+          onClose={() => setDrawerOpen(false)}
+          title={selected?.name ?? ""}
+        >
+          {flowPanel}
         </Drawer>
       ) : null}
       <WardPrototypeFooter

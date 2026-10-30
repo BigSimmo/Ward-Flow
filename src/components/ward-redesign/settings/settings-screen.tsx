@@ -119,7 +119,7 @@ import {
   type ThemeChoice,
 } from "@/components/ward-management/settings/settings-panes";
 import { useRowDensity, type RowDensity } from "@/components/ward-management/settings/row-density";
-import { RuleRow, SettingRow } from "@/components/ward-management/settings/settings-rows";
+import { RuleRow, SettingRow } from "./settings-rows";
 import {
   SETTINGS_TABS,
   findSettings,
@@ -145,7 +145,7 @@ import {
   shortDuration,
   wardsText,
 } from "@/components/ward-management/settings/settings-screen-model";
-import { SettingsTargetsColumn } from "@/components/ward-management/settings/settings-targets-column";
+import { SettingsTargetsColumn } from "./settings-targets-column";
 import {
   copyExecutiveSettingsDiagnostics,
   SettingsSourceHost,

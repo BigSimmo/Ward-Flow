@@ -58,8 +58,6 @@ type Props = {
   /** "N of M past 24h, everyone stays on the board" while a chip is pressed. */
   highlightNote?: ReactNode;
   checks: CheckingItem[];
-  /** Opens the one referral slide-out, from this department (option B, 13 Oct 2026). */
-  onRaiseReferral: () => void;
 };
 
 const shortName = (name: string) => name.replace(/ Emergency Department$/, "");
@@ -86,7 +84,6 @@ export function AsEdOverview({
   onHighlight,
   highlightNote,
   checks,
-  onRaiseReferral,
 }: Props) {
   const isPhone = useIsPhone();
   const tvViewsOn = useWardFeatureFlag("bed-meeting-tv");
@@ -104,22 +101,11 @@ export function AsEdOverview({
   // Only worth saying when the board holds somebody who is not waiting; otherwise it repeats the title.
   const boardSplit = onBoardParts.length > 1 ? onBoardParts.join(", ") : null;
   const checkValue = (id: string) => checks.find((check) => check.id === id)?.value;
-  const raiseButton = (
-    <button
-      type="button"
-      className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
-      data-testid="ward-ed-raise-referral-toggle"
-      onClick={onRaiseReferral}
-    >
-      <Plus size={14} aria-hidden="true" />
-      Raise referral
-    </button>
-  );
-  // P142 (Josh, 27 Oct 2026, 10:12 PM AWST): Add patient sits beside the referral button.
+  // ROLE BRANCH (ed): the hero's Raise referral repeated the app bar's New referral, which opens
+  // the same slide-out (Josh, 30 Oct 2026). Only the bar's button stays; Add patient keeps its place (P142).
   const addPatientHref = "/ward-flow/people/new";
   const actions = (
     <>
-      {raiseButton}
       {canOpen(addPatientHref) ? (
         <Link
           href={addPatientHref}
