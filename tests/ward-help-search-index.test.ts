@@ -38,6 +38,29 @@ describe("searchHelp", () => {
     expect(searchHelp("book transport", "officer")).toEqual(searchHelp("book transport", "officer"));
   });
 
+  it.each([
+    ["triangle", "colour:danger"],
+    ["capsule", "colour:info"],
+    ["colour code", "reference:colour-code"],
+    ["color legend", "reference:colour-code"],
+    ["access admin", "role:admin"],
+    ["TV board", "role:tv"],
+    ["is it saved", "guide:saved"],
+    ["downtime offline paper", "guide:downtime"],
+  ])("finds the existing Help reference for %s", (query, key) => {
+    expect(results(searchHelp(query, "coordinator")).some((item) => item.key === key)).toBe(true);
+  });
+
+  it.each([
+    ["trasnport", "transport"],
+    ["handovr", "handover"],
+    ["thme", "theme"],
+    ["decline refferal", "decline referral"],
+  ])("corrects %s before stemming", (typed, intended) => {
+    expect(searchHelp(typed, "coordinator")).toEqual(searchHelp(intended, "coordinator"));
+    expect(searchHelp(typed, "coordinator").kind).toBe("results");
+  });
+
   it("offers closest topics when nothing matches fully", () => {
     const answer = searchHelp("transport zzzqqq xxyyzz", "coordinator");
     expect(answer.kind).toBe("none");
@@ -48,6 +71,9 @@ describe("searchHelp", () => {
       "what dose of medication should I give",
       "should I admit this patient",
       "diagnosis for psychosis",
+      "Is this patient safe to transfer?",
+      "Is it safe to transfer this patient?",
+      "Should we transfer this patient?",
     ]) {
       expect(isClinicalQuestion(q)).toBe(true);
       expect(searchHelp(q, "ward").kind).toBe("clinical");
@@ -59,6 +85,8 @@ describe("searchHelp", () => {
 
   it("keeps app words that sound clinical searchable", () => {
     expect(isClinicalQuestion("at risk")).toBe(false);
+    expect(isClinicalQuestion("How do I record a safe transfer?")).toBe(false);
+    expect(searchHelp("book transport", "officer").kind).toBe("results");
     expect(isClinicalQuestion("legal status")).toBe(false);
     expect(isClinicalQuestion("Tentative diagnosis")).toBe(false);
     expect(isClinicalQuestion("How do I record a tentative diagnosis?")).toBe(false);

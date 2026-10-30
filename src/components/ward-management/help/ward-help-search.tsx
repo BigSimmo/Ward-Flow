@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
@@ -15,6 +15,11 @@ import { DESK_GUIDES } from "./ward-help-guide";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
 import styles from "./ward-help-search.module.css";
+
+/** Native fragment navigation keeps the mounted workspace and notifies Settings. */
+function openHelpTab(tab: string) {
+  if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+}
 
 function roleLabel(role: WardTourRole): string {
   return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
@@ -36,7 +41,16 @@ function suggested(role: WardTourRole): readonly HelpSearchResult[] {
  * Help. Results come from `searchHelp` only; typed words stay in this component's state and are never
  * written to storage, a URL or a log (D-11, D-18).
  */
-export function WardHelpSearch({ role, home }: { role: WardTourRole; home: string | undefined }) {
+export function WardHelpSearch({
+  role,
+  home,
+  onNavigate,
+}: {
+  role: WardTourRole;
+  home: string | undefined;
+  onNavigate?: () => void;
+}) {
+  const router = useRouter();
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
   const showMeOn = useWardFeatureFlag("help-ask");
@@ -90,13 +104,19 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
     const href = mine ? howToHref(result.go, role, home) : undefined;
     if (href) {
       close(false);
-      window.location.assign(href);
+      onNavigate?.();
+      const [path, tab] = href.split("#");
+      if (path === window.location.pathname && tab) openHelpTab(tab);
+      else router.push(href);
     }
   }
 
   function onKey(event: KeyboardEvent) {
     if (event.key === "Escape") {
       event.preventDefault();
+      // Closing removes this layer before window listeners run. Keep the same Escape from
+      // reaching the Help sheet that has just become the top layer again.
+      event.stopPropagation();
       close();
     } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
@@ -122,19 +142,23 @@ export function WardHelpSearch({ role, home }: { role: WardTourRole; home: strin
         className={index === active ? `${styles.row} ${styles.active}` : styles.row}
         data-testid={`ward-help-search-result-${result.key}`}
         onMouseEnter={() => setActive(index)}
+        onClick={() => act(result)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            act(result);
+          }
+        }}
       >
         <span className={styles.text}>
           <strong>{result.title}</strong>
           <span className={styles.detail}>{result.detail}</span>
         </span>
         {showMeOn && result.howToId && mine ? (
-          <button type="button" tabIndex={-1} className={styles.action} onClick={() => act(result)}>
-            Show me
-          </button>
+          <span className={styles.action}>Show me</span>
         ) : href ? (
-          <Link href={href} tabIndex={-1} className={styles.action} onClick={() => close(false)}>
-            Open
-          </Link>
+          <span className={styles.action}>Open</span>
         ) : null}
       </li>
     );

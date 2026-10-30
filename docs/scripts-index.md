@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (138 files) and the `package.json` script surface (85 entries),
+Curated map of `scripts/` (139 files) and the `package.json` script surface (85 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -87,6 +87,11 @@ secret history scan is the gitleaks job in `.github/workflows/ward-flow.yml`. Ne
 script here.
 
 ## Documents and generated indexes
+
+`node scripts/build-help-cheat-sheets.mjs --output public/help` generates nine Markdown and
+A4 print guides from the same typed content as in-app Help. Add `--check` to detect drift without
+writing. The builder preserves unowned documents and hand-edited output. Help links to the HTML
+guides; they load only when opened and add no script to a phone page.
 
 `npm run docs:check-links` (`check-maintained-doc-links.mjs`, `ward-flow/check-doc-links.mjs`),
 `npm run docs:check-scripts` (`check-docs-script-refs.mjs`), `npm run docs:facts` and

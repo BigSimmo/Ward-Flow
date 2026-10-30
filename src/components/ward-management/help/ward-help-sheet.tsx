@@ -1,11 +1,11 @@
 "use client";
 
-import { ArrowRight, ChevronDown, CircleHelp, Compass, Keyboard, Search } from "lucide-react";
+import { ArrowRight, ChevronDown, CircleHelp, Compass, Keyboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { StatusGlyph, useIsPhone } from "@/components/wf";
+import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
@@ -15,23 +15,18 @@ import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-r
 
 import { WardHelpAsk } from "./ward-help-ask";
 import { WardHelpSearch } from "./ward-help-search";
-import {
-  ADMIN_SETTINGS_HELP,
-  filterGlossary,
-  glossaryForSites,
-  KEYBOARD_SHORTCUTS,
-  screenHelpFor,
-} from "./ward-help-content";
+import { ADMIN_SETTINGS_HELP, glossaryForSites, KEYBOARD_SHORTCUTS, screenHelpFor } from "./ward-help-content";
 import { useWardNetwork } from "../ward-flow-provider";
 import type { HelpView } from "./ward-help-events";
-import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
-import { ROLE_REFERENCE } from "./ward-help-roles";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { useTourRole, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import { WHATS_NEW } from "./ward-whats-new";
 import styles from "./ward-help-sheet.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
+
+import { WardHelpGlossary } from "../help-content/ward-help-glossary-view";
+import { WardHelpReference } from "../help-content/ward-help-reference-view";
 
 const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
   { id: "desk", label: "Your desk" },
@@ -127,8 +122,6 @@ function WardHelpSheetView({
     return role === "admin" && shown?.id === "settings" ? ADMIN_SETTINGS_HELP : shown;
   }, [entries, pathname, role]);
   const phone = useIsPhone();
-  const [query, setQuery] = useState("");
-  const terms = filterGlossary(query, termsSource);
 
   const latest = WHATS_NEW.at(-1);
 
@@ -169,37 +162,20 @@ function WardHelpSheetView({
       }
       footerClassName={barStyles.drawerFooter}
     >
-      <section className={styles.desk} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
-        <div className={styles.deskCard}>
-          <div className={styles.deskText}>
-            <span>Your desk</span>
-            <h3 id="ward-help-intro-title">{deskLabel(role)}</h3>
-          </div>
-          <button
-            type="button"
-            className={styles.secondaryButton}
-            onClick={() => onView("tour")}
-            data-testid="ward-help-view-tour"
-          >
-            <Compass aria-hidden="true" strokeWidth={1.75} />
-            Take the tour
-          </button>
+      <div className={styles.searchDock}>
+        <WardHelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} />
+      </div>
+
+      {ask?.trim() ? (
+        <div className={styles.group}>
+          <WardHelpAsk
+            role={role}
+            home={deskHome ?? home}
+            initialQuery={ask}
+            onClose={onClose}
+            termsSource={termsSource}
+          />
         </div>
-        <p className={styles.note}>
-          The tour starts by itself only once for each desk on this device. Open it again here or in Settings.
-        </p>
-      </section>
-
-      <WardHelpSearch role={role} home={deskHome ?? home} />
-
-      {ask !== undefined ? (
-        <WardHelpAsk
-          role={role}
-          home={deskHome ?? home}
-          initialQuery={ask}
-          onClose={onClose}
-          termsSource={termsSource}
-        />
       ) : null}
 
       <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">
@@ -215,6 +191,38 @@ function WardHelpSheetView({
             {item.label}
           </button>
         ))}
+      </div>
+
+      <div className={styles.utilityRow}>
+        <section className={styles.desk} aria-labelledby="ward-help-intro-title" data-testid="ward-help-intro">
+          <div className={styles.deskCard}>
+            <div className={styles.deskText}>
+              <span className="sr-only">Your desk</span>
+              <h3 id="ward-help-intro-title">{deskLabel(role)}</h3>
+            </div>
+            <button
+              type="button"
+              className={`${styles.secondaryButton} ${styles.tourLink}`}
+              onClick={() => onView("tour")}
+              data-testid="ward-help-view-tour"
+            >
+              <Compass aria-hidden="true" strokeWidth={1.75} />
+              Take the tour
+            </button>
+          </div>
+        </section>
+
+        <WardHelpReference role={role} onClose={onClose}>
+          {ask !== undefined && !ask.trim() ? (
+            <WardHelpAsk
+              role={role}
+              home={deskHome ?? home}
+              initialQuery={ask}
+              onClose={onClose}
+              termsSource={termsSource}
+            />
+          ) : null}
+        </WardHelpReference>
       </div>
 
       {view === "desk" ? (
@@ -338,63 +346,7 @@ function WardHelpSheetView({
         </section>
       ) : null}
 
-      {view === "glossary" ? (
-        <section className={styles.group} aria-label="Glossary" data-testid="ward-help-glossary">
-          <label htmlFor="ward-help-glossary-filter" className={styles.label}>
-            Find a word or code
-          </label>
-          <div className={styles.searchField}>
-            <Search aria-hidden="true" strokeWidth={1.75} />
-            <input
-              id="ward-help-glossary-filter"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              autoComplete="off"
-              placeholder="For example Pulled, NIC or RPH"
-              data-testid="ward-help-glossary-filter"
-            />
-          </div>
-          <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>
-          {terms.length === 0 ? (
-            <p className={styles.empty}>No word or code matches. Try the first few letters.</p>
-          ) : (
-            <dl className={styles.card}>
-              {terms.map((entry) => (
-                <div key={entry.term} className={styles.entry}>
-                  <dt>{entry.term}</dt>
-                  <dd>{entry.meaning}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          <div className={styles.group} data-testid="ward-help-reference">
-            <h3 className={styles.groupHeading}>Reference</h3>
-            <h4 className={styles.groupHeading}>Colour code</h4>
-            <dl className={styles.card} data-testid="ward-help-legend">
-              {COLOUR_LEGEND.map((item) => (
-                <div key={item.tone} className={`${styles.entry} ${styles.legendEntry}`}>
-                  <dt>
-                    <StatusGlyph tone={item.tone} size={12} />
-                    {item.meaning}
-                  </dt>
-                  <dd>{item.shape}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className={styles.note}>{COLOUR_LEGEND_NOTE}</p>
-            <h4 className={styles.groupHeading}>Roles</h4>
-            <dl className={styles.card} data-testid="ward-help-roles">
-              {ROLE_REFERENCE.map((item) => (
-                <div key={item.id} className={styles.entry}>
-                  <dt>{item.name}</dt>
-                  <dd>{item.summary}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        </section>
-      ) : null}
+      {view === "glossary" ? <WardHelpGlossary termsSource={termsSource} /> : null}
     </Sheet>
   );
 }
