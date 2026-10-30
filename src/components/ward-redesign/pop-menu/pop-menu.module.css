@@ -33,6 +33,32 @@
   color: var(--wf-ink-3);
 }
 
+/* My wards keeps the rail's spacing; in this sheet it lines up with the other sections instead. */
+.myWards {
+  display: contents;
+}
+
+.myWards > section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.myWards > section > p {
+  margin: 0 4px;
+  padding: 0;
+  line-height: 12px;
+  letter-spacing: 0.06em;
+}
+
+.myWards > section > ul:empty {
+  display: none;
+}
+
+.myWards > section > div {
+  margin: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .moreCaret {
     transition: none;

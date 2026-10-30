@@ -558,7 +558,10 @@ function MenuPages({
       <div id={moreId} hidden={!moreOpen} className={mock.moreGroups}>
         {rest.map(groupSection)}
       </div>
-      <WardMyWards variant="sheet" onNavigate={onClose} />
+      {/* Mock-up: lines My wards up with the sections around it (its own styles are the rail's). */}
+      <div className={mock.myWards}>
+        <WardMyWards variant="sheet" onNavigate={onClose} />
+      </div>
       <MoreSection onDrawer={onDrawer} onClose={onClose} />
     </>
   );

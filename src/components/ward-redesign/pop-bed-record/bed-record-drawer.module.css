@@ -289,7 +289,8 @@
 
 .kv {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  /* Redesign: one label width for every section, so the values line up from card to card. */
+  grid-template-columns: minmax(7.5rem, auto) minmax(0, 1fr);
   gap: 6px 12px;
   margin: 0;
   padding: 8px 14px 12px;
@@ -408,22 +409,30 @@
 }
 
 /* Timeline */
+/* One shared time column, as wide as the longest time ("09:12, 130 days ago"), so no time is cut. */
 .timeline {
   list-style: none;
   margin: 0;
   padding: 4px 14px 8px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 10px max-content minmax(0, 1fr);
+  column-gap: 8px;
 }
 
 .timeline li {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 10px minmax(0, 8.5rem) minmax(0, 1fr);
-  gap: 8px;
+  grid-template-columns: subgrid;
   align-items: center;
   min-height: 32px;
   font-size: var(--wf-fs-12);
   border-bottom: 1px solid var(--wf-line);
+}
+
+/* The event wraps rather than cutting off, now the time keeps its full width. */
+.timeline li > .ell {
+  padding-block: 6px;
+  white-space: normal;
 }
 
 .timeline li:last-child {

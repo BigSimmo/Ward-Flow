@@ -52,7 +52,7 @@ import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise"
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { formatDateOfBirth, type Patient } from "@/components/ward-management/ward-patients";
-import { ChevronRight, CornerDownLeft, Search, X } from "lucide-react";
+import { ChevronRight, CornerDownLeft, ListFilter, Search, X } from "lucide-react";
 
 import styles from "@/components/ward-management/ward-global-search.module.css";
 import {
@@ -1185,6 +1185,9 @@ export function GlobalSearch({
                               <span className={styles.itemIconBox} aria-hidden="true">
                                 {item.tone ? (
                                   <StatusGlyph tone={item.tone} />
+                                ) : item.kind === "view" && item.id === "delays" ? (
+                                  // Mock-up: Waiting is a page, not a time, so it takes the rail's icon, not the clock.
+                                  <ListFilter className={styles.itemIcon} aria-hidden="true" />
                                 ) : (
                                   <SearchResultIcon kind={item.kind} id={item.id} />
                                 )}

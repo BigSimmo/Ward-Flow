@@ -755,14 +755,19 @@ function statewideLine(desk: Desk): string {
   return desk.role === "officer" ? `${desk.activeJobs ?? 0} active jobs` : `${desk.waiting ?? 0} waiting in ED`;
 }
 
-/** Mock-up: " · 3 past target" after a wait figure, the red glyph beside the words (All EDs' term). */
+/**
+ * Mock-up: " · 3 past target" after a wait figure, the red glyph beside the words (All EDs' term).
+ * The separator sits outside the unbreakable part, so it keeps its spaces and ends a wrapped line.
+ */
 function PastTarget({ count }: { count: number }) {
   return (
-    <span className={mock.pastTarget}>
+    <>
       <span aria-hidden="true"> · </span>
-      <StatusGlyph tone="danger" />
-      <span className={styles.mono}>{count}</span> past target
-    </span>
+      <span className={mock.pastTarget}>
+        <StatusGlyph tone="danger" />
+        <span className={styles.mono}>{count}</span> past target
+      </span>
+    </>
   );
 }
 

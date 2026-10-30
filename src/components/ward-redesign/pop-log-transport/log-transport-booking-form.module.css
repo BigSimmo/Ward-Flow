@@ -172,8 +172,9 @@
   bottom: 0;
   z-index: 1;
   padding-block: var(--wf-s-2);
-  /* Redesign: the popup's own surface, so the pinned Save row matches the dialog in dark too. */
-  background: var(--wf-overlay, var(--wf-surface));
+  /* Redesign: the popup's own surface (its sheet colour), so the pinned Save row matches the dialog
+     in light and dark instead of drawing a white box. */
+  background: var(--wf-glass-sheet, var(--wf-overlay, var(--wf-surface)));
 }
 
 /* Redesign: once nothing is left to answer, the top line says so. */

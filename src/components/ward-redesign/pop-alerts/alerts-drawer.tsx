@@ -631,7 +631,8 @@ export function AlertsDrawer({
                 {timing.word ? <span className={styles.rowWord}>{timing.word}</span> : null}
               </span>
             ) : null}
-            <span aria-hidden="true">·</span>
+            {/* Mock-up: the dot only joins two parts, so a row with no figure never starts with one. */}
+            {timing.value && timing.state ? <span aria-hidden="true">·</span> : null}
             {timing.state ? (
               <span className={styles.rowState} data-tone={timing.stateTone}>
                 {timing.state}
