@@ -26,6 +26,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** queue rows wrap instead of cutting the patient line off, and Offered to wards is a table (patient, ward offered to, waiting time and what the wards have answered so far).",
     "**Decision pane:** Written history and Corrections fold behind one button, so Decline and Accept sit higher. The Timeline tab still shows them in full.",
     "**Kept as today:** the waiting chart already marks the 1, 4 and 24 hour due times, so it is unchanged here.",
+    "**Your 30 October feedback:** the Filter queue box is gone on every device. On a phone the highlight chips wrap onto a second row instead of running off the edge, and the empty strip under Queue and History is gone.",
   ],
   "new-referral": [
     "**Built from a copy of today's referral slide-out**, in the same panel and steps, so finding a patient, the four steps, the Before you send list, Save draft and the ask-before-closing guard all work as now.",

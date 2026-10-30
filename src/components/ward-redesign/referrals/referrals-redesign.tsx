@@ -17,7 +17,7 @@ import {
   acceptedWardOf,
   type AcceptedAwaitingPull,
 } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { ChevronRight, ClipboardList, ListOrdered, Search, TriangleAlert, X } from "lucide-react";
+import { ChevronRight, ClipboardList, ListOrdered, TriangleAlert, X } from "lucide-react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet, overlayOpener } from "@/components/wf/sheet-focus";
@@ -51,7 +51,6 @@ import {
   Sheet,
   TabPanel,
   Tabs,
-  TextInput,
   TierTile,
   buttonClass,
   cx,
@@ -728,7 +727,7 @@ function ReferralBoardRedesign({
       data-ward-design="v6"
       data-referral-layout="queue-panel"
     >
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" className={cx(styles.main, redesign.page)}>
         <h1 className="sr-only">Referrals</h1>
         {phoneLayout ? (
           <ReferralPhoneTop>
@@ -884,19 +883,8 @@ function ReferralBoardRedesign({
               {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
               <div className={a.toolbar}>
                 {phoneLayout ? null : viewSwitch}
-                {/* The search narrows queue rows only, so History (at most ten rows) does not offer it. */}
-                {view === "queue" ? (
-                  <TextInput
-                    type="search"
-                    icon={Search}
-                    boxClassName={a.search}
-                    placeholder="Filter queue"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onClear={() => setSearchQuery("")}
-                    aria-label="Filter referrals"
-                  />
-                ) : null}
+                {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
+                    highlights and the app search cover finding one person. */}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
                 {view === "queue" && recipientFiltersAvailable ? (
                   <FilterChip
@@ -1019,9 +1007,7 @@ function ReferralBoardRedesign({
                 <button type="button" className={a.keyLink} data-kbd-hint="" onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
-                <span className={a.footNote}>
-                  Highlights dim rows and keep every referral. Search narrows the list.
-                </span>
+                <span className={a.footNote}>Highlights dim rows and keep every referral.</span>
                 {/* v10 phone: the order note sits under the queue instead of in the toolbar. */}
                 {view === "queue" ? (
                   <span className={a.phoneFootNote} aria-hidden="true">
