@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - all 38 pages built; Josh approved every recommendation; next is the popup and state swarm; Design owns._
+_Updated 2026-10-30 - 38 pages, 31 popups and 6 states built and checked; final pass done; waiting on Josh's review; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -18,8 +18,8 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown i
 3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
    each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
 4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
-5. Continue at "Remaining plan" step 0, then follow "Swarm plan for the popups and states". Commit and push
-   each piece as it is done.
+5. Everything in "Remaining plan" is done. Next is Josh's page-by-page review: apply his answers to the
+   build notes' "Still open" points, then refresh the private preview (below).
 
 Josh's standing go-ahead: push to this branch only, no pull request, no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
@@ -106,8 +106,10 @@ screens (D-74), and apply every recommendation without waiting for answers.
 | Settings             | Fork (3 files)        | Sticky save bar, compact steppers, Display and profile tab (real data)              |
 | Sign in              | Fork                  | Open as <role> button, no boxed role numbers                                        |
 
-Popups working so far: bed meeting sheet, try a scenario, Capacity ward panel, phone bed forecast, and the
-real movement drawer.
+Popups: all 31 are built (the five page popups above plus 26 built on 30 October), and the six states.
+The preview draws a popup or state from `_preview/popup-components.tsx` (keyed by its `pop` name), handed
+the page it opens over; the five older ones are still opened by their page through `openOnLoad`. Each one's
+build notes are in `_preview/build-notes.ts` under `pop-<name>`.
 
 ## The 23 points: what is being applied
 
@@ -210,25 +212,22 @@ Lessons: the shared dev server ran out of memory once with five helpers compilin
 `npm run ensure`), and a helper's half-saved file briefly breaks every mock-up page, because the viewer
 imports them all; retry before diagnosing.
 
-0. **First, two small approved fixes:** remove the countdowns to recorded legal times from the Waiting
-   and Home forks (show the time as typed, as Legal forms does), and move Pinned wards under the ward
-   chart on Statistics compare.
-1. **Popups (point 8):** Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu,
-   Create, Bed record, Confirm beds, ED actions, Log transport, Broadcast, Record a form, Ward notices,
-   officer job panel, ward switcher, shift brief, Record exam, Refer to a ward, Go to a desk, Add the time,
-   service picker, More pages, tour. Register each in `MOCKUP_POPUPS` (`_preview/screens.ts`) with the
-   page it opens over and its `pop` name, and have the page open it from `openOnLoad`.
-2. **States (point 9)** as one "States" group: loading, empty, error, offline, toast, and a greyed control
-   saying exactly "Not wired in this prototype." (D4).
-3. **Phone pass** on every page built since the tablet pass (Patients onwards), at 390 px. The helpers
-   checked their own pages at 390 px; this is a second look across them all, light and dark.
-4. **Final pass:** `npm run check:ward-text-size`, lint, typecheck, `npm run check:mockups`,
-   `npm run docs:update` (scripts index is stale), `npm run ward:organise:check`, knip (forks export
-   things nothing imports; un-export them); update `README.md` here to describe the React mock-ups; build
-   the shareable bundle (`node scripts/ward-flow/build-redesign-preview.mjs`); publish it to the existing
-   artifact (https://claude.ai/artifact/GaVWBYM1Gkh8GdUtJvJapE, read it first); push.
-5. **Report to Josh:** each recommendation and what he approves, page by page, plus the open questions
-   below.
+All done on 30 October (second session):
+
+0. Done: Waiting and Home show legal times only as typed (no countdowns); Home's ED tiles count typed form
+   times instead of due-soon bands; Pinned wards sits under the ward chart on Statistics compare.
+1. Done: every popup, built by four helpers in parallel and checked at 1440 and 390 px. Bed record and Shift
+   brief open over My ward, Broadcast over Alerts, Tour over Home (where each lives in the app).
+2. Done: the States group (loading, empty, error, offline, toast, "Not wired in this prototype.").
+3. Done: phone pass at 390 px, light and dark, on every page from Patients onwards. No sideways scroll, no
+   content under the dock. Only finding: the kit's segmented tabs are 38 px tall on phones (Discharges,
+   Statistics, Legal forms, Out of area, Downtime, Places, Settings, Sign in); point 2 asks for 48 px. That
+   is the shared kit (`src/components/wf`), so it is a real-app change for Josh to approve.
+4. Done: text-size ratchet, mock-up check, organisation check, typecheck, full lint, knip (popup copies no
+   longer export unused names), docs facts (route count 57), README rewritten for the React mock-ups,
+   shareable bundle built and published to Josh's private preview
+   (https://claude.ai/artifact/BL86wBgPv41hzMG2QWMwB3, which replaces the older GaVWBYM1Gkh8GdUtJvJapE).
+5. Next: Josh's review, page by page.
 
 ## Josh's answers (30 October, evening)
 
@@ -242,12 +241,9 @@ grouped alerts (needs a new command, so it stays unbuilt).
 - Point 21: keep Places, the Capacity bed map and All wards, one job each.
 - Point 22: keep "Not legally checked" word for word.
 - Alerts: a "Chase all" button for a group needs a new command; not built.
-- Waiting and Home still show a countdown to recorded legal times; point 18 removed them on Legal forms.
-  Josh chose on 30 October to remove them there too (mock-ups only); not yet done in the Waiting and Home
-  forks, so do it in the next session.
+- Waiting and Home showed a countdown to recorded legal times; removed on 30 October (mock-ups only).
 - Places: with no bed figures, the Most ready order is replaced by A to Z. My pick: keep A to Z.
-- Statistics compare: with both charts cut to eight rows the ward card ends early at 1440 px. Move Pinned
-  wards under the ward chart? My pick: yes, in the next pass.
+- Statistics compare: Pinned wards moved under the ward chart on 30 October.
 - Sign in: Open as <role> navigates to the role's home; four roles have no home of their own and open
   Home. Confirm the button should navigate at all.
 - Settings: the review notes said not to mock the Profile tab's contents, but the plan asked for one; it is
@@ -271,6 +267,10 @@ grouped alerts (needs a new command, so it stays unbuilt).
 - Names written first name first on My ward's bed tiles and round list, its Notices, the ED board's Lists
   and access-risk card, Stays' Worth a look, Transport and Out of area (D-83 says surname first everywhere).
   The forks fix the last five; My ward's tiles need the real file.
+- The referral slide-out names the patient first name first ("Tobias Wren") in its header and Before you
+  send list: the shared drawer model (`ward-referral-drawer-model.ts`) uses `displayName`, not `formalName`.
+  The New referral and Refer to a ward mock-ups reuse it, so they show it too until the real model changes.
+- The kit's segmented tabs are 38 px tall on phones; point 2 asks for 48 px (shared `src/components/wf`).
 - The New referral button in the app bar has 14 px padding on the left and 5 px on the right
   (`ward-bar.module.css` `.primary` and `.referralPrimary`); the preview overrides it.
 - The dev server ran out of memory once after many pages compiled; `npm run ensure` restarts it.
