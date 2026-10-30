@@ -69,7 +69,6 @@ import {
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-management/coordinator/exception-drawer";
 import styles from "@/components/ward-management/coordinator/home.module.css";
-import { HomeEdPressure } from "@/components/ward-management/coordinator/home-ed-pressure";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
 import { BedsFitTable } from "@/components/ward-redesign/home/home-parts";
 import redesign from "@/components/ward-redesign/home/home-redesign.module.css";
@@ -82,6 +81,7 @@ import shortlistStyles from "@/components/ward-management/coordinator/shortlist-
 import { useExplicitReview } from "./activity-changes";
 import { ActivityPanel, type ActivityTab } from "./activity-panel";
 import mock from "./home-activity.module.css";
+import { HomeActivityEdStrip } from "./home-activity-ed-strip";
 import { PlacementPrompt } from "./home-activity-parts";
 import { PlannedList, usePlannedRows } from "./planned-list";
 
@@ -667,14 +667,14 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
-      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
     </span>
   );
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
   // Shortest clear words (Josh, 30 Oct 2026); a chosen ED is still named.
-  const overdueWord = selectedEd ? `Overdue · ${selectedEd.siteCode}` : "Overdue";
+  const overdueWord = selectedEd ? `Past target · ${selectedEd.siteCode}` : "Past target";
   const tierOneWord = selectedEd ? `Tier 1 · ${selectedEd.siteCode}` : "Tier 1";
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
@@ -954,7 +954,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                         {staleBedCounts + wardsNotReporting > 0 ? (
                           <StatusGlyph tone="warning" size={10} className={mock.dotGlyph} />
                         ) : null}
-                        {staleBedCounts + wardsNotReporting === 1 ? "check" : "checks"}
+                        to check
                       </>
                     }
                     expanded={checksOpen}
@@ -1014,7 +1014,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
           ) : null}
 
           <div className={list.edWrap}>
-            <HomeEdPressure
+            <HomeActivityEdStrip
               now={now}
               movements={movements}
               selectedEdId={selectedEdId}

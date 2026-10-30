@@ -260,6 +260,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Mock-up only:** the demo opens as if you last reviewed at 09:30 (the count is read from the records since then), and Notices shows three sample notices because no notice reaches the bed coordinator in the synthetic world. The review resets on reload, and the pinned clock means a change arriving while Activity is open cannot be shown.",
     "**New:** the ED access forecast that sat as a banner under the ED strip is now the first Planned row, because it is the same kind of thing: people heading for a target.",
     "**New:** on a laptop or desktop, Beds that fit and Placement stay beside the list while it scrolls.",
+    "**Reviewed (30 October):** the hero chip says Past target, the app's own word for waits past their target, because the ED strip uses overdue for typed form times. The ED strip names its noun (1 form due, No forms due) and an ED with nobody waiting just says No wait. The checks chip reads 2 to check, and the desktop hero says in transit, as the phone does.",
   ],
   capacity: [
     "**Figures:** every number comes from the derivations today's Capacity page uses (bed gaps, the network ward rows, the beds forecast and the forecast model). The 48-hour figure is now the real forecast, so it is no longer illustrative.",
