@@ -156,7 +156,8 @@ function bedInvariantViolation(state: WardFlowState): Violation | null {
     const broken = hold(
       `${movement.acceptedUnitId} bed ${movement.heldBedNumber}`,
       movement.id,
-      (admissionId) => admissionById.get(admissionId)?.movementId === movement.id,
+      (admissionId) =>
+        movement.admissionId === admissionId || admissionById.get(admissionId)?.movementId === movement.id,
     );
     if (broken) return broken;
   }
@@ -717,6 +718,111 @@ describe("a bed held for another journey", () => {
     } as WardFlowEvent);
     expect(placed.rejections.at(-1)?.reason).toMatch(/is already pulled for someone/);
     expect(placed.admissions).toBe(held.admissions);
+  });
+});
+
+describe("movement hold and stay ownership", () => {
+  const ownHeldBed = () => {
+    const base = seedWardFlowState("standard");
+    return wardFlowReducer(base, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      now: 742,
+      admissionId: "AD-BTYO-01",
+      actingUnitId: "bty-older-adult",
+      bedNumber: 8,
+    });
+  };
+
+  it("recognises the held movement's forward link to its own pulled stay", () => {
+    const state = ownHeldBed();
+    expect(state.rejections).toEqual([]);
+    const stay = state.admissions.find((row) => row.id === "AD-BTYO-01")!;
+    const movement = state.movements.find((row) => row.id === "WF-304")!;
+    expect(stay.movementId).toBeNull();
+    expect(movement.admissionId).toBe(stay.id);
+    expect(bedInvariantViolation(state) ?? storageViolation(state)).toBeNull();
+  });
+
+  it("still recognises the stay's reverse movement link", () => {
+    const state = ownHeldBed();
+    const reversed: WardFlowState = {
+      ...state,
+      movements: state.movements.map((row) => (row.id === "WF-304" ? { ...row, admissionId: undefined } : row)),
+      admissions: state.admissions.map((row) => (row.id === "AD-BTYO-01" ? { ...row, movementId: "WF-304" } : row)),
+    };
+    expect(bedInvariantViolation(reversed)).toBeNull();
+  });
+
+  it("still detects two separate stays occupying the same numbered bed", () => {
+    const state = ownHeldBed();
+    const own = state.admissions.find((row) => row.id === "AD-BTYO-01")!;
+    const other = state.admissions.find(
+      (row) => row.id !== own.id && row.unitId === own.unitId && row.state === "occupied",
+    )!;
+    const duplicate: WardFlowState = {
+      ...state,
+      admissions: state.admissions.map((row) => (row.id === other.id ? { ...row, bedNumber: own.bedNumber } : row)),
+    };
+    expect(bedInvariantViolation(duplicate)?.rule).toBe("no bed holds two people");
+  });
+
+  it("still detects another occupant in a bed held for this movement", () => {
+    const state = ownHeldBed();
+    const own = state.admissions.find((row) => row.id === "AD-BTYO-01")!;
+    const other = state.admissions.find(
+      (row) => row.id !== own.id && row.unitId === own.unitId && row.state === "occupied",
+    )!;
+    const unrelated: WardFlowState = {
+      ...state,
+      admissions: state.admissions.map((row) =>
+        row.id === own.id
+          ? { ...row, bedNumber: undefined }
+          : row.id === other.id
+            ? { ...row, bedNumber: own.bedNumber }
+            : row,
+      ),
+    };
+    expect(bedInvariantViolation(unrelated)?.rule).toBe("no bed holds two people");
+  });
+
+  it("still detects two different movements reserving one bed", () => {
+    const state = ownHeldBed();
+    const own = state.movements.find((row) => row.id === "WF-304")!;
+    const other = state.movements.find(
+      (row) => row.id !== own.id && !row.closure && row.admissionId !== own.admissionId,
+    )!;
+    const duplicate: WardFlowState = {
+      ...state,
+      movements: state.movements.map((row) =>
+        row.id === other.id
+          ? {
+              ...row,
+              acceptedUnitId: own.acceptedUnitId,
+              heldBedNumber: own.heldBedNumber,
+            }
+          : row,
+      ),
+    };
+    expect(bedInvariantViolation(duplicate)?.rule).toBe("no bed holds two people");
+  });
+
+  it("keeps the reducer's refusal of another stay's placement into the held bed", () => {
+    const state = ownHeldBed();
+    const other = state.admissions.find(
+      (row) => row.id !== "AD-BTYO-01" && row.unitId === "bty-older-adult" && row.state === "occupied",
+    )!;
+    const refused = wardFlowReducer(state, {
+      type: "PLACE_IN_BED",
+      role: "ward",
+      now: 743,
+      actingUnitId: "bty-older-adult",
+      admissionId: other.id,
+      bedNumber: 8,
+    });
+    expect(refused.rejections).toHaveLength(state.rejections.length + 1);
+    expect(refused.admissions).toBe(state.admissions);
+    expect(bedInvariantViolation(refused) ?? storageViolation(refused)).toBeNull();
   });
 });
 
