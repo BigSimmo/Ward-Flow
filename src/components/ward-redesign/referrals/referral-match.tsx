@@ -77,7 +77,8 @@ import {
 import { MatchRow } from "@/components/ward-management/referrals/referral-match-rows";
 import { useReferralMatchState } from "@/components/ward-management/referrals/use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
-import { FoldedHistory } from "./folded-history";
+import { Disclosure, FoldedHistory } from "./folded-history";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
@@ -88,7 +89,8 @@ import {
 } from "@/components/ward-management/ward-turnaround-priority";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
-import { outcomeDetail, outcomeLabel } from "@/components/ward-management/referrals/referral-board-model";
+import { outcomeLabel } from "@/components/ward-management/referrals/referral-board-model";
+import { outcomeDetail } from "./referral-ward-names";
 import { ReferralInformationNeedsPanel } from "@/components/ward-management/referrals/referral-information-needs-lazy";
 
 type ReferralMatchViewProps = {
@@ -198,8 +200,10 @@ export function ReferralMatchView({
     gpSourceNotice,
     edAddressing,
     communityAddressing,
-    wholeWithdrawControl,
+    wholeWithdrawControl: withdrawDetails,
   } = s;
+  // Redesign (Josh, 30 Oct 2026): the pane's three show-more controls are one chevron row.
+  const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
   if (s.senderSummary !== undefined) {
     return (
       <section className={styles.matchSummary} data-testid="ward-referral-sender-progress">
@@ -539,7 +543,9 @@ export function ReferralMatchView({
     const communityArmLive = communityAddressing?.state === "queued" && communityAddressing.withdrawnAt === undefined;
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
-        <ReferralIntakeSummary intake={referral.intake} />
+        <Disclosure>
+          <ReferralIntakeSummary intake={referral.intake} />
+        </Disclosure>
         {wardArms.length > 1 && (
           <label className={styles.fieldLabel}>
             Review recipient ward
@@ -924,9 +930,9 @@ export function ReferralMatchView({
           {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
         </div>
         {kind === "yes" && fitsHidden > 0 ? (
-          <button type="button" className={ph.more} onClick={() => setPhoneAllFits(true)}>
+          <ShowMoreRow onClick={() => setPhoneAllFits(true)} expanded={false}>
             Show {fitsHidden} more with a bed ready
-          </button>
+          </ShowMoreRow>
         ) : null}
       </>
     ) : null;
@@ -975,7 +981,9 @@ export function ReferralMatchView({
     >
       {phone === undefined ? (
         <>
-          <ReferralIntakeSummary intake={referral.intake} />
+          <Disclosure>
+            <ReferralIntakeSummary intake={referral.intake} />
+          </Disclosure>
           {recipientSelect}
           {!hideDossierHeader ? (
             <div className={styles.matchDossierHeader}>

@@ -30,7 +30,7 @@ import {
   REJECTED_DECISION_LABELS,
   revealConfirmRow,
 } from "@/components/ward-management/referrals/referral-match-model";
-import { FoldedHistory } from "./folded-history";
+import { Disclosure, FoldedHistory } from "./folded-history";
 import type { ReferralMatchState } from "@/components/ward-management/referrals/use-referral-match-state";
 
 /*
@@ -64,8 +64,9 @@ export function renderNotABedPhoneReview({
     phoneDeclining,
     setPhoneDeclining,
     gpSourceNotice,
-    wholeWithdrawControl,
+    wholeWithdrawControl: withdrawDetails,
   } = s;
+  const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
   return (
     <section
       className={`${styles.matchPanel} ${ph.sheet}`}
@@ -223,8 +224,9 @@ export function renderNotABedPanel({
     gpSourceNotice,
     edAddressing,
     communityAddressing,
-    wholeWithdrawControl,
+    wholeWithdrawControl: withdrawDetails,
   } = s;
+  const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
       {/* v10: an eyebrow naming the ask, one plain card for where it went, then the decision. */}

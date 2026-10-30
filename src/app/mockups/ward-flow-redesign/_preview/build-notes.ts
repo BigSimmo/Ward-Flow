@@ -549,6 +549,9 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept as today:** the waiting chart already marks the 1, 4 and 24 hour due times, so it is unchanged here.",
     "**Your 30 October feedback:** the Filter queue box is gone on every device. On a phone the highlight chips wrap onto a second row instead of running off the edge, and the empty strip under Queue and History is gone.",
     "**Round 2:** the Written history button sits where the history opens, as a small text button; for ward-bed referrals it was opening nothing and is gone. Phone Offered to wards rows are two lines and list every ward. The 48 px rows and toggles are back to normal size.",
+    "**Review round (30 October):** the queue says what its figures are: Fit reads '11 wards', and Needs uses short words (Locked, Transport) instead of icons alone. History names the ward that declined (FSH Older Adult), not its internal code, and drops the queue's 'Longest wait first' note.",
+    "**Review round (30 October):** a missing legal status reads 'Legal status not recorded' under the name; the waiting chart is headed 'Since referral' and ends at '72h all tiers'; the median reads 'median time to decide 6h 38m (all 24 decided)'. One word for late decisions: Decision overdue (phone too). The decision pane's show-more controls are one chevron row.",
+    "**Phone:** Offered to wards rows are two lines, the patient and waiting time over the ward and its answer.",
   ],
   "new-referral": [
     "**Built from a copy of today's referral slide-out**, in the same panel and steps, so finding a patient, the four steps, the Before you send list, Save draft and the ask-before-closing guard all work as now.",

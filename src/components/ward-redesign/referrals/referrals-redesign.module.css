@@ -66,35 +66,112 @@
 .offerLink:hover {
   text-decoration: underline;
 }
+.offerPhoneAnswer {
+  display: none;
+}
 .mono {
   font-family: var(--wf-mono);
   font-feature-settings: "tnum" 1;
   white-space: nowrap;
 }
 
-/* Written history and corrections sit behind one button in the decision pane, where they open. */
-.historyToggle.historyToggle {
-  display: flex;
-  width: fit-content;
-  margin: var(--wf-s-3) auto 0 0;
+/* The decision pane's three show-more controls, one style (Josh, 30 October 2026): a full-width
+   row with a line above, the words on the left and the app's chevron on the right, turning when
+   open. Written history is a button; Submitted documentation and Referrer cancelled? are today's
+   native disclosures, wrapped in .disclosure so only their summary row is restyled. */
+.disclosure {
+  display: contents;
 }
-.historyChevron[data-open="true"] {
+.disclosure.disclosure > details {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.disclosureRow,
+.disclosure.disclosure > details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: start;
+  list-style: none;
+  cursor: pointer;
+}
+.disclosure.disclosure > details > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosureRow::after,
+.disclosure.disclosure > details > summary::after {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--wf-ink-3);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+}
+.disclosureRow[aria-expanded="true"]::after,
+.disclosure.disclosure > details[open] > summary::after {
   transform: rotate(180deg);
+}
+.disclosureRow:hover,
+.disclosure.disclosure > details > summary:hover {
+  color: var(--wf-accent-ink);
+}
+.disclosureRow:focus-visible,
+.disclosure.disclosure > details > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+@media (max-width: 48rem) {
+  .disclosureRow,
+  .disclosure.disclosure > details > summary {
+    min-height: 48px;
+  }
+}
+
+/* Needs as short words ("Locked", "Transport"), one under another so the narrow column holds them. */
+.needWords.needWords {
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.needWords.needWords > span {
+  white-space: nowrap;
+}
+/* Room for "Transport" on one line. */
+.colNeeds.colNeeds {
+  width: 5.75rem;
 }
 
 @media (max-width: 48rem) {
   .offersTable thead {
     display: none;
   }
-  /* Two-line rows: name and waiting time on the first line, the ward asked and its answer on the
-     second. The whole row is the tap target, at today's row height. */
+  /* Two-line rows: name and waiting time on the first line, the ward asked then its answer on the
+     second ("BTY Adult Secure · Awaiting answer"). The whole row is the tap target. */
   .offersTable tr {
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "name wait"
-      "wards answer";
+      "wards wards";
     gap: 2px var(--wf-s-3);
     padding: var(--wf-s-2) var(--wf-s-3);
     border-top: 1px solid var(--wf-line);
@@ -115,10 +192,12 @@
     grid-area: wards;
     color: var(--wf-ink-2);
   }
+  /* The answer reads after the ward on the second line, so its own cell steps out. */
   .offersTable .offerAnswer {
-    grid-area: answer;
-    color: var(--wf-ink-2);
-    text-align: end;
+    display: none;
+  }
+  .offersTable .offerPhoneAnswer {
+    display: inline;
   }
   .offerLink {
     min-height: 0;
@@ -133,6 +212,12 @@
   .toolbarDesk.toolbarDesk {
     display: none;
   }
+}
+
+/* Phone hero: "Decision overdue" is the longest label, so each figure takes at least its own width
+   instead of an equal third that cut it ("Decision overdu"). */
+.figures.figures {
+  grid-auto-columns: minmax(max-content, 1fr);
 }
 
 /* Phone: the highlight chips wrap onto a second row instead of running off the edge ("0 Com…").

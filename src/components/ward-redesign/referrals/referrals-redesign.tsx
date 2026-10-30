@@ -65,11 +65,9 @@ import {
   DecisionClock,
   HeroTools,
   REFERRAL_SOURCE_WORDS,
-  ReferralAlerts,
   ReferralPatientTab,
   ReferralTimeline,
   SummaryButton,
-  WaitRunway,
   askingForShort,
   bedsReadySummary,
   isOverdue,
@@ -86,7 +84,9 @@ import {
   journeyDuration,
   referralJourneyStages,
 } from "@/components/ward-management/referrals/referral-board-model";
-import { DecidedSection, QueuedSection } from "@/components/ward-management/referrals/referral-board-sections";
+import { DecidedSection, QueuedSection } from "./referral-board-sections";
+import { WaitRunway } from "./wait-runway";
+import { ReferralAlerts } from "./referral-alerts";
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
 const BedMeetingSheet = dynamic(
@@ -110,11 +110,8 @@ const PullAcceptedReferral = dynamic(
 import a from "@/components/ward-management/referrals/referral-board.module.css";
 import p from "@/components/ward-management/referrals/referral-board-phone.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
-import {
-  ReferralPhoneCard,
-  ReferralPhoneHero,
-  ReferralPhoneTop,
-} from "@/components/ward-management/referrals/referral-board-phone";
+import { ReferralPhoneCard, ReferralPhoneTop } from "@/components/ward-management/referrals/referral-board-phone";
+import { ReferralPhoneHero } from "./referral-board-phone";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useIsPhone } from "@/components/wf";
 import mph from "@/components/ward-management/referrals/referral-match-phone.module.css";
@@ -482,6 +479,17 @@ function ReferralBoardRedesign({
         : Math.round(
             (decisionMinutes[decisionMinutes.length / 2 - 1]! + decisionMinutes[decisionMinutes.length / 2]!) / 2,
           );
+  // Redesign (Josh, 30 Oct 2026): the median says what it covers, every decided referral with a
+  // decision time, so it is not read as today's.
+  const medianWords =
+    medianDecision === undefined ? undefined : (
+      <>
+        median time to decide <b>{durMinutes(medianDecision)}</b>{" "}
+        {decisionMinutes.length === decidedTotal
+          ? `(all ${decisionMinutes.length} decided)`
+          : `(${decisionMinutes.length} decided)`}
+      </>
+    );
   const nowHour = Math.floor(minuteOfDay(now) / 60);
   const decisionHours = Array.from({ length: 8 }, (_, index) => nowHour - 7 + index).filter((hour) => hour >= 0);
   const decisionsByHour = decisionHours.map((hour) => ({
@@ -642,7 +650,12 @@ function ReferralBoardRedesign({
           <div>
             <dt>Asking for</dt>
             <dd>{askingForShort(r)}</dd>
-            <dd className={a.stripSub}>{needWords(r).join(", ") || "No bed needs"}</dd>
+            <dd className={a.stripSub}>
+              {/* "Locked", the word the Needs column uses (F-24), not "Secure". */}
+              {needWords(r)
+                .map((word) => (word === "Secure bed" ? "Locked bed" : word))
+                .join(", ") || "No bed needs"}
+            </dd>
           </div>
         ) : null}
         <div data-testid="ward-referral-detail-legal-status">
@@ -660,7 +673,7 @@ function ReferralBoardRedesign({
               if (summary !== undefined) return "Destination details are restricted";
               const ward = wardArm(r)?.destination;
               const words = [
-                ward?.secureBedNeeded ? "Secure bed" : undefined,
+                ward?.secureBedNeeded ? "Locked bed" : undefined,
                 ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
                 ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
                 r.transportNeeded ? "Transport" : undefined,
@@ -702,7 +715,7 @@ function ReferralBoardRedesign({
             <ReferralPhoneHero
               count={queued.length}
               oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
-              median={medianDecision !== undefined ? durMinutes(medianDecision) : undefined}
+              median={medianWords}
               overdue={overdueQueued.length}
               tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
               bedsReady={bedsSummary.total}
@@ -733,7 +746,7 @@ function ReferralBoardRedesign({
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
-                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} past due · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
+                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} overdue · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
                 expanded={phoneSheet === "axis"}
                 onOpen={() => setPhoneSheet("axis")}
               />
@@ -772,12 +785,7 @@ function ReferralBoardRedesign({
               titleMeta={
                 <span className={a.heroMeta}>
                   Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
-                  {medianDecision !== undefined ? (
-                    <span className={a.heroMedian}>
-                      {" "}
-                      · median decision <b>{durMinutes(medianDecision)}</b>
-                    </span>
-                  ) : null}
+                  {medianWords !== undefined ? <span className={a.heroMedian}> · {medianWords}</span> : null}
                 </span>
               }
               className={a.heroA}
@@ -876,7 +884,9 @@ function ReferralBoardRedesign({
                         Clear
                       </Button>
                     </>
-                  ) : (
+                  ) : view === "queue" ? (
+                    // Redesign (Josh, 30 Oct 2026): History is newest decision first, so the queue's
+                    // order note shows on the queue only.
                     <span
                       className={a.orderNote}
                       data-testid="ward-referral-board-order-note"
@@ -886,7 +896,7 @@ function ReferralBoardRedesign({
                       <b>Longest wait first</b>
                       <span className={a.orderTie}> · tier breaks ties</span>
                     </span>
-                  )}
+                  ) : null}
                 </span>
               </div>
               <TabPanel idPrefix="ward-referral-view" id="queue" hidden={view !== "queue"}>
@@ -1153,11 +1163,12 @@ function ReferralBoardRedesign({
                       ) : null;
                     })()}
                     {(() => {
+                      // Redesign (Josh, 30 Oct 2026): the pane's show-more controls share one chevron row.
                       const phoneExtras = (
                         <>
                           <button
                             type="button"
-                            className={mph.more}
+                            className={redesign.disclosureRow}
                             aria-expanded={phoneTimelineOpen}
                             onClick={() => setPhoneTimelineOpen((open) => !open)}
                           >
@@ -1177,7 +1188,7 @@ function ReferralBoardRedesign({
                           ) : null}
                           <button
                             type="button"
-                            className={mph.more}
+                            className={redesign.disclosureRow}
                             aria-expanded={phonePatientOpen}
                             onClick={() => setPhonePatientOpen((open) => !open)}
                           >

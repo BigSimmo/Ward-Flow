@@ -1,10 +1,8 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
 import { createContext, useContext, useId, type ComponentProps, type ReactNode } from "react";
 
 import { ReferralHistoryAndCorrections } from "@/components/ward-management/referrals/referral-history-corrections";
-import { buttonClass } from "@/components/wf";
 
 import styles from "./referrals-redesign.module.css";
 
@@ -15,6 +13,17 @@ const HistoryFoldContext = createContext<Fold | null>(null);
 
 export function HistoryFoldProvider({ value, children }: { value: Fold; children: ReactNode }) {
   return <HistoryFoldContext.Provider value={value}>{children}</HistoryFoldContext.Provider>;
+}
+
+/**
+ * The decision pane's other show-more controls ("Submitted documentation", "Referrer cancelled?")
+ * are native disclosures from today's files. Wrapped in this, their summary row is drawn as the
+ * same chevron row as Written history (Josh, 30 October 2026: one disclosure style in the pane).
+ * `display: contents`, so the wrapper adds no box and the layout around them is unchanged.
+ */
+export function Disclosure({ children }: { children: ReactNode }) {
+  if (children === null || children === undefined || children === false) return null;
+  return <div className={styles.disclosure}>{children}</div>;
 }
 
 /**
@@ -29,14 +38,13 @@ export function FoldedHistory(props: ComponentProps<typeof ReferralHistoryAndCor
     <>
       <button
         type="button"
-        className={buttonClass({ variant: "ghost", size: "sm", className: styles.historyToggle })}
+        className={styles.disclosureRow}
         aria-expanded={fold.open}
         aria-controls={fold.open ? panelId : undefined}
         aria-label={`${fold.open ? "Hide" : "Show"} written history and corrections`}
         onClick={fold.onToggle}
       >
         Written history and corrections
-        <ChevronDown size={14} aria-hidden="true" className={styles.historyChevron} data-open={fold.open} />
       </button>
       {fold.open ? (
         <div id={panelId}>

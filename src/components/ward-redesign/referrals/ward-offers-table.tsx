@@ -78,7 +78,15 @@ export function WardOffersTable({
                     {nameFor(who.formalName, who.umrn)}
                   </Link>
                 </th>
-                <td className={styles.offerWards}>{wards.join(", ")}</td>
+                <td className={styles.offerWards}>
+                  {wards.join(", ")}
+                  {/* Phone (Josh, 30 Oct 2026): two lines, the answer after the ward on the second. */}
+                  <span className={styles.offerPhoneAnswer}>
+                    {" · "}
+                    {status.tone === "warning" ? <StatusGlyph tone="warning" size={8} /> : null}
+                    {status.text}
+                  </span>
+                </td>
                 <td className={cx(styles.mono, styles.offerWait)}>
                   {durMinutes(now - (movement.referredAt ?? movement.openedAt))}
                 </td>
