@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - 38 pages, 31 popups, 6 states and 36 role views built and checked; waiting on Josh's review; Design owns._
+_Updated 2026-10-30 - round 2 polish done on every page, popup, state and role view; ownership split with the Home and Activity chat; waiting on Josh's review; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -18,8 +18,9 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown i
 3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
    each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
 4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
-5. Everything in "Remaining plan" is done. Next is Josh's page-by-page review: apply his answers to the
-   build notes' "Still open" points, then refresh the private preview (below).
+5. Everything in "Remaining plan" and "Round 2" is done. Next is Josh's page-by-page review: apply his
+   answers to the build notes' "Still open" and "Question for you" points, then refresh the private preview.
+6. Check "Who owns what (30 October, evening)" below before editing any folder.
 
 Josh's standing go-ahead: push to this branch only (draft PR #1118, not to be merged or marked ready), no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
@@ -255,13 +256,62 @@ All done on 30 October (second session):
 2. Done: the States group (loading, empty, error, offline, toast, "Not wired in this prototype.").
 3. Done: phone pass at 390 px, light and dark, on every page from Patients onwards. No sideways scroll, no
    content under the dock. Only finding: the kit's segmented tabs are 38 px tall on phones (Discharges,
-   Statistics, Legal forms, Out of area, Downtime, Places, Settings, Sign in); point 2 asks for 48 px. That
-   is the shared kit (`src/components/wf`), so it is a real-app change for Josh to approve.
+   Statistics, Legal forms, Out of area, Downtime, Places, Settings, Sign in). Josh ruled on 30 October
+   not to enlarge controls to 48 px; a larger invisible tap area is the agreed fix.
 4. Done: text-size ratchet, mock-up check, organisation check, typecheck, full lint, knip (popup copies no
    longer export unused names), docs facts (route count 57), README rewritten for the React mock-ups,
    shareable bundle built and published to Josh's private preview
    (https://claude.ai/artifact/BL86wBgPv41hzMG2QWMwB3, which replaces the older GaVWBYM1Gkh8GdUtJvJapE).
 5. Next: Josh's review, page by page.
+
+## Round 2 polish (30 October, evening)
+
+Josh asked for every page made "flawless, stylish, premium, polished, Apple inspired" without making the
+style worse, and **not** to enlarge controls to 48 px. Eight helper groups worked from per-page audits
+(the briefs were in the session scratch folder and are gone; the build notes record every change):
+bed flow, coordinator pages, desks and reference, records, statistics, two role-view groups, and three
+popup groups. Each page's `_preview/build-notes.ts` entry now has "Round 2" lines saying what changed
+and why, and "Question for you" or "For the build" lines for what is left.
+
+Common changes: 48 px enlargements put back to the kit's sizes (with invisible larger tap areas where
+needed); every `[class*="_x__"]` override moved into a copied component; counts that name their noun;
+one word per idea ("Current", "waiting in ED", "Past pull limit", "held up"); wrapping instead of "…";
+empty panels and zero chips dropped when there is nothing to act on; safeguard wording kept word for
+word; legal times still only as typed. The viewer has a Redesign / Today switch: the shareable copy shows
+a picture of today's coordinator page beside each redesign (pictures in `output/redesign-preview/today/`,
+not committed; role views have none).
+
+### Who owns what (30 October, evening)
+
+Josh approved a split with the Home and Activity chat (branch `claude/home-activity-mockup`):
+
+- **That chat:** Home (one Home, from the Home and Activity design), Activity, the empty and loading
+  states, `shell/`, Placement, the deep-review fixes to Waiting, Referrals, Capacity and Discharges
+  (handed over at 719093ff7), and afterwards one size per control and a wording sweep across all pages,
+  including the role copies.
+- **This branch:** everything else, until it hands over. Recommended next: one chat owns all the mock-ups,
+  to stop two writers clashing.
+
+### Lessons from round 2
+
+- **The shared dev server was the bottleneck,** not the number of helpers: with eight helpers a
+  screenshot took up to 10 minutes, pages failed with ChunkLoadError, and the container restarted once.
+  Next time, take review screenshots from the shareable copy (`node scripts/ward-flow/build-redesign-preview.mjs`
+  then a static file server), which is plain files and costs almost nothing to serve.
+- After a container restart, Node 24 is gone (reinstall to `/opt/node24`) but the checkout, uncommitted
+  work and the scratch folder survive; stopped helpers can be resumed from their transcripts.
+- A waiting loop that uses `pgrep -f "<text>"` matches its own command line and never ends.
+
+### Questions for Josh from round 2
+
+1. Alerts drawer legal-form rows show a running "10m Overdue" from the typed time (as the live app does).
+   Recommend "Due 10:32 as typed · Not legally checked" with no running figure.
+2. Waiting: keep "(as written)" or "as typed" next to any legal time. Recommend keeping it.
+3. Printed shift brief: leave tentative diagnoses off paper. Recommend leaving them off (privacy).
+4. Bed record: treat "Not recorded in Ward Flow. Check the ward's own observation chart." as safeguard
+   wording, kept word for word. Recommend yes.
+5. Bed manager Home: the rail's "Waiting 6" (every ED on the desk) sits beside the hero's "5 waiting in
+   RPH ED". Recommend accepting, since the hero names its ED.
 
 ## Josh's answers (30 October, evening)
 
@@ -310,8 +360,17 @@ grouped alerts (needs a new command, so it stays unbuilt).
 - The referral slide-out names the patient first name first ("Tobias Wren") in its header and Before you
   send list: the shared drawer model (`ward-referral-drawer-model.ts`) uses `displayName`, not `formalName`.
   The New referral and Refer to a ward mock-ups reuse it, so they show it too until the real model changes.
-- The kit's segmented tabs are 38 px tall on phones; point 2 asks for 48 px (shared `src/components/wf`).
 - The New referral button in the app bar has 14 px padding on the left and 5 px on the right
   (`ward-bar.module.css` `.primary` and `.referralPrimary`); the preview overrides it.
 - The dev server ran out of memory once after many pages compiled; `npm run ensure` restarts it.
 - Discharges shows three totals (207, 63 and 59) that need one agreed meaning.
+- Found in round 2 (fix in the build, after approval): the Planned admissions Book button stacks its icon
+  over the word (`icon={CalendarPlus}`); Capacity's ward panel links are not checked against the desk's
+  access; the statistics tab chips are cut off at the phone's right edge (shared `StatisticsNav`); the
+  rail shows network figures on a site desk ("Capacity 26"), "Handover in 4h 18m" on the executive desk
+  and "Statewide" on Midland's page; the side-panel Add the time form uses the browser's 12-hour time
+  picker; date fields show mm/dd/yyyy in some browsers; the shared toast covers the foot of Home and
+  touches the phone dock; referral alerts show a literal "Not recorded" as a legal chip; `wardLabel`
+  writes "— open"; the Quick commands block in Search shows "+15m" twice.
+- Bed 12 on the nurse in charge's My ward reads "Name not recorded": the client's workspace scoping keeps
+  an out-of-scope `referralId`, and the resolver treats it as a broken link.
