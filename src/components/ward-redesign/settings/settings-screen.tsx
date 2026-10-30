@@ -83,10 +83,9 @@ const WardHelpUsageCard = dynamic(() =>
 );
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
-import { showsAccessTab } from "@/components/ward-management/settings/access-settings";
 // Round 3: every desk's Access tab draws the access admin's round 2 copy (shorter role rows, chips
 // only for exceptions); it serves the coordinator and ward desks unchanged otherwise.
-import { AccessSettings } from "@/components/ward-redesign/as-admin-home/access-settings";
+import { AccessSettings, showsAccessTab } from "@/components/ward-redesign/as-admin-home/access-settings";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import {
   THEME_CHOICES,

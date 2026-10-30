@@ -5,7 +5,6 @@ import { defaultWardConfiguration, type WardConfiguration } from "@/components/w
 import {
   clock24,
   fullRules,
-  isSurgePreset,
   shortDuration,
   wardsText,
 } from "@/components/ward-management/settings/settings-screen-model";
@@ -166,5 +165,3 @@ export function surgeChanges(): RuleChange[] {
   const defaults = defaultWardConfiguration();
   return ruleChanges(defaults, surgeConfiguration(defaults));
 }
-
-export { isSurgePreset };

@@ -15,7 +15,7 @@ import { DEFAULT_RULES, RULES } from "./settings-rule-catalogue";
 export type RestoreScope = "rules" | "rules-and-browser";
 
 /** This browser's settings a full restore puts back, with the value each returns to. */
-export const BROWSER_DEFAULTS: readonly (readonly [string, string])[] = [
+const BROWSER_DEFAULTS: readonly (readonly [string, string])[] = [
   ["Theme", "Auto"],
   ["Sidebar", "Full"],
   ["Row density", "Comfortable"],

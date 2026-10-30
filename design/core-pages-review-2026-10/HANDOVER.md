@@ -338,6 +338,13 @@ grouped alerts (needs a new command, so it stays unbuilt).
 - Community team: wording for rows not accepted before the bed ("Referred during this stay", "Not
   arrived", "Not counted") is unseen on today's data.
 
+## Settings round 3 (30 October, separate chat)
+
+Settings round 3 was built on branch `claude/settings-mockup-improvements-9j8gcz` (started from this
+branch at 9da375a1): tabs by job, live rule impact, review before saving, an honest restore, an alerts
+check, three proposed browser settings and one component for every role. See
+[SETTINGS-ROUND-3.md](SETTINGS-ROUND-3.md). It edits only Settings folders and their preview entries.
+
 ## Things found while building (for the real app)
 
 - **Shareable copy drops scoped styles (found 30 October).** `build-redesign-preview.mjs` minified CSS
