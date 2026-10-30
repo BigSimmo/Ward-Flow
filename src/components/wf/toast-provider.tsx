@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  type CSSProperties,
   type ReactNode,
   useCallback,
   useContext,
@@ -15,6 +16,10 @@ import { canRestoreFocusTo } from "./sheet-focus";
 import { OverlayPortal } from "./overlay-root";
 import overlayStyles from "./overlay.module.css";
 import { type ToastNextStep, type ToastUndo, ToastView } from "./toast";
+import { useToastJumpKey } from "./toast-keyboard";
+import { RECENT_TOAST_LIMIT, type RecentToast, ToastRecent } from "./toast-recent";
+import { toastStackLayout } from "./toast-stack";
+import { timedToastMs, toastExitMs } from "./toast-timing";
 
 type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -47,7 +52,12 @@ export type Toast = {
   announceKey?: number;
   /** Leaves out the provider's `offlineNote`: for a toast that is itself about being offline. */
   skipOfflineNote?: boolean;
+  /** Test id of the card. Defaults to "toast"; a screen's own outcome can keep its own name. */
+  testId?: string;
 };
+
+/** A card as drawn: a live toast, or one playing its exit. */
+type ShownToast = Toast & { leaving?: boolean };
 
 export type ToastInput = Omit<Toast, "id">;
 export type ToastProviderProps = {
@@ -66,6 +76,8 @@ export type ToastApi = {
    * a caller that writes the provider's offline note into its own text.
    */
   savesOnDevice?: () => boolean;
+  /** Whether the toast with this id is still on screen (not closed, timed out or pushed out). */
+  isShown?: (id: string) => boolean;
 };
 
 /**
@@ -78,9 +90,16 @@ export type ToastApi = {
 export const ToastDeviceSaveContext = createContext<() => boolean>(() => true);
 
 type ToastContextValue = {
-  toasts: Toast[];
+  /** Live toasts plus any still playing their exit, oldest first. */
+  toasts: ShownToast[];
+  /** Outcomes that have left the screen this visit, newest first. Memory only. */
+  recent: RecentToast[];
+  clearRecent: () => void;
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
+  /** Closes a toast because its own time ran out. */
+  timeOut: (id: string) => void;
+  isShown: (id: string) => boolean;
   /** Runs Undo and closes its toast unless the caller temporarily blocks it with false. */
   undoAndDismiss: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
   savesOnDevice: () => boolean;
@@ -88,7 +107,6 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
-const DEFAULT_DURATION = 6000;
 const MAX_VISIBLE_TOASTS = 5;
 
 /**
@@ -97,9 +115,12 @@ const MAX_VISIBLE_TOASTS = 5;
  * app shell) in `ToastProvider` and call `useToast().push(...)` from the handler.
  */
 export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<ShownToast[]>([]);
+  const [recent, setRecent] = useState<RecentToast[]>([]);
   const savesOnDevice = useContext(ToastDeviceSaveContext);
+  // Live toasts only: merging, the visible cap and expiry never see a card that is leaving.
   const toastsRef = useRef<Toast[]>([]);
+  const leaveTimers = useRef(new Map<string, number>());
   const counter = useRef(0);
   const recentControls = useRef<HTMLElement[]>([]);
   const pendingFocusReturn = useRef<HTMLElement[] | null>(null);
@@ -107,8 +128,7 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   useEffect(() => {
     const remember = () => {
       const target = document.activeElement;
-      if (!(target instanceof HTMLElement) || target === document.body || target.closest('[data-testid="toast"]'))
-        return;
+      if (!(target instanceof HTMLElement) || target === document.body || target.closest("[data-wf-toast]")) return;
       recentControls.current = [target, ...recentControls.current.filter((element) => element !== target)].slice(0, 8);
     };
     document.addEventListener("focusin", remember);
@@ -120,14 +140,79 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
     const targets = pendingFocusReturn.current;
     pendingFocusReturn.current = null;
     if (!targets) return;
-    // An action that deliberately focused another control owns that focus.
-    if (document.activeElement !== document.body) return;
+    // An action that deliberately focused another control owns that focus. Focus left on a card
+    // that is playing its exit counts as lost: that card is inert and about to go.
+    const active = document.activeElement;
+    if (active !== document.body && !active?.closest('[data-leaving="true"]')) return;
     for (const target of targets) {
       if (!canRestoreFocusTo(target)) continue;
       target.focus({ preventScroll: true });
       if (document.activeElement === target) break;
     }
   }, [toasts]);
+
+  useEffect(() => {
+    const timers = leaveTimers.current;
+    return () => {
+      for (const timer of timers.values()) window.clearTimeout(timer);
+      timers.clear();
+    };
+  }, []);
+
+  /**
+   * Sets the live toasts. A card that has gone stays drawn, marked leaving, for the v9 exit time
+   * and is then removed; with no exit time (no token stylesheet) it goes at once. Each card that
+   * has gone is kept in the recent list.
+   */
+  const commit = useCallback((next: Toast[], undoneId?: string) => {
+    const before = toastsRef.current;
+    toastsRef.current = next;
+    const gone = before.filter((toast) => !next.some((live) => live.id === toast.id));
+    const exitMs = gone.length ? toastExitMs() : 0;
+    for (const toast of gone) {
+      if (exitMs <= 0) continue;
+      window.clearTimeout(leaveTimers.current.get(toast.id));
+      leaveTimers.current.set(
+        toast.id,
+        window.setTimeout(() => {
+          leaveTimers.current.delete(toast.id);
+          setToasts((shown) => shown.filter((card) => !(card.id === toast.id && card.leaving)));
+        }, exitMs),
+      );
+    }
+    const leaving = new Set(exitMs > 0 ? gone.map((toast) => toast.id) : []);
+    setToasts((shown) => {
+      const drawn: ShownToast[] = [];
+      for (const card of shown) {
+        const live = next.find((toast) => toast.id === card.id);
+        if (live) drawn.push(live);
+        else if (card.leaving || leaving.has(card.id)) drawn.push({ ...card, leaving: true });
+      }
+      for (const toast of next) if (!shown.some((card) => card.id === toast.id)) drawn.push(toast);
+      return drawn;
+    });
+    if (gone.length) {
+      const at = Date.now();
+      setRecent((list) =>
+        [
+          ...gone
+            .slice()
+            .reverse()
+            .map((toast): RecentToast => ({
+              id: toast.id,
+              tone: toast.tone,
+              title: toast.title,
+              body: toast.body,
+              at,
+              undone: toast.id === undoneId,
+            })),
+          ...list,
+        ].slice(0, RECENT_TOAST_LIMIT),
+      );
+    }
+  }, []);
+
+  const clearRecent = useCallback(() => setRecent([]), []);
 
   // Visible Undo toasts whose window has already ended, so `onExpire` runs at most once each. An id
   // leaves the set when its toast is removed.
@@ -141,22 +226,27 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
     toast.undo.onExpire?.();
   }, []);
 
-  const dismiss = useCallback(
-    (id: string) => {
+  const remove = useCallback(
+    (id: string, undone: boolean) => {
       const active = document.activeElement;
-      if (active?.closest('[data-testid="toast"]')) {
+      if (active?.closest("[data-wf-toast]")) {
         // The triggering save strip may have disappeared; keep earlier surviving controls too.
         pendingFocusReturn.current = recentControls.current;
       }
       const gone = toastsRef.current.find((toast) => toast.id === id);
-      const next = toastsRef.current.filter((toast) => toast.id !== id);
-      toastsRef.current = next;
-      setToasts(next);
+      commit(
+        toastsRef.current.filter((toast) => toast.id !== id),
+        undone ? id : undefined,
+      );
       if (gone) expire(gone);
       settled.current.delete(id);
     },
-    [expire],
+    [commit, expire],
   );
+
+  const dismiss = useCallback((id: string) => remove(id, false), [remove]);
+  const timeOut = dismiss;
+  const isShown = useCallback((id: string) => toastsRef.current.some((toast) => toast.id === id), []);
 
   // Settles the toast before the caller's onUndo runs, so nothing that callback does (closing or
   // pushing out its own toast) can also expire it, and the toast still closes if the callback throws.
@@ -180,11 +270,11 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
               settled.current.delete(id);
             }
           }
-        } else dismiss(id);
+        } else remove(id, true);
       }
       return undefined;
     },
-    [dismiss, expire],
+    [remove, expire],
   );
 
   const push = useCallback(
@@ -223,28 +313,26 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
         };
         const next = toastsRef.current.slice();
         next[duplicateIndex] = refreshed;
-        toastsRef.current = next;
-        setToasts(next);
+        commit(next);
         return duplicate.id;
       }
       counter.current += 1;
       const id = `toast-${counter.current}`;
       const all = [...toastsRef.current, { ...toast, id, announceKey: 0 }];
       const next = all.slice(-MAX_VISIBLE_TOASTS);
-      toastsRef.current = next;
-      setToasts(next);
+      commit(next);
       for (const evicted of all.slice(0, all.length - next.length)) {
         expire(evicted);
         settled.current.delete(evicted.id);
       }
       return id;
     },
-    [expire, offlineNote, savesOnDevice],
+    [commit, expire, offlineNote, savesOnDevice],
   );
 
   const value = useMemo(
-    () => ({ toasts, push, dismiss, undoAndDismiss, savesOnDevice }),
-    [toasts, push, dismiss, undoAndDismiss, savesOnDevice],
+    () => ({ toasts, recent, clearRecent, push, dismiss, timeOut, isShown, undoAndDismiss, savesOnDevice }),
+    [toasts, recent, clearRecent, push, dismiss, timeOut, isShown, undoAndDismiss, savesOnDevice],
   );
 
   return (
@@ -271,44 +359,54 @@ export function useOptionalToast(): ToastApi | null {
   const push = context?.push;
   const dismiss = context?.dismiss;
   const savesOnDevice = context?.savesOnDevice;
-  return useMemo(() => (push && dismiss ? { push, dismiss, savesOnDevice } : null), [push, dismiss, savesOnDevice]);
+  const isShown = context?.isShown;
+  return useMemo(
+    () => (push && dismiss ? { push, dismiss, savesOnDevice, isShown } : null),
+    [push, dismiss, savesOnDevice, isShown],
+  );
 }
 
 function ToastCard({
   toast,
   onDismiss,
+  onTimeOut,
   onUndone,
+  stackStyle,
 }: {
-  toast: Toast;
+  toast: ShownToast;
   onDismiss: (id: string) => void;
+  onTimeOut: (id: string) => void;
   onUndone: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
+  stackStyle?: CSSProperties;
 }) {
   // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
   // Audit 24-7 (CT-09): a warning or danger toast stays until dismissed unless its caller sets a time.
+  // A timed toast with no time of its own stays a little longer for each extra word.
   const lasting = Boolean(toast.action) || toast.tone === "warning" || toast.tone === "danger";
-  const duration = toast.undo ? 0 : (toast.duration ?? (lasting ? 0 : DEFAULT_DURATION));
-
-  useEffect(() => {
-    if (duration <= 0) return;
-    const timer = setTimeout(() => onDismiss(toast.id), duration);
-    return () => clearTimeout(timer);
-  }, [duration, onDismiss, toast.id, toast.announceKey]);
+  const duration = toast.undo ? 0 : (toast.duration ?? (lasting ? 0 : timedToastMs(toast.title, toast.body)));
+  const leaving = Boolean(toast.leaving);
 
   return (
     <ToastView
-      data-testid="toast"
+      data-testid={leaving ? "toast-leaving" : (toast.testId ?? "toast")}
+      data-wf-toast=""
       data-tone={toast.tone}
       data-announce-key={toast.announceKey ?? 0}
       // Closes itself (Undo window or timer): the phone pill drops its X, as the v10 mockup draws it.
       data-auto-dismiss={toast.undo || duration > 0 ? "true" : undefined}
       // The region is pointer-events: none so it never blocks the page; each card opts back in.
       className={overlayStyles.toastPointer}
+      style={stackStyle}
       tone={toast.tone}
+      leaving={leaving}
       // Remount on announceKey so a repeated identical outcome re-enters the polite live region
       // instead of staying silent while still visible.
       title={<span key={toast.announceKey ?? 0}>{toast.title}</span>}
       body={toast.body ? <span key={`body-${toast.announceKey ?? 0}`}>{toast.body}</span> : undefined}
       meta={toast.meta}
+      timeout={
+        duration > 0 ? { ms: duration, onTimeout: () => onTimeOut(toast.id), restartKey: toast.announceKey } : undefined
+      }
       action={
         toast.action
           ? {
@@ -342,23 +440,86 @@ function ToastCard({
  * surface that owns its own portal can place it. `role="status"` + `aria-live="polite"`
  * so an outcome is announced without interrupting whatever the user is reading —
  * a failed upload is important, but it is not a reason to cut off a dose sentence.
+ *
+ * Above the region sits a small tools row, outside the live region so its words are never read
+ * as an outcome: "+N more" when older notices are folded behind the newest, and Recent once a
+ * notice has left the screen.
  */
 function ToastRegion() {
   const context = useContext(ToastContext);
+  const [pinned, setPinned] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const regionRef = useRef<HTMLDivElement>(null);
+  const toasts = context?.toasts ?? [];
+  const live = toasts.filter((toast) => !toast.leaving);
+  const expanded = pinned || hovered || focused;
+  const layout = toastStackLayout(toasts, expanded);
+  const jump = useToastJumpKey(regionRef);
+  // A pinned stack folds again once it is short enough not to need folding.
+  const needsPin = toastStackLayout(toasts, false).folded;
+  if (pinned && !needsPin) setPinned(false);
   if (!context) return null;
-  const { toasts, dismiss, undoAndDismiss } = context;
+  const { dismiss, timeOut, undoAndDismiss, recent, clearRecent } = context;
+  const unfoldable = layout.folded || (expanded && needsPin);
 
   const region = (
     <div
-      data-testid="toast-region"
-      role="status"
-      aria-live="polite"
-      aria-relevant="additions text"
+      ref={regionRef}
+      data-wf-toast-host=""
       className={`pointer-events-none fixed inset-x-0 bottom-0 flex flex-col items-center gap-2 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-0 sm:items-end ${overlayStyles.toastRegion ?? ""}`}
     >
-      {toasts.map((toast) => (
-        <ToastCard key={toast.id} toast={toast} onDismiss={dismiss} onUndone={undoAndDismiss} />
-      ))}
+      <div className={overlayStyles.toastTools}>
+        {unfoldable ? (
+          <button
+            type="button"
+            className={overlayStyles.toastToolButton}
+            aria-expanded={!layout.folded}
+            data-testid="toast-stack-toggle"
+            onClick={() => setPinned((value) => !value)}
+          >
+            {layout.folded ? `+${layout.hiddenCount} more` : "Show fewer"}
+          </button>
+        ) : null}
+        <ToastRecent recent={recent} liveCount={live.length} onClear={clearRecent} openRequest={jump.recentRequest} />
+      </div>
+      <div
+        data-testid="toast-region"
+        role="status"
+        aria-live="polite"
+        aria-relevant="additions text"
+        className={overlayStyles.toastList}
+        data-stack={layout.folded ? "folded" : undefined}
+        data-hover-open={hovered ? "true" : undefined}
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+        onFocus={() => setFocused(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+        }}
+      >
+        {toasts.map((toast) => {
+          const slot = layout.slots.get(toast.id);
+          const stackStyle = slot
+            ? ({
+                gridRow: slot.row,
+                "--wf-toast-depth": slot.depth,
+                ...(slot.depth > 0 ? { pointerEvents: "none" } : null),
+                ...(slot.faded ? { opacity: 0 } : null),
+              } as CSSProperties)
+            : undefined;
+          return (
+            <ToastCard
+              key={toast.id}
+              toast={toast}
+              onDismiss={dismiss}
+              onTimeOut={timeOut}
+              onUndone={undoAndDismiss}
+              stackStyle={stackStyle}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 
