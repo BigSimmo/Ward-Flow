@@ -20,7 +20,16 @@ import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-manag
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
-import { originCode, WAIT_BANDS, type WaitBandId } from "./wait-bands";
+import {
+  bandIncludes,
+  originCode,
+  tightHours,
+  WAIT_BANDS,
+  waitingCauseTitle as causeTitle,
+  windowText,
+  type WaitBandId,
+} from "./wait-bands";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
   CheckingFoot,
@@ -37,7 +46,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { type DelayCause, type DelayGroup } from "@/components/ward-management/delays/delays-derivations";
-import { BandBar, Glyph, causeTitle } from "@/components/ward-management/delays/delays-board-parts";
+import { BandBar, Glyph } from "@/components/ward-management/delays/delays-board-parts";
 import {
   NO_FILTERS,
   OVER_24H,
@@ -83,7 +92,6 @@ import {
   queuedReferralCount,
   waitingViewHint,
   waitingViewLabel,
-  windowText,
 } from "@/components/ward-management/delays/waiting-views";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
@@ -441,6 +449,7 @@ export function DelaysBoardRedesign({
   const over24 = rows.filter(isOver24hInEd).length;
   const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
+  const formsPast = breached === 1 ? "form past its time" : "forms past their time";
   // Overall review, 20 Oct 2026: the title leads with the one "waiting" figure (`waitingInEds`, the
   // menu badge's figure too), then names whoever else is on this list ("8 in transit"), so the words
   // add up to the list's own count.
@@ -452,14 +461,14 @@ export function DelaysBoardRedesign({
   const urgentMinutes = thresholds.urgentMinutes;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
   const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
-  // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
+  // Referrals in the Referrals decision queue are not movements yet, so the list only counts them.
   const scope = useServiceScope();
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
   const referralsLine = (
     <p className={styles.footNote} data-testid="delays-referrals-line">
       {queuedReferrals === 0
-        ? "No referrals are waiting for a ward's answer."
-        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral is" : "referrals are"} waiting for a ward's answer, not yet on this list.`}{" "}
+        ? "No referrals awaiting a decision."
+        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral" : "referrals"} awaiting a decision, not yet on this list.`}{" "}
       <Link href="/ward-flow/referrals" className={styles.lnk}>
         Open Referrals
       </Link>
@@ -541,7 +550,7 @@ export function DelaysBoardRedesign({
   if (filters.breached)
     chips.push({
       key: "breached",
-      label: "Past recorded time",
+      label: "Form past its time",
       clear: () => {
         set({ breached: false });
       },
@@ -616,7 +625,13 @@ export function DelaysBoardRedesign({
             <b className={styles.ellBlock}>{patient.formalName}</b>
             <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
               {isPhone ? phonePrefixAsTyped(row, now, thresholds) : null}
-              {[patient.umrn, transitNote(movement, now), originCode(movement)].filter(Boolean).join(" · ")}
+              {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off. */}
+              {(isPhone
+                ? [originCode(movement), transitNote(movement, now), patient.umrn]
+                : [patient.umrn, transitNote(movement, now), originCode(movement)]
+              )
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </button>
         </td>
@@ -736,15 +751,13 @@ export function DelaysBoardRedesign({
           body.push(
             <tr role="row" key={`more-${group.cause}`} className={styles.more}>
               <td role="cell" colSpan={6}>
-                <button
-                  type="button"
-                  className={styles.moreBtn}
+                <ShowMoreRow
                   onClick={() => {
                     setMoreGroups((current) => ({ ...current, [group.cause]: true }));
                   }}
                 >
                   {`Show ${list.length - limit} more`}
-                </button>
+                </ShowMoreRow>
               </td>
             </tr>,
           );
@@ -758,6 +771,7 @@ export function DelaysBoardRedesign({
       if (list.length === 0) continue;
       const open = bandOpen[band.id] ?? band.limit > 0;
       const limit = bandMore[band.id] ? list.length : band.limit;
+      const includes = bandIncludes(list); // "includes 3 in transit" (Josh, 30 Oct 2026)
       body.push(
         <tr role="row" key={`band-${band.id}`} className={styles.grpH}>
           <td role="cell" colSpan={6}>
@@ -765,6 +779,7 @@ export function DelaysBoardRedesign({
               type="button"
               className={styles.gin}
               aria-expanded={open}
+              aria-label={`${band.title}, ${list.length} ${list.length === 1 ? "person" : "people"}${includes ? `, ${includes}` : ", all in an ED"}, ${open ? band.note : "folded"}`}
               onClick={() => setBandOpen((current) => ({ ...current, [band.id]: !open }))}
               data-testid={`delays-band-${band.id}`}
             >
@@ -772,8 +787,9 @@ export function DelaysBoardRedesign({
               <Glyph tone={band.tone} />
               <span className={styles.gTitle}>{band.title}</span>
               <span className={styles.k}>{list.length}</span>
+              {includes && !isPhone ? <span className={styles.mut}>{includes}</span> : null}
               <span className={styles.sp} />
-              <span className={styles.mut}>{open ? band.note : "folded"}</span>
+              <span className={styles.mut}>{open ? (isPhone && includes) || band.note : "folded"}</span>
             </button>
           </td>
         </tr>,
@@ -784,13 +800,9 @@ export function DelaysBoardRedesign({
           body.push(
             <tr role="row" key={`more-${band.id}`} className={styles.more}>
               <td role="cell" colSpan={6}>
-                <button
-                  type="button"
-                  className={styles.moreBtn}
-                  onClick={() => setBandMore((current) => ({ ...current, [band.id]: true }))}
-                >
-                  {`Show ${list.length - limit} more ${band.title.toLowerCase()}`}
-                </button>
+                <ShowMoreRow onClick={() => setBandMore((current) => ({ ...current, [band.id]: true }))}>
+                  {`Show ${list.length - limit} more`}
+                </ShowMoreRow>
               </td>
             </tr>,
           );
@@ -872,13 +884,16 @@ export function DelaysBoardRedesign({
     };
     // Redesign: the same three wait bands as the desktop table, each one foldable.
     return flat
-      ? WAIT_BANDS.map((band) => ({
-          id: band.id,
-          title: band.title,
-          tone: band.tone,
-          note: band.note,
-          rows: shown.filter(band.test).sort(byWait).map(portraitRow),
-        })).filter((group) => group.rows.length > 0)
+      ? WAIT_BANDS.map((band) => {
+          const list = shown.filter(band.test).sort(byWait);
+          return {
+            id: band.id,
+            title: band.title,
+            tone: band.tone,
+            note: [bandIncludes(list), band.note].filter(Boolean).join(" · "),
+            rows: list.map(portraitRow),
+          };
+        }).filter((group) => group.rows.length > 0)
       : groups.map((group) => {
           const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
           return {
@@ -937,14 +952,14 @@ export function DelaysBoardRedesign({
           type="button"
           className={styles.chip}
           aria-pressed={filters.view === view}
-          title={waitingViewHint(view, thresholds)}
+          title={tightHours(waitingViewHint(view, thresholds))}
           onClick={() => {
             set({ view: filters.view === view ? null : view });
           }}
           data-testid={`delays-view-${view}`}
         >
           {/* Josh, 30 Oct 2026: no "(as written)" on form labels. */}
-          {waitingViewLabel(view, thresholds).replace(" (as written)", "")}{" "}
+          {tightHours(waitingViewLabel(view, thresholds).replace(" (as written)", ""))}{" "}
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}
@@ -1020,18 +1035,18 @@ export function DelaysBoardRedesign({
         titleMeta={
           isPhone ? (
             <>
-              Prototype data, invented records · <b>{breached}</b> past recorded time
+              Prototype data, invented records · <b>{breached}</b> {formsPast}
             </>
           ) : (
             <>
-              <b>{breached}</b> past recorded time
+              <b>{breached}</b> {formsPast}
             </>
           )
         }
         testId="delays-hero"
         className={styles.delaysHero}
         // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the list scrolls.
-        condensed={`${heroTitle} · ${breached} past recorded time`}
+        condensed={`${heroTitle} · ${breached} ${formsPast}`}
         stats={
           <div className={styles.stats} role="group" aria-label="Filter by the headline counts">
             {heroStat(
@@ -1073,12 +1088,13 @@ export function DelaysBoardRedesign({
             )}
             {isPhone
               ? null
-              : heroStat(
+              : // Josh, 30 Oct 2026: a filter like its neighbours, as Longest quiet's "Show all quiet" is.
+                heroStat(
                   silentCount,
                   `No update for ${SILENT_MINUTES / 60}h and over`,
                   "warning",
-                  false,
-                  undefined,
+                  filters.silent,
+                  silentCount > 0 || filters.silent ? () => toggle("silent", true) : undefined,
                   "delays-stat-silent",
                 )}
           </div>
@@ -1113,7 +1129,11 @@ export function DelaysBoardRedesign({
         </div>
       ) : (
         <>
-          <section className={`${styles.card} ${styles.owners}`} aria-label="Whose move" data-ward-primitive="panel">
+          <section
+            className={`${styles.card} ${styles.owners} ${waitingKeys.ownersFit}`}
+            aria-label="Whose move"
+            data-ward-primitive="panel"
+          >
             {tiles.map((tile) => (
               <button
                 key={tile.owner}

@@ -22,6 +22,8 @@ import { forecastByKind } from "@/components/ward-management/forecast/forecast-b
 import { horizonDays, sevenDayHorizon } from "@/components/ward-management/forecast/forecast-horizon";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
 
+import { heldUpReleases } from "./held-up";
+
 const NO_PLANNED: never[] = [];
 
 /**
@@ -95,8 +97,12 @@ export function useCapacityModel() {
     wards: new Set(
       upcoming.flatMap((window) => window.wards.filter((ward) => ward.entries.length > 0).map((ward) => ward.unitId)),
     ).size,
-    overdue: sources.windows.find((window) => window.id === "overdue")?.total ?? 0,
+    // Redesign (Josh, 30 Oct): the same overdue figure as the "Review overdue releases" lever (dates
+    // passed, no blocker), so the forecast's right column holds one overdue number, not two.
+    overdueNotHeldUp: forecast.horizons[0]?.overdue ?? 0,
   };
+  // Redesign (Josh, 30 Oct): held-up releases counted and named as Discharges counts them.
+  const heldUp = useMemo(() => heldUpReleases(bedReleases, now), [bedReleases, now]);
   // Wards a coordinator should look at first: none ready, or a count past its freshness limit.
   const wardsToCheck = networkRows
     .filter((row) => !row.unit.isClosed && (row.ready === 0 || !isConfirmationFresh(row.unit, now)))
@@ -125,6 +131,7 @@ export function useCapacityModel() {
     week,
     confirmations,
     sourceSummary,
+    heldUp,
     wardsToCheck,
     plannedBooked: planned.filter((booking) => booking.state === "booked").length,
   };

@@ -48,13 +48,28 @@ export function BedMapCards({
 }) {
   const { mapGroups, networkRows, totals, now } = model;
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
-  const [open, setOpen] = useState(() => new Set(mapGroups.slice(0, OPEN_FIRST).map((group) => group.service)));
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
-  const matches = (unitId: string) => {
+  const lit = (unitId: string, id: Highlight | null) => {
     const row = rowOf.get(unitId);
-    const rule = HIGHLIGHTS.find((entry) => entry.id === highlight);
+    const rule = HIGHLIGHTS.find((entry) => entry.id === id);
     return !rule || (row !== undefined && rule.test(row, isConfirmationFresh(row.unit, now)));
   };
+  const matches = (unitId: string) => lit(unitId, highlight);
+  // Redesign (Josh, 30 Oct): turning a highlight on opens every service group that holds a lit
+  // ward, so no match sits folded away. The coordinator can still fold a group afterwards.
+  const groupsLitBy = (id: Highlight | null) =>
+    id === null
+      ? []
+      : mapGroups.filter((group) => group.wards.some((ward) => lit(ward.unit.id, id))).map((group) => group.service);
+  const [open, setOpen] = useState(
+    () => new Set([...mapGroups.slice(0, OPEN_FIRST).map((group) => group.service), ...groupsLitBy(highlight)]),
+  );
+  const [openedFor, setOpenedFor] = useState(highlight);
+  if (openedFor !== highlight) {
+    setOpenedFor(highlight);
+    const toOpen = groupsLitBy(highlight);
+    if (toOpen.length > 0) setOpen((current) => new Set([...current, ...toOpen]));
+  }
   const toggleGroup = (service: (typeof mapGroups)[number]["service"]) =>
     setOpen((current) => {
       const next = new Set(current);
@@ -86,16 +101,20 @@ export function BedMapCards({
           <span className={styles.kickerInline} aria-hidden="true">
             Highlight
           </span>
-          {HIGHLIGHTS.map((entry) => (
-            <FilterChip
-              key={entry.id}
-              pressed={highlight === entry.id}
-              onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
-              count={networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length}
-            >
-              {entry.label}
-            </FilterChip>
-          ))}
+          {HIGHLIGHTS.map((entry) => {
+            // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as the
+            // hero's bed counts.
+            const wards = networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
+            return (
+              <FilterChip
+                key={entry.id}
+                pressed={highlight === entry.id}
+                onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
+              >
+                {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
+              </FilterChip>
+            );
+          })}
         </div>
         {mapGroups.map((group) => {
           if (group.wards.length === 0) return null;

@@ -14,7 +14,7 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { WardPanel } from "@/components/ward-management/ward-panel";
+import { CapacityPanel } from "./capacity-panel";
 import { deriveStepDownBoard } from "@/components/ward-management/ward-step-down";
 import styles from "@/components/ward-management/capacity/step-down-board.module.css";
 
@@ -64,7 +64,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
   );
 
   return (
-    <WardPanel title="Step down board" count={`${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}>
+    <CapacityPanel title="Step down board" count={`${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}>
       <div data-testid="capacity-step-down-board">
         {rows.length === 0 ? (
           <p className={styles.absent}>No patient is marked for step down.</p>
@@ -242,6 +242,6 @@ export function StepDownBoard({ now }: { now: Instant }) {
           </ul>
         )}
       </div>
-    </WardPanel>
+    </CapacityPanel>
   );
 }

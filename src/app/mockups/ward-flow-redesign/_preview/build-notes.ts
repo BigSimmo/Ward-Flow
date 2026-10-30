@@ -532,7 +532,10 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   waiting: [
     "**Built from a copy of today's Waiting page** (the board and its wrapper), so filters, the person panel, escalation and the graphs work as they do now.",
     "**New:** Longest wait grouped by wait (over 24 hours all shown, over 8 hours the first four, under 8 hours folded), rows naming the ED by its short name, the daily check as one line, and the header's figures in one row with nothing overlapping.",
-    '**Kept as today:** a recorded legal time still shows as time left ("6h 40m left"). The HTML mock-up showed "due 17:21, as recorded" instead. Which you prefer is your call under D-70.',
+    '**Legal times as typed (D-70):** no time left is counted down. The Legal column reads "Ends 17:22 as typed" (colour from your warning settings, always with words); the person panel adds "As typed on the form" and "Not legally checked".',
+    "**Review round (30 October):** Escalate and Journey sit at the top of the person panel on a laptop, not below the candidate wards; the phone keeps them pinned at the foot. The middle band is '8 to 24 hours', and each band says who is not in an ED ('includes 4 in transit'), so it is not read against the header's Over 8h.",
+    "**Review round (30 October):** the header says '0 forms past their time' and 'Form due within 1h'; 'No update for 2h and over' now filters the list like its neighbours; the referrals line reads '7 referrals awaiting a decision, not yet on this list'. The By blocker form group reads 'Form due soon, as typed' (it holds forms due within your urgent window; passed ones are in Form overdue).",
+    "**Phone:** the four blocker chips sit two by two, the daily check is one line ('Daily check: 17 to check') whose list shows 8 then Show more, and each row puts the ED before the UMRN.",
   ],
   eds: [
     "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",
@@ -712,5 +715,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Changed from the HTML mock-up:** the bed map has Grid and Rows. The Table layout is dropped because All wards is that table, so each ward is listed once.",
     "**Round 2:** the ward panel's Open ward and Discharge board links show only when this desk can open them. Planned admissions and the Step down board name people surname first, and Book has its icon beside the word.",
     "**For the build:** the real Planned admissions Book button stacks its icon over the word; the fix is one line.",
+    "**Review round (30 October):** the network total shows once (the All four together card is gone; on a phone the forecast card starts at tomorrow). Held-up releases are counted and named as Discharges counts them (11 recorded, Clean / prep, Family / carer), and See held-up releases opens Discharges, not the waiting list.",
+    "**Review round (30 October):** the 48-hour figure leads with its range in muted ink (may move); the overdue figure shows once (34 overdue, not held up). The phone Bed forecast sheet stacks figures, bars, then levers. Highlight chips name their noun (Open bed ready · 15 wards) and open the service groups that hold a match.",
+    "**Review round (30 October):** Ask the ward is the one name for the request, on the kit's small button; the ward drawer's own title and close replace Back to network. Planned admissions and Step down board use the card title style.",
   ],
 };

@@ -41,7 +41,8 @@ import {
   type BoardRow,
   type RunwayBin,
 } from "@/components/ward-management/delays/delays-board-model";
-import { BandBar, causeTitle } from "@/components/ward-management/delays/delays-board-parts";
+import { BandBar } from "@/components/ward-management/delays/delays-board-parts";
+import { waitingCauseTitle as causeTitle } from "./wait-bands";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";

@@ -81,12 +81,12 @@ export function phonePrefixAsTyped(row: BoardRow, now: Instant, thresholds: DueS
         {" · "}
       </>
     );
+  // Josh, 30 Oct 2026: this form line takes its own line too, so the ED after it is never cut off.
   if (onOrderForm)
     return (
-      <>
+      <span className={redesign.phLegalLine}>
         <b className={styles.phPre}>{`Form ${onOrderForm.code}, time not written`}</b>
-        {" · "}
-      </>
+      </span>
     );
   return null;
 }

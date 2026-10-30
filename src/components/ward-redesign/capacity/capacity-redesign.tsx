@@ -40,7 +40,6 @@ import { StepDownBoard } from "./step-down-board";
 
 import { RedesignPage } from "../parts/redesign-page";
 import { gapWords } from "../parts/range-line";
-import { Kicker } from "../parts/how-worked-out";
 import { BedForecast } from "./bed-forecast";
 import { BedMapCards, type Highlight } from "./bed-map-cards";
 import { BedMeetingSheetDialog } from "./bed-meeting-sheet-dialog";
@@ -182,11 +181,13 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
 
       <ScenarioDialog open={popup?.kind === "scenario"} onClose={() => setPopup(null)} model={model.forecastModel} />
       {sheet ? <BedMeetingSheetDialog open onClose={() => setPopup(null)} sheet={sheet} now={now} /> : null}
+      {/* Redesign (Josh, 30 Oct): the drawer's own title and close replace the panel's "Back to
+          network" line. */}
       <Drawer
         open={selectedRow !== undefined}
         onClose={() => setPopup(null)}
+        title={selectedRow?.unit.name ?? "Ward capacity"}
         ariaLabel={selectedRow ? `${selectedRow.unit.name}, ward capacity` : "Ward capacity"}
-        headerHidden
         testId="redesign-capacity-ward-drawer"
       >
         {selectedRow ? <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} /> : null}
@@ -198,7 +199,7 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
         mobileSize="viewport"
         testId="redesign-capacity-forecast-sheet"
       >
-        <BedForecast model={model} onTryScenario={() => setPopup({ kind: "scenario" })} />
+        <BedForecast model={model} onTryScenario={() => setPopup({ kind: "scenario" })} stacked />
       </Drawer>
     </RedesignPage>
   );
@@ -346,35 +347,38 @@ function CapacityHero({
   );
 }
 
-/** The phone's first tab: the mismatch as rows, the forecast in three figures, then wards to check. */
+/**
+ * The phone's first tab: the mismatch as rows, the forecast in three figures, then wards to check.
+ * The network total is the hero's line, so the mismatch lists the four bed types only and the
+ * forecast starts at tomorrow (Josh, 30 Oct 2026).
+ */
 function PhoneOverview({ model, onForecast }: { model: CapacityModel; onForecast: () => void }) {
-  const { gapRows, gapTotals, tomorrowByKind, forecast, week, wardsToCheck, networkRows, roadTimeFromEdId, now } =
-    model;
+  const { gapRows, tomorrowByKind, forecast, week, wardsToCheck, networkRows, roadTimeFromEdId, now } = model;
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
-  const tomorrow = forecast.horizons[0];
+  const [tomorrow, twoDays] = forecast.horizons;
   const weekOut = week.total.out.reduce((sum, value) => sum + value, 0);
   return (
     <>
       <Card aria-labelledby="phone-mismatch">
         <CardHead id="phone-mismatch" title="Where the mismatch is" />
         <ul className={styles.phoneRows}>
-          {[
-            ...gapRows.map((row) => ({ ...row, likely: byId.get(row.id)?.likely })),
-            { id: "all", need: "All four together", ...gapTotals, likely: tomorrowByKind.total.likely },
-          ].map((row) => (
-            <li key={row.id} className={styles.phoneRow}>
-              <div>
-                <b className={styles.small}>{row.need}</b>
-                <span className={styles.mutedXs}>
-                  {row.waiting} waiting · {row.bedsThatFit} fit
-                  {row.likely !== undefined ? ` · tomorrow ${gapWords(row.likely)}` : ""}
+          {gapRows.map((row) => {
+            const likely = byId.get(row.id)?.likely;
+            return (
+              <li key={row.id} className={styles.phoneRow}>
+                <div>
+                  <b className={styles.small}>{row.need}</b>
+                  <span className={styles.mutedXs}>
+                    {row.waiting} waiting · {row.bedsThatFit} fit
+                    {likely !== undefined ? ` · tomorrow ${gapWords(likely)}` : ""}
+                  </span>
+                </div>
+                <span className={`${styles.small} ${row.gap < 0 ? styles.warnInk : styles.okInk}`}>
+                  <StatusGlyph tone={row.gap < 0 ? "warning" : "success"} size={9} /> {gapWords(row.gap)}
                 </span>
-              </div>
-              <span className={`${styles.small} ${row.gap < 0 ? styles.warnInk : styles.okInk}`}>
-                <StatusGlyph tone={row.gap < 0 ? "warning" : "success"} size={9} /> {gapWords(row.gap)}
-              </span>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </Card>
       <Card aria-labelledby="phone-forecast">
@@ -387,32 +391,42 @@ function PhoneOverview({ model, onForecast }: { model: CapacityModel; onForecast
             </Button>
           }
         />
-        <dl className={styles.phoneForecast}>
-          <div>
-            <dt>
-              <Kicker>Now</Kicker>
-            </dt>
-            <dd className={gapTotals.gap < 0 ? styles.warnInk : styles.okInk}>{gapWords(gapTotals.gap)}</dd>
-          </div>
+        <ul className={styles.phoneRows}>
           {tomorrow ? (
-            <div>
-              <dt>
-                <Kicker>Tomorrow</Kicker>
-              </dt>
-              <dd className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</dd>
-              <dd className={styles.mutedXs}>
-                {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
-              </dd>
-            </div>
+            <li className={styles.phoneRow}>
+              <div>
+                <b className={styles.small}>Tomorrow</b>
+                <span className={styles.mutedXs}>
+                  Range {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
+                </span>
+              </div>
+              <span className={`${styles.small} ${tomorrow.likely < 0 ? styles.warnInk : styles.okInk}`}>
+                {gapWords(tomorrow.likely)}
+              </span>
+            </li>
           ) : null}
-          <div>
-            <dt>
-              <Kicker>Next 7 days</Kicker>
-            </dt>
-            <dd>{weekOut}</dd>
-            <dd className={styles.mutedXs}>beds going out</dd>
-          </div>
-        </dl>
+          {twoDays ? (
+            <li className={styles.phoneRow}>
+              <div>
+                <b className={`${styles.small} ${styles.fcKpiSoftLabel}`}>
+                  <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" />
+                  In 48 hours
+                </b>
+                <span className={styles.mutedXs}>Likely {gapWords(twoDays.likely)} · may move</span>
+              </div>
+              <span className={`${styles.small} ${styles.muted}`}>
+                {gapWords(twoDays.low)} to {gapWords(twoDays.high)}
+              </span>
+            </li>
+          ) : null}
+          <li className={styles.phoneRow}>
+            <div>
+              <b className={styles.small}>Next 7 days</b>
+              <span className={styles.mutedXs}>Beds going out</span>
+            </div>
+            <span className={styles.small}>{weekOut}</span>
+          </li>
+        </ul>
       </Card>
       <Card aria-labelledby="phone-check">
         <CardHead id="phone-check" title="Wards to check" meta={String(wardsToCheck.length)} />

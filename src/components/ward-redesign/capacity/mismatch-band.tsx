@@ -11,12 +11,13 @@ import styles from "./capacity-redesign.module.css";
 type Range = Pick<KindForecast, "low" | "likely" | "high">;
 
 /**
- * Where the mismatch is: each bed type, now and likely by this time tomorrow. One card per type
- * and one for all four, each with the same three lines in the same place, so the eye can run
- * across them. Replaces the table plus a separate "Tomorrow" strip.
+ * Where the mismatch is: each bed type, now and likely by this time tomorrow. One card per type,
+ * each with the same three lines in the same place, so the eye can run across them. Replaces the
+ * table plus a separate "Tomorrow" strip. The network total is the forecast's Now figure, so it
+ * is not repeated here as a fifth card (Josh, 30 Oct 2026).
  */
 export function MismatchBand({ model }: { model: CapacityModel }) {
-  const { gapRows, gapTotals, tomorrowByKind, now } = model;
+  const { gapRows, tomorrowByKind, now } = model;
   const span = rangeSpan(tomorrowByKind);
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
   return (
@@ -30,7 +31,6 @@ export function MismatchBand({ model }: { model: CapacityModel }) {
         {gapRows.map((row) => (
           <MismatchCard key={row.id} title={row.need} row={row} tomorrow={byId.get(row.id)} span={span} />
         ))}
-        <MismatchCard title="All four together" row={gapTotals} tomorrow={tomorrowByKind.total} span={span} total />
       </ul>
     </Card>
   );
@@ -41,17 +41,15 @@ function MismatchCard({
   row,
   tomorrow,
   span,
-  total = false,
 }: {
   title: string;
   row: Pick<BedKindGap, "waiting" | "bedsThatFit" | "gap">;
   tomorrow: Range | undefined;
   span: number;
-  total?: boolean;
 }) {
   const short = row.gap < 0;
   return (
-    <li className={`${styles.mmCard}${total ? ` ${styles.mmTotal}` : ""}`}>
+    <li className={styles.mmCard}>
       <h3 className={styles.mmTitle}>{title}</h3>
       <p className={styles.mmNow}>
         <StatusGlyph tone={short ? "warning" : "success"} size={10} />
@@ -79,6 +77,6 @@ function MismatchCard({
 
 /** One scale for every card, so a longer band always means a wider range. */
 function rangeSpan(forecast: ForecastByKind): number {
-  const ends = [forecast.total, ...forecast.kinds].flatMap((kind) => [Math.abs(kind.low), Math.abs(kind.high)]);
+  const ends = forecast.kinds.flatMap((kind) => [Math.abs(kind.low), Math.abs(kind.high)]);
   return Math.max(4, ...ends);
 }

@@ -4,7 +4,8 @@ import { useId, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 
-import { Button, StatusGlyph } from "@/components/wf";
+import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -28,6 +29,8 @@ import styles from "./waiting-redesign.module.css";
  * be marked checked (UX audit, 21 Oct 2026); while folded, the line itself says so, so the reason
  * stays written down (design review, 22 Oct 2026) without a card and a disabled button.
  */
+const CHECK_LIMIT = 8;
+
 export function DailyCheckLine() {
   const access = useEffectiveWardAccess();
   const { movements, referrals, patients, inboxCompletions } = useWardFlowSelect(
@@ -41,6 +44,11 @@ export function DailyCheckLine() {
   const patientOf = usePatientOf();
   const listId = useId();
   const [open, setOpen] = useState(false);
+  // Josh, 30 Oct 2026: the opened list shows its first 8, then the shared Show more row.
+  const [all, setAll] = useState(false);
+  // Josh, 30 Oct 2026: on a phone the check is one line, "Daily check: 17 to check", with the full
+  // sentence kept for a screen reader.
+  const isPhone = useIsPhone();
   const items = useMemo(
     () => missedRequestCheck({ movements, referrals, patients, now }),
     [movements, referrals, patients, now],
@@ -52,10 +60,12 @@ export function DailyCheckLine() {
     return `${person.formalName} · ${person.umrn}`;
   };
   const requests = `${items.length} ${items.length === 1 ? "bed request" : "bed requests"}`;
+  const toCheck = `${requests} to check, missed or sent twice. Open the list to confirm them.`;
+  const shownItems = all ? items : items.slice(0, CHECK_LIMIT);
 
   return (
     <section className={styles.checkLine} aria-labelledby="redesign-daily-check" data-testid="ward-missed-check">
-      <div className={styles.checkRow}>
+      <div className={styles.checkRow} data-phone={isPhone || undefined}>
         <ListChecks size={16} aria-hidden="true" className={styles.checkIcon} />
         <p id="redesign-daily-check" className={styles.checkText}>
           <b>Daily check:</b>{" "}
@@ -66,8 +76,13 @@ export function DailyCheckLine() {
               <StatusGlyph tone="success" size={9} /> all checked by {checked.by} at{" "}
               {formatInstantWithDay(checked.at, now)}.
             </>
+          ) : isPhone ? (
+            <>
+              <span aria-hidden="true">{`${items.length} to check`}</span>
+              <span className="sr-only">{toCheck}</span>
+            </>
           ) : (
-            `${requests} to check, missed or sent twice. Open the list to confirm them.`
+            toCheck
           )}
         </p>
         {items.length > 0 ? (
@@ -86,7 +101,7 @@ export function DailyCheckLine() {
       {open ? (
         <div className={styles.checkList}>
           <ul id={listId} className={panel.list}>
-            {items.map((item) => (
+            {shownItems.map((item) => (
               <li key={item.key} className={panel.item} data-kind={item.kind}>
                 <span className={panel.kind}>
                   <StatusGlyph tone="warning" size={9} />
@@ -111,6 +126,11 @@ export function DailyCheckLine() {
               </li>
             ))}
           </ul>
+          {items.length > CHECK_LIMIT ? (
+            <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
+              {all ? "Show fewer" : `Show ${items.length - CHECK_LIMIT} more`}
+            </ShowMoreRow>
+          ) : null}
           {checked ? null : (
             <Button
               variant="sec"

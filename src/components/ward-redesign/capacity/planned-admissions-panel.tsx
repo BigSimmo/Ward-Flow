@@ -62,7 +62,7 @@ import {
   type PatientId,
 } from "@/components/ward-management/ward-patients";
 import { healthServiceAcronym, unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { WardPanel } from "@/components/ward-management/ward-panel";
+import { CapacityPanel } from "./capacity-panel";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import { plannedAdmissionAgenda } from "@/components/ward-management/capacity/planned-admissions";
@@ -476,7 +476,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   }
 
   return (
-    <WardPanel
+    <CapacityPanel
       title="Planned admissions"
       count={`${booked} booked`}
       testId="ward-capacity-planned-admissions"
@@ -895,6 +895,6 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         }}
         testId="ward-planned-arrival-identity"
       />
-    </WardPanel>
+    </CapacityPanel>
   );
 }
