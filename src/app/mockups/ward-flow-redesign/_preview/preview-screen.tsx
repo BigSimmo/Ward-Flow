@@ -7,6 +7,7 @@ import { applyThemeToDocument } from "@/lib/theme-client";
 import { screenBySlug } from "./screens";
 import { PreviewShell } from "./preview-shell";
 import { MOCKUP_PAGES } from "./screen-components";
+import { MOCKUP_POPUP_COMPONENTS } from "./popup-components";
 
 const subscribeNothing = () => () => {};
 
@@ -41,7 +42,11 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
   const screen = screenBySlug(slug);
   const Page = MOCKUP_PAGES[slug];
   if (!inBrowser || !screen) return null;
-  const page = Page ? <Page openOnLoad={pop ?? undefined} /> : <NotDrawnYet label={screen.label} />;
+  const drawnPage = Page ? <Page openOnLoad={pop ?? undefined} /> : <NotDrawnYet label={screen.label} />;
+  // A popup or state the preview draws itself (shell overlays, page popups, states): it is handed
+  // the page and draws inside the shell, so it reads the same world and chrome as the page.
+  const Popup = pop ? MOCKUP_POPUP_COMPONENTS[pop] : undefined;
+  const page = Popup ? <Popup page={drawnPage} /> : drawnPage;
   return screen.bare ? page : <PreviewShell appPath={screen.shellPath ?? screen.appPath}>{page}</PreviewShell>;
 }
 
