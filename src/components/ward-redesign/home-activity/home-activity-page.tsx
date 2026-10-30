@@ -1,6 +1,7 @@
 "use client";
 
-import { MoreHorizontal } from "lucide-react";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -57,6 +58,7 @@ import {
   buttonClass,
   CheckingFoot,
   Hero,
+  HeroStat,
   LiveChip,
   Menu,
   OccupancyRing,
@@ -66,7 +68,9 @@ import {
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { ExceptionDrawer, type RegisterTabId } from "@/components/ward-management/coordinator/exception-drawer";
 import styles from "@/components/ward-management/coordinator/home.module.css";
+import { HomeEdPressure } from "@/components/ward-management/coordinator/home-ed-pressure";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
+import { BedsFitTable, PlacementNext } from "@/components/ward-redesign/home/home-parts";
 import redesign from "@/components/ward-redesign/home/home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
@@ -77,7 +81,6 @@ import shortlistStyles from "@/components/ward-management/coordinator/shortlist-
 import { useExplicitReview } from "./activity-changes";
 import { ActivityPanel, type ActivityTab } from "./activity-panel";
 import mock from "./home-activity.module.css";
-import { BedsFitCompact, OldestToPlace, WaitingFilters } from "./home-activity-parts";
 import { PlannedList, usePlannedRows } from "./planned-list";
 
 /*
@@ -265,6 +268,10 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
     }
     setHomeView(view);
   }
+  function toggleFocus(next: "act" | "decide") {
+    showView("needs");
+    chooseNeedsFocus(needsFocus === next ? "all" : next);
+  }
   const selectedEdId = useHomeEdFilter() ?? undefined;
   const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
@@ -277,8 +284,9 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   const [heroPanel, setHeroPanel] = useState<"registers" | undefined>(
     openOnLoad === "registers" ? "registers" : undefined,
   );
+  const [checksOpen, setChecksOpen] = useState(openOnLoad === "checks");
   const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
-  // Overdue and Tier 1 (top of the Waiting tab) highlight their rows in the queue; nothing hides.
+  // Overdue and Tier 1 on the hero highlight their rows in the queue; the rest dim, nothing hides.
   const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
   function toggleHighlight(next: QueueHighlight) {
     setHighlight((current) => (current === next ? undefined : next));
@@ -634,21 +642,6 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
           review.reviewedAt !== undefined ? `your review at ${reviewClock}` : reviewClock
         } · Review`;
   const changesChipOpen = () => openActivity(changeCount > 0 ? "changes" : "recent");
-  // The hero's one control: opens the redesigned Activity panel on Changes.
-  const changesChip = (size: "phone" | "desktop") => (
-    <Button
-      variant="onHero"
-      size={size === "phone" ? "md" : "sm"}
-      className={`${size === "phone" ? styles.phoneSince : ""} ${mock.changesChip}`}
-      aria-haspopup="dialog"
-      aria-expanded={activityOpen}
-      aria-controls="home-activity-panel"
-      onClick={changesChipOpen}
-      data-testid="home-changes-chip"
-    >
-      {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipLabel}
-    </Button>
-  );
   const plannedRows = usePlannedRows(now);
 
   // Hero counts: every one is read from an existing derivation, never typed.
@@ -672,7 +665,8 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
-      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure · Limited demo
+      coverage
     </span>
   );
   const bedsReady = counts.capacity?.value ?? 0;
@@ -708,16 +702,6 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
       ]}
       notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
     />
-  );
-  // One quiet line for what this page checked; open it to see the detail.
-  const checkingLine = (
-    <details className={`${styles.checkingPhone} ${mock.checkingLine}`}>
-      <summary>
-        Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
-        {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
-      </summary>
-      {checkingFoot}
-    </details>
   );
   const shiftWord = currentShift(now)
     .name.replace(/ Shift$/u, " shift")
@@ -853,24 +837,135 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                       <br />
                     </>
                   ) : null}
-                  {statewideOccupancy !== null ? `${statewideOccupancy.toFixed(1)}% of beds in use statewide` : null}
+                  {`Prototype data, invented records${
+                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
+                  }`}
                 </>
               ) : (
                 (notWaitingMeta ?? undefined)
               )
             }
-            // Redesign (Josh, 30 Oct 2026): no figure chips. Act now and Referrals to decide are My
-            // List's own groups; Overdue and Tier 1 moved to the top of the Waiting tab.
+            stats={
+              isPhone ? (
+                <>
+                  <HeroStat
+                    value={actNowCount}
+                    label="Act now"
+                    tone={actNowCount > 0 ? "danger" : undefined}
+                    pressed={homeView === "needs" && needsFocus === "act"}
+                    onToggle={() => toggleFocus("act")}
+                  />
+                  <HeroStat
+                    value={referralQueue.length}
+                    label="To decide"
+                    tone={referralQueue.length > 0 ? "info" : undefined}
+                    pressed={homeView === "needs" && needsFocus === "decide"}
+                    onToggle={() => toggleFocus("decide")}
+                  />
+                  <HeroStat
+                    value={chips.overdueInQueue}
+                    label={chips.overdueLabel}
+                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
+                    pressed={homeView === "queue" && highlight === "overdue"}
+                    onToggle={() => {
+                      showView("queue");
+                      chooseNeedsFocus("all");
+                      toggleHighlight("overdue");
+                    }}
+                  />
+                </>
+              ) : undefined
+            }
             // The one ring on the page leads the hero on desktop and tablet (shared Hero lead slot).
             lead={
               isPhone ? undefined : (
                 <OccupancyRing percent={statewideOccupancy} alertAt={BED_ALERT_THRESHOLD_PERCENT} scope="Statewide" />
               )
             }
-            // Desktop: the checking line and the changes chip share one row. Phone: the chip, then
-            // the checking line as the foot.
-            bar={isPhone ? <div className={styles.phoneHeroActs}>{changesChip("phone")}</div> : checkingLine}
-            barAside={isPhone ? undefined : changesChip("desktop")}
+            bar={
+              isPhone ? (
+                // Redesign: the phone hero's "since you looked" pill becomes the changes chip. It
+                // shows even with nothing new, since it is also the way into Activity.
+                <div className={styles.phoneHeroActs}>
+                  <Button
+                    variant="onHero"
+                    className={`${styles.phoneSince} ${mock.changesChip}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={activityOpen}
+                    aria-controls="home-activity-panel"
+                    onClick={changesChipOpen}
+                    data-testid="home-changes-chip"
+                  >
+                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipLabel}
+                  </Button>
+                </div>
+              ) : (
+                <div className={styles.heroToggles}>
+                  <HeroStat
+                    inline
+                    value={actNowCount}
+                    label="Act now"
+                    tone={actNowCount > 0 ? "danger" : undefined}
+                    pressed={homeView === "needs" && needsFocus === "act"}
+                    onToggle={() => toggleFocus("act")}
+                  />
+                  <HeroStat
+                    inline
+                    value={referralQueue.length}
+                    label="Referrals to decide"
+                    tone={referralQueue.length > 0 ? "info" : undefined}
+                    pressed={homeView === "needs" && needsFocus === "decide"}
+                    onToggle={() => toggleFocus("decide")}
+                  />
+                  <HeroStat
+                    inline
+                    value={chips.overdueInQueue}
+                    label={chips.overdueLabel}
+                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
+                    pressed={homeView === "queue" && highlight === "overdue"}
+                    onToggle={() => {
+                      showView("queue");
+                      chooseNeedsFocus("all");
+                      toggleHighlight("overdue");
+                    }}
+                  />
+                  <HeroStat
+                    inline
+                    value={chips.tierOneInQueue}
+                    label={chips.tierOneLabel}
+                    pressed={homeView === "queue" && highlight === "tier1"}
+                    onToggle={() => {
+                      showView("queue");
+                      chooseNeedsFocus("all");
+                      toggleHighlight("tier1");
+                    }}
+                  />
+                  <HeroStat
+                    inline
+                    value={staleBedCounts + wardsNotReporting}
+                    // The chip says how many; opening it says which (it ran off a tablet's edge).
+                    label={staleBedCounts + wardsNotReporting === 1 ? "check to look at" : "checks to look at"}
+                    tone={staleBedCounts + wardsNotReporting > 0 ? "warning" : undefined}
+                    expanded={checksOpen}
+                    onToggle={() => setChecksOpen((open) => !open)}
+                  />
+                </div>
+              )
+            }
+            barAside={
+              isPhone ? undefined : (
+                // The changes chip: opens the redesigned Activity panel on Changes.
+                <HeroStat
+                  inline
+                  command
+                  value={changeCount > 0 ? changeCount : null}
+                  label={changesChipLabel}
+                  tone={changeCount > 0 ? "info" : undefined}
+                  onToggle={changesChipOpen}
+                  className={mock.changesChip}
+                />
+              )
+            }
             aside={
               isPhone ? (
                 // Device audit (11 Oct 2026): the pause is folded into the Live pill.
@@ -885,7 +980,20 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                 <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
               )
             }
-            foot={isPhone ? checkingLine : undefined}
+            foot={
+              isPhone ? (
+                // P109 (27 Oct 2026): a phone keeps the Checking strip, collapsed, so stale counts still show.
+                <details className={styles.checkingPhone}>
+                  <summary>
+                    Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"},{" "}
+                    {wardsNotReporting} {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+                  </summary>
+                  {checkingFoot}
+                </details>
+              ) : checksOpen ? (
+                checkingFoot
+              ) : undefined
+            }
           />
 
           {heroPanel && !isPhone ? (
@@ -893,6 +1001,16 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
               {renderRegisters("band")}
             </div>
           ) : null}
+
+          <div className={list.edWrap}>
+            <HomeEdPressure
+              now={now}
+              movements={movements}
+              selectedEdId={selectedEdId}
+              onSelectEd={setSelectedEdId}
+              service={service}
+            />
+          </div>
 
           <div
             className={`${styles.grid} ${list.grid}`}
@@ -925,30 +1043,42 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                     { id: "planned", label: "Planned", count: plannedRows.length },
                   ]}
                 />
-                {/* Redesign: Registers and Alerts history live in this menu on every screen size. */}
-                <Menu
-                  label="More for this list"
-                  align="end"
-                  items={[
-                    {
-                      id: "registers",
-                      label: "Registers",
-                      onSelect: () => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions")),
-                    },
-                    { id: "alerts", label: "Alerts history", onSelect: () => router.push("/ward-flow/alerts") },
-                  ]}
-                  trigger={(props) => (
-                    <button
-                      type="button"
-                      {...props}
-                      className={`${buttonClass({ variant: "ghost", size: "sm" })} ${mock.moreButton}`}
-                      data-testid="ward-home-registers"
-                    >
-                      <MoreHorizontal size={16} aria-hidden="true" />
-                      <span className="sr-only">More for this list</span>
-                    </button>
+                {isPhone ? (
+                  <Menu
+                    label="More for this list"
+                    align="end"
+                    items={[
+                      { id: "registers", label: "Registers", onSelect: () => setPhoneSheet({ kind: "exceptions" }) },
+                      { id: "alerts", label: "Alerts history", onSelect: () => router.push("/ward-flow/alerts") },
+                    ]}
+                    trigger={(props) => (
+                      <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
+                        <MoreHorizontal size={16} aria-hidden="true" />
+                        <span className="sr-only">More for this list</span>
+                      </button>
+                    )}
+                  />
+                ) : null}
+                <div className={list.headLinks} style={isPhone ? { display: "none" } : undefined}>
+                  {/* Home v7 (Josh, 22 Oct 2026): the hero's Alerts count became Act now, so the
+                      registers open from here: the strip under the hero, or a sheet on a phone. */}
+                  <button
+                    type="button"
+                    className={list.headLink}
+                    aria-expanded={isPhone ? phoneSheet?.kind === "exceptions" : heroPanel === "registers"}
+                    aria-controls={isPhone ? undefined : "ward-home-hero-panel"}
+                    onClick={() => (isPhone ? setPhoneSheet({ kind: "exceptions" }) : toggleRegisters("exceptions"))}
+                    data-testid="ward-home-registers"
+                  >
+                    Registers
+                  </button>
+                  {isPhone ? null : (
+                    <Link href="/ward-flow/alerts" className={list.headLink}>
+                      Alerts history
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </Link>
                   )}
-                />
+                </div>
               </div>
               {homeView === "needs" ? (
                 <div className={mock.compactList}>
@@ -972,62 +1102,48 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
               ) : homeView === "planned" ? (
                 <PlannedList now={now} rows={plannedRows} />
               ) : (
-                <>
-                  <WaitingFilters
-                    now={now}
-                    movements={movements}
-                    service={service}
-                    selectedEdId={selectedEdId}
-                    onSelectEd={setSelectedEdId}
-                    overdue={chips.overdueInQueue}
-                    tierOne={chips.tierOneInQueue}
-                    highlight={highlight}
-                    onHighlight={toggleHighlight}
-                  />
-                  <PriorityQueue
-                    movements={queue}
-                    units={units}
-                    referralQueue={referralQueue}
-                    now={now}
-                    selectedId={selectedMovementId}
-                    onSelect={(movementId) => {
-                      setSelectedAlertId(undefined);
-                      selectMovement(movementId);
-                    }}
-                    selectedReferralId={selectedReferralId}
-                    onSelectReferral={(referralId) => {
-                      setSelectedAlertId(undefined);
-                      selectReferral(referralId);
-                    }}
-                    filterEdId={activeEdId}
-                    onClearFilter={() => setSelectedEdId(undefined)}
-                    totalMovements={openMovements.length}
-                    serviceScope={queueServiceScope}
-                    pullHoldMinutes={configuration.pullHoldMinutes}
-                    delaysHref={DELAYS_HREF}
-                    highlight={highlight}
-                    onClearHighlight={() => {
-                      setHighlight(undefined);
-                      setSelectedEdId(undefined);
-                    }}
-                    rowCap={isPhone ? PHONE_QUEUE_ROWS : highlight === undefined ? DESKTOP_QUEUE_ROWS : undefined}
-                    phone={isPhone}
-                    pinnedIds={actNowMovementIds}
-                  />
-                </>
+                <PriorityQueue
+                  movements={queue}
+                  units={units}
+                  referralQueue={referralQueue}
+                  now={now}
+                  selectedId={selectedMovementId}
+                  onSelect={(movementId) => {
+                    setSelectedAlertId(undefined);
+                    selectMovement(movementId);
+                  }}
+                  selectedReferralId={selectedReferralId}
+                  onSelectReferral={(referralId) => {
+                    setSelectedAlertId(undefined);
+                    selectReferral(referralId);
+                  }}
+                  filterEdId={activeEdId}
+                  onClearFilter={() => setSelectedEdId(undefined)}
+                  totalMovements={openMovements.length}
+                  serviceScope={queueServiceScope}
+                  pullHoldMinutes={configuration.pullHoldMinutes}
+                  delaysHref={DELAYS_HREF}
+                  highlight={highlight}
+                  onClearHighlight={() => {
+                    setHighlight(undefined);
+                    setSelectedEdId(undefined);
+                  }}
+                  rowCap={isPhone ? PHONE_QUEUE_ROWS : highlight === undefined ? DESKTOP_QUEUE_ROWS : undefined}
+                  phone={isPhone}
+                  pinnedIds={actNowMovementIds}
+                />
               )}
             </div>
-            <div className={list.rightCol}>
+            <div className={`${list.rightCol} ${mock.stickyCol}`}>
               {chosenAlert && !sheetPlacement ? (
                 <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
               ) : null}
-              {/* Placement leads the column once someone is chosen; until then, one slim line. */}
+              {isPhone || chosenAlert ? null : <BedsFitTable now={now} bedsReady={bedsReady} />}
               {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
               {chosenAlert && !chosenAlert.movement ? null : placementNode}
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
-                <OldestToPlace next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
+                <PlacementNext next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
               ) : null}
-              {isPhone || chosenAlert ? null : <BedsFitCompact now={now} bedsReady={bedsReady} />}
             </div>
           </div>
 
