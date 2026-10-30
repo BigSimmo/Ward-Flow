@@ -19,7 +19,7 @@ import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor } from "./ward-hel
 import { useWardNetwork } from "../ward-flow-provider";
 import { showWardHowTo, type HelpView } from "./ward-help-events";
 import { howToHref } from "./ward-help-href";
-import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
+import { canShowMe, HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
 import { tasksForDesk, WardHelpTasks } from "./ward-help-task-list";
 import { recordHowToUsed } from "./ward-help-usage";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
@@ -144,14 +144,14 @@ function WardHelpSheetView({
     () =>
       showMeOn
         ? tasksForDesk(role).filter(
-            (howTo) => howTo.showMe?.length && howToHref(howTo.go, role, deskHref)?.split("#")[0] === pathname,
+            (howTo) => canShowMe(howTo, phone) && howToHref(howTo.go, role, deskHref)?.split("#")[0] === pathname,
           )
         : [],
-    [deskHref, pathname, role, showMeOn],
+    [deskHref, pathname, phone, role, showMeOn],
   );
   const jobShowMe = (id: string | undefined) => {
     const howTo = id ? HOW_TOS.find((candidate) => candidate.id === id) : undefined;
-    return showMeOn && howTo?.showMe?.length && (howTo.desks === "all" || howTo.desks.includes(role))
+    return showMeOn && howTo && canShowMe(howTo, phone) && (howTo.desks === "all" || howTo.desks.includes(role))
       ? howTo
       : undefined;
   };

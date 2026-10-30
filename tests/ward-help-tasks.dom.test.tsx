@@ -27,12 +27,19 @@ vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
   useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
 }));
 
+const phone = vi.hoisted(() => ({ on: false }));
+vi.mock("@/components/wf", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/wf")>()),
+  useIsPhone: () => phone.on,
+}));
+
 import { HOW_TO_TOPICS, HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { tasksForDesk, WardHelpTasks } from "@/components/ward-management/help/ward-help-task-list";
 
 afterEach(() => {
   route.pathname = "/ward-flow/handover";
+  phone.on = false;
 });
 
 function renderTasks(props: Partial<Parameters<typeof WardHelpTasks>[0]> = {}) {
@@ -112,6 +119,17 @@ describe("How do I… task list", () => {
     const row = screen.getByTestId("ward-help-task-answer-sign-off-handover");
     expect(within(row).getByTestId("ward-help-task-show-me")).toBeTruthy();
     expect(within(row).queryByTestId("ward-help-task-go")).toBeNull();
+  });
+
+  it("tells a phone that a computer-only task is done on a computer, instead of offering Show me", () => {
+    phone.on = true;
+    renderTasks({ openTask: "print-handover" });
+    const row = screen.getByTestId("ward-help-task-answer-print-handover");
+    expect(within(row).getByText("On a computer")).toBeTruthy();
+    expect(within(row).getByTestId("ward-help-task-computer-only")).toBeTruthy();
+    expect(within(row).queryByTestId("ward-help-task-show-me")).toBeNull();
+    // A task the phone does draw keeps its Show me.
+    expect(within(screen.getByTestId("ward-help-task-answer-sign-off-handover")).getByText("3 steps")).toBeTruthy();
   });
 
   it("reads as answers only, with no step counts, when Show me is off", () => {

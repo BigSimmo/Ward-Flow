@@ -7,13 +7,18 @@ import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 
 
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useIsPhone } from "@/components/wf";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
 import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
+import { canShowMe, HOW_TOS } from "./ward-help-howto";
 import { tasksForDesk } from "./ward-help-task-list";
+
+/** How-tos whose controls a phone screen does not draw: on a phone they open, not Show me. */
+const COMPUTER_ONLY = new Set(HOW_TOS.filter((howTo) => howTo.computerOnly).map((howTo) => howTo.id));
 import styles from "./ward-help-search.module.css";
 
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
@@ -29,8 +34,13 @@ function roleLabel(role: WardTourRole): string {
  * Before anything is typed: three of this desk's tasks with a Show me, this screen's first, in the
  * list's own order (grouping only, never ranking).
  */
-function suggested(role: WardTourRole, pathname: string, home: string | undefined): readonly HelpSearchResult[] {
-  const tasks = tasksForDesk(role).filter((howTo) => howTo.showMe?.length);
+function suggested(
+  role: WardTourRole,
+  pathname: string,
+  home: string | undefined,
+  phone: boolean,
+): readonly HelpSearchResult[] {
+  const tasks = tasksForDesk(role).filter((howTo) => canShowMe(howTo, phone));
   const here = (go: string | undefined) => howToHref(go, role, home)?.split("#")[0] === pathname;
   return [...tasks.filter((howTo) => here(howTo.go)), ...tasks.filter((howTo) => !here(howTo.go))]
     .slice(0, 3)
@@ -61,6 +71,7 @@ export function WardHelpSearch({
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
+  const phone = useIsPhone();
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
   const showMeOn = useWardFeatureFlag("help-ask");
@@ -76,7 +87,7 @@ export function WardHelpSearch({
       : answer.kind === "none"
         ? answer.closest
         : answer.kind === "empty"
-          ? suggested(role, pathname, home)
+          ? suggested(role, pathname, home, phone)
           : [];
 
   const layer = useRef<HTMLDivElement>(null);
@@ -106,7 +117,7 @@ export function WardHelpSearch({
 
   function act(result: HelpSearchResult) {
     const mine = !result.desks || result.desks.includes(role);
-    if (showMeOn && result.howToId && mine) {
+    if (showMeOn && result.howToId && mine && !(phone && COMPUTER_ONLY.has(result.howToId))) {
       close(false);
       showWardHowTo(result.howToId);
       return;
@@ -165,7 +176,7 @@ export function WardHelpSearch({
           <strong>{result.title}</strong>
           <span className={styles.detail}>{result.detail}</span>
         </span>
-        {showMeOn && result.howToId && mine ? (
+        {showMeOn && result.howToId && mine && !(phone && COMPUTER_ONLY.has(result.howToId)) ? (
           <span className={styles.action}>Show me</span>
         ) : href ? (
           <span className={styles.action}>Open</span>

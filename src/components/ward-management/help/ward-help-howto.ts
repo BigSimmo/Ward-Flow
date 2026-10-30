@@ -57,6 +57,11 @@ export type HowTo = {
   /** Where it is done: "home" (the desk's own home), a rail entry id, or "settings#<tab>". */
   readonly go?: string;
   readonly showMe?: readonly ShowMeStep[];
+  /**
+   * The controls are drawn on a computer only (the phone screen has no such button), so a phone is
+   * told so instead of being offered a Show me that could light nothing.
+   */
+  readonly computerOnly?: true;
 };
 
 const EVERY_DESK = "all";
@@ -72,6 +77,11 @@ const DESK_SWITCH: TourTarget = {
 const setting = (id: string, tab: string): TourTarget => ({
   sel: `[data-setting="${id}"], [data-testid="ward-settings-phone-area-${tab}"]`,
 });
+
+/** Whether Show me can walk this how-to on this device (`computerOnly` ones cannot on a phone). */
+export function canShowMe(howTo: HowTo, phone: boolean): boolean {
+  return Boolean(howTo.showMe?.length) && !(phone && howTo.computerOnly);
+}
 
 export const HOW_TOS: readonly HowTo[] = [
   {
@@ -145,6 +155,8 @@ export const HOW_TOS: readonly HowTo[] = [
           { sel: "#main-content a, #main-content button", text: "Decide" },
           // A phone's list opens each row in a sheet; the hero's To decide count stands in.
           { sel: "#main-content button", text: "To decide" },
+          // A ward's phone keeps its referrals under the Decisions tab.
+          { sel: "#main-content button", text: "Decisions" },
         ],
         title: "Referrals to decide",
         body: "They stay in wait order, oldest first. Press Decide to open one.",
@@ -323,6 +335,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer: "Open Handover and choose More, then Print handover. Present is there too, for the meeting screen.",
     desks: ["coordinator", "ward", "bed_manager"],
     go: "handover",
+    computerOnly: true,
     showMe: [
       {
         target: { sel: '[data-testid="ward-handover-more"]' },
@@ -395,6 +408,7 @@ export const HOW_TOS: readonly HowTo[] = [
       "Use On TV on a ward's home, or Open on TV on Capacity for the bed meeting. Open the link on the TV's browser; it is read only and shows names in full.",
     desks: ["coordinator", "ward", "bed_manager"],
     go: "capacity",
+    computerOnly: true,
     showMe: [
       {
         target: { sel: '[data-testid="capacity-bed-meeting-tv"], [data-testid="ward-open-tv"]' },
@@ -668,6 +682,7 @@ export const HOW_TOS: readonly HowTo[] = [
       "Switch to the paper process. The downtime pack on Handover prints what you need. The app shows when it last saved, and says so when it is offline.",
     desks: EVERY_DESK,
     go: "handover",
+    computerOnly: true,
     showMe: [
       {
         target: { sel: '#main-content a[href="/ward-flow/reports/downtime"]' },

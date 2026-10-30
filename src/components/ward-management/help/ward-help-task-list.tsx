@@ -4,9 +4,11 @@ import { ArrowRight, ChevronDown, MousePointerClick } from "lucide-react";
 import Link from "next/link";
 import { useId, useMemo, useState } from "react";
 
+import { useIsPhone } from "@/components/wf";
+
 import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
-import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, type HowTo } from "./ward-help-howto";
+import { canShowMe, HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, type HowTo } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
 import { recordHowToUsed } from "./ward-help-usage";
 import styles from "./ward-help-sheet.module.css";
@@ -48,11 +50,14 @@ export function HowToRow({
   testPrefix: "ward-help-ask" | "ward-help-task";
 }) {
   const id = useId();
+  const phone = useIsPhone();
   const href = actions ? howToHref(howTo.go, role, home) : undefined;
   // Go there is offered only when the job is done somewhere else.
   const goThere = href && href.split("#")[0] !== pathname ? href : undefined;
-  const showMe = actions && showMeOn && Boolean(howTo.showMe?.length);
-  const steps = showMeOn ? stepsLabel(howTo) : undefined;
+  const showMe = actions && showMeOn && canShowMe(howTo, phone);
+  // A phone screen without the button says where the job is done instead of offering Show me.
+  const computerOnly = actions && showMeOn && phone && Boolean(howTo.computerOnly);
+  const steps = showMeOn && showMe ? stepsLabel(howTo) : computerOnly ? "On a computer" : undefined;
   return (
     <li data-testid={`${testPrefix}-answer-${howTo.id}`}>
       <button
@@ -72,6 +77,11 @@ export function HowToRow({
       {expanded ? (
         <div id={`${id}-answer`} className={styles.answerBody}>
           <p className={styles.text}>{howTo.answer}</p>
+          {computerOnly ? (
+            <p className={styles.note} data-testid={`${testPrefix}-computer-only`}>
+              This is done on a computer: the phone screen has no such button.
+            </p>
+          ) : null}
           {showMe || goThere ? (
             <div className={styles.actions}>
               {showMe ? (
