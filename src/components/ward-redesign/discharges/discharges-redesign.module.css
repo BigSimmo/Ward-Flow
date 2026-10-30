@@ -1,4 +1,4 @@
-/* Discharges, redesigned: one action a row, and the barriers beside the list. */
+/* Discharges, redesigned: one action a row, and the barriers and days beside the list. */
 .actionHead {
   width: 1%;
 }
@@ -9,12 +9,14 @@
   vertical-align: middle;
 }
 
+/* Wide screens: the barrier panel, and the day chart under it, in a column beside the list. */
 .barrierSide {
   display: none;
+  flex-direction: column;
+  gap: var(--wf-s-4);
   align-self: start;
   min-width: 0;
 }
-/* Wide screens: the list and the barriers side by side, so blocker counts stay in sight. */
 @media (min-width: 80rem) {
   .workspace.workspace:not([data-detail-open]) {
     display: grid;
@@ -23,7 +25,54 @@
     align-items: start;
   }
   .barrierSide {
-    display: block;
+    display: flex;
+  }
+  /* The tablet's pair under the list is not needed once both sit beside it. */
+  .chartsBottom.chartsBottom {
+    display: none;
+  }
+}
+
+/* The day chart drawn as rows, in the side column: one row a day, due and held up side by side. */
+.dayRow[data-weekend] {
+  background: var(--wf-surface-2);
+}
+.dayRow[data-weekend]:hover {
+  background: var(--wf-hover);
+}
+.dayRow[aria-pressed="true"] {
+  background: var(--wf-selected);
+}
+.dayTrack {
+  display: flex;
+  gap: 1px;
+}
+.dayFillDue,
+.dayFillHeld {
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+}
+.dayFillDue {
+  background: var(--wf-data-2);
+}
+.dayFillHeld {
+  background: var(--wf-danger);
+}
+.dayFillDue:first-child,
+.dayFillHeld:first-child {
+  border-start-start-radius: var(--radius-pill);
+  border-end-start-radius: var(--radius-pill);
+}
+.dayFillDue:last-child,
+.dayFillHeld:last-child {
+  border-start-end-radius: var(--radius-pill);
+  border-end-end-radius: var(--radius-pill);
+}
+@media (forced-colors: active) {
+  .dayFillDue,
+  .dayFillHeld {
+    background: CanvasText;
   }
 }
 
@@ -34,35 +83,207 @@
   text-overflow: clip;
 }
 
-/* Josh, 30 Oct: one barrier panel on screen at any width. Beside the list on a wide screen (above);
-   below that width it sits beside the day chart, and the day chart takes the whole row once it moves. */
-@media (min-width: 80rem) {
-  .barrierBottom {
-    display: none;
-  }
-  .chartsOne.chartsOne {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* Two-line timing: how far past (or the band) on top, the date whole underneath, never split. */
 .timing > span {
   display: block;
   white-space: nowrap;
 }
 
-/* The order line, in the list's header row: quiet, and it wraps before it squeezes the count. */
-.headerNote {
+/* The list header: the order line is gone, so a spacer keeps the count at the row's end. */
+.headerSpacer {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* A group's Show more row: one full-width cell holding the shared row. */
+.moreRow.moreRow > td {
+  padding: 0;
+}
+
+/* Something a row's button focuses inside the panel: no box of its own until it has the focus. */
+.focusTarget {
+  outline: none;
+  border-radius: var(--wf-r-md);
+}
+.focusTarget:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Phone release panel: Destination takes the whole last row, now that When is one cell. */
+.factWide.factWide.factWide {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
+/* Phone rows (Josh, 30 Oct): three lines, not four. The name and timing share the first, the ward the
+   second, the stage line the third with the row's button at its right. The button is drawn 32px tall
+   and keeps a 48px tap area through an invisible cover. */
+@media screen and (max-width: 48rem) {
+  .list td.timing.timing {
+    grid-row: 1;
+  }
+  .list td.actionCell.actionCell {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+    justify-self: end;
+    width: auto;
+  }
+  .list .rowAction.rowAction {
+    min-height: 0;
+    height: 2rem;
+  }
+  .list .rowAction.rowAction::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem -0.25rem;
+  }
+  .moreRow.moreRow {
+    display: block;
+    padding: 0;
+  }
+  .moreRow.moreRow > td {
+    display: block;
+    grid-column: 1 / -1;
+  }
+}
+
+/* Before the weekend or public holiday: a compact notice above the list. */
+.weekend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-bottom: var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 3px solid var(--wf-warning);
+}
+.weekendHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-width: 0;
+}
+.weekendTitle {
   margin: 0;
-  padding: var(--wf-s-2) 0;
-  color: var(--wf-ink-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+.weekendNote {
+  margin: 0 0 0 auto;
+  color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
-/* Phone: the header row has no padding of its own there, so the line keeps the cards' inset. */
+.weekendFoldHeading {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 0;
+}
+.weekendFold {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: calc(100% + 2 * var(--wf-s-3));
+  min-height: var(--spacing-tap, 3rem);
+  margin: calc(-1 * var(--wf-s-3));
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.weekendFold:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.weekendFold .weekendTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.weekendCount {
+  flex: 0 0 auto;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.weekendChevron {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+.weekendNote[hidden],
+.weekendGroups[hidden] {
+  display: none;
+}
+.weekendGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--wf-s-2) var(--wf-s-4);
+  min-width: 0;
+}
+.weekendGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.weekendGroupTitle {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.weekendList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.weekendRow {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  width: calc(100% + 2 * var(--wf-s-2));
+  min-height: 2.5rem;
+  padding: 2px var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-2));
+  border: 0;
+  border-radius: var(--wf-r-seg-item);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: start;
+  cursor: pointer;
+}
+.weekendRow:hover {
+  background: var(--wf-hover);
+}
+.weekendRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.weekendWho strong {
+  font-weight: 600;
+}
+.weekendWho span {
+  color: var(--wf-ink-2);
+}
+.weekendMeta {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
 @media screen and (max-width: 48rem) {
-  .headerNote {
-    padding: var(--wf-s-2) var(--wf-s-3);
+  .weekend {
+    margin-bottom: var(--wf-s-3);
+    padding: var(--wf-s-3);
+  }
+  .weekendNote {
+    margin-left: 0;
+  }
+  .weekendRow {
+    min-height: var(--spacing-tap, 3rem);
   }
 }

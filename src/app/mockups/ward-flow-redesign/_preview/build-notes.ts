@@ -610,6 +610,10 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** each row leads with the person, then the ward and service, and has one action named for what it needs (Chase, Confirm date, Open). Each opens the release panel, where today's real actions are recorded.",
     "**Round 2:** one barrier panel. The List / Barriers switch and its table are gone, because they were a third copy of the same counts. On a tablet the panel sits beside the day chart instead.",
     "**Round 2:** the Status filter reads 'All listed · 63' (the 59 plus 4 discharged in the last day), and the footer says '148 due in 2+ days, not listed'. Each row shows the timing on top and the whole date underneath.",
+    "**Review round (30 October):** the headline reads '59 to work now · of 207 open' (open means not yet discharged; 59 are the ones listed to work now); the Status filter reads 'All statuses' and the list says '59 to work · 4 discharged'. '148 due in 2+ days' sits only in the list footer.",
+    "**Review round (30 October):** one word, 'Held up', for a release with a blocker. The barrier panel and the day chart count bed releases, the list's own rows, so they match the hero, and a click on either highlights within Now instead of jumping to History.",
+    "**Review round (30 October):** Chase opens the release on its barriers and Confirm date on its 'New expected out' control. Before the weekend or public holiday is a short notice above the list, person first. Each group shows its first 6 rows then Show more; on a wide screen the day chart sits under the barrier panel. Phone rows are three lines with the button beside the stage.",
+    "**Still open:** the day chart counts releases on closed wards, which Capacity's forecast leaves out, so a day can differ while a ward is closed.",
   ],
   wards: [
     "**Built from a copy of today's All wards page**, so the cards, the Table view, Occupancy by service, Counts to check and every filter work as now.",

@@ -40,8 +40,6 @@ const loadToolsSheet = () =>
 // test clock never fires (ui-ward-roles.spec.ts demo clock journey).
 const WardToolsSheet = dynamic(withLoadRetry(loadToolsSheet, "Tools did not load"));
 preloadWhenIdle(loadToolsSheet);
-// The Demo menu under the Synthetic pill (change 8, D-77), loaded on first open.
-const loadDemoMenu = () => import("@/components/ward-management/shell/ward-demo-menu").then((m) => m.WardDemoMenu);
 import { subscribeToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useDemoMenuFromSheet } from "@/components/ward-management/tools/ward-demo-menu-open";
 import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-tools-sheet";
@@ -57,7 +55,6 @@ import { useWardChecks } from "@/components/ward-management/shell/ward-checks";
 import { useDeskRoleLabel } from "@/components/ward-management/shell/ward-access-store";
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { replayEarlyHeaderTap } from "@/components/ward-management/shell/ward-early-tap";
-import { WardDataModeSlot } from "@/components/ward-management/ward-shared-access";
 import { useAccessNavFilter, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import {
   useNavigationPendingRef,
@@ -1041,8 +1038,9 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
 
-        {/* v10: the Prototype pill beside the service pill, in place of the Data mode bar. */}
-        <WardDataModeSlot className={styles.dataMode} menu={loadDemoMenu} />
+        {/* Josh, 30 Oct 2026: no "Synthetic prototype" pill or mark in the mock-ups' header. The page
+            footer's synthetic-data notice stays on every page, and the Demo menu opens from the
+            board clock and from Tools. */}
 
         {/* A7 (overall review, 20 Oct 2026): the demo clock's one place. It opens the demo
             controls in Tools; the rail no longer repeats it. At 1000px and below the bar has no
@@ -1059,13 +1057,6 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
           <span className={styles.demoClockTime}>{liveClockFace}</span>
           <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
-
-        <span
-          className={styles.mark}
-          title="Patient and flow data are synthetic; service names depend on the selected demonstration scenario. Not approved for clinical use."
-        >
-          <span className={styles.markLong}>Synthetic </span>prototype
-        </span>
       </div>
 
       <div className={styles.centerGroup}>

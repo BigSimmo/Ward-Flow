@@ -13,6 +13,7 @@ import {
   BLOCKER_CATEGORIES,
 } from "@/components/ward-management/discharges/discharge-board-model";
 import type { DischargeWorkspaceState } from "@/components/ward-management/discharges/use-discharge-workspace-state";
+import { HELD_UP } from "./discharges-parts";
 
 /* The Now/History switch and filter card. Redesign: the Barriers table view is gone (Josh, 30 Oct: one
    barrier panel, the one beside the list). */
@@ -20,7 +21,7 @@ import type { DischargeWorkspaceState } from "@/components/ward-management/disch
 /** Now and History: in the hero on desktop and tablet, under it on a phone (v10). */
 export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState }) {
   const {
-    bedReleases,
+    releaseGroups,
     population,
     setPopulation,
     setStatus,
@@ -55,7 +56,11 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
           }}
         >
           Now
-          <span className="sr-only">, bed releases {bedReleases.length}</span>
+          {/* Josh, 30 Oct: Now says the hero's figure, the releases listed to work on. */}
+          <span className="sr-only">
+            , {releaseGroups.blocked.length + releaseGroups.confirmed.length + releaseGroups.expected.length} to work
+            now
+          </span>
         </button>
         <button
           type="button"
@@ -102,7 +107,6 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
     services,
     scopedUnits,
     counts,
-    total,
     clearSelection,
     clearAllFilters,
     filtersActive,
@@ -167,12 +171,12 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
               clearSelection();
             }}
           >
-            {/* Redesign (Josh, 30 Oct): the count names what it is, every row in the list: the hero's
-                to-work number plus those discharged in the last 24 hours. */}
-            <option value="all">{`All listed · ${total}`}</option>
+            {/* Josh, 30 Oct: "All statuses" with no count, so no third total beside the hero's two; each
+                status keeps its count, and a blocker reads "Held up". */}
+            <option value="all">All statuses</option>
             {WORK_ORDER.map((key) => (
               <option key={key} value={key}>
-                {`${population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
+                {`${key === "blocked" ? HELD_UP : population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
               </option>
             ))}
           </Select>
