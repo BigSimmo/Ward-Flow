@@ -102,3 +102,10 @@ div.screenHead {
     flex: 1 1 auto;
   }
 }
+
+/* The Reference shelf's row at the end of every view: the mock-up's own copy, so it does not depend on
+   the real Help stylesheet keeping a class of that name (#1119 removes it). */
+.utilityRow {
+  display: grid;
+  min-width: 0;
+}

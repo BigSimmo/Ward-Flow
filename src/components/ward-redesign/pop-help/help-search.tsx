@@ -9,7 +9,6 @@ import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-rol
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
-import { howToHref } from "@/components/ward-management/help/ward-help-ask";
 import { showWardHowTo } from "@/components/ward-management/help/ward-help-events";
 import { DESK_GUIDES } from "@/components/ward-management/help/ward-help-guide";
 import {
@@ -20,6 +19,7 @@ import {
 } from "@/components/ward-management/help/ward-help-search-index";
 import type { WardTourRole } from "@/components/ward-management/help/ward-help-store";
 import styles from "@/components/ward-management/help/ward-help-search.module.css";
+import { howToHref } from "@/components/ward-redesign/pop-help/help-href";
 
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
 function openHelpTab(tab: string) {
