@@ -111,7 +111,11 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "home",
     showMe: [
       {
-        target: { sel: "#main-content button", text: "Release pulled bed" },
+        target: [
+          { sel: "#main-content button", text: "Release pulled bed" },
+          // A phone's list opens each row in a sheet; the hero's Act now count stands in.
+          { sel: "#main-content button", text: "Act now" },
+        ],
         title: "Pulls past their limit are in Act now",
         body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
       },
@@ -137,7 +141,11 @@ export const HOW_TOS: readonly HowTo[] = [
     showMe: [
       {
         // Decide is a link on the coordinator's list and a button elsewhere.
-        target: { sel: "#main-content a, #main-content button", text: "Decide" },
+        target: [
+          { sel: "#main-content a, #main-content button", text: "Decide" },
+          // A phone's list opens each row in a sheet; the hero's To decide count stands in.
+          { sel: "#main-content button", text: "To decide" },
+        ],
         title: "Referrals to decide",
         body: "They stay in wait order, oldest first. Press Decide to open one.",
       },
@@ -159,7 +167,10 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "referrals",
     showMe: [
       {
-        target: { sel: '[data-testid^="ward-referral-board-select-"]' },
+        target: [
+          { sel: '[data-testid^="ward-referral-board-select-"]' },
+          { sel: '[data-testid^="ward-referral-board-card-select-"]' },
+        ],
         title: "Open the referral",
         body: "Select the patient's referral. Its panel has Ask more wards.",
       },
@@ -183,10 +194,11 @@ export const HOW_TOS: readonly HowTo[] = [
       {
         target: [
           { sel: '#main-content a[href^="/ward-flow/movements/"]', text: "Book transport" },
-          { sel: '[data-testid="movements-group-toggle-awaiting_transport"]' },
+          // Movements whose bed is pulled are the ones waiting for transport.
+          { sel: "#main-content button", text: "Pulled" },
         ],
         title: "Find a movement waiting for transport",
-        body: "Once the bed is pulled, the row offers Book transport. Open it.",
+        body: "Once the bed is pulled, the movement needs transport. Open it from the Pulled stage.",
       },
       {
         target: { sel: '[data-testid="ward-shortlist-book-transport"]' },
@@ -206,7 +218,11 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "movements",
     showMe: [
       {
-        target: { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+        target: [
+          { sel: '#main-content a[href^="/ward-flow/movements/"]' },
+          // A phone groups the list by stage; open the stage, then the movement.
+          { sel: '[data-testid^="movements-group-toggle-"]' },
+        ],
         title: "Open the movement",
         body: "Open the patient's movement from the list.",
       },
@@ -228,7 +244,10 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "referrals",
     showMe: [
       {
-        target: { sel: '[data-testid^="ward-referral-board-select-"]' },
+        target: [
+          { sel: '[data-testid^="ward-referral-board-select-"]' },
+          { sel: '[data-testid^="ward-referral-board-card-select-"]' },
+        ],
         title: "Open the referral",
         body: "Log a call is in the referral's panel, with the owner desk.",
       },
@@ -274,7 +293,10 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "handover",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-handover-kpi-strip"]' },
+        target: [
+          { sel: '[data-testid="ward-handover-kpi-strip"]' },
+          { sel: '[data-testid="ward-handover-phone-hero"]' },
+        ],
         title: "Start with Act now",
         body: "These counts open the rows they describe, act now first.",
       },
@@ -284,7 +306,10 @@ export const HOW_TOS: readonly HowTo[] = [
         body: "Each line here should be checked before you sign.",
       },
       {
-        target: { sel: '[data-testid="ward-handover-sign-off-button"]' },
+        target: [
+          { sel: '[data-testid="ward-handover-sign-off-button"]' },
+          { sel: '[data-testid="ward-handover-phone-sign-off"]' },
+        ],
         title: "Sign off",
         body: "Records that the handover was given, with the time.",
       },
@@ -334,7 +359,11 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "home",
     showMe: [
       {
-        target: { sel: '#main-content a[href$="/answer"]' },
+        target: [
+          { sel: '#main-content a[href$="/answer"]' },
+          // On a phone the referrals to answer sit under the Decisions tab.
+          { sel: "#main-content button", text: "Decisions" },
+        ],
         title: "Answer one by one",
         body: "Steps through the ward's referrals in wait order.",
       },
