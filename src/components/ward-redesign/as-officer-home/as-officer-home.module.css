@@ -1,0 +1,14 @@
+/* Role view (transport officer): the "Show all" row under a long job list (owner rule). */
+.more {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.moreNote {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
