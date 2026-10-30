@@ -1,0 +1,1811 @@
+/* Fork of src/components/ward-management/ward/ward-home-tab.module.css (My ward redesign). */
+
+/* Ward Hub home (approved Bed board mockup, 9 Oct 2026): Every bed and the Ward flow panel share
+   one row at equal height, then This shift runs the full width. Plain v6 cards with a fine edge,
+   colour only as a glyph, pills for every switch, text that truncates rather than wraps. */
+
+.homeWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.homeTop {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+  gap: var(--wf-s-3);
+  align-items: stretch;
+  min-width: 0;
+}
+
+.areaBeds,
+.flowWrap,
+.shiftCard {
+  min-width: 0;
+}
+
+/* Bed board tab: the board takes the bed card's column; Every bed and This shift step aside. */
+.boardArea {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.boardArea > * {
+  flex: 1;
+}
+
+.v6Card[hidden] {
+  display: none;
+}
+
+.v6Card {
+  overflow: hidden;
+  scroll-margin-top: 12rem;
+}
+
+.v6Card:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.v6Meta {
+  font-size: var(--wf-fs-12);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.v6Empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.headTools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* Every bed keeps its title on one line. When Place or move and the filters do not fit beside it,
+   they drop to a row of their own instead of squeezing the title onto two lines. */
+.areaBeds > .bedsHead {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-2);
+}
+
+.bedsHead h2 {
+  white-space: nowrap;
+}
+
+/* The waiting count on Place or move, as the tab badges draw a count. */
+.placeCount {
+  min-width: 18px;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-11) / 16px var(--wf-mono);
+  text-align: center;
+}
+
+/* Board or List: two round icon buttons in one soft pill. */
+.viewSwitch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-track);
+  background: var(--wf-surface-2);
+}
+
+.viewSwitch button {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-seg-item);
+  background: transparent;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.viewSwitch button:hover {
+  color: var(--wf-ink-1);
+}
+
+.viewSwitch button[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  box-shadow: var(--wf-e1);
+}
+
+.viewSwitch button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+
+/* Every bed: five tiles a row, number and glyph, the person, then one note and the stay. */
+.bedTiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  list-style: none;
+}
+
+.bedTiles > li {
+  min-width: 0;
+}
+
+.bedTile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  /* Redesign: a tile grows to fit a whole name on two lines, so it no longer fills a fixed height. */
+  height: auto;
+  min-height: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--wf-m-fast) var(--wf-ease),
+    border-color var(--wf-m-fast) var(--wf-ease),
+    color var(--wf-m-fast) var(--wf-ease);
+}
+
+.bedTile:hover {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-hover);
+}
+
+.bedTile:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* v10: free beds retain their fit tint; act-now beds get a rounded coral marker and quiet tint; a highlight dims the beds it does not match by colour, never by opacity. */
+.bedTile[data-status="ready"] {
+  border-color: var(--wf-fit-edge);
+  background: var(--wf-fit-tint);
+}
+
+.bedTile[data-act="true"] {
+  border-color: var(--wf-line);
+
+  background: var(--wf-act-tint);
+  position: relative;
+}
+
+.bedTile[data-act="true"]:hover {
+  background: var(--wf-hover);
+}
+
+.bedTile[data-lit="true"] {
+  border-color: var(--wf-ink-2);
+}
+
+.bedTile[data-dim="true"] {
+  border-color: var(--wf-line);
+  background: var(--wf-surface);
+  color: var(--wf-dim);
+}
+
+.bedTile[data-dim="true"] .bedTileDays,
+.bedTile[data-dim="true"] .bedTileState,
+.bedTile[data-dim="true"] .bedTileNote {
+  color: var(--wf-dim);
+}
+
+.bedTable tr[data-dim="true"] td,
+.bedTable tr[data-dim="true"] .bedTableBed,
+.bedTable tr[data-dim="true"] .bedTableSub {
+  color: var(--wf-dim);
+}
+
+.highlightNote {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.highlightNote b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.highlightNote > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.highlightNote .keyLink {
+  margin-left: auto;
+}
+
+.bedTileTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+/* D-64: the criteria led discharge tag sits with the glyph on the right, the number keeps the left. */
+.bedTileTag {
+  margin-left: auto;
+}
+
+.bedTileTop b {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row. */
+.bedTileName {
+  display: block;
+  overflow: visible;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.bedTileState {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-top: auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.bedTileNote {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bedTile[data-look="true"] .bedTileNote {
+  color: var(--wf-ink-2);
+}
+
+.bedTileDays {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+/* List view: one row a bed. */
+.bedTableWrap {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  overflow-x: auto;
+}
+
+.bedTable {
+  composes: table from "../../ward-management/ward-table/ward-table.module.css";
+  /* Measured 9 Oct 2026: the narrowest desktop card (1200px viewport) draws this table at 586px.
+     36rem (576px) sits just under it, so desktop never scrolls, and below it a phone scrolls the
+     six columns sideways instead of squashing Legal, Going out and Now to 18px each. */
+  --ward-table-min-width: 36rem;
+  table-layout: fixed;
+  /* Deliberately one step larger than the canonical table: tile names read at 13px on the board. */
+  font-size: var(--wf-fs-13);
+}
+
+/* Cell padding and dividers come from the canonical ward table (ward-table.module.css). */
+.bedTable th {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.bedTable th:first-child {
+  width: 6.5rem;
+}
+
+.bedTable th:nth-child(2) {
+  width: 27%;
+}
+
+.bedTable th:nth-child(3) {
+  width: 4.5rem;
+}
+
+.bedTable th,
+.bedTable td {
+  vertical-align: middle;
+}
+
+.bedTable td {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bedTableBed {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  height: 28px;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
+  cursor: pointer;
+}
+
+.bedTableBed:hover {
+  background: var(--wf-hover);
+}
+
+.bedTableBed:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.glyphGap {
+  display: inline-block;
+  width: 9px;
+}
+
+.bedTable td.bedTableName {
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+
+.bedTableSub {
+  margin-left: var(--wf-s-2);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.bedTableMono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.bedTable tr[data-look="true"] .bedTableNow {
+  color: var(--wf-ink-1);
+}
+
+/* The symbol key and bed tally under the board. */
+.bedKey {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.keyItems {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  min-width: 0;
+}
+
+.keyItems > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.bedKey > .keyLink {
+  margin-left: auto;
+}
+
+.keyLink {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  text-decoration: none;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.keyLink:hover {
+  background: var(--wf-hover);
+}
+
+.keyLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.bedFigures {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Ward flow: the panel sits beside the board at the board's height and its list scrolls. */
+.flowWrap {
+  position: relative;
+  min-height: 26rem;
+}
+
+.flowCard {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.flowSwitch {
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}
+
+/* Design audit DA-24: a label never shrinks under its own text. When the panel is too narrow (a 1280
+   or 1366 laptop, or wider letter spacing set for reading) the views wrap onto a second row instead of
+   overlapping. The small side padding keeps one row at 1440; the items grow to share any spare room. */
+.flowSwitch > div {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.flowSwitch > div > button {
+  flex: 1 1 auto;
+  justify-content: center;
+  gap: 5px;
+  min-width: max-content;
+  padding-inline: 2px;
+}
+
+.flowBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.flowPane[data-active="false"] {
+  display: none;
+}
+
+.flowPane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.flowGroup,
+.awaitingCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+
+.awaitingCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-md);
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-1) 0;
+  font: 600 var(--wf-fs-11) / var(--wf-lh-11) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.groupTitle {
+  margin: 0;
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+}
+
+.groupEmpty {
+  margin: 0;
+  padding: var(--wf-s-1) 0 var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.flowList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.flowRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+/* The glyph, time and action keep their size; the title and detail give way instead. */
+.flowRow > :not(.flowMain) {
+  flex: none;
+}
+
+.flowRow:last-child {
+  border-bottom: 0;
+}
+
+.flowMain {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.flowTitle {
+  overflow: hidden;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flowDetail {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.flowWhen {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+/* `flex: none` keeps the foot as tall as its 48px touch link when the card is held to the sheet's height. */
+.flowFoot,
+.shiftFoot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 2.5rem;
+  padding: var(--wf-s-1) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.shiftFoot b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+}
+
+.awaitingList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.awaitingRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+}
+
+.awaitingIdentity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: var(--wf-s-2);
+  align-items: baseline;
+}
+
+.awaitingTier {
+  grid-row: span 2;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: 50%;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+/* Josh, 22 Oct 2026: the patient's name opens the full referral. */
+.awaitingNameButton {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.awaitingNameButton:focus-visible,
+.fitLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.awaitingNameHint {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+/* The patient's fit and the ward's own state, one plain line each. */
+.fitLines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: 1.4;
+  color: var(--wf-ink-1);
+}
+
+.fitLine {
+  display: flex;
+  gap: var(--wf-s-2);
+  align-items: baseline;
+}
+
+.fitDot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  transform: translateY(-1px);
+}
+
+.fitDotOk {
+  background: var(--wf-success);
+}
+
+.fitDotWarn {
+  background: var(--wf-warning);
+}
+
+.fitLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.awaitingMeta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* A1-8: the wait, origin and gates line sits under the meta line, beside the tier. */
+.awaitingSummary {
+  grid-column: 2;
+}
+
+.awaitingActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+.notice,
+.noticeProminent {
+  display: block;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: 1.4;
+  color: var(--wf-ink-2);
+}
+
+.noticeProminent {
+  font-weight: 600;
+  color: var(--wf-warning-ink);
+}
+
+.declineForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+}
+
+.declineFieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: var(--wf-fs-12);
+}
+
+.declineFieldset legend {
+  margin-bottom: var(--wf-s-1);
+  font-weight: 600;
+}
+
+.declineForm button {
+  align-self: flex-start;
+}
+
+/* This shift: To do in three columns, the log, or length of stay. */
+.shiftPane[data-active="false"] {
+  display: none;
+}
+
+.todoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.todoCol {
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  border-left: 1px solid var(--wf-line);
+}
+
+.todoCol:first-child {
+  border-left: 0;
+}
+
+.legalTag {
+  margin-left: auto;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.todoList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todoItem {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.todoItem:last-child {
+  border-bottom: 0;
+}
+
+.todoRow {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto auto;
+  column-gap: var(--wf-s-2);
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* The second action sits on its own line under the row, lined up with the title, so it never
+ * overlaps the first. */
+.todoSecondary {
+  max-width: calc(100% - 9px - var(--wf-s-2));
+  margin-left: calc(9px + var(--wf-s-2));
+  white-space: normal;
+  text-align: left;
+}
+
+.todoMain {
+  display: flex;
+  flex: 1 1 9rem;
+  flex-direction: column;
+  min-width: 0;
+  cursor: default;
+}
+
+label.todoMain {
+  position: relative;
+  cursor: pointer;
+}
+
+.todoTick {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+label.todoMain:has(.todoTick:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-sm);
+}
+
+/* Titles and details wrap to a second line rather than cutting off mid-word in a narrow column. */
+.todoTitle {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.todoDetail {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.todoMeta {
+  flex: none;
+  max-width: 7rem;
+  text-align: right;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
+}
+
+/* A wordy note (a referral stage) goes under the detail so the title keeps the row's width. */
+.todoMetaBelow {
+  grid-row: 2;
+  grid-column: 2;
+  max-width: none;
+  text-align: left;
+}
+
+.paneHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* Shift log */
+.logBody {
+  max-height: 20rem;
+  overflow: auto;
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+}
+
+.timelineStream {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineStream::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: calc(3.25rem + 10px);
+  width: 1px;
+  background: var(--wf-line);
+}
+
+.timelineEntry {
+  display: grid;
+  grid-template-columns: 3.25rem 12px minmax(0, 1fr) max-content;
+  column-gap: var(--wf-s-2);
+  align-items: start;
+  padding: 6px 0;
+  font-size: var(--wf-fs-13);
+}
+
+.timelineTime {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+  color: var(--wf-ink-3);
+  text-align: right;
+}
+
+.timelineDot {
+  position: relative;
+  z-index: 1;
+  justify-self: center;
+  width: 7px;
+  height: 7px;
+  margin-top: 4px;
+  border: 2px solid var(--wf-ink-3);
+  border-radius: 50%;
+  background: var(--wf-surface);
+}
+
+.timelineBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  line-height: 1.35;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.timelineBody strong {
+  font-weight: 600;
+}
+
+.timelineDetail {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.timelineMore {
+  margin-top: 2px;
+}
+
+.timelineMore summary {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.timelineNested {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+}
+
+.timelineEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+/* Length of stay */
+.stayChart {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.statusWord {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.statusWord[data-tone="good"] {
+  color: var(--wf-success-ink);
+}
+
+.statusWord[data-tone="warn"] {
+  color: var(--wf-warning-ink);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Below desktop: the panel stacks under the board at its natural height. */
+@media (max-width: 70rem) {
+  .homeTop {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .flowWrap {
+    min-height: 0;
+  }
+
+  .flowCard {
+    position: static;
+  }
+
+  .flowBody {
+    max-height: 28rem;
+  }
+}
+
+/* Phone: the board keeps its filter on its own line, tiles drop to four a row with the number,
+   glyph and stay, the to do columns stack, and every control keeps a 48px target. Desktop is
+   unchanged. */
+@media (max-width: 48rem) {
+  /* Named, not ".areaBeds > div:first-child": on a phone the card has no head, so that selector
+     wrapped the walk round instead and laid its bed strip and list out side by side, off screen. */
+  .areaBeds > .bedsHead {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .areaBeds > .bedsHead > div:last-child {
+    flex: 1 1 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .headTools {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .headTools > div {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .bedTiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .bedTile {
+    min-height: var(--spacing-tap, 3rem);
+    padding: var(--wf-s-2);
+  }
+
+  .bedTileNote {
+    display: none;
+  }
+
+  .bedKey {
+    flex-wrap: wrap;
+  }
+
+  .keyItems {
+    display: none;
+  }
+
+  .todoGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .todoCol {
+    border-left: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .todoCol:first-child {
+    border-top: 0;
+  }
+
+  .shiftCard > div:first-child {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+  }
+
+  .shiftCard > div:first-child > div:last-child {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
+
+/* Phone: the flow tabs share the width but never shrink below their labels; a narrow screen
+ * scrolls the row instead of overlapping them. */
+@media (max-width: 48rem) {
+  .flowSwitch > div {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .flowSwitch > div > button {
+    flex: 1 0 auto;
+  }
+}
+
+/* Touch screens: the view switch, the list view's bed buttons and the key links keep the 48px
+ * tap target. */
+@media (pointer: coarse) {
+  .viewSwitch button {
+    width: var(--spacing-tap, 3rem);
+    height: var(--spacing-tap, 3rem);
+  }
+
+  .bedTableBed,
+  .keyLink {
+    height: auto;
+    min-height: var(--spacing-tap, 3rem);
+  }
+}
+
+/* Phone first screen (v10 build guide): Ward flow, which opens on Awaiting your answer, comes
+   before the bed tiles. Desktop and tablet keep the beds first. */
+@media (max-width: 48rem) {
+  .homeTop > .flowWrap {
+    order: -1;
+  }
+
+  /* Phone Bed board: the board alone, as the mockup's segmented Bed board view. Ward flow stays one
+     tap away on Home. */
+  .homeTop[data-board="true"] > .flowWrap {
+    display: none;
+  }
+
+  .flowWrap {
+    min-height: 0;
+  }
+}
+
+/* Phone round (Option B, 20 Oct 2026): every bed once, in bed order, one row each at the touch
+   height, with a tick once reviewed. */
+.phoneRows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.phoneRows > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneRow {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: var(--wf-surface);
+  text-align: left;
+  color: var(--wf-ink-1);
+}
+
+.phoneRow[data-act="true"] {
+  box-shadow: none;
+
+  background: var(--wf-act-tint);
+  position: relative;
+}
+
+.phoneRowNo,
+.phoneRowDays {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.phoneRowDays {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneRowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneRowName,
+.phoneRowNote span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneRowName {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.phoneRowNote {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneRow[data-dim="true"] .phoneRowName,
+.phoneRow[data-dim="true"] .phoneRowNote,
+.phoneRow[data-dim="true"] .phoneRowNo,
+.phoneRow[data-dim="true"] .phoneRowDays {
+  color: var(--wf-dim);
+}
+
+@media (max-width: 48rem) {
+  .viewSwitch {
+    display: none;
+  }
+}
+
+/* Phone, Option B (Josh, 20 Oct 2026): the first screen is Needs you (answers waiting, This shift,
+ * Ward flow), then the Round, then Ward details behind a disclosure. This shift and Ward flow open
+ * as bottom sheets from their rows. Every class below renders only on a phone, and the rest sit
+ * under the phone query. */
+.phoneSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.phoneSectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-1) var(--wf-s-1) 0;
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneClear {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneClearTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneClearText {
+  margin: 0;
+  font-weight: 400;
+  white-space: nowrap;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.phoneAwaitList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.phoneAwaitList > li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneAwaitRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.phoneAwaitText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.phoneAwaitName,
+.phoneAwaitMeta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneAwaitName {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+}
+
+.phoneAwaitMeta {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneAwaitWait {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.phoneAwaitWait b {
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.needsCard {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  overflow: hidden;
+}
+
+.needsCard > * + * {
+  border-top: 1px solid var(--wf-line);
+}
+
+.needsCard > .phoneClear,
+.needsCard > .phoneAwaitList {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.needsCard > .phoneAwaitList {
+  border-top: 1px solid var(--wf-line);
+}
+
+.needsCard > .phoneClear {
+  padding: var(--wf-s-3);
+}
+
+.needsCard .phoneClearTitle {
+  flex-wrap: wrap;
+  font-size: var(--wf-fs-14);
+}
+
+/* In the card the counts take their own line under the title, so no line starts with a dot. */
+.needsCard .phoneClearText {
+  flex-basis: 100%;
+  padding-left: calc(12px + var(--wf-s-2));
+}
+
+.needsCard .phoneClearSep {
+  display: none;
+}
+
+.needsLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3) 0;
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.needsLabel + .phoneAwaitList {
+  border-top: 0;
+}
+
+.needsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.needsRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.needsIcon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.needsIcon[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 14%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+
+.needsIcon[data-tone="info"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.needsText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.needsText b {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+}
+
+/* H-0389 (26 Oct 2026): at 320px "0 referrals · 1 admission · 13 discharges" lost its last count to
+   an ellipsis. The summary takes a second line instead. */
+.needsText span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.needsChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.phoneBoardHint {
+  margin: calc(-1 * var(--wf-s-3)) var(--wf-s-1) calc(-1 * var(--wf-s-2));
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.phoneBoardLink {
+  min-height: var(--wf-touch);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 600 var(--wf-fs-13) / 1.3 var(--wf-font);
+  color: var(--wf-accent-ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.phoneRow[data-reviewed="true"] .phoneRowNo,
+.phoneRow[data-reviewed="true"] .phoneRowName {
+  color: var(--wf-ink-2);
+}
+
+.phoneBedsHead {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.phoneFigures {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.phoneFigures > summary {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: var(--wf-s-2) calc(var(--wf-s-4) + 20px) var(--wf-s-2) var(--wf-s-3);
+  list-style: none;
+  cursor: pointer;
+}
+
+.phoneFigures > summary::-webkit-details-marker {
+  display: none;
+}
+
+.phoneFigures > summary::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: var(--wf-s-4);
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--wf-ink-3);
+  border-bottom: 1.5px solid var(--wf-ink-3);
+  transform: translateY(-70%) rotate(45deg);
+}
+
+.phoneFigures[open] > summary::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+
+.phoneFiguresTitle {
+  font: 600 var(--wf-fs-14) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.phoneFiguresLine {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phoneFiguresBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.phoneFiguresFoot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-3) 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.phoneFiguresFoot :is(span, a) {
+  white-space: normal;
+  color: inherit;
+}
+
+.phoneShiftSwitch {
+  padding: 0 0 var(--wf-s-2);
+}
+
+.phoneShiftSwitch > div {
+  display: flex;
+  width: 100%;
+}
+
+.phoneShiftSwitch > div > button {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+/* In a sheet the card loses its own chrome: the sheet is the surface. */
+.phoneSheetBody :is(.flowCard, .shiftCard) {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phoneSheetBody .flowBody {
+  max-height: none;
+}
+
+@media (max-width: 48rem) {
+  .homeWrap {
+    gap: var(--wf-s-4);
+  }
+
+  /* The round: one card, the progress and Carry on at the top, then a row per bed. */
+  .areaBeds {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  /* A bed's card takes the page: no card frame, and nothing clipped, so its foot can pin. */
+  .areaBeds[data-walking="true"] {
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .phoneRows {
+    border: 0;
+    border-radius: 0;
+  }
+
+  .phoneRow {
+    grid-template-columns: 36px minmax(0, 1fr) auto;
+    /* A reviewed bed's tick takes a fourth column on the same line, only when it is there. */
+    grid-auto-flow: column;
+    gap: var(--wf-s-3);
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+
+  .phoneRowNo {
+    font-size: var(--wf-fs-15);
+    font-weight: 700;
+  }
+
+  .phoneRowName {
+    font-size: var(--wf-fs-14);
+  }
+
+  .phoneRowDays {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: var(--wf-fs-14);
+    font-weight: 700;
+    color: var(--wf-ink-1);
+  }
+
+  .phoneRowDaysSub {
+    font: 400 var(--wf-fs-12) / 1 var(--wf-font);
+    color: var(--wf-ink-3);
+  }
+
+  .phoneFigures .bedKey {
+    padding: 0 var(--wf-s-3);
+    border: 0;
+  }
+}
+
+/* In a phone sheet the sheet body already insets the content, so the card's own side padding
+ * steps away and the flow tabs span the sheet. */
+.phoneSheetBody .flowSwitch,
+.phoneSheetBody .flowBody,
+.phoneSheetBody .flowFoot,
+.phoneSheetBody .shiftFoot,
+.phoneSheetBody .todoCol {
+  padding-inline: 0;
+}
+
+.phoneSheetBody .flowSwitch {
+  padding-top: 0;
+}
+
+.phoneSheetBody .flowSwitch > div > button {
+  flex: 1 1 0;
+  min-height: var(--wf-touch);
+}
+
+/* Audit 11 Oct 2026, iPad landscape: four tiles a row so the occupant's name, the thing a NUM
+ * reads first, is not cut short. Desktop keeps five. */
+@media (min-width: 70.0625rem) and (max-width: 85rem) {
+  .bedTiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+/* Audit 11 Oct 2026, iPad portrait: Act now takes the full width so its time and button do not
+ * collide; Later today and Done sit side by side under it. */
+@media (min-width: 48.0625rem) and (max-width: 64rem) {
+  .todoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .todoGrid > .todoCol:first-child {
+    grid-column: 1 / -1;
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .todoGrid > .todoCol:nth-child(2) {
+    border-left: 0;
+  }
+}
+
+/* Rounded attention markers apply at every responsive breakpoint. */
+.phoneRow[data-act="true"],
+.bedTile[data-act="true"] {
+  position: relative;
+}
+
+.phoneRow[data-act="true"]::before,
+.bedTile[data-act="true"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.625rem;
+  inset-inline-start: 6px;
+  width: 3px;
+  border-radius: var(--radius-pill, 9999px);
+  background: var(--wf-danger);
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .phoneRow[data-act="true"]::before,
+  .bedTile[data-act="true"]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}

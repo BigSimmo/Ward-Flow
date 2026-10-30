@@ -1,11 +1,12 @@
 "use client";
 
-import { DischargesPage } from "@/components/ward-redesign/discharges/discharges-page";
+import { DischargesRedesign } from "@/components/ward-redesign/as-ward-discharges/discharges-redesign";
 
 /**
- * As nurse in charge: the Discharges mock-up as this role sees it. The preview takes the role's desk
- * before drawing (`role` in `screens.ts`), so the page shows only what the role may open.
+ * As nurse in charge: the Discharges mock-up as this role sees it, with nothing chosen. The preview
+ * takes the role's desk before drawing (`role` in `screens.ts`); the fork beside this file holds the
+ * ward-desk branches.
  */
 export function AsWardDischargesPage() {
-  return <DischargesPage />;
+  return <DischargesRedesign />;
 }

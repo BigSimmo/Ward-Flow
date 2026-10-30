@@ -1,11 +1,12 @@
 "use client";
 
-import { StaysPage } from "@/components/ward-redesign/stays/stays-page";
+import { StaysRedesign } from "@/components/ward-redesign/as-ward-stays/stays-redesign";
 
 /**
- * As nurse in charge: the Stays and discharges mock-up as this role sees it. The preview takes the role's desk
- * before drawing (`role` in `screens.ts`), so the page shows only what the role may open.
+ * As nurse in charge: Stays and discharges for the desk's own ward, as the app's own example
+ * address does. The preview takes the role's desk before drawing (`role` in `screens.ts`); the fork
+ * beside this file holds the ward-desk branch.
  */
 export function AsWardStaysPage() {
-  return <StaysPage />;
+  return <StaysRedesign unitId="rph-adult-secure" />;
 }
