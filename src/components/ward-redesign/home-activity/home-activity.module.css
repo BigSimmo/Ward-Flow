@@ -47,9 +47,164 @@
   border-radius: var(--wf-r-xs);
 }
 
-/* The hero's changes chip. */
+/* The hero's changes chip, and its one quiet checking line. */
 .changesChip b {
   font-family: var(--wf-mono);
+}
+.checkingLine > summary {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+  cursor: pointer;
+}
+
+/* The ⋯ menu at the end of the list tabs holds Registers and Alerts history. */
+.moreButton {
+  flex: none;
+}
+
+/* Top of the Waiting tab: ED filters, then the queue's own facts. */
+.waitingTop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  margin-bottom: var(--wf-s-2);
+}
+.edFilters {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.edFilters::-webkit-scrollbar {
+  display: none;
+}
+.queueFacts {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.factToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-tag);
+  background: none;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.factToggle b {
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.factToggle[aria-pressed="true"] {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+}
+.factToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Right column: the slim "Oldest to place" line, and Beds that fit, compact. */
+.oldestLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+.oldestLine b {
+  color: var(--wf-ink-1);
+}
+.fitCard {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.fitHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+}
+.fitHead h2 {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.fitLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: auto;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+  text-decoration: none;
+}
+.fitFoot .fitLink {
+  margin-inline-start: 0;
+}
+.fitLink:hover {
+  text-decoration: underline;
+}
+.fitTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+}
+.fitTable thead th {
+  padding: 4px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  text-align: end;
+  color: var(--wf-ink-3);
+}
+.fitTable thead th:first-child {
+  text-align: start;
+}
+.fitTable tbody th,
+.fitTable td {
+  padding: 6px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.fitTable tbody th {
+  font-weight: 600;
+  text-align: start;
+}
+.fitTable td {
+  text-align: end;
+  white-space: nowrap;
+}
+.warnInk {
+  color: var(--wf-warning-ink);
+}
+.okInk {
+  color: var(--wf-success-ink);
+}
+.fitFoot {
+  margin: 0;
+  padding: 6px var(--wf-s-4) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
 }
 
 /* Two-line rows (Planned, Changes): who and when, then what. */
@@ -258,41 +413,6 @@
   text-align: center;
   color: var(--wf-ink-3);
 }
-.tally {
-  margin-top: var(--wf-s-2);
-  border-top: 1px solid var(--wf-line);
-}
-.tally summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  min-height: 40px;
-  padding: 0 var(--wf-s-4);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-ink-2);
-  cursor: pointer;
-}
-.tallyGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
-  gap: var(--wf-s-2);
-  padding: 0 var(--wf-s-4) var(--wf-s-3);
-}
-.tallyTile {
-  display: flex;
-  flex-direction: column;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-.tallyTile b {
-  font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-mono);
-  color: var(--wf-ink-1);
-}
 .chips {
   padding: 0 var(--wf-s-4) var(--wf-s-2);
 }
@@ -407,7 +527,6 @@ a.eventText:hover {
     margin: -14px -8px;
     padding: 14px 8px;
   }
-  .tally summary,
   .earlier summary,
   .eventRow {
     min-height: 48px;
@@ -418,6 +537,17 @@ a.eventText:hover {
   .panelClose {
     width: 48px;
     height: 48px;
+  }
+  .moreButton {
+    min-width: 48px;
+    min-height: 48px;
+  }
+  .edFilters button,
+  .factToggle {
+    min-height: 48px;
+  }
+  .checkingLine > summary {
+    min-height: 32px;
   }
   .twoLine {
     min-height: 48px;
@@ -510,11 +640,6 @@ a.eventText:hover {
   }
 }
 
-/* Redesign: the ED access forecast moves into Planned, so its banner under the ED strip goes. */
-.scope [data-testid="home-ed-access-risk"] {
-  display: none;
-}
-
 /* The forecast heads Planned in the same two-line shape as the rows, set apart by a tint. */
 .forecastRow {
   display: grid;
@@ -536,4 +661,34 @@ a.eventText:hover {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
+}
+
+/*
+ * Final pass (Josh, 30 Oct 2026): one place for each fact. Scoped to this mock-up, over today's
+ * components: the queue's own "Filtered to" chip (the chosen ED chip says it and clears it), the
+ * chosen alert's line that repeats Placement's next step, My List's explanatory foot line and the
+ * "needs a person now" label beside Act now.
+ */
+.scope [class*="_applied__"],
+.scope [class*="_alertNext__"],
+.scope [class*="_needsFoot__"] > svg,
+.scope [class*="_needsFoot__"] > span,
+.scope section[aria-label="Act now"] [class*="_groupAside__"] {
+  display: none;
+}
+.scope [class*="_needsFoot__"] {
+  justify-content: flex-end;
+}
+
+/* Desktop: the right column stays beside the list as it scrolls, and scrolls itself if taller. */
+@media (min-width: 62.5625rem) {
+  .scope [data-layout="desktop"] > [class*="_rightCol__"] {
+    position: sticky;
+    top: calc(var(--wf-header-height, 3.75rem) + var(--wf-s-3));
+    align-self: start;
+    max-height: calc(100dvh - var(--wf-header-height, 3.75rem) - var(--wf-s-6));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
 }

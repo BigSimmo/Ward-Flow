@@ -67,7 +67,7 @@ function noticeKindWords(kind: string): string {
  * Mock-up only: the redesigned Activity panel, a fork of the bar's Activity drawer body
  * (`shell/ward-bar-activity.tsx`) in the same `Drawer` (right on desktop, a bottom sheet with a grab
  * handle on a phone). One title row, compact segmented tabs, and a sticky foot that holds only the
- * review button. The live tally folds into a disclosure at the end of each tab.
+ * review button. No live tally: on Home it only repeated the hero.
  */
 export function ActivityPanel({
   open,
@@ -187,10 +187,10 @@ export function ActivityPanel({
 
   const tabs = [
     { id: "changes" as const, label: "Changes", count: review.shown.length },
-    { id: "recent" as const, label: isPhone ? "Recent" : "Recent activity", count: events.length },
+    // No count on Recent activity: it is always the latest 20, so a number would say nothing.
+    { id: "recent" as const, label: isPhone ? "Recent" : "Recent activity" },
     { id: "notices" as const, label: "Notices", count: unreadCount },
   ];
-  const tally = <LiveTally activity={activity} now={now} />;
 
   return (
     <Drawer
@@ -213,36 +213,14 @@ export function ActivityPanel({
     >
       <TabPanel idPrefix="home-activity" id="changes" hidden={tab !== "changes"}>
         <ChangesBody review={review} now={now} />
-        {tally}
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="recent" hidden={tab !== "recent"}>
         <RecentBody events={events} tones={activity.tones} />
-        {tally}
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="notices" hidden={tab !== "notices"}>
         <NoticesBody notices={noticeViews} samples={usingSamples} now={now} onMarkRead={markRead} />
-        {tally}
       </TabPanel>
     </Drawer>
-  );
-}
-
-function LiveTally({ activity, now }: { activity: Activity; now: Instant }) {
-  return (
-    <details className={styles.tally}>
-      <summary>
-        <span>Live tally</span>
-        <span className={styles.muted}>as at {formatInstant(now)}</span>
-      </summary>
-      <div className={styles.tallyGrid}>
-        {activity.content.tiles.map((tile) => (
-          <div key={tile.label} className={styles.tallyTile}>
-            <b>{tile.value}</b>
-            <span>{tile.label}</span>
-          </div>
-        ))}
-      </div>
-    </details>
   );
 }
 
