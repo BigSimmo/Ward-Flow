@@ -1,0 +1,5 @@
+/* Role view (as ED clinician): Escalate is the coordinator's, so its "Coordinator only" note sits
+   beside it; the actions wrap so Journey stays inside the panel instead of running off its edge. */
+.actsWrap {
+  flex-wrap: wrap;
+}

@@ -112,3 +112,9 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* The person panel's blocker title wraps rather than cutting off ("Form due soon, as typed"). */
+.wrapTitle {
+  display: block;
+  overflow-wrap: anywhere;
+}

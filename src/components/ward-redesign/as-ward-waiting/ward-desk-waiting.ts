@@ -2,7 +2,8 @@
 // so the merged component can read them as one more branch on the desk's role.
 import { useCallback } from "react";
 
-import { causeTitle } from "@/components/ward-management/delays/delays-board-parts";
+// Josh, 30 Oct 2026: this page's blocker titles ("Form due soon, as typed"), as the coordinator's board.
+import { waitingCauseTitle as causeTitle } from "@/components/ward-redesign/waiting/wait-bands";
 import { ownerName } from "@/components/ward-management/delays/delays-board-model";
 import { waitingViewHint, waitingViewLabel } from "@/components/ward-management/delays/waiting-views";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";

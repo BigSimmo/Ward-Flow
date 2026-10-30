@@ -26,6 +26,7 @@ import {
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
 import { DailyCheckLine } from "@/components/ward-redesign/waiting/daily-check-line";
 import { AsEdDelaysBoardRedesign as DelaysBoardRedesign } from "./as-ed-delays-board-redesign";
+import { retitledGroups } from "@/components/ward-redesign/waiting/wait-bands";
 import styles from "@/components/ward-management/delays/delays.module.css";
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
@@ -88,7 +89,11 @@ export function AsEdWaitingRedesign({
     () => (movements === allMovements ? open : allMovements.filter(isOpen)),
     [movements, allMovements, open],
   );
-  const groups = useMemo(() => delayGroups(movements, units, now, thresholds), [movements, units, now, thresholds]);
+  // Josh, 30 Oct 2026: this page's blocker titles (`wait-bands.ts`), so no "(as written)" group title.
+  const groups = useMemo(
+    () => retitledGroups(delayGroups(movements, units, now, thresholds)),
+    [movements, units, now, thresholds],
+  );
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
   // never dropped.
@@ -99,7 +104,7 @@ export function AsEdWaitingRedesign({
   // Q-12: "Attention" is never dropped. The severe causes across the whole network, plus any urgent
   // movement outside the chosen service, each marked rather than hidden.
   const networkGroups = useMemo(
-    () => (movements === allMovements ? groups : delayGroups(allMovements, units, now, thresholds)),
+    () => (movements === allMovements ? groups : retitledGroups(delayGroups(allMovements, units, now, thresholds))),
     [movements, allMovements, groups, units, now, thresholds],
   );
   const urgentOutsideMovements = useMemo(

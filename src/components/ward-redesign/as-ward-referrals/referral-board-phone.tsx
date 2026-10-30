@@ -1,7 +1,7 @@
 "use client"; // Forked from src/components/ward-management/referrals/referral-board-phone.tsx (role view: nurse in charge).
 
 import { ListOrdered, TriangleAlert } from "lucide-react";
-import { useId, useRef } from "react";
+import { useId, useRef, type ReactNode } from "react";
 
 import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
@@ -36,7 +36,8 @@ export function ReferralPhoneHero({
 }: {
   count: number;
   oldest: string | undefined;
-  median: string | undefined;
+  /** The median and what it covers, already worded by the page (Josh, 30 Oct 2026). */
+  median: ReactNode;
   overdue: number;
   tier1: number;
   bedsReady: number;
@@ -87,12 +88,7 @@ export function ReferralPhoneHero({
           ) : (
             "No referral waiting"
           )}
-          {median ? (
-            <>
-              {" "}
-              · median decision <span className={styles.num}>{median}</span>
-            </>
-          ) : null}
+          {median ? <> · {median}</> : null}
         </p>
       )}
       {/* Role view (nurse in charge): no figures, as on desktop. Each row of a ward's short queue marks

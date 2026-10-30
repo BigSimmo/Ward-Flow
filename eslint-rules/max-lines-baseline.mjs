@@ -19,6 +19,7 @@
 // it gets its own cap rather than a split that would break the line-by-line match with the real file.
 // The My ward mock-up's copies of ward-screen and ward-home-tab (both listed) follow on the same basis.
 // 30 October 2026 (D-89): likewise the Home and Activity mock-up's copy of the shortlist panel.
+// 30 October 2026 (D-89): and the nurse in charge's Waiting copy, which follows the coordinator's line by line.
 export const MAX_LINES_DEFAULT = 1500;
 export const MAX_LINES_HEADROOM = 300;
 
@@ -37,4 +38,5 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-redesign/ward/ward-screen.tsx": 2600,
   "src/components/ward-redesign/ward/ward-home-tab.tsx": 2300,
   "src/components/ward-redesign/home-activity/placement-panel.tsx": 2750,
+  "src/components/ward-redesign/as-ward-waiting/delays-board-redesign.tsx": 1600,
 };

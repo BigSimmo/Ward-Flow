@@ -8,10 +8,11 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { Button, LiveChip, ScrollRow, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "@/components/ward-management/referrals/referral-board-phone.module.css";
+import local from "@/components/ward-redesign/referrals/referrals-redesign.module.css";
 
 /**
  * Referrals on the phone (v10 build guide, Referrals > Phone). Its own design at 390 wide: the hero
- * with three figures (Overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
+ * with three figures (Decision overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
  * highlight chips scrolling sideways (compact, 48px targets), then the waiting axis one tap away. Desktop never
  * renders any of this.
  */
@@ -45,7 +46,8 @@ export function ReferralPhoneHero({
 }: {
   count: number;
   oldest: string | undefined;
-  median: string | undefined;
+  /** The median and what it covers, already worded by the page (Josh, 30 Oct 2026). */
+  median: ReactNode;
   overdue: number;
   tier1: number;
   bedsReady: number;
@@ -113,12 +115,7 @@ export function ReferralPhoneHero({
         ) : (
           "No referral waiting"
         )}
-        {median && !edDesk ? (
-          <>
-            {" "}
-            · median decision <span className={styles.num}>{median}</span>
-          </>
-        ) : null}
+        {median && !edDesk ? <> · {median}</> : null}
       </p>
       {edDesk ? (
         <div className={styles.figures}>
@@ -145,7 +142,7 @@ export function ReferralPhoneHero({
           </button>
         </div>
       ) : (
-        <div className={styles.figures} role="group" aria-label="Highlight referrals">
+        <div className={cx(styles.figures, local.figures)} role="group" aria-label="Highlight referrals">
           <Figure
             value={overdue}
             label="Decision overdue"

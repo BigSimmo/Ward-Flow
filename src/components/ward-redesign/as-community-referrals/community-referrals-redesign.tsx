@@ -59,7 +59,9 @@ import {
 } from "@/components/wf";
 
 import { ReferralHistoryAndCorrections } from "@/components/ward-management/referrals/referral-history-corrections-lazy";
-import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match-lazy";
+// Redesign (Josh, 30 Oct 2026): the coordinator's decision pane, with one disclosure style and wards named.
+import { ReferralMatchView } from "@/components/ward-redesign/referrals/referral-match-lazy";
+import { HistoryFoldProvider } from "@/components/ward-redesign/referrals/folded-history";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "@/components/ward-management/referrals/use-referral-decision-undo";
 import { WardOffersTable } from "@/components/ward-redesign/referrals/ward-offers-table";
@@ -70,11 +72,9 @@ import {
   DecisionClock,
   HeroTools,
   REFERRAL_SOURCE_WORDS,
-  ReferralAlerts,
   ReferralPatientTab,
   ReferralTimeline,
   SummaryButton,
-  WaitRunway,
   askingForShort,
   bedsReadySummary,
   isOverdue,
@@ -92,6 +92,9 @@ import {
   referralJourneyStages,
 } from "@/components/ward-management/referrals/referral-board-model";
 import { DecidedSection, QueuedSection } from "./community-referral-board-sections";
+// Redesign (Josh, 30 Oct 2026): the coordinator's copies ("Since referral", "Legal status not recorded").
+import { WaitRunway } from "@/components/ward-redesign/referrals/wait-runway";
+import { ReferralAlerts } from "@/components/ward-redesign/referrals/referral-alerts";
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
 const BedMeetingSheet = dynamic(
@@ -530,6 +533,17 @@ function ReferralBoardRedesign({
         : Math.round(
             (decisionMinutes[decisionMinutes.length / 2 - 1]! + decisionMinutes[decisionMinutes.length / 2]!) / 2,
           );
+  // Josh, 30 Oct 2026: the median says what it covers (every decided referral), not read as today's.
+  const medianBasis =
+    decisionMinutes.length === decidedTotal
+      ? `(all ${decisionMinutes.length} decided)`
+      : `(${decisionMinutes.length} decided)`;
+  const medianWords =
+    medianDecision === undefined ? undefined : (
+      <>
+        median time to decide <b>{durMinutes(medianDecision)}</b> {medianBasis}
+      </>
+    );
   const nowHour = Math.floor(minuteOfDay(now) / 60);
   const decisionHours = Array.from({ length: 8 }, (_, index) => nowHour - 7 + index).filter((hour) => hour >= 0);
   const decisionsByHour = decisionHours.map((hour) => ({
@@ -690,7 +704,12 @@ function ReferralBoardRedesign({
           <div>
             <dt>Asking for</dt>
             <dd>{askingForShort(r)}</dd>
-            <dd className={a.stripSub}>{needWords(r).join(", ") || "No bed needs"}</dd>
+            <dd className={a.stripSub}>
+              {/* "Locked", the word the Needs column uses (F-24), not "Secure". */}
+              {needWords(r)
+                .map((word) => (word === "Secure bed" ? "Locked bed" : word))
+                .join(", ") || "No bed needs"}
+            </dd>
           </div>
         ) : null}
         <div data-testid="ward-referral-detail-legal-status">
@@ -708,7 +727,7 @@ function ReferralBoardRedesign({
               if (summary !== undefined) return "Destination details are restricted";
               const ward = wardArm(r)?.destination;
               const words = [
-                ward?.secureBedNeeded ? "Secure bed" : undefined,
+                ward?.secureBedNeeded ? "Locked bed" : undefined,
                 ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
                 ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
                 r.transportNeeded ? "Transport" : undefined,
@@ -750,7 +769,7 @@ function ReferralBoardRedesign({
             <ReferralPhoneHero
               count={queued.length}
               oldest={oldestClocks ? durMinutes(oldestClocks.sinceReferral) : undefined}
-              median={medianDecision !== undefined ? durMinutes(medianDecision) : undefined}
+              median={medianWords}
               overdue={overdueQueued.length}
               tier1={queued.filter((r) => highlightTest("tier1", r, now)).length}
               bedsReady={bedsSummary.total}
@@ -785,7 +804,7 @@ function ReferralBoardRedesign({
             {queued.length > 0 ? (
               <ReferralPhoneCard
                 title="Waiting time against due times"
-                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} past due · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
+                meta={`${queued.filter((r) => highlightTest("overdue", r, now)).length} overdue · due T1 ${OVERDUE_AFTER_MINUTES_BY_TIER[1] / 60}h · T2 ${OVERDUE_AFTER_MINUTES_BY_TIER[2] / 60}h · T3 ${OVERDUE_AFTER_MINUTES_BY_TIER[3] / 60}h`}
                 expanded={phoneSheet === "axis"}
                 onOpen={() => setPhoneSheet("axis")}
               />
@@ -834,18 +853,13 @@ function ReferralBoardRedesign({
                 community && !oldestClocks ? (
                   medianDecision !== undefined ? (
                     <span className={a.heroMeta}>
-                      Median decision <b>{durMinutes(medianDecision)}</b>
+                      Median time to decide <b>{durMinutes(medianDecision)}</b> {medianBasis}
                     </span>
                   ) : undefined
                 ) : (
                   <span className={a.heroMeta}>
                     Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
-                    {medianDecision !== undefined ? (
-                      <span className={a.heroMedian}>
-                        {" "}
-                        · median decision <b>{durMinutes(medianDecision)}</b>
-                      </span>
-                    ) : null}
+                    {medianWords !== undefined ? <span className={a.heroMedian}> · {medianWords}</span> : null}
                   </span>
                 )
               }
@@ -1261,11 +1275,12 @@ function ReferralBoardRedesign({
                       ) : null;
                     })()}
                     {(() => {
+                      // Redesign (Josh, 30 Oct 2026): the pane's show-more controls share one chevron row.
                       const phoneExtras = (
                         <>
                           <button
                             type="button"
-                            className={mph.more}
+                            className={redesign.disclosureRow}
                             aria-expanded={phoneTimelineOpen}
                             onClick={() => setPhoneTimelineOpen((open) => !open)}
                           >
@@ -1285,7 +1300,7 @@ function ReferralBoardRedesign({
                           ) : null}
                           <button
                             type="button"
-                            className={mph.more}
+                            className={redesign.disclosureRow}
                             aria-expanded={phonePatientOpen}
                             onClick={() => setPhonePatientOpen((open) => !open)}
                           >
@@ -1344,7 +1359,9 @@ function ReferralBoardRedesign({
                     className={cx(styles.registerDetailBody, a.panelBody)}
                   >
                     {inspectorTab === "place" && !readOnly ? (
-                      <div className={redesign.foldHistory} data-history-open={historyOpen || undefined}>
+                      <HistoryFoldProvider
+                        value={{ open: historyOpen, onToggle: () => setHistoryOpen((open) => !open) }}
+                      >
                         <ReferralMatchView
                           key={selectedReferral.id}
                           referral={selectedReferral}
@@ -1356,17 +1373,7 @@ function ReferralBoardRedesign({
                           hideDossierHeader
                           onDecision={decide(selectedReferral)}
                         />
-                        <button
-                          type="button"
-                          className={redesign.historyToggle}
-                          aria-expanded={historyOpen}
-                          onClick={() => setHistoryOpen((open) => !open)}
-                        >
-                          {historyOpen
-                            ? "Hide written history and corrections"
-                            : "Show written history and corrections"}
-                        </button>
-                      </div>
+                      </HistoryFoldProvider>
                     ) : null}
                     {inspectorTab === "patient" ? (
                       <ReferralPatientTab

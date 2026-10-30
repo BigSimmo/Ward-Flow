@@ -10,10 +10,12 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { Button, LiveChip, ScrollRow, StatusGlyph, buttonClass, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "@/components/ward-management/referrals/referral-board-phone.module.css";
+import local from "@/components/ward-redesign/referrals/referrals-redesign.module.css";
+import own from "./community-referral-board-phone.module.css";
 
 /**
  * Referrals on the phone (v10 build guide, Referrals > Phone). Its own design at 390 wide: the hero
- * with three figures (Overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
+ * with three figures (Decision overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
  * highlight chips scrolling sideways (compact, 48px targets), then the waiting axis one tap away. Desktop never
  * renders any of this.
  */
@@ -37,7 +39,8 @@ export function ReferralPhoneHero({
 }: {
   count: number;
   oldest: string | undefined;
-  median: string | undefined;
+  /** The median and what it covers, already worded by the page (Josh, 30 Oct 2026). */
+  median: ReactNode;
   overdue: number;
   tier1: number;
   bedsReady: number;
@@ -88,9 +91,7 @@ export function ReferralPhoneHero({
       {/* Role view (community clinician): "No referral waiting" repeats the title over an empty list. */}
       {community && !oldest ? (
         median ? (
-          <p className={styles.sub}>
-            Median decision <span className={styles.num}>{median}</span>
-          </p>
+          <p className={cx(styles.sub, own.leadCap)}>{median}</p>
         ) : null
       ) : (
         <p className={styles.sub}>
@@ -101,18 +102,13 @@ export function ReferralPhoneHero({
           ) : (
             "No referral waiting"
           )}
-          {median ? (
-            <>
-              {" "}
-              · median decision <span className={styles.num}>{median}</span>
-            </>
-          ) : null}
+          {median ? <> · {median}</> : null}
         </p>
       )}
       {/* Role view (community clinician): with nothing waiting on the team, Overdue 0, Tier 1 0 and a
           dead Next overdue say nothing, so the hero keeps only the way to the team's Waiting list. */}
       {emptyTeamList ? null : (
-        <div className={styles.figures} role="group" aria-label="Highlight referrals">
+        <div className={cx(styles.figures, local.figures)} role="group" aria-label="Highlight referrals">
           <Figure
             value={overdue}
             label="Decision overdue"
