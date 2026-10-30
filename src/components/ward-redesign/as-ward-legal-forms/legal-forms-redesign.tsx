@@ -1,0 +1,1255 @@
+"use client";
+
+// Forked from src/components/ward-redesign/legal-forms/legal-forms-redesign.tsx (role view: nurse in charge).
+
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+
+import { useState } from "react";
+import { useLegalFormsCopy } from "@/components/ward-management/legal-forms/use-legal-forms-copy";
+import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardHead,
+  DataRow,
+  Drawer,
+  Hero,
+  HeroStat,
+  HeroTrack,
+  LiveChip,
+  PhoneHero,
+  PhoneListRow,
+  PhoneSheet,
+  Segmented,
+  StackBar,
+  SrOnly,
+  StatusGlyph,
+  cx,
+  tableClasses,
+  type StackSegment,
+  type WfFill,
+  useIsPhone,
+} from "@/components/wf";
+import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { isOpen } from "@/components/ward-management/ward-derivations";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
+import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
+import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
+import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import type { Movement } from "@/components/ward-management/ward-model";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { edById, edShortName } from "@/components/ward-management/ward-sites";
+import {
+  SUPPORT_NOTIFICATION_PARTIES,
+  SUPPORT_NOTIFICATION_PARTY_SHORT,
+  type SupportNotificationParty,
+} from "@/components/ward-management/ward-support-notifications";
+import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+
+import {
+  currentLegalDueAt,
+  formatReminderHours,
+  legalDeadlineText,
+  legalExpiryReminderSummary,
+  legalFormBreakdown,
+  legalFormGroupRows,
+  isLegalDeadlineBreached,
+} from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import {
+  admittedOnAForm,
+  LegalFormsAdmitted,
+  WARD_RECORDS_ADMITTED,
+} from "@/components/ward-management/legal-forms/legal-forms-admitted";
+import { FocusPanel, type FocusTab } from "@/components/ward-management/legal-forms/legal-forms-panel";
+import {
+  ExtendSheet,
+  RecordFormSheet,
+  RequirementsSheet,
+  TellSheet,
+  movementPickerLabel,
+  type RecordDraft,
+} from "@/components/ward-management/legal-forms/legal-forms-sheets";
+import {
+  CATALOGUE,
+  STANDING_TONE,
+  clockStanding,
+  formTitle,
+  handoverLines,
+  hasGap,
+  isActNow,
+  isOwnedLegalFormCode,
+  receiptEventAccepts,
+  recentTellSubjects,
+  type RecordGap,
+} from "@/components/ward-management/legal-forms/legal-forms-view";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { PhoneChecklist } from "@/components/ward-management/legal-forms/legal-forms-phone-checklist";
+import styles from "@/components/ward-management/legal-forms/legal-forms.module.css";
+import redesign from "@/components/ward-redesign/legal-forms/legal-forms-redesign.module.css";
+import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+
+/**
+ * FORMS (renamed from Legal forms, owner 9 Oct 2026; built from the approved v4 mockup). Live work for each
+ * patient on a Mental Health Act form. The hero answers and carries the highlight chips; three cards under it
+ * count what is still to record on the form and who is still to be told; the table lists everyone on a form in
+ * two groups that are never ordered against each other. Desktop shows the hero and the list at full width (D-77
+ * change 5): the record-and-tell strip sits behind the phone's sheet only, and a chosen patient's form opens in
+ * a drawer over the list. Form times live in Tools. Review,
+ * rates, audit, registers and reports live on Governance. Owner rules kept: no invented deadlines or section
+ * numbers (D5), an unconnected action says "Not wired in this prototype." (D4), and a highlight never hides a row.
+ */
+
+import {
+  ROW_COLUMNS,
+  FormRow,
+  PhoneFormRow,
+  ChecklistView,
+  GAP_LABEL,
+} from "@/components/ward-redesign/legal-forms/legal-form-rows-redesign";
+
+/** Redesign: rows shown under Time not written before Show more. */
+const NO_TIME_FIRST = 6;
+const CHART_WINDOW_MINUTES = 8 * 60;
+
+type View = "clocks" | "checklist" | "history";
+type Highlight =
+  | { kind: "act" }
+  | { kind: "soon" }
+  | { kind: "none" }
+  | { kind: "code"; code: string }
+  | { kind: "gap"; gap: RecordGap }
+  | null;
+
+const CODE_FILLS: WfFill[] = ["data-1", "data-2", "data-3", "neutral", "closed"];
+/** Form type chips shown before "+N" in Forms in force, so the chips stay on one line. */
+const CODE_CHIPS_SHOWN = 3;
+
+const GAP_ACTION: Record<RecordGap, string> = {
+  written: "Add time",
+  // "Mark received" truncated in the task strip (device audit 11 Oct 2026).
+  received: "Received",
+  examination: "Record exam",
+};
+
+// A form save whose confirmation never arrived: the sheet keeps its draft and says why.
+const UNCONFIRMED_SAVE = {
+  commandId: "",
+  status: "failed",
+  message: SAVE_NOT_CONFIRMED,
+} as const;
+
+function sameHighlight(a: Highlight, b: Highlight): boolean {
+  if (a === null || b === null) return a === b;
+  if (a.kind !== b.kind) return false;
+  if (a.kind === "code" && b.kind === "code") return a.code === b.code;
+  if (a.kind === "gap" && b.kind === "gap") return a.gap === b.gap;
+  return true;
+}
+
+type WorkspaceProps = { initialMovementId?: string; recordOnOpen?: boolean };
+
+export function LegalFormsRedesign(props: WorkspaceProps = {}) {
+  const { worldGeneration } = useWardFlowSelect("worldGeneration");
+  return <LegalFormsWorkspace key={worldGeneration} {...props} />;
+}
+
+function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: WorkspaceProps) {
+  const [noTimeAll, setNoTimeAll] = useState(false);
+  const thresholds = useDueSoonThresholds();
+  usePrintableDisclosures();
+
+  const { movements, referrals, patients, admissions, units, supportNotifications, dispatch, dayZero, rejections } =
+    useWardFlowSelect(
+      "movements",
+      "referrals",
+      "patients",
+      "admissions",
+      "units",
+      "supportNotifications",
+      "dispatch",
+      "dayZero",
+      "rejections",
+    );
+  const now = useWardFlowClock();
+  const gate = useRoleGate();
+  // B2 (site review, 12 Oct 2026): every step is recorded as the route's own role, so history names
+  // who acted (the coordinator here) rather than a borrowed "ED".
+  const routeRole = useRouteRole();
+  const raise = useWardRaise(routeRole);
+  // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
+  const {
+    run: runStep,
+    runRecorded,
+    offer: offerStep,
+  } = useUndoableStep({
+    dispatch,
+    rejections,
+    now,
+    routeRole,
+  });
+
+  const [view, setView] = useState<View>("clocks");
+  const [highlight, setHighlight] = useState<Highlight>(null);
+  // Governance links a gap here with ?movement=, so that patient opens selected.
+  const [selectedId, setSelectedId] = useState<string | null>(initialMovementId ?? null);
+  const [tab, setTab] = useState<FocusTab>("now");
+  const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
+  const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
+  const [recordOpen, setRecordOpen] = useState(
+    () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
+  );
+  // MHA forms are never prefilled: the form type opens blank and is chosen from the paper.
+  const [recordDraft, setRecordDraft] = useState<RecordDraft>({
+    form: "",
+    movement: recordOnOpen ? (initialMovementId ?? "") : "",
+  });
+  const [extendId, setExtendId] = useState<string | null>(null);
+  const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
+  const { copied, copyNotice, copyText } = useLegalFormsCopy();
+  const [tasksOpen, setTasksOpen] = useState(false);
+  const isPhone = useIsPhone();
+  // Forms in force (v10): the three most common types as chips on one line, the rest behind "+N".
+  const [allCodes, setAllCodes] = useState(false);
+  const openMovements = movements.filter(isOpen);
+  // WT-03 (Josh, 26 Oct 2026): a person admitted on a form stays here, and the ward records the next one.
+  const admitted = admittedOnAForm(movements, admissions);
+  const recordable =
+    routeRole === "ed" ? openMovements : routeRole === "ward" ? admitted : [...openMovements, ...admitted];
+  const withDeadline = legalFormGroupRows(movements, now, "with-deadline");
+  // "Time not written" is never folded (audit A3-6, 13 Oct 2026) and keeps the longest wait in ED
+  // first (`legalFormGroupRows`). Owner, 20 Oct 2026: nothing here works out an Act period, so no
+  // computed time orders it.
+  const patientOf = (movement: Movement) => resolveSubjectPatient(movement, { patients, referrals });
+  const noDeadline = legalFormGroupRows(movements, now, "no-deadline");
+  const rows = [...withDeadline, ...noDeadline];
+  const voluntary = openMovements.length - rows.length;
+  const breakdown = legalFormBreakdown(rows, now);
+  const reminders = legalExpiryReminderSummary(movements, now, thresholds);
+  const passed = withDeadline.filter((movement) => isLegalDeadlineBreached(movement, now)).length;
+  const upcoming = withDeadline.length - passed;
+  const actNow = withDeadline.filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
+
+  const nameOf = (movement: Movement) => patientOf(movement).formalName;
+  const umrnOf = (movement: Movement) => patientOf(movement).umrn;
+  const edNameOf = (movement: Movement) => {
+    const ed = edById(movement.originEdId);
+    return ed ? edShortName(ed) : movementOriginLabel(movement, undefined);
+  };
+  const wardNameOf = (movement: Movement) =>
+    movement.acceptedUnitId ? (units.find((unit) => unit.id === movement.acceptedUnitId)?.name ?? null) : null;
+
+  // A gap this page can close: a written time is only recordable for the forms it owns.
+  const offersGap = (movement: Movement, gap: RecordGap) =>
+    hasGap(movement, gap) && (gap !== "written" || isOwnedLegalFormCode(movement.legalForm?.code));
+  const matches = (movement: Movement): boolean => {
+    if (highlight === null) return false;
+    const standing = clockStanding(movement, now, thresholds);
+    if (highlight.kind === "act") return isActNow(standing);
+    if (highlight.kind === "soon") return standing === "soon";
+    if (highlight.kind === "none") return currentLegalDueAt(movement) === undefined;
+    if (highlight.kind === "code") return movement.legalForm?.code === highlight.code;
+    return offersGap(movement, highlight.gap);
+  };
+  const toggleHighlight = (next: Highlight) => setHighlight((current) => (sameHighlight(current, next) ? null : next));
+
+  const selected = rows.find((movement) => movement.id === selectedId) ?? null;
+  const lastWrittenRefusal = selected
+    ? rejections.findLast(
+        (entry) => entry.movementId === selected.id && entry.attempted === "RECORD_LEGAL_FORM_WRITTEN",
+      )
+    : undefined;
+
+  const select = (movement: Movement) => {
+    if (movement.id !== selectedId) setTab("now");
+    setSelectedId(movement.id);
+    setFocusGap(null);
+  };
+
+  const gapCount = (gap: RecordGap) => rows.filter((movement) => offersGap(movement, gap)).length;
+  // Desktop: a task opens its own drawer or sheet, so the Record and tell drawer steps aside.
+  const leaveTasks = () => setTasksOpen((open) => open && isPhone);
+
+  const startGap = (gap: RecordGap) => {
+    const first = rows.find((movement) => offersGap(movement, gap));
+    if (!first) return;
+    leaveTasks();
+    select(first);
+    setTab("now");
+    setFocusGap((previous) => ({ gap, nonce: (previous?.nonce ?? 0) + 1 }));
+  };
+
+  // Carer, PSP and MHAS apply to completed moves of involuntary patients (PR #159), so this card
+  // reads recent arrivals, transfers and discharges, not the open moves in the table.
+  const tellInput = { movements, admissions, patients, referrals, units, supportNotifications };
+  const tellSubjects = recentTellSubjects(tellInput, now, false).filter(
+    (subject) => subject.missing.length > 0 || subject.key === tell?.key,
+  );
+  const partyCount = (party: SupportNotificationParty) =>
+    tellSubjects.filter((subject) => subject.missing.includes(party)).length;
+  const tellNext = (party: SupportNotificationParty) => {
+    const first = tellSubjects.find((subject) => subject.missing.includes(party));
+    leaveTasks();
+    setTell({ party, key: first?.key ?? null });
+  };
+
+  const handover = handoverLines(withDeadline, now, nameOf, CHART_WINDOW_MINUTES);
+
+  const openRecord = (movementId?: string) => {
+    // An explicit subject wins; the generic entry resumes its unsent synthetic draft.
+    if (movementId) setRecordDraft((current) => ({ ...current, movement: movementId }));
+    setRecordOpen(true);
+  };
+
+  // Feature 11: Mark received is raised as the route's role by the place holding the form. A ward
+  // or team holds it only on a journey it sent (D-80), the same rule the server checks.
+  const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
+  const access = useEffectiveWardAccess();
+  const receivedUnavailable = (movement: Movement): string | undefined =>
+    receivedGate.reason ??
+    ((routeRole === "ward" || routeRole === "community") &&
+    !(
+      journeySentByKind(referrals, movement, routeRole) &&
+      journeySentByDesk({ referrals, admissions }, movement, access, wardPlaceLookup(units))
+    )
+      ? "Only the place that sent this journey marks its form received."
+      : undefined);
+  // Record a form: the coordinator always may; another route sees it greyed with the reason.
+  const writtenGate = gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form");
+  // WT-03: a ward records only for a person admitted to its bed, never on an open journey.
+  const recordGate = routeRole === "ward" ? { allowed: false, reason: WARD_RECORDS_ADMITTED } : writtenGate;
+  const sheetReason = routeRole === "ward" && admitted.length === 0 ? WARD_RECORDS_ADMITTED : writtenGate.reason;
+  const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
+  const markReceived = (movement: Movement) => {
+    if (receivedUnavailable(movement) !== undefined) return;
+    if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
+    runStep(
+      { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
+      {
+        success: "Form marked received",
+        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
+        undone: "Received mark undone.",
+      },
+    );
+  };
+
+  // Form types in force, most first, each with its own data fill.
+  const codeTotals = new Map<string, number>();
+  for (const movement of rows) {
+    const code = movement.legalForm!.code;
+    codeTotals.set(code, (codeTotals.get(code) ?? 0) + 1);
+  }
+  const codeCounts = [...codeTotals.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([code, count], index) => ({ code, count, fill: CODE_FILLS[index % CODE_FILLS.length]! }));
+  const codeSegments: StackSegment[] = codeCounts.map((entry) => ({
+    id: entry.code,
+    value: entry.count,
+    fill: entry.fill,
+    label: `Form ${entry.code}`,
+  }));
+  // Role view (nurse in charge): a ward's few rows already lead with the next to end, so no hero card.
+  const next = routeRole === "ward" ? undefined : withDeadline[0];
+  // Role view (nurse in charge): with nobody admitted on a form the ward cannot record here; the
+  // Admitted on a form group says so, so the greyed button is left out rather than repeated.
+  const recordOffered = !(routeRole === "ward" && admitted.length === 0);
+  const nextStanding = next ? clockStanding(next, now, thresholds) : "none";
+  const closedWithForms = movements
+    .filter((movement) => !isOpen(movement) && movement.legalForm !== undefined)
+    .sort((a, b) => (b.closure?.at ?? b.openedAt) - (a.closure?.at ?? a.openedAt));
+
+  const highlightCount = rows.filter(matches).length;
+  const rowProps = (movement: Movement) => ({
+    movement,
+    now,
+    name: nameOf(movement),
+    umrn: umrnOf(movement),
+    edName: edNameOf(movement),
+    wardName: wardNameOf(movement),
+    selected: movement.id === selectedId,
+    highlighted: matches(movement),
+    dimmed: highlight !== null && !matches(movement),
+    onSelect: select,
+    onAddTime: (target: Movement) => {
+      select(target);
+      setTab("now");
+      setFocusGap((previous) => ({ gap: "written", nonce: (previous?.nonce ?? 0) + 1 }));
+    },
+  });
+
+  // Role view (nurse in charge): the ward's own place, named in the title and the empty Admitted line.
+  const ownUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
+  const ownWardName = units.find((unit) => ownUnitIds.includes(unit.id))?.name;
+  const movesTitle =
+    routeRole === "ward" && ownWardName
+      ? `${rows.length} ${rows.length === 1 ? "form" : "forms"} on moves to ${ownWardName}`
+      : `${rows.length} forms on open moves`;
+  // Role view (nurse in charge): with nobody admitted on a form the group still shows, saying where the
+  // ward records a form (the hero's Record a form is left out then).
+  const admittedList =
+    routeRole === "ward" && admitted.length === 0 ? (
+      <section aria-label="Admitted on a form" data-testid="ward-legal-forms-admitted">
+        <div className={styles.groupHead}>
+          <span>Admitted on a form</span>
+          <span className={styles.groupCount}>0</span>
+        </div>
+        <p className={styles.absent}>{WARD_RECORDS_ADMITTED}</p>
+      </section>
+    ) : (
+      <LegalFormsAdmitted
+        {...{ rows: admitted, now, nameOf, umrnOf, wardNameOf, onRecord: openRecord }}
+        recordUnavailable={
+          writtenGate.reason ?? (routeRole === "ed" ? "The admitting ward records the next form." : undefined)
+        }
+      />
+    );
+  const historyList =
+    isPhone && closedWithForms.length > 0 ? (
+      // v10 phone: one row per closed move, the code chip first and the closing time at the end.
+      <ul className={styles.phoneList} aria-label="Closed moves with a form">
+        {closedWithForms.map((movement) => {
+          const outcome = movement.closure?.outcome;
+          const ward = wardNameOf(movement);
+          const closedAt = movement.closure?.at;
+          const face = closedAt !== undefined ? formatInstant(closedAt) : "";
+          const full = closedAt !== undefined ? formatInstantWithDay(closedAt, now) : "";
+          return (
+            <PhoneListRow
+              key={movement.id}
+              as="li"
+              className={styles.phoneRow}
+              leading={<span className={styles.code}>{movement.legalForm?.code}</span>}
+              name={nameOf(movement)}
+              meta={
+                outcome === "arrived"
+                  ? `Arrived at ${ward ?? "the receiving ward"}`
+                  : outcome === "did_not_proceed"
+                    ? "Did not proceed"
+                    : `Closed · ${edNameOf(movement)}`
+              }
+              value={face}
+              time={
+                closedAt === undefined
+                  ? undefined
+                  : full === face
+                    ? "today"
+                    : full.slice(face.length).replace(/^,?\s*/u, "")
+              }
+            />
+          );
+        })}
+      </ul>
+    ) : closedWithForms.length > 0 ? (
+      <ul className={styles.historyList} aria-label="Closed moves with a form">
+        {closedWithForms.map((movement) => (
+          <li key={movement.id} className={styles.historyRow}>
+            <span className={styles.cellStack}>
+              <span className={styles.name}>{nameOf(movement)}</span>
+              <span className={cx(styles.sub, styles.mono)}>{umrnOf(movement)}</span>
+            </span>
+            <span className={styles.formCell}>
+              <span className={styles.code}>{movement.legalForm?.code}</span>
+              <span className={styles.formTitle}>{formTitle(movement.legalForm!.code)}</span>
+            </span>
+            <span className={styles.cellStack}>
+              <span className={styles.truncate}>{edNameOf(movement)}</span>
+              <span className={cx(styles.sub, styles.truncate)}>{wardNameOf(movement) ?? "No receiving ward"}</span>
+            </span>
+            <span className={styles.cellStack}>
+              <span>
+                {movement.closure?.outcome === "arrived"
+                  ? "Arrived"
+                  : movement.closure?.outcome === "did_not_proceed"
+                    ? "Did not proceed"
+                    : "Closed"}
+              </span>
+              <span className={cx(styles.sub, styles.mono)}>
+                {movement.closure ? formatInstantWithDay(movement.closure.at, now) : ""}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className={styles.absent}>No closed move carries a form yet.</p>
+    );
+
+  const copySelectedSummary = () => {
+    if (!selected) return;
+    copyText(
+      "summary",
+      `${nameOf(selected)} (${umrnOf(selected)})\n${
+        selected.legalForm ? legalFormName(selected.legalForm) : "Voluntary"
+      }\n${legalDeadlineText(selected, now)}`,
+    );
+  };
+
+  const focusPanel = selected ? (
+    <FocusPanel
+      key={selected.id}
+      movement={selected}
+      name={nameOf(selected)}
+      umrn={umrnOf(selected)}
+      edName={edNameOf(selected)}
+      wardName={wardNameOf(selected)}
+      now={now}
+      dayZero={dayZero}
+      tab={tab}
+      onTab={setTab}
+      onClose={() => setSelectedId(null)}
+      focusGap={focusGap}
+      refusal={lastWrittenRefusal?.reason}
+      onSaveWritten={({ writtenAt, region, ageBand }, onAccepted) => {
+        if (!recordGate.allowed) return;
+        const formCode = selected.legalForm?.code;
+        if (!isOwnedLegalFormCode(formCode)) return;
+        const movementId = selected.id;
+        runRecorded(
+          () => {
+            const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
+            // The panel's Change form closes only once the engine has accepted the time.
+            const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
+              outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
+            if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
+            else closeIfAccepted(completion);
+            return completion;
+          },
+          {
+            success: "Form time recorded",
+            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+            undone: "Form time undone.",
+          },
+        );
+      }}
+      recordUnavailable={recordGate.reason}
+      onMarkReceived={() => markReceived(selected)}
+      markReceivedUnavailable={receivedUnavailable(selected)}
+      onExtend={() => setExtendId(selected.id)}
+      extendUnavailable={extendGate.reason}
+      onRecordNext={() => openRecord(selected.id)}
+      onRequirements={(code) => setRequirementsCode(code)}
+      onCopy={copySelectedSummary}
+      copied={copied === "summary"}
+    />
+  ) : null;
+
+  // The record-and-tell tasks sit one tap away on both layouts; the phone sheet foot pins the next one to record.
+  const phoneTaskCount =
+    (["written", "received", "examination"] as const).reduce((sum, gap) => sum + gapCount(gap), 0) +
+    SUPPORT_NOTIFICATION_PARTIES.reduce((sum, party) => sum + partyCount(party), 0);
+  const phoneTaskForms = rows.filter((movement) =>
+    (["written", "received", "examination"] as const).some((gap) => offersGap(movement, gap)),
+  ).length;
+  const nextGap = selected
+    ? (["written", "received", "examination"] as const).find((gap) => offersGap(selected, gap))
+    : undefined;
+  const phonePrimary =
+    selected && nextGap
+      ? {
+          label: GAP_ACTION[nextGap],
+          disabledReason:
+            nextGap === "received"
+              ? receivedUnavailable(selected)
+              : nextGap === "written"
+                ? recordGate.reason
+                : undefined,
+          onAction: () => {
+            if (nextGap === "received") markReceived(selected);
+            else {
+              setTab("now");
+              setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
+            }
+          },
+        }
+      : undefined;
+  // v10 phone: the sheet foot always pins the next step. With no gap left to record it is the
+  // panel's own "Record next form", and Copy sits beside it, so neither floats mid-sheet.
+  const phoneSheetPrimary =
+    phonePrimary ??
+    (selected
+      ? {
+          label: "Record next form",
+          disabledReason: recordGate.reason,
+          onAction: () => openRecord(selected.id),
+        }
+      : undefined);
+  const phoneSheetSecondary = selected
+    ? { label: copied === "summary" ? "Copied" : "Copy", onAction: copySelectedSummary }
+    : undefined;
+
+  // Read aloud on both layouts: desktop no longer shows the strip that used to carry it (D-77 change 5).
+  const breakdownNote = (
+    <div className={styles.srOnly} data-testid="legal-form-breakdown">
+      {breakdown.map((form) => {
+        const openWord = form.openCount === 1 ? "open movement" : "open movements";
+        const breachClause =
+          form.breachedCount > 0
+            ? `, ${form.breachedCount} passed ${form.breachedCount === 1 ? "its deadline" : "their deadlines"}`
+            : "";
+        return <span key={form.name}>{`${form.name}, ${form.openCount} ${openWord}${breachClause}. `}</span>;
+      })}
+    </div>
+  );
+
+  const taskStrip = (
+    <div className={styles.strip}>
+      <Card aria-label="Forms in force">
+        <CardHead
+          title="Forms in force"
+          level={2}
+          action={
+            <button
+              type="button"
+              className={styles.textLink}
+              onClick={() => {
+                leaveTasks();
+                setRequirementsCode(CATALOGUE[0]!.code);
+              }}
+            >
+              <BookOpen size={14} aria-hidden="true" /> Requirements
+            </button>
+          }
+        />
+        <CardBody className={styles.stripBody}>
+          <StackBar segments={codeSegments} label="Forms in force by type" thin />
+          <div className={styles.codeChips} role="group" aria-label="Highlight a form type">
+            {(allCodes
+              ? codeCounts
+              : codeCounts.filter(
+                  (entry, index) =>
+                    index < CODE_CHIPS_SHOWN || (highlight?.kind === "code" && highlight.code === entry.code),
+                )
+            ).map((entry) => (
+              <button
+                key={entry.code}
+                type="button"
+                className={styles.codeChip}
+                aria-pressed={highlight?.kind === "code" && highlight.code === entry.code}
+                title={formTitle(entry.code)}
+                onClick={() => toggleHighlight({ kind: "code", code: entry.code })}
+              >
+                <span className={styles.codeChipKey} data-fill={entry.fill} aria-hidden="true" />
+                <span className={styles.codeChipCode}>{entry.code}</span>
+                <span className={styles.codeChipCount}>{entry.count}</span>
+              </button>
+            ))}
+            {codeCounts.length > CODE_CHIPS_SHOWN ? (
+              <button
+                type="button"
+                className={styles.codeChip}
+                aria-expanded={allCodes}
+                onClick={() => setAllCodes((open) => !open)}
+              >
+                {allCodes ? "Fewer" : `+${codeCounts.length - CODE_CHIPS_SHOWN}`}
+                <SrOnly>{allCodes ? " form types" : " more form types"}</SrOnly>
+              </button>
+            ) : null}
+            <span className={styles.stripTotal}>{rows.length} total</span>
+          </div>
+          {breakdownNote}
+        </CardBody>
+      </Card>
+
+      <Card aria-label="Record on the form">
+        <CardHead title="Record on the form" level={2} aside={<span className={styles.meta}>Open moves</span>} />
+        <CardBody className={styles.stripBody}>
+          <ul className={styles.taskList}>
+            {(["written", "received", "examination"] as const).map((gap) => {
+              const count = gapCount(gap);
+              return (
+                <li key={gap} className={styles.taskRow}>
+                  <button
+                    type="button"
+                    className={styles.taskLabel}
+                    aria-pressed={highlight?.kind === "gap" && highlight.gap === gap}
+                    onClick={() => toggleHighlight({ kind: "gap", gap })}
+                  >
+                    <StatusGlyph tone={count > 0 ? "neutral" : "success"} size={9} />
+                    {GAP_LABEL[gap]}
+                  </button>
+                  <span className={styles.taskCount}>
+                    <strong>{count}</strong> to do
+                  </span>
+                  <Button
+                    variant="sec"
+                    size="sm"
+                    disabledReason={count === 0 ? "Nothing to record" : undefined}
+                    reasonDisplay="tooltip"
+                    onClick={() => startGap(gap)}
+                  >
+                    {GAP_ACTION[gap]}
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardBody>
+      </Card>
+
+      <Card aria-label="Tell people">
+        <CardHead
+          title="Tell people"
+          level={2}
+          aside={<span className={styles.meta}>Recent moves, oldest first</span>}
+        />
+        <CardBody className={styles.stripBody}>
+          <ul className={styles.taskList}>
+            {SUPPORT_NOTIFICATION_PARTIES.map((party) => {
+              const count = partyCount(party);
+              return (
+                <li key={party} className={styles.taskRow}>
+                  <span className={styles.taskLabel}>
+                    <StatusGlyph tone={count > 0 ? "neutral" : "success"} size={9} />
+                    {SUPPORT_NOTIFICATION_PARTY_SHORT[party]}
+                  </span>
+                  <span className={styles.taskCount}>
+                    <strong>{count}</strong> to do
+                  </span>
+                  <Button
+                    variant="sec"
+                    size="sm"
+                    disabledReason={count === 0 ? "Everyone is recorded" : undefined}
+                    reasonDisplay="tooltip"
+                    onClick={() => tellNext(party)}
+                  >
+                    Tell next
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardBody>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div className={styles.screen} data-testid="ward-legal-forms-page" data-ward-design="v8">
+      <main id="main-content" className={styles.main}>
+        {copyNotice ? <p role="status">{copyNotice}</p> : null}
+        <h1 className={styles.srOnly}>Legal forms</h1>
+        <p className={styles.srOnly}>Recorded forms and deadlines for open movements.</p>
+        <span className={`${styles.prototypeBadge} ${styles.srOnly}`} data-ward-type-floor="badge">
+          Synthetic prototype
+        </span>
+        <dl className={styles.srOnly} aria-label="Legal forms summary">
+          <div data-tone={passed > 0 ? "danger" : "quiet"}>
+            <dt>Deadline passed</dt>
+            <dd>{passed}</dd>
+          </div>
+          <div>
+            <dt>Upcoming deadlines</dt>
+            <dd>{upcoming}</dd>
+          </div>
+          <div>
+            <dt>No deadline recorded</dt>
+            <dd>{noDeadline.length}</dd>
+          </div>
+          <div>
+            <dt>Voluntary, no form</dt>
+            <dd>{voluntary}</dd>
+          </div>
+        </dl>
+
+        {/* The three unlabelled top-bar tools (Requirements, Tell PSP, Handover) only repeated the
+            Requirements link, the Tell task card and Copy for handover (device audit 11 Oct 2026). */}
+
+        {isPhone ? (
+          <>
+            <PhoneHero
+              data-testid="ward-legal-hud-island"
+              className={styles.phoneHero}
+              eyebrow="Mental Health Act forms"
+              chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
+              title={movesTitle}
+              sub={`${voluntary} voluntary, no form · warnings at ${formatReminderHours(reminders.soonHours)} and ${formatReminderHours(reminders.urgentHours)}`}
+              figures={[
+                { id: "act", value: actNow, label: "Act now", tone: "danger" },
+                {
+                  id: "soon",
+                  value: reminders.withinSoon,
+                  label: `Within ${formatReminderHours(reminders.soonHours)}`,
+                  tone: "warning",
+                },
+                { id: "none", value: noDeadline.length, label: "Time not written", tone: "closed" },
+              ]}
+              actions={
+                <>
+                  {recordOffered ? (
+                    <Button
+                      variant="onHero"
+                      icon={Plus}
+                      className={styles.phoneHeroAction}
+                      disabledReason={sheetReason}
+                      reasonDisplay="tooltip"
+                      onClick={() => openRecord()}
+                    >
+                      Record a form
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="onHero"
+                    icon={ClipboardCopy}
+                    className={styles.phoneHeroAction}
+                    disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
+                    reasonDisplay="tooltip"
+                    onClick={() => copyText("handover", handover.join("\n"))}
+                  >
+                    {copied === "handover" ? "Copied" : `Copy for handover ${handover.length}`}
+                  </Button>
+                </>
+              }
+            />
+            <LegalLimitsNotChecked />
+            {/* Role view (nurse in charge): with nothing to record or tell, the ward's phone skips the card. */}
+            {routeRole === "ward" && phoneTaskCount === 0 ? null : (
+              <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
+                <ClipboardList size={16} aria-hidden="true" />
+                <span className={styles.cellStack}>
+                  <span className={styles.name}>Record and tell</span>
+                  <span className={styles.sub}>
+                    <strong className={styles.mono}>{phoneTaskCount}</strong> items to record across {phoneTaskForms}{" "}
+                    forms
+                  </span>
+                </span>
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            )}
+            <Segmented<View>
+              className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
+              label="View"
+              value={view}
+              onChange={setView}
+              items={[
+                { id: "clocks", label: "Clocks" },
+                { id: "checklist", label: "Checklist" },
+                { id: "history", label: "History", count: closedWithForms.length },
+              ]}
+            />
+            <Card className={styles.listCard} aria-label="Everyone on a form">
+              {highlight ? (
+                <p className={styles.phoneNote}>
+                  {highlightCount} of {rows.length} highlighted, all rows stay
+                </p>
+              ) : null}
+              {view === "clocks" ? (
+                <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
+                  {rows.length === 0 ? (
+                    <p className={styles.absent}>No open movement carries a legal form.</p>
+                  ) : (
+                    <>
+                      <div className={styles.groupHead}>
+                        <span>Expiry typed</span>
+                        <span className={styles.groupCount}>{withDeadline.length}</span>
+                        <span className={styles.groupOrder}>least time left</span>
+                      </div>
+                      <ul className={styles.phoneList}>
+                        {withDeadline.map((movement) => (
+                          <PhoneFormRow key={movement.id} {...rowProps(movement)} />
+                        ))}
+                      </ul>
+                      <div className={styles.groupHead}>
+                        <span>Time not written</span>
+                        <span className={styles.groupCount}>{noDeadline.length}</span>
+                        <span className={styles.groupOrder}>most period used</span>
+                      </div>
+                      <ul className={styles.phoneList}>
+                        {noDeadline.map((movement) => (
+                          <PhoneFormRow key={movement.id} {...rowProps(movement)} />
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </section>
+              ) : null}
+              {view === "checklist" ? (
+                <PhoneChecklist
+                  rows={rows}
+                  nameOf={nameOf}
+                  umrnOf={umrnOf}
+                  isHighlighted={matches}
+                  highlightOn={highlight !== null}
+                  onSelect={select}
+                />
+              ) : null}
+              {view === "clocks" ? admittedList : null}
+              {view === "history" ? historyList : null}
+            </Card>
+            <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
+              {taskStrip}
+            </PhoneSheet>
+            <PhoneSheet
+              open={selected !== null}
+              onClose={() => setSelectedId(null)}
+              title={selected ? nameOf(selected) : "Form"}
+              description={
+                selected ? (
+                  <>
+                    <span className={styles.mono}>{umrnOf(selected)}</span> · {edNameOf(selected)}
+                  </>
+                ) : undefined
+              }
+              height="tall"
+              primary={phoneSheetPrimary}
+              secondary={phoneSheetSecondary}
+            >
+              {/* v10 phone: the sheet's own header names the person, so the panel drops its head. */}
+              <div className={styles.phoneFocus}>{focusPanel}</div>
+            </PhoneSheet>
+          </>
+        ) : (
+          <>
+            <div data-testid="ward-legal-hud-island">
+              <Hero
+                className={styles.heroBand}
+                eyebrow="Mental Health Act forms"
+                title={
+                  <>
+                    <SrOnly>Legal forms, </SrOnly>
+                    {movesTitle}
+                  </>
+                }
+                titleMeta={
+                  voluntary > 0 ? <span className={styles.heroMeta}>{voluntary} voluntary, no form</span> : undefined
+                }
+                aside={
+                  <div className={styles.heroAside}>
+                    {next ? (
+                      <button
+                        type="button"
+                        className={`${styles.nextCard} ${redesign.nextCard}`}
+                        onClick={() => select(next)}
+                      >
+                        <span className={styles.nextEyebrow}>
+                          <StatusGlyph tone={STANDING_TONE[nextStanding]} size={9} />
+                          {nextStanding === "passed" ? "Passed" : "Next to end"}
+                        </span>
+                        <span className={styles.nextName}>
+                          {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
+                        </span>
+                        <span className={styles.nextTime}>
+                          {formatInstantWithDay(currentLegalDueAt(next)!, now)}
+                          <small className={redesign.typed}> as typed</small>
+                        </span>
+                      </button>
+                    ) : null}
+                    {recordOffered ? (
+                      <Button
+                        variant="light"
+                        icon={Plus}
+                        disabledReason={sheetReason}
+                        reasonDisplay="tooltip"
+                        onClick={() => openRecord()}
+                      >
+                        Record a form
+                      </Button>
+                    ) : null}
+                  </div>
+                }
+                bar={
+                  <div className={styles.heroFilters}>
+                    <HeroStat
+                      inline
+                      value={actNow}
+                      label="Act now"
+                      tone="danger"
+                      pressed={highlight?.kind === "act"}
+                      onToggle={() => toggleHighlight({ kind: "act" })}
+                    />
+                    <HeroStat
+                      inline
+                      value={reminders.withinSoon}
+                      label={`Within ${formatReminderHours(reminders.soonHours)}`}
+                      tone="warning"
+                      pressed={highlight?.kind === "soon"}
+                      onToggle={() => toggleHighlight({ kind: "soon" })}
+                    />
+                    <HeroStat
+                      inline
+                      value={noDeadline.length}
+                      label="Time not written"
+                      tone="neutral"
+                      pressed={highlight?.kind === "none"}
+                      onToggle={() => toggleHighlight({ kind: "none" })}
+                    />
+                    <button
+                      type="button"
+                      className={`${styles.heroCopy} ${redesign.heroAction} ${redesign.firstAction}`}
+                      aria-disabled={handover.length === 0 ? "true" : undefined}
+                      title={
+                        handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"
+                      }
+                      onClick={() => {
+                        if (handover.length > 0) copyText("handover", handover.join("\n"));
+                      }}
+                    >
+                      <ClipboardCopy size={14} aria-hidden="true" />
+                      <span>{copied === "handover" ? "Copied" : "Copy for handover"}</span>
+                      <span className={styles.heroCopyCount}>{handover.length}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.heroCopy} ${redesign.heroAction}`}
+                      onClick={() => setTasksOpen(true)}
+                    >
+                      <ClipboardList size={14} aria-hidden="true" />
+                      <span>Record and tell</span>
+                      <span className={styles.heroCopyCount}>{phoneTaskCount}</span>
+                    </button>
+                  </div>
+                }
+                barAside={
+                  <HeroTrack<View>
+                    label="View"
+                    value={view}
+                    onChange={setView}
+                    items={[
+                      { id: "clocks", label: "Clocks", count: rows.length },
+                      { id: "checklist", label: "Checklist" },
+                      { id: "history", label: "History", count: closedWithForms.length },
+                    ]}
+                  />
+                }
+              />
+            </div>
+            <LegalLimitsNotChecked />
+
+            {breakdownNote}
+
+            <div className={styles.work}>
+              <Card className={styles.listCard} aria-label="Everyone on a form">
+                <CardHead
+                  title={view === "history" ? "Closed moves with a form" : "Everyone on a form"}
+                  level={2}
+                  aside={
+                    <span className={styles.meta}>
+                      {highlight
+                        ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
+                        : view === "clocks"
+                          ? "Act now first, then least time left"
+                          : null}
+                    </span>
+                  }
+                  action={
+                    highlight ? (
+                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                        Clear highlight
+                      </Button>
+                    ) : undefined
+                  }
+                />
+
+                {view === "clocks" ? (
+                  <section
+                    className={styles.groups}
+                    aria-label="Legal forms and deadlines"
+                    data-testid="ward-legal-forms-groups"
+                  >
+                    <p className={styles.srOnly}>
+                      {rows.length} of {openMovements.length} open{" "}
+                      {openMovements.length === 1 ? "movement carries" : "movements carry"} a legal form
+                    </p>
+                    <div role="region" aria-label="Legal forms list" className={styles.table}>
+                      {rows.length === 0 ? (
+                        <p className={styles.absent}>No open movement carries a legal form.</p>
+                      ) : (
+                        <>
+                          <DataRow head columns={ROW_COLUMNS} aria-hidden="true" className={styles.headRow}>
+                            <span className={tableClasses.th}>Patient</span>
+                            <span className={tableClasses.th}>Form</span>
+                            <span className={tableClasses.th}>Where</span>
+                            <span className={tableClasses.th}>Ends, as typed</span>
+                            <span className={tableClasses.th}>To record</span>
+                          </DataRow>
+                          <div className={styles.groupHead}>
+                            <span>Expiry typed</span>
+                            <span className={styles.groupCount}>{withDeadline.length}</span>
+                            <span className={styles.groupOrder}>soonest typed end first</span>
+                            <span className={styles.srOnly}>Forms with a deadline recorded</span>
+                          </div>
+                          {withDeadline.length > 0 ? (
+                            <ul className={styles.rowList}>
+                              {withDeadline.map((movement) => (
+                                <FormRow key={movement.id} {...rowProps(movement)} />
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className={styles.absent} data-testid="ward-legal-forms-none-with-deadline">
+                              No open movement carries a form with a deadline recorded on it.
+                            </p>
+                          )}
+                          <div className={styles.groupHead}>
+                            <span>Time not written</span>
+                            <span className={styles.groupCount}>{noDeadline.length}</span>
+                            <span className={styles.groupOrder}>longest open first</span>
+                            <span className={styles.srOnly}>Forms with no deadline recorded</span>
+                          </div>
+                          {noDeadline.length > 0 ? (
+                            <>
+                              <ul className={styles.rowList}>
+                                {(noTimeAll ? noDeadline : noDeadline.slice(0, NO_TIME_FIRST)).map((movement) => (
+                                  <FormRow key={movement.id} {...rowProps(movement)} />
+                                ))}
+                              </ul>
+                              {noDeadline.length > NO_TIME_FIRST ? (
+                                <button
+                                  type="button"
+                                  className={redesign.more}
+                                  onClick={() => setNoTimeAll((all) => !all)}
+                                >
+                                  {noTimeAll
+                                    ? "Show fewer"
+                                    : `Show ${noDeadline.length - NO_TIME_FIRST} more with no time written`}
+                                </button>
+                              ) : null}
+                            </>
+                          ) : (
+                            <p className={styles.absent} data-testid="ward-legal-forms-none-without-deadline">
+                              Every open movement carrying a form has a deadline recorded on it.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </section>
+                ) : null}
+
+                {view === "checklist" ? (
+                  <ChecklistView
+                    rows={rows}
+                    now={now}
+                    nameOf={nameOf}
+                    umrnOf={umrnOf}
+                    selectedId={selectedId}
+                    isHighlighted={matches}
+                    highlightOn={highlight !== null}
+                    onSelect={select}
+                  />
+                ) : null}
+
+                {view === "clocks" ? admittedList : null}
+                {view === "history" ? historyList : null}
+              </Card>
+
+              {selected ? (
+                // D-77 change 5: the list keeps the full width and the form opens as a drawer over it.
+                <Drawer
+                  open
+                  onClose={() => setSelectedId(null)}
+                  title={nameOf(selected)}
+                  description={`${umrnOf(selected)}${selected.legalForm ? ` · ${formTitle(selected.legalForm.code)}` : ""}`}
+                  testId="ward-legal-form-sheet"
+                >
+                  {/* As on the phone sheet, the drawer's own header names the person, so the panel drops its head. */}
+                  <div className={styles.phoneFocus}>{focusPanel}</div>
+                </Drawer>
+              ) : null}
+              <Drawer
+                open={tasksOpen}
+                onClose={() => setTasksOpen(false)}
+                title="Record and tell"
+                description={`${phoneTaskCount} items to record across ${phoneTaskForms} forms`}
+                testId="ward-legal-tasks-sheet"
+              >
+                <div className={styles.taskDrawer}>{taskStrip}</div>
+              </Drawer>
+            </div>
+          </>
+        )}
+
+        <RequirementsSheet
+          code={requirementsCode}
+          onCode={setRequirementsCode}
+          onClose={() => setRequirementsCode(null)}
+        />
+        <RecordFormSheet
+          open={recordOpen}
+          onClose={() => setRecordOpen(false)}
+          draft={recordDraft}
+          onDraft={setRecordDraft}
+          openMovements={recordable}
+          labelOf={(movement) => movementPickerLabel(nameOf(movement), umrnOf(movement), movement)}
+          now={now}
+          recordUnavailable={sheetReason}
+          targetMovement={recordOnOpen ? initialMovementId : undefined}
+          onSaveForm={({ movementId, formCode, writtenAt, region }) => {
+            if (!writtenGate.allowed || !isOwnedLegalFormCode(formCode)) return false;
+            const movement = recordable.find((candidate) => candidate.id === movementId);
+            if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
+            const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}) };
+            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
+            const accepted = (outcome: Awaited<typeof completion>) => {
+              offerStep(
+                {
+                  success: `Form ${formCode} recorded`,
+                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+                  undone: "Form record undone.",
+                },
+                { completion: outcome },
+              );
+              if (outcome?.status === "accepted") return outcome.isCurrent?.() ?? true;
+              // The sheet shows the refusal itself, so the person is not left with a Save that did nothing.
+              return outcome?.status === "refused"
+                ? `Not recorded: ${outcome.message ?? "The action was refused."}`
+                : (outcome?.message ?? SAVE_NOT_CONFIRMED);
+            };
+            const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
+            return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
+          }}
+        />
+        <ExtendSheet
+          target={movements.find((movement) => movement.id === extendId) ?? null}
+          label={(() => {
+            const target = movements.find((movement) => movement.id === extendId);
+            return target ? `${nameOf(target)} · ${umrnOf(target)}` : "";
+          })()}
+          now={now}
+          dayZero={dayZero}
+          onClose={() => setExtendId(null)}
+          extendUnavailable={extendGate.reason}
+          onExtendForm={(movement, dueAt) => {
+            if (!extendGate.allowed) return false;
+            if (!openMovements.some((candidate) => candidate.id === movement.id)) return false;
+            const completion = raise("RECORD_LEGAL_FORM_EXPIRY", { movementId: movement.id, dueAt });
+            const accepted = (outcome: Awaited<typeof completion>) => {
+              offerStep(
+                {
+                  success: `Form ${movement.legalForm?.code ?? ""} extended`,
+                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
+                  undone: "Form extension undone.",
+                },
+                { completion: outcome },
+              );
+              return outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true);
+            };
+            const unconfirmed = () => accepted(UNCONFIRMED_SAVE);
+            return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
+          }}
+        />
+        <TellSheet
+          open={tell !== null}
+          party={tell?.party ?? null}
+          subjects={tellSubjects}
+          subjectKey={tell?.key ?? null}
+          onSubject={(key) => setTell((current) => (current ? { ...current, key } : current))}
+          onClose={() => setTell(null)}
+          now={now}
+        />
+      </main>
+      <WardPrototypeFooter testId="ward-legal-forms-governance" />
+    </div>
+  );
+}

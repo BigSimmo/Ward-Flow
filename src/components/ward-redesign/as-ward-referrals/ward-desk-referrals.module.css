@@ -1,0 +1,18 @@
+/* Role view (nurse in charge): the empty ward queue's one link, in the app's link colour. */
+.link {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 30rem) {
+  .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+  }
+}
