@@ -549,3 +549,25 @@ a.eventText:hover {
     overflow-y: auto;
   }
 }
+
+/* Final polish: nothing on a phone row is cut off. The status comes straight after the name (it is
+   why the row is here), and where follows in full, wrapping if it needs to. */
+@media (max-width: 48rem) {
+  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] {
+    order: 1;
+    max-width: 100%;
+  }
+  .compactList [class*="_phoneRowText__"] > [class*="_rowOpen__"] > span {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .compactList [class*="_phoneRowText__"] > :nth-child(3) {
+    order: 2;
+    flex: 1 0 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+}
