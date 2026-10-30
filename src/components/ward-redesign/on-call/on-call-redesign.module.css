@@ -1,0 +1,35 @@
+/* On-call, redesigned: a scoped stylesheet over today's screen (see on-call-redesign.tsx). */
+
+/* Service lines: two lines each (line, number). "Until 20:00" repeated on every card moves to the
+   chosen line's detail and the directory rows, where it is already shown. */
+.onCall [class*="_keys__"] {
+  gap: 4px;
+}
+.onCall [class*="_key__"] {
+  padding: 5px 8px;
+}
+.onCall [class*="_keyUntil__"] {
+  display: none;
+}
+.onCall [class*="_key__"][aria-pressed="true"] [class*="_keyUntil__"] {
+  display: block;
+}
+
+/* Directory filters: tighter, so they keep to one row on a wide screen. */
+.onCall [class*="_dirHead2__"] {
+  column-gap: 6px;
+}
+.onCall [class*="_dirHead2__"] [class*="_chip__"] {
+  padding-inline: 8px;
+}
+
+/* Laptop and phone: the strip scrolls sideways rather than squeezing seven cards. */
+@media (max-width: 80rem) {
+  .onCall [class*="_keys__"] {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(9.5rem, 1fr);
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+}
