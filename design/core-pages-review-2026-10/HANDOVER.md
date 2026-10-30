@@ -149,6 +149,18 @@ compare wards; Places is the directory to find a place and open it, with no bed 
 rule, 22 October). Stays' bed record column stays on screen (ruling of 30 August); point 16 is met by
 opening it on the first bed that needs a look instead of leaving it empty.
 
+## How Josh wants pages reviewed (30 October)
+
+Reviewing a page is restructuring, not restyling. For every part of the page ask what job it does,
+whether that job is already done elsewhere (on this page or another), and whether it belongs here at all.
+Then move, merge or remove so each piece of information lives in one right place. Question parts that
+come from shared components too; "it sits in a shared file" is not a reason to keep it. Cut explanatory
+sentences to short labels, and spend phone space on content. Example he gave: on the Home and Activity
+mock-up (`claude/home-activity-mockup`), the ED access-target banner duplicated the new Planned tab, so it
+became Planned's first row; the "since you looked" strip became one chip that opens Activity; notices got
+their own Activity tab. Apply this to every popup and state, and when proposing changes give the reason
+for each.
+
 ## Swarm plan for the popups and states
 
 Josh asked for multiple agents in parallel. The pattern that worked for the last 15 pages:
