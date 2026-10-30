@@ -16,6 +16,7 @@ import { DayBars, type DayBar } from "@/components/ward-redesign/parts/day-bars"
 import { HowWorkedOut, Kicker, Legend } from "@/components/ward-redesign/parts/how-worked-out";
 import { gapWords } from "@/components/ward-redesign/parts/range-line";
 import type { CapacityModel } from "./use-capacity-model";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "@/components/ward-redesign/capacity/capacity-redesign.module.css";
 
 const WARD_ROWS = 8;
@@ -123,7 +124,8 @@ export function BedForecast({ model, onTryScenario }: { model: CapacityModel; on
           <div className={styles.fcSources}>
             <p className={styles.small}>
               <b>{sourceSummary.discharges}</b> discharges from {sourceSummary.wards} wards ·{" "}
-              <b>{sourceSummary.overdue}</b> overdue · <b>{weekOut}</b> in the next {bars.length} days
+              <b>{sourceSummary.overdueNotHeldUp}</b> overdue, not held up · <b>{weekOut}</b> in the next {bars.length}{" "}
+              days
             </p>
             <p className={styles.mutedXs}>
               Not yet counted: {forecastModel.notCounted.leaveBeds} beds held for people on leave,{" "}
@@ -273,9 +275,9 @@ function WardDays({
         </tbody>
       </table>
       {rows.length > WARD_ROWS ? (
-        <Button size="sm" variant="ghost" onClick={() => setAll((open) => !open)} aria-expanded={all}>
+        <ShowMoreRow onClick={() => setAll((open) => !open)} expanded={all}>
           {all ? "Show fewer wards" : `Show all ${rows.length} wards`}
-        </Button>
+        </ShowMoreRow>
       ) : null}
     </div>
   );

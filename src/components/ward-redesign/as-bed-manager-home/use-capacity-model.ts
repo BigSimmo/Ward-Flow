@@ -26,6 +26,7 @@ import { useForecastModel } from "@/components/ward-management/forecast/use-fore
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { ownUnits } from "@/components/ward-management/reports/use-own-units";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { heldUpReleases } from "@/components/ward-redesign/capacity/held-up";
 
 const NO_PLANNED: never[] = [];
 
@@ -146,8 +147,11 @@ export function useCapacityModel() {
     wards: new Set(
       upcoming.flatMap((window) => window.wards.filter((ward) => ward.entries.length > 0).map((ward) => ward.unitId)),
     ).size,
-    overdue: sources.windows.find((window) => window.id === "overdue")?.total ?? 0,
+    // Redesign (Josh, 30 Oct): one overdue figure, as the coordinator's Capacity (dates passed, no blocker).
+    overdueNotHeldUp: forecast.horizons[0]?.overdue ?? 0,
   };
+  // Redesign (Josh, 30 Oct): held-up releases counted and named as Discharges counts them.
+  const heldUp = useMemo(() => heldUpReleases(bedReleases, now), [bedReleases, now]);
   // Wards a coordinator should look at first: none ready, or a count past its freshness limit.
   const wardsToCheck = networkRows
     .filter((row) => !row.unit.isClosed && (row.ready === 0 || !isConfirmationFresh(row.unit, now)))
@@ -176,6 +180,7 @@ export function useCapacityModel() {
     week,
     confirmations,
     sourceSummary,
+    heldUp,
     wardsToCheck,
     site,
     otherSiteRows,
