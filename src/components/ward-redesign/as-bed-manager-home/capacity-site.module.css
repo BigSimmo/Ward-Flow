@@ -9,6 +9,6 @@
 /* A site shows only the bed types it holds, so the wide row has as many columns as cards. */
 @container page (min-width: 1100px) {
   .siteMismatch.siteMismatch {
-    grid-template-columns: repeat(var(--bm-columns, 5), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--bm-columns, 4), minmax(0, 1fr));
   }
 }

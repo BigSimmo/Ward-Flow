@@ -8,14 +8,15 @@ import { Button, buttonClass, Card, CardHead, Segmented } from "@/components/wf"
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { BEDS_FORECAST_LIMITS } from "@/components/ward-management/capacity/beds-forecast";
-import { shortBlocker, type ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
+import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
 import { DayBars, type DayBar } from "@/components/ward-redesign/parts/day-bars";
 import { HowWorkedOut, Kicker, Legend } from "@/components/ward-redesign/parts/how-worked-out";
 import { gapWords } from "@/components/ward-redesign/parts/range-line";
-import type { CapacityModel } from "@/components/ward-redesign/capacity/use-capacity-model";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
+import { HELD_UP_HREF, HELD_UP_LINK_LABEL, tallyBarriers } from "@/components/ward-redesign/capacity/held-up";
+import type { CapacityModel } from "@/components/ward-redesign/capacity/use-capacity-model";
 import styles from "@/components/ward-redesign/capacity/capacity-redesign.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
@@ -26,8 +27,20 @@ const WARD_ROWS = 8;
  * Three figures down the left, the next seven days as a chart in the middle, and what would change
  * tomorrow most on the right. The ward-by-day grid is the same chart's "By ward" view, and the four
  * caveat paragraphs are one sentence plus "How this is worked out".
+ *
+ * `stacked` is the phone sheet (Josh, 30 Oct 2026): the three figures, then the seven-day bars at
+ * full width, then the levers, one under the other, with the sheet's own title in place of the
+ * card's.
  */
-export function BedForecast({ model, onTryScenario }: { model: CapacityModel; onTryScenario: () => void }) {
+export function BedForecast({
+  model,
+  onTryScenario,
+  stacked = false,
+}: {
+  model: CapacityModel;
+  onTryScenario: () => void;
+  stacked?: boolean;
+}) {
   const [view, setView] = useState<"network" | "ward">("network");
   const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now } = model;
   const [tomorrow, twoDays] = forecast.horizons;
@@ -44,29 +57,43 @@ export function BedForecast({ model, onTryScenario }: { model: CapacityModel; on
     .map((bar) => `${bar.label} ${bar.value}`)
     .join(", ")}. Days after tomorrow may move.`;
 
-  return (
-    <Card aria-labelledby="capacity-forecast-title" id="forecast">
-      <CardHead
-        id="capacity-forecast-title"
-        title="Bed forecast"
-        meta="From recorded discharge dates and planned admissions"
-        action={
-          <div className={styles.headActions}>
-            <Segmented
-              label="Forecast view"
-              items={[
-                { id: "network" as const, label: "Network" },
-                { id: "ward" as const, label: "By ward" },
-              ]}
-              value={view}
-              onChange={setView}
-            />
-            <Button size="sm" variant="sec" onClick={onTryScenario} aria-haspopup="dialog">
-              Try a scenario
-            </Button>
-          </div>
-        }
+  const actions = (
+    <div className={styles.headActions}>
+      <Segmented
+        label="Forecast view"
+        items={[
+          { id: "network" as const, label: "Network" },
+          { id: "ward" as const, label: "By ward" },
+        ]}
+        value={view}
+        onChange={setView}
       />
+      <Button size="sm" variant="sec" onClick={onTryScenario} aria-haspopup="dialog">
+        Try a scenario
+      </Button>
+    </div>
+  );
+
+  return (
+    <Card
+      aria-labelledby={stacked ? undefined : "capacity-forecast-title"}
+      aria-label={stacked ? "Bed forecast" : undefined}
+      id={stacked ? undefined : "forecast"}
+      className={stacked ? styles.fcStacked : undefined}
+    >
+      {stacked ? (
+        <div className={styles.fcToolbar}>
+          <span className={styles.mutedXs}>From recorded discharge dates and planned admissions</span>
+          {actions}
+        </div>
+      ) : (
+        <CardHead
+          id="capacity-forecast-title"
+          title="Bed forecast"
+          meta="From recorded discharge dates and planned admissions"
+          action={actions}
+        />
+      )}
       <div className={styles.fcBody}>
         <dl className={styles.fcKpis}>
           <Kpi
@@ -84,11 +111,14 @@ export function BedForecast({ model, onTryScenario }: { model: CapacityModel; on
             />
           ) : null}
           {twoDays ? (
+            // Redesign (Josh, 30 Oct): 48 hours rests on later, softer dates, so it leads with the
+            // range and reads muted, as the chart's "may move" bars do.
             <Kpi
               label="In 48 hours"
-              value={gapWords(twoDays.likely)}
+              value={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
               tone={twoDays.likely}
-              sub={`Range ${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
+              soft
+              sub={`Likely ${gapWords(twoDays.likely)} · may move`}
             />
           ) : null}
         </dl>
@@ -156,14 +186,30 @@ export function BedForecast({ model, onTryScenario }: { model: CapacityModel; on
   );
 }
 
-function Kpi({ label, value, sub, tone }: { label: string; value: string; sub: string; tone: number }) {
+function Kpi({
+  label,
+  value,
+  sub,
+  tone,
+  soft = false,
+}: {
+  label: string;
+  value: string;
+  sub: string;
+  tone: number;
+  /** Rests on dates that may move: muted, with the chart's hatched swatch beside the label. */
+  soft?: boolean;
+}) {
   return (
     <div className={styles.fcKpi}>
-      <dt>
+      <dt className={soft ? styles.fcKpiSoftLabel : undefined}>
+        {soft ? <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" /> : null}
         <Kicker>{label}</Kicker>
       </dt>
       <dd>
-        <span className={`${styles.fcKpiValue} ${tone < 0 ? styles.warnInk : styles.okInk}`}>{value}</span>
+        <span className={`${styles.fcKpiValue} ${soft ? styles.fcKpiSoft : tone < 0 ? styles.warnInk : styles.okInk}`}>
+          {value}
+        </span>
         <span className={styles.mutedXs}>{sub}</span>
       </dd>
     </div>
@@ -178,16 +224,20 @@ function daySub(day: HorizonDay): string {
 }
 
 function LeverItem({ lever, n }: { lever: ForecastLever; n: number }) {
+  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
   // Role view (executive): Waiting and Discharges are not this desk's screens, so the lever is read
   // as information, with no link to act on it.
   const executive = useEffectiveWardAccess().role === "executive";
-  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
   const content =
     lever.kind === "clear_held_up"
       ? {
-          title: `Chase ${plural(lever.beds, "held-up release", "held-up releases")}`,
-          body: lever.reasons.map((entry) => `${shortBlocker(entry.reason)} ${entry.count}`).join(" · "),
-          action: { href: "/ward-flow/waiting", label: "See Waiting" },
+          // Redesign (Josh, 30 Oct): names its subset (due by this time tomorrow) and Discharges'
+          // barrier names, and opens Discharges' held-up list rather than the waiting list.
+          title: `Chase ${plural(lever.beds, "held-up release", "held-up releases")} due by tomorrow`,
+          body: tallyBarriers(lever.reasons)
+            .map((entry) => `${entry.label} ${entry.count}`)
+            .join(" · "),
+          action: { href: HELD_UP_HREF, label: HELD_UP_LINK_LABEL },
           uplift: lever.likelyUplift,
         }
       : lever.kind === "confirm_dates"

@@ -20,6 +20,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the nurse in charge**, the header reads 'Bed release · Dabakarn' instead of 'all services'.",
     "**Removed:** the Service and Ward filters (one choice each), the ward name under every person, and the second 'Blocked by barrier' panel that repeated the first.",
     "**Round 2:** one barrier panel and the shared Discharges changes (see Discharges).",
+    "**Review round (30 October):** as the coordinator's Discharges: '4 to work now · of 14 open', '4 to work · 1 discharged', Held up as the one word, barrier and day clicks stay on Now, the day chart counts releases (closed wards left out), Chase opens Barriers and Confirm date the date control. Own-ward wording and filters kept.",
   ],
   "as-ward-seclusion": [
     "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
@@ -139,6 +140,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the hero adds '5 waiting in RPH ED' (counts only, no names), from the All EDs page's own figures. 'Past target in RPH ED' shows only when someone is past target.",
     "**Round 2:** uses Capacity's copied ward panel, Planned admissions and Step down board, so their links are checked against this desk and names are surname first.",
     "**Question for you:** the rail says 'Waiting 6' (every ED this desk covers) beside the hero's '5 waiting in RPH ED'. The hero names its ED so the two read apart. Is that acceptable?",
+    "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
   ],
   "as-bed-manager-wards": [
     "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
@@ -160,6 +162,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the site bed manager**, Discharges opens on Royal Perth's own releases ('Bed release · Royal Perth Hospital').",
     "**Removed:** the Service filter and the service name after each ward (one site, one service).",
     "**Round 2:** one barrier panel beside the list, as on Discharges.",
+    "**Review round (30 October):** as the coordinator's Discharges: '7 to work now · of 23 open', Held up as the one word, clicks stay on Now, first rows then Show more. Only the ward or the coordinator can change an expected date, so an expected release here offers Open (on Milestones), not Confirm date.",
   ],
   "as-bed-manager-referrals": [
     "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
@@ -188,6 +191,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-executive-capacity": [
     "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
     "**Replaced:** Planned admissions listed people with legal status under 'Name not shown'; it is now one card of counts.",
+    "**Review round (30 October):** as the coordinator's Capacity: the network total once, a muted 48-hour range, a stacked phone forecast sheet, held-up releases counted and named as Discharges does (11), and the drawer's own title. This desk has no Discharges, so no link to it; Ask the ward shows disabled, as before.",
   ],
   "as-admin-home": [
     "**As the access admin**, Settings opens on Access as the first tab; Rules and Alerts (no use to this desk) are removed.",

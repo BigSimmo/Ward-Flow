@@ -5,15 +5,16 @@ import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/w
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
-import { shortBlocker } from "@/components/ward-management/forecast/forecast-levers";
 
 import { Kicker } from "@/components/ward-redesign/parts/how-worked-out";
+import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "@/components/ward-redesign/capacity/held-up";
 import type { CapacityModel } from "@/components/ward-redesign/capacity/use-capacity-model";
 import styles from "@/components/ward-redesign/capacity/capacity-redesign.module.css";
 
 /**
  * The column beside the bed map: nearest ready beds, who has not confirmed this shift, and beds
- * held up by a blocker. Each is a short card with one action, in that order.
+ * held up by a blocker. Each is a short card with one action, in that order. Held-up releases are
+ * counted and named as Discharges counts them (Josh, 30 Oct 2026), and the link opens that list.
  */
 export function CapacitySide({
   model,
@@ -27,11 +28,10 @@ export function CapacitySide({
   onSelectWard: (unitId: string) => void;
   /** Role view (executive): absent, because asking a ward to confirm is the coordinator's step. */
   onAskWard?: (unitId: string) => void;
-  /** Role view (executive): Waiting is not this desk's screen, so its link is left out. */
+  /** Role view (executive): Discharges is not this desk's screen, so its link is left out. */
   executive?: boolean;
 }) {
-  const { networkRows, roadTimeFromEdId, confirmations, forecastModel, now } = model;
-  const { blockers } = forecastModel;
+  const { networkRows, roadTimeFromEdId, confirmations, heldUp, now } = model;
   const first = confirmations.waiting[0];
   return (
     <div className={styles.sideColumn}>
@@ -72,14 +72,14 @@ export function CapacitySide({
         </div>
       </Card>
       <Card aria-labelledby="capacity-blockers-title">
-        <CardHead id="capacity-blockers-title" title="Beds held up by a blocker" meta={`${blockers.total} recorded`} />
+        <CardHead id="capacity-blockers-title" title="Held-up releases" meta={`${heldUp.total} recorded`} />
         <div className={`${styles.sideBody} ${styles.blockers}`}>
-          {blockers.total === 0 ? (
-            <p className={styles.small}>No bed has a recorded blocker.</p>
+          {heldUp.total === 0 ? (
+            <p className={styles.small}>No bed release has a recorded blocker.</p>
           ) : (
             [
-              { title: "Same day", rows: blockers.sameDay },
-              { title: "Escalate", rows: blockers.escalate },
+              { title: "Same day", rows: heldUp.sameDay },
+              { title: "Escalate", rows: heldUp.escalate },
             ].map((group) => (
               <div key={group.title}>
                 <Kicker>
@@ -87,8 +87,8 @@ export function CapacitySide({
                 </Kicker>
                 <ul className={styles.kvList}>
                   {group.rows.map((row) => (
-                    <li key={row.reason}>
-                      <span>{shortBlocker(row.reason)}</span>
+                    <li key={row.id}>
+                      <span>{row.label}</span>
                       <b>{row.count}</b>
                     </li>
                   ))}
@@ -98,10 +98,10 @@ export function CapacitySide({
           )}
         </div>
         <div className={styles.cardFoot}>
-          <span>Held-up beds count only in the best case.</span>
+          <span>Held-up releases count only in the best case.</span>
           {executive ? null : (
-            <Link href="/ward-flow/waiting" className={buttonClass({ variant: "ghost", size: "sm" })}>
-              Open Waiting
+            <Link href={HELD_UP_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+              {HELD_UP_LINK_LABEL}
             </Link>
           )}
         </div>

@@ -151,7 +151,14 @@ export function useCapacityModel() {
     overdueNotHeldUp: forecast.horizons[0]?.overdue ?? 0,
   };
   // Redesign (Josh, 30 Oct): held-up releases counted and named as Discharges counts them.
-  const heldUp = useMemo(() => heldUpReleases(bedReleases, now), [bedReleases, now]);
+  // ROLE BRANCH (bed_manager): only the site's own wards' releases, as its Discharges lists them.
+  const heldUp = useMemo(() => {
+    const own = new Set(units.map((unit) => unit.id));
+    return heldUpReleases(
+      siteCode === undefined ? bedReleases : bedReleases.filter((release) => own.has(release.unitId)),
+      now,
+    );
+  }, [siteCode, units, bedReleases, now]);
   // Wards a coordinator should look at first: none ready, or a count past its freshness limit.
   const wardsToCheck = networkRows
     .filter((row) => !row.unit.isClosed && (row.ready === 0 || !isConfirmationFresh(row.unit, now)))
