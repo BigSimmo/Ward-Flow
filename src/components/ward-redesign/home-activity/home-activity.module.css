@@ -679,7 +679,7 @@ a.eventText:hover {
     min-height: 0;
     padding: 0 10px;
     border-color: var(--wf-line);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     box-shadow: none;
   }
   .scope :is([class*="_edButton__"], [class$="_edButton"], [class*="_edButton "])::after {
@@ -825,11 +825,11 @@ a.eventText:hover {
     height: 40px;
     margin-block: 4px;
     padding: 3px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-track);
   }
   .viewSwitch.viewSwitch > * {
     height: 32px;
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-seg-item);
   }
   .viewSwitch.viewSwitch > *::after {
     inset: -8px 0;
@@ -846,7 +846,7 @@ a.eventText:hover {
     min-height: 40px;
     padding: 0 16px;
     border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
-    border-radius: var(--wf-r-pill);
+    border-radius: var(--wf-r-ctl);
     background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
     text-decoration: none;
   }
