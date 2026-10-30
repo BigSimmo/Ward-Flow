@@ -16,6 +16,7 @@ import {
   useWardFeatureFlag,
 } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { TOUR_AUTO_DONE_STORAGE_KEY } from "@/components/ward-management/help/ward-tour-auto-start";
+import { markWhatsNewSeen } from "@/components/ward-management/help/ward-whats-new";
 import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
 
 import { screenBySlug } from "./screens";
@@ -93,12 +94,14 @@ function usePreviewDesk(role: WardAccess | undefined): boolean {
   const { access } = useWardAccessSnapshot();
   const roleAccessOn = useWardFeatureFlag("role-access");
   useLayoutEffect(() => {
-    // The tour offers itself on each desk's first visit; a mock-up is judged without it on top.
+    // The tour and the What's new note offer themselves on a desk's first visit; a mock-up is
+    // judged without them on top.
     try {
       localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, TOUR_ROLES);
     } catch {
       // Blocked storage: the tour then never offers itself anyway.
     }
+    markWhatsNewSeen();
     if (role) setWardFeatureFlagOnDevice("role-access", true);
     if (!sameDesk(readWardAccessSnapshot().access, desk)) setWardAccess(desk);
     if (!role) setWardFeatureFlagOnDevice("role-access", null);

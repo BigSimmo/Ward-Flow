@@ -1,11 +1,12 @@
 "use client";
 
-import { WardsPage } from "@/components/ward-redesign/wards/wards-page";
+import { AsBedManagerWards } from "./wards-redesign";
 
 /**
- * As site bed manager: the All wards mock-up as this role sees it. The preview takes the role's desk
- * before drawing (`role` in `screens.ts`), so the page shows only what the role may open.
+ * As site bed manager: All wards. The preview takes the role's desk before drawing (`role` in
+ * `screens.ts`), and the forked page branches on it: its own site's wards first and in full, every
+ * other site as bed counts only (D-80).
  */
 export function AsBedManagerWardsPage() {
-  return <WardsPage />;
+  return <AsBedManagerWards />;
 }

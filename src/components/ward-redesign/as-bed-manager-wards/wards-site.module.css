@@ -1,0 +1,29 @@
+/* All wards as a site bed manager: a heading over its own site and over the other sites. */
+.siteHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: var(--wf-s-2) 0 var(--wf-s-2);
+}
+.siteHead:first-child {
+  margin-top: 0;
+}
+.siteTitle {
+  font-size: var(--wf-fs-15);
+  font-weight: 650;
+  color: var(--wf-ink-1);
+}
+.siteMeta {
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.more {
+  align-self: flex-start;
+  margin-top: var(--wf-s-2);
+}
+.countsOnly {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}

@@ -1,11 +1,12 @@
 "use client";
 
-import { CapacityRedesign } from "@/components/ward-redesign/capacity/capacity-redesign";
+import { AsBedManagerCapacity } from "./capacity-redesign";
 
 /**
- * As site bed manager: the Capacity mock-up as this role sees it. The preview takes the role's desk
- * before drawing (`role` in `screens.ts`), so the page shows only what the role may open.
+ * As site bed manager: Capacity, the desk's home. The preview takes the role's desk before drawing
+ * (`role` in `screens.ts`), and the forked page branches on it: its own site in detail, every other
+ * site as bed counts only (D-80).
  */
 export function AsBedManagerHomePage() {
-  return <CapacityRedesign />;
+  return <AsBedManagerCapacity />;
 }

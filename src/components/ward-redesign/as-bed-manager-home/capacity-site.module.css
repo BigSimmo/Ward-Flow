@@ -1,0 +1,14 @@
+/* The site bed manager's Capacity: the bed map and the other sites' counts share the left column. */
+.mapColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* A site shows only the bed types it holds, so the wide row has as many columns as cards. */
+@container page (min-width: 1100px) {
+  .siteMismatch.siteMismatch {
+    grid-template-columns: repeat(var(--bm-columns, 5), minmax(0, 1fr));
+  }
+}
