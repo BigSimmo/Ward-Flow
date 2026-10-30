@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
@@ -9,11 +9,11 @@ import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-rol
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
-import { howToHref } from "./ward-help-ask";
+import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
-import { DESK_GUIDES } from "./ward-help-guide";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
+import { tasksForDesk } from "./ward-help-task-list";
 import styles from "./ward-help-search.module.css";
 
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
@@ -25,15 +25,24 @@ function roleLabel(role: WardTourRole): string {
   return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
 }
 
-function suggested(role: WardTourRole): readonly HelpSearchResult[] {
-  return DESK_GUIDES[role].jobs.slice(0, 3).map((job, index) => ({
-    key: `guide:${role}:${index}`,
-    group: "Guides",
-    title: job.job,
-    detail: job.how,
-    go: job.go,
-    desks: [role],
-  }));
+/**
+ * Before anything is typed: three of this desk's tasks with a Show me, this screen's first, in the
+ * list's own order (grouping only, never ranking).
+ */
+function suggested(role: WardTourRole, pathname: string, home: string | undefined): readonly HelpSearchResult[] {
+  const tasks = tasksForDesk(role).filter((howTo) => howTo.showMe?.length);
+  const here = (go: string | undefined) => howToHref(go, role, home)?.split("#")[0] === pathname;
+  return [...tasks.filter((howTo) => here(howTo.go)), ...tasks.filter((howTo) => !here(howTo.go))]
+    .slice(0, 3)
+    .map((howTo) => ({
+      key: `howto:${howTo.id}`,
+      group: "Guides",
+      title: howTo.title,
+      detail: howTo.answer,
+      go: howTo.go,
+      desks: howTo.desks === "all" ? undefined : howTo.desks,
+      howToId: howTo.id,
+    }));
 }
 
 /**
@@ -51,6 +60,7 @@ export function WardHelpSearch({
   onNavigate?: () => void;
 }) {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
   const showMeOn = useWardFeatureFlag("help-ask");
@@ -66,7 +76,7 @@ export function WardHelpSearch({
       : answer.kind === "none"
         ? answer.closest
         : answer.kind === "empty"
-          ? suggested(role)
+          ? suggested(role, pathname, home)
           : [];
 
   const layer = useRef<HTMLDivElement>(null);
@@ -192,7 +202,7 @@ export function WardHelpSearch({
         onClick={() => setOpen(true)}
       >
         <Search size={16} aria-hidden="true" />
-        <span>Search Help: guides, screens, words, shortcuts…</span>
+        <span>Search Help, or ask: how do I pull a bed?</span>
       </button>
       {open && typeof document !== "undefined"
         ? createPortal(

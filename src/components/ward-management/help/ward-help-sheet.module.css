@@ -158,38 +158,6 @@
 
 /* ── Your desk ───────────────────────────────────────────────────────────────────────────── */
 
-.desk {
-  display: grid;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.deskCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  min-height: 44px;
-}
-
-.deskText {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-}
-
-.deskText > span {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.deskText > h3 {
-  margin: 0;
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-}
-
 /* ── Buttons and links ───────────────────────────────────────────────────────────────────── */
 
 .primaryButton,
@@ -275,12 +243,15 @@
 
 /* Phone: the full-width pill track the Activity drawer uses, each section a 44px tap. */
 @media (max-width: 48rem) {
+  /* Five sections: on a phone they wrap to two rows (three, then two) instead of scrolling sideways. */
   .views {
+    flex-wrap: wrap;
     padding: 2px;
     border-radius: var(--wf-r-track);
   }
 
   .views > button {
+    flex: 1 1 30%;
     min-height: 44px;
     padding: 0 4px;
     border-radius: var(--wf-r-seg-item);
@@ -480,35 +451,6 @@
   letter-spacing: -0.01em;
 }
 
-.shortcuts > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 48px;
-  padding: 6px var(--wf-s-3);
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  list-style: none;
-  cursor: pointer;
-}
-
-.shortcuts > summary::-webkit-details-marker {
-  display: none;
-}
-
-.shortcuts > summary:hover {
-  background: var(--wf-hover);
-}
-
-.shortcuts[open] > summary {
-  border-bottom: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
-}
-
-.shortcuts[open] > summary .caret {
-  transform: rotate(180deg);
-}
-
 .rowIcon {
   display: grid;
   flex: none;
@@ -526,33 +468,8 @@
   height: 16px;
 }
 
-.keys {
-  display: grid;
-  margin: 0;
-}
-
-.keys > div + div {
-  border-top: 1px solid var(--wf-line);
-}
-
-.key {
-  display: grid;
-  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--wf-s-3);
-  padding: 8px var(--wf-s-3);
-}
-
-.key dt,
-.key dd {
-  margin: 0;
-}
-
-.key dd {
-  color: var(--wf-ink-2);
-}
-
-.key kbd {
+/* A key in the Reference's shortcut list, drawn as a key. */
+.entry kbd {
   display: inline-grid;
   place-items: center;
   height: 20px;
@@ -583,8 +500,7 @@
 .goLink:focus-visible,
 .example:focus-visible,
 .answerTitle:focus-visible,
-.linkRow:focus-visible,
-.shortcuts > summary:focus-visible {
+.linkRow:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
@@ -690,48 +606,6 @@
   }
 }
 
-/* Search first; desk, tour and Reference share a quiet utility row. */
-.utilityRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-.utilityRow .deskCard {
-  gap: var(--wf-s-2);
-}
-.utilityRow .deskText > h3 {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-.tourLink {
-  min-height: 44px;
-  padding: 0 var(--wf-s-1);
-  border-color: transparent;
-  background: transparent;
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-}
-.utilityRow > .reference {
-  border: 0;
-  background: transparent;
-}
-.utilityRow > .reference > summary {
-  padding: var(--wf-s-3) var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-}
-.utilityRow > .reference[open] {
-  grid-column: 1 / -1;
-  border: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-}
-.utilityRow > .reference[open] > summary {
-  padding-inline: var(--wf-s-3);
-}
-.utilityRow:has(> .reference[open]) > .desk {
-  grid-column: 1 / -1;
-}
 .glossaryFilters {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.85fr);
@@ -769,5 +643,96 @@
 @media (width <= 360px) {
   .glossaryFilters {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Redesign (Josh, 30 Oct 2026; #1118 and the Core Pages artifact) ─────────────────────── */
+
+/* Under the title: the desk, and the screen this Help speaks for. */
+.context {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* A folded row's own words, and its quiet count ("3 steps") before the caret. */
+.answerName {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.answerMeta {
+  flex: none;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.linkRow > .answerMeta {
+  margin-left: auto;
+  color: var(--wf-accent-ink, var(--wf-accent-strong));
+  font-weight: 600;
+}
+
+/* A question's answer, folded under it until asked for. */
+.answer {
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+/* Show me and Go to under a desk job. */
+.jobLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--wf-s-3);
+}
+
+button.goLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* The foot of every view: the tour and the shortcuts, side by side, then Reference below. */
+.endRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.endRow > button {
+  flex: 1 1 10rem;
+}
+
+button.linkRow {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 48rem) {
+  .endRow > button,
+  .answerTitle,
+  button.linkRow {
+    min-height: 48px;
+  }
+
+  button.goLink {
+    min-height: 44px;
   }
 }

@@ -377,7 +377,8 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "form",
-          { sel: '[data-testid^="ward-ed-form-expiry-"]' },
+          // The visible expiry chip: the screen-reader text's parent, beside the time drawn as typed.
+          { sel: '[aria-hidden="true"] + [data-testid^="ward-ed-form-expiry-"]', up: 1 },
           "The legal form",
           "The Form column shows the form recorded for each person. In the row's menu, Mark Form 1A received and Record expiry from the form let the receiving ward and transport see it. The time is as typed from the paper form.",
         ),

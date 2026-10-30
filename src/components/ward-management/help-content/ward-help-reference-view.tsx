@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import type { ReactNode } from "react";
 import { StatusGlyph } from "@/components/wf";
 import { ROLE_SCREENS, screenForPath } from "../ward-role-access";
 import { railEntries } from "../shell/ward-rail-entries";
@@ -12,15 +11,7 @@ import type { WardTourRole } from "../help/ward-help-store";
 import { ACCESSIBILITY_HELP, COMMON_QUESTIONS, INTERACTIONS_HELP } from "./ward-help-reference";
 import styles from "../help/ward-help-sheet.module.css";
 
-export function WardHelpReference({
-  role,
-  onClose,
-  children,
-}: {
-  role: WardTourRole;
-  onClose: () => void;
-  children?: ReactNode;
-}) {
+export function WardHelpReference({ role, onClose }: { role: WardTourRole; onClose: () => void }) {
   const roles = [...ROLE_REFERENCE].sort((a, b) => Number(b.id === role) - Number(a.id === role));
   return (
     <details className={styles.reference} data-testid="ward-help-reference">
@@ -134,12 +125,6 @@ export function WardHelpReference({
             ))}
           </div>
         </details>
-        {children ? (
-          <details className={styles.referenceSection}>
-            <summary>Ask a question</summary>
-            {children}
-          </details>
-        ) : null}
       </div>
     </details>
   );

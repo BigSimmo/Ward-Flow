@@ -2,15 +2,20 @@
 
 import { Sheet } from "@/components/wf/sheet";
 
-import { KEYBOARD_SHORTCUTS } from "./ward-help-content";
+import { KEYBOARD_SHORTCUTS, SHORTCUT_GROUPS } from "./ward-help-content";
 import { openWardHelp } from "./ward-help-events";
+import styles from "./ward-shortcuts-sheet.module.css";
 
 /** PROPOSED WORDING (P120): awaiting Josh's approval of the exact words. */
 export const SHORTCUTS_SHEET_TITLE = "Keyboard shortcuts";
 export const SHORTCUTS_SHEET_HINT = "Press ? on any screen to see these again.";
 export const SHORTCUTS_SHEET_HELP_BUTTON = "More in Help";
 
-/** The keyboard shortcuts sheet "?" opens on any screen (P120). Lists the same keys as Help. */
+/**
+ * The keyboard shortcuts sheet "?" opens on any screen (P120), and Help's Keyboard shortcuts button.
+ * Lists the same keys as Help, in three columns (Find, Open, Move around), each key drawn beside
+ * what it does; the columns stack on a narrow window (redesign, #1118).
+ */
 export function WardShortcutsSheet({ onClose }: { onClose: () => void }) {
   return (
     <Sheet
@@ -19,12 +24,14 @@ export function WardShortcutsSheet({ onClose }: { onClose: () => void }) {
       title={SHORTCUTS_SHEET_TITLE}
       description={SHORTCUTS_SHEET_HINT}
       testId="ward-shortcuts-sheet"
+      contentClassName={styles.sheet}
       // The list scrolls on short screens: the body takes keyboard focus and is named by the title.
       bodyTabIndex={0}
       bodyLabel={SHORTCUTS_SHEET_TITLE}
       footer={
         <button
           type="button"
+          className={styles.more}
           onClick={() => {
             onClose();
             openWardHelp("screen");
@@ -35,16 +42,25 @@ export function WardShortcutsSheet({ onClose }: { onClose: () => void }) {
         </button>
       }
     >
-      <dl data-testid="ward-shortcuts-list">
-        {KEYBOARD_SHORTCUTS.map((item) => (
-          <div key={item.keys}>
-            <dt>
-              <kbd>{item.keys}</kbd>
-            </dt>
-            <dd>{item.action}</dd>
-          </div>
+      <div className={styles.columns} data-testid="ward-shortcuts-list">
+        {SHORTCUT_GROUPS.map((group) => (
+          <section key={group} className={styles.column} aria-labelledby={`ward-shortcuts-${group}`}>
+            <h3 id={`ward-shortcuts-${group}`} className={styles.heading}>
+              {group}
+            </h3>
+            <dl className={styles.list}>
+              {KEYBOARD_SHORTCUTS.filter((item) => item.group === group).map((item) => (
+                <div key={item.keys} className={styles.row}>
+                  <dt>
+                    <kbd className={styles.key}>{item.keys}</kbd>
+                  </dt>
+                  <dd>{item.action}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
         ))}
-      </dl>
+      </div>
     </Sheet>
   );
 }

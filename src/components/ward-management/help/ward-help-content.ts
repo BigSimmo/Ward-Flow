@@ -651,13 +651,24 @@ export function filterGlossary(
  * `ward-rail.tsx`), with the names the screens use. Every one but Ctrl+K and Esc is a single-key
  * shortcut, which Settings can turn off.
  */
-export const KEYBOARD_SHORTCUTS: readonly { keys: string; action: string }[] = [
-  { keys: "/", action: "Search, from the box in the header. On Settings it finds a setting." },
-  { keys: "Ctrl+K", action: "Search, even with single-key shortcuts off. Cmd+K on a Mac." },
-  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks." },
-  { keys: "Shift+A", action: "Open Activity." },
-  { keys: "Shift+R", action: "Start a new referral." },
-  { keys: "[", action: "Fold the side menu to icons, or open it again." },
-  { keys: "Esc", action: "Close what is open, or step back." },
-  { keys: "?", action: "Show these shortcuts. On Handover and Referrals, list that page's own keys." },
+/** The columns the shortcuts sheet sorts the keys into (redesign, #1118). */
+export const SHORTCUT_GROUPS = ["Find", "Open", "Move around"] as const;
+
+export const KEYBOARD_SHORTCUTS: readonly {
+  keys: string;
+  action: string;
+  group: (typeof SHORTCUT_GROUPS)[number];
+}[] = [
+  { keys: "/", action: "Search, from the box in the header. On Settings it finds a setting.", group: "Find" },
+  { keys: "Ctrl+K", action: "Search, even with single-key shortcuts off. Cmd+K on a Mac.", group: "Find" },
+  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks.", group: "Open" },
+  { keys: "Shift+A", action: "Open Activity.", group: "Open" },
+  { keys: "Shift+R", action: "Start a new referral.", group: "Open" },
+  { keys: "[", action: "Fold the side menu to icons, or open it again.", group: "Move around" },
+  { keys: "Esc", action: "Close what is open, or step back.", group: "Move around" },
+  {
+    keys: "?",
+    action: "Show these shortcuts. On Handover and Referrals, list that page's own keys.",
+    group: "Open",
+  },
 ];

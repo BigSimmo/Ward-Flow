@@ -4,14 +4,15 @@
  */
 const OPEN_HELP_EVENT = "ward-flow-open-help";
 
-export type HelpView = "desk" | "screen" | "glossary" | "new" | "tour";
+/** "tasks" is How do I…, the desk's common tasks, each with Show me (Josh, 30 Oct 2026). */
+export type HelpView = "tasks" | "desk" | "screen" | "glossary" | "new" | "tour";
 
-type OpenHelpDetail = { view?: HelpView; ask?: string; showMe?: string };
+type OpenHelpDetail = { view?: HelpView; ask?: string; showMe?: string; task?: string };
 
-/** Opens the Help sheet at `view`, from anywhere in the shell. */
-export function openWardHelp(view: HelpView = "screen"): void {
+/** Opens the Help sheet at `view`, from anywhere in the shell; `task` opens that how-to in How do I…. */
+export function openWardHelp(view: HelpView = "screen", task?: string): void {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent<OpenHelpDetail>(OPEN_HELP_EVENT, { detail: { view } }));
+  window.dispatchEvent(new CustomEvent<OpenHelpDetail>(OPEN_HELP_EVENT, { detail: { view, task } }));
 }
 
 /**
@@ -38,7 +39,9 @@ export function looksLikeHelpQuestion(query: string): boolean {
 }
 
 export type HelpRequest =
-  { kind: "view"; view: HelpView } | { kind: "ask"; question: string } | { kind: "show-me"; id: string };
+  | { kind: "view"; view: HelpView; task?: string }
+  | { kind: "ask"; question: string }
+  | { kind: "show-me"; id: string };
 
 export function subscribeWardHelp(onOpen: (request: HelpRequest) => void): () => void {
   function handler(event: Event) {
@@ -47,7 +50,7 @@ export function subscribeWardHelp(onOpen: (request: HelpRequest) => void): () =>
     const detail = (event as CustomEvent<OpenHelpDetail>).detail ?? {};
     if (detail.showMe) onOpen({ kind: "show-me", id: detail.showMe });
     else if (detail.ask !== undefined) onOpen({ kind: "ask", question: detail.ask });
-    else onOpen({ kind: "view", view: detail.view ?? "screen" });
+    else onOpen({ kind: "view", view: detail.view ?? "screen", task: detail.task });
   }
   window.addEventListener(OPEN_HELP_EVENT, handler);
   return () => window.removeEventListener(OPEN_HELP_EVENT, handler);
