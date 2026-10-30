@@ -1,0 +1,35 @@
+/* Discharges, redesigned: one action a row, and the barriers beside the list. */
+.actionHead {
+  width: 1%;
+}
+.actionCell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+  vertical-align: middle;
+}
+
+.barrierSide {
+  display: none;
+  align-self: start;
+  min-width: 0;
+}
+/* Wide screens: the list and the barriers side by side, so blocker counts stay in sight. */
+@media (min-width: 80rem) {
+  .workspace.workspace:not([data-detail-open]) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
+    gap: var(--wf-s-4);
+    align-items: start;
+  }
+  .barrierSide {
+    display: block;
+  }
+}
+
+/* The line under the title wraps on a phone rather than running off the edge. */
+.meta.meta {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}

@@ -68,6 +68,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** table cells wrap instead of ending in "…" ("Sent to 1 place", "RPH Community"), and the highlight chips wrap instead of running off the edge.',
     "**Tablet:** today's tablet table already drops the Heading to column and reads well, so it is unchanged.",
   ],
+  discharges: [
+    "**Built from a copy of today's Discharges page**, so the five filters, Now and History, Copy counts, Print list, Blocked first order and the release panel all work as now.",
+    '**The totals (point 20, my pick for you to confirm):** the headline counts the rows listed, "59 to work now", with "of 207 open · 148 due in 2+ days, not listed" beside it. From the code: 207 is every release not yet gone; 59 are those due by tomorrow, past their date or held up; the filter\'s 63 is those 59 plus 4 discharged in the last day.',
+    "**New:** each row leads with the person, then the ward and service, and has one action named for what it needs (Chase, Confirm date, Open). Each opens the release panel, where today's real actions are recorded.",
+    "**New:** on wide screens the blocker counts sit beside the list; choosing one lights its rows. The Barriers tab still gives the full table.",
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",
