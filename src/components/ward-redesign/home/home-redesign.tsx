@@ -1,9 +1,10 @@
 "use client";
 
 import { ChevronRight, Copy, MoreHorizontal } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
   alertActionFor,
@@ -19,8 +20,7 @@ import type { QueueEntry, QueueHandlers } from "@/components/ward-management/ale
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
-import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { openReferralSheet, openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -74,13 +74,13 @@ import styles from "@/components/ward-management/coordinator/home.module.css";
 import { HomeEdPressureRedesign as HomeEdPressure } from "./home-ed-pressure-redesign";
 import { useHomeLayout } from "@/components/ward-management/coordinator/home-layout";
 import { BedsFitTable, PlacementNext } from "./home-parts";
+import { HomeReferralActionsSlot } from "./home-preview-slot";
 import redesign from "./home-redesign.module.css";
 import { ChosenAlertCard, HomeReleaseSheet, MyListCard } from "@/components/ward-management/coordinator/home-list-lazy";
 import list from "@/components/ward-management/coordinator/home-list.module.css";
 import { PriorityQueue, type QueueHighlight } from "@/components/ward-management/coordinator/priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel-lazy";
 import shortlistStyles from "@/components/ward-management/coordinator/shortlist-panel.module.css";
-import { SinceLastLookPanel } from "@/components/ward-management/coordinator/since-last-look-band-lazy";
 import {
   SinceLastLookSheetBody,
   sinceHandoverText,
@@ -127,8 +127,13 @@ function subscribeHomeEdFilter(onChange: () => void) {
 }
 
 const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
-/** Activity lines shown under "Since you looked". */
-const SINCE_TIMELINE_LINES = 8;
+/*
+ * Redesign: the Since you looked band, forked so it no longer repeats the Activity feed. Loaded only
+ * when its hero count is opened, as today's band is (since-last-look-band-lazy.tsx).
+ */
+const HomeSinceBand = dynamic(() => import("./home-since-band").then((m) => m.HomeSinceBand), {
+  loading: () => null,
+});
 const HOME_VIEWS = ["needs", "queue"] as const;
 const NEEDS_FOCI = ["all", "act", "decide"] as const;
 const DELAYS_HREF = "/ward-flow/waiting";
@@ -143,6 +148,8 @@ const DESKTOP_QUEUE_ROWS = 10;
 
 /** Alerts whose work happens in Placement, so their row button opens it beside the list (Home v7). */
 const IN_PLACE_KINDS = new Set(["hold", "declines", "nobed", "unsuitable"]);
+/** Of those, the ones whose work is finding a bed: Placement's "Oldest to place" names the first. */
+const FIND_A_BED_KINDS = new Set(["declines", "nobed", "unsuitable"]);
 
 /** A bed count older than this is named in the hero's Checking foot (v10 Home chapter). */
 const BED_COUNT_FRESH_MINUTES = CLINICAL_VALUES.bedCountFresh.value;
@@ -195,7 +202,6 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
     admissions,
     rejections,
     referrals,
-    refreshRequests,
     dispatch,
     focusMovementId,
     setFocusMovementId,
@@ -215,7 +221,6 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
     "admissions",
     "rejections",
     "referrals",
-    "refreshRequests",
     "dispatch",
     "focusMovementId",
     "setFocusMovementId",
@@ -272,7 +277,12 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
   const setSelectedEdId = writeHomeEdFilter;
   // The shortlist's other possible subject. Switching the queue between Patients and Referrals
   // never touches either selection.
-  const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(undefined);
+  // Preview only: a state mock-up's extra referral actions (Not wired). With them, Home opens on the
+  // oldest referral to decide, so its Referral placement panel shows them.
+  const referralActions = use(HomeReferralActionsSlot);
+  const [selectedReferralId, setSelectedReferralId] = useState<string | undefined>(() =>
+    referralActions ? referralQueueOrder(referrals)[0]?.id : undefined,
+  );
   const queueFocusRef = useRef<HTMLDivElement>(null);
   const [exceptionsOpen, setExceptionsOpen] = useState(false);
   // Desktop: one strip under the hero, opened from its Exceptions, Declines or New events count.
@@ -598,41 +608,6 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
   const lastLook = useSinceLastLook(lastLookWorld, now);
   const newEvents = sinceLastLookCount(lastLook.changes);
 
-  // The same timestamped projection the bar's Activity drawer reads; Home shows its newest lines.
-  const recentActivity = useMemo(() => {
-    const activity = deriveCommandActivity({
-      movements,
-      patients,
-      units,
-      referrals,
-      rejections,
-      bedReleases,
-      leaveBeds,
-      admissions,
-      refreshRequests,
-      now,
-      sites: network.sites,
-      thresholds,
-    });
-    return activity.content.changes.slice(0, SINCE_TIMELINE_LINES).map((change) => ({
-      ...change,
-      tone: activity.tones[change.id] ?? "info",
-    }));
-  }, [
-    movements,
-    patients,
-    units,
-    referrals,
-    rejections,
-    bedReleases,
-    leaveBeds,
-    admissions,
-    refreshRequests,
-    now,
-    thresholds,
-    network,
-  ]);
-
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(
     () =>
@@ -776,7 +751,10 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
           {/* In the Placement sheet (phone, tablet portrait) the alert's reason leads, as it does on desktop. */}
           {sheetPlacement && chosenAlert ? <ChosenAlertCard entry={chosenAlert} now={now} /> : null}
           {selectedReferral ? (
-            <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
+            <>
+              <ReferralPlacementPanel referral={selectedReferral} now={liveNow} />
+              {referralActions ? <div className={redesign.referralActions}>{referralActions}</div> : null}
+            </>
           ) : (
             <ShortlistPanel
               movement={deferredPanelMovement}
@@ -990,12 +968,11 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
               {heroPanel === "registers" ? (
                 renderRegisters("band")
               ) : (
-                <SinceLastLookPanel
+                <HomeSinceBand
                   changes={lastLook.changes}
                   now={now}
-                  activity={recentActivity}
                   onMarkSeen={lastLook.markSeen}
-                  placement="band"
+                  onOpenActivity={() => openWardDrawer("activity")}
                 />
               )}
             </div>
@@ -1135,7 +1112,14 @@ export function HomeRedesign({ openOnLoad }: { openOnLoad?: string }) {
               {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
               {chosenAlert && !chosenAlert.movement ? null : placementNode}
               {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
-                <PlacementNext next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
+                <PlacementNext
+                  // Redesign: only an alert whose work is finding a bed ("Find a bed"). A pull that
+                  // expired is released from its own row, so it is not "to place".
+                  next={actEntries.find(
+                    (entry) => entry.movement && FIND_A_BED_KINDS.has(alertKindOf(entry.item.id) ?? ""),
+                  )}
+                  onOpen={alertHandlers.onSelect}
+                />
               ) : null}
             </div>
           </div>

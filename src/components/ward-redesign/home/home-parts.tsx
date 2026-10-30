@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronRight, MousePointerClick } from "lucide-react";
+import { BedDouble, ChevronRight } from "lucide-react";
 
 import { Button, Card, CardHead, StatusGlyph } from "@/components/wf";
 import type { QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
@@ -103,31 +103,39 @@ export function BedsFitTable({ now, bedsReady }: { now: Instant; bedsReady: numb
 
 /**
  * Placement before anyone is chosen. Josh's Home v7 rule stands (22 Oct 2026): nothing is
- * pre-selected, so a name is checked before anything is done. The card now names who is next on
- * the list, with one button to open them, so the column says something useful on arrival.
+ * pre-selected, so a name is checked before anything is done. The card names the oldest alert whose
+ * work is finding a bed, with one button to open that person.
+ *
+ * Redesign polish: the head and the body said the same sentence ("opens for the person you choose"),
+ * so the head keeps it and the body is the next person only, on the card itself rather than in a
+ * second box inside it. With no such alert the body is one short line.
  */
 export function PlacementNext({ next, onOpen }: { next: QueueEntry | undefined; onOpen: (entry: QueueEntry) => void }) {
   return (
     <Card data-testid="home-placement-prompt" aria-labelledby="home-placement-title">
       <CardHead id="home-placement-title" title="Placement" meta="opens for the person you choose" />
-      <div className={styles.promptBody}>
-        <MousePointerClick size={20} aria-hidden="true" className={styles.promptIcon} />
-        <div className={styles.promptMain}>
-          <p>Choose a patient, alert or referral from the list. Placement opens for that person only.</p>
-          {next ? (
-            <div className={styles.nextUp}>
-              <span className={styles.kicker}>Oldest alert to place</span>
-              <b>{next.subject.displayName}</b>
-              <span className={styles.muted}>
-                {next.item.title} · {next.subject.from}
-              </span>
-              <Button size="sm" variant="sec" onClick={() => onOpen(next)}>
-                Open {next.subject.displayName}
-              </Button>
-            </div>
-          ) : null}
+      {next ? (
+        <div className={styles.nextUp}>
+          <div className={styles.nextText}>
+            <span className={styles.kicker}>Oldest to place</span>
+            <b>{next.subject.displayName}</b>
+            <span className={styles.muted}>
+              {next.item.title} · {next.subject.from}
+            </span>
+          </div>
+          <Button
+            size="sm"
+            variant="sec"
+            className={styles.nextOpen}
+            onClick={() => onOpen(next)}
+            aria-label={`Open ${next.subject.displayName}`}
+          >
+            Open
+          </Button>
         </div>
-      </div>
+      ) : (
+        <p className={styles.promptBody}>Choose a patient, alert or referral from the list.</p>
+      )}
     </Card>
   );
 }

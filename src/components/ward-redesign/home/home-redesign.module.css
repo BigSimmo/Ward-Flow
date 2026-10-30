@@ -89,44 +89,69 @@
 }
 
 .promptBody {
-  display: flex;
-  gap: var(--wf-s-3);
+  margin: 0;
   padding: var(--wf-s-3) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
   color: var(--wf-ink-2);
 }
-.promptIcon {
-  flex: none;
-  color: var(--wf-ink-3);
-}
-.promptMain {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-.promptMain p {
-  margin: 0;
-}
+/* The next person to place, on the card itself: their name and alert, Open at the right. */
 .nextUp {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface-2);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
   color: var(--wf-ink-1);
 }
-.nextUp button {
-  margin-top: var(--wf-s-2);
+.nextOpen {
+  flex: none;
+}
+.nextText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 /* The disclosure footer keeps the page's side margin, as on every other page. */
 .footer.footer {
   margin-inline: var(--wf-s-4);
   width: auto;
+}
+
+/* Preview only: a state mock-up's extra referral actions, under the referral's own Decide. */
+.referralActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* A link-styled button (Since you looked opens Activity from its foot). */
+button.headLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.headLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-sm);
+}
+
+/* Since you looked: the change lines run across the band instead of down half of it. */
+.sinceLines.sinceLines {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-6);
+}
+.sinceFoot.sinceFoot {
+  justify-content: space-between;
 }

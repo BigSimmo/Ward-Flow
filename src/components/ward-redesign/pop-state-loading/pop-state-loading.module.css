@@ -1,10 +1,16 @@
 /* Preview only: the shared in-shell loading placeholder (src/app/ward-flow/loading.tsx), shaped like
-   Home so the page lands where the blocks were. Tokens only, no new colour. */
+   Home, Capacity or Waiting so the page lands where the blocks were. Tokens only, no new colour. */
 .main {
   display: grid;
+  grid-template-rows: auto auto 1fr;
   gap: var(--wf-s-3);
   padding: var(--wf-s-4);
   min-width: 0;
+}
+
+/* The status and blocks sit at the top; the prototype footer keeps to the foot. */
+.main > :last-child {
+  align-self: end;
 }
 
 .status {
@@ -14,6 +20,12 @@
   margin: 0;
   color: var(--wf-ink-2);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.blocks {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
 }
 
 .block {
@@ -64,6 +76,53 @@
   min-height: 8rem;
 }
 
+/* Capacity: five mismatch cards across, then the full-width bed forecast. */
+.five {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.mismatch {
+  min-height: 12rem;
+}
+
+.forecast {
+  min-height: 20rem;
+}
+
+/* Waiting: a shorter band, the daily check line, four blocker cards, the list and its side column. */
+.bandShort {
+  min-height: 5.5rem;
+}
+
+.line {
+  min-height: 3.25rem;
+}
+
+.four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.blocker {
+  min-height: 6rem;
+}
+
+.wide {
+  grid-template-columns: minmax(0, 2.6fr) minmax(0, 1fr);
+}
+
+.table {
+  min-height: 26rem;
+}
+
+/* Every other page: today's plain placeholder. */
+.plain {
+  min-height: 6rem;
+}
+
+.plainTall {
+  min-height: 14rem;
+}
+
 @media (max-width: 48rem) {
   .main {
     padding: var(--wf-s-3);
@@ -76,6 +135,21 @@
   }
   .strip > :nth-child(n + 4) {
     display: none;
+  }
+  /* Capacity and Waiting cards stack on a phone, so two stand in for the column. */
+  .five,
+  .four {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .five > :nth-child(n + 3),
+  .four > :nth-child(n + 3) {
+    display: none;
+  }
+  .mismatch {
+    min-height: 8rem;
+  }
+  .forecast {
+    min-height: 14rem;
   }
   .columns {
     grid-template-columns: minmax(0, 1fr);

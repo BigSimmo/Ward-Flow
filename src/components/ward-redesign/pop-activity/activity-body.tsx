@@ -4,15 +4,10 @@
 // out of `ward-bar.tsx` to keep it under the line cap. The drawer's state stays in `WardBar`.
 import Link from "next/link";
 import { ChevronDown, Search } from "lucide-react";
-import { startTransition } from "react";
+import { startTransition, useState, type ReactNode } from "react";
 
 import { StatusGlyph } from "@/components/wf";
-import {
-  formatInstant,
-  formatInstantWithDay,
-  splitDuration,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { HealthService, Notice } from "@/components/ward-management/ward-model";
 
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -40,7 +35,6 @@ export function ActivityBody({
   setActivityPart,
   shownActivity,
   unreadNoticeCount,
-  lastActivityAt,
   now,
   activityQuery,
   setActivityQuery,
@@ -68,7 +62,6 @@ export function ActivityBody({
   setActivityPart: (part: ActivityPart) => void;
   shownActivity: WardActivityContent;
   unreadNoticeCount: number;
-  lastActivityAt: Instant | undefined;
   now: Instant;
   activityQuery: string;
   setActivityQuery: (query: string) => void;
@@ -98,6 +91,58 @@ export function ActivityBody({
   "use no memo";
   // B3 P170: a row links to its record only where this desk may open it.
   const canOpenHref = useCanOpenHref();
+  // Redesign: notices have their own tab beside Events (larger layouts). The phone keeps one list.
+  const [noticesTab, setNoticesTab] = useState(false);
+  const showEvents = isPhone || (activityPart === "activity" && !noticesTab);
+  const showNotices = !isPhone && activityPart === "activity" && noticesTab;
+  const totalEvents = shownActivity?.changes.length ?? 0;
+  const narrowed = activityQuery.trim() !== "" || activityCategoryFilter !== "all";
+  const noticesCard: ReactNode =
+    scopedNotices.length > 0 ? (
+      <div className={styles.card}>
+        {/* Item 48, Q2: "counts show unread only" — the heading counts unread notices, never
+              `scopedNotices.length`, even though read notices stay in the list below. */}
+        <div className={styles.cardHead}>
+          <p className={styles.activityHead}>
+            Notices <span>· {unreadNoticeCount} unread</span>
+          </p>
+          <button
+            type="button"
+            className={styles.switchBtn}
+            aria-pressed={unreadOnly}
+            onClick={() => setUnreadOnly(!unreadOnly)}
+          >
+            Unread only
+            <span className={styles.switchTrack} aria-hidden="true" />
+          </button>
+        </div>
+        {visibleNotices.length === 0 ? <p className={styles.cardEmpty}>No notices match these filters.</p> : null}
+        <ol className={styles.activityFeed} aria-label="Notices">
+          {visibleNotices.map((notice) => {
+            const isRead = notice.readAt !== undefined;
+            return (
+              <li key={notice.id} className={styles.noticeRow} data-tone="info" data-notice-read={isRead}>
+                <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
+                <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
+                <div className={styles.noticeContent}>
+                  <span>{noticeText(notice.sentence)}</span>
+                  {/* No automatic read on opening the drawer — this is the only place
+                        `MARK_NOTICE_READ` is dispatched from, and only a person's own click
+                        reaches it (item 48, Q2, owner answer 48). */}
+                  {isRead ? (
+                    <span className={styles.noticeReadLabel}>Read</span>
+                  ) : (
+                    <button type="button" className={styles.noticeMarkRead} onClick={() => markNoticeRead(notice.id)}>
+                      Mark as read
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    ) : null;
   return (
     <>
       {/* Phone (v10 Activity sheet): a plain list. The tally, search and category chips stay on
@@ -108,12 +153,29 @@ export function ActivityBody({
             <button
               type="button"
               className={styles.segBtn}
-              aria-pressed={activityPart === "activity"}
+              aria-pressed={showEvents}
               aria-controls="ward-bar-activity-events"
-              onClick={() => setActivityPart("activity")}
+              onClick={() => {
+                setNoticesTab(false);
+                setActivityPart("activity");
+              }}
             >
-              Activity
-              <span>{shownActivity?.changes.length ?? 0}</span>
+              Events
+              <span>{totalEvents}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.segBtn}
+              aria-pressed={showNotices}
+              aria-controls="pop-activity-notices"
+              aria-label={`Notices, ${unreadNoticeCount} unread`}
+              onClick={() => {
+                setNoticesTab(true);
+                setActivityPart("activity");
+              }}
+            >
+              Notices
+              <span>{unreadNoticeCount}</span>
             </button>
             <button
               type="button"
@@ -129,121 +191,64 @@ export function ActivityBody({
         </div>
       )}
 
-      {activityPart === "activity" && !isPhone ? (
+      {activityPart === "activity" && !isPhone && !(noticesTab && scopedNotices.length === 0) ? (
         <div className={styles.activityToolbar}>
-          <div className={styles.drawerSummary}>
-            <div>
-              <strong>{shownActivity?.changes.length ?? 0}</strong>
-              <span>Recorded events</span>
+          {/* Redesign: one search box serves both tabs (as today), named for the tab it is on; with
+              no notice to search, the Notices tab has none. */}
+          {noticesTab && scopedNotices.length === 0 ? null : (
+            <label className={styles.drawerSearch}>
+              <Search aria-hidden="true" strokeWidth={1.75} />
+              <input
+                aria-label={noticesTab ? "Search notices" : "Search events"}
+                placeholder={noticesTab ? "Search notices" : "Search events"}
+                value={activityQuery}
+                onChange={(event) => setActivityQuery(event.target.value)}
+              />
+            </label>
+          )}
+          {noticesTab ? null : (
+            <div
+              className={styles.filterChipsTrack}
+              role="group"
+              aria-label="Filter events by category"
+              data-testid="ward-bar-activity-category-filters"
+            >
+              {ACTIVITY_CATEGORY_CHIPS.map((chip) => (
+                <button
+                  key={chip.id}
+                  type="button"
+                  className={styles.filterChip}
+                  aria-pressed={activityCategoryFilter === chip.id}
+                  data-testid={`ward-bar-activity-filter-${chip.id}`}
+                  onClick={() => startTransition(() => setActivityCategoryFilter(chip.id))}
+                >
+                  {chip.label}
+                  <span className={styles.chipCount}>{activityCategoryCounts[chip.id]}</span>
+                </button>
+              ))}
             </div>
-            <div>
-              <strong>{unreadNoticeCount}</strong>
-              <span>Unread notices</span>
-            </div>
-            {lastActivityAt === undefined ? (
-              <div>
-                <strong>{formatInstant(now)}</strong>
-                <span>Demo time</span>
-              </div>
-            ) : (
-              <div>
-                <strong>{formatInstantWithDay(lastActivityAt, now)}</strong>
-                <span>Last event</span>
-              </div>
-            )}
-          </div>
-          <label className={styles.drawerSearch}>
-            <Search aria-hidden="true" strokeWidth={1.75} />
-            <input
-              aria-label="Search activity"
-              placeholder="Search events and notices"
-              value={activityQuery}
-              onChange={(event) => setActivityQuery(event.target.value)}
-            />
-          </label>
-          <div
-            className={styles.filterChipsTrack}
-            role="group"
-            aria-label="Filter events by category"
-            data-testid="ward-bar-activity-category-filters"
-          >
-            {ACTIVITY_CATEGORY_CHIPS.map((chip) => (
-              <button
-                key={chip.id}
-                type="button"
-                className={styles.filterChip}
-                aria-pressed={activityCategoryFilter === chip.id}
-                data-testid={`ward-bar-activity-filter-${chip.id}`}
-                onClick={() => startTransition(() => setActivityCategoryFilter(chip.id))}
-              >
-                {chip.label}
-                <span className={styles.chipCount}>{activityCategoryCounts[chip.id]}</span>
-              </button>
-            ))}
-          </div>
+          )}
         </div>
       ) : null}
 
-      <section
-        id="ward-bar-activity-events"
-        className={styles.activitySection}
-        hidden={!isPhone && activityPart !== "activity"}
-      >
-        {scopedNotices.length > 0 ? (
-          <div className={styles.card}>
-            {/* Item 48, Q2: "counts show unread only" — the heading counts unread notices, never
-                  `scopedNotices.length`, even though read notices stay in the list below. */}
-            <div className={styles.cardHead}>
-              <p className={styles.activityHead}>
-                Notices <span>· {unreadNoticeCount} unread</span>
-              </p>
-              <button
-                type="button"
-                className={styles.switchBtn}
-                aria-pressed={unreadOnly}
-                onClick={() => setUnreadOnly(!unreadOnly)}
-              >
-                Unread only
-                <span className={styles.switchTrack} aria-hidden="true" />
-              </button>
-            </div>
-            {visibleNotices.length === 0 ? <p className={styles.cardEmpty}>No notices match these filters.</p> : null}
-            <ol className={styles.activityFeed} aria-label="Notices">
-              {visibleNotices.map((notice) => {
-                const isRead = notice.readAt !== undefined;
-                return (
-                  <li key={notice.id} className={styles.noticeRow} data-tone="info" data-notice-read={isRead}>
-                    <time className={styles.feedTime}>{formatInstantWithDay(notice.raisedAt, now)}</time>
-                    <StatusGlyph tone={isRead ? "neutral" : "info"} size={8} className={styles.feedGlyph} />
-                    <div className={styles.noticeContent}>
-                      <span>{noticeText(notice.sentence)}</span>
-                      {/* No automatic read on opening the drawer — this is the only place
-                            `MARK_NOTICE_READ` is dispatched from, and only a person's own click
-                            reaches it (item 48, Q2, owner answer 48). */}
-                      {isRead ? (
-                        <span className={styles.noticeReadLabel}>Read</span>
-                      ) : (
-                        <button
-                          type="button"
-                          className={styles.noticeMarkRead}
-                          onClick={() => markNoticeRead(notice.id)}
-                        >
-                          Mark as read
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-        ) : null}
+      <section id="ward-bar-activity-events" className={styles.activitySection} hidden={!showEvents}>
+        {isPhone ? noticesCard : null}
         <div className={styles.card}>
-          <div className={`${styles.cardHead} ${styles.changesHead}`}>
-            <p className={styles.activityHead}>
-              Recent events <span className={styles.countPill}>{filteredActivityChanges.length}</span>
-            </p>
-          </div>
+          {/* Redesign: on the larger layouts the Events tab and the chosen chip carry the count, so
+              the head shows only when a search or chip narrows the list. The phone keeps it. */}
+          {isPhone || narrowed ? (
+            <div className={`${styles.cardHead} ${styles.changesHead}`}>
+              <p className={styles.activityHead}>
+                {isPhone ? (
+                  <>
+                    Recent events <span className={styles.countPill}>{filteredActivityChanges.length}</span>
+                  </>
+                ) : (
+                  `Showing ${filteredActivityChanges.length} of ${totalEvents} events`
+                )}
+              </p>
+            </div>
+          ) : null}
           {!shownActivity && scopedNotices.length === 0 ? (
             <p className={styles.cardEmpty}>{service ? `No event today in ${service}.` : "No event today."}</p>
           ) : !shownActivity ? null : shownActivity.changes.length === 0 ? (
@@ -312,18 +317,9 @@ export function ActivityBody({
             </ol>
           )}
         </div>
-        {!isPhone && ((shownActivity && shownActivity.changes.length > 0) || publishedChecks.length > 0) ? (
+        {/* Redesign: the tone key is gone, since every row already names its tone in words. */}
+        {!isPhone && publishedChecks.length > 0 ? (
           <div className={styles.card}>
-            {shownActivity && shownActivity.changes.length > 0 ? (
-              <p className={styles.activityKey}>
-                {(["danger", "warning", "info"] as const).map((tone) => (
-                  <span key={tone}>
-                    <StatusGlyph tone={ACTIVITY_GLYPH[tone]} size={8} />
-                    {ACTIVITY_TONE_WORD[tone]}
-                  </span>
-                ))}
-              </p>
-            ) : null}
             {publishedChecks.length > 0 ? (
               <details className={styles.figureChecks} data-testid="ward-bar-figure-checks">
                 <summary>
@@ -345,6 +341,14 @@ export function ActivityBody({
             ) : null}
           </div>
         ) : null}
+      </section>
+
+      <section id="pop-activity-notices" className={styles.activitySection} hidden={!showNotices}>
+        {noticesCard ?? (
+          <div className={styles.card}>
+            <p className={styles.cardEmpty}>{service ? `No notices today in ${service}.` : "No notices today."}</p>
+          </div>
+        )}
       </section>
 
       <section

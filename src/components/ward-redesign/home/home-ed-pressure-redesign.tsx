@@ -68,16 +68,15 @@ export function HomeEdPressureRedesign({ now, movements, selectedEdId, onSelectE
           const typedForms = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? []).filter(
             (movement) => movement.legalForm !== undefined && currentLegalDueAt(movement) !== undefined,
           ).length;
-          const deadline: { tone: WfTone; text: string; spoken: string } =
+          const deadline: { text: string; spoken: string } =
             typedForms > 0
               ? {
-                  tone: "neutral",
                   text: `${typedForms} form time${typedForms === 1 ? "" : "s"} typed`,
                   spoken: `${typedForms} legal form${typedForms === 1 ? "" : "s"} with a typed end time, shown as typed on Legal forms`,
                 }
               : row.waiting > 0
-                ? { tone: "neutral", text: "No form times", spoken: "No form time typed" }
-                : { tone: "neutral", text: "No form times", spoken: "No patients waiting" };
+                ? { text: "No form times", spoken: "No form time typed" }
+                : { text: "", spoken: "No patients waiting" };
 
           const longestTone: WfTone | null = edLongestWaitTone(
             row.waiting,
@@ -87,11 +86,18 @@ export function HomeEdPressureRedesign({ now, movements, selectedEdId, onSelectE
 
           const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
           const shownService = serviceAcronym && !isPhone ? ` ${serviceAcronym}` : "";
-          const visibleSummary = `${row.ed.siteCode}${shownService}, ${row.waiting} waiting, ${waitText}, ${deadline.text}`;
+          const visibleSummary = [
+            `${row.ed.siteCode}${shownService}`,
+            `${row.waiting} waiting`,
+            waitText,
+            deadline.text,
+          ]
+            .filter(Boolean)
+            .join(", ");
           const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) spoken.push("no patients waiting");
           else spoken.push(`longest ${splitDuration(row.longestWaitMinutes)}`);
-          spoken.push(deadline.spoken);
+          if (row.waiting > 0) spoken.push(deadline.spoken);
 
           return (
             <li key={row.ed.id} className={styles.edCell}>
@@ -135,10 +141,14 @@ export function HomeEdPressureRedesign({ now, movements, selectedEdId, onSelectE
                     <span className={styles.edWord}>No wait</span>
                   )}
                 </span>{" "}
-                <span className={`${styles.edLine} ${styles.edDeadline}`} aria-hidden="true">
-                  <StatusGlyph tone={deadline.tone} size={9} />
-                  <span className={styles.edWord}>{deadline.text}</span>
-                </span>
+                {/* Redesign: the form line's glyph was always the neutral ring, so it carried no
+                    meaning and pushed "2 form times typed" onto a third line; it goes. A department
+                    with nobody waiting has no forms to count, so the line goes there too. */}
+                {row.waiting > 0 ? (
+                  <span className={`${styles.edLine} ${styles.edDeadline}`} aria-hidden="true">
+                    <span className={styles.edWord}>{deadline.text}</span>
+                  </span>
+                ) : null}
               </button>
             </li>
           );

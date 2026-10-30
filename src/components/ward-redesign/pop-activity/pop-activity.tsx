@@ -7,7 +7,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
@@ -117,11 +117,12 @@ export function PopActivity({ page }: { page: ReactNode }) {
             </p>
           ) : (
             <p className={barStyles.activityFreshness} data-tone={activityTone}>
+              {/* Redesign: the demo time is the header clock's, so the line says only what the list is. */}
               <span>
-                Synthetic state · demo time {formatInstant(now)}
+                Synthetic events · newest first
                 {activity.lastActivityAt === undefined
                   ? " · no recorded event"
-                  : ` · last event ${formatInstantWithDay(activity.lastActivityAt, now)}`}
+                  : ` · last at ${formatInstantWithDay(activity.lastActivityAt, now)}`}
               </span>
             </p>
           )
@@ -134,7 +135,8 @@ export function PopActivity({ page }: { page: ReactNode }) {
         bodyClassName={barStyles.drawerBody}
         footer={
           <div className={`${barStyles.drawerFoot} ${local.foot}`}>
-            <span>Synthetic events · newest first</span>
+            {/* Redesign: "Synthetic events · newest first" moved up into the line under the title. */}
+            <span aria-hidden="true" />
             <Link href={WARD_ALERTS_HREF} className={local.footLink} onClick={() => setOpen(false)}>
               Alerts history
               <ChevronRight size={14} aria-hidden="true" />
@@ -149,7 +151,6 @@ export function PopActivity({ page }: { page: ReactNode }) {
           setActivityPart={activity.setActivityPart}
           shownActivity={activity.shownActivity}
           unreadNoticeCount={activity.unreadNoticeCount}
-          lastActivityAt={activity.lastActivityAt}
           now={now}
           activityQuery={activity.activityQuery}
           setActivityQuery={activity.setActivityQuery}
