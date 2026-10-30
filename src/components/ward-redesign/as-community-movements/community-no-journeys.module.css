@@ -1,0 +1,37 @@
+/* Role view (community clinician): the no-journeys page's spacing, its words and its two links. */
+.body {
+  display: grid;
+  gap: var(--wf-s-4);
+}
+
+.empty {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+}
+
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.meta {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+}
+
+@media (max-width: 40rem) {
+  .actions > * {
+    min-height: 48px;
+  }
+}
