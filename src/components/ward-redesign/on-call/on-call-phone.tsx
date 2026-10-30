@@ -1,0 +1,407 @@
+"use client";
+
+// Copied from src/components/ward-management/on-call/on-call-phone.tsx (On-call redesign fork: group counts read
+// "4 of 4" as on the wider screen, and the place line wraps).
+
+import { useState, type ReactNode } from "react";
+import { ChevronDown, Copy, Mail, Search, Star } from "lucide-react";
+import { Button, Icon, Sheet, SrOnly, StatusGlyph, cx } from "@/components/wf";
+import {
+  SERVICE_META,
+  availability,
+  groupRows,
+  hhmm,
+  isAnswering,
+  keyLineLabel,
+  numberAt,
+  type DirectoryEntry,
+  type DirectoryTab,
+} from "@/components/ward-management/on-call/on-call-directory";
+import {
+  ContactCard,
+  ServiceTag,
+  isWardRow,
+  placeOf,
+  type ContactActions,
+} from "@/components/ward-management/on-call/on-call-parts";
+
+import styles from "./on-call.module.css";
+
+/**
+ * Phone: its own layout, designed at 390 by 844 (owner, 9 October 2026: phone is never a trimmed
+ * desktop). The job on the move is to find the right line and reach it, so the hero holds one focal
+ * bed flow card, the directory is an inset grouped list with a call button on every row, and the
+ * contact card rises as a bottom sheet with large action tiles.
+ */
+
+const FOCAL = [
+  ["sw-bfc", "State"],
+  ["nmhs-bfc", "NMHS"],
+  ["emhs-bfc", "EMHS"],
+  ["smhs-bfc", "SMHS"],
+  ["cahs-bfc", "CAHS"],
+  ["wachs-bfc", "WACHS"],
+] as const;
+
+function Until({ entry, minute }: { entry: DirectoryEntry; minute: number }) {
+  const now = availability(entry, minute);
+  if (now.kind === "on")
+    return now.allDay ? (
+      <span className={styles.phoneUntil}>
+        <StatusGlyph tone="success" size={9} />
+        24 hours
+      </span>
+    ) : (
+      <span className={cx(styles.phoneUntil, now.soon && styles.untilSoon)}>
+        <StatusGlyph tone={now.soon ? "warning" : "success"} size={9} />
+        Until <b className={styles.mono}>{hhmm(now.until)}</b>
+      </span>
+    );
+  if (now.kind === "off")
+    return (
+      <span className={cx(styles.phoneUntil, styles.untilOff)}>
+        <StatusGlyph tone="neutral" size={9} />
+        Opens <b className={styles.mono}>{hhmm(now.opens)}</b>
+      </span>
+    );
+  return null;
+}
+
+function CallButton({ entry, actions, onHero }: { entry: DirectoryEntry; actions: ContactActions; onHero?: boolean }) {
+  const number = numberAt(entry, actions.minute);
+  // Calling only copies the number, so there is no Call button (overall review, 20 Oct 2026). The
+  // row still shows the number, and its sheet copies it.
+  if (number) return <span />;
+  if (entry.email)
+    return (
+      <button
+        type="button"
+        className={cx(styles.phoneCall, onHero && styles.phoneCallHero)}
+        aria-label={`Copy email for ${entry.name}`}
+        onClick={(event) => {
+          event.stopPropagation();
+          actions.onCopy(entry.email!, "Email copied");
+        }}
+      >
+        <Icon icon={Mail} size={20} />
+      </button>
+    );
+  return <span />;
+}
+
+/** The hero's focal card: one service's bed flow line, its number large, and the crisis line under it. */
+export function PhoneFocal({
+  entries,
+  actions,
+  onOpen,
+}: {
+  entries: readonly DirectoryEntry[];
+  actions: ContactActions;
+  onOpen: (id: string) => void;
+}) {
+  const [focalId, setFocalId] = useState<string>("sw-bfc");
+  const entry = entries.find((item) => item.id === focalId) ?? entries[0]!;
+  const crisis = entries.find((item) => item.id === "sw-mherl");
+  const now = availability(entry, actions.minute);
+  const number = numberAt(entry, actions.minute);
+  const then =
+    now.kind === "on" && !now.allDay
+      ? now.then
+        ? `then ${now.then.label.toLowerCase()}`
+        : "then closed"
+      : now.kind === "off"
+        ? "closed now"
+        : "";
+  return (
+    <div className={styles.focalWrap} id="ward-reach-bed" tabIndex={-1}>
+      <div className={styles.focal}>
+        <div className={styles.focalSeg} role="radiogroup" aria-label="Bed flow for">
+          {FOCAL.map(([id, label]) => (
+            <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <span className={styles.focalLabel}>
+          <ServiceTag service={entry.service} label="" />
+          {keyLineLabel(entry)}
+        </span>
+        <span className={styles.focalNumber}>{number ?? "Not recorded"}</span>
+        <span className={styles.focalUntil}>
+          <Until entry={entry} minute={actions.minute} />
+          <span>{then}</span>
+        </span>
+        <div className={styles.focalActions}>
+          {number ? (
+            <Button
+              variant="onHero"
+              icon={Copy}
+              iconOnly
+              aria-label="Copy number"
+              onClick={() => actions.onCopy(number, "Number copied")}
+            />
+          ) : null}
+          <Button variant="onHero" onClick={() => onOpen(entry.id)}>
+            Details
+          </Button>
+        </div>
+      </div>
+      {crisis ? (
+        <div className={styles.focalMini}>
+          <button type="button" className={styles.focalMiniOpen} onClick={() => onOpen(crisis.id)}>
+            <ServiceTag service={crisis.service} label="" />
+            <b>MHERL crisis line</b>
+            <span className={styles.spacer} />
+            <span className={styles.mono}>{numberAt(crisis, actions.minute) ?? ""}</span>
+          </button>
+          <CallButton entry={crisis} actions={actions} onHero />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PhoneRow({
+  entry,
+  actions,
+  byRole,
+  highlighted,
+  dimmed = false,
+  onOpen,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  byRole: boolean;
+  highlighted: boolean;
+  dimmed?: boolean;
+  onOpen: (id: string) => void;
+}) {
+  const now = availability(entry, actions.minute);
+  const number = numberAt(entry, actions.minute);
+  const line = now.kind === "on" ? now.line : now.kind === "off" ? now.next : entry.lines[0];
+  const name = byRole && entry.siteCode && !isWardRow(entry) ? entry.groupTitle : entry.name;
+  const sub = isWardRow(entry)
+    ? entry.place
+    : byRole
+      ? SERVICE_META[entry.service].short
+      : (line?.label ?? entry.purpose);
+  return (
+    <li
+      className={cx(styles.phoneRow, now.kind === "off" && styles.phoneRowOff)}
+      data-highlighted={highlighted || undefined}
+      data-dim={dimmed ? "true" : undefined}
+    >
+      <button type="button" className={styles.phoneRowOpen} onClick={() => onOpen(entry.id)}>
+        <span className={styles.phoneRowName}>
+          <b>
+            {byRole ? <ServiceTag service={entry.service} label="" /> : null}
+            {name}
+          </b>
+          <span className={styles.phoneRowMeta}>
+            <Until entry={entry} minute={actions.minute} />
+            {/* Redesign: the place wraps rather than ending in "…" ("St John of God Midland Public …"). */}
+            <span className={cx(styles.phoneRowSub, styles.phoneRowSubWrap)}>{sub ? `· ${sub}` : null}</span>
+          </span>
+        </span>
+        <span className={styles.phoneRowEnd}>
+          {number ? <span className={styles.number}>{number}</span> : <span className={styles.cellSub}>Email</span>}
+        </span>
+      </button>
+      <CallButton entry={entry} actions={actions} />
+    </li>
+  );
+}
+
+/** Inset grouped list. One group opens at a time, and search opens every group with a match. */
+export function PhoneDirectory({
+  entries,
+  rows,
+  tab,
+  groupBy,
+  actions,
+  isHighlighted,
+  dimming = false,
+  queryActive,
+  hitCount,
+  otherHits,
+  onClearQuery,
+  onOpen,
+}: {
+  entries: readonly DirectoryEntry[];
+  rows: readonly DirectoryEntry[];
+  tab: DirectoryTab;
+  groupBy: "place" | "role";
+  actions: ContactActions;
+  isHighlighted: (entry: DirectoryEntry) => boolean;
+  dimming?: boolean;
+  queryActive: boolean;
+  hitCount: number;
+  otherHits: readonly { section: string; label: string; count: number; onShow: () => void }[];
+  onClearQuery: () => void;
+  onOpen: (id: string) => void;
+}) {
+  // The open group belongs to one tab and grouping; switching either opens that view's first group.
+  const scope = `${tab}:${groupBy}`;
+  const [opened, setOpened] = useState<{ scope: string; key: string } | null>(null);
+  const blocks = groupRows(entries, rows, tab, groupBy);
+  const firstKey = blocks[0]?.groups[0]?.key;
+  const openKey = opened?.scope === scope ? opened.key : firstKey;
+  const byRole = (tab === "hospitals" && groupBy === "role") || tab === "mine";
+  return (
+    <div className={styles.phoneList} id="ward-reach-switchboard" tabIndex={-1}>
+      {queryActive ? (
+        <div className={styles.phoneHits}>
+          <Icon icon={Search} size={14} />
+          <span>
+            <span className={styles.mono}>{hitCount}</span> highlighted below
+          </span>
+          <span className={styles.spacer} />
+          {otherHits.map((item) => (
+            <Button key={item.section} variant="ghost" size="sm" onClick={item.onShow}>
+              {item.count} in {item.label}
+            </Button>
+          ))}
+          <Button variant="ghost" size="sm" onClick={onClearQuery}>
+            Clear
+          </Button>
+        </div>
+      ) : null}
+      {rows.length ? null : (
+        <p className={styles.phoneEmpty}>Star any line to keep it here. My list stays in this browser.</p>
+      )}
+      {blocks.map((block) => (
+        <div key={block.service ?? "all"} className={styles.phoneBlock}>
+          {block.service ? (
+            <div className={styles.phoneServiceHead}>
+              <ServiceTag service={block.service} label={SERVICE_META[block.service].name} strong />
+              <span className={styles.spacer} />
+              {/* Redesign: "12 of 14", as the wider screen's group counts read; "answering" is spoken. */}
+              <span className={cx(styles.cellSub, styles.mono)}>
+                {block.groups.reduce(
+                  (total, group) => total + group.rows.filter((entry) => isAnswering(entry, actions.minute)).length,
+                  0,
+                )}{" "}
+                of {block.groups.reduce((total, group) => total + group.rows.length, 0)}
+                <SrOnly> answering</SrOnly>
+              </span>
+            </div>
+          ) : null}
+          <div className={styles.phoneBlockList}>
+            {block.groups.map((group) => {
+              const open = tab === "mine" || openKey === group.key || (queryActive && group.rows.some(isHighlighted));
+              const on = group.rows.filter((entry) => isAnswering(entry, actions.minute)).length;
+              return (
+                <section key={group.key} className={styles.phoneGroup}>
+                  {tab !== "mine" ? (
+                    <button
+                      type="button"
+                      className={styles.phoneGroupHead}
+                      aria-expanded={open}
+                      onClick={() => setOpened({ scope, key: open ? "" : group.key })}
+                    >
+                      {group.code ? <span className={styles.code}>{group.code}</span> : null}
+                      <b>{group.title}</b>
+                      <span className={styles.spacer} />
+                      {/* The count never truncates; the hospital name does (device audit 11 Oct 2026). */}
+                      <span className={cx(styles.cellSub, styles.mono, styles.phoneGroupCount)}>
+                        {on} of {group.rows.length}
+                        <SrOnly> answering</SrOnly>
+                      </span>
+                      <Icon icon={ChevronDown} size={16} className={cx(styles.chevron, !open && styles.chevronShut)} />
+                    </button>
+                  ) : null}
+                  {open ? (
+                    <ul className={styles.phoneRows}>
+                      {group.rows.map((entry) => (
+                        <PhoneRow
+                          key={entry.id}
+                          entry={entry}
+                          actions={actions}
+                          byRole={byRole}
+                          highlighted={isHighlighted(entry)}
+                          dimmed={dimming && !isHighlighted(entry)}
+                          onOpen={onOpen}
+                        />
+                      ))}
+                    </ul>
+                  ) : null}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The contact card as a bottom sheet: Copy, Email and Star tiles, the call pinned in the foot (v10). */
+export function PhoneSheet({
+  entry,
+  actions,
+  notice,
+  onClose,
+}: {
+  entry: DirectoryEntry;
+  actions: ContactActions;
+  notice: ReactNode;
+  onClose: () => void;
+}) {
+  const number = numberAt(entry, actions.minute);
+  const starred = actions.favourites.includes(entry.id);
+  return (
+    <Sheet
+      open
+      onClose={onClose}
+      title={entry.name}
+      description={[
+        SERVICE_META[entry.service].name,
+        entry.place === SERVICE_META[entry.service].short ? null : placeOf(entry),
+      ]
+        .filter(Boolean)
+        .join(", ")}
+      contentClassName={styles.sheetSolid}
+      mobilePlacement="bottom"
+      mobileSize="viewport"
+      testId="ward-on-call-sheet"
+    >
+      <div className={styles.sheetBody}>
+        <div className={styles.actionTiles}>
+          {number ? (
+            <>
+              <button
+                type="button"
+                className={styles.actionTile}
+                onClick={() => actions.onCopy(number, "Number copied")}
+              >
+                <Icon icon={Copy} size={20} />
+                Copy
+              </button>
+            </>
+          ) : null}
+          {entry.email ? (
+            <button
+              type="button"
+              className={styles.actionTile}
+              onClick={() => actions.onCopy(entry.email!, "Email copied")}
+            >
+              <Icon icon={Mail} size={20} />
+              Email
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className={styles.actionTile}
+            aria-pressed={starred}
+            onClick={() => actions.onToggleFavourite(entry.id)}
+          >
+            <Icon icon={Star} size={20} />
+            {starred ? "Starred" : "Star"}
+          </button>
+        </div>
+        {notice}
+        <ContactCard entry={entry} actions={actions} showHead={false} showCall={false} />
+      </div>
+    </Sheet>
+  );
+}

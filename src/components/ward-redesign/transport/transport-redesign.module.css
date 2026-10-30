@@ -1,28 +1,33 @@
 /* Transport, redesigned. */
 
-/* Forms still to upload are marked, not only counted. */
+/* Forms still to upload: the dots, then one line that names its noun ("2 forms missing"). */
+.formsCell.formsCell {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
 .missing {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
   white-space: nowrap;
   font-size: var(--wf-fs-12);
   color: var(--wf-warning-ink);
 }
 
-/* Columns sized so Next always fits: today's 7.5rem cuts "Arrived at ward" off at the edge. */
-.transport [class*="jobsTable"] th:nth-child(6) {
+/* Columns sized so Next always fits: today's 7.5rem cuts "Arrived at ward" off at the edge. Classes on
+   the cells themselves, so a new column never moves the rule onto the wrong one. */
+.table > thead th.nextCol {
   width: 9.5rem;
 }
-.transport [data-testid^="ward-officer-job-"] > td:nth-child(2) {
+.table .routeCell {
   white-space: normal;
 }
 
-.transport [class*="formsCell"] {
-  flex-wrap: wrap;
-  row-gap: 0;
-}
-.transport [class*="formsCell"] > .missing {
-  flex-basis: 100%;
+/* Cancelled transport: a plain list in the page's own card. */
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
 }

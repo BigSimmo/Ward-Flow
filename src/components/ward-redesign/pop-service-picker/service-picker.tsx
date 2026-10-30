@@ -22,8 +22,8 @@ import styles from "./pop-service-picker.module.css";
  * Same choices, the same `waitingInEds` counts and the same store write (`setServiceScope`) and
  * announcement as `selectService` in `ward-bar.tsx`. Design changes: the "narrows the lists" line
  * shows on desktop too, Statewide carries its total, each count is a number with a quiet "waiting"
- * rather than a mono phrase, a service with nobody waiting reads "None" in grey, and on a phone it is
- * a bottom sheet with 48px rows. Escape, the scrim, a press outside and Close all close it.
+ * rather than a mono phrase, a service with nobody waiting shows a grey 0, and on a phone it is a
+ * bottom sheet at today's row size. Escape, the scrim, a press outside and Close all close it.
  */
 export function ServicePickerMock({ onClose }: { onClose: () => void }) {
   const titleId = useId();
@@ -77,14 +77,10 @@ export function ServicePickerMock({ onClose }: { onClose: () => void }) {
     <button key={key} type="button" className={styles.option} aria-pressed={pressed} onClick={() => choose(value)}>
       <span className={styles.dot} data-service={key} aria-hidden="true" />
       <span className={styles.name}>{label}</span>
+      {/* Mock-up: each count names its noun, so the foot line that explained it goes; a zero is a
+          quiet figure in the same column as the others. */}
       <span className={styles.count} data-none={count === 0 || undefined}>
-        {count > 0 ? (
-          <>
-            <b>{count}</b> waiting
-          </>
-        ) : (
-          "None waiting"
-        )}
+        <b>{count}</b> waiting in ED
       </span>
       <Check className={styles.check} aria-hidden="true" data-visible={pressed || undefined} strokeWidth={2} />
     </button>
@@ -104,7 +100,7 @@ export function ServicePickerMock({ onClose }: { onClose: () => void }) {
         <header className={styles.head}>
           <span className={styles.headText}>
             <strong id={titleId}>Service</strong>
-            <em>{SERVICE_SCOPE_SHEET_LINE}</em>
+            <em>{SERVICE_SCOPE_SHEET_LINE.replace(/^Narrows the (.+) lists$/u, "Narrows $1")}</em>
           </span>
           <Button variant="ghost" size="sm" iconOnly icon={X} aria-label="Close Service" onClick={onClose} />
         </header>
@@ -124,7 +120,6 @@ export function ServicePickerMock({ onClose }: { onClose: () => void }) {
             ),
           )}
         </div>
-        <p className={styles.foot}>Each count is people waiting in that service&rsquo;s emergency departments.</p>
       </div>
     </OverlayPortal>
   );

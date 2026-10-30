@@ -25,6 +25,7 @@ import styles from "@/components/ward-management/search/global-search-preview.mo
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { originName } from "@/components/ward-management/ward-movement-origin";
+import local from "@/components/ward-redesign/pop-search/search.module.css";
 
 /**
  * THE RIGHT-HAND PREVIEW OF THE HEADER SEARCH PALETTE (Josh, 8 Oct 2026, option B).
@@ -111,10 +112,11 @@ function personSub(patient: Patient, activeDate: Date): string {
     .join(" · ");
 }
 
-function waited(movement: Movement, now: number | undefined): string | null {
+/** Mock-up: `word` false under a "Waiting" label, so the row does not say waiting twice. */
+function waited(movement: Movement, now: number | undefined, word = true): string | null {
   if (now === undefined) return null;
   const minutes = now - movement.openedAt;
-  return Number.isFinite(minutes) && minutes >= 0 ? `${durMinutes(minutes)} waiting` : null;
+  return Number.isFinite(minutes) && minutes >= 0 ? `${durMinutes(minutes)}${word ? " waiting" : ""}` : null;
 }
 
 function Action({
@@ -169,7 +171,9 @@ function Journey({ stage }: { stage: MovementStage }) {
                 index + 1
               )}
             </span>
-            <span className={styles.stepLabel}>{stageCopy[step].shortLabel}</span>
+            <span className={`${styles.stepLabel} ${state === "current" ? local.stepCurrent : "sr-only"}`}>
+              {stageCopy[step].shortLabel}
+            </span>
           </li>
         );
       })}
@@ -203,7 +207,7 @@ function MovementPreview({
   const declined = movement.declines
     .map((decline) => units.find((unit) => unit.id === decline.unitId)?.name)
     .filter((name): name is string => Boolean(name));
-  const wait = isOpen(movement) ? waited(movement, now) : null;
+  const wait = isOpen(movement) ? waited(movement, now, false) : null;
   const needs = [
     movement.cohort,
     movement.security,
@@ -238,9 +242,8 @@ function MovementPreview({
         </p>
       ) : null}
       <Journey stage={movement.stage} />
-      <dl className={styles.facts}>
-        <dt>Stage</dt>
-        <dd>{stageCopy[movement.stage].label}</dd>
+      {/* Mock-up: no Stage row; the stepper above shows the stage and names it aloud. */}
+      <dl className={`${styles.facts} ${local.facts}`}>
         {wait ? (
           <>
             <dt>Waiting</dt>
@@ -345,7 +348,7 @@ function PersonPreview({
     (movement) => isOpen(movement) && resolveSubjectPatient(movement, lookup).patient?.id === patient.id,
   );
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
-  const wait = openMovement ? waited(openMovement, now) : null;
+  const wait = openMovement ? waited(openMovement, now, false) : null;
   const personReferrals = lookup.referrals ?? [];
   const linkedReferral =
     (openMovement !== undefined ? personReferrals.find((ref) => ref.id === openMovement.referralId) : undefined) ??
@@ -363,7 +366,7 @@ function PersonPreview({
         </div>
       </div>
       {openMovement ? <Journey stage={openMovement.stage} /> : null}
-      <dl className={styles.facts}>
+      <dl className={`${styles.facts} ${local.facts}`}>
         <dt>Born</dt>
         <dd className={styles.mono}>{dayMonthYear(patient.dateOfBirth)}</dd>
         {patient.preferredName ? (
@@ -495,7 +498,7 @@ function WardPreview({
           <span className={styles.statLabel}>Incoming</span>
         </div>
       </div>
-      <dl className={styles.facts}>
+      <dl className={`${styles.facts} ${local.facts}`}>
         <dt>Locked</dt>
         <dd>
           {unit.lockedBeds} of {unit.beds} beds
@@ -559,7 +562,7 @@ function EdPreview({
           <p className={styles.sub}>{ed?.siteCode ?? ""}</p>
         </div>
       </div>
-      <dl className={styles.facts}>
+      <dl className={`${styles.facts} ${local.facts}`}>
         <dt>Open</dt>
         <dd>
           {open.length} {open.length === 1 ? "movement" : "movements"}

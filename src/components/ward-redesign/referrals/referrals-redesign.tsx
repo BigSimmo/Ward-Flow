@@ -29,13 +29,7 @@ import { ReadmissionFlag, useReadmissionFlagVisible } from "@/components/ward-ma
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import {
-  acceptedAddressing,
-  declinedAddressings,
-  referralDestinationLabels,
-  referralSuburbLabel,
-  referralClocks,
-} from "@/components/ward-management/ward-referrals";
+import { acceptedAddressing, declinedAddressings, referralClocks } from "@/components/ward-management/ward-referrals";
 import { OVERDUE_AFTER_MINUTES_BY_TIER } from "@/components/ward-management/ward-operational-defaults";
 import {
   Avatar,
@@ -58,7 +52,9 @@ import {
 } from "@/components/wf";
 
 import { ReferralHistoryAndCorrections } from "@/components/ward-management/referrals/referral-history-corrections-lazy";
-import { ReferralMatchView } from "@/components/ward-management/referrals/referral-match-lazy";
+import { ReferralMatchView } from "./referral-match-lazy";
+import { HistoryFoldProvider } from "./folded-history";
+import { ReferralPhoneChips } from "./referral-phone-chips";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "@/components/ward-management/referrals/use-referral-decision-undo";
 import { WardOffersTable } from "./ward-offers-table";
@@ -116,7 +112,6 @@ import p from "@/components/ward-management/referrals/referral-board-phone.modul
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import {
   ReferralPhoneCard,
-  ReferralPhoneChips,
   ReferralPhoneHero,
   ReferralPhoneTop,
 } from "@/components/ward-management/referrals/referral-board-phone";
@@ -348,7 +343,6 @@ function ReferralBoardRedesign({
     chosenHighlight !== null && !recipientFiltersAvailable && !["overdue", "tier1"].includes(chosenHighlight)
       ? null
       : chosenHighlight;
-  const [searchQuery, setSearchQuery] = useState("");
   // The board's decisions are dispatched as the coordinator (CO-D2), so Undo is too.
   const watchDecision = useReferralDecisionUndo("coordinator");
   const [chosenTab, setInspectorTab] = useState<InspectorTab>("place");
@@ -389,7 +383,6 @@ function ReferralBoardRedesign({
   }, []);
 
   const clearHighlights = useCallback(() => {
-    setSearchQuery("");
     setHighlight(null);
   }, []);
 
@@ -400,41 +393,16 @@ function ReferralBoardRedesign({
     [resolverState],
   );
 
-  const matchesSearch = (referral: Referral) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return false;
-    const siteName = (siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode).toLowerCase();
-    const destinations = referralDestinationLabels(referral).join(" ").toLowerCase();
-    const pat = resolveSubjectPatient(referral, resolverState);
-    return (
-      referral.id.toLowerCase().includes(q) ||
-      pat.displayName.toLowerCase().includes(q) ||
-      pat.umrn.toLowerCase().includes(q) ||
-      siteName.includes(q) ||
-      referral.originSiteCode.toLowerCase().includes(q) ||
-      referralSuburbLabel(referral.suburb).toLowerCase().includes(q) ||
-      referral.homeRegion.toLowerCase().includes(q) ||
-      referral.ageBand.toLowerCase().includes(q) ||
-      destinations.includes(q)
-    );
-  };
-  /*
-   * v10 Referrals acceptance check: "Search narrows rows and the count line updates." The search
-   * is the one control on this board that hides rows; the hero and toolbar chips still only
-   * highlight (they dim the rest and every row stays).
-   */
-  const searching = searchQuery.trim() !== "";
-  const shownQueued = searching ? queued.filter(matchesSearch) : queued;
   const anyHighlight = highlight !== null;
   const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
-  const highlightedCount = anyHighlight ? shownQueued.filter(isHighlighted).length : 0;
+  const highlightedCount = anyHighlight ? queued.filter(isHighlighted).length : 0;
   /*
    * Audit round 2 (A2-14): on the phone a chip FILTERS. Dimming greyed the overdue row's act-now
    * marker and left the match below the fold. Desktop keeps highlight-and-dim (Josh, 13 Oct 2026),
    * but an overdue (act-now) row is never dimmed on either.
    */
   const phoneFiltered = phoneLayout && anyHighlight;
-  const listedQueued = phoneFiltered ? shownQueued.filter(isHighlighted) : shownQueued;
+  const listedQueued = phoneFiltered ? queued.filter(isHighlighted) : queued;
 
   const decided = presentationLists.recentlyDecided;
   // The DENOMINATOR, uncapped. `decided` above is already truncated to the display limit, so its
@@ -740,7 +708,6 @@ function ReferralBoardRedesign({
               bedsReady={bedsSummary.total}
               highlight={highlight}
               onHighlight={(key) => {
-                setSearchQuery("");
                 setHighlight((current) => (current === key ? null : key));
               }}
               bedsOpen={phoneSheet === "beds"}
@@ -759,7 +726,6 @@ function ReferralBoardRedesign({
                 onHighlight={(key) => {
                   const chosen = HIGHLIGHT_KEYS.find((k) => k === key);
                   if (!chosen) return;
-                  setSearchQuery("");
                   setHighlight((current) => (current === chosen ? null : chosen));
                 }}
               />
@@ -829,7 +795,6 @@ function ReferralBoardRedesign({
                       aria-pressed={highlight === key}
                       data-testid={`ward-referral-highlight-${key}`}
                       onClick={() => {
-                        setSearchQuery("");
                         setHighlight((current) => (current === key ? null : key));
                       }}
                     >
@@ -881,7 +846,7 @@ function ReferralBoardRedesign({
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
                   queue switch does. The row sits in the queue card beside the list it pins over. */}
               {phoneLayout ? <div className={cx(a.phoneViewRow, wardPin.pinnedSwitch)}>{viewSwitch}</div> : null}
-              <div className={a.toolbar}>
+              <div className={cx(a.toolbar, redesign.toolbarDesk)}>
                 {phoneLayout ? null : viewSwitch}
                 {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
                     highlights and the app search cover finding one person. */}
@@ -897,20 +862,12 @@ function ReferralBoardRedesign({
                   </FilterChip>
                 ) : null}
                 <span className={a.toolbarNote}>
-                  {(anyHighlight || searching) && view === "queue" ? (
+                  {anyHighlight && view === "queue" ? (
                     <>
-                      {searching ? (
-                        <span data-testid="ward-referral-search-note">
-                          <b>
-                            {shownQueued.length} of {queued.length}
-                          </b>{" "}
-                          shown
-                        </span>
-                      ) : null}
                       {anyHighlight ? (
                         <span data-testid="ward-referral-highlight-note">
                           <b>
-                            {highlightedCount} of {shownQueued.length}
+                            {highlightedCount} of {queued.length}
                           </b>{" "}
                           {phoneFiltered ? "shown" : "highlighted · all rows stay"}
                         </span>
@@ -951,8 +908,8 @@ function ReferralBoardRedesign({
                 <QueuedSection
                   progressUnavailable={presentationLists.unavailable.length > 0}
                   queued={listedQueued}
-                  searchMiss={(searching || phoneFiltered) && listedQueued.length === 0 && queued.length > 0}
-                  filterMiss={phoneFiltered && !searching}
+                  searchMiss={phoneFiltered && listedQueued.length === 0 && queued.length > 0}
+                  filterMiss={phoneFiltered}
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
@@ -1007,7 +964,6 @@ function ReferralBoardRedesign({
                 <button type="button" className={a.keyLink} data-kbd-hint="" onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
-                <span className={a.footNote}>Highlights dim rows and keep every referral.</span>
                 {/* v10 phone: the order note sits under the queue instead of in the toolbar. */}
                 {view === "queue" ? (
                   <span className={a.phoneFootNote} aria-hidden="true">
@@ -1277,7 +1233,9 @@ function ReferralBoardRedesign({
                     className={cx(styles.registerDetailBody, a.panelBody)}
                   >
                     {inspectorTab === "place" && !readOnly ? (
-                      <div className={redesign.foldHistory} data-history-open={historyOpen || undefined}>
+                      <HistoryFoldProvider
+                        value={{ open: historyOpen, onToggle: () => setHistoryOpen((open) => !open) }}
+                      >
                         <ReferralMatchView
                           key={selectedReferral.id}
                           referral={selectedReferral}
@@ -1289,17 +1247,7 @@ function ReferralBoardRedesign({
                           hideDossierHeader
                           onDecision={decide(selectedReferral)}
                         />
-                        <button
-                          type="button"
-                          className={redesign.historyToggle}
-                          aria-expanded={historyOpen}
-                          onClick={() => setHistoryOpen((open) => !open)}
-                        >
-                          {historyOpen
-                            ? "Hide written history and corrections"
-                            : "Show written history and corrections"}
-                        </button>
-                      </div>
+                      </HistoryFoldProvider>
                     ) : null}
                     {inspectorTab === "patient" ? (
                       <ReferralPatientTab

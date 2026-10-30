@@ -5,7 +5,7 @@
   align-items: center;
   gap: 4px var(--wf-s-2);
   width: 100%;
-  min-height: 48px;
+  min-height: var(--wf-h-lg);
   padding: 6px var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-lg);
@@ -29,10 +29,7 @@
   outline-offset: 2px;
 }
 
-.serviceHead[aria-expanded="false"] svg:first-child {
-  transform: rotate(-90deg);
-}
-
+/* The chevron turns as on every other group here (down when shut, up when open). */
 .serviceName {
   font-size: var(--wf-fs-14);
 }
@@ -59,4 +56,17 @@
 
 .none {
   color: var(--wf-ink-3);
+}
+
+/* A statewide tile's line wraps to a second line rather than cutting off its figure. */
+span.tileLine.tileLine {
+  overflow: visible;
+  white-space: normal;
+}
+
+.pastTarget {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }

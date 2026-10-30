@@ -2,6 +2,7 @@
 
 import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 
 import {
   Button,
@@ -68,6 +69,14 @@ export function AgendaRedesign() {
  * meeting, the four lists two by two so the agenda fits one screen, people surname first (D-83), and
  * a small "+ Action" on each row with the urgency the record carries beside it.
  */
+/**
+ * Redesign: the pulled-beds card says its order without "expire", the app's word for legal expiry
+ * (D-81 calls this a pull time limit). The rows already read "Pull 20m left".
+ */
+const CARD_TITLES: Record<string, string> = {
+  holds: "Pulled beds, least time left",
+};
+
 /** The hero's short names for the four lists; the cards keep their full titles. */
 const SHORT_TITLES: Record<string, string> = {
   "ed-waits": "ED waits",
@@ -157,7 +166,7 @@ function BedMeetingAgenda() {
       <Hero
         level={1}
         eyebrow="Bed meeting"
-        title="Bed meeting agenda"
+        title="Agenda"
         titleMeta={`as at ${formatInstantWithDay(now, now)}`}
         stats={
           <>
@@ -193,41 +202,48 @@ function BedMeetingAgenda() {
       />
       {sheet ? <BedMeetingSheetDialog open onClose={() => setSheetOpen(false)} sheet={sheet} now={now} /> : null}
 
-      <Card>
-        <CardHead title="Actions" meta="From earlier meetings" level={2} />
-        <CardBody>
-          {/* One line when nothing is waiting, not a row of zeros and a sentence saying the same (UX audit, 21 Oct 2026). */}
-          <p className={styles.summary} data-testid="bed-meeting-action-summary" ref={actionSummary}>
-            {summary.overdue.length + summary.open.length === 0
-              ? `No actions are waiting${summary.doneLastDay > 0 ? ` · ${summary.doneLastDay} done in the last day` : ""}.`
-              : `${summary.doneLastDay} done in the last day · ${summary.overdue.length} overdue · ${summary.open.length} still open`}
-          </p>
-          {actionRows.length === 0 ? null : (
-            <ul className={styles.list} data-testid="bed-meeting-action-list" ref={actionList}>
-              {actionRows.map((row, index) => (
-                <ActionRow
-                  key={`${row.subject.id}-${row.action.kind}`}
-                  row={row}
-                  now={now}
-                  name={patientOf(row.record).formalName}
-                  owner={ownerText(row.action)}
-                  onMarkDone={markActionDone}
-                  claimDone={() => {
-                    if (!claimDone()) return false;
-                    markDone(index);
-                    return true;
-                  }}
-                />
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      {/* Redesign: with nothing waiting, the actions are one quiet line under the hero, not an
+          empty card (no empty panels). The line stays where focus lands when the last one closes. */}
+      {actionRows.length === 0 ? (
+        <p
+          className={styles.noActions}
+          data-testid="bed-meeting-action-summary"
+          ref={actionSummary}
+        >{`No actions waiting from earlier meetings${summary.doneLastDay > 0 ? ` · ${summary.doneLastDay} done in the last day` : ""}`}</p>
+      ) : (
+        <Card>
+          <CardHead title="Actions" meta="From earlier meetings" level={2} />
+          <CardBody>
+            <p className={styles.summary} data-testid="bed-meeting-action-summary" ref={actionSummary}>
+              {`${summary.doneLastDay} done in the last day · ${summary.overdue.length} overdue · ${summary.open.length} still open`}
+            </p>
+            {actionRows.length === 0 ? null : (
+              <ul className={styles.list} data-testid="bed-meeting-action-list" ref={actionList}>
+                {actionRows.map((row, index) => (
+                  <ActionRow
+                    key={`${row.subject.id}-${row.action.kind}`}
+                    row={row}
+                    now={now}
+                    name={patientOf(row.record).formalName}
+                    owner={ownerText(row.action)}
+                    onMarkDone={markActionDone}
+                    claimDone={() => {
+                      if (!claimDone()) return false;
+                      markDone(index);
+                      return true;
+                    }}
+                  />
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       <div className={styles.sections}>
         {sections.map((section) => (
           <Card key={section.id} data-testid={`bed-meeting-agenda-${section.id}`}>
-            <CardHead title={section.title} meta={`${section.items.length}`} level={2} />
+            <CardHead title={CARD_TITLES[section.id] ?? section.title} meta={`${section.items.length}`} level={2} />
             <CardBody>
               {section.items.length === 0 ? (
                 <p className={styles.note}>Nobody here right now.</p>
@@ -278,7 +294,8 @@ function ActionRow({
     <li className={styles.row}>
       <div className={styles.rowText}>
         <span className={styles.name}>
-          <StatusGlyph tone={overdue ? "warning" : "info"} size={8} /> {bedMeetingActionLabel(row.action.kind)} · {name}
+          {overdue ? <StatusGlyph tone="warning" size={8} /> : null}
+          {bedMeetingActionLabel(row.action.kind)} · {name}
         </span>
         <span className={styles.detail}>
           {owner} · {overdue ? "was due" : "due"} {formatInstantWithDay(row.action.dueAt, now)}
@@ -325,7 +342,7 @@ function AgendaRow({
           <span className={styles.name}>
             {urgency ? <StatusGlyph tone="danger" size={8} /> : null}
             {name}
-            {urgency ? <span className={styles.urgency}>{urgency}</span> : null}
+            {urgency?.tag ? <span className={styles.urgency}>{urgency.tag}</span> : null}
           </span>
           <span className={styles.detail}>{item.detail}</span>
           {openActions.length > 0 ? (
@@ -342,11 +359,12 @@ function AgendaRow({
           className={styles.addAction}
           aria-expanded={adding}
           aria-controls={formId}
+          icon={adding ? undefined : Plus}
           aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
           onClick={() => setAdding((value) => !value)}
           data-testid="bed-meeting-add-action"
         >
-          {adding ? "Cancel" : "+ Action"}
+          {adding ? "Cancel" : "Action"}
         </Button>
       </div>
       {adding ? (
@@ -368,14 +386,15 @@ function AgendaRow({
 
 /**
  * The urgency the record itself carries: an ED wait past the long-wait mark, or a pulled bed whose
- * pull has run out. Nothing else is judged here.
+ * pull has run out. Nothing else is judged here. A run-out pull keeps its red mark but no tag: its
+ * detail line already says "Pull expired 10m ago".
  */
-function urgencyOf(sectionId: string, item: AgendaItem, now: Instant): string | null {
+function urgencyOf(sectionId: string, item: AgendaItem, now: Instant): { tag: string | null } | null {
   const record = item.record;
   if (!("stage" in record)) return null;
-  if (sectionId === "holds" && record.pullExpiresAt !== undefined && record.pullExpiresAt <= now) return "Expired";
+  if (sectionId === "holds" && record.pullExpiresAt !== undefined && record.pullExpiresAt <= now) return { tag: null };
   if (sectionId === "ed-waits" && now - record.openedAt >= LONG_WAIT_MINUTES)
-    return LONG_WAIT_TEXT.charAt(0).toUpperCase() + LONG_WAIT_TEXT.slice(1);
+    return { tag: LONG_WAIT_TEXT.charAt(0).toUpperCase() + LONG_WAIT_TEXT.slice(1) };
   return null;
 }
 

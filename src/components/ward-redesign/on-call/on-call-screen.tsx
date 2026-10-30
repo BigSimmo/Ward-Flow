@@ -66,7 +66,7 @@ import {
   placeOf,
   type ContactActions,
 } from "./on-call-parts";
-import { PhoneDirectory, PhoneFocal, PhoneSheet } from "@/components/ward-management/on-call/on-call-phone";
+import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 
 import {
   readFavourites,
@@ -83,7 +83,7 @@ const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, 
   { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
   {
     id: "soon",
-    label: "Ends within the hour",
+    label: "Ending soon",
     test: (entry, minute) => {
       const now = availability(entry, minute);
       return now.kind === "on" && !now.allDay && now.soon;
@@ -327,7 +327,8 @@ export function OnCallScreen() {
       />
       <HeroChip
         value={endingSoon.length}
-        label="end within the hour"
+        // Redesign: one wording for this state at every width, the phone's "ending soon" (within the hour).
+        label="ending soon"
         tone="warning"
         pressed={highlight === "soon"}
         onPress={() => toggleHighlight("soon")}
@@ -375,8 +376,7 @@ export function OnCallScreen() {
             <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
           </>
         }
-        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
-        titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
+        // Redesign: the synthetic-data notice is said once, at the foot of the directory, not also in the hero.
         stats={
           isPhone ? (
             // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.
@@ -506,14 +506,15 @@ export function OnCallScreen() {
   const search = (
     <>
       <label className={styles.srOnlyLabel} htmlFor={searchId}>
-        Search contacts
+        Search by role, hospital, ward, team or number
       </label>
       <TextInput
         id={searchId}
         type="search"
         icon={Search}
         trailing={isPhone ? undefined : <Kbd>/</Kbd>}
-        placeholder="Role, hospital, ward, team or number"
+        // Redesign: a short placeholder that never cuts off; the full hint is the field's (hidden) label.
+        placeholder="Search lines"
         value={query}
         onChange={(event) => setQuery(event.target.value)}
         boxClassName={styles.search}
@@ -682,7 +683,8 @@ export function OnCallScreen() {
               {groupByChip}
               {groupByChip ? <span className={styles.divider} aria-hidden="true" /> : null}
               {/* The chip counts are this tab's rows, so they name it: the hero counts the whole page. */}
-              <span className={styles.chipScope}>In {tabItems.find((item) => item.id === tab)?.label}</span>
+              {/* Redesign: says what the counts are, so they are not read against the hero's whole-page figures. */}
+              <span className={styles.chipScope}>Highlight in {tabItems.find((item) => item.id === tab)?.label}</span>
               {highlightChips}
               {highlight || query ? (
                 <Button

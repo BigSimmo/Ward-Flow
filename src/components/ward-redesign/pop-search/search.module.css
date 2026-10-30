@@ -1,0 +1,14 @@
+/* Mock-up changes to the Search preview (the rest is ward-management/search/global-search-preview.module.css). */
+
+/* A fact wraps to a second line rather than cutting off a hospital or provider name. */
+dl.facts dd {
+  overflow: visible;
+  white-space: normal;
+}
+
+/* Only the current stage is labelled under the stepper, so short columns never run labels together;
+   every stage is still read out from the list's own name. */
+span.stepCurrent {
+  max-width: none;
+  overflow: visible;
+}

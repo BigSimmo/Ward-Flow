@@ -10,7 +10,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { wardOffersOutsideQueue } from "@/components/ward-management/referrals/home-ward-offers";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { Count, StatusGlyph, durMinutes } from "@/components/wf";
+import { Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 
 import styles from "./referrals-redesign.module.css";
 
@@ -55,7 +55,7 @@ export function WardOffersTable({
     <section className={styles.offers} data-testid="ward-referral-board-ward-offers" aria-labelledby={titleId}>
       <h2 id={titleId} className={styles.offersTitle}>
         Offered to wards <Count n={offers.length} />
-        <span className={styles.offersNote}>Waiting on a ward, not on you</span>
+        <span className={styles.offersNote}>Waiting on a ward</span>
       </h2>
       <table className={styles.offersTable}>
         <thead>
@@ -73,14 +73,16 @@ export function WardOffersTable({
             const wards = movement.referredUnitIds.map(wardName);
             return (
               <tr key={movement.id} data-testid={`ward-referral-board-ward-offer-${movement.id}`}>
-                <th scope="row">
+                <th scope="row" className={styles.offerName}>
                   <Link href={movementHref(movement.id)} className={styles.offerLink}>
                     {nameFor(who.formalName, who.umrn)}
                   </Link>
                 </th>
-                <td>{wards.length <= 2 ? wards.join(", ") : `${wards[0]} and ${wards.length - 1} more`}</td>
-                <td className={styles.mono}>{durMinutes(now - (movement.referredAt ?? movement.openedAt))}</td>
-                <td>
+                <td className={styles.offerWards}>{wards.join(", ")}</td>
+                <td className={cx(styles.mono, styles.offerWait)}>
+                  {durMinutes(now - (movement.referredAt ?? movement.openedAt))}
+                </td>
+                <td className={styles.offerAnswer}>
                   <StatusGlyph tone={status.tone} size={8} /> {status.text}
                 </td>
               </tr>

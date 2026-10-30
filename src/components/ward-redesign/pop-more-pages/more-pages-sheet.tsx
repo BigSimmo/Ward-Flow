@@ -10,7 +10,7 @@ import { Sheet } from "@/components/wf/sheet";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
+import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { wardNavCountLabel } from "@/components/ward-management/ward-nav-counts";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
@@ -46,13 +46,15 @@ function shiftMinutesLeft(minute: number): number {
 
 /** Handover's menu id, as `ward-rail.tsx` names it. */
 const HANDOVER_MENU_ID = "handover";
+/** New referral's menu id (`ward-rail-entries.ts`). */
+const NEW_REFERRAL_ID = "referral-intake";
 
 /**
  * Mock-up of the rail's "More pages" sheet (the `Sheet` at the foot of `shell/ward-rail.tsx`). Same
  * pages, groups, counts and links, worked out the same way (`roleMenu(...).more`, the role access
  * filter, `useWardNavCounts`). Design changes: a wider sheet with the groups side by side so every
- * page shows without scrolling, each page's count and what it counts on one row, board time and the
- * handover countdown as one line under the title, and a single-row foot.
+ * page shows without scrolling, each page's count and what it counts on one row, the handover
+ * countdown as one line under the title, and a single-row foot.
  */
 export function MorePagesSheetMock({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname() ?? "";
@@ -72,7 +74,10 @@ export function MorePagesSheetMock({ open, onClose }: { open: boolean; onClose: 
   const groups = menu.more
     .map((group) => ({
       label: group.label,
-      entries: handoverLinks ? group.entries.filter((item) => item.id !== HANDOVER_MENU_ID) : [...group.entries],
+      // Mock-up: New referral is an action (the header, Create and Tools start it), not a page to list.
+      entries: group.entries.filter(
+        (item) => item.id !== NEW_REFERRAL_ID && (!handoverLinks || item.id !== HANDOVER_MENU_ID),
+      ),
     }))
     .filter((group) => group.entries.length > 0);
   const firstId = groups[0]?.entries[0]?.id;
@@ -101,7 +106,13 @@ export function MorePagesSheetMock({ open, onClose }: { open: boolean; onClose: 
           <Icon aria-hidden="true" className={styles.icon} strokeWidth={1.75} />
           <span className={styles.text}>
             <span className={styles.label}>{entry.label}</span>
-            {count ? <span className={styles.noun}>{count.noun}</span> : null}
+            {/* Mock-up: the noun's first clause keeps every row to two lines ("releases held up");
+                the whole noun stays in the row's spoken label and its tooltip. */}
+            {count ? (
+              <span className={styles.noun} title={count.noun}>
+                {count.noun.split(",")[0]}
+              </span>
+            ) : null}
           </span>
           {count ? (
             <span className={styles.count} data-tone={count.urgent ? "warning" : undefined}>
@@ -158,9 +169,8 @@ export function MorePagesSheetMock({ open, onClose }: { open: boolean; onClose: 
           </span>
         }
         headerBottom={
+          // Mock-up: the top bar's clock stays in view beside the sheet, so only the handover countdown is here.
           <p className={styles.context}>
-            Board time <strong>{formatInstant(now)}</strong> AWST
-            <span aria-hidden="true"> · </span>
             {handoverLinks ? (
               <Link href={handoverHref()} onClick={onClose}>
                 Handover {handoverText === null ? "due now" : `in ${handoverText}`}

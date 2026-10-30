@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
-import { Bell, ListChecks, Plus } from "lucide-react";
+import { Bell, Clock3, ListChecks, Plus } from "lucide-react";
 
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import {
@@ -190,11 +190,12 @@ function strictNeeds(byId: ReadonlyMap<string, RailEntry>, counts: CountMap): Ne
         // Audit 6 (Josh, 20 Oct 2026): Waiting's severe causes are "At a time limit", so the menu
         // no longer shows two rows called Waiting with different numbers.
         label: id === "delays" && count?.need ? "At a time limit" : entry.label,
-        meta: id === "delays" && count?.need ? "in Waiting, or with nowhere to go" : need.noun,
+        // Mock-up: the meta names the noun, not where the rows sit; a time limit takes the clock.
+        meta: id === "delays" && count?.need ? "people in Waiting" : need.noun,
         count: need.value,
         // shell-9: Delays opens filtered to the severe causes this row counts.
         href: id === "delays" ? `${entry.href}?show=severe` : entry.href,
-        icon: entry.icon,
+        icon: id === "delays" && count?.need ? Clock3 : entry.icon,
         actNow: false,
       });
     }
@@ -210,7 +211,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
         {
           id: "act-now",
           label: "Act-now alerts",
-          meta: "red rows in Alerts",
+          meta: "to act on in Alerts",
           count: actNow,
           href: WARD_ALERTS_HREF,
           icon: Bell,
@@ -221,7 +222,7 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
         {
           id: "act-now",
           label: "Act-now tasks",
-          meta: "red rows in Tasks",
+          meta: "to act on in Tasks",
           count: actNow,
           icon: ListChecks,
           actNow: true,

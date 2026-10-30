@@ -13,10 +13,12 @@ import {
   Hero,
   HeroStat,
   Select,
+  SrOnly,
   StatusGlyph,
   tableClasses,
   TextInput,
   cx,
+  useIsPhone,
   type WfTone,
 } from "@/components/wf";
 
@@ -54,11 +56,13 @@ import styles from "./seclusion-redesign.module.css";
 /** The room's four states, in the order the table lists them: what needs a look first. */
 type RoomState = "in_use" | "out_of_service" | "not_recorded" | "available";
 
+// Redesign: listed in the table's own order (ROOM_ORDER), so the phone hero's three figures are the
+// three that need a look; the phone says the available count in the title line.
 const ROOM_STATES: readonly { id: RoomState; label: string; tone: WfTone }[] = [
   { id: "in_use", label: "In use", tone: "warning" },
-  { id: "available", label: "Available", tone: "success" },
   { id: "out_of_service", label: "Out of service", tone: "danger" },
   { id: "not_recorded", label: "Not recorded", tone: "neutral" },
+  { id: "available", label: "Available", tone: "success" },
 ];
 const ROOM_ORDER: Record<RoomState, number> = { in_use: 0, out_of_service: 1, not_recorded: 2, available: 3 };
 
@@ -78,6 +82,7 @@ export function SeclusionRedesign() {
   const role: WardFlowRole =
     access.role === "ward" ? "ward" : access.role === "bed_manager" ? "bed_manager" : "coordinator";
   const patientOf = usePatientOf();
+  const isPhone = useIsPhone();
   const [chosen, setChosen] = useState<string>("");
   const recordRef = useRef<HTMLDivElement>(null);
   // Only the wards this desk may see: a ward or site desk never lists another ward's episodes.
@@ -141,12 +146,22 @@ export function SeclusionRedesign() {
         level={1}
         eyebrow="Restrictive practice"
         title="Seclusion, restraint and incidents"
-        titleMeta={`${rows.length} secure wards · as at ${formatInstantWithDay(now, now)}`}
+        titleMeta={
+          isPhone
+            ? `${rows.length} secure wards · ${counts.available} ${counts.available === 1 ? "room" : "rooms"} available · as at ${formatInstantWithDay(now, now)}`
+            : `Seclusion rooms on ${rows.length} secure wards · as at ${formatInstantWithDay(now, now)}`
+        }
         stats={ROOM_STATES.map((entry) => (
           <HeroStat
             key={entry.id}
             value={counts[entry.id]}
-            label={`Rooms ${entry.label.toLowerCase()}`}
+            // Redesign: short labels that stay on one line; "Seclusion rooms" is spoken before each.
+            label={
+              <>
+                <SrOnly>Seclusion rooms </SrOnly>
+                {entry.label}
+              </>
+            }
             tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
           />
         ))}
@@ -160,7 +175,12 @@ export function SeclusionRedesign() {
         <Card data-testid="seclusion-wards" className={styles.tableCard}>
           <CardHead
             title="Seclusion rooms by ward"
-            meta={restraint > 0 ? `${restraint} restraint in use` : "No restraint recorded as in use"}
+            // Redesign: the count names its noun.
+            meta={
+              restraint > 0
+                ? `${restraint} restraint ${restraint === 1 ? "episode" : "episodes"} in use`
+                : "No restraint recorded as in use"
+            }
             level={2}
           />
           {rows.length === 0 ? (
@@ -325,7 +345,7 @@ function WardCard({
           <p className={styles.line} data-testid="seclusion-room-status">
             {room.kind === "in_use"
               ? `In use since ${formatInstantWithDay(room.since, now)}${recordedLine ? `. Last marked ${recordedLine}` : ""}`
-              : (recordedLine ?? "Not recorded yet")}
+              : (recordedLine ?? "Not recorded")}
           </p>
           <div className={styles.controls}>
             <Button
@@ -380,7 +400,7 @@ function WardCard({
             Seclusion and restraint in use
           </h3>
           {open.length === 0 ? (
-            <p className={styles.note}>None recorded as in use on this ward.</p>
+            <p className={styles.note}>None recorded</p>
           ) : (
             <ul className={styles.list}>
               {open.map((episode) => (
@@ -419,7 +439,7 @@ function WardCard({
             Incidents in the last day
           </h3>
           {incidents.length === 0 ? (
-            <p className={styles.note}>None recorded in the last day.</p>
+            <p className={styles.note}>None recorded</p>
           ) : (
             <ul className={styles.list} data-testid="seclusion-incidents">
               {incidents.map((incident) => (

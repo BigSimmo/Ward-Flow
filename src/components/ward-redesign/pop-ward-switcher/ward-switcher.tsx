@@ -109,7 +109,12 @@ export function WardSwitcherMock({ onClose }: { onClose: () => void }) {
     const figure = figures.get(candidate.id);
     // The hospital is named only for a ward on another site; its group heading names this one's.
     const otherSite = candidate.siteCode !== unit.siteCode;
-    const detail = [candidate.cohort, figure?.security, otherSite ? figure?.site : null].filter(Boolean).join(" · ");
+    // A ward whose name already ends in its security ("SJGM Adult Open") does not say it twice.
+    const security =
+      figure?.security && !candidate.name.toLowerCase().endsWith(figure.security.toLowerCase())
+        ? figure.security
+        : null;
+    const detail = [candidate.cohort, security, otherSite ? figure?.site : null].filter(Boolean).join(" · ");
     const ready = figure?.ready ?? 0;
     const body = (
       <>

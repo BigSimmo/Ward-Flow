@@ -1128,9 +1128,10 @@ table.censusTable td * {
   min-width: 0;
 }
 
+/* Redesign: six groups as 3 by 2, so no label ends in "…" and "Not active" never sits alone on a row. */
 .phoneGroups {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2px;
   padding: 3px;
   border: 1px solid var(--wf-line);
@@ -1502,6 +1503,10 @@ table.censusTable td * {
   font: 500 var(--wf-fs-12) / 16px var(--wf-font);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.phoneMetaWrap {
+  white-space: normal;
 }
 
 .phoneEnd {

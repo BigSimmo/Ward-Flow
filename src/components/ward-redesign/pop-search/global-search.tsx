@@ -188,6 +188,19 @@ export type WardGlobalSearchProps = {
 
 const allowSearchChoice = () => true;
 
+/**
+ * Mock-up: an alert's line under its title, without the UMRN (the preview shows it), so the reason
+ * fits on one line; a bed pull past its limit says so rather than "overdue", which means form times.
+ */
+function alertLine(
+  task: Parameters<typeof needsYouMeta>[0] & { title: string },
+  lookup: Parameters<typeof needsYouMeta>[1],
+  nameFor: Parameters<typeof needsYouMeta>[2],
+): string {
+  const line = needsYouMeta(task, lookup, nameFor).replace(/ · UM\d+/u, "");
+  return /bed pull/iu.test(task.title) ? line.replace(/\boverdue\b/u, "past pull limit") : line;
+}
+
 /** Navigation permission never changes the catalogue or supplies a record entitlement. */
 function permittedSearchResult(
   item: SearchResultItem,
@@ -499,7 +512,7 @@ export function GlobalSearch({
                   kindLabel: "Task",
                   id: task.id,
                   title: task.title,
-                  meta: needsYouMeta(task, lookup, nameFor),
+                  meta: alertLine(task, lookup, nameFor),
                   href: task.href ?? movementHref(task.movementId),
                   movementId: task.movementId,
                   tone: task.tone,
@@ -606,7 +619,7 @@ export function GlobalSearch({
           title: task.title,
           // D-39: a person is named by UMRN, never by a WF journey number, in every shape of id.
           // shell-4: the patient's name leads, so a phone (no preview pane) still names them.
-          meta: needsYouMeta(task, lookup, nameFor),
+          meta: alertLine(task, lookup, nameFor),
           href: task.href ?? movementHref(task.movementId),
           movementId: task.movementId,
           tone: task.tone,
@@ -1195,9 +1208,8 @@ export function GlobalSearch({
                                   ) : null}
                                 </span>
                               </span>
-                              <span className={styles.resultKind}>
-                                {item.kind === "task" ? tasksWord.one : item.kindLabel}
-                              </span>
+                              {/* Mock-up: the section heading already names the kind, so it is spoken, not shown. */}
+                              <span className="sr-only">, {item.kind === "task" ? tasksWord.one : item.kindLabel}</span>
                               <span className={styles.actionHint} aria-hidden="true">
                                 <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
                               </span>

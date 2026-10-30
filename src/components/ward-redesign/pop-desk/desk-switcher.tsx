@@ -134,7 +134,8 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
  * search and wiring. Design changes: each health service folds to one summary row (hospitals, people
  * awaiting a bed in its EDs, beds ready), so the drawer opens short instead of as a long list of
  * hospital cards; the service of the desk you are on opens by itself; a search opens every match;
- * and a hospital with nobody waiting says "None awaiting in ED" rather than "0 awaiting bed in ED".
+ * a zero is a quiet grey figure ("0 waiting in ED"), like the "0 ready" beside it; and the ED figure
+ * says "waiting in ED", the rail's and the Service picker's words for the same count.
  *
  * Original note: Switch workstation, direction D (Josh, 9 Oct 2026): a site drawer with an inline preview.
  * Search and recents on top, the desk you are on and what it can do, the statewide desks, then
@@ -497,9 +498,13 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
               <Icon icon={ROLE_ICON[desk.role]} size={16} />
               <span className={styles.who}>
                 <b>{deskRoleLabel(desk.role)}</b>
-                <span>{statewideLine(desk)}</span>
+                {/* Mock-up: the current desk says so in words, so its ring never reads as keyboard focus. */}
+                <span className={mock.tileLine}>
+                  {desk.id === hereId ? "Current · " : null}
+                  {statewideLine(desk)}
+                  {desk.pastTarget ? <PastTarget count={desk.pastTarget} /> : null}
+                </span>
               </span>
-              {desk.pastTarget ? <StatusGlyph tone="danger" /> : null}
             </Link>
           ))}
           {accessOn ? (
@@ -571,7 +576,11 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
             (sum, site) => sum + site.desks.reduce((n, desk) => n + (desk.role === "ward" ? (desk.ready ?? 0) : 0), 0),
             0,
           );
-          const pastTarget = group.some((site) => site.desks.some((desk) => desk.role === "ed" && desk.pastTarget));
+          const pastTarget = group.reduce(
+            (sum, site) =>
+              sum + site.desks.reduce((n, desk) => n + (desk.role === "ed" ? (desk.pastTarget ?? 0) : 0), 0),
+            0,
+          );
           return (
             <section key={service} className={styles.group} aria-label={service}>
               <button
@@ -598,15 +607,12 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
                 <span className={mock.serviceMeta}>
                   {group.length} {group.length === 1 ? "hospital" : "hospitals"}
                 </span>
+                {/* Mock-up: a zero is a quiet figure, like "0 ready" beside it; past target is said in words. */}
                 <span className={styles.mini}>
-                  {pastTarget ? <StatusGlyph tone="danger" /> : null}
-                  {edWaiting > 0 ? (
-                    <>
-                      <span className={styles.mono}>{edWaiting}</span> awaiting bed in ED
-                    </>
-                  ) : (
-                    "None awaiting in ED"
-                  )}
+                  <span className={edWaiting > 0 ? undefined : mock.none}>
+                    <span className={styles.mono}>{edWaiting}</span> waiting in ED
+                  </span>
+                  {pastTarget > 0 ? <PastTarget count={pastTarget} /> : null}
                 </span>
                 <span className={styles.mini}>
                   <span className={styles.mono}>{wardsReady}</span> ready
@@ -648,14 +654,10 @@ export function DeskSwitcherMock({ isOpen, onClose, onSelectRole }: DeskSwitcher
                           <b className={styles.siteName}>{site.site}</b>
                           {ed ? (
                             <span className={styles.mini}>
-                              {ed.pastTarget ? <StatusGlyph tone="danger" /> : null}
-                              {ed.waiting ? (
-                                <>
-                                  <span className={styles.mono}>{ed.waiting}</span> awaiting bed in ED
-                                </>
-                              ) : (
-                                <span className={mock.none}>None awaiting in ED</span>
-                              )}
+                              <span className={ed.waiting ? undefined : mock.none}>
+                                <span className={styles.mono}>{ed.waiting ?? 0}</span> waiting in ED
+                              </span>
+                              {ed.pastTarget ? <PastTarget count={ed.pastTarget} /> : null}
                             </span>
                           ) : null}
                           {wards.length ? (
@@ -750,7 +752,18 @@ function groupByService(sites: { site: string; service?: string; desks: Desk[] }
 }
 
 function statewideLine(desk: Desk): string {
-  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active` : `${desk.waiting ?? 0} awaiting bed in ED`;
+  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active jobs` : `${desk.waiting ?? 0} waiting in ED`;
+}
+
+/** Mock-up: " · 3 past target" after a wait figure, the red glyph beside the words (All EDs' term). */
+function PastTarget({ count }: { count: number }) {
+  return (
+    <span className={mock.pastTarget}>
+      <span aria-hidden="true"> · </span>
+      <StatusGlyph tone="danger" />
+      <span className={styles.mono}>{count}</span> past target
+    </span>
+  );
 }
 
 /** The ED access target as people say it: `24h`, or `5h 30m` when it is not whole hours. */

@@ -2,6 +2,7 @@
 
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
+import { ChevronDown } from "lucide-react";
 import { type ChangeEvent, useId, useRef, useState } from "react";
 
 import { Dialog } from "@/components/wf";
@@ -214,7 +215,8 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
                 onClick={() => setConfirming({ kind: "load", scenario: candidate })}
               >
                 <strong>{scenarioLabels[candidate]}</strong>
-                {scenario === candidate ? <em>Loaded</em> : null}
+                {/* Mock-up: "Current" here and in See it as, one word for the choice in use. */}
+                {scenario === candidate ? <em>Current</em> : null}
               </button>
             ))}
           </div>
@@ -242,7 +244,10 @@ function OperationalDemoPanel({ oneList = false }: { oneList?: boolean }) {
           </button>
         </div>
         <details className={mock.practice}>
-          <summary>Practise a placement</summary>
+          <summary>
+            Practise a placement
+            <ChevronDown aria-hidden="true" className={mock.practiceCaret} strokeWidth={1.75} />
+          </summary>
           <WardPracticeMode className={mock.practiceBody} headingClassName={mock.practiceHeading} />
         </details>
         {savingOnDevice === false ? (

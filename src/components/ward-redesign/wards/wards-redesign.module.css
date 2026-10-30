@@ -31,12 +31,28 @@
 
 /* Card text wraps ("Sir Charles Gairdner · Older adult") instead of ending in "…". */
 .page article *,
-.page [class*="_card__"] * {
+.wrapText * {
   text-overflow: clip;
 }
 .page article p,
 .page article span,
-.page [class*="_card__"] p {
+.wrapText p {
   overflow: visible;
   white-space: normal;
+}
+
+/* A ward name wraps onto a second line rather than being cut ("Mabu Liyan / Broome Mental Health Unit"). */
+.wrapLine.wrapLine {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* Sibling cards: the bed strip and everything under it sit at the foot, so strips line up across a
+   row when one card's name or site wraps. */
+.stripFoot.stripFoot {
+  margin-top: auto;
+}
+.cardFoot.cardFoot {
+  margin-top: 0;
 }

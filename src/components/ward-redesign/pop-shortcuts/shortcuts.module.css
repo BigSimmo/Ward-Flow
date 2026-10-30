@@ -25,20 +25,21 @@
   text-transform: uppercase;
 }
 
+/* No card round each column: the column heading and the row dividers carry it. The key column is
+   as wide as the column's widest key, so each key sits close to what it does. */
 .list {
   display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--wf-s-3);
   margin: 0;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
 }
 
 .item {
   display: grid;
-  grid-template-columns: 5.25rem minmax(0, 1fr);
-  align-items: start;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-3);
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: var(--wf-s-2) 0;
 }
 
 .item + .item {
@@ -112,9 +113,5 @@
 @media (max-width: 48rem) {
   .columns {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .helpButton {
-    min-height: 3rem;
   }
 }

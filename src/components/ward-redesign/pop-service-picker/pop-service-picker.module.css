@@ -143,7 +143,8 @@
   color: var(--wf-ink-1);
 }
 
-.count[data-none] {
+.count[data-none],
+.count[data-none] b {
   color: var(--wf-ink-3);
 }
 
@@ -158,19 +159,16 @@
   visibility: visible;
 }
 
-.foot {
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
-  border-top: 1px solid var(--wf-line);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-}
-
 @media (max-width: 48rem) {
-  /* Phone controls at least 48px (owner rule). */
+  /* Josh, 30 Oct: today's control sizes. The close keeps a larger, invisible touch area. */
   .head button {
-    min-width: 48px;
-    min-height: 48px;
+    position: relative;
+  }
+
+  .head button::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
   }
 
   .scrim {
@@ -191,10 +189,6 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
     border-radius: var(--wf-r-lg, 16px) var(--wf-r-lg, 16px) 0 0;
     visibility: visible;
-  }
-
-  .option {
-    min-height: 48px;
   }
 }
 

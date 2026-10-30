@@ -164,8 +164,7 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
   return (
     <section className={styles.group} aria-label="See it as">
       <h3 className={styles.groupHead}>
-        See it as{" "}
-        <span id={noteId}>Opens that role&rsquo;s demo desk. The scenario stays loaded. Synthetic data only.</span>
+        See it as <span id={noteId}>Opens that role&rsquo;s demo desk · the scenario stays loaded</span>
       </h3>
       <div className={styles.grid} role="group" aria-label="Demo role">
         {WARD_ACCESS_ROLES.map((role) => (
@@ -179,7 +178,7 @@ function LocalDemoRoles({ enabled }: { enabled: boolean }) {
             onClick={() => choose(role)}
           >
             <strong>{ACCESS_ROLE_LABELS[role]}</strong>
-            {current === role ? <em>Selected</em> : null}
+            {current === role ? <em>Current</em> : null}
             {!choices[role] ? <span>No demo desk in this scenario</span> : null}
           </button>
         ))}

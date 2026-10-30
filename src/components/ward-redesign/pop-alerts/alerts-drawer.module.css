@@ -257,6 +257,12 @@
     "tnum" 1;
 }
 
+/* Mock-up: a filter with nothing in it keeps its place but its zero goes quiet. */
+.count[data-zero] {
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+
 .filterMeta {
   display: flex;
   min-width: 0;
@@ -1296,12 +1302,6 @@
   line-height: var(--wf-lh-13);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.groupCount {
-  color: var(--wf-ink-3);
-  font-family: var(--wf-mono);
-  font-variant-numeric: tabular-nums;
 }
 
 .groupList {

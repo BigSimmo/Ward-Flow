@@ -1,10 +1,5 @@
 /* ED board, redesigned. */
 
-/* The Form column shows the form number only; its description is in the record and the tooltip. */
-.board [data-testid^="ward-ed-form-title-"] {
-  display: none;
-}
-
 /* The two links to other pages, as one quiet footer line under the board. */
 .linksFoot {
   display: flex;
@@ -37,7 +32,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-1) var(--wf-s-3);
-  min-height: 48px;
+  min-height: var(--wf-row-compact);
   padding: 0 var(--wf-s-4);
   font-size: var(--wf-fs-13);
   font-weight: 600;
@@ -52,23 +47,34 @@
   border-bottom: 1px solid var(--wf-line);
 }
 
-/* On TV sits with the other hero actions: the empty "since you looked" slot held 240px open
-   between them and left On TV alone mid-band. */
-.board [class*="since-last-look-pill_slot"][data-empty="true"] {
-  display: none;
+/* On TV sits with the other hero actions: the empty "since you looked" slot held 15rem open between
+   them and left On TV alone mid-band. It leaves the flow but stays in the page, so focus can return
+   to it (the source does this on phone only). */
+.slotEmpty.slotEmpty {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  min-block-size: 0;
+  overflow: hidden;
 }
 
 /* Phone: Raise referral and Add patient share one row, half each, instead of one full-width button
-   with a small one under it. */
+   with a small one under it. Both take the row's height, which is the taller button's own size, never an
+   enlarged one. */
+.phoneActions {
+  display: contents;
+}
 @media (max-width: 48rem) {
-  .board [class*="phone_heroActions__"] {
+  .phoneActions {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex: 1 1 100%;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
     gap: var(--wf-s-2);
   }
-  .board [class*="phone_heroActions__"] > * {
+  .phoneActions > * {
     width: auto;
-    min-height: 48px;
+    height: auto;
     justify-content: center;
   }
 }

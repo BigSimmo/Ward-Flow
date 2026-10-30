@@ -23,14 +23,14 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import redesign from "./ed-board-redesign.module.css";
 import styles from "@/components/ward-management/ed/ed.module.css";
-import { EdOverview } from "@/components/ward-management/ed/ed-overview";
-import { SinceLastLookPill } from "@/components/ward-management/since-last-look-pill";
+import { EdOverview } from "./ed-overview-redesign";
+import { SinceLastLookPill } from "./since-last-look-pill-redesign";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "@/components/ward-management/ed/ed-screen-actions";
-import { EdBoardSection } from "@/components/ward-management/ed/ed-screen-board";
+import { EdBoardSection } from "./ed-screen-board";
 import { EdAccessRiskCard } from "./ed-access-risk-redesign";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { deriveEdScreen } from "@/components/ward-management/ed/ed-screen-derivations";
@@ -98,8 +98,9 @@ type EdScreenProps = {
  */
 /**
  * Preview only: a fork of `EdScreen`. One table: the Lists below it repeated the same people, so
- * they fold behind one closed row on desktop. The board's two links become one footer line, and
- * the Form column shows the form number, with its description in the record and the tooltip.
+ * they fold behind one closed row on desktop that counts each list. The board's two links become one footer
+ * line, and the Form column shows the form number, with its description in the record and the tooltip
+ * (forked `ed-screen-desktop.tsx`). The hero is the forked `ed-overview-redesign.tsx`.
  */
 export function EdBoardRedesign({ edId }: EdScreenProps) {
   const thresholds = useDueSoonThresholds();
@@ -186,7 +187,7 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
     },
     {
       href: "/ward-flow/governance",
-      title: "Seen in the last 24 hours",
+      title: "Last 24 hours of events",
       sub: "This department's recorded events, in the Governance audit",
     },
   ].filter((link) => canOpen(link.href));
@@ -502,7 +503,7 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
         {fullscreenBoard || elsewhereLinks.length === 0 ? null : (
           <nav className={redesign.linksFoot} aria-label="Elsewhere" data-testid="ward-ed-elsewhere">
             {elsewhereLinks.map((link) => (
-              <Link key={link.href} href={link.href}>
+              <Link key={link.href} href={link.href} title={link.sub}>
                 {link.title}
                 <ChevronRight size={14} aria-hidden="true" />
               </Link>
@@ -514,7 +515,18 @@ export function EdBoardRedesign({ edId }: EdScreenProps) {
         ) : (
           <details className={redesign.listsFold}>
             <summary>
-              Lists by step <span>Medical clearance, Expects, Forms and Referred, the same people as the board</span>
+              Lists by step{" "}
+              <span>
+                {[
+                  ["Awaiting review", ctx.awaitingReviewPatients.length],
+                  ["Medical clearance", ctx.clearedPatients.length],
+                  ["Expects", ctx.expects.length],
+                  ["Forms", ctx.underFormPatients.length],
+                  ["Referred", ctx.outbox.length + ctx.answeredAll.length],
+                ]
+                  .map(([label, count]) => `${label} ${count}`)
+                  .join(" · ")}
+              </span>
             </summary>
             <EdListsSection ctx={ctx} />
           </details>

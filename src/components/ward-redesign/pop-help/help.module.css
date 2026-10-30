@@ -71,13 +71,34 @@
   border-top: 1px solid var(--wf-line);
 }
 
-@media (max-width: 48rem) {
-  .questionButton {
-    min-height: 3rem;
-  }
+/* The screen's name and purpose sit on the page, not in a card. */
+div.screenHead {
+  padding: 0;
+}
 
+/* The footer's What's new date, as a quiet link in the footer's own type. */
+.footLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.footLink:hover {
+  color: var(--wf-ink-1);
+}
+
+.footLink:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
   .endRow > button {
-    min-height: 3rem;
     flex: 1 1 auto;
   }
 }

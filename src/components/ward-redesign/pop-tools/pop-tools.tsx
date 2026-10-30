@@ -5,8 +5,6 @@ import { useState, type ReactNode } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
-import { formatInstant } from "@/components/ward-management/ward-clock";
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { useDeskRoleLabel } from "@/components/ward-management/shell/ward-access-store";
 import { openReferralSheet, openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
@@ -23,7 +21,6 @@ import { ToolsSheet } from "./tools-sheet";
  */
 export function PopTools({ page }: { page: ReactNode }) {
   const isPhone = useIsPhone();
-  const now = useWardFlowClock();
   const { role } = useWardNavCounts();
   const deskRoleLabel = useDeskRoleLabel(role);
   const [open, setOpen] = useState(true);
@@ -46,9 +43,6 @@ export function PopTools({ page }: { page: ReactNode }) {
             Esc
           </kbd>
         }
-        descriptionContent={
-          <p className={barStyles.activityFreshness}>Quick actions and look ups for the whole network</p>
-        }
         placement="right"
         testId="pop-tools-sheet"
         desktopBackdropClassName={barStyles.drawerBackdrop}
@@ -60,9 +54,6 @@ export function PopTools({ page }: { page: ReactNode }) {
         footer={
           <div className={barStyles.drawerFoot}>
             <span>Whole network · synthetic prototype</span>
-            <span className={barStyles.footClock}>
-              Demo time <b>{formatInstant(now)}</b>
-            </span>
           </div>
         }
         footerClassName={barStyles.drawerFooter}

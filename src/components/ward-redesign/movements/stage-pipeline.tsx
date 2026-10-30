@@ -1,29 +1,33 @@
 import { ChevronRight } from "lucide-react";
 
 import { StatusGlyph, durMinutes } from "@/components/wf";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { JourneyStage } from "@/components/ward-management/movements/movements-derivations";
 import { STAGE_SHORT } from "@/components/ward-management/movements/movements-screen-helpers";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
 import styles from "./movements-redesign.module.css";
 
-/** A wait past this reads amber on its stage, past a day red. */
-const WAIT_WARN_MINUTES = 8 * 60;
-const WAIT_LONG_MINUTES = 24 * 60;
-
 /**
  * The six stages a movement passes through, left to right, each with how many are there and the
- * oldest wait. One strip replaces the hero's stage chips and the stage headings repeating them.
+ * longest wait (time since the journey opened, as the hero's "Longest wait" measures it). One strip
+ * replaces the hero's stage chips; the worklist keeps its stage headings (overview and detail).
  * Choosing a stage highlights its rows in the worklist; nothing is hidden.
+ *
+ * The wait colours use the same lines as the hero's pills: amber from the severe-pressure default
+ * ("Over 8h"), red past the configured ED access target ("Past 24h").
  */
 export function StagePipeline({
   stages,
   now,
+  accessTarget,
   highlight,
   onToggle,
 }: {
   stages: readonly JourneyStage[];
   now: Instant;
+  /** The configured ED access target, in minutes. */
+  accessTarget: number;
   highlight: string | null;
   onToggle: (stageId: JourneyStage["id"]) => void;
 }) {
@@ -36,9 +40,9 @@ export function StagePipeline({
           const tone =
             wait === undefined
               ? undefined
-              : wait >= WAIT_LONG_MINUTES
+              : wait >= accessTarget
                 ? "danger"
-                : wait >= WAIT_WARN_MINUTES
+                : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES
                   ? "warning"
                   : undefined;
           return (
@@ -58,7 +62,7 @@ export function StagePipeline({
                   ) : (
                     <>
                       {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-                      oldest {durMinutes(wait)}
+                      longest {durMinutes(wait)}
                     </>
                   )}
                 </span>

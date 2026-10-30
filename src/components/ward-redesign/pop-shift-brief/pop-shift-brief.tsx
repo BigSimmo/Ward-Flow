@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 
-import { WardDailySheetDialog } from "@/components/ward-management/board/ward-daily-sheet";
+import { WardDailySheetDialog } from "@/components/ward-redesign/pop-shift-brief/shift-brief-sheet";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 
 /** The ward the stays and ward mock-ups draw, so the brief matches the page behind it. */
