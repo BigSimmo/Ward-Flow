@@ -296,21 +296,39 @@
 .chips {
   padding: 0 var(--wf-s-4) var(--wf-s-2);
 }
+/* Recent activity: time, glyph, then the text across the rest of the row. Its own areas, so the
+   shared row classes (which name grid areas) cannot drop the text into the glyph's column. */
 .eventRow {
   position: relative;
   display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  align-items: center;
-  column-gap: 10px;
+  grid-template-columns: minmax(2.5rem, auto) 12px minmax(0, 1fr);
+  grid-template-areas: "time glyph text";
+  align-items: baseline;
+  align-content: center;
+  column-gap: var(--wf-s-2);
   min-height: 40px;
   padding: 6px var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
   font-size: var(--wf-fs-13);
   line-height: 18px;
 }
+.eventTime {
+  grid-area: time;
+  font: 500 var(--wf-fs-12) / 18px var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.eventGlyph {
+  grid-area: glyph;
+  align-self: center;
+}
 .eventText {
+  grid-area: text;
+  min-width: 0;
   color: var(--wf-ink-1);
   text-decoration: none;
+  overflow-wrap: anywhere;
 }
 a.eventText::after {
   content: "";
@@ -427,15 +445,36 @@ a.eventText:hover {
   .switchRow.switchRow {
     flex-wrap: nowrap;
   }
+  /* A slim track (36px) whose options keep a 48px hit area through an invisible cover. */
   .viewSwitch.viewSwitch {
     flex: 1 1 auto;
+    align-items: center;
     min-width: 0;
-    height: auto;
+    height: 36px;
+    min-height: 0;
+    margin-block: 6px;
+    padding: 2px;
+    overflow: visible;
+    border-color: var(--wf-line);
+    box-shadow: none;
   }
   .viewSwitch.viewSwitch > * {
+    position: relative;
     flex: 1 1 auto;
-    min-height: 48px;
+    justify-content: center;
+    height: 30px;
+    min-height: 0;
     padding-inline: 8px;
+    font-size: var(--wf-fs-13);
+  }
+  .viewSwitch.viewSwitch > *::after {
+    content: "";
+    position: absolute;
+    inset: -9px 0;
+  }
+  .viewSwitch.viewSwitch > [aria-checked="true"] {
+    font-weight: 600;
+    color: var(--wf-ink-1);
   }
 
   /*
@@ -570,4 +609,87 @@ a.eventText:hover {
     overflow: visible;
     text-overflow: clip;
   }
+}
+
+/*
+ * Status glyphs on this page (Josh, 30 Oct 2026): one refined set in place of the kit's basic
+ * triangle, bar and dot. Act now is a rounded warning triangle with an exclamation mark, to decide
+ * a rounded square with a question mark, overdue or watch a filled clock. Each is a mask filled with
+ * the glyph's own colour (the danger, info and warning tokens, or the hero's), so light, dark and
+ * forced colours still follow the kit. Scoped to this page and its Activity panel; the kit is
+ * unchanged.
+ */
+:is(.scope, .glyphScope) svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) {
+  width: 12px;
+  height: 12px;
+  background-color: currentColor;
+  -webkit-mask: var(--wf-glyph) center / contain no-repeat;
+  mask: var(--wf-glyph) center / contain no-repeat;
+}
+:is(.scope, .glyphScope) svg[class*="glyph"]:is([class*="_danger"], [class*="_info"], [class*="_warning"]) > * {
+  visibility: hidden;
+}
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_danger"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M8 5.4v3.6' stroke='black' stroke-width='1.9' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.8' r='1.1' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M6.6 2.3a1.6 1.6 0 0 1 2.8 0l5.5 9.6a1.6 1.6 0 0 1-1.4 2.4H2.5a1.6 1.6 0 0 1-1.4-2.4z' mask='url%28%23m%29'/%3E%3C/svg%3E");
+}
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_info"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M6.1 6.2a1.95 1.95 0 1 1 2.7 1.8c-.5.2-.8.6-.8 1.1v.3' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='8' cy='11.7' r='1.05' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M4.5 1.5h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3z' mask='url%28%23m%29'/%3E%3C/svg%3E");
+}
+:is(.scope, .glyphScope) svg[class*="glyph"][class*="_warning"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M8 4.6v3.7l2.3 1.5' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E");
+}
+@media (forced-colors: active) {
+  :is(.scope, .glyphScope) svg[class*="glyph"] {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
+}
+
+/*
+ * Phone ED chips (Josh, 30 Oct 2026): slimmer and quieter. A 32px pill with a hairline border, the
+ * waiting count and the longest wait on one line, and a 48px hit area from an invisible cover. The
+ * strip sits closer to the list tabs under it.
+ */
+@media (max-width: 48rem) {
+  .scope [class*="_edWrap__"] {
+    margin-bottom: calc(-1 * var(--wf-s-2));
+  }
+  .scope [class*="_edGrid__"] {
+    gap: 6px;
+    padding-block: 8px;
+  }
+  .scope [class*="_edButton__"] {
+    position: relative;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    min-height: 0;
+    padding: 0 10px;
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-pill);
+    box-shadow: none;
+  }
+  .scope [class*="_edButton__"]::after {
+    content: "";
+    position: absolute;
+    inset: -8px -3px;
+  }
+  .scope [class*="_edButton__"][aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-accent-tint);
+  }
+  .scope [class*="_edButton__"] [class*="_edWaitingValue__"],
+  .scope [class*="_edButton__"] [class*="_edMono__"] {
+    line-height: 16px;
+  }
+  .scope [class*="_edButton__"] [class*="_edLine__"] {
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+/* In Activity an amber event is "worth a look", not overdue, so it is a filled dot rather than the
+   overdue clock. */
+.glyphScope svg[class*="glyph"][class*="_warning"] {
+  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
 }

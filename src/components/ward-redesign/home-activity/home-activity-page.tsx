@@ -665,8 +665,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
-      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure · Limited demo
-      coverage
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure
     </span>
   );
   const bedsReady = counts.capacity?.value ?? 0;
@@ -827,22 +826,16 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
               isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }
             title={heroTitle}
+            // Redesign (Josh, 30 Oct 2026): the synthetic disclosure lives in the app bar and the footer, so
+            // the hero keeps only its facts; on a phone they fold to one line.
             titleMeta={
               isPhone ? (
-                <>
-                  {/* The physical split stays beside the journey total on every screen size. */}
-                  {notWaitingMeta ? (
-                    <>
-                      {notWaitingMeta}
-                      <br />
-                    </>
-                  ) : null}
-                  {`Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
-                  }`}
-                </>
+                <span data-testid="ward-home-ed-population">
+                  {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
+                  {statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% beds in use` : ""}
+                </span>
               ) : (
-                (notWaitingMeta ?? undefined)
+                notWaitingMeta
               )
             }
             stats={
@@ -960,7 +953,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
                   command
                   value={changeCount > 0 ? changeCount : null}
                   label={changesChipLabel}
-                  tone={changeCount > 0 ? "info" : undefined}
+                  // No glyph: the info glyph reads "to decide" on this page, which a change is not.
                   onToggle={changesChipOpen}
                   className={mock.changesChip}
                 />

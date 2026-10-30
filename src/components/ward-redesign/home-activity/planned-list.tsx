@@ -26,9 +26,10 @@ import { plannedRows, type PlannedKind, type PlannedRow } from "./planned-model"
 const FIRST_ROWS = 8;
 
 const KIND_TONE: Record<PlannedKind, WfTone> = {
-  move: "info",
-  transport: "info",
-  admission: "info",
+  // Neutral rings for records; the info glyph means "to decide" on this page.
+  move: "neutral",
+  transport: "neutral",
+  admission: "neutral",
   discharge: "success",
   target: "warning",
 };

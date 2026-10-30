@@ -207,6 +207,7 @@ export function ActivityPanel({
           <PillTabs items={tabs} value={tab} onChange={onTab} label="Activity" idPrefix="home-activity" fill />
         </div>
       }
+      contentClassName={styles.glyphScope}
       bodyClassName={styles.panelBody}
       footerClassName={styles.panelFooter}
       footer={showFoot ? <ReviewFoot review={review} /> : undefined}
@@ -338,8 +339,22 @@ function ReviewFoot({ review }: { review: Review }) {
   );
 }
 
+/**
+ * The feed names a person by UMRN (D-39 in the bar's feed); this panel names them surname first
+ * (D-83) wherever the UMRN belongs to a known synthetic person, and leaves any other number as is.
+ */
+function usePersonText(): (text: string) => string {
+  const { patients } = useWardFlowSelect("patients");
+  const byUmrn = useMemo(
+    () => new Map(patients.map((patient) => [patient.umrn, `${patient.familyName}, ${patient.givenName}`])),
+    [patients],
+  );
+  return (text) => text.replace(/\bUM\d{6}\b/gu, (umrn) => byUmrn.get(umrn) ?? umrn);
+}
+
 function RecentBody({ events, tones }: { events: Activity["content"]["changes"]; tones: Activity["tones"] }) {
   const [filter, setFilter] = useState<ActivityCategoryFilter>("all");
+  const personText = usePersonText();
   const counts = useMemo(() => {
     const next: Record<ActivityCategoryFilter, number> = {
       all: 0,
@@ -380,15 +395,20 @@ function RecentBody({ events, tones }: { events: Activity["content"]["changes"];
       <ol className={styles.plainList} aria-label="Recent activity">
         {rows.map((event) => (
           <li key={event.id} className={styles.eventRow}>
-            <StatusGlyph tone={ACTIVITY_GLYPH[tones[event.id] ?? "info"]} size={9} className={styles.rowGlyph} />
+            <time className={styles.eventTime}>{event.time}</time>
+            <StatusGlyph
+              // An update is a plain ring here: the info glyph means "to decide" on this page.
+              tone={(tones[event.id] ?? "info") === "info" ? "neutral" : ACTIVITY_GLYPH[tones[event.id] ?? "info"]}
+              size={9}
+              className={styles.eventGlyph}
+            />
             {event.href ? (
               <Link href={event.href} className={styles.eventText}>
-                {event.text}
+                {personText(event.text)}
               </Link>
             ) : (
-              <span className={styles.eventText}>{event.text}</span>
+              <span className={styles.eventText}>{personText(event.text)}</span>
             )}
-            <time className={styles.rowTime}>{event.time}</time>
           </li>
         ))}
       </ol>

@@ -157,7 +157,7 @@ function changeLines(changes: ChangesSinceLastLook, context: LineContext): Chang
     lines.push({
       id: `discharge-moved:${row.admissionId}:${admission.dischargeDateSetAt ?? 0}`,
       group: "discharges",
-      tone: "info",
+      tone: "neutral",
       ...person(nameOf(admission)),
       text: `expected discharge date moved${row.unitName ? ` · ${row.unitName}` : ""}`,
       at: admission.dischargeDateSetAt ?? undefined,
