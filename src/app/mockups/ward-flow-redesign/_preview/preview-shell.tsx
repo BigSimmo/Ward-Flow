@@ -6,12 +6,11 @@ import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/a
 import { NavigationPromisesContext, PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 
 import { useOptionalToast } from "@/components/wf";
-import { WardBarMount } from "@/components/ward-management/shell/ward-bar";
-import { WardRail } from "@/components/ward-management/shell/ward-rail-lazy";
+import { PreviewBarMount as WardBarMount } from "@/components/ward-redesign/shell/preview-bar";
+import { PreviewRail as WardRail } from "@/components/ward-redesign/shell/preview-rail";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
-import shellFix from "./preview-shell.module.css";
 import { mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";
@@ -67,7 +66,7 @@ export function PreviewShell({
     <AppRouterContext.Provider value={router}>
       <NavigationPromisesContext.Provider value={null}>
         <PathnameContext.Provider value={appPath}>
-          <div className={`${layoutStyles.shellRow} ${shellFix.row}`} onClickCapture={keepLinksInMockups}>
+          <div className={layoutStyles.shellRow} onClickCapture={keepLinksInMockups}>
             <WardRail />
             <div className={layoutStyles.shellContent} data-wf-scroller="">
               <WardBarMount />
