@@ -1,0 +1,120 @@
+/* Redesign: the keyboard shortcuts in three columns, each key beside what it does. */
+.panel {
+  font-family: var(--wf-font);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+}
+
+.column {
+  display: grid;
+  align-content: start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.columnTitle {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.item + .item {
+  border-top: 1px solid var(--wf-line);
+}
+
+.keys {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.kbd {
+  display: inline-flex;
+  min-width: 1.75rem;
+  height: 1.625rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-2);
+  border-bottom-width: 2px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.action {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.foot {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.helpButton {
+  display: inline-flex;
+  min-height: var(--wf-h-sm);
+  align-items: center;
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.helpButton:hover {
+  border-color: var(--wf-line-3);
+}
+
+.helpButton:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .helpButton {
+    min-height: 3rem;
+  }
+}

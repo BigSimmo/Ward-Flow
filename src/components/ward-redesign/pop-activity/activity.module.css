@@ -1,0 +1,70 @@
+/* Redesign: an Activity row leads with the person's name (surname first), then what happened. */
+.event {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.who {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.who strong {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.umrn {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.what {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  line-height: var(--wf-lh-12);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  width: 100%;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.footLink {
+  display: inline-flex;
+  min-height: var(--wf-h-sm);
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .footLink {
+    min-height: 3rem;
+  }
+}

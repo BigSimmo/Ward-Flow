@@ -6,6 +6,151 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  "pop-ed-actions": [
+    "**Built from a copy of today's row actions menu**: the items, labels, conditions and short reasons are the menu's own, and each item presses the board's real control.",
+    "**New:** only the actions you can take now, in three groups (Review and disposition, Transfer and handover, Legal and referral). The row's next step is the one filled button.",
+    "**New:** greyed actions fold into 'Not available yet (n)', each with its short reason, who acts next and its one fix.",
+    "**Kept:** every action, including View patient record, Edit presentation and Edit plan. A bottom sheet with 48 px rows on a phone.",
+  ],
+  "pop-log-transport": [
+    "**Built from a copy of today's transport booking form**: every field, the check and the save work as now.",
+    "**New:** '3 answers left' moves to the top with a link to the first one; with nothing left it reads 'Every answer given. Check them, then save.'",
+    "**New:** phone answer buttons are 48 px tall, and the pinned Save row matches the popup background in dark.",
+    "**Kept:** all fields, the legal-status prefill from Legal now, and Save greyed until every answer is in.",
+  ],
+  "pop-officer-job": [
+    "**Built on today's job panel itself**, opened by choosing the first job on the desk, so steps, forms pack, copy and close are real.",
+    "**New:** on wider screens the four leg steps sit two by two, so 'Arrived at ward' is no longer cut off.",
+    "**Kept:** the phone panel (steps list, Mark en route pinned at the foot) is unchanged.",
+  ],
+  "pop-record-form": [
+    "**Built from a copy of today's Record a form sheet**: validation, error summary, draft keeping, save and Undo work as now.",
+    "**New:** movement first, then the form type, then the time and date as written on the paper, with one line under the time: 'Only the written time is recorded. No expiry is calculated.'",
+    "**Kept:** the form type always opens blank, and no legal period is worked out (D5, D-70).",
+  ],
+  "pop-record-exam": [
+    "**Built from today's ED examination form**: the same four outcomes in the same words, the same 'Choose an outcome first' check and the same save, with Undo.",
+    "**New:** its own popup, each outcome a 48 px row and the button full width on a phone.",
+    "**Still open:** today Legal forms does not record the exam; it sends you to the ED board ('Record on ED'). Drawn over Legal forms as a proposal: should Legal forms record it directly, or keep the link?",
+  ],
+  "pop-add-time": [
+    "**Built from the side panel's 'Record the time written' form**: the same fields (date, time, region, age band), checks and save, with Undo.",
+    "**New:** 'Add the time' opens it as its own popup on the person (today it opens the side panel and jumps to the form). Region and Age band have visible labels.",
+    "**Kept:** 'Only the written time is recorded. No expiry is calculated.' Region and age band open as Not recorded, never guessed.",
+  ],
+  "pop-bed-record": [
+    "**Built from a copy of today's bed drawer** with My ward's own wiring, so Record that they have left, blockers, Mark at an ED, observation level, discharge date and the confirm steps work as now. It opens on the first bed that needs a look.",
+    "**New:** one filled button chosen by the stay (held up: Update blocker; away at an ED: Mark them back; due out or past date: Record that they have left; settled: none), with one plain button and More beside it.",
+    "**New:** a 'Why they have not left' notice under the four facts, from what the ward recorded. Surname first; the fact tiles wrap instead of cutting off; Patient page sits beside the name. The drawer is 500 px wide (was 460) so the three buttons fit.",
+    "**Kept:** the four headline facts, the Overview, Plan to leave and Timeline tabs, Patient page, and the paper-authority and criteria notes.",
+  ],
+  "pop-confirm-beds": [
+    "**Built from a copy of today's Confirm capacity figures dialog**, with the same two confirm handlers, so it saves the beds and the morning numbers as now, now in the shared dialog.",
+    "**New:** four fact tiles first (Staffed beds, In use, Ready, Closed), Pulled and Open-and-vacant in one quiet line, then a − / + control for the free beds showing the change as you go.",
+    "**New:** one filled button: 'Confirm beds and morning numbers (09:30)' while they are due, with 'Confirm beds only' beside Cancel.",
+    "**Kept:** 'Writes to Dabakarn only — never any other ward', 'Currently confirmed … at …', and Review today's expected discharges (which now goes to Stays and discharges).",
+  ],
+  "pop-broadcast": [
+    "**Built from a copy of today's broadcast composer** and the Alerts screen's draft and Dispatch, drawn over Alerts where it lives, so it sends the same network alert as now.",
+    "**New:** a wider dialog in the middle of the screen: the form on the left (Severity and Expires side by side), and on the right a preview of what each desk will see, with who it goes to and the desk count.",
+    "**New:** Dispatch stays greyed until the box is ticked and says what is left ('Tick the confirmation first.').",
+    "**Kept:** every field, the template list and the confirmation wording. One column, full screen, on a phone.",
+  ],
+  "pop-ward-notices": [
+    "**Built from a copy of today's Notices panel**, opened as now (right-hand sheet on a computer, tall sheet on a phone), with My ward's own Confirm numbers and Acknowledge.",
+    "**New:** names are surname first; only Act now rows keep a filled button (a Check row's Open transfer is plain); a list longer than 8 shows its first 6, then Show more.",
+    "**Kept:** the filters, the Needs attention and From the coordinator sections, and the buzz sound switch.",
+  ],
+  "pop-refer-ward": [
+    "**Built from the ED row's own Refer to a ward link**, read into the same request the app bar opens, for the first person on the Peel ED board whose next step is Refer to a ward: ward chosen, sent from Peel ED, patient and referral filled in.",
+    "**Kept:** it reuses the redesigned referral slide-out from the New referral mock-up, in the app bar's own sheet, so the two read the same.",
+    "**Still open:** the shared slide-out still shows the patient first name first in its header and Before you send list; it needs `formalName`.",
+  ],
+  "pop-demo": [
+    "**Built from a copy of today's Demo menu, panel and roles**, so scenario loads, Reset, the clock, Save and Load, and role switching work as now, confirms included.",
+    "**New:** Scenario and See it as are compact two-column grids; the clock is one row; Save to file, Load from file and Reset demo sit in a pinned footer.",
+    "**New:** role paragraphs are cut to one line, Practise a placement folds into a closed row, and the header has its own close button (48 px on a phone).",
+    "**Kept:** all 8 scenarios, every role, and the safety lines word for word.",
+  ],
+  "pop-menu": [
+    "**Built from a copy of today's phone Menu**, so Needs you, the counts, search, Go to a desk, Tools, Settings and Help work as now.",
+    "**New:** Act now and overdue first, then this desk's own pages, then one 'More pages' row ('11 pages in 3 groups') that opens the other groups in place.",
+    "**New:** the old More section is renamed 'Tools and settings', so two things are no longer called More.",
+    "**Kept:** search still finds every page, My wards, and the 'not approved for clinical use' line.",
+  ],
+  "pop-create": [
+    "**Built from a copy of today's Create sheet**, so New referral opens the referral slide-out and the other rows go to their pages.",
+    "**Kept:** New referral is the one filled button, then Log a delay, Update a bed and Add patient (today's order).",
+    "**New:** a small 'Or record' heading over the three secondary rows.",
+  ],
+  "pop-ward-switcher": [
+    "**Built on today's Switch ward menu's own rules**: the same access filter and the same navigation to the chosen ward.",
+    "**New:** this ward sits at the top, ticked; wards at the same hospital come next, then 'Elsewhere in East Metro'. Each shows its cohort, security and 'n of N ready', from the Wards page's figures.",
+    "**New:** after 6 rows under Elsewhere, a Show more link. On a phone it is a bottom sheet with 48 px rows.",
+    "**Still open:** today's menu lists only the same hospital (or the service when the hospital has no other ward). Showing the wider service is a proposal for Josh.",
+  ],
+  "pop-shift-brief": [
+    "**Today's Shift brief dialog, unchanged**, opened for Dabakarn over My ward (where its Shift brief button is), so Copy, Print and Close work as now.",
+    "**Still open:** no design changes, because there were no review notes for it. Josh to say what to change.",
+  ],
+  "pop-desk": [
+    "**Built from a copy of today's Go to a desk drawer**, so search, recents, the statewide tiles and opening a desk work as now.",
+    "**New:** each health service folds to one summary row (hospitals, people awaiting a bed in its EDs, beds ready), so the drawer opens short.",
+    "**New:** the service of your current desk opens by itself, and a search opens every match. A hospital with nobody waiting says 'None awaiting in ED'.",
+  ],
+  "pop-service-picker": [
+    "**Built on today's Service picker's own figures and save**, so choosing a service narrows the lists and announces it as now.",
+    "**New:** the 'Narrows the Capacity, Waiting and Movements lists' line shows on desktop too, and Statewide carries its total.",
+    "**New:** counts read as a bold number plus 'waiting'; a service with nobody waiting says 'None waiting'; a foot note says what the counts are. A bottom sheet with 48 px rows on a phone.",
+  ],
+  "pop-more-pages": [
+    "**Built on today's More pages sheet's own logic**, so it shows the same pages, groups, counts, links and Go to a desk.",
+    "**New:** a wider sheet with the groups side by side, so every page shows without scrolling.",
+    "**New:** board time and the handover time are one line under the title; the foot is one row (person, Settings).",
+    "**Still open:** the Appearance switch is left out of the foot because the rail has it; add it back if iPad portrait needs it.",
+  ],
+  "pop-tour": [
+    "**Built from a copy of today's tour**, with the same steps, spotlight, keys and saved place, drawn over Home (the coordinator's desk home, where it runs).",
+    "**New:** the progress bar and 'Step n of N' sit under the header; Close is an icon in the corner; the buttons read Skip tour, then Back and Next.",
+    "**Changed for the mock-up:** it does not jump to the desk's home first, so it stays over the page it is drawn on.",
+  ],
+  "pop-alerts": [
+    "**Built from a copy of today's Alerts drawer**, fed the same alert list as the bell, so Acknowledge, Open and each row's action work as now.",
+    "**New:** only the most urgent row (Release pulled bed) has a filled button. Same-kind alerts share one row ('Transport awaiting departure · 5'), one line per person; a group longer than 8 shows its first 6, then Show more.",
+    "**New:** names are surname first ('Cadwaller, Rhys'). Open Alerts is outlined, so the panel keeps one filled button.",
+    "**Kept:** Open Alerts, Acknowledge visible, and the All, Act now, Waiting and Running filters. No 'Chase all' (it needs a new command).",
+    "**Still open:** on a phone the bell opens the Alerts page, not this drawer; at 390 px the mock-up shows the drawer's phone layout.",
+  ],
+  "pop-activity": [
+    "**Built from a copy of today's Activity panel**, with the same events, notices and Mark as read.",
+    "**New:** each row leads with the person, surname first, then the record number, then what happened.",
+    "**New:** an Alerts history link in the footer, to the Alerts page (as Home's link does). It replaces the footer's Demo time pop-out; the demo time still shows in the header line.",
+    "**Kept:** search, the category filters (All, Escalations, Declines, Referrals, Transfers) and Live tally.",
+  ],
+  "pop-tools": [
+    "**Built from a copy of today's Tools sheet**, so every tool opens and works as now.",
+    "**New:** a Search tools box, and three groups: Do now, Look up, Print and share. Hospital feed moves into Do now; Legal forms (and Out of area on a phone) into Look up.",
+    "**New:** the end of each row means something: an arrow opens the tool's page, a caret opens it in place. A short key under the search says so.",
+    "**Kept:** Change view (Viewing as) and every tool; the phone keeps New referral, Handover sheet and Demo.",
+  ],
+  "pop-search": [
+    "**Built from a copy of today's header search**, drawn in the app bar's own search slot and opened on load, as pressing '/' does.",
+    "**New:** before anything is typed, the right half previews the first person in the list instead of the New referral button alone.",
+    "**New:** in a person's preview, Open patient is the one filled button, then Open movement, then Open referral (renamed from 'Open referral in inbox →').",
+    "**Kept:** the All, People, Movements and Referrals tabs, Full patient search and the keyboard hints.",
+    "**Still open:** Open referral shows only when a referral is linked; the drawn person has none.",
+  ],
+  "pop-help": [
+    "**Built from a copy of today's Help sheet** (not PR #1109's version). It opens on This screen, as the rail's Help does.",
+    "**New:** one box, 'Search Help or ask a question'; the separate Ask a question box has gone, as search already finds the how-to answers.",
+    "**New:** a screen's questions fold open one at a time; Take the tour and Keyboard shortcuts are buttons at the end of every view (the phone shows only Take the tour, as today).",
+    "**Kept:** Your desk (now headed with the desk name), This screen, Glossary, What's new and Reference. Take the tour runs the real tour.",
+  ],
+  "pop-shortcuts": [
+    "**Built from a copy of today's Keyboard shortcuts sheet**, with the same title, hint and More in Help button.",
+    "**New:** three columns (Find, Open, Move around), each key drawn beside what it does; they stack on a phone.",
+    "**Kept:** every shortcut, read from the same list Help uses, so the two cannot disagree. More in Help opens today's Help sheet.",
+  ],
   "pop-state-loading": [
     "**Built from today's shared loading placeholder** (`ward-flow/loading.tsx`), so the 'Loading page' status, the busy marker and the pulsing grey blocks stay as now.",
     "**New:** the blocks take Home's shape (hero band, ED blocks, My list beside Beds that fit and Placement), so the page lands where the blocks were instead of jumping. On a phone it folds to the band, three ED blocks and one list block.",
