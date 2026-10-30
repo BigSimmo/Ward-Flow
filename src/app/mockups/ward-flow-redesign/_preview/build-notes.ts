@@ -104,6 +104,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
     "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
   ],
+  agenda: [
+    "**Built from a copy of today's meeting agenda**, so the four lists, Actions from earlier meetings, Done with its Undo, and recording an action (pick-list, owner, due time) all work as now.",
+    "**New:** a header counting each list and the actions waiting, with Bed meeting sheet (the same printed sheet Capacity opens) and Start meeting (opens the bed meeting TV).",
+    "**New:** the four lists sit two by two in the full width, so the agenda fits about one screen instead of a 2,000-pixel column.",
+    '**New (D-83):** every list names people surname first. Each row has a small "+ Action" instead of about 20 identical Add action buttons, and a red mark where the record itself says it is urgent: an ED wait over 24 hours, or a pulled bed whose pull has run out. Nothing else is judged.',
+    "**Kept:** the note that actions are tasks for people and an overdue action is shown, never escalated.",
+  ],
   "bed-meeting-tv": [
     "**Built from a copy of today's bed meeting TV**, so Change screen, Full screen, Lock as TV, Leave TV view, the ward and ED screens, the live refresh and the read-only footer all work as now.",
     '**New:** each tile is one big figure and one short line ("7 locked · 3 bed types short"). What the tiles used to add in small print (the ward count not confirmed, beds being made ready, referrals with no reply) is one line under the tiles, or under the controls on a TV.',

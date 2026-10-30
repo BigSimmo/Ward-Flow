@@ -25,6 +25,21 @@ import { OnCallRedesign } from "@/components/ward-redesign/on-call/on-call-redes
 import { SeclusionRedesign } from "@/components/ward-redesign/seclusion/seclusion-redesign";
 import { GovernancePage } from "@/components/ward-redesign/governance/governance-page";
 import { BedMeetingTvPage } from "@/components/ward-redesign/bed-meeting-tv/bed-meeting-tv-page";
+import { DowntimePage } from "@/components/ward-redesign/downtime/downtime-page";
+import { ChronologyPage } from "@/components/ward-redesign/chronology/chronology-page";
+import { PlacesPage } from "@/components/ward-redesign/places/places-page";
+import { CommunityPage } from "@/components/ward-redesign/community/community-page";
+import { CommunityTeamPage } from "@/components/ward-redesign/community-team/community-team-page";
+import { PatientPage } from "@/components/ward-redesign/patient/patient-page";
+import { AddPatientPage } from "@/components/ward-redesign/add-patient/add-patient-page";
+import { WardAnswerPage } from "@/components/ward-redesign/ward-answer/ward-answer-page";
+import { SettingsPage } from "@/components/ward-redesign/settings/settings-page";
+import { SignInPage } from "@/components/ward-redesign/sign-in/sign-in-page";
+import { StatisticsComparePage } from "@/components/ward-redesign/statistics-compare/statistics-compare-page";
+import { StatisticsListPage } from "@/components/ward-redesign/statistics-list/statistics-list-page";
+import { StatisticsUnitPage } from "@/components/ward-redesign/statistics-unit/statistics-unit-page";
+import { StatisticsWeeklyPage } from "@/components/ward-redesign/statistics-weekly/statistics-weekly-page";
+import { AgendaRedesign } from "@/components/ward-redesign/agenda/agenda-redesign";
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -55,4 +70,19 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   seclusion: SeclusionRedesign,
   governance: GovernancePage,
   "bed-meeting-tv": BedMeetingTvPage,
+  downtime: DowntimePage,
+  chronology: ChronologyPage,
+  places: PlacesPage,
+  community: CommunityPage,
+  "community-team": CommunityTeamPage,
+  patient: PatientPage,
+  "add-patient": AddPatientPage,
+  "ward-answer": WardAnswerPage,
+  settings: SettingsPage,
+  "sign-in": SignInPage,
+  "statistics-compare": StatisticsComparePage,
+  "statistics-list": StatisticsListPage,
+  "statistics-unit": StatisticsUnitPage,
+  "statistics-weekly": StatisticsWeeklyPage,
+  agenda: AgendaRedesign,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

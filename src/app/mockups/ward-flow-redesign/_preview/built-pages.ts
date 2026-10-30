@@ -23,6 +23,21 @@ export const MOCKUP_PAGE_SLUGS = [
   "seclusion",
   "governance",
   "bed-meeting-tv",
+  "downtime",
+  "chronology",
+  "places",
+  "community",
+  "community-team",
+  "patient",
+  "add-patient",
+  "ward-answer",
+  "settings",
+  "sign-in",
+  "statistics-compare",
+  "statistics-list",
+  "statistics-unit",
+  "statistics-weekly",
+  "agenda",
 ] as const;
 
 export type BuiltPageSlug = (typeof MOCKUP_PAGE_SLUGS)[number];
