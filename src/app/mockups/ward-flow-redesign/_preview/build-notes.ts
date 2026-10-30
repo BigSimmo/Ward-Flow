@@ -85,6 +85,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** Bed board, Journey and Map are one switch instead of three large cards, and Open a unit is one button beside it that shows today's unit finder in place, instead of a panel repeating the menu.",
     "**New:** summary first. Occupancy by service (with Empty to ready and Admission stages, which come with it) sits at the top, and the hospital chart lists its first 7 hospitals with Show all.",
   ],
+  alerts: [
+    "**Built from a copy of today's Alerts page**, so Now, Broadcast, Notices and History, the Urgency, Lanes and Owner views, Notify me, Copy for handover and every row action work as now.",
+    '**New:** the Checking strip is one chip ("8 checks raised · 4 clear") that opens today\'s full list in place. The owner highlight is one menu instead of chips that ran off the panel.',
+    '**New (point 17):** three or more alerts of one recorded kind in a row become one group row ("Transport awaiting departure · 5 people"), opened with Show each. It groups by kind only, never by wording, and each alert keeps its own row and action inside.',
+    '**New:** the detail panel has one Release (for the pulled bed), with "Choose a reason first" written under it until a reason is chosen. The second button that also said Release meant handing the alert back, so it now says Hand back, on one row with More actions.',
+    "**Not done here:** a Chase all button for a group. Each person's Chase transport is inside the group; one button acting on all five needs a new command, so it waits for your yes.",
+  ],
   home: [
     "**Built from a copy of today's Home screen**, so every list, filter, sheet and button works as it does now. The difference between the two files is the design change.",
     "**Changed from the HTML mock-up:** Placement no longer opens on the first item. Your Home v7 rule (22 October) says it opens only for the person the coordinator chooses, so the name is checked first. The card now names the oldest alert to place, with one button to open that person.",

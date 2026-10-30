@@ -56,6 +56,10 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`. No pull
 | Stays and discharges | Fork                  | Ward home hero, one figures line, one notice, five cards a row                      |
 | ED board             | Fork                  | One table, Lists folded, form number only, links in the footer                      |
 | Transport            | Fork                  | Surname first, jobs line beside the title, "from → to" routes, missing forms marked |
+| Patients             | Real screen + styles  | Cells wrap, chips wrap                                                              |
+| Discharges           | Fork                  | "59 to work now of 207 open", person first, one action a row, blocker counts beside |
+| All wards            | Fork                  | Status, Cohort and Order as menus, key and count on one line, card text wraps       |
+| Statistics           | Fork (split helpers)  | View switch with Open a unit, occupancy first, chart's first 7 rows                 |
 
 Popups working so far: bed meeting sheet, try a scenario, Capacity ward panel, phone bed forecast, and the
 real movement drawer.
