@@ -14,3 +14,9 @@
 .finder {
   max-width: 40rem;
 }
+
+/* Redesign (phone rows): a count's noun on the same line as the count, quieter than the figure. */
+.rowUnit {
+  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
+  color: var(--wf-ink-2);
+}

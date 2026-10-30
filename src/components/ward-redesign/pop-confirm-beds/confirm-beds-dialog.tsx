@@ -188,9 +188,10 @@ export function ConfirmBedsDialog() {
       <Dialog
         open={open}
         onClose={close}
-        size="md"
+        // Redesign: wide enough for the three footer buttons on one row.
+        size="lg"
+        // Redesign: the ward is named once, in the title; the intro sentence repeated it.
         title={`Confirm capacity figures — ${unit.name}`}
-        description={`Confirm or update the live operational figures for ${unit.name}.`}
         primary={primary}
         secondary={secondary}
         closeLabel="Close capacity confirmation"
@@ -217,7 +218,8 @@ export function ConfirmBedsDialog() {
           {/* Then the free-bed control. */}
           <div className={styles.control}>
             <label className={styles.controlLabel} htmlFor="ward-capacity-input">
-              Confirm allocatable beds for {unit.name}
+              {/* Redesign: the tiles' own word ("free to offer"), not "allocatable". */}
+              Beds free to offer
             </label>
             <div className={styles.stepper}>
               <Button
@@ -283,7 +285,8 @@ export function ConfirmBedsDialog() {
               router.push(wardBoardHref(unit.id));
             }}
           >
-            Review today&apos;s expected discharges → ({releasesCountedToday.length})
+            {/* Redesign: the count names its noun, and the arrow comes last. */}
+            Review {plural(releasesCountedToday.length, "expected discharge", "expected discharges")} today →
           </button>
         </div>
       </Dialog>

@@ -32,22 +32,6 @@ import {
 // Preview copy of the phone bed sheet from `ward/ward-bed-dossier-drawer.tsx`, split out of the
 // drawer copy to keep both under the line cap.
 
-/** What the bed is doing now, in the words the Every bed list uses. */
-function nowLabel(bedItem: BedItem | undefined, isReady: boolean): string {
-  if (isReady) return "Ready";
-  if (!bedItem) return "Not recorded";
-  if (bedItem.status === "closed") return "Closed";
-  if (bedItem.blockReason) return "Held up";
-  if (bedItem.awayAtEdHours != null) return "Away at an ED";
-  if (bedItem.status === "leave") return "On leave";
-  // WT-07: Delivered is the one state after the officer hands over, until the ward confirms.
-  if (bedItem.status === "incoming") return typeof bedItem.deliveredAt === "number" ? "Arrived at ward" : "Arriving";
-  if (bedItem.pastDate) return "Past date";
-  if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
-    return "Leaving";
-  return "On the ward";
-}
-
 const CHIP_LABEL = new Map<WfTone, string>([
   ["danger", "Act now"],
   ["warning", "Needs a look"],
@@ -113,6 +97,9 @@ interface PhoneBedSheetProps {
   leavePaper?: ReactNode;
   /** The expected leaving line as plain words, for the not-left notice. */
   notLeftPlan: string;
+  /** Redesign: the desktop's Going out and Observation tiles, so both layouts show the same four facts. */
+  goingOut: string;
+  observationShort: string;
   /** Redesign: the same steps the desktop drawer lists, and which one is filled for this stay. */
   actions: BedAction[];
   mainId: ReturnType<typeof mainActionId>;
@@ -161,9 +148,14 @@ export function PhoneBedSheet({
   actions,
   mainId,
   notLeftPlan,
+  goingOut,
+  observationShort,
 }: PhoneBedSheetProps) {
   const chip = tone ? CHIP_LABEL.get(tone) : undefined;
-  const sub = [bedItem?.umrn, bedItem?.podLabel ?? bedItem?.designation].filter(Boolean).join(" · ");
+  // Redesign: sex moves up from a fact tile to the line under the name, as on the desktop drawer.
+  const sub = [bedItem?.umrn, isReady ? null : bedItem?.sex, bedItem?.podLabel ?? bedItem?.designation]
+    .filter(Boolean)
+    .join(" · ");
   const admissionId = bedItem?.admissionId;
   return (
     <>
@@ -200,12 +192,14 @@ export function PhoneBedSheet({
               </span>
             ) : null}
           </div>
+          {/* Redesign: the kit sheet's close, a 36 px face with a larger invisible tap area. */}
           <Button
             variant="ghost"
+            size="sm"
             iconOnly
             icon={X}
             aria-label="Close bed drawer"
-            className={styles.pill}
+            className={styles.phoneClose}
             onClick={onClose}
             data-sheet-autofocus="true"
           />
@@ -232,10 +226,11 @@ export function PhoneBedSheet({
           ) : (
             <>
               <div className={styles.phoneFacts}>
-                <FactTile label="Now" value={nowLabel(bedItem, isReady)} />
+                {/* Redesign: the same four facts as the desktop drawer. */}
                 <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`} />
                 <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
-                <FactTile label="Sex" value={bedItem?.sex ?? "Not recorded"} />
+                <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "danger" : null} />
+                <FactTile label="Observation" value={observationShort} />
               </div>
               <NotLeftNotice bedItem={bedItem} expectedPlan={notLeftPlan} isOccupied={isOccupied} />
               <h3 className={styles.phoneSec}>This person</h3>

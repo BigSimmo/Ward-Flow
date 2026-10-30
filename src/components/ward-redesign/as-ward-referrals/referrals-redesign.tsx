@@ -476,6 +476,8 @@ function ReferralBoardRedesign({
   const selectedReferral = selectedReferralId
     ? referrals.find((referral) => referral.id === selectedReferralId)
     : undefined;
+  // ROLE BRANCH (ward): with nothing queued and nothing open, the decision pane would be an empty panel.
+  const emptyWardQueue = wardDesk && queued.length === 0 && selectedReferral === undefined && !leftNotice;
   // WS-03: an accepted referral with no bed pulled, which the coordinator can pull here in one step.
   const awaitingPull = useMemo(
     () => (readOnly ? [] : acceptedReferralsAwaitingPull(referrals, units, movements)),
@@ -906,7 +908,8 @@ function ReferralBoardRedesign({
           </div>
         )}
 
-        <div className={cx(styles.registerLayout, a.layout)}>
+        {/* Role view (nurse in charge): an empty ward queue has no decision to show, so the queue takes the width. */}
+        <div className={cx(styles.registerLayout, a.layout, emptyWardQueue && desk.single)}>
           {selectedReferral ? (
             <div
               className={styles.detailBackdrop}
@@ -959,7 +962,7 @@ function ReferralBoardRedesign({
                         Clear
                       </Button>
                     </>
-                  ) : (
+                  ) : emptyWardQueue ? null : (
                     <span
                       className={a.orderNote}
                       data-testid="ward-referral-board-order-note"
@@ -1012,7 +1015,7 @@ function ReferralBoardRedesign({
                 {wardDesk && queued.length === 0 ? (
                   // Role view (nurse in charge): what lands here, and the ward's people already on their way.
                   <p className={styles.v6Empty} data-testid="ward-referral-board-own-ward-empty">
-                    {`Referrals and bed offers to ${ownWardName ?? "your ward"} land here. `}
+                    {`No referral or bed offer for ${ownWardName ?? "your ward"}. `}
                     {onTheirWay > 0 ? (
                       <Link href="/ward-flow/movements" className={desk.link}>
                         {`${onTheirWay} ${onTheirWay === 1 ? "person is" : "people are"} already coming and going`}
@@ -1075,367 +1078,375 @@ function ReferralBoardRedesign({
             </Card>
           </div>
 
-          <div
-            ref={detailRef}
-            className={cx(styles.registerDetail, a.detail)}
-            role="region"
-            aria-label="Selected referral detail"
-            tabIndex={0}
-            data-has-selection={selectedReferral ? "true" : "false"}
-          >
-            {selectedReferral ? (
-              <Card className={cx(styles.v6DetailCard, a.panel)}>
-                <div className={a.panelTop}>
-                  <div className={a.panelHead}>
-                    <Avatar name={selectedPatientInfo.displayName} size="lg" decorative />
-                    <div className={a.panelWho}>
-                      <h2 className={a.panelName}>
-                        {/* "Surname, First", as the queue beside it (simplification A8, 19 Oct 2026). */}
-                        {selectedPatientInfo.formalName}
-                        <span className="sr-only"> {selectedPatientInfo.umrn}</span>
-                      </h2>
-                      <p className={a.panelMeta}>
-                        {/* Shown, never copied: no UMRN goes on the clipboard (D-71 item 7, 21 Oct 2026). */}
-                        <span className={umrnCopyable ? a.mono : undefined}>{selectedUmrn}</span>
-                        <span aria-hidden="true">·</span>
-                        <span className={a.truncate}>{demographicLabel(selectedReferral)}</span>
-                      </p>
-                    </div>
-                    <span
-                      className={a.panelTier}
-                      data-priority={selectedPriority}
-                      data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
-                      title={urgencyTierLabel(selectedReferral.urgency)}
-                    >
-                      <span aria-hidden="true">
-                        <TierTile tier={selectedReferral.urgency} />
-                      </span>
-                      <span className="sr-only">
-                        {urgencyTierLabel(selectedReferral.urgency)},{" "}
-                        {referralPriorityLabel(selectedPriority ?? "routine")}
-                      </span>
-                    </span>
-                    {(() => {
-                      const accepted = acceptedAddressing(selectedReferral);
-                      const linkedMovement = movements.find((m) => m.referralId === selectedReferral.id && !m.closure);
-                      const targetWardUnitId =
-                        accepted?.acceptedUnitId ??
-                        linkedMovement?.acceptedUnitId ??
-                        acceptedWardOf(selectedReferral, units)?.unitId;
-                      const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
-                      if (!targetWardUnitId) return null;
-                      // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
-                      // its movement when one is open, otherwise names the next step, holding the
-                      // bed on the accepting ward, and links the patient record.
-                      return (
-                        <>
-                          {linkedMovement ? (
-                            <Link
-                              href={movementHref(linkedMovement.id)}
-                              className={buttonClass({ variant: "ghost", size: "sm" })}
-                              data-testid="ward-referral-open-movement"
-                            >
-                              Open movement
-                            </Link>
-                          ) : readOnly ? null : selectedToPull && routeRole === "coordinator" ? (
-                            // WS-03: the coordinator pulls the bed here in one step, with the recorded details.
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setPulling(selectedToPull)}
-                              data-testid="ward-referral-pull-bed"
-                            >
-                              Pull the bed
-                            </Button>
-                          ) : (
-                            <Link
-                              href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
-                              className={buttonClass({ variant: "ghost", size: "sm" })}
-                              title={`Open ${targetWard?.name ?? "ward"} bed board`}
-                              data-testid="ward-referral-hold-bed"
-                            >
-                              Pull the bed
-                            </Link>
-                          )}
-                          {selectedReferral.patientId && !isPhone ? (
-                            <Link
-                              href={patientHref(selectedReferral.patientId)}
-                              className={buttonClass({ variant: "ghost", size: "sm" })}
-                              data-testid="ward-referral-open-patient"
-                            >
-                              Patient
-                            </Link>
-                          ) : null}
-                        </>
-                      );
-                    })()}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={X}
-                      iconOnly
-                      aria-label="Close referral detail (Esc)"
-                      title="Close (Esc)"
-                      onClick={closeDetail}
-                    />
-                  </div>
-
-                  {readOnly ? (
-                    <p className={a.panelMeta} data-testid="ward-referral-read-only">
-                      Read only. The coordinator and the receiving ward answer this referral.
-                    </p>
-                  ) : null}
-                  <ReferralAlerts
-                    referral={selectedReferral}
-                    readmission={
-                      selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
-                    }
-                  />
-                  {!isPhone ? renderDetailFacts(selectedReferral) : null}
-
-                  {!isPhone ? (
-                    <Tabs
-                      label="Referral detail"
-                      idPrefix="ward-referral-inspector"
-                      className={a.panelTabs}
-                      value={inspectorTab}
-                      onChange={setInspectorTab}
-                      items={[
-                        ...(readOnly
-                          ? []
-                          : [
-                              {
-                                id: "place" as const,
-                                label: wardArm(selectedReferral) ? "Place" : "Decide",
-                                count: selectedReadyUnits,
-                              },
-                            ]),
-                        { id: "patient", label: "Patient" },
-                        {
-                          id: "timeline",
-                          label: "Timeline",
-                          count:
-                            sender.referralFor(selectedReferral) === undefined
-                              ? referralTimeline(selectedReferral, units).length
-                              : undefined,
-                        },
-                      ]}
-                    />
-                  ) : null}
-                </div>
-
-                {isPhone ? (
-                  <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
-                    {renderDetailFacts(selectedReferral)}
-                    {(() => {
-                      const stages = referralJourneyStages(selectedReferral, now, sender.referralFor(selectedReferral));
-                      return stages ? (
-                        <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
-                          <p className={mph.ch} id="ward-referral-phone-journey">
-                            Journey
-                          </p>
-                          <JourneyStrip
-                            label="Referral journey"
-                            stages={stages}
-                            formatDuration={journeyDuration}
-                            note={false}
-                          />
-                          {(() => {
-                            // U3 (review 12 Oct 2026): words, not "Now: Bed offered 0s".
-                            const current = stages.find((stage) => stage.now);
-                            return current ? (
-                              <p className={mph.journeyNote} aria-hidden="true">
-                                {current.label}{" "}
-                                {current.minutes < 1 ? "just now" : `${durMinutes(current.minutes)} ago`}
-                              </p>
-                            ) : null;
-                          })()}
-                        </section>
-                      ) : null;
-                    })()}
-                    {(() => {
-                      const phoneExtras = (
-                        <>
-                          <button
-                            type="button"
-                            className={mph.more}
-                            aria-expanded={phoneTimelineOpen}
-                            onClick={() => setPhoneTimelineOpen((open) => !open)}
-                          >
-                            {phoneTimelineOpen
-                              ? "Hide timeline"
-                              : `Show timeline, ${referralTimeline(selectedReferral, units).length} ${referralTimeline(selectedReferral, units).length === 1 ? "event" : "events"}`}
-                          </button>
-                          {phoneTimelineOpen ? (
-                            <ReferralTimeline referral={selectedReferral} units={units} now={now}>
-                              <ReferralHistoryAndCorrections
-                                referral={selectedReferral}
-                                now={now}
-                                dispatch={dispatch}
-                                readOnly={readOnly}
-                              />
-                            </ReferralTimeline>
-                          ) : null}
-                          <button
-                            type="button"
-                            className={mph.more}
-                            aria-expanded={phonePatientOpen}
-                            onClick={() => setPhonePatientOpen((open) => !open)}
-                          >
-                            {phonePatientOpen ? "Hide patient details" : "Show patient details"}
-                          </button>
-                          {phonePatientOpen ? (
-                            <ReferralPatientTab
-                              referral={selectedReferral}
-                              now={now}
-                              readyUnits={selectedReadyUnits}
-                              readOnly={readOnly}
-                            />
-                          ) : null}
-                          <div className={mph.acts}>
-                            <span className={a.spacer} />
-                            <SummaryButton onClick={() => setSheet("summary")} />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              icon={ChevronRight}
-                              onClick={() => selectAt(1)}
-                              title="Next referral (J)"
-                            >
-                              Next
-                            </Button>
-                          </div>
-                        </>
-                      );
-                      // D-80: a read-only board shows the timeline and patient details with no decision list.
-                      return readOnly ? (
-                        phoneExtras
-                      ) : (
-                        <ReferralMatchView
-                          key={selectedReferral.id}
-                          referral={selectedReferral}
-                          units={units}
-                          now={now}
-                          dispatch={dispatch}
-                          rejections={rejections}
-                          patientInfo={selectedPatientInfo}
-                          hideDossierHeader
-                          onDecision={decide(selectedReferral)}
-                          phone={phoneExtras}
-                        />
-                      );
-                    })()}
-                  </div>
-                ) : (
-                  <TabPanel
-                    key={`${selectedReferral.id}-${inspectorTab}`}
-                    idPrefix="ward-referral-inspector"
-                    id={inspectorTab}
-                    className={cx(styles.registerDetailBody, a.panelBody)}
-                  >
-                    {inspectorTab === "place" && !readOnly ? (
-                      <div className={redesign.foldHistory} data-history-open={historyOpen || undefined}>
-                        <ReferralMatchView
-                          key={selectedReferral.id}
-                          referral={selectedReferral}
-                          units={units}
-                          now={now}
-                          dispatch={dispatch}
-                          rejections={rejections}
-                          patientInfo={selectedPatientInfo}
-                          hideDossierHeader
-                          onDecision={decide(selectedReferral)}
-                        />
-                        <button
-                          type="button"
-                          className={redesign.historyToggle}
-                          aria-expanded={historyOpen}
-                          onClick={() => setHistoryOpen((open) => !open)}
-                        >
-                          {historyOpen
-                            ? "Hide written history and corrections"
-                            : "Show written history and corrections"}
-                        </button>
+          {emptyWardQueue ? null : (
+            <div
+              ref={detailRef}
+              className={cx(styles.registerDetail, a.detail)}
+              role="region"
+              aria-label="Selected referral detail"
+              tabIndex={0}
+              data-has-selection={selectedReferral ? "true" : "false"}
+            >
+              {selectedReferral ? (
+                <Card className={cx(styles.v6DetailCard, a.panel)}>
+                  <div className={a.panelTop}>
+                    <div className={a.panelHead}>
+                      <Avatar name={selectedPatientInfo.displayName} size="lg" decorative />
+                      <div className={a.panelWho}>
+                        <h2 className={a.panelName}>
+                          {/* "Surname, First", as the queue beside it (simplification A8, 19 Oct 2026). */}
+                          {selectedPatientInfo.formalName}
+                          <span className="sr-only"> {selectedPatientInfo.umrn}</span>
+                        </h2>
+                        <p className={a.panelMeta}>
+                          {/* Shown, never copied: no UMRN goes on the clipboard (D-71 item 7, 21 Oct 2026). */}
+                          <span className={umrnCopyable ? a.mono : undefined}>{selectedUmrn}</span>
+                          <span aria-hidden="true">·</span>
+                          <span className={a.truncate}>{demographicLabel(selectedReferral)}</span>
+                        </p>
                       </div>
+                      <span
+                        className={a.panelTier}
+                        data-priority={selectedPriority}
+                        data-testid={`ward-referral-inspector-priority-${selectedReferral.id}`}
+                        title={urgencyTierLabel(selectedReferral.urgency)}
+                      >
+                        <span aria-hidden="true">
+                          <TierTile tier={selectedReferral.urgency} />
+                        </span>
+                        <span className="sr-only">
+                          {urgencyTierLabel(selectedReferral.urgency)},{" "}
+                          {referralPriorityLabel(selectedPriority ?? "routine")}
+                        </span>
+                      </span>
+                      {(() => {
+                        const accepted = acceptedAddressing(selectedReferral);
+                        const linkedMovement = movements.find(
+                          (m) => m.referralId === selectedReferral.id && !m.closure,
+                        );
+                        const targetWardUnitId =
+                          accepted?.acceptedUnitId ??
+                          linkedMovement?.acceptedUnitId ??
+                          acceptedWardOf(selectedReferral, units)?.unitId;
+                        const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
+                        if (!targetWardUnitId) return null;
+                        // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
+                        // its movement when one is open, otherwise names the next step, holding the
+                        // bed on the accepting ward, and links the patient record.
+                        return (
+                          <>
+                            {linkedMovement ? (
+                              <Link
+                                href={movementHref(linkedMovement.id)}
+                                className={buttonClass({ variant: "ghost", size: "sm" })}
+                                data-testid="ward-referral-open-movement"
+                              >
+                                Open movement
+                              </Link>
+                            ) : readOnly ? null : selectedToPull && routeRole === "coordinator" ? (
+                              // WS-03: the coordinator pulls the bed here in one step, with the recorded details.
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setPulling(selectedToPull)}
+                                data-testid="ward-referral-pull-bed"
+                              >
+                                Pull the bed
+                              </Button>
+                            ) : (
+                              <Link
+                                href={`/ward-flow/ward/${targetWardUnitId}?tab=board`}
+                                className={buttonClass({ variant: "ghost", size: "sm" })}
+                                title={`Open ${targetWard?.name ?? "ward"} bed board`}
+                                data-testid="ward-referral-hold-bed"
+                              >
+                                Pull the bed
+                              </Link>
+                            )}
+                            {selectedReferral.patientId && !isPhone ? (
+                              <Link
+                                href={patientHref(selectedReferral.patientId)}
+                                className={buttonClass({ variant: "ghost", size: "sm" })}
+                                data-testid="ward-referral-open-patient"
+                              >
+                                Patient
+                              </Link>
+                            ) : null}
+                          </>
+                        );
+                      })()}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={X}
+                        iconOnly
+                        aria-label="Close referral detail (Esc)"
+                        title="Close (Esc)"
+                        onClick={closeDetail}
+                      />
+                    </div>
+
+                    {readOnly ? (
+                      <p className={a.panelMeta} data-testid="ward-referral-read-only">
+                        Read only. The coordinator and the receiving ward answer this referral.
+                      </p>
                     ) : null}
-                    {inspectorTab === "patient" ? (
-                      <ReferralPatientTab
-                        referral={selectedReferral}
-                        now={now}
-                        readyUnits={selectedReadyUnits}
-                        readOnly={readOnly}
+                    <ReferralAlerts
+                      referral={selectedReferral}
+                      readmission={
+                        selectedReadmission ? <ReadmissionFlag flag={selectedReadmission} expandable={false} /> : null
+                      }
+                    />
+                    {!isPhone ? renderDetailFacts(selectedReferral) : null}
+
+                    {!isPhone ? (
+                      <Tabs
+                        label="Referral detail"
+                        idPrefix="ward-referral-inspector"
+                        className={a.panelTabs}
+                        value={inspectorTab}
+                        onChange={setInspectorTab}
+                        items={[
+                          ...(readOnly
+                            ? []
+                            : [
+                                {
+                                  id: "place" as const,
+                                  label: wardArm(selectedReferral) ? "Place" : "Decide",
+                                  count: selectedReadyUnits,
+                                },
+                              ]),
+                          { id: "patient", label: "Patient" },
+                          {
+                            id: "timeline",
+                            label: "Timeline",
+                            count:
+                              sender.referralFor(selectedReferral) === undefined
+                                ? referralTimeline(selectedReferral, units).length
+                                : undefined,
+                          },
+                        ]}
                       />
                     ) : null}
-                    {inspectorTab === "timeline" ? (
-                      <ReferralTimeline referral={selectedReferral} units={units} now={now}>
-                        <ReferralHistoryAndCorrections
+                  </div>
+
+                  {isPhone ? (
+                    <div className={cx(styles.registerDetailBody, a.panelBody, mph.body)}>
+                      {renderDetailFacts(selectedReferral)}
+                      {(() => {
+                        const stages = referralJourneyStages(
+                          selectedReferral,
+                          now,
+                          sender.referralFor(selectedReferral),
+                        );
+                        return stages ? (
+                          <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
+                            <p className={mph.ch} id="ward-referral-phone-journey">
+                              Journey
+                            </p>
+                            <JourneyStrip
+                              label="Referral journey"
+                              stages={stages}
+                              formatDuration={journeyDuration}
+                              note={false}
+                            />
+                            {(() => {
+                              // U3 (review 12 Oct 2026): words, not "Now: Bed offered 0s".
+                              const current = stages.find((stage) => stage.now);
+                              return current ? (
+                                <p className={mph.journeyNote} aria-hidden="true">
+                                  {current.label}{" "}
+                                  {current.minutes < 1 ? "just now" : `${durMinutes(current.minutes)} ago`}
+                                </p>
+                              ) : null;
+                            })()}
+                          </section>
+                        ) : null;
+                      })()}
+                      {(() => {
+                        const phoneExtras = (
+                          <>
+                            <button
+                              type="button"
+                              className={mph.more}
+                              aria-expanded={phoneTimelineOpen}
+                              onClick={() => setPhoneTimelineOpen((open) => !open)}
+                            >
+                              {phoneTimelineOpen
+                                ? "Hide timeline"
+                                : `Show timeline, ${referralTimeline(selectedReferral, units).length} ${referralTimeline(selectedReferral, units).length === 1 ? "event" : "events"}`}
+                            </button>
+                            {phoneTimelineOpen ? (
+                              <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                                <ReferralHistoryAndCorrections
+                                  referral={selectedReferral}
+                                  now={now}
+                                  dispatch={dispatch}
+                                  readOnly={readOnly}
+                                />
+                              </ReferralTimeline>
+                            ) : null}
+                            <button
+                              type="button"
+                              className={mph.more}
+                              aria-expanded={phonePatientOpen}
+                              onClick={() => setPhonePatientOpen((open) => !open)}
+                            >
+                              {phonePatientOpen ? "Hide patient details" : "Show patient details"}
+                            </button>
+                            {phonePatientOpen ? (
+                              <ReferralPatientTab
+                                referral={selectedReferral}
+                                now={now}
+                                readyUnits={selectedReadyUnits}
+                                readOnly={readOnly}
+                              />
+                            ) : null}
+                            <div className={mph.acts}>
+                              <span className={a.spacer} />
+                              <SummaryButton onClick={() => setSheet("summary")} />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                icon={ChevronRight}
+                                onClick={() => selectAt(1)}
+                                title="Next referral (J)"
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </>
+                        );
+                        // D-80: a read-only board shows the timeline and patient details with no decision list.
+                        return readOnly ? (
+                          phoneExtras
+                        ) : (
+                          <ReferralMatchView
+                            key={selectedReferral.id}
+                            referral={selectedReferral}
+                            units={units}
+                            now={now}
+                            dispatch={dispatch}
+                            rejections={rejections}
+                            patientInfo={selectedPatientInfo}
+                            hideDossierHeader
+                            onDecision={decide(selectedReferral)}
+                            phone={phoneExtras}
+                          />
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    <TabPanel
+                      key={`${selectedReferral.id}-${inspectorTab}`}
+                      idPrefix="ward-referral-inspector"
+                      id={inspectorTab}
+                      className={cx(styles.registerDetailBody, a.panelBody)}
+                    >
+                      {inspectorTab === "place" && !readOnly ? (
+                        <div className={redesign.foldHistory} data-history-open={historyOpen || undefined}>
+                          <ReferralMatchView
+                            key={selectedReferral.id}
+                            referral={selectedReferral}
+                            units={units}
+                            now={now}
+                            dispatch={dispatch}
+                            rejections={rejections}
+                            patientInfo={selectedPatientInfo}
+                            hideDossierHeader
+                            onDecision={decide(selectedReferral)}
+                          />
+                          <button
+                            type="button"
+                            className={redesign.historyToggle}
+                            aria-expanded={historyOpen}
+                            onClick={() => setHistoryOpen((open) => !open)}
+                          >
+                            {historyOpen
+                              ? "Hide written history and corrections"
+                              : "Show written history and corrections"}
+                          </button>
+                        </div>
+                      ) : null}
+                      {inspectorTab === "patient" ? (
+                        <ReferralPatientTab
                           referral={selectedReferral}
                           now={now}
-                          dispatch={dispatch}
+                          readyUnits={selectedReadyUnits}
                           readOnly={readOnly}
                         />
-                      </ReferralTimeline>
-                    ) : null}
-                  </TabPanel>
-                )}
+                      ) : null}
+                      {inspectorTab === "timeline" ? (
+                        <ReferralTimeline referral={selectedReferral} units={units} now={now}>
+                          <ReferralHistoryAndCorrections
+                            referral={selectedReferral}
+                            now={now}
+                            dispatch={dispatch}
+                            readOnly={readOnly}
+                          />
+                        </ReferralTimeline>
+                      ) : null}
+                    </TabPanel>
+                  )}
 
-                {!isPhone ? (
-                  <div className={a.panelFoot}>
-                    <span className={a.spacer} />
-                    <SummaryButton onClick={() => setSheet("summary")} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={ChevronRight}
-                      onClick={() => selectAt(1)}
-                      title="Next referral (J)"
-                    >
-                      Next
-                    </Button>
-                  </div>
-                ) : null}
-                <IsbarSheet
-                  open={sheet === "summary"}
-                  onClose={() => setSheet(null)}
-                  referral={selectedReferral}
-                  name={selectedPatientInfo.formalName}
-                  umrn={selectedUmrn}
-                  demographics={demographicLabel(selectedReferral)}
-                  now={now}
-                  recorded={isbarRecorded(selectedReferral, movements, referrals)}
-                />
-              </Card>
-            ) : (
-              <Card className={styles.v6DetailCard}>
-                <section className={styles.registerEmpty} aria-labelledby="ward-referral-detail-heading">
-                  <h2 id="ward-referral-detail-heading" className="sr-only">
-                    Referral detail
-                  </h2>
-                  <EmptyState
-                    icon={ClipboardList}
-                    title={
-                      // Role view (nurse in charge): an empty queue says where the ward's answer is recorded.
-                      wardDesk && queued.length === 0
-                        ? "Accept and Decline open here"
-                        : readOnly
-                          ? "Select a queued referral to review its facts."
-                          : "Select a queued referral to review its facts and record a decision."
-                    }
-                    meta={
-                      wardDesk && queued.length === 0
-                        ? undefined
-                        : `${queued.length} awaiting decision · ${decidedTotal} decided`
-                    }
-                  />
-                  {leftNotice ? (
-                    <p role="status" data-testid="ward-referral-decided-elsewhere">
-                      {leftNotice}
-                    </p>
+                  {!isPhone ? (
+                    <div className={a.panelFoot}>
+                      <span className={a.spacer} />
+                      <SummaryButton onClick={() => setSheet("summary")} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={ChevronRight}
+                        onClick={() => selectAt(1)}
+                        title="Next referral (J)"
+                      >
+                        Next
+                      </Button>
+                    </div>
                   ) : null}
-                </section>
-              </Card>
-            )}
-          </div>
+                  <IsbarSheet
+                    open={sheet === "summary"}
+                    onClose={() => setSheet(null)}
+                    referral={selectedReferral}
+                    name={selectedPatientInfo.formalName}
+                    umrn={selectedUmrn}
+                    demographics={demographicLabel(selectedReferral)}
+                    now={now}
+                    recorded={isbarRecorded(selectedReferral, movements, referrals)}
+                  />
+                </Card>
+              ) : (
+                <Card className={styles.v6DetailCard}>
+                  <section className={styles.registerEmpty} aria-labelledby="ward-referral-detail-heading">
+                    <h2 id="ward-referral-detail-heading" className="sr-only">
+                      Referral detail
+                    </h2>
+                    <EmptyState
+                      icon={ClipboardList}
+                      title={
+                        // Role view (nurse in charge): an empty queue says where the ward's answer is recorded.
+                        wardDesk && queued.length === 0
+                          ? "Accept and Decline open here"
+                          : readOnly
+                            ? "Select a queued referral to review its facts."
+                            : "Select a queued referral to review its facts and record a decision."
+                      }
+                      meta={
+                        wardDesk && queued.length === 0
+                          ? undefined
+                          : `${queued.length} awaiting decision · ${decidedTotal} decided`
+                      }
+                    />
+                    {leftNotice ? (
+                      <p role="status" data-testid="ward-referral-decided-elsewhere">
+                        {leftNotice}
+                      </p>
+                    ) : null}
+                  </section>
+                </Card>
+              )}
+            </div>
+          )}
         </div>
 
         <BedMeetingSheet

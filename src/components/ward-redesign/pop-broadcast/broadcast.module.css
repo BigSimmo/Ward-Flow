@@ -1,15 +1,17 @@
 /* Preview: the redesigned broadcast composer. A centred dialog, form on the left, the preview of
-   what each desk sees on the right with the confirmation, Dispatch in the footer. */
-.overlay {
+   what each desk sees on the right with the confirmation, Dispatch in the footer.
+   Round 2: doubled class names, so these rules always win over the Alerts page's own composer rules
+   (same weight, and the load order of the two style sheets is not fixed). */
+.overlay.overlay {
   justify-content: center;
   align-items: center;
 }
 
-.composer {
+.composer.composer {
   width: min(58rem, 100%);
 }
 
-.body {
+.body.body {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: var(--wf-s-6);
@@ -23,7 +25,7 @@
   min-width: 0;
 }
 
-.side {
+.side.side {
   position: sticky;
   top: 0;
   display: flex;
@@ -93,6 +95,21 @@
   color: var(--wf-ink-3);
 }
 
+/* What Dispatch is waiting for, under the confirmation that clears it. */
+.waits {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.waits svg {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
 .reach {
   margin: 0;
   font: 400 var(--wf-fs-13) / 1.4 var(--wf-font);
@@ -109,44 +126,31 @@
 }
 
 @media (max-width: 48rem) {
-  .overlay {
+  .overlay.overlay {
     padding: 0;
     align-items: stretch;
   }
 
-  .composer {
+  .composer.composer {
     max-height: none;
     height: 100%;
     border-radius: 0;
   }
 
-  .body {
+  .body.body {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-4);
   }
 
-  .side {
+  .side.side {
     position: static;
   }
 
-  .composer :global(select),
-  .composer :global(input:not([type="checkbox"])) {
-    min-height: 48px;
-  }
-
-  .foot {
+  .foot.foot {
     flex-wrap: wrap;
   }
 
-  .foot > :global(*) {
+  .foot.foot > :global(*) {
     flex: 1 1 auto;
-  }
-
-  .foot > :first-child {
-    flex: 1 1 100%;
-  }
-
-  .foot :global(button) {
-    min-height: 48px;
   }
 }

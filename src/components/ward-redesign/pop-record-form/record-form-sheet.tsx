@@ -5,14 +5,15 @@
  * change is the order of the questions (review note, pop-record-form): the movement first, then the
  * form from the paper, then the time and date as written, with one line saying nothing is worked out
  * from that time. Validation, wording, draft keeping and the save are the sheet's own, unchanged.
+ * Round 2 polish: a one-line description, the reason beside Save on one footer row, no clock icon
+ * (the HH:MM placeholder says it), a one-line date help and a shorter draft notice.
  */
 import { useEffect, useId, useRef, useState } from "react";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { draftSessionVersion, sessionDraftKey } from "@/components/ward-management/ward-session-drafts";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { Clock } from "lucide-react";
 
-import { Button, ErrorSummary, Field, Select, Sheet, TextInput, type ErrorSummaryItem } from "@/components/wf";
+import { Button, ErrorSummary, Field, Select, Sheet, SrOnly, TextInput, type ErrorSummaryItem } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
@@ -181,11 +182,11 @@ export function RecordFormSheetRedesign({
       onClose={dismiss}
       initialFocusRef={typeRef}
       title="Record a form"
-      description="Attach a form to an open movement and record the time written on the paper"
+      description="Record the time written on the paper form"
       portal={false}
       testId="ward-legal-record"
       footer={
-        <div className={styles.sheetFoot}>
+        <div className={own.foot}>
           <Button
             variant="ghost"
             onClick={() => {
@@ -203,7 +204,6 @@ export function RecordFormSheetRedesign({
           >
             Clear
           </Button>
-          <span className={styles.footSpacer} />
           <Button
             variant="pri"
             data-testid="ward-legal-forms-register-confirm"
@@ -261,7 +261,11 @@ export function RecordFormSheetRedesign({
       }
     >
       {!draftSaved ? <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p> : null}
-      {draftRestored ? <p role="status">Draft restored in this tab — use Clear to remove it.</p> : null}
+      {draftRestored ? (
+        <p role="status" className={own.draftNote}>
+          Draft restored · Clear removes it
+        </p>
+      ) : null}
       <div key={formKey} className={styles.recordForm}>
         {refusedSaves > 0 ? <ErrorSummary items={problems} action="before saving" focusKey={refusedSaves} /> : null}
         <Field label="Movement" id={movementId} error={problemFor(movementId)}>
@@ -327,7 +331,6 @@ export function RecordFormSheetRedesign({
         <div className={styles.fieldPair}>
           <Field label="Time on form" id={timeId} error={problemFor(timeId)}>
             <TextInput
-              icon={Clock}
               placeholder="HH:MM"
               inputMode="numeric"
               autoComplete="off"
@@ -342,7 +345,12 @@ export function RecordFormSheetRedesign({
             <Field
               label="Date on form"
               id={`${baseId}-legal-forms-new-date`}
-              help="Leave blank for today. Use it for a form written before midnight."
+              help={
+                <>
+                  Leave blank for today
+                  <SrOnly>. Use it for a form written before midnight.</SrOnly>
+                </>
+              }
             >
               <TextInput
                 type="date"

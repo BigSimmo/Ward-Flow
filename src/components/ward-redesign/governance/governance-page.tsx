@@ -8,11 +8,10 @@ import modes from "@/components/ward-management/ward-management-modes.module.css
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import { GovernanceWorkbenchRedesign } from "./governance-redesign";
-import styles from "./governance-redesign.module.css";
 
 /**
  * The Governance mock-up: today's route frame (`WardModeWorkspace` and `GovernanceView` in
- * `ward-management-modes.tsx`; its header is hidden there) around the redesigned workbench, with the scoped stylesheet that lets its columns wrap.
+ * `ward-management-modes.tsx`; its header is hidden there) around the redesigned workbench (its copied event list wraps its columns).
  */
 export function GovernancePage() {
   const {
@@ -69,7 +68,7 @@ export function GovernancePage() {
     >
       <main id="main-content" className={modes.modeContent}>
         <h1 className="sr-only">Governance</h1>
-        <div className={`${governance.governanceRoute} ${styles.governance}`} data-testid="ward-governance-view">
+        <div className={governance.governanceRoute} data-testid="ward-governance-view">
           <GovernanceWorkbenchRedesign movements={movements} units={units} now={now} api={api} />
           <details className={governance.srOnly} data-testid="ward-governance-medical-device-notice">
             <summary tabIndex={-1}>Synthetic prototype · not approved for clinical use</summary>

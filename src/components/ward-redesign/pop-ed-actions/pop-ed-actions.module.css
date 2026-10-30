@@ -75,10 +75,13 @@
   outline-offset: -2px;
 }
 
-/* The row's next step: the menu's one filled button (the kit's primary button, full width). */
-.primary {
+/* The row's next step: the menu's one filled button. Redesign: the kit's primary button, its label
+   lined up with the rows' labels, so it reads as one item in the list rather than a banner. */
+.primary.primary {
+  justify-content: flex-start;
   width: 100%;
-  margin: var(--wf-s-1) 0;
+  margin: 2px 0;
+  padding-inline: var(--wf-s-2);
 }
 
 .fold {
@@ -159,15 +162,9 @@
   cursor: pointer;
 }
 
-/* The phone sheet: the same list, every control at least 48 px tall. */
+/* The phone sheet: the same list at today's sizes (Josh, 30 Oct 2026: no 48 px growth). */
 .sheetBody {
   display: grid;
-}
-
-.sheetBody .item,
-.sheetBody .foldSummary,
-.sheetBody .fix {
-  min-height: 48px;
 }
 
 .sheetBody .item,

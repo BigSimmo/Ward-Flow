@@ -250,7 +250,7 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
     tab === "all" ? "All sources" : `${SOURCE_OF_TAB[tab]} only`,
     kind === "all" ? "Every record kind" : `${kind} only`,
     needle ? "Search applied" : "No search",
-    ...(nurseView ? ["Ward nurse view"] : []),
+    ...(nurseView ? ["Ward manager view"] : []),
   ].join(" · ");
   const clearFilters = () => {
     setTab("all");
@@ -348,11 +348,10 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
           id={`${baseId}-night`}
           icon={ListOrdered}
           title="Patients on this demo night"
-          aside={<span className={styles.headMeta}>{people.length} with records</span>}
+          // Round 2: a short label instead of the sentence. Ward Flow keeps no list of who you opened,
+          // so this lists people with at least one record, by surname.
+          aside={<span className={styles.headMeta}>With records, A to Z</span>}
         />
-        <p className={styles.cardNote}>
-          Ward Flow keeps no list of who you opened, so this shows people with at least one record, by surname.
-        </p>
         <ul className={redesign.people} aria-label="Patients on this demo night">
           {people.slice(0, shownPeople).map((patient) => (
             <li key={patient.id}>
@@ -369,13 +368,17 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
             </li>
           ))}
         </ul>
+        {/* Round 2: one Show more, then the search finds anyone else, rather than about 30 presses. */}
         {shownPeople < people.length ? (
           <div className={redesign.more}>
-            <Button variant="ghost" size="sm" onClick={() => setShownPeople((n) => n + START_ROWS * 2)}>
-              Show more
-            </Button>
+            {shownPeople === START_ROWS ? (
+              <Button variant="ghost" size="sm" onClick={() => setShownPeople(START_ROWS * 3)}>
+                Show more
+              </Button>
+            ) : null}
             <span className={redesign.moreNote}>
-              {Math.min(shownPeople, people.length)} of {people.length} shown · or search above
+              {Math.min(shownPeople, people.length)} of {people.length}
+              {shownPeople === START_ROWS ? "" : " · search for anyone else"}
             </span>
           </div>
         ) : null}
@@ -431,7 +434,7 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
     </p>
   ) : nurseView ? (
     <p className={styles.cardNote} data-testid="ward-chronology-nurse-view">
-      Ward nurse view: records and session log only. The coordinator audit is left out.
+      Ward manager view: records and session log only. The coordinator audit is left out.
     </p>
   ) : null;
 
@@ -456,7 +459,7 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
   /* ---------------------------------------------------------------- phone */
   if (isPhone) {
     const kindSummary = `${kind === "all" ? "Every record kind" : `${kind} only`}${
-      coordinator ? ` · ${nurseView ? "Ward nurse" : "Bed coordinator"}` : ""
+      coordinator ? ` · ${nurseView ? "Ward manager" : "Bed coordinator"}` : ""
     }`;
     return (
       <div
@@ -469,8 +472,13 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
             level={1}
             eyebrow={
               <span data-testid="ward-chronology-generated">
-                PIR chronology · generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
-                <span className={phone.srOnly}> · Synthetic demo data</span>
+                {/* Round 2: the app bar and title name the page, so the eyebrow is only the time. */}
+                Generated {formatInstant(now)}
+                <span className={phone.srOnly}>
+                  {" "}
+                  · PIR chronology, {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo
+                  data
+                </span>
                 <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
                   {" "}
                   · Filter: {filterScope}
@@ -502,7 +510,7 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
                   <b className={phone.mono}>{umrn}</b> · synthetic demo data, not a clinical record
                 </>
               ) : (
-                "Synthetic demo data · find a patient to read their events"
+                "Synthetic demo data"
               )
             }
             // Ops-19 (13 Oct 2026): the counts sit once, in the source tabs below.
@@ -684,7 +692,7 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
                   }}
                   items={[
                     { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward nurse" },
+                    { id: "nurse", label: "Ward manager" },
                   ]}
                 />
               ) : null}
@@ -832,7 +840,7 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
                   }}
                   items={[
                     { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward nurse" },
+                    { id: "nurse", label: "Ward manager" },
                   ]}
                 />
               </span>

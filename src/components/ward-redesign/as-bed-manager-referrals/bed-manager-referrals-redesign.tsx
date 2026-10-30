@@ -715,6 +715,9 @@ function ReferralBoardRedesign({
     </>
   );
 
+  // ROLE BRANCH (bed_manager), polish r2: with nothing queued, the highlights, the waiting band and the
+  // sort note have nothing to act on, so they are left out until a referral waits.
+  const siteEmpty = siteManager && queued.length === 0;
   const viewSwitch = (
     <Tabs
       label="Referral views"
@@ -744,7 +747,9 @@ function ReferralBoardRedesign({
             <BedManagerReferralPhoneHero
               // Bed manager: the site code fits the phone eyebrow; read only is said here (no detail pane).
               eyebrow={
-                siteManager && access.scope.kind === "site" ? `${access.scope.siteCode} wards · read only` : undefined
+                siteManager && access.scope.kind === "site"
+                  ? `Referrals · ${access.scope.siteCode} wards · read only`
+                  : undefined
               }
               showBeds={!siteManager}
               count={queued.length}
@@ -818,45 +823,53 @@ function ReferralBoardRedesign({
             <Hero
               // Bed manager: read only is said once, in the detail pane beside the queue.
               eyebrow={siteManager && siteName ? `Referrals · ${siteName} wards` : "Referrals"}
-              title={`${queued.length} awaiting decision`}
+              // Polish r2: the phone's wording for an empty queue, and no "Oldest none".
+              title={queued.length === 0 ? "Nothing awaiting a decision" : `${queued.length} awaiting decision`}
               titleMeta={
-                <span className={a.heroMeta}>
-                  Oldest <b>{oldestClocks ? durMinutes(oldestClocks.sinceReferral) : "none"}</b>
-                  {medianDecision !== undefined ? (
-                    <span className={a.heroMedian}>
-                      {" "}
-                      · median decision <b>{durMinutes(medianDecision)}</b>
-                    </span>
-                  ) : null}
-                </span>
+                queued.length === 0 && medianDecision === undefined ? undefined : (
+                  <span className={a.heroMeta}>
+                    {oldestClocks ? (
+                      <>
+                        Oldest <b>{durMinutes(oldestClocks.sinceReferral)}</b>
+                      </>
+                    ) : null}
+                    {medianDecision !== undefined ? (
+                      <span className={a.heroMedian}>
+                        {oldestClocks ? " · m" : "M"}edian decision <b>{durMinutes(medianDecision)}</b>
+                      </span>
+                    ) : null}
+                  </span>
+                )
               }
               className={a.heroA}
               // v10: no New referral in the hero. The header's New referral is the page's one primary.
               aside={<LiveChip state="live" onHero />}
               bar={
-                <div className={a.pills} role="group" aria-label="Highlight referrals">
-                  {HIGHLIGHT_LABELS.filter(
-                    ([key]) =>
-                      // Bed manager: only Overdue and Tier 1. The type chips sort lines it never holds.
-                      (recipientFiltersAvailable && !siteManager) || key === "overdue" || key === "tier1",
-                  ).map(([key, label]) => (
-                    <button
-                      key={key}
-                      type="button"
-                      className={a.pill}
-                      aria-pressed={highlight === key}
-                      data-testid={`ward-referral-highlight-${key}`}
-                      onClick={() => {
-                        setSearchQuery("");
-                        setHighlight((current) => (current === key ? null : key));
-                      }}
-                    >
-                      <span className={a.pillCount}>{queued.filter((r) => highlightTest(key, r, now)).length}</span>
-                      {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                siteEmpty ? undefined : (
+                  <div className={a.pills} role="group" aria-label="Highlight referrals">
+                    {HIGHLIGHT_LABELS.filter(
+                      ([key]) =>
+                        // Bed manager: only Overdue and Tier 1. The type chips sort lines it never holds.
+                        (recipientFiltersAvailable && !siteManager) || key === "overdue" || key === "tier1",
+                    ).map(([key, label]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={a.pill}
+                        aria-pressed={highlight === key}
+                        data-testid={`ward-referral-highlight-${key}`}
+                        onClick={() => {
+                          setSearchQuery("");
+                          setHighlight((current) => (current === key ? null : key));
+                        }}
+                      >
+                        <span className={a.pillCount}>{queued.filter((r) => highlightTest(key, r, now)).length}</span>
+                        {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )
               }
               barAside={
                 <HeroTools
@@ -866,22 +879,24 @@ function ReferralBoardRedesign({
                 />
               }
               foot={
-                <div className={cx(a.heroBand, redesign.heroBand)}>
-                  <WaitRunway
-                    queued={queued}
-                    now={now}
-                    selectedId={selectedReferralId}
-                    isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                    nameOf={nameOf}
-                    onSelect={(id) => {
-                      setView("queue");
-                      handleSelect(id);
-                    }}
-                  />
-                  {/* Bed manager: no Beds ready. It counts beds for placing these referrals, which is the
+                siteEmpty ? undefined : (
+                  <div className={cx(a.heroBand, redesign.heroBand)}>
+                    <WaitRunway
+                      queued={queued}
+                      now={now}
+                      selectedId={selectedReferralId}
+                      isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
+                      nameOf={nameOf}
+                      onSelect={(id) => {
+                        setView("queue");
+                        handleSelect(id);
+                      }}
+                    />
+                    {/* Bed manager: no Beds ready. It counts beds for placing these referrals, which is the
                       coordinator's job; the site's own beds are on its Capacity page. */}
-                  {siteManager ? null : <BedsReady summary={bedsSummary} />}
-                </div>
+                    {siteManager ? null : <BedsReady summary={bedsSummary} />}
+                  </div>
+                )
               }
             />
           </div>
@@ -906,7 +921,7 @@ function ReferralBoardRedesign({
                 {/* Redesign (Josh, 30 Oct 2026): no Filter queue box. Seven rows need no search, and the
                     highlights and the app search cover finding one person. */}
                 {/* v10: Refused once moved here from the hero, which keeps its five chips. */}
-                {view === "queue" && recipientFiltersAvailable ? (
+                {view === "queue" && recipientFiltersAvailable && !siteEmpty ? (
                   <FilterChip
                     pressed={highlight === "refused"}
                     onPressedChange={(pressed) => setHighlight(pressed ? "refused" : null)}
@@ -939,7 +954,7 @@ function ReferralBoardRedesign({
                         Clear
                       </Button>
                     </>
-                  ) : (
+                  ) : siteEmpty ? null : (
                     <span
                       className={a.orderNote}
                       data-testid="ward-referral-board-order-note"
@@ -1027,9 +1042,9 @@ function ReferralBoardRedesign({
                 <button type="button" className={a.keyLink} data-kbd-hint="" onClick={() => setSheet("keys")}>
                   <Kbd>?</Kbd> all shortcuts
                 </button>
-                <span className={a.footNote}>Highlights dim rows and keep every referral.</span>
+                {/* Polish r2: no "Highlights dim rows" sentence; the highlight note says so while one is on. */}
                 {/* v10 phone: the order note sits under the queue instead of in the toolbar. */}
-                {view === "queue" ? (
+                {view === "queue" && !siteEmpty ? (
                   <span className={a.phoneFootNote} aria-hidden="true">
                     Longest wait first · tier breaks ties
                   </span>
@@ -1376,10 +1391,11 @@ function ReferralBoardRedesign({
                   </h2>
                   {siteManager && siteName && queued.length === 0 ? (
                     // Bed manager with nothing queued: say so for its own wards, not "select a referral".
+                    // Polish r2: the hero says the queue is empty, so this pane says only who answers.
                     <EmptyState
                       icon={ClipboardList}
-                      title={`No referral is waiting for a ${siteName} ward.`}
-                      meta="Read only. The coordinator and the receiving ward answer each referral."
+                      title="Read only"
+                      meta="The coordinator and the receiving ward answer each referral."
                     />
                   ) : (
                     <EmptyState

@@ -1,6 +1,6 @@
 # Ward Flow design review, October 2026
 
-_Updated 2026-10-30 - React mock-ups built from the app's own components: 38 pages, 31 popups, 6 states and 36 views as other roles; Design owns._
+_Updated 2026-10-30 - React mock-ups built from the app's own components: 38 pages, 31 popups, 6 states and 36 views as other roles, all polished in a second round; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed.** Under the
 [D-74 standing rule](../../docs/ward-flow/decisions.md#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026),
@@ -17,7 +17,8 @@ overlays, and real wiring, so buttons work as they do in the app.
 Each redesigned page or popup is a copy ("fork") of today's component in `src/components/ward-redesign/`,
 with the design changes applied. Comparing the copy with the original shows exactly what would change, so an
 approved design can be built by applying that difference to the real file. Role differences are commented branches on the desk's role inside the same copy. The viewer shows each one at desktop, laptop, tablet and phone widths, in
-light or dark, with the review notes and build notes beside it.
+light or dark, with the review notes and build notes beside it. A Redesign / Today switch shows a picture
+of today's coordinator page beside each redesign in the shareable copy.
 
 The shareable copy is built by `node scripts/ward-flow/build-redesign-preview.mjs` into
 `output/redesign-preview/` (not committed) and published privately for Josh.
@@ -73,7 +74,9 @@ The notes beside each mock-up list every issue with the device it affects, and w
 
 ## Open points for Josh
 
-Josh agreed every recommendation on 30 October (see [HANDOVER.md](HANDOVER.md)). Still open:
+Josh agreed every recommendation on 30 October (see [HANDOVER.md](HANDOVER.md)), and a second polish
+round followed the same evening; its questions are in HANDOVER.md under "Questions for Josh from round 2".
+Still open:
 
 - **Discharges totals.** The header says 207 open, the filter says 63 and the list says 59 listed. The totals
   need one agreed meaning before build.

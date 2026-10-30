@@ -54,7 +54,9 @@ import {
   durMinutes,
   useIsPhone,
   PhoneSheet,
+  SrOnly,
 } from "@/components/wf";
+import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "@/components/ward-management/ward/ward-answer-view.module.css";
 import rx from "./ward-answer-redesign.module.css";
@@ -605,7 +607,10 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
             isPhone
               ? activeMovement
                 ? `Tier ${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
-                : `${recentAnswers[0]?.at !== undefined ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)} · ` : ""}${states.ready} ${states.ready === 1 ? "bed" : "beds"} ready`
+                : // Round 2: the Ready figure below carries the bed count, so the line keeps only the last answer.
+                  recentAnswers[0]?.at !== undefined
+                  ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)}`
+                  : undefined
               : undefined
           }
           stats={
@@ -756,14 +761,13 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
               </div>
             )}
 
-            {incoming.length === 0 && isPhone ? (
-              <div className={styles.phoneClear}>
-                <p className={styles.phoneClearTitle}>
-                  <StatusGlyph tone="success" size={12} />
-                  All answered
-                </p>
-                <p className={styles.phoneClearText}>
-                  No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
+            {/* Round 2: the title already says "Nothing to answer", so the notice is one line on every
+                device and says only what happens next. */}
+            {incoming.length === 0 ? (
+              <div className={rx.allAnswered} data-testid="ward-answer-all-answered">
+                <p className={rx.allAnsweredLine}>
+                  <StatusGlyph tone="success" size={10} />
+                  <span>Requests land here as they are sent.</span>
                 </p>
                 {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
@@ -777,15 +781,6 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                 >
                   Show request {activeAnswerIndex + 1} of {incoming.length}
                 </button>
-              </div>
-            ) : incoming.length === 0 ? (
-              <div className={rx.allAnswered} data-testid="ward-answer-all-answered">
-                <p className={rx.allAnsweredLine}>
-                  <StatusGlyph tone="success" size={10} />
-                  <strong>All answered.</strong>
-                  <span>No referral is currently awaiting an answer from {unit.name}.</span>
-                </p>
-                {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
             ) : activeMovement ? (
               (() => {
@@ -1445,8 +1440,15 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                 </div>
                 <div className={styles.capacityPanelBody}>
                   <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
+                    {/* Round 2: Confirmed free leads (the form below sets it); Ready is the hero's word for
+                        the bed board figure; the discharge figures use the app's labels, as they
+                        count tomorrow too. */}
                     <div>
-                      <dt>Ready now</dt>
+                      <dt>Confirmed free</dt>
+                      <dd>{unit.allocatable.value}</dd>
+                    </div>
+                    <div>
+                      <dt>Ready</dt>
                       <dd>{states.ready}</dd>
                     </div>
                     <div>
@@ -1454,15 +1456,11 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                       <dd>{unit.empty.value}</dd>
                     </div>
                     <div>
-                      <dt>Confirmed free</dt>
-                      <dd>{unit.allocatable.value}</dd>
-                    </div>
-                    <div>
-                      <dt>Confirmed discharges</dt>
+                      <dt>{CAPACITY_FIGURE_LABELS.confirmedToday}</dt>
                       <dd>{breakdown.confirmedToday}</dd>
                     </div>
                     <div>
-                      <dt>Expected discharges</dt>
+                      <dt>{CAPACITY_FIGURE_LABELS.expectedToday}</dt>
                       <dd>{breakdown.expectedToday}</dd>
                     </div>
                   </dl>
@@ -1591,25 +1589,25 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                   ))}
                 </ul>
                 {/* The reason the greyed beds give (a disabled control always says why). */}
-                <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
-                  Only a ready bed can take a request.
-                </p>
+                {/* Round 2: shown only while a request is open (it explains the greyed squares then);
+                    otherwise it stays for the squares' spoken description. */}
+                {activeMovement ? (
+                  <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
+                    Only a ready bed can take a request.
+                  </p>
+                ) : (
+                  <SrOnly id={`ward-answer-bed-reason-${unit.id}`}>Only a ready bed can take a request.</SrOnly>
+                )}
                 {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
                   65/35 male-to-female split of the occupied count were typed in here (25 September
                   2026 review). Ward Flow holds no staffing figures and this screen counts no one's
                   sex, so both rows say so rather than show a number. */}
+                {/* Round 2: the "Not recorded: nurse ratio, gender mix" row held nothing, and the expected
+                    discharges figure lives once, in Confirm your beds. */}
                 <div className={styles.milieuList}>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Not recorded</span>
-                    <span className={styles.milieuValue}>nurse ratio, gender mix</span>
-                  </div>
                   <div className={styles.milieuRow}>
                     <span className={styles.milieuLabel}>Constant observation</span>
                     <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
-                  </div>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Expected out today and tomorrow</span>
-                    <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
                   </div>
                 </div>
               </section>,

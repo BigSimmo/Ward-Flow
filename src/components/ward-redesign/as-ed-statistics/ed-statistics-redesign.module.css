@@ -1,0 +1,11 @@
+/* Role view (as ED clinician): Declines' two tiles stacked in the narrow side column, so the card
+   ends level with Time since opening beside it instead of half empty. */
+.stackTiles {
+  grid-auto-flow: row;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stackTiles > * + * {
+  border-top: 1px solid var(--wf-line);
+  border-left: 0;
+}

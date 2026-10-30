@@ -5,7 +5,7 @@ import { readDeclinesByReason } from "@/components/ward-management/statistics/st
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, Clock, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
+import { ArrowRight, Lock, Search, Siren, TrendingUp, Truck, X } from "lucide-react";
 
 import {
   Badge,
@@ -101,7 +101,7 @@ import styles from "@/components/ward-management/statistics/statistics-v6.module
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "@/components/ward-redesign/statistics/statistics-chart-redesign";
 import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
-import { StatisticsSessionTrendsCard } from "@/components/ward-management/statistics/statistics-session-trends-card";
+import { StatisticsSessionTrendsCard } from "@/components/ward-redesign/statistics/statistics-session-trends-redesign";
 import trendStyles from "@/components/ward-management/statistics/statistics-session-trends.module.css";
 import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import {
@@ -109,7 +109,7 @@ import {
   type SummaryModel,
   type SummarySlots,
   type SummaryEd,
-} from "@/components/ward-management/statistics/statistics-network-cards";
+} from "@/components/ward-redesign/statistics/statistics-network-cards-redesign";
 import { StatisticsUnitFinder } from "@/components/ward-management/statistics/statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
@@ -710,6 +710,7 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
           beingMadeReady={pendingPreparation}
           occupied={inUseCount}
           occupiedPct={occupiedPct}
+          totalBeds={totalBeds}
           waitingInEd={waitingCount}
           endedToday={dischargesCount}
           wards={allPressureWards.map((ward) => ({
@@ -801,7 +802,8 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
-              <HeroChip value={inUseCount} label={`${occupiedPct.toFixed(1)}% in use`} />
+              {/* Redesign: the count names its noun first, its share after. */}
+              <HeroChip value={inUseCount} label={`In use · ${occupiedPct.toFixed(1)}%`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               {notShown(dischargesCount) ? null : (
                 <HeroChip
@@ -1125,7 +1127,8 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
               </StatCard>
 
               <StatCard
-                icon={Clock}
+                // Redesign: the menu's ED icon; a clock is for time only.
+                icon={Siren}
                 title="Open ED journeys"
                 data-testid="ward-statistics-emergency-departments"
                 aside={

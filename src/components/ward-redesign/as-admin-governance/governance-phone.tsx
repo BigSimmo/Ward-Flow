@@ -223,44 +223,57 @@ export function GovernancePhone({
         // the hero carries the Demo pill and says the records are invented.
         chip={<LiveChip state="live" onHero />}
         title={reviewTitle}
-        sub={`Invented records · ${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
-        figures={[
-          {
-            id: "override",
-            value: overrideCount,
-            label: "Overrides",
-            onPress: () => toggleChip("override"),
-            pressed: chip === "override",
-          },
-          {
-            id: "refused",
-            value: refusedCount,
-            label: "Refused",
-            onPress: () => toggleChip("refused"),
-            pressed: chip === "refused",
-          },
-          {
-            id: "access",
-            value: accessCount,
-            label: "Record access",
-            onPress: () => toggleChip("access"),
-            pressed: chip === "access",
-          },
-        ]}
+        // Polish r2: no "0 of 0 reviewed" while the session holds nothing to review.
+        sub={
+          reviewedOf === 0
+            ? "Invented records"
+            : `Invented records · ${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`
+        }
+        // Polish r2 (admin): no row of zero figures while nothing waits, as on the desktop.
+        figures={
+          adminDesk && toReview.length === 0
+            ? undefined
+            : [
+                {
+                  id: "override",
+                  value: overrideCount,
+                  label: "Overrides",
+                  onPress: () => toggleChip("override"),
+                  pressed: chip === "override",
+                },
+                {
+                  id: "refused",
+                  value: refusedCount,
+                  label: "Refused",
+                  onPress: () => toggleChip("refused"),
+                  pressed: chip === "refused",
+                },
+                {
+                  id: "access",
+                  value: accessCount,
+                  label: "Record access",
+                  onPress: () => toggleChip("access"),
+                  pressed: chip === "access",
+                },
+              ]
+        }
+        // Polish r2: no Review next while nothing waits (the hero's only button would do nothing).
         actions={
-          <Button
-            variant="onHero"
-            icon={ShieldCheck}
-            className={thirdEdition.phoneHeroAction}
-            disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
-            reasonDisplay="tooltip"
-            onClick={() => {
-              const first = toReview[0];
-              if (first) openPhoneEvent(first);
-            }}
-          >
-            Review next
-          </Button>
+          toReview.length === 0 ? undefined : (
+            <Button
+              variant="onHero"
+              icon={ShieldCheck}
+              className={thirdEdition.phoneHeroAction}
+              disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
+              reasonDisplay="tooltip"
+              onClick={() => {
+                const first = toReview[0];
+                if (first) openPhoneEvent(first);
+              }}
+            >
+              Review next
+            </Button>
+          )
         }
       />
       <Segmented<"review" | "gaps" | "audit">
@@ -306,12 +319,14 @@ export function GovernancePhone({
               <p>
                 {reviewable.length > 0
                   ? "Every recorded event has been reviewed."
-                  : "No override audit is recorded in this session."}
+                  : adminDesk
+                    ? "No override, refused action or record access this session."
+                    : "No override audit is recorded in this session."}
                 {/* Role view (access admin): who opened which record lives in Settings, so point there. */}
                 {adminDesk ? (
                   <>
                     {" "}
-                    Record openings: <Link href="/ward-flow/settings#access">Access log</Link>.
+                    <Link href="/ward-flow/settings#access">Open the Access log</Link>
                   </>
                 ) : null}
               </p>

@@ -1,27 +1,19 @@
-/* Governance, redesigned: a scoped stylesheet over today's event list (see governance-page.tsx). */
+/* Governance, redesigned: the folder's own classes, used by the copied event list (governance-event-detail.tsx). */
 
 /* Review point 6: the What and Record cells wrap instead of ending in "…". */
-.governance [class*="_eventRow__"] [class*="_clip__"] {
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
+.wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.governance [class*="_eventRow__"] {
+.registerBody .eventRow {
   align-items: start;
   padding-block: var(--wf-s-2);
 }
 
 /* The list takes the height of the screen rather than stopping a third of the way down. */
 @media (min-width: 64rem) {
-  .governance [class*="_registerBody__"] {
+  .list .registerBody {
     max-height: max(23rem, calc(100dvh - 22rem));
-  }
-}
-
-/* Review point 2: the phone's Review, Gaps and Reviewed switch is 48px tall, like every phone control. */
-@media (max-width: 48rem) {
-  .governance [class*="_phoneTabs__"] [role="radio"] {
-    min-height: 48px;
   }
 }

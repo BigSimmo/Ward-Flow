@@ -301,9 +301,12 @@ export function AlertsHero({
                 {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
                 Next of <span className={styles.mono}>{nextQueue.length}</span>
               </Button>
-              <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
-                Copy for handover
-              </Button>
+              {/* Role view (transport officer): the officer's handover copy is on My jobs (Copy handover). */}
+              {officerDesk ? null : (
+                <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
+                  Copy for handover
+                </Button>
+              )}
             </div>
           }
           foot={<div className={styles.checkingFootWide}>{checkingFoot}</div>}

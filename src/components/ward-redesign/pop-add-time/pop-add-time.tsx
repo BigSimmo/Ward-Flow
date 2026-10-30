@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { Clock } from "lucide-react";
 
 import { Button, Dialog, Field, Segmented, TextInput } from "@/components/wf";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import {
-  formTitle,
   instantFromDateAndTimeInputs,
   isOwnedLegalFormCode,
 } from "@/components/ward-management/legal-forms/legal-forms-view";
@@ -119,12 +117,13 @@ export function PopAddTime({ page }: { page: ReactNode }) {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Record the time written"
+        // Redesign: titled with the link that opens it. The form's full name is on the row behind.
+        title="Add the time"
         description={
           <>
             {/* Surname first (D-83). */}
             <strong>{patient.formalName}</strong> · <span className={styles.mono}>{patient.umrn}</span> · Form{" "}
-            {legalForm.code}, {formTitle(legalForm.code)}
+            {legalForm.code}
           </>
         }
         size="md"
@@ -139,10 +138,13 @@ export function PopAddTime({ page }: { page: ReactNode }) {
                 onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
               />
             </Field>
+            {/* Redesign: the 24-hour HH:MM text field Record a form uses, typed as written (never a
+                12-hour picker). The same parser reads it. */}
             <Field label="Time" id={`legal-forms-written-time-${target.id}`}>
               <TextInput
-                type="time"
-                icon={Clock}
+                placeholder="HH:MM"
+                inputMode="numeric"
+                autoComplete="off"
                 value={draft.time}
                 onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))}
               />
@@ -189,20 +191,19 @@ export function PopAddTime({ page }: { page: ReactNode }) {
           >
             Only the written time is recorded. No expiry is calculated.
           </p>
-          {/* The panel's own button and reason, in the popup body so the whole label fits on a phone. */}
+          {/* One footer row, as the other Legal forms popups: Cancel, then the reason and Save. */}
           <div className={own.actions}>
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
             <Button
               variant="pri"
-              className={own.confirm}
               data-testid={`ward-legal-forms-written-confirm-${target.id}`}
               aria-describedby={`ward-legal-forms-clock-preview-${target.id}`}
               disabledReason={recordUnavailable ?? writtenProblem}
               onClick={save}
             >
-              Save time written
-            </Button>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
+              Save time
             </Button>
           </div>
           {refusal ? (

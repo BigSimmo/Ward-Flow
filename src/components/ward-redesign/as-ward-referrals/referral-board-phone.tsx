@@ -61,7 +61,8 @@ export function ReferralPhoneHero({
       data-wf-hero="band"
     >
       <div className={styles.eyebrow}>
-        <span className={styles.eyebrowText}>{`Referrals · ${placeName ?? "statewide"}`}</span>
+        {/* Role view (nurse in charge): the title names the ward, so the eyebrow is the page alone. */}
+        <span className={styles.eyebrowText}>{placeName ? "Referrals" : "Referrals · statewide"}</span>
         <LiveChip state="live" onHero />
       </div>
       <h2 id={titleId} className={styles.title}>
@@ -93,29 +94,33 @@ export function ReferralPhoneHero({
           ) : null}
         </p>
       )}
-      <div className={styles.figures} role="group" aria-label="Highlight referrals">
-        <Figure
-          value={overdue}
-          label="Decision overdue"
-          tone={overdue > 0 ? "danger" : "neutral"}
-          pressed={highlight === "overdue"}
-          onPress={() => onHighlight("overdue")}
-        />
-        <Figure value={tier1} label="Tier 1" pressed={highlight === "tier1"} onPress={() => onHighlight("tier1")} />
-        <button
-          type="button"
-          className={styles.figure}
-          aria-expanded={bedsOpen}
-          onClick={onBeds}
-          data-testid="ward-referral-phone-beds"
-        >
-          <span className={styles.figureValue}>{bedsReady}</span>
-          <span className={styles.figureLabel}>
-            <StatusGlyph tone="success" size={9} />
-            Beds ready
-          </span>
-        </button>
-      </div>
+      {/* Role view (nurse in charge): no figures, as on desktop. Each row of a ward's short queue marks
+          its own overdue and tier, and the ward desk has no statewide beds panel to open. */}
+      {placeName ? null : (
+        <div className={styles.figures} role="group" aria-label="Highlight referrals">
+          <Figure
+            value={overdue}
+            label="Overdue"
+            tone={overdue > 0 ? "danger" : "neutral"}
+            pressed={highlight === "overdue"}
+            onPress={() => onHighlight("overdue")}
+          />
+          <Figure value={tier1} label="Tier 1" pressed={highlight === "tier1"} onPress={() => onHighlight("tier1")} />
+          <button
+            type="button"
+            className={styles.figure}
+            aria-expanded={bedsOpen}
+            onClick={onBeds}
+            data-testid="ward-referral-phone-beds"
+          >
+            <span className={styles.figureValue}>{bedsReady}</span>
+            <span className={styles.figureLabel}>
+              <StatusGlyph tone="success" size={9} />
+              Beds ready
+            </span>
+          </button>
+        </div>
+      )}
       {/* Role view (nurse in charge): Next overdue and the meeting list repeat a ward's short queue. */}
       {placeName ? null : (
         <div className={styles.actions}>

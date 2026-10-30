@@ -50,8 +50,8 @@ import {
 } from "@/components/wf";
 
 import thirdEdition from "@/components/ward-management/governance-third-edition.module.css";
-import { EventDetail, EventTable } from "@/components/ward-management/governance-event-detail";
-import { GovernancePhone } from "@/components/ward-management/governance-phone";
+import { EventDetail, EventTable } from "./governance-event-detail";
+import { GovernancePhone } from "./governance-phone";
 import {
   REVIEWING_ROLES,
   actionLabels,
@@ -529,7 +529,7 @@ function GovernanceSession({
 
   const TAB_LABEL: Record<GovernanceTab, string> = {
     review: "Review",
-    gaps: "Gaps by site",
+    gaps: "Form gaps by site",
     audit: "Audit trail",
     registers: "Registers",
     reports: "Reports",
@@ -546,8 +546,8 @@ function GovernanceSession({
       ? reviewTitle
       : tab === "gaps"
         ? totalGaps === 0
-          ? "No gaps recorded"
-          : `${totalGaps} ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} ${sites.filter((entry) => entry.gaps > 0).length === 1 ? "site" : "sites"}`
+          ? "No form gaps recorded"
+          : `${totalGaps} form ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} ${sites.filter((entry) => entry.gaps > 0).length === 1 ? "site" : "sites"}`
         : tab === "audit"
           ? "Audit trail"
           : tab === "registers"
@@ -617,7 +617,7 @@ function GovernanceSession({
           Every captured event is reviewed.
         </p>
       ) : (
-        <p className={thirdEdition.quietText}>Choose an event from the list to review it.</p>
+        <p className={thirdEdition.quietText}>Choose an event</p>
       )}
     </div>
   );
@@ -765,7 +765,7 @@ function GovernanceSession({
             onChange={changeTab}
             items={[
               { id: "review", label: "Review", count: toReview.length },
-              { id: "gaps", label: "Gaps by site" },
+              { id: "gaps", label: "Form gaps by site" },
               { id: "audit", label: "Audit trail" },
               { id: "registers", label: "Registers" },
               { id: "reports", label: "Reports" },
@@ -854,7 +854,7 @@ function GovernanceSession({
               <CardHead
                 id="governance-gaps-title"
                 title="Sites and requirements"
-                aside={<span className={thirdEdition.quietText}>Done of applicable. A name opens Forms.</span>}
+                aside={<span className={thirdEdition.quietText}>Done / due</span>}
               />
               {sites.length === 0 ? (
                 <p className={thirdEdition.emptyCell}>No open form or recent move to check.</p>

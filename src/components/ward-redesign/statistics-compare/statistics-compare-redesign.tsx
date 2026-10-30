@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useSyncExternalStore } from "react";
-import { BedDouble, Clock, Download, MapPin, Pin, Search, X } from "lucide-react";
+import { BedDouble, Download, MapPin, Pin, Search, Siren, X } from "lucide-react";
 
 import {
   BarList,
@@ -375,27 +375,28 @@ function ComparePresentation({
               value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
               label="Average stay"
             />
-            <HeroStat value={statisticsCountText(totalBlockers)} label="Blockers" />
+            <HeroStat value={statisticsCountText(totalBlockers)} label="Discharges held up" />
           </>
         ),
       }}
       stats={
         <>
           <HeroStat value={units.length} label="Wards" />
-          <HeroStat value={readyBeds} label={`${readyPct}% of ${totalBeds} beds ready`} />
+          {/* Redesign: each figure names its noun first ("26 Ready · 8.6% of 304 beds"), and uses
+              the words the other Statistics pages use. */}
+          <HeroStat value={readyBeds} label={`Ready · ${readyPct}% of ${totalBeds} beds`} />
           {pendingPreparationBeds > 0 ? <HeroStat value={pendingPreparationBeds} label="Being made ready" /> : null}
           <HeroStat
             value={networkAvgStay === null ? "Not recorded" : `${networkAvgStay.toFixed(1)} days`}
             label="Average stay"
           />
-          <HeroStat value={statisticsCountText(totalBlockers)} label="Blockers" />
-          <HeroStat value={statisticsCountText(totalLongStays)} label="Over 3 months" />
+          <HeroStat value={statisticsCountText(totalBlockers)} label="Discharges held up" />
+          <HeroStat value={statisticsCountText(totalLongStays)} label="Stays over 3 months" />
           <HeroStat
             value={statisticsCountText(stillOpenCount)}
             label={
               <>
-                <SrOnly>Still open:</SrOnly>{" "}
-                {`${statisticsCountText(urgentCount)} urgent, ${statisticsCountText(unplacedCount)} no ward`}
+                {`Still open · ${statisticsCountText(urgentCount)} urgent, ${statisticsCountText(unplacedCount)} no ward`}
               </>
             }
           />
@@ -471,7 +472,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
   return (
     <PhoneBody testId="ward-statistics-compare-phone">
       <Segmented<"wards" | "eds">
-        className={`${phone.seg} ${compare.phoneSeg}`}
+        className={phone.seg}
         size="md"
         label="Compare"
         value={kind}
@@ -529,7 +530,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
                   <StatusGlyph tone="warning" size={9} />
                   {wardReferenceProtected
                     ? "Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used."
-                    : "Amber dot: well above the mean, by more than one standard deviation. Case mix differs."}
+                    : "Amber dot: well above the mean, by more than one standard deviation. Wards differ in case mix."}
                 </span>
               </p>
             </>
@@ -675,7 +676,8 @@ type WardMetric = "occupancy" | "stay" | "blocked" | "long";
 const WARD_METRICS: Record<WardMetric, { label: string; chart: string; unit: string }> = {
   occupancy: { label: "Occupancy", chart: "Ward occupancy bar chart, percent of beds in use", unit: "percent" },
   stay: { label: "Stay", chart: "Ward average stay bar chart", unit: "days" },
-  blocked: { label: "Blockers", chart: "Ward discharge blockers bar chart", unit: "people" },
+  // Redesign: the word the hero and All wards use for this count.
+  blocked: { label: "Held up", chart: "Ward discharges held up bar chart", unit: "people" },
   long: { label: "Long stays", chart: "Ward long stays bar chart", unit: "people" },
 };
 
@@ -721,7 +723,8 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
   const unrecorded = sorted.filter((entry) => entry.value === null);
   const barRows: BarListRow[] = charted.map(({ row, value }) => ({
     id: row.unit.id,
-    label: unitLabel(row.unit.name, row.unit.siteCode),
+    // Redesign: a trailing short form ("(EMyU)") is left to the spoken label, so names keep to one line.
+    label: unitLabel(row.unit.name.replace(/ \([^)]*\)$/, ""), row.unit.siteCode),
     labelText: row.unit.name,
     ...comparisonBar(value, wardMetricFormat(metric)),
     flag: flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove ? "warning" : undefined,
@@ -876,7 +879,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
             Some counts are not shown. Their bars, count order and network reference are not shown; A to Z is used.
           </p>
         ) : null}
-        <span className={compare.footNote}>Case mix differs</span>
+        <span className={compare.footNote}>Wards differ in case mix</span>
       </CardFoot>
     </StatCard>
   );
@@ -926,7 +929,9 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
   const flagAbove = edMean === null ? null : edMean + standardDeviation(values);
   const barRows: BarListRow[] = sorted.map(({ entry, value }) => ({
     id: entry.department.id,
-    label: unitLabel(shortDepartmentName(entry.department.name), entry.department.siteCode),
+    // Redesign: the card title says ED, so the chart drops it and long names keep to one line; the
+    // spoken label keeps the full name.
+    label: unitLabel(shortDepartmentName(entry.department.name).replace(/ ED$/, ""), entry.department.siteCode),
     labelText: entry.department.name,
     ...comparisonBar(
       value,
@@ -956,7 +961,8 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
   return (
     <StatCard
       id="eds"
-      icon={Clock}
+      // Redesign: the menu's ED icon; a clock is for time only.
+      icon={Siren}
       title="ED comparison"
       data-testid="statistics-compare-ed-chart"
       action={
@@ -1063,7 +1069,7 @@ const PINNED_MEASURES: PinnedMeasure[] = [
   },
   {
     id: "blocked",
-    label: "Blockers",
+    label: "Discharges held up",
     value: (row) => row.statistics.readyToLeaveCannot,
     text: String,
     markAbove: true,
@@ -1235,7 +1241,8 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
       }
     >
       {pinned.length === 0 ? (
-        <p className={styles.empty}>Pick up to three wards to set beside the network.</p>
+        // Redesign: one line; the foot's "Pin up to three" said it again, so the foot waits for a pin.
+        <p className={styles.empty}>Pin up to three wards to set beside the network.</p>
       ) : (
         <div className={styles.tableWrap}>
           <table className={`${tableClasses.table} ${styles.table} ${compare.pinTable}`}>
@@ -1316,21 +1323,21 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
           </table>
         </div>
       )}
-      <CardFoot
-        meta={
-          <span className={styles.flagged}>
-            <Icon icon={Pin} size={14} />
-            Pin up to three
-          </span>
-        }
-      >
-        {pinned.length > 0 ? (
+      {pinned.length === 0 ? null : (
+        <CardFoot
+          meta={
+            <span className={styles.flagged}>
+              <Icon icon={Pin} size={14} />
+              Pin up to three
+            </span>
+          }
+        >
           <span className={styles.flagged}>
             <StatusGlyph tone="warning" size={9} />
             <span className={compare.footNote}>Above network</span>
           </span>
-        ) : null}
-      </CardFoot>
+        </CardFoot>
+      )}
     </StatCard>
   );
 }
@@ -1388,7 +1395,7 @@ const WARD_COLUMNS: readonly CompareColumn<WardColumnRow>[] = [
         : { text: `${statistics.averageLengthOfStayDays} days` },
   },
   // Both are genuine counts, so a nought is a measurement and renders as one.
-  { header: "Blockers", cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },
+  { header: "Held up", cell: (statistics, words) => count(statistics.readyToLeaveCannot, words) },
   { header: "Long stays", cell: (statistics, words) => count(statistics.longStays, words) },
   {
     // `consideredCount` is met + missed: 0 of 0 is undefined, not zero, so it keeps the absence wording.

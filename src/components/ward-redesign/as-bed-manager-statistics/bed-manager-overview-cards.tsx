@@ -9,7 +9,7 @@ import {
   ServiceOccupancyCard,
   networkServiceRows,
   networkUnitRows,
-} from "@/components/ward-management/statistics/statistics-network-cards";
+} from "@/components/ward-redesign/statistics/statistics-network-cards-redesign";
 import { FlushStack } from "@/components/ward-management/statistics/statistics-layout";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";

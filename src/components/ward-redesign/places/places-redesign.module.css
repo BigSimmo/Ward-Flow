@@ -7,7 +7,7 @@
 }
 
 .heroSearch input {
-  min-height: 48px;
+  min-height: var(--wf-h-lg);
   font-size: var(--wf-fs-15);
 }
 
@@ -52,7 +52,6 @@
   font-weight: 400;
 }
 
-.bedsNote,
 .bedsElsewhere {
   display: inline-flex;
   flex-wrap: wrap;
@@ -62,7 +61,6 @@
   font-size: var(--wf-fs-12);
 }
 
-.bedsNote a,
 .bedsElsewhere a {
   color: var(--wf-accent-ink);
   font-weight: 600;
@@ -106,9 +104,9 @@
 }
 
 @media (max-width: 48rem) {
-  .showMore,
+  /* Round 2: the service rows keep the live Places phone size (hub.module.css, 3rem); Show more keeps its own 44px. */
   .serviceRow {
-    min-height: 48px;
+    min-height: 3rem;
   }
 
   .listHead,
@@ -117,6 +115,87 @@
   }
 }
 
-.bedsNote > span {
+.bedsElsewhere > span {
   min-width: 0;
+}
+
+/* Round 2: a service head inside Wards reads in sentence case, quieter than the section heading. */
+.foldName {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Round 2: in All, the EDs' and teams' section heading is itself the fold row. */
+.sectionHead {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sectionFold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+/* The whole heading row is the hit area, without a bigger-looking control. */
+.sectionFold::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--wf-s-2)) calc(-1 * var(--wf-s-3));
+}
+
+.sectionFold:hover {
+  color: var(--wf-ink-1);
+}
+
+.sectionFold:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.sectionFold:disabled {
+  cursor: default;
+}
+
+.sectionFoldIcon {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform 120ms ease;
+}
+
+.sectionFold[aria-expanded="false"] .sectionFoldIcon {
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sectionFoldIcon {
+    transition: none;
+  }
+}
+
+/* Round 2, phone: a stale row's "Stale 5h" sits on the right of its two lines, not on a third line. */
+@media (max-width: 48rem) {
+  button.rowMain {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .rowMain .rowConfirmed {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    padding-right: 0;
+  }
 }

@@ -77,46 +77,52 @@ export function BedManagerReferralPhoneHero({
           "Nothing awaiting a decision"
         )}
       </h2>
-      <p className={styles.sub}>
-        {oldest ? (
-          <>
-            Oldest <span className={styles.num}>{oldest}</span>
-          </>
-        ) : (
-          "No referral waiting"
-        )}
-        {median ? (
-          <>
-            {" "}
-            · median decision <span className={styles.num}>{median}</span>
-          </>
-        ) : null}
-      </p>
-      <div className={styles.figures} role="group" aria-label="Highlight referrals">
-        <Figure
-          value={overdue}
-          label="Decision overdue"
-          tone={overdue > 0 ? "danger" : "neutral"}
-          pressed={highlight === "overdue"}
-          onPress={() => onHighlight("overdue")}
-        />
-        <Figure value={tier1} label="Tier 1" pressed={highlight === "tier1"} onPress={() => onHighlight("tier1")} />
-        {showBeds ? (
-          <button
-            type="button"
-            className={styles.figure}
-            aria-expanded={bedsOpen}
-            onClick={onBeds}
-            data-testid="ward-referral-phone-beds"
-          >
-            <span className={styles.figureValue}>{bedsReady}</span>
-            <span className={styles.figureLabel}>
-              <StatusGlyph tone="success" size={9} />
-              Beds ready
-            </span>
-          </button>
-        ) : null}
-      </div>
+      {/* Polish r2: on the site desk the title already says nothing waits, so no second line saying so. */}
+      {!oldest && !median && !showBeds ? null : (
+        <p className={styles.sub}>
+          {oldest ? (
+            <>
+              Oldest <span className={styles.num}>{oldest}</span>
+            </>
+          ) : (
+            "No referral waiting"
+          )}
+          {median ? (
+            <>
+              {" "}
+              · median decision <span className={styles.num}>{median}</span>
+            </>
+          ) : null}
+        </p>
+      )}
+      {/* Polish r2: no zero highlights over an empty queue. */}
+      {count === 0 && !showBeds ? null : (
+        <div className={styles.figures} role="group" aria-label="Highlight referrals">
+          <Figure
+            value={overdue}
+            label="Overdue"
+            tone={overdue > 0 ? "danger" : "neutral"}
+            pressed={highlight === "overdue"}
+            onPress={() => onHighlight("overdue")}
+          />
+          <Figure value={tier1} label="Tier 1" pressed={highlight === "tier1"} onPress={() => onHighlight("tier1")} />
+          {showBeds ? (
+            <button
+              type="button"
+              className={styles.figure}
+              aria-expanded={bedsOpen}
+              onClick={onBeds}
+              data-testid="ward-referral-phone-beds"
+            >
+              <span className={styles.figureValue}>{bedsReady}</span>
+              <span className={styles.figureLabel}>
+                <StatusGlyph tone="success" size={9} />
+                Beds ready
+              </span>
+            </button>
+          ) : null}
+        </div>
+      )}
       <div className={styles.actions}>
         <Button
           variant="onHero"

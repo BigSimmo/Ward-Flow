@@ -821,7 +821,14 @@ function ReferralBoardRedesign({
             <Hero
               // Role view (community clinician): the page names the team, never "statewide".
               eyebrow={community && teamName ? `Referrals · ${teamName} team` : "Referrals"}
-              title={community ? `${queued.length} waiting on the team` : `${queued.length} awaiting decision`}
+              title={
+                // Role view (community clinician): an empty list reads as a state, as on the phone.
+                community
+                  ? queued.length === 0
+                    ? "Nothing waiting on the team"
+                    : `${queued.length} waiting on the team`
+                  : `${queued.length} awaiting decision`
+              }
               titleMeta={
                 // Role view (community clinician): "Oldest none" says nothing over an empty list.
                 community && !oldestClocks ? (
@@ -967,7 +974,7 @@ function ReferralBoardRedesign({
                         Clear
                       </Button>
                     </>
-                  ) : (
+                  ) : community && view === "history" ? null : ( // Role view: History is by decision date.
                     <span
                       className={a.orderNote}
                       data-testid="ward-referral-board-order-note"
@@ -1178,8 +1185,7 @@ function ReferralBoardRedesign({
                       {/* Role view (community clinician): says where the team answers instead. */}
                       {community ? (
                         <>
-                          <span>Read only here.</span>
-                          <span>The team answers from its Waiting list.</span>
+                          <span>Read only · the team answers from its Waiting list</span>
                         </>
                       ) : (
                         "Read only. The coordinator and the receiving ward answer this referral."

@@ -12,6 +12,13 @@ import styles from "@/components/ward-management/hub/hub.module.css";
 
 import directory from "./places-redesign.module.css";
 
+/** Round 2: "Open" sat beside Open buttons, so the security word names the ward. */
+export const SECURITY_WORD: Record<NonNullable<HubEntry["security"]>, string> = {
+  Open: "Open ward",
+  Locked: "Locked ward",
+  Mixed: "Mixed security",
+};
+
 export const PlaceRow = memo(function PlaceRow({
   entry,
   active,
@@ -48,7 +55,12 @@ export const PlaceRow = memo(function PlaceRow({
           </span>
           <span className={styles.resultSub}>
             {(entry.kind === "ward"
-              ? [entry.site, entry.cohort, entry.security, entry.authorised === false ? "Voluntary only" : undefined]
+              ? [
+                  entry.site,
+                  entry.cohort,
+                  entry.security === undefined ? undefined : SECURITY_WORD[entry.security],
+                  entry.authorised === false ? "Voluntary only" : undefined,
+                ]
               : [entry.site, entry.service]
             )
               .filter(Boolean)
@@ -60,8 +72,9 @@ export const PlaceRow = memo(function PlaceRow({
             <>
               {/* The word, not only the colour — a stale reading must survive a reader who cannot see it. */}
               <StatusGlyph tone="warning" size={8} />
-              <span className={styles.flagPill}>Stale count</span>
+              <span className={styles.flagPill}>Stale</span>
               {durMinutes(now - entry.confirmedAt)}
+              <SrOnly>: the ward has not confirmed its bed count in time</SrOnly>
             </>
           ) : (
             <>

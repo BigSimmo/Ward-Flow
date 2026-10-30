@@ -401,7 +401,12 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
   const nearFullCount = heroPlaced.filter((row) => row.occupancy >= NEAR_FULL).length;
   const noReadyCount = heroPlaced.filter((row) => row.ready === 0).length;
   const staleRows = [...heroRows.filter((row) => row.stale)].sort((a, b) => a.confirmedAt - b.confirmedAt);
-  const mostReady = [...heroPlaced].sort((a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name))[0];
+  const wardsWithReady = heroPlaced.filter((row) => row.ready > 0).length;
+  // Polish r2: "Most ready" names a ward only when one ward leads; a tie would pick one at random.
+  const [mostReady, runnerUp] = [...heroPlaced].sort(
+    (a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name),
+  );
+  const mostReadyLeads = mostReady !== undefined && mostReady.ready > 0 && (runnerUp?.ready ?? -1) < mostReady.ready;
   const statewidePercent = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : null;
   const [filtersOpen, setFiltersOpen] = useState(false);
   // ROLE BRANCH (bed_manager): own site first, then the rest as counts, folded after a few cards.
@@ -445,9 +450,8 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
           <h2 id="ward-counts-to-check" className={styles.railTitle}>
             Counts to check <Count n={staleRows.length} />
           </h2>
-          <span className={styles.serviceMeta}>
-            {deskSite ? `${deskSite.name}, past each ward's limit` : "past each ward's limit"}
-          </span>
+          {/* Polish r2: the site is in the page's eyebrow; its name here was cut off with "…". */}
+          <span className={styles.serviceMeta}>past each ward&apos;s limit</span>
         </div>
         {staleRows.length === 0 ? (
           <p className={styles.railNote}>0 wards have a stale bed count.</p>
@@ -479,11 +483,8 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
     >
       <main id="main-content" className={`${styles.main} ${redesign.page}`}>
         <Hero
-          eyebrow={
-            isPhone
-              ? `Wards · ${deskSite?.name ?? "Statewide"}`
-              : `Wards · ${deskSite?.name ?? "Statewide"} · ${heroUnits.length} wards, ${totalBeds} beds`
-          }
+          // Polish r2: the site's ward and bed totals are said once, on its section head below.
+          eyebrow={`Wards · ${deskSite?.name ?? "Statewide"}`}
           level={1}
           title={
             <>
@@ -494,21 +495,22 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
           titleMeta={
             isPhone
               ? `${heroUnits.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${statewidePercent.toFixed(1)}% in use`} · ${pulled} pulled`
-              : undefined
+              : // Polish r2: figures that filter nothing read as one quiet line, not as look-alike chips.
+                `${readyNow + freeingByShiftEnd} ready by ${formatInstantWithDay(shiftEnd, now)} · ${pulled} pulled`
           }
           stats={
             isPhone ? (
               <>
                 <HeroStat
                   value={noReadyCount}
-                  label="No bed ready"
+                  label="Wards full"
                   tone={noReadyCount > 0 ? "warning" : undefined}
                   pressed={status === "full"}
                   onToggle={() => setStatus(status === "full" ? "all" : "full")}
                 />
                 <HeroStat
                   value={readyNow + freeingByShiftEnd}
-                  label={`By ${formatInstantWithDay(shiftEnd, now)}`}
+                  label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
                   tone="info"
                 />
                 <HeroStat
@@ -538,20 +540,15 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
                 role="group"
                 aria-label={deskSite ? `${deskSite.name} counts` : "Statewide counts"}
               >
+                {/* Polish r2: the title counts ready beds; this filter counts the wards that have one. */}
                 <HeroStat
                   inline
-                  value={readyNow}
-                  label="Ready now"
+                  value={wardsWithReady}
+                  label={wardsWithReady === 1 ? "Ward with a ready bed" : "Wards with a ready bed"}
                   tone="success"
                   pressed={status === "has-ready"}
                   onToggle={() => setStatus(status === "has-ready" ? "all" : "has-ready")}
                 />
-                <HeroStat
-                  inline
-                  value={readyNow + freeingByShiftEnd}
-                  label={`Ready by ${formatInstantWithDay(shiftEnd, now)}`}
-                />
-                <HeroStat inline value={pulled} label="Pulled" />
                 <HeroStat
                   inline
                   value={staleCount}
@@ -564,7 +561,7 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
             )
           }
           barAside={
-            !isPhone && mostReady && mostReady.ready > 0 ? (
+            !isPhone && mostReadyLeads && mostReady ? (
               <Link
                 className={styles.heroJump}
                 href={`/ward-flow/ward/${mostReady.unit.id}`}
@@ -579,13 +576,8 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
           foot={
             isPhone ? undefined : (
               <CheckingFoot
+                // Polish r2: stale counts are the hero chip above (it filters), so not repeated here.
                 items={[
-                  {
-                    id: "stale",
-                    label: "Stale bed counts",
-                    value: staleCount,
-                    tone: staleCount > 0 ? "warning" : undefined,
-                  },
                   {
                     id: "near-full",
                     label: `Near full, ${NEAR_FULL * 100}% and over`,
@@ -636,7 +628,7 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
                   onChange={(event) => setOrder(event.target.value as OrderBy)}
                   boxClassName={redesign.menu}
                 >
-                  <option value="service">By service</option>
+                  <option value="service">{deskSite ? "By site" : "By service"}</option>
                   <option value="most-ready">Most ready first</option>
                   <option value="fullest">Fullest first</option>
                 </Select>
@@ -724,7 +716,7 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
               <Segmented
                 label="Order"
                 items={[
-                  { id: "service" as OrderBy, label: "Service" },
+                  { id: "service" as OrderBy, label: deskSite ? "Site" : "Service" },
                   { id: "most-ready" as OrderBy, label: "Most ready" },
                   { id: "fullest" as OrderBy, label: "Fullest" },
                 ]}
@@ -734,37 +726,39 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
             </span>
           </div>
           {/* Audit 11 Oct 2026: the bed strip key is one line under the filters, not a rail card. */}
-          <div className={redesign.keyRow}>
-            {isPhone ? null : (
-              <div className={styles.legendLine} aria-label="Reading a ward" role="note">
-                <BedStripLegend />
-                <span>One cell a bed.</span>
-              </div>
-            )}
-            <p className={styles.shownCount} data-testid="ward-index-count-note">
-              {isPhone ? <b className={styles.phoneListTitle}>Every ward</b> : null}
-              {isFiltered ? (
-                <>
-                  <span>
-                    <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
-                    highlighted. All wards stay.
-                  </span>
-                  {lit.length === 0 ? <span>No match.</span> : null}
-                  {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
-                  {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
-                    <Button variant="ghost" size="sm" onClick={resetFilters}>
-                      Reset filters
-                    </Button>
-                  )}
-                </>
-              ) : isPhone ? null : (
-                // shell-15: the phone shows no "22 of 22" while nothing is filtered.
-                <span>
-                  <b className={styles.num}>{placed.length}</b> of <b className={styles.num}>{placed.length}</b> wards
-                </span>
+          {/* Polish r2: with "Every ward" gone, an unfiltered phone has nothing on this row, so no empty gap. */}
+          {isPhone && !isFiltered ? null : (
+            <div className={redesign.keyRow}>
+              {isPhone ? null : (
+                <div className={styles.legendLine} aria-label="Reading a ward" role="note">
+                  <BedStripLegend />
+                  <span>One cell a bed.</span>
+                </div>
               )}
-            </p>
-          </div>
+              <p className={styles.shownCount} data-testid="ward-index-count-note">
+                {isFiltered ? (
+                  <>
+                    <span>
+                      <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
+                      highlighted. All wards stay.
+                    </span>
+                    {lit.length === 0 ? <span>No match.</span> : null}
+                    {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
+                    {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
+                      <Button variant="ghost" size="sm" onClick={resetFilters}>
+                        Reset filters
+                      </Button>
+                    )}
+                  </>
+                ) : isPhone ? null : (
+                  // shell-15: the phone shows no "22 of 22" while nothing is filtered.
+                  <span>
+                    <b className={styles.num}>{placed.length}</b> of <b className={styles.num}>{placed.length}</b> wards
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
         </section>
 
         {/* Service anchors: the canonical service order, one heading each, for in-page links. */}
@@ -788,6 +782,7 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
                 <WardPhoneList
                   rows={ownOrdered}
                   now={now}
+                  dotKey={false}
                   grouped={false}
                   isDim={(row) => isFiltered && !isLit(row)}
                   onOpen={(row) => setPhoneWardId(row.unit.id)}
@@ -1187,9 +1182,12 @@ function WardPhoneList({
   isDim,
   onOpen,
   countsOnly = false,
+  dotKey = true,
 }: {
   rows: WardRow[];
   now: Instant;
+  /** Polish r2: with two lists on the page, the amber dot's key is said once, under the last. */
+  dotKey?: boolean;
   /** ROLE BRANCH (bed_manager): other sites' wards, whose stale counts are not this desk's to chase. */
   countsOnly?: boolean;
   grouped: boolean;
@@ -1274,10 +1272,12 @@ function WardPhoneList({
         );
       })}
       {/* Phone review F-25: the amber dot marks two things here, so the key names both. */}
-      <p className={styles.phoneDotKey} data-testid="ward-index-phone-dot-key">
-        <StatusGlyph tone="warning" size={8} />
-        <span>{`Amber dot: ${NEAR_FULL * 100}% or more in use, or a bed count not confirmed in time`}</span>
-      </p>
+      {dotKey ? (
+        <p className={styles.phoneDotKey} data-testid="ward-index-phone-dot-key">
+          <StatusGlyph tone="warning" size={8} />
+          <span>{`Amber dot: ${NEAR_FULL * 100}% or more in use, or a bed count not confirmed in time`}</span>
+        </p>
+      ) : null}
     </section>
   );
 }

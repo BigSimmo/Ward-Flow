@@ -151,10 +151,4 @@
     grid-area: open;
     width: auto;
   }
-  .openLink {
-    min-height: 48px;
-  }
-  .more {
-    min-height: 48px;
-  }
 }

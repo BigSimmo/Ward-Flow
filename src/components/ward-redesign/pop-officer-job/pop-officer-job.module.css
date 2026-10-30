@@ -1,9 +1,8 @@
-/* Officer job panel, light redesign over the desk's own panel. `display: contents` keeps the desk's layout. */
+/* Officer job panel, drawn over the desk's own panel. `display: contents` keeps the desk's layout.
+   Redesign, round 2: the earlier class-name override that set the four leg steps two by two is
+   removed (brief hard rule: no class-name attribute selectors). The panel is the desk's own
+   (`officer/officer-job-detail.tsx`, drawn by the Transport page), so the 2 x 2 steps belong in a
+   copy of that file in the Transport page's folder. */
 .scope {
   display: contents;
-}
-
-/* The four leg steps sit two by two, so "Arrived at ward" is never cut to "Arrived at w…". */
-.scope [data-testid="ward-officer-detail"] [class*="_actionRow__"] {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }

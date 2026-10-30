@@ -78,7 +78,7 @@ import {
   ownerShort,
   type QueueEntry,
   type QueueHandlers,
-} from "@/components/ward-management/alerts/alerts-queue";
+} from "./alerts-queue";
 import { groupLinkedAlerts, type LinkedQueueItem } from "@/components/ward-management/alerts/alert-linked-groups";
 import { LinkedAlertItem } from "@/components/ward-management/alerts/alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail-redesign";
@@ -94,15 +94,15 @@ import {
 } from "@/components/ward-management/alerts/alerts-tab-panels";
 import { BroadcastComposer } from "@/components/ward-management/alerts/broadcast-composer";
 
-import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forecast-alerts-group";
+import { ForecastAlertsGroup } from "./forecast-alerts-group";
 import styles from "@/components/ward-management/alerts/alerts.module.css";
+import redesign from "./alerts-redesign.module.css";
 import {
   Button,
   Count,
   Card,
   Drawer,
   EmptyState,
-  FilterChip,
   PhoneSheet,
   PillTabs,
   Segmented,
@@ -866,7 +866,7 @@ function AlertsWorkspace() {
       queued.kind === "single" ? (
         renderEntry(queued.entry)
       ) : queued.kind === "kind" ? (
-        <KindGroup key={queued.key} group={queued} listClassName={listClassName} renderEntry={renderEntry} />
+        <KindGroup key={queued.key} group={queued} now={now} listClassName={listClassName} renderEntry={renderEntry} />
       ) : (
         <LinkedAlertItem
           key={queued.key}
@@ -932,7 +932,7 @@ function AlertsWorkspace() {
         "Act now",
         actEntries,
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
-        "None firing now. The conditions checked are named in the header.",
+        "Nothing to act on now.",
         urgencyLink(0),
       )}
       {access.role === "coordinator" || access.role === "bed_manager" ? (
@@ -940,9 +940,7 @@ function AlertsWorkspace() {
           now={now}
           className={styles.group}
           readOnly={access.role === "bed_manager"}
-          head={(count) => (
-            <GroupHead tone="warning" label="Forecast" count={count} aside="coordinators, bed managers" />
-          )}
+          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
         />
       ) : null}
       {groupSection(
@@ -1304,26 +1302,17 @@ function AlertsWorkspace() {
                   </div>
                   {isPhone ? (
                     <>
-                      {owners.length > 0 ? (
-                        <div className={styles.phoneChips} role="group" aria-label="Highlight by owner">
-                          {/* Yours is a hero figure on phone, so the chips are the other owners. */}
-                          {owners
-                            .filter((owner) => ownerShort(owner, coordDesk) !== "You")
-                            .map((owner) => (
-                              <FilterChip
-                                key={owner}
-                                className={styles.filterBtn}
-                                pressed={ownerHighlight === owner}
-                                onPressedChange={() =>
-                                  setOwnerHighlight((current) => (current === owner ? null : owner))
-                                }
-                              >
-                                <b className={styles.mono}>
-                                  {allEntries.filter((entry) => entry.owner === owner).length}
-                                </b>
-                                {ownerShort(owner, coordDesk)}
-                              </FilterChip>
-                            ))}
+                      {/* Round 2: the desktop's owner menu, not a row of chips that ran off the screen. Yours
+                          is a hero figure on phone, so the menu lists the other owners. */}
+                      {owners.some((owner) => ownerShort(owner, coordDesk) !== "You") ? (
+                        <div className={redesign.phoneOwner}>
+                          <OwnerMenu
+                            owners={owners.filter((owner) => ownerShort(owner, coordDesk) !== "You")}
+                            value={ownerHighlight}
+                            onChange={setOwnerHighlight}
+                            labelFor={(owner) => ownerShort(owner, coordDesk)}
+                            countFor={(owner) => allEntries.filter((entry) => entry.owner === owner).length}
+                          />
                         </div>
                       ) : null}
                       <div className={styles.phoneList}>{urgencyView}</div>
@@ -1405,7 +1394,7 @@ function AlertsWorkspace() {
                       Checking <span className={styles.mono}>{checks.length}</span> conditions
                     </span>
                     <span className={styles.phoneCardMeta}>
-                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
+                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> flagged · handover
                       sheets not checked
                     </span>
                   </span>
@@ -1426,7 +1415,7 @@ function AlertsWorkspace() {
                     Checking <span className={styles.mono}>{checks.length}</span> conditions
                   </span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
+                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> flagged · handover
                     sheets not checked
                   </span>
                 </span>
@@ -1434,7 +1423,8 @@ function AlertsWorkspace() {
               </button>
             )}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
-              <div className={styles.phoneChecks}>{checkingFoot}</div>
+              {/* Round 2: the list itself, not the collapsed chip, so one tap reaches it. */}
+              <div className={styles.phoneChecks}>{checkingList}</div>
             </PhoneSheet>
           </div>
 

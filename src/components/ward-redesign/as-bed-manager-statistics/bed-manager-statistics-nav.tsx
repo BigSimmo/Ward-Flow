@@ -153,7 +153,8 @@ export function BedManagerStatisticsNav({
     access.role === "bed_manager"
       ? allItems
           .filter((item) => item.id === "hub" || item.id === "ward" || item.id === "weekly")
-          .map((item) => ({ ...item, count: undefined }))
+          // Role view (site bed manager): the first tab is the desk's own site, not the network.
+          .map((item) => ({ ...item, count: undefined, label: item.id === "hub" ? "Site" : item.label }))
       : allItems;
 
   if (ownPlaceOnly) return withSamples && variant !== "chips" ? <StatisticsSamplesSwitch /> : null;

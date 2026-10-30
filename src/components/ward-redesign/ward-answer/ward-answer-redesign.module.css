@@ -108,9 +108,9 @@
 
 .swatch {
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
+  width: var(--wf-s-3);
+  height: var(--wf-s-3);
+  border-radius: calc(var(--wf-r-xs) / 2);
   box-sizing: border-box;
 }
 

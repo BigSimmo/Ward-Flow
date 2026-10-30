@@ -390,7 +390,9 @@ function WardsIndexView({
         </HeroTool>
       }
       phone={{
-        title: `${overLine} ${plural(overLine, "ward", "wards")} over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+        // Redesign: the title names the page, as on desktop. It said "14 wards over 85%", the same
+        // fact as the Over 85% figure under it, which stays because it is the phone's highlight toggle.
+        title: "All wards",
         sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${shown(blockedTotal)} ${plural(blockedTotal, "discharge", "discharges")} held up`,
         stats: (
           <>
@@ -453,7 +455,7 @@ function WardsIndexView({
             </p>
           ) : null}
           <Segmented<"service" | "none">
-            className={cx(phone.seg, list.phoneSeg)}
+            className={phone.seg}
             size="md"
             label="Group wards"
             value={group}
@@ -466,7 +468,8 @@ function WardsIndexView({
             }}
             items={[
               { id: "service", label: "By service" },
-              { id: "none", label: "Fullest first" },
+              // Redesign: the desktop switch's own words, so one control has one name.
+              { id: "none", label: "One list" },
             ]}
           />
           <PhoneList label="Every ward">
@@ -476,10 +479,8 @@ function WardsIndexView({
                   <li className={phone.listHead}>
                     <GroupHead
                       title={
-                        <span className={phone.dotName}>
-                          <ServiceDot service={entry.service} />
-                          {entry.service ?? "Service not recorded"}
-                        </span>
+                        // Redesign: no service colour dot beside the service's own name (calm colour).
+                        <span className={phone.dotName}>{entry.service ?? "Service not recorded"}</span>
                       }
                       aside={<b className={phone.mono}>{entry.rows.length}</b>}
                     />
@@ -493,7 +494,17 @@ function WardsIndexView({
                       as="li"
                       className={cx(chips.size > 0 && !hit && phone.dim)}
                       name={row.name}
-                      meta={`${row.hospital.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u, "")} · ${row.ready} ready · ${shown(row.blocked)} blocked`}
+                      // Redesign: "held up", the hero's word, and only the parts that are not nought.
+                      meta={[
+                        row.hospital.replace(
+                          / (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u,
+                          "",
+                        ),
+                        row.ready > 0 ? `${row.ready} ready` : null,
+                        positive(row.blocked) ? `${shown(row.blocked)} held up` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                       value={
                         <span className={phone.flagged}>
                           {row.rate >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -580,7 +591,6 @@ function WardsIndexView({
                         <tr className={index.groupRow}>
                           <th scope="colgroup" colSpan={10}>
                             <span className={index.groupLabel}>
-                              <ServiceDot service={entry.service} />
                               {entry.service ?? "Service not recorded"}
                               <span className={styles.muted}>{entry.rows.length}</span>
                             </span>

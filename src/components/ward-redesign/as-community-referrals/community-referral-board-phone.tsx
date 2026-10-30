@@ -155,7 +155,7 @@ export function ReferralPhoneHero({
         {community && teamHref ? (
           // Role view (community clinician): the way to the team page's Waiting list instead.
           <Link href={teamHref} className={buttonClass({ variant: "onHero", className: styles.action })}>
-            Team&rsquo;s Waiting list
+            Open the team&rsquo;s Waiting list
           </Link>
         ) : (
           <Button variant="onHero" icon={ListOrdered} className={styles.action} onClick={onMeeting}>

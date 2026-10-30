@@ -38,7 +38,8 @@ export function DeskSidePanel({
     <section className={styles.clear} aria-label={`Checked for ${wardName}`}>
       <p className={styles.head}>
         <CheckCircle2 size={16} aria-hidden="true" />
-        {`Nothing for ${wardName} needs you`}
+        {/* The page title already says no alert is for the ward; this panel says what was checked. */}
+        {`Checked for ${wardName}`}
       </p>
       {checks}
     </section>

@@ -15,6 +15,8 @@ export function shortLegal(label: string | undefined): string {
   if (!label) return "Not recorded";
   // WT-03: "Form 6A not recorded (Form 1A ended ...)" keeps its "not recorded" on the tile.
   if (label.includes(" not recorded (")) return label.split(" (")[0]!;
+  // Redesign: the tile keeps one short line, so a community treatment order reads "CTO" (full words in Overview).
+  if (label.startsWith("Community treatment order")) return "CTO";
   return label.startsWith("Form ") ? label.split(" ").slice(0, 2).join(" ") : label;
 }
 
@@ -154,8 +156,9 @@ export function NotLeftNotice({
     tone = "warning";
     text = `Away at an ED for ${bedItem.awayAtEdHours}h. The bed is held for them.`;
   } else if (bedItem.pastDate) {
+    // Redesign: the date is on the Going out tile and in Plan to leave; the notice gives the reason only.
     tone = "warning";
-    text = `${expectedPlan}. Nothing is recorded as holding them up.`;
+    text = "Nothing is recorded as holding them up.";
   } else if (bedItem.dischargeBarrier) {
     tone = "warning";
     text = `Long-stay reason: ${bedItem.dischargeBarrier}.`;

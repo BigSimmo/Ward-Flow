@@ -6,7 +6,7 @@ import { readDeclinesByReason } from "@/components/ward-management/statistics/st
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
+import { ArrowRight, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
 
 import {
   Badge,
@@ -19,13 +19,11 @@ import {
   FilterChip,
   HeroChip,
   HeroChips,
-  Icon,
   StackBar,
   Spinner,
   StatusGlyph,
   TextInput,
   buttonClass,
-  durMinutes,
   tableClasses,
   useIsPhone,
   rowDim,
@@ -63,15 +61,13 @@ import {
   type DeclineReason,
 } from "@/components/ward-management/ward-model";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import {
-  ED_ELEVATED_PRESSURE_WAIT_MINUTES,
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import { FlushRow, Follow } from "@/components/ward-management/statistics/statistics-layout";
 import { useStatisticsView } from "@/components/ward-management/statistics/statistics-view-bar";
 import { StatisticsViewSwitch } from "./bed-manager-statistics-view-switch";
-import { arrivalBandsFor, hoursLabel } from "@/components/ward-redesign/statistics/statistics-bands";
+import { BedManagerEdCard, SortTh, type EdSortKey } from "./bed-manager-ed-card";
+import { arrivalBandsFor } from "@/components/ward-redesign/statistics/statistics-bands";
 
 function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
   return (
@@ -105,7 +101,7 @@ import { StatisticsCapacityChart } from "@/components/ward-redesign/statistics/s
 import { StatCard, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
 import { BedManagerStatisticsHero as StatisticsHero } from "./bed-manager-statistics-hero";
 import { BedManagerOverviewCards } from "./bed-manager-overview-cards";
-import { StatisticsSessionTrendsCard } from "@/components/ward-management/statistics/statistics-session-trends-card";
+import { StatisticsSessionTrendsCard } from "@/components/ward-redesign/statistics/statistics-session-trends-redesign";
 import trendStyles from "@/components/ward-management/statistics/statistics-session-trends.module.css";
 import { BedManagerStatisticsSummaryPhone } from "./bed-manager-statistics-summary-phone";
 import {
@@ -114,11 +110,11 @@ import {
   type SummaryModel,
   type SummarySlots,
   type SummaryEd,
-} from "@/components/ward-management/statistics/statistics-network-cards";
+} from "@/components/ward-redesign/statistics/statistics-network-cards-redesign";
 import { StatisticsUnitFinder } from "@/components/ward-management/statistics/statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "@/components/ward-management/ward-referrals";
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
-import { hoursText, occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
+import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
@@ -159,12 +155,6 @@ function formatReportDay(instant: Instant, dayZero: Date): string {
   return `${weekday} ${day} ${month}`;
 }
 
-/** Minutes as a duration, or "none" when nothing is waiting. */
-const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
-
-/** A median wait to the nearest hour ("6h", "1d 4h"), or "none" when nothing is waiting. */
-const medianText = (minutes: number | null) => (minutes === null ? "none" : hoursText(Math.round(minutes / 60)));
-
 /** "Royal Perth Hospital" reads "Royal Perth" in the narrow ED table; the site code leads the row. */
 const shortSiteName = (name: string) =>
   name
@@ -182,44 +172,14 @@ const PRESSURE_ROWS = 10;
 
 /** Whole hours, as a short label ("4h"). */
 type WardSortKey = "name" | "beds" | "ready" | "occ" | "ref";
-type EdSortKey = "name" | "waiting" | "longest" | "median" | "over8" | "over24";
-
-function SortTh<K extends string>({
-  id,
-  label,
-  sort,
-  asc,
-  onSort,
-  numeric = false,
-}: {
-  id: K;
-  label: string;
-  sort: K;
-  asc: boolean;
-  onSort: (id: K) => void;
-  numeric?: boolean;
-}) {
-  const active = sort === id;
-  return (
-    <th
-      scope="col"
-      className={`${styles.sortTh} ${numeric ? styles.num : ""}`}
-      aria-sort={active ? (asc ? "ascending" : "descending") : "none"}
-    >
-      <button type="button" onClick={() => onSort(id)}>
-        {label}
-        {active ? <Icon icon={asc ? ChevronUp : ChevronDown} size={14} /> : null}
-      </button>
-    </th>
-  );
-}
 
 /** H-0187: every site code in the ward table, spelt out once under it. */
 function SiteCodeKey({ sites }: { sites: readonly { code: string; name: string }[] }) {
   const named = [...new Map(sites.map((site) => [site.code, site.name])).entries()].toSorted(([a], [b]) =>
     a.localeCompare(b),
   );
-  if (named.length === 0) return null;
+  // Bed manager: one site needs no key; the card title already names it.
+  if (named.length <= 1) return null;
   return (
     <p className={`${styles.sub} ${styles.muted}`} data-testid="ward-statistics-site-key">
       Site codes: {named.map(([code, name]) => `${code} ${name}`).join(" · ")}
@@ -895,40 +855,45 @@ function StatisticsSummaryView({
       <StatCard
         icon={TrendingUp}
         title={siteName ? `${siteName} wards` : "Where the pressure is"}
-        meta="Occupancy, awaiting answer"
+        // Bed manager: the column heads say what the table shows, so the title stands alone.
+        meta={siteName ? undefined : "Occupancy, awaiting answer"}
         data-testid="ward-statistics-pressure"
       >
-        <div className={styles.toolbar}>
-          {/* Bed manager: its own site's few wards need no filter box. */}
-          {siteName ? null : (
-            <TextInput
-              type="search"
-              icon={Search}
-              boxClassName={styles.search}
-              id="wardSearchInput"
-              placeholder="Filter wards"
-              value={wardSearchQuery}
-              onChange={(e) => setWardSearchQuery(e.target.value)}
-              aria-label="Filter wards or hospitals"
-            />
-          )}
-          <FilterChip pressed={wardOverLine} onPressedChange={setWardOverLine} tone="warning" count={overLineCount}>
-            {`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-          </FilterChip>
-          <span className={styles.toolbarEnd} id="wardFilterCount" role="status">
-            {wardOverLine ? (
-              <>
-                <b>{overLineCount}</b> of {filteredAndSortedWards.length}{" "}
-                <span className={styles.srOnly}>synthetic rows</span> highlighted, all rows stay
-              </>
-            ) : (
-              <>
-                <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}{" "}
-                <span className={styles.srOnly}>synthetic rows</span>
-              </>
+        {/* Bed manager: with three wards or fewer the highlight chip and count cannot change what
+            is read, so the toolbar goes. */}
+        {siteName && allPressureWards.length <= 3 ? null : (
+          <div className={styles.toolbar}>
+            {/* Bed manager: its own site's few wards need no filter box. */}
+            {siteName ? null : (
+              <TextInput
+                type="search"
+                icon={Search}
+                boxClassName={styles.search}
+                id="wardSearchInput"
+                placeholder="Filter wards"
+                value={wardSearchQuery}
+                onChange={(e) => setWardSearchQuery(e.target.value)}
+                aria-label="Filter wards or hospitals"
+              />
             )}
-          </span>
-        </div>
+            <FilterChip pressed={wardOverLine} onPressedChange={setWardOverLine} tone="warning" count={overLineCount}>
+              {`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
+            </FilterChip>
+            <span className={styles.toolbarEnd} id="wardFilterCount" role="status">
+              {wardOverLine ? (
+                <>
+                  <b>{overLineCount}</b> of {filteredAndSortedWards.length}{" "}
+                  <span className={styles.srOnly}>synthetic rows</span> highlighted, all rows stay
+                </>
+              ) : (
+                <>
+                  <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}{" "}
+                  <span className={styles.srOnly}>synthetic rows</span>
+                </>
+              )}
+            </span>
+          </div>
+        )}
         <div className={styles.tableWrap}>
           <table className={`${tableClasses.table} ${styles.table}`} id="wardPressureTable">
             <caption className={styles.srOnly}>Inpatient mental health ward capacity and demand</caption>
@@ -1018,110 +983,22 @@ function StatisticsSummaryView({
         )}
       </StatCard>
 
-      <StatCard
-        icon={Clock}
-        title="Open ED journeys"
-        data-testid="ward-statistics-emergency-departments"
-        aside={
-          longestEd && longestEd.longest !== null ? (
-            <Badge
-              tone={
-                longestEd.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES
-                  ? "danger"
-                  : longestEd.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES
-                    ? "warning"
-                    : undefined
-              }
-            >
-              {`${durMinutes(Math.round(longestEd.longest))} longest, ${longestEd.site}`}
-            </Badge>
-          ) : undefined
-        }
-      >
-        <div className={styles.toolbar}>
-          {/* Bed manager: one ED, its own site's, so no filter box. */}
-          {siteName ? null : (
-            <TextInput
-              type="search"
-              icon={Search}
-              boxClassName={styles.search}
-              id="edSearchInput"
-              placeholder="Filter departments"
-              value={edSearchQuery}
-              onChange={(e) => setEdSearchQuery(e.target.value)}
-              aria-label="Filter emergency departments"
-            />
-          )}
-          <span className={styles.toolbarEnd} id="edFilterCount">
-            {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
-          </span>
-        </div>
-        <div className={styles.tableWrap}>
-          <table className={`${tableClasses.table} ${styles.table}`} id="edPressureTable">
-            <caption className={styles.srOnly}>Emergency department waits for a mental health bed</caption>
-            <thead>
-              <tr>
-                <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
-                <SortTh
-                  id="waiting"
-                  label="Open ED journeys"
-                  sort={edSortCol}
-                  asc={edSortAsc}
-                  onSort={handleEdSort}
-                  numeric
-                />
-                <SortTh id="longest" label="Longest" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                <SortTh id="median" label="Median" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                <SortTh id="over8" label="8h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                <SortTh id="over24" label="24h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAndSortedEds.map((d) => (
-                <tr key={d.id}>
-                  <th scope="row" className={styles.siteCell}>
-                    <b className={styles.codeLead}>{d.site}</b>
-                    <span className={styles.siteName} title={d.name}>
-                      {d.name}
-                    </span>
-                  </th>
-                  <td className={`${styles.num} ${exactStatisticsCount(d.waiting) === 0 ? styles.zero : ""}`}>
-                    {small(d.waiting)}
-                  </td>
-                  <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
-                    <span className={styles.flagged}>
-                      {d.longest !== null && d.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
-                        <StatusGlyph tone="danger" size={9} />
-                      ) : d.longest !== null && d.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES ? (
-                        <StatusGlyph tone="warning" size={9} />
-                      ) : null}
-                      {waitText(d.longest)}
-                    </span>
-                  </td>
-                  <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>{medianText(d.median)}</td>
-                  <td className={`${styles.num} ${exactStatisticsCount(d.over8) === 0 ? styles.zero : ""}`}>
-                    {small(d.over8)}
-                  </td>
-                  <td className={`${styles.num} ${exactStatisticsCount(d.over24) === 0 ? styles.zero : ""}`}>
-                    {small(d.over24)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            {/* Bed manager: one ED row, so no total row repeating it. */}
-            <tfoot hidden={siteName !== undefined}>
-              <tr>
-                <th scope="row">All {emergencyDepts.length} departments</th>
-                <td className={styles.num}>{small(totalEdWaiting)}</td>
-                <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
-                <td className={styles.num}>{medianText(networkMedianWait)}</td>
-                <td className={styles.num}>{small(totalEdOver8)}</td>
-                <td className={styles.num}>{small(totalEdOver24)}</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-      </StatCard>
+      <BedManagerEdCard
+        siteName={siteName}
+        longestEd={longestEd}
+        edSearchQuery={edSearchQuery}
+        setEdSearchQuery={setEdSearchQuery}
+        edSortCol={edSortCol}
+        edSortAsc={edSortAsc}
+        handleEdSort={handleEdSort}
+        filteredAndSortedEds={filteredAndSortedEds}
+        departmentCount={emergencyDepts.length}
+        small={small}
+        totalEdWaiting={totalEdWaiting}
+        networkMedianWait={networkMedianWait}
+        totalEdOver8={totalEdOver8}
+        totalEdOver24={totalEdOver24}
+      />
     </div>
   );
 
@@ -1226,7 +1103,8 @@ function StatisticsSummaryView({
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
-              <HeroChip value={inUseCount} label={`${occupiedPct.toFixed(1)}% in use`} />
+              {/* Redesign: the count names its noun first, its share after. */}
+              <HeroChip value={inUseCount} label={`In use · ${occupiedPct.toFixed(1)}%`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               <HeroChip
                 value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}

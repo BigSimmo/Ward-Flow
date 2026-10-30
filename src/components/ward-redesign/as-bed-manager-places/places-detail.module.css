@@ -1,0 +1,6 @@
+/* Places as a site bed manager: a place's fixed facts as one quiet line in the preview. */
+.facts {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}

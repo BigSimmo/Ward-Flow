@@ -12,7 +12,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { edReferralStatus, edStageLabel } from "@/components/ward-management/ed/ed-referral-status";
 import { openWardReferralFor, referredToLabel } from "@/components/ward-management/ed/ed-bed-search-step";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { Card, Count, StatusGlyph, TierTile, buttonClass, durMinutes } from "@/components/wf";
+import { Card, StatusGlyph, TierTile, buttonClass, durMinutes } from "@/components/wf";
 
 import styles from "./as-ed-raised-section.module.css";
 
@@ -55,8 +55,9 @@ export function AsEdRaisedSection({
     <Card className={styles.card} data-testid="as-ed-raised">
       <section aria-labelledby={titleId}>
         <h2 id={titleId} className={styles.title}>
-          Raised from {departmentName} <Count n={raised.length} />
-          <span className={styles.note}>Longest first</span>
+          {/* Redesign: the page title already counts what this ED raised, so the card names the list. */}
+          Open referrals<span className="sr-only"> from {departmentName}</span>
+          <span className={styles.note}>Longest wait first</span>
         </h2>
         {raised.length === 0 ? (
           <p className={styles.empty}>Nothing raised from this ED is open.</p>
@@ -105,9 +106,11 @@ export function AsEdRaisedSection({
                     <td className={styles.open}>
                       <Link
                         href={movementHref(movement.id)}
-                        className={buttonClass({ variant: "sec", size: "sm", className: styles.openLink })}
+                        className={buttonClass({ variant: "ghost", size: "sm", className: styles.openLink })}
                       >
+                        {/* Redesign: a quiet link, not eight outlined buttons; the name says whose journey. */}
                         Journey
+                        <span className="sr-only">, {nameFor(who.formalName, who.umrn)}</span>
                       </Link>
                     </td>
                   </tr>

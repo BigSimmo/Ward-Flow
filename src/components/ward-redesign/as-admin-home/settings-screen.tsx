@@ -19,19 +19,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import {
-  Bell,
-  Check,
-  ChevronRight,
-  Clock,
-  Database,
-  Gavel,
-  KeyRound,
-  Layers,
-  Palette,
-  Search,
-  UserRound,
-} from "lucide-react";
+import { Check, ChevronRight, Clock, Gavel, Layers, Search } from "lucide-react";
 
 import { useWardAccessibilityPreference } from "@/components/ward-management/shell/ward-accessibility";
 import {
@@ -107,7 +95,7 @@ const WardHelpUsageCard = dynamic(() =>
 );
 import { useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
-import { AccessSettings, showsAccessTab } from "@/components/ward-management/settings/access-settings";
+import { AccessSettings, showsAccessTab } from "./access-settings";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal";
 import { ResetBaselineModal } from "@/components/ward-management/settings/reset-baseline-modal";
 import {
@@ -120,8 +108,8 @@ import {
 } from "@/components/ward-management/settings/settings-panes";
 import { useRowDensity, type RowDensity } from "@/components/ward-management/settings/row-density";
 import { RuleRow, SettingRow } from "@/components/ward-management/settings/settings-rows";
+import { REDESIGN_TABS, TAB_ICONS } from "./settings-tabs";
 import {
-  SETTINGS_TABS,
   findSettings,
   type SettingsSearchEntry,
   type SettingsTab,
@@ -164,20 +152,6 @@ import {
  * as one "Display and profile" tab whose Profile card reads only what the app holds (desk, role,
  * scope, shift pattern, service in view, appearance). An old #profile address opens that tab.
  */
-
-/** The redesign's tab list: Profile and shift joins Display. */
-const REDESIGN_TABS: readonly { readonly id: SettingsTab; readonly label: string }[] = SETTINGS_TABS.filter(
-  (item) => item.id !== "profile",
-).map((item) => (item.id === "display" ? { ...item, label: "Display and profile" } : item));
-
-const TAB_ICONS = {
-  rules: Clock,
-  alerts: Bell,
-  display: Palette,
-  profile: UserRound,
-  data: Database,
-  access: KeyRound,
-} as const;
 
 export function AsAdminSettingsRedesign() {
   return <SettingsSourceHost>{(source) => <SettingsWorkspace source={source} />}</SettingsSourceHost>;
@@ -1197,6 +1171,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   ) : null;
   // #788: the band names the desk in use, not the coordinator demo profile, on every role.
   const deskProfile = useSettingsDeskProfile();
+  const roleIsName = deskProfile.name === deskProfile.role;
 
   /* Phone (v10): its own design, never a reflow of the desktop. A compact profile hero, Find a
      setting, the four settings people change on a phone, then the five areas as rows that open
@@ -1213,14 +1188,18 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     };
     // Role view (access admin): giving access is all this desk does, so its areas come first on a
     // phone, above the display settings, and the buzz sound (for alerts it never gets) is left out.
+    // Polish r2: its requests and roles are open on the page, and Theme and density stay in Display.
+    const accessInline = desk.role === "admin" && accessOn;
     const allSettings = (
       <section className={styles.phoneSection} aria-labelledby="settings-phone-all">
         <h2 id="settings-phone-all" className={styles.phoneHead}>
           All settings
         </h2>
         <ul className={styles.phoneList}>
-          {tabs.map((item) => {
+          {tabs.flatMap((item) => {
             const Icon = TAB_ICONS[item.id];
+            // Role view (access admin), polish r2: Access is open on the page above, so no row for it.
+            if (accessInline && item.id === "access") return [];
             return (
               <PhoneListRow
                 key={item.id}
@@ -1276,7 +1255,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             }
             eyebrow={deskProfile.location}
             chip={<span className={styles.phoneProfileChip}>Demo profile</span>}
-            sub={deskProfile.role}
+            sub={roleIsName ? undefined : deskProfile.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
             actions={
@@ -1290,51 +1269,58 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           {refusedLine}
 
           {desk.role === "admin" ? allSettings : null}
-          <section className={styles.phoneSection} aria-labelledby="settings-phone-quick">
-            <h2 id="settings-phone-quick" className={styles.phoneHead}>
-              On this phone
-              <span className={styles.phoneHeadMeta}>Saves at once</span>
-            </h2>
-            <div className={styles.phoneCard}>
-              <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
-                <Segmented<ThemeChoice>
-                  className={styles.phoneSeg}
-                  size="md"
-                  label="Theme"
-                  items={[...THEME_CHOICES]}
-                  value={theme}
-                  onChange={chooseTheme}
-                />
-              </SettingRow>
-              <SettingRow setting="density" title="Row density" stacked>
-                <Segmented<RowDensity>
-                  className={styles.phoneSeg}
-                  size="md"
-                  label="Row density"
-                  items={[
-                    { id: "comfortable", label: "Comfortable" },
-                    { id: "compact", label: "Compact" },
-                  ]}
-                  value={rowDensity}
-                  onChange={chooseRowDensity}
-                />
-              </SettingRow>
-              {desk.role === "admin" ? null : (
-                <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
-                  <Switch
-                    checked={audioBuzz}
-                    onCheckedChange={(next) => {
-                      setAudioBuzz(next);
-                      setAudioBuzzPreference(next);
-                      showToast(next ? "Buzz sound on." : "Buzz sound off.");
-                    }}
-                    label={<SrOnly>Buzz sound</SrOnly>}
-                    className={styles.phoneSwitch}
+          {accessInline ? (
+            <section className={styles.phoneSection} aria-label="Access">
+              <AccessSettings />
+            </section>
+          ) : null}
+          {accessInline ? null : (
+            <section className={styles.phoneSection} aria-labelledby="settings-phone-quick">
+              <h2 id="settings-phone-quick" className={styles.phoneHead}>
+                On this phone
+                <span className={styles.phoneHeadMeta}>Saves at once</span>
+              </h2>
+              <div className={styles.phoneCard}>
+                <SettingRow setting="theme" title="Theme" stacked testId="ward-settings-phone-theme">
+                  <Segmented<ThemeChoice>
+                    className={styles.phoneSeg}
+                    size="md"
+                    label="Theme"
+                    items={[...THEME_CHOICES]}
+                    value={theme}
+                    onChange={chooseTheme}
                   />
                 </SettingRow>
-              )}
-            </div>
-          </section>
+                <SettingRow setting="density" title="Row density" stacked>
+                  <Segmented<RowDensity>
+                    className={styles.phoneSeg}
+                    size="md"
+                    label="Row density"
+                    items={[
+                      { id: "comfortable", label: "Comfortable" },
+                      { id: "compact", label: "Compact" },
+                    ]}
+                    value={rowDensity}
+                    onChange={chooseRowDensity}
+                  />
+                </SettingRow>
+                {desk.role === "admin" ? null : (
+                  <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz">
+                    <Switch
+                      checked={audioBuzz}
+                      onCheckedChange={(next) => {
+                        setAudioBuzz(next);
+                        setAudioBuzzPreference(next);
+                        showToast(next ? "Buzz sound on." : "Buzz sound off.");
+                      }}
+                      label={<SrOnly>Buzz sound</SrOnly>}
+                      className={styles.phoneSwitch}
+                    />
+                  </SettingRow>
+                )}
+              </div>
+            </section>
+          )}
 
           {desk.role === "admin" ? null : allSettings}
 
@@ -1407,7 +1393,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         <Hero
           className={styles.band}
           testId="ward-settings-profile"
-          eyebrow={`${deskProfile.role} · ${deskProfile.location}`}
+          // Polish r2: a desk named by its role ("Access admin") says the role once, in the title.
+          eyebrow={roleIsName ? deskProfile.location : `${deskProfile.role} · ${deskProfile.location}`}
           title={
             <span className={styles.who}>
               <Avatar
@@ -1430,9 +1417,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               {findSetting}
               <Button variant="onHero" size="sm" icon={Layers} onClick={goToDesk}>
                 Go to a desk
-              </Button>
-              <Button variant="light" size="sm" icon={UserRound} onClick={() => chooseTab("display")}>
-                Profile
               </Button>
             </>
           }

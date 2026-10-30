@@ -13,6 +13,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import React, { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { LEGAL_LIMITS_NOT_CHECKED_NOTICE } from "@/components/ward-management/ward-legal-clock";
 import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
+import { isQuietFormTime } from "@/components/ward-redesign/ward/ward-screen-derivations";
 import styles from "./ward-home-tab.module.css";
 import { pendingDepartureLogRows, type WardShiftLogRow } from "@/components/ward-management/ward/ward-departure-log";
 import { wardSafeRejectionReason } from "@/components/ward-management/ward/ward-rejection-text";
@@ -679,8 +680,21 @@ export function WardHomeTab({
     blocked?: string;
     /** The movement this row acts on, so an engine refusal shows under its own row. */
     movementId?: string;
+    /** Redesign: a typed form time outside both warnings, as typed ("Form 1 ends Sat 09:00 as typed"). */
+    formLine?: string;
     run: () => void;
   };
+  // Redesign (approved 30 Oct 2026): a form time outside both warnings leaves Act now for the
+  // person's own Admissions row. Times stay as typed, and the colour key goes with them.
+  const quietFormLine = new Map(
+    liveFormAlerts
+      .filter(isQuietFormTime)
+      .map((alert) => [
+        alert.movementId,
+        `${alert.title.replace(/ end time$/, "")} ${alert.countdown.replace(/^Ends /, "ends ")}`,
+      ]),
+  );
+  const actNowAlerts = liveFormAlerts.filter((alert) => !isQuietFormTime(alert));
   const expectedRows: FlowRow[] = accepted.map((movement, index): FlowRow => {
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
     // WT-07: once Delivered, the patient is at the ward, so the ETA is no longer late.
@@ -695,6 +709,7 @@ export function WardHomeTab({
     return {
       key: movement.id,
       movementId: movement.id,
+      formLine: quietFormLine.get(movement.id),
       title: displayName,
       when: eta === undefined ? undefined : `${late ? "Due" : "ETA"} ${formatInstantWithDay(eta, now)}`,
       // A greyed Pull a bed says why in words on the row, not only on hover. A lapsed hold
@@ -802,7 +817,7 @@ export function WardHomeTab({
         action: bed ? { label: "Open bed", run: () => onSelectBed?.(Number(bed.bedNumber)) } : undefined,
       };
     }),
-    ...liveFormAlerts.map((alert): TodoRow => ({
+    ...actNowAlerts.map((alert): TodoRow => ({
       key: alert.key,
       title: alert.title,
       detail: alert.text,
@@ -1083,6 +1098,7 @@ export function WardHomeTab({
             {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
           </span>
           <span className={styles.flowDetail}>{row.detail}</span>
+          {row.formLine ? <span className={styles.flowForm}>{row.formLine}</span> : null}
           {row.movementId && lastActionRejection?.movementId === row.movementId ? (
             <span className={styles.noticeProminent} role="alert">
               {WARD_ACTION_REJECTION_LABELS[lastActionRejection.attempted] ?? lastActionRejection.attempted} not
@@ -1498,6 +1514,11 @@ export function WardHomeTab({
               ) : (
                 <ul className={styles.flowList}>{expectedRows.map(renderFlowRow)}</ul>
               )}
+              {expectedRows.some((row) => row.formLine) ? (
+                <p className={styles.flowKey} title={LEGAL_LIMITS_NOT_CHECKED_NOTICE}>
+                  {TYPED_TIME_KEY}
+                </p>
+              ) : null}
             </section>
             <section aria-labelledby="ward-flow-leave" className={styles.flowGroup}>
               <div className={styles.groupHead}>
@@ -1691,7 +1712,7 @@ export function WardHomeTab({
           {/* Audit 11 Oct 2026: one footnote for the form times, not a tag crowding Act now. Decision 1
               (Josh, 30 Oct 2026): it is the one colour key the Legal forms and Waiting pages carry too,
               ending "Not legally checked."; the full notice stays in its tooltip. */}
-          {liveFormAlerts.some((alert) => alert.key.startsWith("form-")) ? (
+          {actNowAlerts.some((alert) => alert.key.startsWith("form-")) ? (
             <span
               className={styles.legalTag}
               data-testid="legal-limits-not-checked"

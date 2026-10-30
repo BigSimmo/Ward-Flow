@@ -784,7 +784,24 @@
 
 .actionsPhone :global(button) {
   width: 100%;
-  min-height: 48px;
+}
+
+/* The phone sheet's close: the kit sheet's 36 px face, with an invisible hit area for the thumb. */
+.phoneClose.phoneClose {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: var(--wf-r-tag);
+  color: var(--wf-ink-2);
+}
+
+.phoneClose::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
 }
 
 /* Redesign (preview): why the person has not left yet, from what the ward recorded. */

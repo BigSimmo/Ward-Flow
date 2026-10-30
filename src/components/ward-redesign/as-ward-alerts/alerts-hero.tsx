@@ -130,9 +130,12 @@ export function AlertsHero({
                 {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
                       one primary; a statewide broadcast stays one tap away as a secondary, with Pause between
                       the two so a thumb aiming for Next cannot start a broadcast (P017, 27 Oct 2026). */}
-                <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
-                  Next alert
-                </Button>
+                {/* ROLE BRANCH (ward): a quiet ward has no next alert, so no filled button that does nothing. */}
+                {wardDesk && nextQueue.length === 0 ? null : (
+                  <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
+                    Next alert
+                  </Button>
+                )}
                 <Button
                   variant="onHero"
                   icon={live.paused ? Play : Pause}
@@ -281,23 +284,26 @@ export function AlertsHero({
               ) : null}
             </div>
           }
+          // ROLE BRANCH (ward): with no alert in turn, Next of 0 and an empty handover copy are left out.
           barAside={
-            <div className={styles.heroTools}>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={ChevronRight}
-                aria-label={`Next alert, ${nextQueue.length} in turn`}
-                disabled={nextQueue.length === 0}
-                onClick={handleNext}
-              >
-                {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
-                Next of <span className={styles.mono}>{nextQueue.length}</span>
-              </Button>
-              <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
-                Copy for handover
-              </Button>
-            </div>
+            wardDesk && nextQueue.length === 0 ? undefined : (
+              <div className={styles.heroTools}>
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={ChevronRight}
+                  aria-label={`Next alert, ${nextQueue.length} in turn`}
+                  disabled={nextQueue.length === 0}
+                  onClick={handleNext}
+                >
+                  {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
+                  Next of <span className={styles.mono}>{nextQueue.length}</span>
+                </Button>
+                <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
+                  Copy for handover
+                </Button>
+              </div>
+            )
           }
           // Role view (nurse in charge): a quiet ward's checks sit in the side panel instead (no foot here).
           foot={checkingFoot ? <div className={styles.checkingFootWide}>{checkingFoot}</div> : undefined}

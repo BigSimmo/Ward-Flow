@@ -6,7 +6,7 @@
 import { openInformationNeeds } from "@/components/ward-management/referrals/referral-information-needs";
 import { referralFollowUpLine } from "@/components/ward-management/referrals/referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "@/components/ward-management/referrals/referral-no-reply-flag";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -41,6 +41,7 @@ import {
 } from "@/components/ward-management/referrals/referral-board-parts";
 import styles from "@/components/ward-management/referrals/referrals.module.css";
 import a from "@/components/ward-management/referrals/referral-board.module.css";
+import local from "./community-referrals.module.css";
 import {
   ALSO_CANCELLED_LEAD,
   ALSO_REFUSED_LEAD,
@@ -529,14 +530,23 @@ export function DecidedSection({
   // the repeated "to Community team (Community follow-up)" and the name gets the line; the note on
   // what an acceptance does is the coordinator's reminder and is left out.
   const ownTeamDesk = useEffectiveWardAccess().role === "community";
+  // Role view (community clinician): owner rule, a long list opens on its first rows, then Show more.
+  const [showAll, setShowAll] = useState(false);
+  const hiddenRows = ownTeamDesk && !showAll ? Math.max(0, displayDecided.length - FIRST_DECIDED) : 0;
+  const listed = hiddenRows > 0 ? displayDecided.slice(0, FIRST_DECIDED) : displayDecided;
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
         eyebrow
         title={
           <>
-            Recently decided{" "}
-            <Count n={decided.length < decidedTotal ? `${decided.length} of ${decidedTotal}` : decidedTotal} />
+            Recently decided{/* Role view (community clinician): the History tab above carries the count. */}
+            {ownTeamDesk ? null : (
+              <>
+                {" "}
+                <Count n={decided.length < decidedTotal ? `${decided.length} of ${decidedTotal}` : decidedTotal} />
+              </>
+            )}
           </>
         }
       />
@@ -624,7 +634,7 @@ export function DecidedSection({
           </WardTable>
 
           <ul className={cx(styles.cardList, styles.v6List)} data-testid="ward-referral-board-decided-cards">
-            {displayDecided.map((referral) => {
+            {listed.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, decidedResolverState);
               const presentation = referralPresentation(referral, sender.referralFor(referral));
               const accepted = presentation.kind !== "unavailable" && presentation.state === "accepted";
@@ -674,7 +684,16 @@ export function DecidedSection({
                       {decidedAt !== undefined ? (
                         <>
                           <span className="sr-only">Decided </span>
-                          {formatInstantWithDay(decidedAt, now)}
+                          {/* Role view (community clinician): the day alone ("30 days ago"), so the name is not cut;
+                              the clock time stays in the spoken label and the tooltip. */}
+                          {ownTeamDesk ? (
+                            <span title={formatInstantWithDay(decidedAt, now)}>
+                              <span className="sr-only">{formatInstantWithDay(decidedAt, now)}</span>
+                              <span aria-hidden="true">{dayOnly(formatInstantWithDay(decidedAt, now))}</span>
+                            </span>
+                          ) : (
+                            formatInstantWithDay(decidedAt, now)
+                          )}
                         </>
                       ) : (
                         "Not recorded"
@@ -685,8 +704,21 @@ export function DecidedSection({
               );
             })}
           </ul>
+          {ownTeamDesk && displayDecided.length > FIRST_DECIDED ? (
+            <Button variant="ghost" size="sm" className={local.more} onClick={() => setShowAll((value) => !value)}>
+              {showAll ? "Show fewer" : `Show ${hiddenRows} more`}
+            </Button>
+          ) : null}
         </>
       )}
     </section>
   );
+}
+
+/** Role view (community clinician): rows of the decided list shown before Show more (owner rule). */
+const FIRST_DECIDED = 8;
+
+/** "10:42, 30 days ago" read as "30 days ago": the clock time of a decision weeks ago is noise on a row. */
+function dayOnly(when: string): string {
+  return when.replace(/^\d{1,2}:\d{2}, /, "");
 }

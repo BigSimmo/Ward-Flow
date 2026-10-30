@@ -75,7 +75,8 @@
 
 .input {
   width: 88px;
-  height: 48px;
+  /* The same height as the − and + buttons beside it (today's large control), not a taller box. */
+  height: var(--wf-h-lg);
   box-sizing: border-box;
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-ctl);
@@ -126,7 +127,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .linkish {
-    min-height: 48px;
+  /* The kit's buttons keep their phone tap floor, so the box matches the − and + beside it. */
+  .input {
+    height: var(--spacing-tap, 3rem);
   }
 }

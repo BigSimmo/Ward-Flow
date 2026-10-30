@@ -365,6 +365,12 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
             dueOutText={dueOutText}
             pastDate={pastDate}
             pastDateText={pastDateText}
+            otherText={figures.other.kind === "measured" ? small(figures.other.value) : figureText(figures.other)}
+            noDateText={
+              figures.admitted.kind === "measured" && figures.expected.kind === "measured"
+                ? small(figures.admitted.value - figures.expected.value)
+                : figureText(figures.expected)
+            }
           />
         ),
         followUp: countsOnly ? (
@@ -405,23 +411,15 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
         ),
         dueOut:
           countsOnly && ownTeamDesk ? (
-            // Role view (community clinician): only the figures the hero does not already show.
+            // Role view (community clinician): every figure the hero does not lead with, in one row of
+            // tiles (the Statistics family's card figures). Discharged here, Left another way and No
+            // follow-up yet moved here from the hero, so the follow-up measure sits in one place and
+            // the hero keeps the two that lead.
             <CardBody className={styles.bodyStack}>
-              <PhoneFacts
-                flush
-                label="Coming back to the team"
-                facts={[
-                  { id: "due", label: "Due out within 7 days", value: dueOutText },
-                  {
-                    id: "past",
-                    label: (
-                      <>
-                        {pastDate > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                        Past date
-                      </>
-                    ),
-                    value: pastDateText,
-                  },
+              <dl className={styles.tiles} aria-label="Coming back to the team">
+                {[
+                  { id: "due", label: "Due out within 7 days", value: dueOutText, flag: false },
+                  { id: "past", label: "Past discharge date", value: pastDateText, flag: pastDate > 0 },
                   {
                     id: "nodate",
                     label: "No discharge date",
@@ -429,17 +427,42 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
                       figures.admitted.kind === "measured" && figures.expected.kind === "measured"
                         ? small(figures.admitted.value - figures.expected.value)
                         : figureText(figures.expected),
+                    flag: false,
                   },
                   {
-                    id: "arranged",
-                    label: "Follow-up arranged",
+                    id: "discharged",
+                    label: "Discharged here",
                     value:
                       figures.discharged.kind === "measured"
-                        ? small(lists.dischargedIntoTheArea.length - notArranged.length)
+                        ? small(figures.discharged.value)
                         : figureText(figures.discharged),
+                    flag: false,
                   },
-                ]}
-              />
+                  {
+                    id: "other",
+                    label: "Left another way",
+                    value: figures.other.kind === "measured" ? small(figures.other.value) : figureText(figures.other),
+                    flag: false,
+                  },
+                  {
+                    id: "nofollow",
+                    label: "No follow-up yet",
+                    value:
+                      figures.discharged.kind === "measured"
+                        ? small(notArranged.length)
+                        : figureText(figures.discharged),
+                    flag: figures.discharged.kind === "measured" && notArranged.length > 0,
+                  },
+                ].map((fact) => (
+                  <div key={fact.id} className={styles.tile}>
+                    <dt className={styles.tileLabel}>
+                      {fact.flag ? <StatusGlyph tone="warning" size={9} /> : null}
+                      {fact.label}
+                    </dt>
+                    <dd className={styles.tileValue}>{fact.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </CardBody>
           ) : countsOnly ? (
             <CardBody>
@@ -571,10 +594,14 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
           </HeroTool>
         ) : undefined
       }
-      eyebrowLabel="Community team"
+      // Role view (community clinician): the eyebrow says where this is and that the desk reads
+      // counts only, as on the ED desk; the card no longer repeats "Counts only".
+      eyebrowLabel={ownTeamDesk ? "Statistics" : "Community team"}
       eyebrowDetail={
         ownTeamDesk ? (
-          <span>Your team, as counts</span>
+          <span data-testid="ward-statistics-people-not-listed">
+            Community team · Counts only<SrOnly>, so people are not listed</SrOnly>
+          </span>
         ) : (
           <span>
             {COMMUNITY_TEAM_PAGES.length} teams in the network{scopeLabel ? " · " + scopeLabel : ""}
@@ -609,13 +636,16 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
           <>
             <HeroStat value={inBedCount === null ? figureText(figures.admitted) : small(inBedCount)} label="In a bed" />
             <HeroStat value={phoneParts.withDate} label="With a date" />
-            <HeroStat value={phoneParts.noDate} label="No date" />
+            {/* Role view (community clinician): No discharge date is in the card below. */}
+            {ownTeamDesk ? null : <HeroStat value={phoneParts.noDate} label="No date" />}
           </>
         ),
       }}
       stats={
         <>
-          {figureRows.map((row) => (
+          {/* Role view (community clinician): the hero leads with In a bed and With a discharge date;
+              the outcome counts are in the card, so three noughts no longer fill the header. */}
+          {(ownTeamDesk ? figureRows.slice(0, 2) : figureRows).map((row) => (
             <HeroStat
               key={row.key}
               value={
@@ -626,20 +656,30 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
                   {row.figure.kind === "measured" ? small(row.figure.value) : figureText(row.figure)}
                 </span>
               }
-              label={HERO_LABELS[row.key]}
+              label={
+                ownTeamDesk && row.key === "admitted" ? (
+                  <>
+                    In a bed<SrOnly>, or with one pulled</SrOnly>
+                  </>
+                ) : (
+                  HERO_LABELS[row.key]
+                )
+              }
             />
           ))}
-          <HeroStat
-            value={notArrangedText}
-            label={
-              <span className={styles.flagged}>
-                {figures.discharged.kind === "measured" && positive(measuredValue(notArranged)) ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                No follow-up yet
-              </span>
-            }
-          />
+          {ownTeamDesk ? null : (
+            <HeroStat
+              value={notArrangedText}
+              label={
+                <span className={styles.flagged}>
+                  {figures.discharged.kind === "measured" && positive(measuredValue(notArranged)) ? (
+                    <StatusGlyph tone="warning" size={9} />
+                  ) : null}
+                  No follow-up yet
+                </span>
+              }
+            />
+          )}
         </>
       }
     >
@@ -654,10 +694,9 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
           className={detail.anchor}
           icon={CalendarClock}
           title="Coming back to the team"
-          aside="Counts only"
-        >
-          {slots.dueOut}
-          <CardFoot>
+          // Role view (community clinician): the way to the caseload sits in the card head, not
+          // alone in a footer strip.
+          action={
             <Link
               href={communityTeamHref(team)}
               className={buttonClass({ variant: "sec", size: "sm" })}
@@ -665,7 +704,9 @@ function CommunityView({ model, slots }: { model: CommunityModel; slots: Communi
             >
               Open caseload
             </Link>
-          </CardFoot>
+          }
+        >
+          {slots.dueOut}
         </StatCard>
       ) : (
         <>
@@ -831,6 +872,8 @@ function TeamPhone({
   dueOutText,
   pastDate,
   pastDateText,
+  otherText,
+  noDateText,
 }: {
   /** Null on the executive desk, where people are not listed. */
   people: readonly Admission[] | null;
@@ -849,6 +892,9 @@ function TeamPhone({
   dueOutText: number | string;
   pastDate: StatisticsCount | null;
   pastDateText: number | string;
+  /** Role view (community clinician): Left another way and No discharge date, for the one card. */
+  otherText?: number | string;
+  noDateText?: number | string;
 }) {
   // Role view (community clinician): the hero's In a bed figure is the handover count, so the group
   // that would only say "people are not listed" is left out.
@@ -917,47 +963,86 @@ function TeamPhone({
         </PhoneGroup>
       )}
       {/* Role view (community clinician): the same name as the desktop card. */}
+      {/* Role view (community clinician): the desktop card's six figures in its order; "Counts only"
+          is in the eyebrow. */}
       <PhoneGroup
         title={ownTeamDesk ? "Coming back to the team" : "Follow-up"}
-        aside={ownTeamDesk ? "counts only" : "discharged here"}
+        aside={ownTeamDesk ? undefined : "discharged here"}
       >
-        <PhoneFacts
-          label="Follow-up for people discharged into this area"
-          facts={[
-            {
-              id: "discharged",
-              label: "Discharged here",
-              value: "text" in followUp ? followUp.text : followUp.discharged,
-            },
-            {
-              id: "arranged",
-              label: "Follow-up arranged",
-              value: "text" in followUp ? followUp.text : followUp.arranged,
-            },
-            {
-              id: "not",
-              label: (
-                <>
-                  {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
-                  No follow-up yet
-                </>
-              ),
-              value: "text" in followUp ? followUp.text : followUp.notArranged,
-            },
-            { id: "due", label: "Due out within 7 days", value: dueOutText },
-            {
-              id: "past",
-              label: (
-                <>
-                  {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
-                  Past date
-                </>
-              ),
-              value: pastDateText,
-              testId: "ward-statistics-community-past-date",
-            },
-          ]}
-        />
+        {ownTeamDesk ? (
+          <PhoneFacts
+            label="Coming back to the team"
+            facts={[
+              { id: "due", label: "Due out within 7 days", value: dueOutText },
+              {
+                id: "past",
+                label: (
+                  <>
+                    {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
+                    Past discharge date
+                  </>
+                ),
+                value: pastDateText,
+                testId: "ward-statistics-community-past-date",
+              },
+              { id: "nodate", label: "No discharge date", value: noDateText ?? "" },
+              {
+                id: "discharged",
+                label: "Discharged here",
+                value: "text" in followUp ? followUp.text : followUp.discharged,
+              },
+              { id: "other", label: "Left another way", value: otherText ?? "" },
+              {
+                id: "not",
+                label: (
+                  <>
+                    {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
+                    No follow-up yet
+                  </>
+                ),
+                value: "text" in followUp ? followUp.text : followUp.notArranged,
+              },
+            ]}
+          />
+        ) : (
+          <PhoneFacts
+            label="Follow-up for people discharged into this area"
+            facts={[
+              {
+                id: "discharged",
+                label: "Discharged here",
+                value: "text" in followUp ? followUp.text : followUp.discharged,
+              },
+              {
+                id: "arranged",
+                label: "Follow-up arranged",
+                value: "text" in followUp ? followUp.text : followUp.arranged,
+              },
+              {
+                id: "not",
+                label: (
+                  <>
+                    {"flagged" in followUp && followUp.flagged ? <StatusGlyph tone="warning" size={9} /> : null}
+                    No follow-up yet
+                  </>
+                ),
+                value: "text" in followUp ? followUp.text : followUp.notArranged,
+              },
+              { id: "due", label: "Due out within 7 days", value: dueOutText },
+              {
+                id: "past",
+                label: (
+                  <>
+                    {positive(pastDate) ? <StatusGlyph tone="warning" size={9} /> : null}
+                    Past date
+                  </>
+                ),
+                value: pastDateText,
+                testId: "ward-statistics-community-past-date",
+              },
+            ]}
+          />
+        )}
       </PhoneGroup>
     </PhoneBody>
   );

@@ -251,6 +251,14 @@
   padding: 0 0 var(--wf-s-3);
 }
 
+/* Redesign: on a wide screen the record button is sized to its words, like Mark available, not
+   stretched to a field's width. Phone keeps the full-width button. */
+@media (min-width: 48.0625rem) {
+  .form > button {
+    justify-self: start;
+  }
+}
+
 /* The reason a button cannot be used yet takes its own row, under the fields, at every width. */
 .formReason {
   grid-column: 1 / -1;

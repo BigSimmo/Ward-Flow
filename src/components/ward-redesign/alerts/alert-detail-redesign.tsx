@@ -562,7 +562,7 @@ export function AlertDetail({
         className={styles.detailStatus}
       />
 
-      <div className={`${styles.detailActions} ${redesign.detailActions}`}>
+      <div className={styles.detailActions}>
         {snoozedUntil ? (
           <p className={styles.quiet}>{snoozedLine(snoozedUntil, now)}</p>
         ) : action.kind === "link" ? (
@@ -570,7 +570,7 @@ export function AlertDetail({
             {action.label}
           </Link>
         ) : (
-          <div className={styles.releaseRow}>
+          <div className={`${styles.releaseRow} ${redesign.releaseRow}`}>
             <Field label="Reason for release" id={`alerts-release-${item.id}`}>
               <Select
                 ref={releaseRef}
@@ -585,19 +585,22 @@ export function AlertDetail({
                 ))}
               </Select>
             </Field>
-            <Button
-              variant="pri"
-              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
-              reasonDisplay="inline"
-              onClick={() => {
-                if (releaseReason === "") return;
-                handlers.onRelease(item, releaseReason);
-                setReleaseReason("");
-              }}
-            >
-              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
-              Release pulled bed for {subject.displayName}
-            </Button>
+            {/* Round 2: the full-width Release with its "why" line under it, in this folder's own class. */}
+            <div className={redesign.releaseAction}>
+              <Button
+                variant="pri"
+                disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
+                reasonDisplay="inline"
+                onClick={() => {
+                  if (releaseReason === "") return;
+                  handlers.onRelease(item, releaseReason);
+                  setReleaseReason("");
+                }}
+              >
+                {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+                Release pulled bed for {subject.displayName}
+              </Button>
+            </div>
             {movement ? (
               <AlertArrivedAtWard
                 movement={movement}

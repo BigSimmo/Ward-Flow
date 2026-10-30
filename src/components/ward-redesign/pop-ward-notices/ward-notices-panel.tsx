@@ -1,7 +1,8 @@
 "use client";
 
 // Preview copy of My ward's Notices panel (`ward/ward-notification-center.tsx`). Unchanged except:
-// people are named surname first, and a long list shows its first rows, then Show more.
+// people are named surname first, a long list shows its first rows, then Show more, and notices of
+// the same kind share one row with a line per person, as the Alerts drawer mock-up does.
 
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
@@ -208,6 +209,65 @@ function NoticeRow({
   );
 }
 
+/** One person inside a shared row: name, record number, when, and their own step. */
+type GroupMember = { key: string; name: string; umrn?: string; when: string; action: ReactNode; testId?: string };
+
+/**
+ * Redesign: notices of the same kind share one row ("Medical clearance not recorded · 2 people"), with
+ * the shared sentence once and one line per person, as the Alerts drawer mock-up groups its alerts.
+ */
+function NoticeGroupRow({
+  tone,
+  icon: RowIcon,
+  title,
+  status,
+  detail,
+  members,
+}: {
+  tone: WfTone;
+  icon: LucideIcon;
+  title: string;
+  status: string;
+  detail: string;
+  members: readonly GroupMember[];
+}) {
+  return (
+    <li className={drawer.row} data-tone={tone} data-expanded="true" data-done="false" data-group="">
+      <div className={drawer.rowHead}>
+        <span className={drawer.rowIcon} aria-hidden="true">
+          <RowIcon aria-hidden="true" />
+        </span>
+        <div className={drawer.rowText}>
+          <span className={`${drawer.rowTitle} ${styles.rowTitleWraps}`}>{title}</span>
+          <p className={`${drawer.rowMeta} ${styles.rowMetaWraps}`}>
+            <StatusGlyph tone={tone} size={9} />
+            <span>{status}</span>
+            <span aria-hidden="true">·</span>
+            <span>{members.length} people</span>
+          </p>
+        </div>
+      </div>
+      <div className={drawer.rowDetail}>
+        <p className={drawer.detailLine}>{detail}</p>
+      </div>
+      <ul className={pop.groupList} aria-label={`${title}, ${members.length} people`}>
+        {members.map((member) => (
+          <li key={member.key} className={pop.groupMember} data-testid={member.testId}>
+            <span className={pop.memberText}>
+              <span className={pop.memberWho}>
+                <strong>{member.name}</strong>
+                {member.umrn ? <span className={drawer.mono}>{member.umrn}</span> : null}
+              </span>
+              <span className={pop.memberWhen}>{member.when}</span>
+            </span>
+            {member.action}
+          </li>
+        ))}
+      </ul>
+    </li>
+  );
+}
+
 function PatientMeta({ name, umrn }: { name: string; umrn?: string }) {
   return (
     <>
@@ -385,7 +445,8 @@ export function WardNoticesPanel({
           </>
         }
         value={censusLateMinutes > 0 ? splitDuration(censusLateMinutes) : undefined}
-        state="Overdue"
+        // Redesign: "Overdue" is kept for legal form times; this is a ward's own daily time.
+        state="Late"
         detail="Confirm today's discharges and the beds you can offer."
         key="census-overdue"
         testId="ward-census-overdue"
@@ -409,11 +470,12 @@ export function WardNoticesPanel({
               key={`overdue-${m.id}`}
               tone="danger"
               icon={Truck}
-              title="Arrival overdue"
+              title="Late arrival"
               status="Act now"
               meta={<PatientMeta {...who} />}
-              value={`ETA ${eta}`}
-              state="Overdue"
+              // Redesign: "Overdue" is kept for legal form times.
+              value={eta}
+              state="Past ETA"
               detail={`Expected ${eta}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes late.`}
               actions={transferAction(m)}
             />
@@ -421,39 +483,74 @@ export function WardNoticesPanel({
         })
       : []),
     ...(showAct
-      ? missingClearances.map((m) => (
-          <NoticeRow
-            key={`clearance-${m.id}`}
-            tone="danger"
-            icon={Stethoscope}
-            title="Medical clearance not given"
-            status="Act now"
-            meta={<PatientMeta {...identityOf(m)} />}
-            state="Blocks transfer"
-            detail="The transfer cannot go ahead until it is signed off."
-            actions={transferAction(m)}
-          />
-        ))
+      ? missingClearances.length > 1
+        ? [
+            <NoticeGroupRow
+              key="clearance-missing-group"
+              tone="danger"
+              icon={Stethoscope}
+              title="Medical clearance not given"
+              status="Act now"
+              detail="The transfer cannot go ahead until it is signed off."
+              members={missingClearances.map((m) => ({
+                key: m.id,
+                ...identityOf(m),
+                when: "Blocks transfer",
+                action: transferAction(m),
+              }))}
+            />,
+          ]
+        : missingClearances.map((m) => (
+            <NoticeRow
+              key={`clearance-${m.id}`}
+              tone="danger"
+              icon={Stethoscope}
+              title="Medical clearance not given"
+              status="Act now"
+              meta={<PatientMeta {...identityOf(m)} />}
+              state="Blocks transfer"
+              detail="The transfer cannot go ahead until it is signed off."
+              actions={transferAction(m)}
+            />
+          ))
       : []),
     ...(showCheck
-      ? unrecordedClearances.map((m) => (
-          <NoticeRow
-            key={`clearance-unrecorded-${m.id}`}
-            tone="warning"
-            icon={Stethoscope}
-            title="Medical clearance not recorded"
-            status="Check"
-            meta={<PatientMeta {...identityOf(m)} />}
-            state="Before arrival"
-            detail={
-              m.acceptedUnitId === unitId
-                ? "Not recorded on the transfer. Check with the sending team before arrival."
-                : "Not recorded on the transfer. Check with the sending team before you accept."
-            }
-            testId="ward-clearance-not-recorded"
-            actions={transferAction(m, false)}
-          />
-        ))
+      ? unrecordedClearances.length > 1
+        ? [
+            <NoticeGroupRow
+              key="clearance-unrecorded-group"
+              tone="warning"
+              icon={Stethoscope}
+              title="Medical clearance not recorded"
+              status="Check"
+              detail="Not recorded on the transfer. Check with the sending team."
+              members={unrecordedClearances.map((m) => ({
+                key: m.id,
+                ...identityOf(m),
+                when: m.acceptedUnitId === unitId ? "Before arrival" : "Before you accept",
+                action: transferAction(m, false),
+                testId: "ward-clearance-not-recorded",
+              }))}
+            />,
+          ]
+        : unrecordedClearances.map((m) => (
+            // Redesign: "Before arrival" is in the sentence; the right column keeps figures.
+            <NoticeRow
+              key={`clearance-unrecorded-${m.id}`}
+              tone="warning"
+              icon={Stethoscope}
+              title="Medical clearance not recorded"
+              status="Check"
+              meta={<PatientMeta {...identityOf(m)} />}
+              detail={
+                m.acceptedUnitId === unitId
+                  ? "Not recorded on the transfer. Check with the sending team before arrival."
+                  : "Not recorded on the transfer. Check with the sending team before you accept."
+              }
+              testId="ward-clearance-not-recorded"
+              actions={transferAction(m, false)}
+            />
+          ))
       : []),
   ].filter(Boolean);
 
@@ -612,7 +709,8 @@ export function WardNoticesPanel({
           </span>
           <div className={drawer.headerText}>
             <h2 className={drawer.heading}>Notices</h2>
-            <p className={drawer.headerNote}>{unitName} · this ward only</p>
+            {/* Redesign: the page already says this is the ward's own panel. */}
+            <p className={drawer.headerNote}>{unitName}</p>
           </div>
           <span className={drawer.headingCount} data-testid="ward-notification-count">
             <span className={drawer.mono}>{totalUnreadAlerts}</span> open
@@ -623,6 +721,8 @@ export function WardNoticesPanel({
               type="button"
               className={drawer.closeButton}
               onClick={onClose}
+              // Redesign: focus starts on Close, so the sheet itself never draws a focus outline on open.
+              data-sheet-autofocus="true"
               aria-label="Close notices"
               title="Close notices"
               data-testid="ward-notification-close-btn"
@@ -669,7 +769,8 @@ export function WardNoticesPanel({
                   {attentionShown}
                   <span className="sr-only"> sample records</span>
                 </span>
-                <span className={drawer.sectionNote}>Leaves when done</span>
+                {/* Redesign: the Alerts drawer mock-up's wording for the same rule. */}
+                <span className={drawer.sectionNote}>Leaves when no longer true</span>
               </div>
               <ul className={drawer.list}>{firstRows("attention", attentionRows)}</ul>
             </section>
@@ -703,11 +804,13 @@ export function WardNoticesPanel({
         ) : null}
       </div>
 
-      <div className={`${drawer.drawerFoot} ${styles.foot}`}>
-        <span className={styles.footNote}>Urgent buzzes from the coordinator play a sound.</span>
+      <div className={`${drawer.drawerFoot} ${styles.foot} ${pop.footEnd}`}>
+        {/* Redesign: the explaining sentence moves into the switch's tooltip and spoken label. */}
         <button
           type="button"
           data-testid="ward-buzz-audio-toggle"
+          title="Urgent buzzes from the coordinator play a sound."
+          aria-describedby={`${baseId}-sound-note`}
           className={drawer.btn}
           aria-pressed={soundEnabled}
           onClick={() => setSoundEnabled(!soundEnabled)}
@@ -715,6 +818,9 @@ export function WardNoticesPanel({
           {soundEnabled ? <Bell aria-hidden="true" /> : <BellOff aria-hidden="true" />}
           {soundEnabled ? "Buzz sound on" : "Buzz sound off"}
         </button>
+        <span id={`${baseId}-sound-note`} className="sr-only">
+          Urgent buzzes from the coordinator play a sound.
+        </span>
       </div>
     </section>
   );

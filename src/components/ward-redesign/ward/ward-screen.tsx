@@ -140,7 +140,11 @@ import {
   WardReferralInbox,
 } from "@/components/ward-management/ward/ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "@/components/ward-redesign/ward/ward-screen-top-bar";
-import { wardBedRoster, wardLiveFormAlerts } from "@/components/ward-redesign/ward/ward-screen-derivations";
+import {
+  isQuietFormTime,
+  wardBedRoster,
+  wardLiveFormAlerts,
+} from "@/components/ward-redesign/ward/ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "@/components/ward-management/ward/ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "@/components/ward-redesign/ward/ward-screen-home-section";
 import { WardScreenBedDrawer, WardScreenCapacityModal } from "@/components/ward-management/ward/ward-screen-overlays";
@@ -1875,7 +1879,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   });
   const actNowCount = wardActNowCount({
     absences: absencesOnOrder.length,
-    alerts: liveFormAlerts.length,
+    // Redesign: a form time outside both warnings is on Admissions, not Act now.
+    alerts: liveFormAlerts.filter((alert) => !isQuietFormTime(alert)).length,
     incoming: incoming.length,
     heldUp: blockedReleases.length,
     rollupOverdue: !isRollupConfirmedToday && morningRollupDeadlinePassed,
