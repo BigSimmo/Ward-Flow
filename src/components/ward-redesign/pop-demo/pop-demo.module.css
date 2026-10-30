@@ -91,7 +91,9 @@
   color: var(--wf-ink-2);
 }
 
+/* The note sits on its own quiet line under the heading, at every width. */
 .groupHead span {
+  flex-basis: 100%;
   font-weight: 400;
   letter-spacing: 0;
   text-transform: none;
@@ -247,10 +249,34 @@
 .practice summary {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   min-height: 40px;
   padding: 0 var(--wf-s-3);
   font-weight: 600;
   cursor: pointer;
+  list-style: none;
+}
+
+.practice summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice summary:hover {
+  border-radius: calc(var(--wf-r-md) - 1px);
+  background: var(--wf-hover);
+}
+
+/* The app's chevron, as on Tools' folded rows: down when shut, up when open. */
+.practiceCaret {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.practice[open] .practiceCaret {
+  transform: rotate(180deg);
 }
 
 .practiceBody {
@@ -286,22 +312,20 @@
 }
 
 @media (max-width: 30rem) {
-  /* Phone controls at least 48px (owner rule). */
+  /* Josh, 30 Oct: today's control sizes. The close keeps a larger, invisible touch area. */
   .head button {
-    min-width: 48px;
-    min-height: 48px;
+    position: relative;
+  }
+
+  .head button::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
   }
 
   /* Ends above the phone dock (about 84px plus the safe area). */
   .menu {
     max-height: calc(100dvh - 64px - 96px - env(safe-area-inset-bottom, 0px));
-  }
-
-  .small,
-  .reset,
-  .choice,
-  .practice summary {
-    min-height: 48px;
   }
 }
 

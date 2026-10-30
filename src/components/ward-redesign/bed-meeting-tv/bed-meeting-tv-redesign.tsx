@@ -36,7 +36,7 @@ import { WARD_BED_MEETING_TV_HREF, WARD_CAPACITY_HREF, bedMeetingTvHref } from "
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
-import { StatusGlyph, useSharedRefreshLate } from "@/components/wf";
+import { StatusGlyph, cx, useSharedRefreshLate } from "@/components/wf";
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { allEmergencyDepartments, edById } from "@/components/ward-management/ward-sites";
 
@@ -162,7 +162,12 @@ function TvTile({ label, value, detail, tone, meter, age, testId }: TvTileProps)
 
 function TvTiles({ tiles }: { tiles: TvTileProps[] }) {
   return (
-    <dl className={styles.tiles} aria-label="Today at a glance" data-testid="bed-meeting-tv-tiles">
+    <dl
+      className={styles.tiles}
+      aria-label="Today at a glance"
+      data-testid="bed-meeting-tv-tiles"
+      data-ages={tiles.some((tile) => tile.age) ? "" : undefined}
+    >
       {tiles.map((tile) => (
         <TvTile key={tile.testId} {...tile} />
       ))}
@@ -410,11 +415,11 @@ function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
           <th scope="col" className={styles.num}>
             Ready
           </th>
-          <th scope="col" className={styles.num}>
-            Locked
+          <th scope="col" className={cx(styles.num, styles.headWrap)}>
+            Locked ready
           </th>
           <th scope="col" className={styles.num}>
-            Going
+            Due out
           </th>
         </tr>
       </thead>
@@ -518,7 +523,7 @@ function BedMeetingTvView({
           {
             label: "Longest ED wait",
             value: longest ? splitDuration(longest.waitMinutes) : 0,
-            detail: longest ? `At ${edName(longest.department)}` : "Nobody waiting",
+            detail: longest ? `At ${edName(longest.department)}` : "No one waiting",
             tone: longest && longest.waitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
             testId: "bed-meeting-tv-longest",
           },
@@ -528,8 +533,8 @@ function BedMeetingTvView({
             // Redesign: one short line the room can read; being made ready and the count's age move
             // to the checking line under the tiles.
             detail: shortKinds.length
-              ? `${capacity.lockedReady} locked · ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
-              : `Of ${capacity.beds} beds · ${capacity.lockedReady} locked`,
+              ? `${capacity.lockedReady} locked ready · ${shortKinds.length} bed ${shortKinds.length === 1 ? "type" : "types"} short`
+              : `Of ${capacity.beds} beds · ${capacity.lockedReady} locked ready`,
             tone:
               capacity.ready === 0
                 ? "danger"
@@ -551,7 +556,9 @@ function BedMeetingTvView({
           {
             // PR #489 review: this counts every open journey (waiting and in transit), the same
             // figure as the Movements badge, so it carries that badge's words rather than "Delayed".
-            label: "Still open",
+            // Redesign: the count names its noun, in the Movements page's own words ("Open movements").
+            // Causes keep the fixed cause order (form times first), so the first is the most urgent.
+            label: "Open movements",
             value: delays.total,
             detail: delays.groups[0] ? `Most urgent: ${delays.groups[0].title.toLowerCase()}` : "None open",
             tone: delays.total > 0 ? "warning" : undefined,
@@ -568,7 +575,7 @@ function BedMeetingTvView({
             : null,
           // TV-12: the printed sheet's stuck referrals, counted here where there is room on every TV.
           stuck && stuck.places > 0
-            ? `Referrals with no reply after ${splitDuration(stuck.limitMinutes)} at ${stuck.places} ${stuck.places === 1 ? "place" : "places"}`
+            ? `${stuck.places} ${stuck.places === 1 ? "place" : "places"} with no referral reply after ${splitDuration(stuck.limitMinutes)}`
             : null,
         ]
           .filter(Boolean)
@@ -582,7 +589,7 @@ function BedMeetingTvView({
           </Panel>
         ) : (
           <Panel title={`Wards in ${healthServiceAcronym(sheet.service)}`} testId="bed-meeting-tv-wards-panel" wide>
-            {extras.wards.length === 0 ? <Empty>No wards in this service.</Empty> : <WardTable rows={extras.wards} />}
+            {extras.wards.length === 0 ? <Empty>No wards in this service</Empty> : <WardTable rows={extras.wards} />}
           </Panel>
         )}
 
@@ -602,7 +609,7 @@ function BedMeetingTvView({
 
         <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel" area="waits">
           {ed.longestWaits.length === 0 ? (
-            <Empty>Nobody waiting.</Empty>
+            <Empty>No one waiting</Empty>
           ) : (
             <JourneyList
               rows={ed.longestWaits.slice(0, MEETING_TV_ROWS).map((person) => ({
@@ -621,7 +628,7 @@ function BedMeetingTvView({
 
         <Panel title="Waiting by cause" testId="bed-meeting-tv-delays-panel" area="delays">
           {delays.groups.length === 0 ? (
-            <Empty>No delays.</Empty>
+            <Empty>No delays</Empty>
           ) : (
             <>
               <ol className={styles.list}>
@@ -733,7 +740,7 @@ function WardTvView({
       <div className={styles.panels}>
         <Panel title="Coming to this ward" testId="ward-tv-incoming-panel">
           {sheet.coming.rows.length === 0 ? (
-            <Empty>Nobody asked of or accepted for this ward.</Empty>
+            <Empty>Nobody asked of or accepted for this ward</Empty>
           ) : (
             <JourneyList rows={sheet.coming.rows} more={sheet.coming.more} noun="coming" />
           )}
@@ -741,7 +748,7 @@ function WardTvView({
 
         <Panel title="Going out" testId="ward-tv-going-panel">
           {discharges.rows.length === 0 ? (
-            <Empty>No discharges expected today or tomorrow.</Empty>
+            <Empty>No discharges expected today or tomorrow</Empty>
           ) : (
             <>
               <ol className={styles.list}>
@@ -762,7 +769,7 @@ function WardTvView({
 
         <Panel title="Held up or past their date" testId="ward-tv-stuck-panel">
           {stuck.length === 0 ? (
-            <Empty>Nobody held up or past their date.</Empty>
+            <Empty>Nobody held up or past their date</Empty>
           ) : (
             <>
               <ol className={styles.list}>
@@ -780,7 +787,7 @@ function WardTvView({
 
         <Panel title="Off the ward at an ED" testId="ward-tv-away-panel">
           {sheet.away.length === 0 ? (
-            <Empty>Everyone is on the ward.</Empty>
+            <Empty>Everyone is on the ward</Empty>
           ) : (
             <>
               <ol className={styles.list}>
@@ -854,7 +861,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
           {
             label: "Longest wait",
             value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
-            detail: summary.waiting === 0 ? "Nobody waiting" : "The longest anyone here has waited",
+            detail: summary.waiting === 0 ? "No one waiting" : "The longest anyone here has waited",
             tone: summary.longestWaitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
             testId: "ed-tv-longest",
           },
@@ -880,7 +887,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
       <div className={styles.panels}>
         <Panel title="Waiting for a bed" testId="ed-tv-people-panel">
           {sheet.people.length === 0 ? (
-            <Empty>Nobody waiting for a mental health bed.</Empty>
+            <Empty>No one waiting for a mental health bed</Empty>
           ) : (
             <JourneyList
               rows={sheet.people.slice(0, ED_TV_PEOPLE_ROWS)}
@@ -900,7 +907,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
             {sheet.bedCount.oldestAt === undefined ? "" : `. ${bedCountText(sheet.bedCount, now)}`}
           </p>
           {sheet.wards.length === 0 ? (
-            <Empty>No ward in this service has a bed ready.</Empty>
+            <Empty>No ward in this service has a bed ready</Empty>
           ) : (
             <>
               <ol className={styles.list}>

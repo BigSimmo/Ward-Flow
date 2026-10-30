@@ -1,4 +1,4 @@
-/* Redesign: the Tools search box and the key that says what the end of each row means. */
+/* Redesign: the Tools search box. Each row's end icon says what it does (its spoken text too). */
 .find {
   display: grid;
   gap: var(--wf-s-2);
@@ -12,28 +12,6 @@
   width: 16px;
   height: 16px;
   flex: none;
-}
-
-.key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1) var(--wf-s-4);
-  margin: 0;
-  padding: 0 var(--wf-s-1);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.key span {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.key svg {
-  width: 14px;
-  height: 14px;
 }
 
 .none {
@@ -50,10 +28,4 @@
 .none p {
   margin: 0;
   font-size: var(--wf-fs-13);
-}
-
-@media (max-width: 48rem) {
-  .search {
-    min-height: 3rem;
-  }
 }

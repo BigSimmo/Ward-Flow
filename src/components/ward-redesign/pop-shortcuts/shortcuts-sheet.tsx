@@ -6,7 +6,6 @@ import { KEYBOARD_SHORTCUTS } from "@/components/ward-management/help/ward-help-
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 import {
   SHORTCUTS_SHEET_HELP_BUTTON,
-  SHORTCUTS_SHEET_HINT,
   SHORTCUTS_SHEET_TITLE,
 } from "@/components/ward-management/help/ward-shortcuts-sheet";
 
@@ -22,6 +21,21 @@ const COLUMNS: readonly { title: string; keys: readonly string[] }[] = [
   { title: "Move around", keys: ["[", "Esc"] },
 ];
 
+/**
+ * Mock-up: each key's words cut to a short label; the longer sentence (in `KEYBOARD_SHORTCUTS`)
+ * stays in Help and is the spoken description. A key not named here shows its Help sentence.
+ */
+const SHORT_LABELS: Readonly<Record<string, string>> = {
+  "/": "Search",
+  "Ctrl+K": "Search, even with shortcuts off (⌘K on a Mac)",
+  "Shift+T": "Open Alerts or Tasks",
+  "Shift+A": "Open Activity",
+  "Shift+R": "New referral",
+  "[": "Fold or open the side menu",
+  Esc: "Close, or step back",
+  "?": "Show shortcuts",
+};
+
 function columnOf(keys: string): string {
   return COLUMNS.find((column) => column.keys.includes(keys))?.title ?? "Move around";
 }
@@ -35,10 +49,10 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
     <Sheet
       open
       onClose={onClose}
+      // Mock-up: no "Press ? to see these again" line; the ? key is listed under Open.
       title={SHORTCUTS_SHEET_TITLE}
-      description={SHORTCUTS_SHEET_HINT}
       testId="ward-shortcuts-sheet"
-      contentClassName={`${styles.panel} sm:max-w-5xl`}
+      contentClassName={`${styles.panel} sm:max-w-4xl`}
       // The list scrolls on short screens: the body takes keyboard focus and is named by the title.
       bodyTabIndex={0}
       bodyLabel={SHORTCUTS_SHEET_TITLE}
@@ -84,7 +98,10 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
                         </kbd>,
                       ])}
                     </dt>
-                    <dd className={styles.action}>{item.action}</dd>
+                    <dd className={styles.action} title={item.action}>
+                      {SHORT_LABELS[item.keys] ?? item.action}
+                      {SHORT_LABELS[item.keys] ? <span className="sr-only">. {item.action}</span> : null}
+                    </dd>
                   </div>
                 ))}
               </dl>

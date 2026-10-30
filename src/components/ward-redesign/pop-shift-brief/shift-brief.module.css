@@ -1,0 +1,7 @@
+/* Mock-up changes to the Shift brief dialog (the rest is ward-management/board/ward-daily-sheet.module.css). */
+
+/* The stamp is a sentence, not a figure: the app's sans in quiet ink, on one line. */
+.stamp {
+  font-family: var(--wf-font);
+  color: var(--wf-ink-2);
+}

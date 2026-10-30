@@ -28,7 +28,9 @@
 
 .progress {
   display: grid;
+  flex: 1;
   gap: 4px;
+  min-width: 0;
 }
 
 /* Skip tour on the left; Back and Next together on the right. */
@@ -36,11 +38,31 @@
   justify-content: flex-end;
 }
 
-.skip {
+/* Skip tour is a quiet ghost button, the same shape as Back and Next beside it, not an underlined link. */
+.buttons .skip {
   margin-right: auto;
+  padding: 0 0.875rem;
+  color: var(--wf-ink-2);
+  text-decoration: none;
 }
 
+.buttons .skip:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+/* The spotlight takes the focus colour; amber means "needs a look" elsewhere in the app. */
+div.spot {
+  border-color: var(--wf-focus-ring);
+}
+
+/* Josh, 30 Oct: today's 32px close on a phone too, with a larger invisible touch area. */
 [data-device="phone"] .close {
-  width: 48px;
-  height: 48px;
+  position: relative;
+}
+
+[data-device="phone"] .close::after {
+  position: absolute;
+  inset: -8px;
+  content: "";
 }

@@ -379,13 +379,14 @@ export function ToolsSheet({
       show: isPhone && canRefer,
       node: (
         <button key="new-referral" type="button" className={styles.row} onClick={() => onNewReferral()}>
-          <RowText icon={Plus} name="New referral" detail="Review details and choose a destination" />
+          <RowText icon={Plus} name="New referral" detail="Details and destination" />
           <ArrowUpRight className={styles.rowChevron} aria-hidden="true" strokeWidth={1.75} />
           <span className="sr-only">, opens the referral form</span>
         </button>
       ),
     },
-    link(`${root}/waiting`, Clock3, "Log a delay", "Choose the patient, then the reason"),
+    // Mock-up: row lines are short noun phrases, the same words as the phone Create sheet.
+    link(`${root}/waiting`, Clock3, "Log a delay", "Patient and reason"),
     ...(updateBedHref === `${root}/wards`
       ? [
           // P023 (Josh, 27 Oct 2026): a network desk chooses the ward here, not on the Wards list.
@@ -400,17 +401,18 @@ export function ToolsSheet({
       : updateBedHref
         ? [link(updateBedHref, BedSingle, "Update a bed", "Open, close or hold a bed")]
         : []),
-    tool("bed-finder", BedDouble, "Find a bed", "Ready beds by ward", <WardBedFinder onNavigate={onNavigate} />),
     tool(
       "feed",
       Inbox,
       "Hospital feed",
-      "Invented admissions and discharges to confirm or reject.",
+      "Admissions and discharges to confirm",
       executive ? <p role="status">Individual feed records are unavailable for this desk.</p> : <WardFeedInbox />,
     ),
   ];
 
+  // Mock-up: Find a bed is a look-up, not an action, so it leads Look up instead of sitting in Do now.
   const lookUp: ToolsEntry[] = [
+    tool("bed-finder", BedDouble, "Find a bed", "Ready beds by ward", <WardBedFinder onNavigate={onNavigate} />),
     tool(
       "figures",
       BarChart3,
@@ -516,16 +518,6 @@ export function ToolsSheet({
             onChange={(event) => setQuery(event.target.value)}
           />
         </label>
-        <p className={local.key}>
-          <span>
-            <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
-            opens its page
-          </span>
-          <span>
-            <ChevronDown aria-hidden="true" strokeWidth={1.75} />
-            opens here
-          </span>
-        </p>
       </div>
 
       {matches === 0 ? (

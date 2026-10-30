@@ -42,16 +42,21 @@
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
 }
 
+/* The groups flow down two balanced columns, so a short group leaves no gap beside a long one. */
 .groups {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--wf-s-4) var(--wf-s-4);
-  align-items: start;
+  columns: 2 15rem;
+  column-gap: var(--wf-s-4);
 }
 
 .group {
   display: grid;
   gap: var(--wf-s-1);
+  margin-bottom: var(--wf-s-4);
+  break-inside: avoid;
+}
+
+.group:last-child {
+  margin-bottom: 0;
 }
 
 .eyebrow {
@@ -216,12 +221,4 @@
   margin-left: auto;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
-}
-
-@media (max-width: 48rem) {
-  .row,
-  .person,
-  .footLink {
-    min-height: 48px;
-  }
 }

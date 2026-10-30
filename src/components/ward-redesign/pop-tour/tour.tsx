@@ -298,6 +298,18 @@ export function TourMock({ onClose }: { onClose: () => void }) {
   ]
     .filter(Boolean)
     .join(", ");
+  // Mock-up: the welcome card's title and body already say who you are and the meta says how long
+  // is left, so it drops the who-line and its own "This takes about N minutes." sentence.
+  const welcome = step.id === "welcome";
+  const progress = (
+    <div className={mock.progress}>
+      <div className={styles.bar} aria-hidden="true">
+        <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+      </div>
+      <p className={styles.meta}>{meta}</p>
+    </div>
+  );
+  const body = welcome ? step.body.replace(/\s*This takes about [^.]*\./u, "") : step.body;
 
   return (
     <OverlayPortal layer="modal" name="ward-tour">
@@ -305,7 +317,7 @@ export function TourMock({ onClose }: { onClose: () => void }) {
         {box ? (
           <div
             ref={spotRef}
-            className={styles.spot}
+            className={`${styles.spot} ${mock.spot}`}
             style={{ transform: `translate(${box.left}px, ${box.top}px)`, width: box.width, height: box.height }}
             data-testid="ward-tour-spot"
             aria-hidden="true"
@@ -327,7 +339,8 @@ export function TourMock({ onClose }: { onClose: () => void }) {
           data-step={step.id}
         >
           <div className={styles.head}>
-            <p className={styles.who}>{who}</p>
+            {/* On the welcome card the progress takes the who-line's place beside Close, so no empty row. */}
+            {welcome ? progress : <p className={styles.who}>{who}</p>}
             <button
               type="button"
               className={mock.close}
@@ -338,18 +351,13 @@ export function TourMock({ onClose }: { onClose: () => void }) {
               <X aria-hidden="true" strokeWidth={1.75} />
             </button>
           </div>
-          <div className={mock.progress}>
-            <div className={styles.bar} aria-hidden="true">
-              <i style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
-            </div>
-            <p className={styles.meta}>{meta}</p>
-          </div>
+          {welcome ? null : progress}
           <p className={styles.chapter}>{step.chapter}</p>
           <h2 id="ward-tour-title" className={styles.title} aria-live="polite">
             {step.title}
           </h2>
           <p id="ward-tour-body" className={styles.body}>
-            {step.body}
+            {body}
           </p>
           {step.tryIt ? (
             <p className={styles.try}>
@@ -400,9 +408,12 @@ export function TourMock({ onClose }: { onClose: () => void }) {
             >
               {last ? "Replay" : "Skip tour"}
             </button>
-            <button type="button" className={styles.secondary} disabled={index === 0} onClick={() => go(index - 1)}>
-              Back
-            </button>
+            {/* Mock-up: no dead Back on the first card. */}
+            {index > 0 ? (
+              <button type="button" className={styles.secondary} onClick={() => go(index - 1)}>
+                Back
+              </button>
+            ) : null}
             <button
               ref={nextRef}
               type="button"

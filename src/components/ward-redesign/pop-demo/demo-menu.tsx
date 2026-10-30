@@ -71,7 +71,7 @@ export function DemoMenuMock({ onClose }: { onClose: (refocus?: boolean) => void
           </span>
           <span className={styles.headText}>
             <strong>Demo</strong>
-            <em>Scenario, role and clock. Synthetic data only.</em>
+            <em>Scenario, role and clock</em>
           </span>
           <Button
             ref={first}

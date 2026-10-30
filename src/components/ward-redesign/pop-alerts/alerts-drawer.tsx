@@ -213,7 +213,13 @@ function rowTiming(
   waitWord: string,
 ): { value?: string; word?: string; state: string; tone: WfTone; stateTone?: WfTone } {
   if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
-    return { value: durMinutes(now - movement.pullExpiresAt), state: "Overdue", tone: "danger", stateTone: "danger" };
+    // Mock-up: "Past pull limit", not "Overdue", which on these screens means form times.
+    return {
+      value: durMinutes(now - movement.pullExpiresAt),
+      state: "Past pull limit",
+      tone: "danger",
+      stateTone: "danger",
+    };
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
     return { value: durMinutes(now - movement.legalForm.dueAt), state: "Overdue", tone: "danger", stateTone: "danger" };
@@ -230,14 +236,16 @@ function rowTiming(
     return {
       value: String(movement.declines.length),
       word: "wards",
-      state: "Declined",
+      // Mock-up: the row's title already says "declined", so the right side keeps the figure only.
+      state: "",
       tone: "closed",
     };
   }
   // Ops-8 (remaining-pages audit, 13 Oct 2026): a row that records when it started (a planned
   // arrival not yet recorded) shows how long it has waited, the figure the phone list sorts by.
   if (item.tone !== "danger" && item.since !== undefined && item.since <= now) {
-    return { value: durMinutes(now - item.since), word: "waiting", state: waitWord, tone: "warning" };
+    // Mock-up: the figure already says "waiting"; the row's meta line names its group.
+    return { value: durMinutes(now - item.since), word: "waiting", state: "", tone: "warning" };
   }
   return item.tone === "danger"
     ? { state: "Act now", tone: "danger", stateTone: "danger" }
@@ -559,12 +567,8 @@ export function AlertsDrawer({
           </span>
           <div className={styles.rowText}>
             <h4 className={styles.groupTitle}>
+              {/* Mock-up: the count is said once, as "5 people" on the line below. */}
               {group.title}
-              <span className={styles.groupCount}>
-                <span aria-hidden="true"> · </span>
-                <span className="sr-only">, </span>
-                {group.items.length}
-              </span>
             </h4>
             <p className={styles.rowMeta}>
               <StatusGlyph tone={severity} size={9} />
@@ -622,9 +626,11 @@ export function AlertsDrawer({
               </span>
             ) : null}
             <span aria-hidden="true">·</span>
-            <span className={styles.rowState} data-tone={timing.stateTone}>
-              {timing.state}
-            </span>
+            {timing.state ? (
+              <span className={styles.rowState} data-tone={timing.stateTone}>
+                {timing.state}
+              </span>
+            ) : null}
           </span>
         </span>
         <span className={styles.memberActions}>
@@ -951,9 +957,11 @@ export function AlertsDrawer({
                 {timing.word ? <span className={styles.rowWord}>{timing.word}</span> : null}
               </span>
             ) : null}
-            <span className={styles.rowState} data-tone={timing.stateTone}>
-              {timing.state}
-            </span>
+            {timing.state ? (
+              <span className={styles.rowState} data-tone={timing.stateTone}>
+                {timing.state}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -1192,14 +1200,18 @@ export function AlertsDrawer({
                     setTaskFilter(value);
                   }}
                 >
-                  {label} <span className={styles.count}>{count}</span>
+                  {label}{" "}
+                  <span className={styles.count} data-zero={count === 0 || undefined}>
+                    {count}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
 
           <div className={styles.filterMeta}>
-            <span role="status" className={styles.filterStatus}>
+            {/* Mock-up: "12 of 12" repeats the All count, so it shows only while a filter narrows the list. */}
+            <span role="status" className={filteredItems.length === items.length ? "sr-only" : styles.filterStatus}>
               <strong className={styles.mono}>{filteredItems.length}</strong> of {items.length}{" "}
               {words === ALERTS_WORDS ? (
                 <>

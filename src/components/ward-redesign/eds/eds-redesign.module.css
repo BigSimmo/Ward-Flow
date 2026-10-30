@@ -1,9 +1,12 @@
 /* All EDs, redesigned: names that wrap, and one line for departments with nobody waiting. */
-.wrapNames.wrapNames article h2,
-.wrapNames.wrapNames article p[title] {
+/* Card names wrap rather than end in "…". Doubled class beats the source module's ellipsis. */
+.wrap.wrap {
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
+}
+.fig {
+  white-space: nowrap;
 }
 .clearLine {
   display: flex;
@@ -12,9 +15,10 @@
   gap: var(--wf-s-2) var(--wf-s-4);
   grid-column: 1 / -1;
   padding: var(--wf-s-3) var(--wf-s-4);
-  border: 1px dashed var(--wf-line-2);
+  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
   font-size: var(--wf-fs-13);
 }
 .clearLabel {
@@ -28,4 +32,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--wf-s-2);
+}
+/* Dim, never hide: a filtered-out department here dims as its card would. */
+.clearEd[data-dim="true"] b {
+  color: var(--wf-dim);
 }

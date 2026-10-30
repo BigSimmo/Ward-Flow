@@ -115,9 +115,8 @@ import { LongStaySummary } from "@/components/ward-management/handover/long-stay
 // Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
 import { HandoverOpenPromises } from "@/components/ward-management/handover/handover-open-promises";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "@/components/ward-management/handover/handover-print-sheet";
-import { HandoverPhone } from "@/components/ward-management/handover/handover-phone";
+import { HandoverPhone } from "./handover-phone";
 import styles from "@/components/ward-management/handover/handover-refined.module.css";
-import phoneChips from "./handover-redesign.module.css";
 import { ShowMoreRow, SignOffBar, SinceLine, signOffWaitReason } from "./handover-redesign-parts";
 
 const DUE_FIRST = 4; // Due by rows shown before Show more.
@@ -844,7 +843,7 @@ export function HandoverRedesign() {
 
   if (isPhoneWidth) {
     return (
-      <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6" className={phoneChips.page}>
+      <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -1442,10 +1441,11 @@ export function HandoverRedesign() {
       <SinceLine since={formatInstantWithDay(newSince, now)} items={sinceItems} />
     </div>
   ) : null;
+  // One Sign off on screen: the bar shows only when the rail's own panel is not beside the table.
   const signBar =
-    tab === "pts" && !sheetOpen ? (
+    tab === "pts" && !sheetOpen && !signOffInRail ? (
       <SignOffBar
-        title={`Sign off ${shiftClock} handover`}
+        title={`${shiftClock} handover`}
         checks={signChecks}
         signedLine={signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null}
         cannotSignReason={canSignOff ? undefined : cannotSignReason}

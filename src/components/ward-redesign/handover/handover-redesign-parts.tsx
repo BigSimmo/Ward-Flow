@@ -18,7 +18,7 @@ export function SinceLine({ since, items }: { since: string; items: SinceItem[] 
       <ul className={styles.sinceItems}>
         {items.map((item) => (
           <li key={item.id} title={typeof item.detail === "string" ? item.detail : undefined}>
-            <StatusGlyph tone={item.value === 0 ? "neutral" : (item.tone ?? "neutral")} size={8} />
+            {item.value > 0 && item.tone && item.tone !== "neutral" ? <StatusGlyph tone={item.tone} size={8} /> : null}
             <b className={styles.mono}>{item.value}</b> {item.word}
             {item.value > 0 && typeof item.detail === "string" && item.detail !== "None" ? (
               <span className={styles.sinceDetail}> · {item.detail}</span>
@@ -105,8 +105,13 @@ export function ShowMoreRow({
   return (
     <tr className={styles.moreRow}>
       <td colSpan={span}>
-        <button type="button" aria-expanded={open} onClick={onToggle}>
-          {open ? "Show fewer" : `Show ${hidden} more ${what}`}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? `Show fewer ${what}` : `Show ${hidden} more ${what}`}
+          onClick={onToggle}
+        >
+          {open ? "Show fewer" : `Show ${hidden} more`}
         </button>
       </td>
     </tr>
@@ -116,6 +121,6 @@ export function ShowMoreRow({
 /** Why sign-off waits, in the panel's own words: a passed handover, or one not next in line. */
 export function signOffWaitReason(passed: boolean, nextShift: boolean): string | undefined {
   if (passed) return "This handover has passed. Choose the next one.";
-  if (!nextShift) return "Sign-off opens after the preceding handover. Choose the next handover to sign off now.";
+  if (!nextShift) return "Opens after the previous handover";
   return undefined;
 }

@@ -136,7 +136,7 @@ function rowClock(row: EdRow): WaitClock {
 
 /**
  * All EDs, redesigned (October 2026 design review). A copy of `ed/ed-index.tsx` with the review's
- * changes: the title counts every department ("62 waiting across 10 EDs · 8 have someone waiting"),
+ * changes: the title counts every department ("62 waiting across 10 EDs · 8 with someone waiting"),
  * hospital names wrap on the cards instead of ending in "…", and departments with nobody waiting
  * share one line with an Enter button each, rather than a full empty card.
  */
@@ -390,7 +390,7 @@ export function EdIndexRedesign() {
               ? waiting > 0 && longestRow
                 ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
                 : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-              : `${withWaiting.length} have someone waiting`
+              : `${withWaiting.length} with someone waiting`
           }
           aside={
             isPhone ? (
@@ -524,7 +524,6 @@ export function EdIndexRedesign() {
               </>
             )}
             <span className={styles.shownCount}>
-              <span className={styles.filterHint}>Filters and chips highlight, all EDs stay</span>
               {isFiltered ? (
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -557,7 +556,7 @@ export function EdIndexRedesign() {
             <EmptyState
               icon={Search}
               title="No match"
-              meta={`No ED matches these filters. All ${rows.length} stay below, dimmed.`}
+              meta={`No ED matches. All ${rows.length} stay below, dimmed.`}
               action={
                 <Button variant="sec" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -588,7 +587,7 @@ export function EdIndexRedesign() {
           // Device audit 11 Oct 2026: Waiting by service is a rail beside the cards rather than an
           // eleventh card, and a full-width strip under them at tablet portrait.
           <div className={styles.cardsWithRail}>
-            <section className={cx(styles.cardGrid, redesign.wrapNames)} aria-label="Emergency department cards">
+            <section className={styles.cardGrid} aria-label="Emergency department cards">
               {ordered
                 .filter((row) => row.summary.waiting > 0)
                 .map((row) => (
@@ -601,12 +600,16 @@ export function EdIndexRedesign() {
                   />
                 ))}
               {ordered.some((row) => row.summary.waiting === 0) ? (
-                <div className={redesign.clearLine} aria-label="Departments with nobody waiting" role="group">
-                  <span className={redesign.clearLabel}>Nobody waiting</span>
+                <div className={redesign.clearLine} aria-label="Departments with no one waiting" role="group">
+                  <span className={redesign.clearLabel}>No one waiting</span>
                   {ordered
                     .filter((row) => row.summary.waiting === 0)
                     .map((row) => (
-                      <span key={row.summary.ed.id} className={redesign.clearEd}>
+                      <span
+                        key={row.summary.ed.id}
+                        className={redesign.clearEd}
+                        data-dim={isDim(row) ? "true" : undefined}
+                      >
                         <b title={row.summary.ed.name}>{row.short}</b>
                         <EnterLink row={row} />
                       </span>
@@ -782,23 +785,35 @@ function EdCard({
         data-testid={`ed-index-preview-${row.summary.ed.id}`}
       />
       <div className={styles.cardHead}>
-        <h2 className={styles.edTitle} title={summary.ed.name}>
+        <h2 className={cx(styles.edTitle, redesign.wrap)} title={summary.ed.name}>
           {row.short}
         </h2>
         <span className={styles.service}>{summary.service}</span>
       </div>
       <div className={styles.siteRow}>
-        <p className={styles.meta} title={summary.siteName}>
+        <p className={cx(styles.meta, redesign.wrap)} title={summary.siteName}>
           {summary.siteName}
         </p>
         <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" />
       </div>
       <PeoplePips row={row} highlight={highlight} />
-      <p className={styles.figures}>
-        <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.noBed}</b> no bed <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.held}</b> accepted <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.forms}</b> form
+      {/* Redesign: the figures wrap between figures, never mid-phrase, so none ends in "…". */}
+      <p className={cx(styles.figures, redesign.wrap)}>
+        <span className={redesign.fig}>
+          <b className={styles.num}>{summary.waiting}</b> waiting
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={redesign.fig}>
+          <b className={styles.num}>{row.noBed}</b> no bed
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={redesign.fig}>
+          <b className={styles.num}>{row.held}</b> accepted
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={redesign.fig}>
+          <b className={styles.num}>{row.forms}</b> under a form
+        </span>
       </p>
       <div className={styles.cardFoot}>
         <Longest row={row} />
@@ -1121,7 +1136,7 @@ function PhoneEdList({
               <span className={styles.phoneMeta}>
                 <PeoplePips row={item} highlight={highlight} />
                 <span>
-                  {item.noBed} no bed · {item.held} accepted · {item.forms} form
+                  {item.noBed} no bed · {item.held} accepted · {item.forms} under a form
                 </span>
               </span>
             ) : (

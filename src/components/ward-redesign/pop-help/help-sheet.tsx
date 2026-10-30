@@ -165,7 +165,13 @@ function WardHelpSheetView({
       footer={
         <div className={barStyles.drawerFoot}>
           <span>Ward Flow guide · nothing typed here is saved</span>
-          {latest ? <span>Updated {formatNewDate(latest.date)}</span> : null}
+          {/* Mock-up: the date opens What's new, so it does something rather than repeat that tab. A
+              phone has the room for one line only, and the What's new tab sits at the top. */}
+          {latest && view !== "new" && !phone ? (
+            <button type="button" className={local.footLink} onClick={() => onView("new")}>
+              What&rsquo;s new {formatNewDate(latest.date)}
+            </button>
+          ) : null}
         </div>
       }
       footerClassName={barStyles.drawerFooter}
@@ -187,10 +193,6 @@ function WardHelpSheetView({
             {item.label}
           </button>
         ))}
-      </div>
-
-      <div className={styles.utilityRow}>
-        <WardHelpReference role={role} onClose={onClose} />
       </div>
 
       {view === "desk" ? (
@@ -245,11 +247,10 @@ function WardHelpSheetView({
       {view === "screen" ? (
         help ? (
           <section className={styles.stack} aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
-            <div className={styles.card}>
-              <div className={styles.screenHead}>
-                <h3 id="ward-help-screen-title">{help.title}</h3>
-                <p className={styles.text}>{help.purpose}</p>
-              </div>
+            {/* Mock-up: a plain heading and line, not a card, for the screen this Help is about. */}
+            <div className={`${styles.screenHead} ${local.screenHead}`}>
+              <h3 id="ward-help-screen-title">{help.title}</h3>
+              <p className={styles.text}>{help.purpose}</p>
             </div>
             <PointList heading="Main actions" points={phone ? (help.phoneActions ?? help.actions) : help.actions} />
             {help.questions?.length ? (
@@ -288,6 +289,12 @@ function WardHelpSheetView({
 
       {view === "glossary" ? <WardHelpGlossary termsSource={termsSource} /> : null}
 
+      {/* Mock-up: Reference (colour code, roles, more) is an extra, so it moves from above the content
+          to the end of every view, just before the tour and the shortcuts. */}
+      <div className={styles.utilityRow}>
+        <WardHelpReference role={role} onClose={onClose} />
+      </div>
+
       {/* Redesign: the tour and the shortcuts are buttons at the end of every Help view. A phone has
           no keyboard, so it is not offered the shortcuts (HF-14). */}
       <div className={local.endRow}>
@@ -316,7 +323,7 @@ function WardHelpSheetView({
   );
 }
 
-/** A heading and a card of short points, each behind a quiet dot. */
+/** A heading and a card of short points. Mock-up: the row dividers part them, so no dot as well. */
 function PointList({ heading, points, testId }: { heading: string; points: readonly string[]; testId?: string }) {
   return (
     <div className={styles.group}>
@@ -324,7 +331,6 @@ function PointList({ heading, points, testId }: { heading: string; points: reado
       <ul className={styles.card} data-testid={testId}>
         {points.map((point) => (
           <li key={point} className={styles.row}>
-            <span className={styles.point} aria-hidden="true" />
             <span className={styles.text}>{point}</span>
           </li>
         ))}

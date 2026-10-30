@@ -687,7 +687,6 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
   // Hero tools (Josh, 9 Oct 2026: every page header carries page-specific tools). Each reads only
   // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
   // computed limit, D5), and the coordinator's own queue of next steps.
-  const movingCount = openMovements.filter((movement) => movement.stage === "moving").length;
   // The earliest opened open movement.
   const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
@@ -784,12 +783,17 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
   }
 
   const tierOneNow = (
-    <div className={styles.needsYou} role="group" aria-label="Tier 1 now" data-testid="movements-needs-you">
-      <div className={styles.needsYouHead}>
+    <div
+      className={cx(styles.needsYou, !isPhone && redesign.sideNeeds)}
+      role="group"
+      aria-label="Tier 1 now"
+      data-testid="movements-needs-you"
+    >
+      <div className={cx(styles.needsYouHead, !isPhone && redesign.sideNeedsHead)}>
         <h2 className={styles.needsYouTitle}>Tier 1 now</h2>
         {attentionCore.length > 0 ? (
           <span className={styles.needsYouMeta}>
-            {attentionCore.length} of {tierOneOpen.length} Tier 1 open journeys
+            {attentionCore.length} of {tierOneOpen.length} open
           </span>
         ) : null}
         {/* B4: the full list of what needs the coordinator, in Delays' Needs me now view. */}
@@ -802,7 +806,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
       ) : (
         // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
         // worklist, and a movement outside the chosen service says so.
-        <ul className={flow.needsList}>
+        <ul className={cx(flow.needsList, !isPhone && redesign.sideNeedsList)}>
           {attentionMovements.map((movement) => {
             const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
             const subject = resolveSubjectPatient(movement, { patients, referrals });
@@ -811,7 +815,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
             const legalReason = legalActNowReason(movement, now, thresholds);
             const reason = legalReason ?? meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
             return (
-              <li key={movement.id} className={flow.needsCell}>
+              <li key={movement.id} className={cx(flow.needsCell, !isPhone && redesign.sideNeedsCell)}>
                 <button
                   type="button"
                   className={flow.needsItem}
@@ -916,7 +920,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
                 "Prototype data, invented records"
               ) : (
                 <span className={flow.heroTitleMeta}>
-                  {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
+                  {closedToday.length} resolved today · {activeCorridorCount} active corridors
                 </span>
               )
             }
@@ -1001,13 +1005,14 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
             <StagePipeline
               stages={openStages.filter((stage) => stage.id !== "arrived")}
               now={now}
+              accessTarget={accessTarget}
               highlight={highlight}
               onToggle={(stageId) => toggleHighlight(`stage:${stageId}`)}
             />
           )}
 
           {/* Phone (v10): the stage chips sit on the canvas under the band, number first. */}
-          {isPhone ? stageTrack(flow.phStages, flow.phStage, flow.phStageCount) : null}
+          {isPhone ? stageTrack(cx(flow.phStages, redesign.phStagesWrap), flow.phStage, flow.phStageCount) : null}
 
           {isPhone ? tierOneNow : null}
         </section>
@@ -1336,7 +1341,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
           </div>
 
           <aside className={cx(styles.secondary, redesign.secondaryWithTier)} aria-label="Movement details">
-            {isPhone ? null : <div className={redesign.sideNeeds}>{tierOneNow}</div>}
+            {isPhone ? null : tierOneNow}
             {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
                 the region name follows whichever view is showing. The transport count stays off
                 the header: the bar caption already says how many legs are booked or moving. */}

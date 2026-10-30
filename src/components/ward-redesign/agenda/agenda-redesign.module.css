@@ -35,11 +35,24 @@
   color: var(--wf-danger-ink);
 }
 
-/* "+ Action": link weight, but still a full touch target. */
+/* "Action": link weight at today's small button size, with an invisible touch area around it
+   rather than a taller-looking button (Josh, 30 Oct 2026). */
 .addAction {
+  position: relative;
   flex: none;
-  min-height: var(--wf-touch);
   color: var(--wf-accent-strong);
+}
+.addAction::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+/* No actions waiting: one quiet line, not an empty card. */
+.noActions {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
 }
 
 .off {

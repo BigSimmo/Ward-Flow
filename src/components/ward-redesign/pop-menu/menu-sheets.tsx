@@ -82,7 +82,8 @@ const CREATE_LINKS: readonly {
   icon: LucideIcon;
   href?: string;
 }[] = [
-  { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
+  // Mock-up: short noun phrases, the same words as the Tools rows.
+  { id: "delays", label: "Log a delay", meta: "Patient and reason", icon: Clock3 },
   { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
   {
     id: "add-patient",
@@ -412,7 +413,6 @@ function CreateSheet({
       open={open}
       onClose={onClose}
       title="Create"
-      description="Start something new"
       mobileBreakpoint="phone"
       returnFocusRef={returnFocusRef}
       contentClassName={styles.sheet}
@@ -512,10 +512,11 @@ function MenuPages({
   );
   return (
     <>
-      {/* UX audit (21 Oct 2026): "Needs you" is Home's one list; this section says what it holds. */}
-      <Section label="Act now and overdue" rich>
+      {/* UX audit (21 Oct 2026): "Needs you" is Home's one list; this section says what it holds.
+          Mock-up: "Act now", since "overdue" on these screens means form times and none of these rows are. */}
+      <Section label="Act now" rich>
         {needs.length === 0 ? (
-          <li className={styles.empty}>Nothing is act-now or overdue.</li>
+          <li className={styles.empty}>Nothing to act on now.</li>
         ) : (
           needs.map((row) => <NeedRowLink key={row.id} row={row} onGo={onClose} onTasks={() => onDrawer("tasks")} />)
         )}

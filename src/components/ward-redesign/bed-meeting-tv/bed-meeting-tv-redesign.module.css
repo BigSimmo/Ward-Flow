@@ -657,6 +657,14 @@
   color: var(--wf-ink-2);
   font-size: var(--tv-small);
   font-weight: 600;
+  vertical-align: bottom;
+}
+
+/* Redesign: "Locked ready" (TV-11: locked beds among the ready ones) takes two short lines in
+   its narrow column rather than running into "Due out". */
+.table thead .headWrap {
+  line-height: 1.15;
+  white-space: normal;
 }
 
 .table tbody th {
@@ -978,7 +986,7 @@
 
 /* Redesign: a row of tiles with no second detail line keeps four rows, so no empty row pads it. */
 @supports (grid-template-rows: subgrid) {
-  .tiles:not(:has([data-testid$="-age"])) > .tile {
+  .tiles:not([data-ages]) > .tile {
     grid-row: span 4;
   }
 }
