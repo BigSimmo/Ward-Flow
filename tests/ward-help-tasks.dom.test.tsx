@@ -77,7 +77,9 @@ describe("How do I… task list", () => {
   it("says so when nothing starts on this screen", () => {
     route.pathname = "/ward-flow/somewhere-else";
     renderTasks({ pathname: route.pathname });
-    expect(within(screen.getByTestId("ward-help-tasks-here")).getByText(/No task here starts on this screen/)).toBeTruthy();
+    expect(
+      within(screen.getByTestId("ward-help-tasks-here")).getByText(/No task here starts on this screen/),
+    ).toBeTruthy();
   });
 
   it("opens one answer at a time, with Show me and Go there", () => {
@@ -88,9 +90,11 @@ describe("How do I… task list", () => {
       const row = screen.getByTestId("ward-help-task-answer-pull-bed");
       expect(within(row).getByText("2 steps")).toBeTruthy();
       fireEvent.click(within(row).getByRole("button", { name: /Pull the bed for a patient/ }));
-      expect(within(row).getByRole("button", { name: /Pull the bed for a patient/ }).getAttribute("aria-expanded")).toBe(
-        "true",
-      );
+      expect(
+        within(row)
+          .getByRole("button", { name: /Pull the bed for a patient/ })
+          .getAttribute("aria-expanded"),
+      ).toBe("true");
       expect(within(row).getByTestId("ward-help-task-go").getAttribute("href")).toBe("/ward-flow/movements");
       fireEvent.click(within(row).getByTestId("ward-help-task-show-me"));
       expect((show.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ showMe: "pull-bed" });
@@ -120,9 +124,7 @@ describe("How do I… task list", () => {
 
 describe("How do I… in the Help sheet", () => {
   it("is the first section and opens a task handed back from Show me", () => {
-    render(
-      <WardHelpSheet view="tasks" task="sign-off-handover" showMeOn onView={vi.fn()} onClose={vi.fn()} />,
-    );
+    render(<WardHelpSheet view="tasks" task="sign-off-handover" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
     const sections = within(screen.getByRole("group", { name: "Help sections" })).getAllByRole("button");
     expect(sections.map((button) => button.textContent)).toEqual([
       "How do I…",
@@ -133,15 +135,18 @@ describe("How do I… in the Help sheet", () => {
     ]);
     expect(sections[0]?.getAttribute("aria-pressed")).toBe("true");
     const row = screen.getByTestId("ward-help-task-answer-sign-off-handover");
-    expect(within(row).getByRole("button", { name: /Hand over to the next shift/ }).getAttribute("aria-expanded")).toBe(
-      "true",
-    );
+    expect(
+      within(row)
+        .getByRole("button", { name: /Hand over to the next shift/ })
+        .getAttribute("aria-expanded"),
+    ).toBe("true");
   });
 
   it("offers this screen's tasks as Show me on This screen, and Show me beside a desk job", () => {
     const { unmount } = render(<WardHelpSheet view="screen" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
-    expect(within(screen.getByTestId("ward-help-screen-tasks")).getByTestId("ward-help-screen-show-me-sign-off-handover"))
-      .toBeTruthy();
+    expect(
+      within(screen.getByTestId("ward-help-screen-tasks")).getByTestId("ward-help-screen-show-me-sign-off-handover"),
+    ).toBeTruthy();
     unmount();
     render(<WardHelpSheet view="desk" showMeOn onView={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getAllByTestId("ward-help-job-show-me").length).toBeGreaterThan(0);

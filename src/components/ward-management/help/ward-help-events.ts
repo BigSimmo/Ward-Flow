@@ -39,9 +39,7 @@ export function looksLikeHelpQuestion(query: string): boolean {
 }
 
 export type HelpRequest =
-  | { kind: "view"; view: HelpView; task?: string }
-  | { kind: "ask"; question: string }
-  | { kind: "show-me"; id: string };
+  { kind: "view"; view: HelpView; task?: string } | { kind: "ask"; question: string } | { kind: "show-me"; id: string };
 
 export function subscribeWardHelp(onOpen: (request: HelpRequest) => void): () => void {
   function handler(event: Event) {

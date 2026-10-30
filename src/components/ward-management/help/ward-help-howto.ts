@@ -116,7 +116,10 @@ export const HOW_TOS: readonly HowTo[] = [
         body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
       },
       {
-        target: [{ sel: '[data-testid="ward-cancel-transport-toggle"]' }, { sel: '[data-testid="ward-release-pull-toggle"]' }],
+        target: [
+          { sel: '[data-testid="ward-cancel-transport-toggle"]' },
+          { sel: '[data-testid="ward-release-pull-toggle"]' },
+        ],
         title: "Cancel transport first, then release",
         body: "If transport is booked, cancel it first so the officer is not sent. Then use Release the pulled bed.",
       },
@@ -139,10 +142,7 @@ export const HOW_TOS: readonly HowTo[] = [
         body: "They stay in wait order, oldest first. Press Decide to open one.",
       },
       {
-        target: [
-          { sel: '[data-testid^="ward-accept-"]' },
-          { sel: "#main-content button", text: "Accept referral" },
-        ],
+        target: [{ sel: '[data-testid^="ward-accept-"]' }, { sel: "#main-content button", text: "Accept referral" }],
         title: "Accept or decline",
         body: "Read the referral, then Accept referral or Decline referral. A decline needs a reason from the list.",
       },
@@ -384,7 +384,10 @@ export const HOW_TOS: readonly HowTo[] = [
     desks: ["ed"],
     showMe: [
       {
-        target: [{ sel: '[data-testid="ward-rail-bed-finder"]' }, { sel: '[data-testid="ward-phone-dock-bed-finder"]' }],
+        target: [
+          { sel: '[data-testid="ward-rail-bed-finder"]' },
+          { sel: '[data-testid="ward-phone-dock-bed-finder"]' },
+        ],
         title: "Find a bed",
         body: "In the side menu, or the bar at the foot on a phone. Choose the patient's needs, then read the wards that fit.",
       },
@@ -690,7 +693,10 @@ export const HOW_TOS: readonly HowTo[] = [
     go: "settings#access",
     showMe: [
       {
-        target: [{ sel: '[data-testid="ward-access-grant"]' }, { sel: '[data-testid="ward-settings-phone-area-access"]' }],
+        target: [
+          { sel: '[data-testid="ward-access-grant"]' },
+          { sel: '[data-testid="ward-settings-phone-area-access"]' },
+        ],
         title: "Give a desk",
         body: "Find the person, choose the desk, then confirm. Each change is recorded.",
       },

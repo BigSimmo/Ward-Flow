@@ -57,7 +57,11 @@
      layers, below the dock, so hiding it is the one rule that works for all of them. The Menu and
      Create sheets are the dock's own and already cover it, so they leave it as it was, and the tour
      and Show me point at the dock, so it stays for them too. */
-  :global(body:has([aria-modal="true"]:not([hidden], #ward-phone-menu, #ward-phone-create, #ward-tour-card, #ward-show-me-card)))
+  :global(
+      body:has(
+        [aria-modal="true"]:not([hidden], #ward-phone-menu, #ward-phone-create, #ward-tour-card, #ward-show-me-card)
+      )
+    )
     .pageDock.pageDock {
     visibility: hidden;
   }
