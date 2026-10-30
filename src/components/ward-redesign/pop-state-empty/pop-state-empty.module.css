@@ -1,0 +1,70 @@
+/* Preview only: Home with nothing in its lists. Tokens only. */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  width: 100%;
+  max-width: 52rem;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: var(--wf-s-4);
+}
+
+.switchRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.checked {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Each empty group is one calm line under its head, not a blank box. The glyph stays beside the
+   words when they wrap on a phone. */
+.emptyLine {
+  flex-wrap: nowrap;
+  padding: 0 var(--wf-s-4);
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.footer.footer {
+  margin-inline: var(--wf-s-4);
+  width: auto;
+}
+
+@media (max-width: 48rem) {
+  .body {
+    padding: var(--wf-s-3);
+  }
+  .emptyLine {
+    padding: var(--wf-s-1) var(--wf-s-3);
+  }
+  /* Phone controls at least 48px tall. */
+  .switchRow [role="radio"] {
+    min-height: 48px;
+  }
+}

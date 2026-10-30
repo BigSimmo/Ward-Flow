@@ -1,0 +1,107 @@
+/* Preview only: the shared in-shell loading placeholder (src/app/ward-flow/loading.tsx), shaped like
+   Home so the page lands where the blocks were. Tokens only, no new colour. */
+.main {
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  min-width: 0;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.block {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+  min-width: 0;
+}
+
+/* The hero band: the headline and its chips. */
+.band {
+  min-height: 9rem;
+}
+
+/* The ED strip: one block per department, folded to three on a phone. */
+.strip {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.cell {
+  min-height: 5.5rem;
+}
+
+/* My list on the left, Beds that fit and Placement on the right. */
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.side {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.list {
+  min-height: 22rem;
+}
+
+.fit {
+  min-height: 13rem;
+}
+
+.place {
+  min-height: 8rem;
+}
+
+@media (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3);
+  }
+  .band {
+    min-height: 7.5rem;
+  }
+  .strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .strip > :nth-child(n + 4) {
+    display: none;
+  }
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .side {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .block {
+    animation: wf-pop-loading-pulse 1.2s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes wf-pop-loading-pulse {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+
+@media (forced-colors: active) {
+  .block {
+    border-color: CanvasText;
+  }
+}

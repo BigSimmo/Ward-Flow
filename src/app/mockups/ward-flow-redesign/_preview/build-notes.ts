@@ -6,6 +6,40 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  "pop-state-loading": [
+    "**Built from today's shared loading placeholder** (`ward-flow/loading.tsx`), so the 'Loading page' status, the busy marker and the pulsing grey blocks stay as now.",
+    "**New:** the blocks take Home's shape (hero band, ED blocks, My list beside Beds that fit and Placement), so the page lands where the blocks were instead of jumping. On a phone it folds to the band, three ED blocks and one list block.",
+    "**Kept:** the Synthetic prototype footer; the rail and header stay up while the page loads.",
+    "**Still open:** the real placeholder is shared by every page, so a Home-shaped one needs its own `loading.tsx` for Home. Other pages keep the plain one unless Josh wants a shape for each.",
+  ],
+  "pop-state-empty": [
+    "**Built from today's My list and Everyone waiting**, with every group empty and their own words ('None firing now.', 'No referral is waiting on a decision.', 'Nothing is waiting on a transport leg or an arrival.', 'No open movements').",
+    "**New:** each empty group is one calm line with a green tick under its heading, not a blank box; 'Checked at 10:42' sits beside the switch. The switch buttons are 48 px tall on a phone.",
+    "**Kept:** the group headings with their 0 counts, the list foot line and the prototype footer.",
+    "**Still open:** this replaces the whole page area, because an empty world cannot be made from the seeded one, so there is no hero band or Beds that fit. Should a real empty Home keep its band and ED strip?",
+  ],
+  "pop-state-error": [
+    "**Built from a copy of today's Ward Flow error panel**, with the boundary's title 'This ward screen could not be shown' and its description word for word.",
+    "**New:** the panel moves onto Ward Flow's own colours and buttons. Try again is the one filled button; Reload page is outlined. Both are full width and 48 px tall on a phone.",
+    "**New:** it shows the fixed 'details are kept out of view' sentence, never the error text, and the heading no longer draws a focus box on arrival.",
+    "**Kept:** the synthetic-prototype notice above the panel, the rail and header, and the prototype footer. Try again draws Home again, as retry does in the app.",
+  ],
+  "pop-state-offline": [
+    "**Built on today's offline notice** (`ward-offline-banner.tsx`). The browser is told it is offline while the mock-up is open, so the notice, the header's Offline chip and its amber clock dot react as in the app.",
+    "**New:** the notice sits pinned under the header and takes the band's colour over Home, so header, notice and band read as one surface.",
+    "**Kept:** the notice's wording exactly, and a save toast with 'Saved on this device only.' under it.",
+    "**Still open:** the preview never saves, so the mock-up writes 'Saved on this device only.' in itself, as a device that is saving shows it.",
+  ],
+  "pop-state-toast": [
+    "**Built from today's Pull the bed toast**, 'Bed pulled at <ward>', shown through the app's own toast system, for the first accepted referral on Home still waiting for its bed.",
+    "**Kept:** the real place, look and screen-reader announcement: a card at the bottom right on desktop, the dark pill above the dock on a phone.",
+    "**Still open:** in the app this toast closes itself after 6 seconds; here it stays until closed so it can be reviewed. Nothing is saved, so the row still shows behind it.",
+  ],
+  "pop-state-not-wired": [
+    "**Built on the kit button's own unavailable state** (D4): greyed with a dashed edge, a lock, and the exact sentence 'Not wired in this prototype.' from the app's one shared constant. It can be reached with the keyboard but does nothing.",
+    "**New:** a small 'Referral actions' panel docked to the page's corner (above the dock on a phone), with the wired Intake board as the one filled button beside the unwired Contact referrer for contrast.",
+    "**Still open:** on desktop the panel covers the foot of Beds that fit. A real not-wired control would sit inside a page panel, such as the record preview.",
+  ],
   "add-patient": [
     "**Built from a copy of today's Add a patient form**, so typing, the duplicate check, Reset with Undo, Add patient and Register & start referral work as now.",
     "**New:** the duplicate check sits under the identity fields, inside the Identity card, and runs as you type. Before anything is typed it is one quiet line saying what it checks.",
