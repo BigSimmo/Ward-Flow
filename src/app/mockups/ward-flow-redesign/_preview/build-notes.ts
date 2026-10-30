@@ -104,6 +104,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
     "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
   ],
+  governance: [
+    "**Built from a copy of today's Governance workbench**, so the hero counts, the five header tabs (Review, Gaps by site, Audit trail, Registers, Reports), the filters, PIR chronology, Record review, Reviewed and Follow-up, and the phone layout all work as now.",
+    "**Already done in today's screen:** the tabs moved into the header and outcomes show as a tick, cross or circle after the review was written, so those points needed no change.",
+    '**New:** the review pane opens on the newest event waiting, with its facts, who opened the record and Reviewed or Follow-up, instead of "Choose an event". Closing it keeps it closed. On a phone or a portrait tablet the event still opens only when chosen, because there it covers the list.',
+    '**New:** the What and Record cells wrap instead of ending in "…", and the list runs the height of the screen. On a phone the Review, Gaps and Reviewed switch is 48 px tall.',
+    '**Kept:** the review count, PIR chronology and "Safety incidents not recorded here".',
+    '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
+  ],
   seclusion: [
     "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",
     "**New:** one table of every secure ward's seclusion room (in use, available, out of service or not recorded), with what is in use, the last day's incident count and who last marked the room. The header counts rooms in each state. Rows needing a look come first.",
