@@ -265,6 +265,14 @@ grouped alerts (needs a new command, so it stays unbuilt).
 
 ## Things found while building (for the real app)
 
+- **Shareable copy drops scoped styles (found 30 October).** `build-redesign-preview.mjs` minified CSS
+  module class names, so every scoped override written as `[class*="_name__"]` (On-call, Governance,
+  Patients, Referrals, Handover, Movements, All wards, Out of area, Settings) silently does nothing in the
+  published copy. Fix: set `minifyWhitespace` and `minifySyntax` but `minifyIdentifiers: false`, and write
+  selectors as `:is([class*="_name__"], [class$="_name"], [class*="_name "])` to match both the dev server
+  and the bundle. Done on branch `claude/home-activity-mockup` for Home and Activity; apply here too and
+  check pages in the built copy, not only the dev server.
+
 - Surname first still needed in shared code the mock-ups cannot reach: the downtime pack rows
   (`use-take-downtime-pack.ts`), the community team record drawer, Add a patient's save toasts, and the
   chronology CSV's patient line.
