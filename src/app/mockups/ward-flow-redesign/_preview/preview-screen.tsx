@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
+import { Suspense, useEffect, useLayoutEffect, useSyncExternalStore } from "react";
 
 import { applyThemeToDocument } from "@/lib/theme-client";
+import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import {
   readWardAccessSnapshot,
@@ -62,19 +63,28 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
   const Popup = pop ? MOCKUP_POPUP_COMPONENTS[pop] : undefined;
   const page = Popup ? <Popup page={drawnPage} /> : drawnPage;
   const rolePrefix = screen.role ? slug.split("-").slice(0, -1).join("-") + "-" : undefined;
-  return screen.bare ? (
-    page
-  ) : (
-    <PreviewShell appPath={screen.shellPath ?? screen.appPath} rolePrefix={rolePrefix}>
-      {page}
-    </PreviewShell>
+  // As in the app's layout, everything below (chrome included) reads the workspace scoped to the
+  // desk's role and place. It does nothing for the statewide coordinator.
+  return (
+    <Suspense fallback={null}>
+      <WardAccessScope>
+        {screen.bare ? (
+          page
+        ) : (
+          <PreviewShell appPath={screen.shellPath ?? screen.appPath} rolePrefix={rolePrefix}>
+            {page}
+          </PreviewShell>
+        )}
+      </WardAccessScope>
+    </Suspense>
   );
 }
 
 /**
  * Preview only: draws a role's view as that desk, the way the Demo menu's "See it as" does (the
  * role-access safeguard on, the desk taken, the rail's persona matched). Every other mock-up puts the
- * statewide coordinator back. Nothing is shared; the desk lives in this browser only.
+ * statewide coordinator back. Nothing is shared; the desk lives in this browser only, so on the local
+ * server it also sets the real app's own desk and role-access switch in the same browser.
  */
 const TOUR_ROLES = "coordinator,bed_manager,ward,ed,community,officer,executive,admin";
 

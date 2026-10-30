@@ -1,81 +1,288 @@
 "use client";
 
+// Each page and popup loads on its own, so a frame compiles and downloads only what it draws.
+import dynamic from "next/dynamic";
+
 import type { ComponentType } from "react";
 
-import { CapacityRedesign } from "@/components/ward-redesign/capacity/capacity-redesign";
-import { EdIndexRedesign } from "@/components/ward-redesign/eds/eds-redesign";
-import { HandoverRedesign } from "@/components/ward-redesign/handover/handover-redesign";
-import { HomeRedesign } from "@/components/ward-redesign/home/home-redesign";
-import { NewReferralRedesign } from "@/components/ward-redesign/new-referral/new-referral-redesign";
-import { ReferralsRedesign } from "@/components/ward-redesign/referrals/referrals-redesign";
-import { MovementsRedesign } from "@/components/ward-redesign/movements/movements-redesign";
-import { WaitingRedesign } from "@/components/ward-redesign/waiting/waiting-redesign";
-import { WardRedesign } from "@/components/ward-redesign/ward/ward-redesign";
-import { StaysPage } from "@/components/ward-redesign/stays/stays-page";
-import { EdBoardPage } from "@/components/ward-redesign/ed-board/ed-board-page";
-import { TransportRedesign } from "@/components/ward-redesign/transport/transport-redesign";
-import { PatientsRedesign } from "@/components/ward-redesign/patients/patients-redesign";
-import { DischargesPage } from "@/components/ward-redesign/discharges/discharges-page";
-import { WardsPage } from "@/components/ward-redesign/wards/wards-page";
-import { StatisticsPage } from "@/components/ward-redesign/statistics/statistics-page";
-import { AlertsRedesign } from "@/components/ward-redesign/alerts/alerts-redesign";
-import { LegalFormsPage } from "@/components/ward-redesign/legal-forms/legal-forms-page";
-import { OutOfAreaPage } from "@/components/ward-redesign/out-of-area/out-of-area-page";
-import { OnCallRedesign } from "@/components/ward-redesign/on-call/on-call-redesign";
-import { SeclusionRedesign } from "@/components/ward-redesign/seclusion/seclusion-redesign";
-import { GovernancePage } from "@/components/ward-redesign/governance/governance-page";
-import { BedMeetingTvPage } from "@/components/ward-redesign/bed-meeting-tv/bed-meeting-tv-page";
-import { DowntimePage } from "@/components/ward-redesign/downtime/downtime-page";
-import { ChronologyPage } from "@/components/ward-redesign/chronology/chronology-page";
-import { PlacesPage } from "@/components/ward-redesign/places/places-page";
-import { CommunityPage } from "@/components/ward-redesign/community/community-page";
-import { CommunityTeamPage } from "@/components/ward-redesign/community-team/community-team-page";
-import { PatientPage } from "@/components/ward-redesign/patient/patient-page";
-import { AddPatientPage } from "@/components/ward-redesign/add-patient/add-patient-page";
-import { WardAnswerPage } from "@/components/ward-redesign/ward-answer/ward-answer-page";
-import { SettingsPage } from "@/components/ward-redesign/settings/settings-page";
-import { SignInPage } from "@/components/ward-redesign/sign-in/sign-in-page";
-import { StatisticsComparePage } from "@/components/ward-redesign/statistics-compare/statistics-compare-page";
-import { StatisticsListPage } from "@/components/ward-redesign/statistics-list/statistics-list-page";
-import { StatisticsUnitPage } from "@/components/ward-redesign/statistics-unit/statistics-unit-page";
-import { StatisticsWeeklyPage } from "@/components/ward-redesign/statistics-weekly/statistics-weekly-page";
-import { AgendaRedesign } from "@/components/ward-redesign/agenda/agenda-redesign";
-import { AsWardHomePage } from "@/components/ward-redesign/as-ward-home/as-ward-home-page";
-import { AsWardStaysPage } from "@/components/ward-redesign/as-ward-stays/as-ward-stays-page";
-import { AsWardDischargesPage } from "@/components/ward-redesign/as-ward-discharges/as-ward-discharges-page";
-import { AsWardReferralsPage } from "@/components/ward-redesign/as-ward-referrals/as-ward-referrals-page";
-import { AsWardWaitingPage } from "@/components/ward-redesign/as-ward-waiting/as-ward-waiting-page";
-import { AsWardLegalFormsPage } from "@/components/ward-redesign/as-ward-legal-forms/as-ward-legal-forms-page";
-import { AsWardHandoverPage } from "@/components/ward-redesign/as-ward-handover/as-ward-handover-page";
-import { AsWardStatisticsPage } from "@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page";
-import { AsWardSeclusionPage } from "@/components/ward-redesign/as-ward-seclusion/as-ward-seclusion-page";
-import { AsWardAlertsPage } from "@/components/ward-redesign/as-ward-alerts/as-ward-alerts-page";
-import { AsWardSettingsPage } from "@/components/ward-redesign/as-ward-settings/as-ward-settings-page";
-import { AsEdHomePage } from "@/components/ward-redesign/as-ed-home/as-ed-home-page";
-import { AsEdReferralsPage } from "@/components/ward-redesign/as-ed-referrals/as-ed-referrals-page";
-import { AsEdWaitingPage } from "@/components/ward-redesign/as-ed-waiting/as-ed-waiting-page";
-import { AsEdLegalFormsPage } from "@/components/ward-redesign/as-ed-legal-forms/as-ed-legal-forms-page";
-import { AsEdHandoverPage } from "@/components/ward-redesign/as-ed-handover/as-ed-handover-page";
-import { AsEdStatisticsPage } from "@/components/ward-redesign/as-ed-statistics/as-ed-statistics-page";
-import { AsCommunityHomePage } from "@/components/ward-redesign/as-community-home/as-community-home-page";
-import { AsCommunityReferralsPage } from "@/components/ward-redesign/as-community-referrals/as-community-referrals-page";
-import { AsCommunityMovementsPage } from "@/components/ward-redesign/as-community-movements/as-community-movements-page";
-import { AsCommunityPatientPage } from "@/components/ward-redesign/as-community-patient/as-community-patient-page";
-import { AsCommunityStatisticsPage } from "@/components/ward-redesign/as-community-statistics/as-community-statistics-page";
-import { AsOfficerHomePage } from "@/components/ward-redesign/as-officer-home/as-officer-home-page";
-import { AsOfficerAlertsPage } from "@/components/ward-redesign/as-officer-alerts/as-officer-alerts-page";
-import { AsBedManagerHomePage } from "@/components/ward-redesign/as-bed-manager-home/as-bed-manager-home-page";
-import { AsBedManagerWardsPage } from "@/components/ward-redesign/as-bed-manager-wards/as-bed-manager-wards-page";
-import { AsBedManagerPlacesPage } from "@/components/ward-redesign/as-bed-manager-places/as-bed-manager-places-page";
-import { AsBedManagerWardPage } from "@/components/ward-redesign/as-bed-manager-ward/as-bed-manager-ward-page";
-import { AsBedManagerDischargesPage } from "@/components/ward-redesign/as-bed-manager-discharges/as-bed-manager-discharges-page";
-import { AsBedManagerReferralsPage } from "@/components/ward-redesign/as-bed-manager-referrals/as-bed-manager-referrals-page";
-import { AsBedManagerStatisticsPage } from "@/components/ward-redesign/as-bed-manager-statistics/as-bed-manager-statistics-page";
-import { AsBedManagerSeclusionPage } from "@/components/ward-redesign/as-bed-manager-seclusion/as-bed-manager-seclusion-page";
-import { AsExecutiveHomePage } from "@/components/ward-redesign/as-executive-home/as-executive-home-page";
-import { AsExecutiveCapacityPage } from "@/components/ward-redesign/as-executive-capacity/as-executive-capacity-page";
-import { AsAdminHomePage } from "@/components/ward-redesign/as-admin-home/as-admin-home-page";
-import { AsAdminGovernancePage } from "@/components/ward-redesign/as-admin-governance/as-admin-governance-page";
+const CapacityRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/capacity/capacity-redesign").then((module) => module.CapacityRedesign),
+);
+const EdIndexRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/eds/eds-redesign").then((module) => module.EdIndexRedesign),
+);
+const HandoverRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/handover/handover-redesign").then((module) => module.HandoverRedesign),
+);
+const HomeRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/home/home-redesign").then((module) => module.HomeRedesign),
+);
+const NewReferralRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/new-referral/new-referral-redesign").then((module) => module.NewReferralRedesign),
+);
+const ReferralsRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/referrals/referrals-redesign").then((module) => module.ReferralsRedesign),
+);
+const MovementsRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/movements/movements-redesign").then((module) => module.MovementsRedesign),
+);
+const WaitingRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/waiting/waiting-redesign").then((module) => module.WaitingRedesign),
+);
+const WardRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/ward/ward-redesign").then((module) => module.WardRedesign),
+);
+const StaysPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/stays/stays-page").then((module) => module.StaysPage),
+);
+const EdBoardPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/ed-board/ed-board-page").then((module) => module.EdBoardPage),
+);
+const TransportRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/transport/transport-redesign").then((module) => module.TransportRedesign),
+);
+const PatientsRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/patients/patients-redesign").then((module) => module.PatientsRedesign),
+);
+const DischargesPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/discharges/discharges-page").then((module) => module.DischargesPage),
+);
+const WardsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/wards/wards-page").then((module) => module.WardsPage),
+);
+const StatisticsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/statistics/statistics-page").then((module) => module.StatisticsPage),
+);
+const AlertsRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/alerts/alerts-redesign").then((module) => module.AlertsRedesign),
+);
+const LegalFormsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/legal-forms/legal-forms-page").then((module) => module.LegalFormsPage),
+);
+const OutOfAreaPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/out-of-area/out-of-area-page").then((module) => module.OutOfAreaPage),
+);
+const OnCallRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
+);
+const SeclusionRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/seclusion/seclusion-redesign").then((module) => module.SeclusionRedesign),
+);
+const GovernancePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/governance/governance-page").then((module) => module.GovernancePage),
+);
+const BedMeetingTvPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/bed-meeting-tv/bed-meeting-tv-page").then((module) => module.BedMeetingTvPage),
+);
+const DowntimePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/downtime/downtime-page").then((module) => module.DowntimePage),
+);
+const ChronologyPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/chronology/chronology-page").then((module) => module.ChronologyPage),
+);
+const PlacesPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/places/places-page").then((module) => module.PlacesPage),
+);
+const CommunityPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/community/community-page").then((module) => module.CommunityPage),
+);
+const CommunityTeamPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/community-team/community-team-page").then((module) => module.CommunityTeamPage),
+);
+const PatientPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/patient/patient-page").then((module) => module.PatientPage),
+);
+const AddPatientPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/add-patient/add-patient-page").then((module) => module.AddPatientPage),
+);
+const WardAnswerPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/ward-answer/ward-answer-page").then((module) => module.WardAnswerPage),
+);
+const SettingsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/settings/settings-page").then((module) => module.SettingsPage),
+);
+const SignInPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/sign-in/sign-in-page").then((module) => module.SignInPage),
+);
+const StatisticsComparePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/statistics-compare/statistics-compare-page").then(
+    (module) => module.StatisticsComparePage,
+  ),
+);
+const StatisticsListPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/statistics-list/statistics-list-page").then((module) => module.StatisticsListPage),
+);
+const StatisticsUnitPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/statistics-unit/statistics-unit-page").then((module) => module.StatisticsUnitPage),
+);
+const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/statistics-weekly/statistics-weekly-page").then(
+    (module) => module.StatisticsWeeklyPage,
+  ),
+);
+const AgendaRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/agenda/agenda-redesign").then((module) => module.AgendaRedesign),
+);
+const AsWardHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-home/as-ward-home-page").then((module) => module.AsWardHomePage),
+);
+const AsWardStaysPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-stays/as-ward-stays-page").then((module) => module.AsWardStaysPage),
+);
+const AsWardDischargesPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-discharges/as-ward-discharges-page").then(
+    (module) => module.AsWardDischargesPage,
+  ),
+);
+const AsWardReferralsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-referrals/as-ward-referrals-page").then(
+    (module) => module.AsWardReferralsPage,
+  ),
+);
+const AsWardWaitingPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-waiting/as-ward-waiting-page").then((module) => module.AsWardWaitingPage),
+);
+const AsWardLegalFormsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-legal-forms/as-ward-legal-forms-page").then(
+    (module) => module.AsWardLegalFormsPage,
+  ),
+);
+const AsWardHandoverPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-handover/as-ward-handover-page").then(
+    (module) => module.AsWardHandoverPage,
+  ),
+);
+const AsWardStatisticsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page").then(
+    (module) => module.AsWardStatisticsPage,
+  ),
+);
+const AsWardSeclusionPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-seclusion/as-ward-seclusion-page").then(
+    (module) => module.AsWardSeclusionPage,
+  ),
+);
+const AsWardAlertsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-alerts/as-ward-alerts-page").then((module) => module.AsWardAlertsPage),
+);
+const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ward-settings/as-ward-settings-page").then(
+    (module) => module.AsWardSettingsPage,
+  ),
+);
+const AsEdHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ed-home/as-ed-home-page").then((module) => module.AsEdHomePage),
+);
+const AsEdReferralsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ed-referrals/as-ed-referrals-page").then((module) => module.AsEdReferralsPage),
+);
+const AsEdWaitingPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ed-waiting/as-ed-waiting-page").then((module) => module.AsEdWaitingPage),
+);
+const AsEdLegalFormsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ed-legal-forms/as-ed-legal-forms-page").then(
+    (module) => module.AsEdLegalFormsPage,
+  ),
+);
+const AsEdHandoverPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ed-handover/as-ed-handover-page").then((module) => module.AsEdHandoverPage),
+);
+const AsEdStatisticsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-ed-statistics/as-ed-statistics-page").then(
+    (module) => module.AsEdStatisticsPage,
+  ),
+);
+const AsCommunityHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-community-home/as-community-home-page").then(
+    (module) => module.AsCommunityHomePage,
+  ),
+);
+const AsCommunityReferralsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-community-referrals/as-community-referrals-page").then(
+    (module) => module.AsCommunityReferralsPage,
+  ),
+);
+const AsCommunityMovementsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-community-movements/as-community-movements-page").then(
+    (module) => module.AsCommunityMovementsPage,
+  ),
+);
+const AsCommunityPatientPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-community-patient/as-community-patient-page").then(
+    (module) => module.AsCommunityPatientPage,
+  ),
+);
+const AsCommunityStatisticsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-community-statistics/as-community-statistics-page").then(
+    (module) => module.AsCommunityStatisticsPage,
+  ),
+);
+const AsOfficerHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-officer-home/as-officer-home-page").then((module) => module.AsOfficerHomePage),
+);
+const AsOfficerAlertsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-officer-alerts/as-officer-alerts-page").then(
+    (module) => module.AsOfficerAlertsPage,
+  ),
+);
+const AsBedManagerHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-home/as-bed-manager-home-page").then(
+    (module) => module.AsBedManagerHomePage,
+  ),
+);
+const AsBedManagerWardsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-wards/as-bed-manager-wards-page").then(
+    (module) => module.AsBedManagerWardsPage,
+  ),
+);
+const AsBedManagerPlacesPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-places/as-bed-manager-places-page").then(
+    (module) => module.AsBedManagerPlacesPage,
+  ),
+);
+const AsBedManagerWardPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-ward/as-bed-manager-ward-page").then(
+    (module) => module.AsBedManagerWardPage,
+  ),
+);
+const AsBedManagerDischargesPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-discharges/as-bed-manager-discharges-page").then(
+    (module) => module.AsBedManagerDischargesPage,
+  ),
+);
+const AsBedManagerReferralsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-referrals/as-bed-manager-referrals-page").then(
+    (module) => module.AsBedManagerReferralsPage,
+  ),
+);
+const AsBedManagerStatisticsPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-statistics/as-bed-manager-statistics-page").then(
+    (module) => module.AsBedManagerStatisticsPage,
+  ),
+);
+const AsBedManagerSeclusionPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-bed-manager-seclusion/as-bed-manager-seclusion-page").then(
+    (module) => module.AsBedManagerSeclusionPage,
+  ),
+);
+const AsExecutiveHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-executive-home/as-executive-home-page").then(
+    (module) => module.AsExecutiveHomePage,
+  ),
+);
+const AsExecutiveCapacityPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-executive-capacity/as-executive-capacity-page").then(
+    (module) => module.AsExecutiveCapacityPage,
+  ),
+);
+const AsAdminHomePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-admin-home/as-admin-home-page").then((module) => module.AsAdminHomePage),
+);
+const AsAdminGovernancePage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/as-admin-governance/as-admin-governance-page").then(
+    (module) => module.AsAdminGovernancePage,
+  ),
+);
 
 import type { BuiltPageSlug } from "./built-pages";
 
