@@ -1,10 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { DeskSwitcherMock } from "./desk-switcher";
 
-/** The Go to a desk mock-up, drawn over its page. `page` is the page it opens over. */
+/** The Go to a desk mock-up, drawn over its page and opened on load. `page` is the page it opens over. */
 export function PopDesk({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="Go to a desk" />;
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      {page}
+      {open ? <DeskSwitcherMock isOpen onClose={() => setOpen(false)} /> : null}
+    </>
+  );
 }

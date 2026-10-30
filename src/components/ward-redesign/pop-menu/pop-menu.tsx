@@ -2,9 +2,14 @@
 
 import type { ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { PhoneMenuMock } from "./menu-host";
 
-/** The Phone menu mock-up, drawn over its page. `page` is the page it opens over. */
+/** The phone Menu sheet mock-up, drawn over its page and opened on load. `page` is the page it opens over. */
 export function PopMenu({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="Phone menu" />;
+  return (
+    <>
+      {page}
+      <PhoneMenuMock initial="menu" />
+    </>
+  );
 }

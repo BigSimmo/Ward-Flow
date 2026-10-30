@@ -1,0 +1,192 @@
+/* Mock-up of My ward's Switch ward menu. Desktop: a popover under the ward name. Phone: a bottom sheet. */
+.scrim {
+  display: none;
+}
+
+.panel {
+  position: fixed;
+  top: var(--pick-top, 120px);
+  left: var(--pick-left, 8px);
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 16px));
+  max-height: min(560px, calc(100dvh - var(--pick-top, 120px) - 16px));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg, 16px);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  pointer-events: auto;
+  visibility: hidden;
+}
+
+.panel[data-placed] {
+  visibility: visible;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.head strong {
+  font-size: var(--wf-fs-15, 15px);
+}
+
+.scroll {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.group {
+  margin: var(--wf-s-2) var(--wf-s-2) 4px;
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 48px;
+  padding: 6px var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+}
+
+button.row {
+  cursor: pointer;
+}
+
+button.row:hover {
+  background: var(--wf-hover);
+}
+
+.row[aria-current="page"] {
+  background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
+}
+
+.row:focus-visible,
+.more:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.detail {
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ready {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ready b {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.ready[data-none] b {
+  color: var(--wf-ink-3);
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--wf-accent);
+}
+
+.more {
+  justify-self: start;
+  min-height: 40px;
+  margin: 4px var(--wf-s-2) 0;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink, var(--wf-accent));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.none {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 48rem) {
+  /* Phone controls at least 48px (owner rule). */
+  .head button {
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .scrim {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: color-mix(in srgb, var(--wf-ink-1) 40%, transparent);
+    pointer-events: auto;
+  }
+
+  .panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85dvh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: var(--wf-r-lg, 16px) var(--wf-r-lg, 16px) 0 0;
+    visibility: visible;
+  }
+
+  .more {
+    min-height: 48px;
+  }
+}

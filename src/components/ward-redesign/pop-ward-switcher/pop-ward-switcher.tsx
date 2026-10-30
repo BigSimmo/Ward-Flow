@@ -1,10 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { WardSwitcherMock } from "./ward-switcher";
 
-/** The Ward switcher mock-up, drawn over its page. `page` is the page it opens over. */
+/** The Switch ward mock-up, drawn over My ward and opened on load. `page` is the page it opens over. */
 export function PopWardSwitcher({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="Ward switcher" />;
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      {page}
+      {open ? <WardSwitcherMock onClose={() => setOpen(false)} /> : null}
+    </>
+  );
 }

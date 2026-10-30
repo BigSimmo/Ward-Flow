@@ -1,10 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { DemoMenuMock } from "./demo-menu";
 
-/** The Demo menu mock-up, drawn over its page. `page` is the page it opens over. */
+/** The Demo menu mock-up, drawn over its page and opened on load. `page` is the page it opens over. */
 export function PopDemo({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="Demo menu" />;
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      {page}
+      {open ? <DemoMenuMock onClose={() => setOpen(false)} /> : null}
+    </>
+  );
 }

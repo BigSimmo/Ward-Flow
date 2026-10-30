@@ -1,10 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { TourMock } from "./tour";
 
-/** The Tour mock-up, drawn over its page. `page` is the page it opens over. */
+/** The product tour mock-up, drawn over its page and opened on load. `page` is the page it opens over. */
 export function PopTour({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="Tour" />;
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      {page}
+      {open ? <TourMock onClose={() => setOpen(false)} /> : null}
+    </>
+  );
 }

@@ -2,9 +2,17 @@
 
 import type { ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { PhoneMenuMock } from "@/components/ward-redesign/pop-menu/menu-host";
 
-/** The Create mock-up, drawn over its page. `page` is the page it opens over. */
+/**
+ * The phone Create sheet mock-up (the dock's +), drawn over its page and opened on load. It shares
+ * the Menu mock-up's fork of the sheets (`pop-menu/menu-sheets.tsx`), where Create is drawn.
+ */
 export function PopCreate({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="Create" />;
+  return (
+    <>
+      {page}
+      <PhoneMenuMock initial="create" />
+    </>
+  );
 }

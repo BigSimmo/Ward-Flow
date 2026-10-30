@@ -1,0 +1,46 @@
+/* Mock-up changes to the tour card (the rest is the real ward-tour.module.css). */
+.close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border: 0;
+  border-radius: var(--wf-r-ctl, 8px);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.close:hover {
+  background: var(--wf-hover);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+}
+
+.progress {
+  display: grid;
+  gap: 4px;
+}
+
+/* Skip tour on the left; Back and Next together on the right. */
+.buttons {
+  justify-content: flex-end;
+}
+
+.skip {
+  margin-right: auto;
+}
+
+[data-device="phone"] .close {
+  width: 48px;
+  height: 48px;
+}

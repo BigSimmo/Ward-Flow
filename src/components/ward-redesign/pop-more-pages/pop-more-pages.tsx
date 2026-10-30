@@ -1,10 +1,16 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
-import { PopupPlaceholder } from "@/components/ward-redesign/parts/popup-placeholder";
+import { MorePagesSheetMock } from "./more-pages-sheet";
 
-/** The More pages mock-up, drawn over its page. `page` is the page it opens over. */
+/** The rail's More pages mock-up, drawn over its page and opened on load. `page` is the page it opens over. */
 export function PopMorePages({ page }: { page: ReactNode }) {
-  return <PopupPlaceholder page={page} label="More pages" />;
+  const [open, setOpen] = useState(true);
+  return (
+    <>
+      {page}
+      <MorePagesSheetMock open={open} onClose={() => setOpen(false)} />
+    </>
+  );
 }

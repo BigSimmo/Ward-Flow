@@ -1,0 +1,40 @@
+/* Mock-up additions to the phone Menu sheet (the rest is the real ward-phone-menu.module.css). */
+.moreRow {
+  font-weight: 600;
+}
+
+.moreCaret {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  transition: transform 160ms ease;
+}
+
+.moreCaret[data-open] {
+  transform: rotate(180deg);
+}
+
+.moreGroups {
+  display: contents;
+}
+
+.moreGroups[hidden] {
+  display: none;
+}
+
+.createHeading {
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .moreCaret {
+    transition: none;
+  }
+}
