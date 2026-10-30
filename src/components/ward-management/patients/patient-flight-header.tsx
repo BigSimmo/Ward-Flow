@@ -60,6 +60,9 @@ export function PatientFlightHeader({
   tabs: ReactNode;
   actions?: ReactNode;
 }) {
+  // Match the adjacent patient summary/panel: avoid compiler-generated render caches here.
+  // The explicit phone hook, identity formatting and supplied actions remain unchanged.
+  "use no memo";
   const idLine = (
     <span className={styles.v6IdLine}>
       {patient ? (
