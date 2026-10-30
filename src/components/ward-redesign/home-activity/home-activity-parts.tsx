@@ -27,12 +27,15 @@ export function PlacementPrompt({
           <p>Choose someone from the list to place them.</p>
           {next ? (
             <div className={styles.nextUp}>
-              <span className={styles.kicker}>Oldest alert to place</span>
-              <b>{next.subject.displayName}</b>
-              <span className={styles.muted}>
-                {next.item.title} · {next.subject.from}
+              {/* Final check: the words stack in one column so Open keeps its full name, not "Open …". */}
+              <span className={styles.nextText}>
+                <span className={styles.kicker}>Oldest alert to place</span>
+                <b>{next.subject.displayName}</b>
+                <span className={styles.muted}>
+                  {next.item.title} · {next.subject.from}
+                </span>
               </span>
-              <Button size="sm" variant="sec" onClick={() => onOpen(next)}>
+              <Button size="sm" variant="sec" className={styles.nextOpen} onClick={() => onOpen(next)}>
                 Open {next.subject.displayName}
               </Button>
             </div>

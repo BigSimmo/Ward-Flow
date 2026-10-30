@@ -18,3 +18,13 @@
   align-items: center;
   gap: 6px;
 }
+
+/* Final check (30 Oct 2026): Add CAD number keeps its whole name; the reason beside it wraps instead. */
+.cadFit [class*="_withReason"] {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+.cadFit [class*="_withReason"] > button {
+  flex: none;
+}

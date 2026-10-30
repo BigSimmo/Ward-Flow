@@ -58,3 +58,11 @@
 .railWrap.railWrap > div {
   grid-template-columns: max-content minmax(0, 1fr);
 }
+
+/* Final check (30 Oct 2026): on a phone the pre-filled banner keeps the same side inset as the step
+   card and checklist around it, instead of running edge to edge. */
+@media (max-width: 48rem) {
+  .fastTrackInset.fastTrackInset {
+    margin-inline: var(--wf-s-4);
+  }
+}

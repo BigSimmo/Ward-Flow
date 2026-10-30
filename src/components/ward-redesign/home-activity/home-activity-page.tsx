@@ -770,7 +770,7 @@ export function HomeActivityPage({ openOnLoad }: { openOnLoad?: string }) {
       />
       <div className={`${styles.shortlistColumn} ${shortlistStyles.shortlistColumn ?? ""}`}>
         <aside
-          className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""}`}
+          className={`${styles.shortlistRegion} ${shortlistStyles.shortlistRegion ?? ""} ${redesign.referralPlacement}`}
           aria-label={selectedReferral ? "Referral placement" : "Placement"}
           data-testid="ward-home-placement"
           // Journeys prove which movement the panel is for by this attribute.

@@ -658,7 +658,7 @@ export function WardHomeTab({
       </ul>
       {roundRows.length > ROUND_FIRST ? (
         <ShowMoreRow onClick={() => setRoundAll((all) => !all)} expanded={roundAll}>
-          {roundAll ? "Show fewer beds" : `Show more (${roundHidden} more ${roundHidden === 1 ? "bed" : "beds"})`}
+          {roundAll ? "Show fewer beds" : `Show ${roundHidden} more ${roundHidden === 1 ? "bed" : "beds"}`}
         </ShowMoreRow>
       ) : null}
     </>

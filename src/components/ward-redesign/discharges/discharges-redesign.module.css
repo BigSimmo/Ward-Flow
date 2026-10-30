@@ -129,6 +129,7 @@
     align-self: center;
     justify-self: end;
     width: auto;
+    border-bottom: 0; /* the row draws its own line; the cell's left a short stray one under Chase */
   }
   .list .rowAction.rowAction {
     min-height: 0;

@@ -465,7 +465,7 @@ export function DelaysBoardRedesign({
   const scope = useServiceScope();
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
   const referralsLine = (
-    <p className={styles.footNote} data-testid="delays-referrals-line">
+    <p className={`${styles.footNote} ${waitingKeys.referralsLine}`} data-testid="delays-referrals-line">
       {queuedReferrals === 0
         ? "No referrals awaiting a decision."
         : `${queuedReferrals} ${queuedReferrals === 1 ? "referral" : "referrals"} awaiting a decision, not yet on this list.`}{" "}
@@ -1270,7 +1270,7 @@ export function DelaysBoardRedesign({
                   hidden columns can be reached by keyboard, and its cut edge fades. */}
               <div
                 ref={sideScrollRef}
-                className={styles.tableWrap}
+                className={`${styles.tableWrap} ${waitingKeys.phoneTimes}`}
                 hidden={portrait}
                 data-more-before={sideScroll.before || undefined}
                 data-more-after={sideScroll.after || undefined}
