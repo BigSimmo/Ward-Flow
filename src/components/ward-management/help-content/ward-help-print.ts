@@ -22,7 +22,7 @@ export function printHelpGuides() {
       shortcuts: KEYBOARD_SHORTCUTS.filter((key) =>
         role.id === "tv"
           ? key.keys === "Esc"
-          : (role.id !== "executive" || key.keys !== "Shift+T") &&
+          : (key.keys !== "Shift+T" || ROLE_SCREENS[role.id].alerts) &&
             (key.keys !== "Shift+R" || ROLE_SCREENS[role.id]["referral-new"]),
       ).map((key) => `${key.keys}: ${key.action}`),
     };

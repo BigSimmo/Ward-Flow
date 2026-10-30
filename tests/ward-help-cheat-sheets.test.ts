@@ -37,9 +37,10 @@ describe("printable Help guides from the app's content", () => {
     for (const id of ["executive", "admin", "tv"])
       expect(sheets.find((sheet) => sheet.id === id)?.shortcuts.join()).not.toContain("Shift+R");
   });
-  it("omits executive task shortcuts without changing other desks or TV", () => {
-    expect(sheets.find((sheet) => sheet.id === "executive")?.shortcuts.join()).not.toContain("Shift+T");
-    for (const id of ["coordinator", "ward", "ed"])
+  it("omits task shortcuts for roles without Alerts while preserving permitted desks and TV", () => {
+    for (const id of ["executive", "admin"])
+      expect(sheets.find((sheet) => sheet.id === id)?.shortcuts.join()).not.toContain("Shift+T");
+    for (const id of ["coordinator", "ward", "ed", "community", "officer", "bed_manager"])
       expect(sheets.find((sheet) => sheet.id === id)?.shortcuts.join()).toContain("Shift+T");
     expect(sheets.find((sheet) => sheet.id === "tv")?.shortcuts).toEqual(["Esc: Close what is open, or step back."]);
   });
