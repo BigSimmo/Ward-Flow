@@ -50,7 +50,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's Stays and discharges board**, so the filters, the order, the length-of-stay bands, the bed record, the shift brief and Change ward all work as now.",
     "**New:** the same full-width hero as Ward home. It still carries everything the old card did: the ward name, site, locked split, Ready now and the band figures, the being-made-ready and constraint sentences, and the As at time.",
     "**New:** the ten day figures are one Also on this ward line, without the two the hero already shows. Worth a look and Your part in tomorrow's forecast sit in one notice. Bed cards are five to a row and names wrap.",
-    "**Kept, against the HTML mock-up:** the bed record column stays on screen with nothing chosen. Your ruling of 30 August made it permanent, so it is narrower here rather than hidden. Say if you want it to open only on a choice.",
+    "**The record column:** it stays on screen, as your ruling of 30 August keeps it, and now opens on the first bed that needs a look instead of sitting empty (point 16). Close leaves it empty for the rest of the visit.",
   ],
   "ed-board": [
     "**Built from a copy of today's ED board**, so the ED peer strip, the access-target card, the filter chips, Record exam, Log transport booking, the row menus, the patient record and On TV all work as now.",

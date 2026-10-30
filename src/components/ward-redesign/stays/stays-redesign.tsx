@@ -242,6 +242,7 @@ export function StaysRedesign({
    * person, and so nothing in this component ever has an ordinal to print.
    */
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [autoPicked, setAutoPicked] = useState(false);
   const isPhone = useIsPhone();
   const [dateEdit, setDateEdit] = useState<{
     admissionId: string;
@@ -611,6 +612,14 @@ export function StaysRedesign({
         return true;
     }
   };
+
+  // Redesign (point 16): the record column opens on the first bed that needs a look rather than
+  // sitting empty. Once only, so closing it is respected; never on a phone, where it is a sheet.
+  if (!autoPicked && !isPhone && selectedKey === null) {
+    const firstLook = tiles.find((tile) => tileMatchesFilter(tile, "look"));
+    setAutoPicked(true);
+    if (firstLook) setSelectedKey(firstLook.key);
+  }
 
   let lookCount = 0;
   let readyCount = 0;
