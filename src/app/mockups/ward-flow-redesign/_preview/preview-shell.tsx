@@ -23,12 +23,21 @@ const NOT_DRAWN = "That page is not drawn in this mock-up.";
  * (`appPath`), and sends any link or router call back into the mock-ups instead of out to the
  * running app. Nothing below the shell knows it is in a preview.
  */
-export function PreviewShell({ appPath, children }: { appPath: string; children: ReactNode }) {
+export function PreviewShell({
+  appPath,
+  rolePrefix,
+  children,
+}: {
+  appPath: string;
+  /** A role view's slug prefix (`as-ward-`), so its links stay in that role's views. */
+  rolePrefix?: string;
+  children: ReactNode;
+}) {
   const realRouter = useRouter();
   const toast = useOptionalToast();
   const router = useMemo<AppRouterInstance>(() => {
     const go = (href: string, replace: boolean) => {
-      const target = mockupHrefForAppPath(href);
+      const target = mockupHrefForAppPath(href, rolePrefix);
       if (target) {
         if (replace) realRouter.replace(target);
         else realRouter.push(target);
@@ -40,7 +49,7 @@ export function PreviewShell({ appPath, children }: { appPath: string; children:
       replace: (href) => go(href, true),
       prefetch: () => {},
     };
-  }, [realRouter, toast]);
+  }, [realRouter, toast, rolePrefix]);
 
   const keepLinksInMockups = (event: MouseEvent<HTMLDivElement>) => {
     const anchor = (event.target as Element).closest?.("a[href]");
@@ -49,7 +58,7 @@ export function PreviewShell({ appPath, children }: { appPath: string; children:
     if (!href.startsWith("/") || href.startsWith("/mockups/")) return;
     event.preventDefault();
     event.stopPropagation();
-    const target = mockupHrefForAppPath(href);
+    const target = mockupHrefForAppPath(href, rolePrefix);
     if (target) realRouter.push(target);
     else toast?.push({ tone: "info", title: NOT_DRAWN });
   };

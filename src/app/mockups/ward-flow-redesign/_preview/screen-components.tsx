@@ -40,6 +40,42 @@ import { StatisticsListPage } from "@/components/ward-redesign/statistics-list/s
 import { StatisticsUnitPage } from "@/components/ward-redesign/statistics-unit/statistics-unit-page";
 import { StatisticsWeeklyPage } from "@/components/ward-redesign/statistics-weekly/statistics-weekly-page";
 import { AgendaRedesign } from "@/components/ward-redesign/agenda/agenda-redesign";
+import { AsWardHomePage } from "@/components/ward-redesign/as-ward-home/as-ward-home-page";
+import { AsWardStaysPage } from "@/components/ward-redesign/as-ward-stays/as-ward-stays-page";
+import { AsWardDischargesPage } from "@/components/ward-redesign/as-ward-discharges/as-ward-discharges-page";
+import { AsWardReferralsPage } from "@/components/ward-redesign/as-ward-referrals/as-ward-referrals-page";
+import { AsWardWaitingPage } from "@/components/ward-redesign/as-ward-waiting/as-ward-waiting-page";
+import { AsWardLegalFormsPage } from "@/components/ward-redesign/as-ward-legal-forms/as-ward-legal-forms-page";
+import { AsWardHandoverPage } from "@/components/ward-redesign/as-ward-handover/as-ward-handover-page";
+import { AsWardStatisticsPage } from "@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page";
+import { AsWardSeclusionPage } from "@/components/ward-redesign/as-ward-seclusion/as-ward-seclusion-page";
+import { AsWardAlertsPage } from "@/components/ward-redesign/as-ward-alerts/as-ward-alerts-page";
+import { AsWardSettingsPage } from "@/components/ward-redesign/as-ward-settings/as-ward-settings-page";
+import { AsEdHomePage } from "@/components/ward-redesign/as-ed-home/as-ed-home-page";
+import { AsEdReferralsPage } from "@/components/ward-redesign/as-ed-referrals/as-ed-referrals-page";
+import { AsEdWaitingPage } from "@/components/ward-redesign/as-ed-waiting/as-ed-waiting-page";
+import { AsEdLegalFormsPage } from "@/components/ward-redesign/as-ed-legal-forms/as-ed-legal-forms-page";
+import { AsEdHandoverPage } from "@/components/ward-redesign/as-ed-handover/as-ed-handover-page";
+import { AsEdStatisticsPage } from "@/components/ward-redesign/as-ed-statistics/as-ed-statistics-page";
+import { AsCommunityHomePage } from "@/components/ward-redesign/as-community-home/as-community-home-page";
+import { AsCommunityReferralsPage } from "@/components/ward-redesign/as-community-referrals/as-community-referrals-page";
+import { AsCommunityMovementsPage } from "@/components/ward-redesign/as-community-movements/as-community-movements-page";
+import { AsCommunityPatientPage } from "@/components/ward-redesign/as-community-patient/as-community-patient-page";
+import { AsCommunityStatisticsPage } from "@/components/ward-redesign/as-community-statistics/as-community-statistics-page";
+import { AsOfficerHomePage } from "@/components/ward-redesign/as-officer-home/as-officer-home-page";
+import { AsOfficerAlertsPage } from "@/components/ward-redesign/as-officer-alerts/as-officer-alerts-page";
+import { AsBedManagerHomePage } from "@/components/ward-redesign/as-bed-manager-home/as-bed-manager-home-page";
+import { AsBedManagerWardsPage } from "@/components/ward-redesign/as-bed-manager-wards/as-bed-manager-wards-page";
+import { AsBedManagerPlacesPage } from "@/components/ward-redesign/as-bed-manager-places/as-bed-manager-places-page";
+import { AsBedManagerWardPage } from "@/components/ward-redesign/as-bed-manager-ward/as-bed-manager-ward-page";
+import { AsBedManagerDischargesPage } from "@/components/ward-redesign/as-bed-manager-discharges/as-bed-manager-discharges-page";
+import { AsBedManagerReferralsPage } from "@/components/ward-redesign/as-bed-manager-referrals/as-bed-manager-referrals-page";
+import { AsBedManagerStatisticsPage } from "@/components/ward-redesign/as-bed-manager-statistics/as-bed-manager-statistics-page";
+import { AsBedManagerSeclusionPage } from "@/components/ward-redesign/as-bed-manager-seclusion/as-bed-manager-seclusion-page";
+import { AsExecutiveHomePage } from "@/components/ward-redesign/as-executive-home/as-executive-home-page";
+import { AsExecutiveCapacityPage } from "@/components/ward-redesign/as-executive-capacity/as-executive-capacity-page";
+import { AsAdminHomePage } from "@/components/ward-redesign/as-admin-home/as-admin-home-page";
+import { AsAdminGovernancePage } from "@/components/ward-redesign/as-admin-governance/as-admin-governance-page";
 
 import type { BuiltPageSlug } from "./built-pages";
 
@@ -85,4 +121,40 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "statistics-unit": StatisticsUnitPage,
   "statistics-weekly": StatisticsWeeklyPage,
   agenda: AgendaRedesign,
+  "as-ward-home": AsWardHomePage,
+  "as-ward-stays": AsWardStaysPage,
+  "as-ward-discharges": AsWardDischargesPage,
+  "as-ward-referrals": AsWardReferralsPage,
+  "as-ward-waiting": AsWardWaitingPage,
+  "as-ward-legal-forms": AsWardLegalFormsPage,
+  "as-ward-handover": AsWardHandoverPage,
+  "as-ward-statistics": AsWardStatisticsPage,
+  "as-ward-seclusion": AsWardSeclusionPage,
+  "as-ward-alerts": AsWardAlertsPage,
+  "as-ward-settings": AsWardSettingsPage,
+  "as-ed-home": AsEdHomePage,
+  "as-ed-referrals": AsEdReferralsPage,
+  "as-ed-waiting": AsEdWaitingPage,
+  "as-ed-legal-forms": AsEdLegalFormsPage,
+  "as-ed-handover": AsEdHandoverPage,
+  "as-ed-statistics": AsEdStatisticsPage,
+  "as-community-home": AsCommunityHomePage,
+  "as-community-referrals": AsCommunityReferralsPage,
+  "as-community-movements": AsCommunityMovementsPage,
+  "as-community-patient": AsCommunityPatientPage,
+  "as-community-statistics": AsCommunityStatisticsPage,
+  "as-officer-home": AsOfficerHomePage,
+  "as-officer-alerts": AsOfficerAlertsPage,
+  "as-bed-manager-home": AsBedManagerHomePage,
+  "as-bed-manager-wards": AsBedManagerWardsPage,
+  "as-bed-manager-places": AsBedManagerPlacesPage,
+  "as-bed-manager-ward": AsBedManagerWardPage,
+  "as-bed-manager-discharges": AsBedManagerDischargesPage,
+  "as-bed-manager-referrals": AsBedManagerReferralsPage,
+  "as-bed-manager-statistics": AsBedManagerStatisticsPage,
+  "as-bed-manager-seclusion": AsBedManagerSeclusionPage,
+  "as-executive-home": AsExecutiveHomePage,
+  "as-executive-capacity": AsExecutiveCapacityPage,
+  "as-admin-home": AsAdminHomePage,
+  "as-admin-governance": AsAdminGovernancePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

@@ -3,6 +3,8 @@
  * the address it will have once built. The shell reads that address to mark its menu and title,
  * and links in the shell are mapped back to the matching mock-up through it.
  */
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
+
 export type MockupScreen = {
   slug: string;
   label: string;
@@ -16,6 +18,8 @@ export type MockupScreen = {
   shellPath?: string;
   /** Pages that draw without the app's rail and header (the TV, sign in, print packs). */
   bare?: boolean;
+  /** The desk the page is drawn as, for another role's view. Left out, it is the statewide coordinator. */
+  role?: WardAccess;
 };
 
 export type MockupPopup = {
@@ -29,6 +33,17 @@ export type MockupPopup = {
 };
 
 export const MOCKUP_BASE = "/mockups/ward-flow-redesign";
+
+/** The desk each role's views are drawn as: the same ward, ED and team the coordinator's mock-ups show. */
+const ROLE_DESKS = {
+  ward: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
+  ed: { role: "ed", scope: { kind: "ed", edId: "peel-ed" } },
+  community: { role: "community", scope: { kind: "team", teamName: "Midland" } },
+  officer: { role: "officer", scope: { kind: "jobs" } },
+  "bed-manager": { role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } },
+  executive: { role: "executive", scope: { kind: "statewide" } },
+  admin: { role: "admin", scope: { kind: "statewide" } },
+} satisfies Record<string, WardAccess>;
 
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
@@ -111,6 +126,258 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
   },
   { slug: "statistics-weekly", label: "Weekly", group: "Statistics pages", appPath: "/ward-flow/statistics/weekly" },
+  {
+    slug: "as-ward-home",
+    label: "My ward",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/ward/rph-adult-secure",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-stays",
+    label: "Stays and discharges",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/board/rph-adult-secure",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-discharges",
+    label: "Discharges",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/discharges",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-referrals",
+    label: "Referrals",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/referrals",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-waiting",
+    label: "Waiting",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/waiting",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-legal-forms",
+    label: "Legal forms",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/legal-forms",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-handover",
+    label: "Handover",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/handover",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-statistics",
+    label: "Statistics",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/statistics",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-seclusion",
+    label: "Seclusion",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/seclusion",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-alerts",
+    label: "Alerts",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/alerts",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ward-settings",
+    label: "Settings",
+    group: "As nurse in charge",
+    appPath: "/ward-flow/settings",
+    role: ROLE_DESKS["ward"],
+  },
+  {
+    slug: "as-ed-home",
+    label: "ED board",
+    group: "As ED clinician",
+    appPath: "/ward-flow/ed/peel-ed",
+    role: ROLE_DESKS["ed"],
+  },
+  {
+    slug: "as-ed-referrals",
+    label: "Referrals",
+    group: "As ED clinician",
+    appPath: "/ward-flow/referrals",
+    role: ROLE_DESKS["ed"],
+  },
+  {
+    slug: "as-ed-waiting",
+    label: "Waiting",
+    group: "As ED clinician",
+    appPath: "/ward-flow/waiting",
+    role: ROLE_DESKS["ed"],
+  },
+  {
+    slug: "as-ed-legal-forms",
+    label: "Legal forms",
+    group: "As ED clinician",
+    appPath: "/ward-flow/legal-forms",
+    role: ROLE_DESKS["ed"],
+  },
+  {
+    slug: "as-ed-handover",
+    label: "Handover",
+    group: "As ED clinician",
+    appPath: "/ward-flow/handover",
+    role: ROLE_DESKS["ed"],
+  },
+  {
+    slug: "as-ed-statistics",
+    label: "Statistics",
+    group: "As ED clinician",
+    appPath: "/ward-flow/statistics",
+    role: ROLE_DESKS["ed"],
+  },
+  {
+    slug: "as-community-home",
+    label: "Community team",
+    group: "As community clinician",
+    appPath: "/ward-flow/community/midland",
+    role: ROLE_DESKS["community"],
+  },
+  {
+    slug: "as-community-referrals",
+    label: "Referrals",
+    group: "As community clinician",
+    appPath: "/ward-flow/referrals",
+    role: ROLE_DESKS["community"],
+  },
+  {
+    slug: "as-community-movements",
+    label: "Movements",
+    group: "As community clinician",
+    appPath: "/ward-flow/movements",
+    role: ROLE_DESKS["community"],
+  },
+  {
+    slug: "as-community-patient",
+    label: "Patient record",
+    group: "As community clinician",
+    appPath: "/ward-flow/people/196zcp24w5t0",
+    role: ROLE_DESKS["community"],
+  },
+  {
+    slug: "as-community-statistics",
+    label: "Statistics",
+    group: "As community clinician",
+    appPath: "/ward-flow/statistics",
+    role: ROLE_DESKS["community"],
+  },
+  {
+    slug: "as-officer-home",
+    label: "Transport desk",
+    group: "As transport officer",
+    appPath: "/ward-flow/transport/officer",
+    role: ROLE_DESKS["officer"],
+  },
+  {
+    slug: "as-officer-alerts",
+    label: "Alerts",
+    group: "As transport officer",
+    appPath: "/ward-flow/alerts",
+    role: ROLE_DESKS["officer"],
+  },
+  {
+    slug: "as-bed-manager-home",
+    label: "Capacity",
+    group: "As site bed manager",
+    appPath: "/ward-flow/capacity",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-wards",
+    label: "All wards",
+    group: "As site bed manager",
+    appPath: "/ward-flow/wards",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-places",
+    label: "Places",
+    group: "As site bed manager",
+    appPath: "/ward-flow/hub",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-ward",
+    label: "My ward",
+    group: "As site bed manager",
+    appPath: "/ward-flow/ward/rph-adult-secure",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-discharges",
+    label: "Discharges",
+    group: "As site bed manager",
+    appPath: "/ward-flow/discharges",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-referrals",
+    label: "Referrals",
+    group: "As site bed manager",
+    appPath: "/ward-flow/referrals",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-statistics",
+    label: "Statistics",
+    group: "As site bed manager",
+    appPath: "/ward-flow/statistics",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-bed-manager-seclusion",
+    label: "Seclusion",
+    group: "As site bed manager",
+    appPath: "/ward-flow/seclusion",
+    role: ROLE_DESKS["bed-manager"],
+  },
+  {
+    slug: "as-executive-home",
+    label: "Statistics",
+    group: "As executive",
+    appPath: "/ward-flow/statistics",
+    role: ROLE_DESKS["executive"],
+  },
+  {
+    slug: "as-executive-capacity",
+    label: "Capacity",
+    group: "As executive",
+    appPath: "/ward-flow/capacity",
+    role: ROLE_DESKS["executive"],
+  },
+  {
+    slug: "as-admin-home",
+    label: "Settings",
+    group: "As access admin",
+    appPath: "/ward-flow/settings",
+    role: ROLE_DESKS["admin"],
+  },
+  {
+    slug: "as-admin-governance",
+    label: "Governance",
+    group: "As access admin",
+    appPath: "/ward-flow/governance",
+    role: ROLE_DESKS["admin"],
+  },
 ];
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
@@ -171,9 +438,14 @@ export function screenBySlug(slug: string): MockupScreen | undefined {
 }
 
 /** The mock-up that stands for an app address, or null when none is drawn. */
-export function mockupHrefForAppPath(href: string): string | null {
+export function mockupHrefForAppPath(href: string, rolePrefix?: string): string | null {
   const path = href.split(/[?#]/)[0]?.replace(/\/$/, "") || "/";
-  const exact = MOCKUP_SCREENS.find((screen) => screen.appPath === path);
+  // A role's view keeps its links inside that role's views where one is drawn.
+  const asRole = rolePrefix
+    ? MOCKUP_SCREENS.find((screen) => screen.slug.startsWith(rolePrefix) && screen.appPath === path)
+    : undefined;
+  if (asRole) return `${MOCKUP_BASE}/${asRole.slug}`;
+  const exact = MOCKUP_SCREENS.find((screen) => screen.appPath === path && !screen.role);
   if (exact) return `${MOCKUP_BASE}/${exact.slug}`;
   const prefixed = PREFIX_SCREENS.find(([prefix]) => path.startsWith(prefix));
   return prefixed ? `${MOCKUP_BASE}/${prefixed[1]}` : null;

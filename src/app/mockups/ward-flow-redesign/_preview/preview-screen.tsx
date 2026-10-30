@@ -1,8 +1,21 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useLayoutEffect, useSyncExternalStore } from "react";
 
 import { applyThemeToDocument } from "@/lib/theme-client";
+import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
+import {
+  readWardAccessSnapshot,
+  sameDesk,
+  setWardAccess,
+  useWardAccessSnapshot,
+} from "@/components/ward-management/shell/ward-access-store";
+import {
+  setWardFeatureFlagOnDevice,
+  useWardFeatureFlag,
+} from "@/components/ward-management/shell/ward-feature-flag-store";
+import { TOUR_AUTO_DONE_STORAGE_KEY } from "@/components/ward-management/help/ward-tour-auto-start";
+import { STATEWIDE_COORDINATOR, type WardAccess } from "@/components/ward-management/ward-role-access";
 
 import { screenBySlug } from "./screens";
 import { PreviewShell } from "./preview-shell";
@@ -40,14 +53,53 @@ export function PreviewScreen({ slug, pop, theme }: { slug: string; pop: string 
     return () => observer.disconnect();
   }, [theme, inBrowser]);
   const screen = screenBySlug(slug);
+  const deskReady = usePreviewDesk(screen?.role);
   const Page = MOCKUP_PAGES[slug];
-  if (!inBrowser || !screen) return null;
+  if (!inBrowser || !screen || !deskReady) return null;
   const drawnPage = Page ? <Page openOnLoad={pop ?? undefined} /> : <NotDrawnYet label={screen.label} />;
   // A popup or state the preview draws itself (shell overlays, page popups, states): it is handed
   // the page and draws inside the shell, so it reads the same world and chrome as the page.
   const Popup = pop ? MOCKUP_POPUP_COMPONENTS[pop] : undefined;
   const page = Popup ? <Popup page={drawnPage} /> : drawnPage;
-  return screen.bare ? page : <PreviewShell appPath={screen.shellPath ?? screen.appPath}>{page}</PreviewShell>;
+  const rolePrefix = screen.role ? slug.split("-").slice(0, -1).join("-") + "-" : undefined;
+  return screen.bare ? (
+    page
+  ) : (
+    <PreviewShell appPath={screen.shellPath ?? screen.appPath} rolePrefix={rolePrefix}>
+      {page}
+    </PreviewShell>
+  );
+}
+
+/**
+ * Preview only: draws a role's view as that desk, the way the Demo menu's "See it as" does (the
+ * role-access safeguard on, the desk taken, the rail's persona matched). Every other mock-up puts the
+ * statewide coordinator back. Nothing is shared; the desk lives in this browser only.
+ */
+const TOUR_ROLES = "coordinator,bed_manager,ward,ed,community,officer,executive,admin";
+
+function usePreviewDesk(role: WardAccess | undefined): boolean {
+  const desk = role ?? STATEWIDE_COORDINATOR;
+  const { access } = useWardAccessSnapshot();
+  const roleAccessOn = useWardFeatureFlag("role-access");
+  useLayoutEffect(() => {
+    // The tour offers itself on each desk's first visit; a mock-up is judged without it on top.
+    try {
+      localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, TOUR_ROLES);
+    } catch {
+      // Blocked storage: the tour then never offers itself anyway.
+    }
+    if (role) setWardFeatureFlagOnDevice("role-access", true);
+    if (!sameDesk(readWardAccessSnapshot().access, desk)) setWardAccess(desk);
+    if (!role) setWardFeatureFlagOnDevice("role-access", null);
+    const persona =
+      desk.role === "admin" || desk.role === "executive" || desk.role === "bed_manager" ? "coordinator" : desk.role;
+    dispatchPersonaSyncForRole(
+      persona,
+      desk.scope.kind === "ward" ? desk.scope.unitIds[0] : desk.scope.kind === "ed" ? desk.scope.edId : undefined,
+    );
+  }, [role, desk]);
+  return sameDesk(access, desk) && (!role || roleAccessOn);
 }
 
 function NotDrawnYet({ label }: { label: string }) {
