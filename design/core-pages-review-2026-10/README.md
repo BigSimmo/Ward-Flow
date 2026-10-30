@@ -1,6 +1,6 @@
 # Ward Flow design review, October 2026
 
-_Updated 2026-10-30 - the mock-ups are now React pages built from the app's own components: 38 pages, 31 popups and 6 states; Design owns._
+_Updated 2026-10-30 - React mock-ups built from the app's own components: 38 pages, 31 popups, 6 states and 36 views as other roles; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed.** Under the
 [D-74 standing rule](../../docs/ward-flow/decisions.md#d-74-owner-answers-to-the-21-october-open-questions-21-october-2026),
@@ -16,8 +16,7 @@ overlays, and real wiring, so buttons work as they do in the app.
 
 Each redesigned page or popup is a copy ("fork") of today's component in `src/components/ward-redesign/`,
 with the design changes applied. Comparing the copy with the original shows exactly what would change, so an
-approved design can be built by applying that difference to the real file. A few pages draw the real screen
-with a scoped stylesheet instead. The viewer shows each one at desktop, laptop, tablet and phone widths, in
+approved design can be built by applying that difference to the real file. Role differences are commented branches on the desk's role inside the same copy. The viewer shows each one at desktop, laptop, tablet and phone widths, in
 light or dark, with the review notes and build notes beside it.
 
 The shareable copy is built by `node scripts/ward-flow/build-redesign-preview.mjs` into
@@ -35,6 +34,7 @@ The shareable copy is built by `node scripts/ward-flow/build-redesign-preview.mj
 | Shell popups            | Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu, Create, ward switcher, shift brief, Go to a desk, service picker, More pages, tour                                                                                      |
 | Page popups             | Bed meeting sheet, Try a scenario, Capacity ward panel, Movement drawer, phone bed forecast, Bed record, Confirm beds, Broadcast, Ward notices, Refer to a ward, ED actions, Log transport, officer job panel, Record a form, Record exam, Add the time |
 | States                  | Loading, Empty, Error, Offline, Toast, Not wired                                                                                                                                                                                                        |
+| As other roles          | 36 views as the nurse in charge, ED clinician, community clinician, transport officer, site bed manager, executive and access admin                                                                                                                     |
 
 Addresses that only forward to another page (for example `/ward-flow/command` and `/ward-flow/queue`) are
 not drawn. The movement record opens the same screen as the patient record, so one mock-up covers both.

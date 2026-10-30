@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-30 - 38 pages, 31 popups and 6 states built and checked; final pass done; waiting on Josh's review; Design owns._
+_Updated 2026-10-30 - 38 pages, 31 popups, 6 states and 36 role views built and checked; waiting on Josh's review; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -21,7 +21,7 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown i
 5. Everything in "Remaining plan" is done. Next is Josh's page-by-page review: apply his answers to the
    build notes' "Still open" points, then refresh the private preview (below).
 
-Josh's standing go-ahead: push to this branch only, no pull request, no change to the real `/ward-flow`
+Josh's standing go-ahead: push to this branch only (draft PR #1118, not to be merged or marked ready), no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
 
 ## What Josh asked for
@@ -48,8 +48,8 @@ screens (D-74), and apply every recommendation without waiting for answers.
 - **Files over 1,500 lines:** the repository caps files at 1,500 lines. Until now big screens were either
   split into two fork files (Legal forms, Statistics helpers) or drawn as the real screen with a scoped
   redesign stylesheet (My ward, Patients, On-call). **Josh said on 30 October that raising the limit is
-  fine.** Before using that, record it as an owner decision (`docs/agents/native-startup/recording-decisions.md`:
-  a `docs/decisions/` entry, with the reason in the change), then add the preview fork's path to
+  fine.** Before using that, record it as an owner decision (`docs/agents/native-startup/recording-decisions.md`;
+  recorded as D-89 in `docs/ward-flow/decisions.md`), then add the preview fork's path to
   `eslint-rules/max-lines-baseline.mjs` rather than trimming comments. The ratchet test
   (`tests/max-lines-baseline.test.ts`) must still pass.
 - **Registering a page:** add the slug to `_preview/built-pages.ts`, the component to
@@ -65,46 +65,46 @@ screens (D-74), and apply every recommendation without waiting for answers.
 
 ## Done so far
 
-| Page                 | How                   | Main changes                                                                        |
-| -------------------- | --------------------- | ----------------------------------------------------------------------------------- |
-| Capacity             | New, real derivations | Full-width forecast with 7-day chart, By ward switch, bed map cards, side column    |
-| Home                 | Fork                  | Beds that fit table, Checking chip, oldest alert to place (keeps Josh's v7 rule)    |
-| Movements            | Fork                  | Stage pipeline, Tier 1 in the side column, full names                               |
-| Waiting              | Fork                  | Daily check line, wait bands, site codes                                            |
-| All EDs              | Fork                  | One-line title, cards only for EDs with someone waiting                             |
-| Referrals            | Fork                  | Rows wrap, Offered to wards table, written history folded                           |
-| New referral         | Fork of the slide-out | Calmer Catchment card                                                               |
-| Handover             | Fork                  | One-line since summary, sticky sign-off bar, Due by Show more                       |
-| My ward              | Real screen + styles  | Full names on tiles, 3 actions plus More, busiest Ward flow list                    |
-| Stays and discharges | Fork                  | Ward home hero, one figures line, one notice, five cards a row                      |
-| ED board             | Fork                  | One table, Lists folded, form number only, links in the footer                      |
-| Transport            | Fork                  | Surname first, jobs line beside the title, "from → to" routes, missing forms marked |
-| Patients             | Real screen + styles  | Cells wrap, chips wrap                                                              |
-| Discharges           | Fork                  | "59 to work now of 207 open", person first, one action a row, blocker counts beside |
-| All wards            | Fork                  | Status, Cohort and Order as menus, key and count on one line, card text wraps       |
-| Statistics           | Fork (split helpers)  | View switch with Open a unit, occupancy first, chart's first 7 rows                 |
-| Alerts               | Fork of 4 files       | Checks as one chip, Owner menu, same-kind groups, one Release plus Hand back        |
-| Legal forms          | Fork split in two     | Times only as typed (point 18), 1A name shortened, Show more, header buttons        |
-| Out of area          | Fork                  | Surname first, quieter hero and checks, region beds open on choice                  |
-| On-call              | Real screen + styles  | Compact two-line service strip that scrolls on smaller screens                      |
-| Seclusion            | Fork                  | Table of every secure ward's room, header counts, ward record beside it             |
-| Governance           | Fork + styles         | Pane opens on the newest event, cells wrap, list full height                        |
-| Bed meeting TV       | Fork                  | One-line tiles, surname first, three tables (laptop); 1080p shows every panel       |
-| Meeting agenda       | Fork                  | Header counts, four lists two by two, surname first, small + Action                 |
-| Downtime pack        | Fork                  | One table at a time on screen with tabs; print keeps all four                       |
-| Chronology           | Fork                  | Header patient search, demo night's patients, what a chronology holds               |
-| Places               | Fork                  | A directory with no bed figures (point 21), search first, opens on a place          |
-| Community            | Fork                  | Live team count, full-width suburb lookup, page-scrolling A to Z                    |
-| Community team       | Fork (3 files)        | One caseload table, surname first, row opens the record                             |
-| Patient record       | Fork (2 files)        | Recorded-events timeline, surname first                                             |
-| Statistics compare   | Fork (3 files)        | Open a unit from the tab row, first 8 rows, occupancy first                         |
-| Statistics ward list | Fork                  | Chips on one row, first services and wards then Show more                           |
-| Statistics one ward  | Fork (3 files)        | Compact shaded bed map, roster first 8 rows (the admissions table)                  |
-| Statistics weekly    | Fork (2 files)        | Pilot measures in one table, Counted outside Ward Flow panel                        |
-| Add a patient        | Fork                  | Duplicate check inside Identity, live Needed list, surname first                    |
-| Ward answer          | Fork (D-89 cap)       | One-line All answered, census squares coloured by state with a key                  |
-| Settings             | Fork (3 files)        | Sticky save bar, compact steppers, Display and profile tab (real data)              |
-| Sign in              | Fork                  | Open as <role> button, no boxed role numbers                                        |
+| Page                 | How                   | Main changes                                                                          |
+| -------------------- | --------------------- | ------------------------------------------------------------------------------------- |
+| Capacity             | New, real derivations | Full-width forecast with 7-day chart, By ward switch, bed map cards, side column      |
+| Home                 | Fork                  | Beds that fit table, Checking chip, oldest alert to place (keeps Josh's v7 rule)      |
+| Movements            | Fork                  | Stage pipeline, Tier 1 in the side column, full names                                 |
+| Waiting              | Fork                  | Daily check line, wait bands, site codes                                              |
+| All EDs              | Fork                  | One-line title, cards only for EDs with someone waiting                               |
+| Referrals            | Fork                  | Rows wrap, Offered to wards table, written history folded                             |
+| New referral         | Fork of the slide-out | Calmer Catchment card                                                                 |
+| Handover             | Fork                  | One-line since summary, sticky sign-off bar, Due by Show more                         |
+| My ward              | Real screen + styles  | Full names on tiles, 3 actions plus More, busiest Ward flow list                      |
+| Stays and discharges | Fork                  | Ward home hero, one figures line, one notice, five cards a row                        |
+| ED board             | Fork                  | One table, Lists folded, form number only, links in the footer                        |
+| Transport            | Fork                  | Surname first, jobs line beside the title, "from → to" routes, missing forms marked   |
+| Patients             | Real screen + styles  | Cells wrap, chips wrap                                                                |
+| Discharges           | Fork                  | "59 to work now of 207 open", person first, one action a row, blocker counts beside   |
+| All wards            | Fork                  | Status, Cohort and Order as menus, key and count on one line, card text wraps         |
+| Statistics           | Fork (split helpers)  | View switch with Open a unit, occupancy first, chart's first 7 rows                   |
+| Alerts               | Fork of 4 files       | Checks as one chip, Owner menu, same-kind groups, one Release plus Hand back          |
+| Legal forms          | Fork split in two     | Times as typed, no countdown (point 18); the due-soon colour and counts remain (open) |
+| Out of area          | Fork                  | Surname first, quieter hero and checks, region beds open on choice                    |
+| On-call              | Real screen + styles  | Compact two-line service strip that scrolls on smaller screens                        |
+| Seclusion            | Fork                  | Table of every secure ward's room, header counts, ward record beside it               |
+| Governance           | Fork + styles         | Pane opens on the newest event, cells wrap, list full height                          |
+| Bed meeting TV       | Fork                  | One-line tiles, surname first, three tables (laptop); 1080p shows every panel         |
+| Meeting agenda       | Fork                  | Header counts, four lists two by two, surname first, small + Action                   |
+| Downtime pack        | Fork                  | One table at a time on screen with tabs; print keeps all four                         |
+| Chronology           | Fork                  | Header patient search, demo night's patients, what a chronology holds                 |
+| Places               | Fork                  | A directory with no bed figures (point 21), search first, opens on a place            |
+| Community            | Fork                  | Live team count, full-width suburb lookup, page-scrolling A to Z                      |
+| Community team       | Fork (3 files)        | One caseload table, surname first, row opens the record                               |
+| Patient record       | Fork (2 files)        | Recorded-events timeline, surname first                                               |
+| Statistics compare   | Fork (3 files)        | Open a unit from the tab row, first 8 rows, occupancy first                           |
+| Statistics ward list | Fork                  | Chips on one row, first services and wards then Show more                             |
+| Statistics one ward  | Fork (3 files)        | Compact shaded bed map, roster first 8 rows (the admissions table)                    |
+| Statistics weekly    | Fork (2 files)        | Pilot measures in one table, Counted outside Ward Flow panel                          |
+| Add a patient        | Fork                  | Duplicate check inside Identity, live Needed list, surname first                      |
+| Ward answer          | Fork (D-89 cap)       | One-line All answered, census squares coloured by state with a key                    |
+| Settings             | Fork (3 files)        | Sticky save bar, compact steppers, Display and profile tab (real data)                |
+| Sign in              | Fork                  | Open as <role> button, no boxed role numbers                                          |
 
 Popups: all 31 are built (the five page popups above plus 26 built on 30 October), and the six states.
 The preview draws a popup or state from `_preview/popup-components.tsx` (keyed by its `pop` name), handed
@@ -186,6 +186,28 @@ Josh asked for multiple agents in parallel. The pattern that worked for the last
 4. **Watch-outs:** the shared dev server ran out of memory once with five helpers (restart with
    `npm run ensure`); a helper's half-saved file briefly breaks every mock-up page, so retry before
    diagnosing; the push guard lints the working tree, so a push can fail once while helpers are mid-edit.
+
+## Role views (30 October, second session)
+
+Josh asked for perfected screens for the other sign-in roles. A mock-up entry in `screens.ts` may name a
+desk (`role`); the preview takes that desk first, as the Demo menu's See it as does, and mounts
+`WardAccessScope` as the app's layout does, so the rail, app bar and data are the role's. Every other
+mock-up returns to the statewide coordinator. 36 views, under the groups "As nurse in charge"
+(Dabakarn), "As ED clinician" (Peel ED), "As community clinician" (Midland), "As transport officer",
+"As site bed manager" (Royal Perth), "As executive" and "As access admin", each in
+`src/components/ward-redesign/as-<role>-<page>/`.
+
+**How they are built:** a copy of the coordinator's redesign (or of today's file) with every role
+difference as a commented branch on the desk's role (`ROLE BRANCH (ward)` and the like), so it can be
+merged into the one real component that serves every role. No override stylesheets. My ward, Patients
+and On-call were converted the same way (they used to restyle the real screen from outside).
+
+**Lessons:** the preview first drew role views on statewide data (fixed by mounting `WardAccessScope`);
+`fork.py` rewrites code imports only, so a copied stylesheet's relative `composes` broke every page once;
+loading all 74 pages in one bundle made every save rebuild everything (each page now loads on its own);
+the first-visit tour, What's new and page hints are marked read in the preview; two dev servers do not fit
+in this container's memory (each grows to 6 to 7 GB); the shareable copy had dropped every scoped
+override selector (fixed in the bundle script).
 
 ## Josh's 30 October feedback
 
@@ -276,9 +298,7 @@ grouped alerts (needs a new command, so it stays unbuilt).
 - Surname first still needed in shared code the mock-ups cannot reach: the downtime pack rows
   (`use-take-downtime-pack.ts`), the community team record drawer, Add a patient's save toasts, and the
   chronology CSV's patient line.
-- The docs facts check fails on this branch: the route count is 57 with the two mock-up routes, while
-  `docs/ward-flow/STATUS.md` and the code-map pages say 55. `npm run docs:facts:write` in the final pass
-  fixes it (those files need a claim update first).
+- The docs facts check failed on this branch (route count 55 against 57); fixed on 30 October.
 - Today's bed meeting TV does not fit a 1080p screen: the Brief is cut off at the foot (hidden overflow).
   The redesign shows every panel; only the footer line sits below.
 - `?theme=dark` was not applying on any mock-up page (the rail re-applied the stored theme after mount);

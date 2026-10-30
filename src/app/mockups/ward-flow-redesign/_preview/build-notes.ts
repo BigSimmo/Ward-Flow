@@ -6,6 +6,171 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
+  "as-ward-home": [
+    "**As the nurse in charge**, My ward opens on Dabakarn's beds, the Ward flow list and This shift, with Confirm numbers in the header.",
+    "**New:** Handover stays a visible button beside More, because handing over is this desk's own job (a commented role branch in the one My ward copy).",
+    "**Still open:** bed 12 reads 'Name not recorded' on this desk but 'Marrowby, Ines' for the coordinator; the access scope withholds her record from Dabakarn. Is that intended?",
+  ],
+  "as-ward-stays": [
+    "**As the nurse in charge**, Stays is Dabakarn's own. Change ward is gone: a ward desk cannot open other wards, so it listed nothing it could use.",
+    "**Kept:** Before handover with They have left and Record a blocker.",
+    "**Still open:** the phone shows all 20 bed tiles with no Show more (the coordinator's copy).",
+  ],
+  "as-ward-discharges": [
+    "**As the nurse in charge**, the header reads 'Bed release · Dabakarn' instead of 'all services'.",
+    "**Removed:** the Service and Ward filters (one choice each), the ward name under every person, and the second 'Blocked by barrier' panel that repeated the first.",
+  ],
+  "as-ward-seclusion": [
+    "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
+    "**New:** the header counts this ward (seclusion in use, restraint in use, incidents in the last day).",
+    "**Kept:** the operational-only safeguard wording, word for word.",
+  ],
+  "as-ward-handover": [
+    "**As the nurse in charge**, the sheet is titled for Dabakarn, with no scope picker.",
+    "**New:** empty groups fold into one line, so the table opens on real rows; the footer says '1 bed ready on Dabakarn' instead of the statewide finding-a-ward bar.",
+    "**Removed:** the Finding a ward chip (the coordinator's job).",
+  ],
+  "as-ward-referrals": [
+    "**As the nurse in charge**, Referrals opens on 'Nothing for Dabakarn to answer' (or 'N for Dabakarn to answer'): only this ward's own incoming lines.",
+    "**Removed:** destination pills and Refused once (every line is to this ward, and a ward never learns another ward's refusal, FD-23), Next overdue, the Bed meeting list, the waiting runway and the statewide Beds ready figure.",
+    "**New:** an empty queue shows one line plus a link to the people already coming and going.",
+  ],
+  "as-ward-waiting": [
+    "**As the nurse in charge**, the eyebrow reads 'Waiting · coming to Dabakarn', and 'Waiting on you' becomes 'Waiting on the coordinator', because on this board 'you' meant the coordinator.",
+    "**New:** the side column opens on the first person, and a short list opens every wait band in full.",
+    "**Removed:** whose-move tiles, saved views, the graphs, the registers and Longest quiet (the coordinator's chase list); and from the person panel, other wards' eligibility (FD-23) and Escalate.",
+    "**Kept:** legal times as typed.",
+  ],
+  "as-ward-legal-forms": [
+    "**As the nurse in charge**, the title reads '2 forms on moves to Dabakarn'. Times show only as typed; 'Not legally checked' is kept word for word.",
+    "**New:** an 'Admitted on a form' group carries the app's own sentence on who records the next form.",
+    "**Removed:** the greyed Record a form (its reason now lives in that group) and the Next to end card, which repeated the table's first row.",
+  ],
+  "as-ward-alerts": [
+    "**As the nurse in charge**, the title reads 'No alert for Dabakarn', and a quiet ward's side panel lists the checks instead of 'Pick an alert'.",
+    "**Removed:** Broadcast alert (a ward never broadcasts, so it is left out rather than greyed), the owner lens and the Today chart while the ward is quiet.",
+  ],
+  "as-ward-settings": [
+    "**As the nurse in charge**, Settings opens on Display and profile, not on rules the desk cannot change. Rules read 'Read only' and the save bar is gone.",
+    "**Removed:** profile rows the header already shows, and Service in view (a one-ward desk picks no service).",
+    "**Still open:** read-only rule steppers draw as near-empty boxes (the coordinator's copy).",
+  ],
+  "as-ward-statistics": [
+    "**As the nurse in charge**, Statistics opens Dabakarn's own ward page as counts, where the real menu sends a ward desk (D-80), not the network page.",
+    "**Removed:** the Admission roster card that only said people are not listed.",
+    "**Still open:** the bed map, Beds now and the hero all show bed states; merge them?",
+  ],
+  "as-ed-home": [
+    "**As the ED clinician**, the page opens on Peel ED's own board. The strip of other EDs is gone: with scoped data each tile only said 'Not shown at this desk'.",
+    "**New:** on the phone the board comes first, then the access-target card.",
+    "**Still open:** the hero's Raise referral and the app bar's New referral open the same sheet. Keep only one on this desk?",
+  ],
+  "as-ed-referrals": [
+    "**As the ED clinician**, Referrals opens on 'Raised from Peel ED' (9 open), because the coordinator's queue was empty for this desk. Rows show tier, surname first, time since referral and where it stands; after 8 rows, Show more.",
+    "**Removed:** the Bed meeting list, 'statewide' and the median decision time; the highlight pills and runway show only while an ED review waits on this desk.",
+  ],
+  "as-ed-waiting": [
+    "**As the ED clinician**, 'you' in the shared wording means the coordinator, so it now says 'Coordinator' and 'Waiting on the coordinator'.",
+    "**Removed:** the ED code on every row, 'ED' in the search box, the Catchment switch and the whose-move grid: with one ED they said nothing new.",
+    "**Kept:** Escalate greyed with the app's own reason; legal times as typed.",
+  ],
+  "as-ed-legal-forms": [
+    "**As the ED clinician**, the page already lists only Peel ED's people on forms, with times as typed and 'Not legally checked' word for word. Nothing needed changing for this role.",
+  ],
+  "as-ed-handover": [
+    "**As the ED clinician**, the sheet says 'Peel ED' instead of 'All records you can access'.",
+    "**Removed:** the Beds tab, the beds-ready meter and the ward admitted and discharged counts: an ED holds no ward, so they were always 0.",
+    "**Still open:** the greyed sign-off notice appears three times on desktop. Drop the sign-off section for this desk?",
+  ],
+  "as-ed-statistics": [
+    "**As the ED clinician**, Statistics is Peel ED's own page, as the real menu opens it (D-80), not the network hub.",
+    "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
+    "**Removed:** three panels that only said people are not listed; that sentence is said once.",
+  ],
+  "as-community-home": [
+    "**As the community clinician**, the page opens on the team's own In a bed list: the people it follows into hospital.",
+    "**Removed:** Change team (this desk opens its own team only), the Caseload figure the title already gives, and an all-zero Excluded box.",
+    "**Still open:** the app bar's place chip says 'Statewide' (shared chrome); the phone In a bed list has 9 rows and no Show more.",
+  ],
+  "as-community-referrals": [
+    "**As the community clinician**, the board is read only, and with nothing waiting it opens on History with the latest decided referral, not an empty queue.",
+    "**Removed:** the runway, statewide Beds ready, bed-type highlights and the all-zero decisions chart; 'Open the team's Waiting list' replaces the Bed meeting list.",
+  ],
+  "as-community-movements": [
+    "**As the community clinician**, Midland has no journey in the demo data, so the page shows one panel saying what puts a journey there and that the team books its transport from it (D-76), with Refer from team.",
+    "**Still open:** the view with journeys is unchecked by eye, because the data has none for Midland.",
+  ],
+  "as-community-patient": [
+    "**As the community clinician**, the record shows Emberfall, Cassia, who is on Midland's caseload (the coordinator's example is Peel's).",
+    "**Removed:** the Record a change card, which held only greyed buttons; Why admitted takes its place.",
+    "**Still open:** the hero chips, the On ward card and Legal now repeat the same day count, date and legal status (the coordinator's copy).",
+  ],
+  "as-community-statistics": [
+    "**As the community clinician**, Statistics opens Midland's own team page as counts, where the real menu sends this desk.",
+    "**New:** one 'Coming back to the team' card with only the new counts replaces two cards that repeated the hero.",
+  ],
+  "as-officer-home": [
+    "**As the transport officer**, the phone opens on the next job (Open, then the one filled En route), then the job list; a long list shows its first 8 jobs, then Show all.",
+    "**Moved:** Copy handover goes under the list on the phone, as an end-of-shift step.",
+    "**Removed:** the Providers row while there is one provider (it repeated the jobs line).",
+  ],
+  "as-officer-alerts": [
+    "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
+    "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
+  ],
+  "as-bed-manager-home": [
+    "**As the site bed manager**, Capacity opens on Royal Perth Hospital: 2 ready of 34, with the site's own mismatch, forecast and bed map. Before, the site's waiting list was set against all 304 network beds.",
+    "**New:** an Other sites card, bed counts only, and 'Confirm beds on <ward>' in place of the coordinator's Ask the ward.",
+    "**Still open:** the rail's 'Capacity 26' and a first-visit hint still use the network's figure and wording (shared chrome).",
+  ],
+  "as-bed-manager-wards": [
+    "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
+    "**Removed from other sites' cards:** Enter, Stays and discharges and ask NUM, which this desk cannot use.",
+  ],
+  "as-bed-manager-places": [
+    "**As the site bed manager**, Places opens on '2 wards at your site', Dabakarn in the preview.",
+    "**Changed:** a place this desk cannot open shows Open greyed with the app's own sentence; Ask to confirm becomes Confirm beds on the site's wards.",
+    "**Still open:** RPH ED is not listed as one of the site's places, because this role cannot open ED pages. Should it?",
+  ],
+  "as-bed-manager-ward": [
+    "**As the site bed manager**, the real gating already works: Confirm numbers is offered, Raise referral is greyed, answering and placing are blocked.",
+    "**New:** no Start the round, drug count, seclusion check or sign-off reminders, and Morning bed numbers with Confirm first in This shift (role branches in the one My ward copy).",
+  ],
+  "as-bed-manager-discharges": [
+    "**As the site bed manager**, Discharges opens on Royal Perth's own releases ('Bed release · Royal Perth Hospital').",
+    "**Removed:** the Service filter and the service name after each ward (one site, one service).",
+    "**Still open:** 'Blocked by barrier' appears twice and the Barriers view is a third copy (the coordinator's copy). Keep the one beside the list.",
+  ],
+  "as-bed-manager-referrals": [
+    "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
+    "**Removed:** the destination chips and statewide Beds ready (placing is the coordinator's job).",
+  ],
+  "as-bed-manager-statistics": [
+    "**As the site bed manager**, Statistics leads with Royal Perth's wards and its own ED; the hero figures are the site's.",
+    "**Removed:** sections and links this desk cannot open, other EDs' false zeros, and the network placement figures.",
+    "**Still open:** the shared counts hook treats this desk as full detail although its grant is counts; the copy applies counts only.",
+  ],
+  "as-bed-manager-seclusion": [
+    "**As the site bed manager**, the page is headed for Royal Perth ('1 secure ward of 2 at the site').",
+    "**Kept:** Mark available or out of service (this desk may), and the operational-only safeguard note.",
+  ],
+  "as-executive-home": [
+    "**As the executive**, one line under the hero explains the small-number rule once, instead of unexplained 'not shown' values in every card.",
+    "**Removed:** hero chips that only said 'not shown'; withheld charts become plain label and value lists.",
+    "**Kept:** beds, occupancy and the ward and ED tables, exact as released.",
+  ],
+  "as-executive-capacity": [
+    "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
+    "**Replaced:** Planned admissions listed people with legal status under 'Name not shown'; it is now one card of counts.",
+  ],
+  "as-admin-home": [
+    "**As the access admin**, Settings opens on Access as the first tab; Rules and Alerts (no use to this desk) are removed.",
+    "**Still open:** the rail labels this desk 'EXECUTIVE' and has no Governance entry (shared chrome).",
+  ],
+  "as-admin-governance": [
+    "**As the access admin**, Governance opens on Review, with only Review and Audit trail; bed operations, registers, reports and the patient chronology are removed (no clinical content).",
+    "**New:** an empty Review links to the record openings in Settings, Access log.",
+  ],
   "pop-ed-actions": [
     "**Built from a copy of today's row actions menu**: the items, labels, conditions and short reasons are the menu's own, and each item presses the board's real control.",
     "**New:** only the actions you can take now, in three groups (Review and disposition, Transfer and handover, Legal and referral). The row's next step is the one filled button.",
@@ -325,6 +490,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone:** unchanged; it already keeps Sign off at the foot.",
   ],
   ward: [
+    "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet, so a diff against today's files shows the change. Names are surname first, the Form 4A time shows as typed, and the phone round list shows 8 beds then Show more.",
     "**Today's My ward screen, with a redesign stylesheet on top.** Its main file and the bed tiles are each over the repository's 1,500-line limit, so they cannot be copied whole. Every bed, the filters, Place or move, This shift and Confirm numbers work exactly as now.",
     "**Applied here:** bed tiles show the whole name on up to two lines; the desktop toolbar shows On TV, Raise referral and Referral form, with Notices, Shift brief and Handover in More; Ward flow opens on its busiest list instead of an empty one.",
     "**To change in the real files once approved (not drawn here):** the heading states the ward's position (\"1 bed ready, 16 occupied\") with the facts line moved into the eyebrow; Ward flow's busiest-list default set where the list choice lives.",
@@ -348,6 +514,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** routes read from first, then the ward ("PEEL → Maali (Ward 4.2)"), missing forms are marked under the count, and the Next column is wide enough that "Arrived at ward" is never cut off.',
   ],
   patients: [
+    "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
     "**Today's Patients page, with a redesign stylesheet on top.** The review kept almost all of it, so the search with date of birth, the stage chips, highlights, the groups with Show all, and This shift all work as now.",
     '**New:** table cells wrap instead of ending in "…" ("Sent to 1 place", "RPH Community"), and the highlight chips wrap instead of running off the edge.',
     "**Tablet:** today's tablet table already drops the Heading to column and reads well, so it is unchanged.",
@@ -420,6 +587,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Demo night:** nothing is recorded yet, so every room starts as Not recorded. Marking a room or recording a start updates the table and header at once.",
   ],
   "on-call": [
+    "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
     "**Today's On-call page, with a redesign stylesheet on top.** The review found it the right shape, so cover at Now, 22:00 and later, My list, Copy who is on, the downtime card, the directory and the detail pane (status, both numbers, email and escalation order, with Copy buttons) all work as now.",
     '**New:** the seven service lines are a compact two-line strip (line and number). "Until 20:00" shows on the chosen line and in its detail, rather than repeated on every card. On a laptop or phone the strip scrolls sideways instead of squeezing.',
     "**Not done here:** the filters still take two rows at 1440 px; one row needs the filter labels shortened in the real file.",

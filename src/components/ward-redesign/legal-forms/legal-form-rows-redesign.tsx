@@ -158,8 +158,8 @@ export function FormRow({
           </>
         ) : hasDue ? (
           <>
-            {/* Redesign (point 18, D5, D-70): the typed time only, said to be typed. No countdown,
-                band or bar is worked out from it. */}
+            {/* Redesign (point 18, D5, D-70): the typed time only, said to be typed, with no countdown
+                or bar. The glyph keeps today's due-soon colour from the typed time (open for Josh). */}
             <span className={styles.leftLine}>
               <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
               <strong className={styles.leftValue}>
