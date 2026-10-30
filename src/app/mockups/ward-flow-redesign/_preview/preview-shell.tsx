@@ -11,6 +11,7 @@ import { WardRail } from "@/components/ward-management/shell/ward-rail-lazy";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
+import shellFix from "./preview-shell.module.css";
 import { mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";
@@ -57,7 +58,7 @@ export function PreviewShell({ appPath, children }: { appPath: string; children:
     <AppRouterContext.Provider value={router}>
       <NavigationPromisesContext.Provider value={null}>
         <PathnameContext.Provider value={appPath}>
-          <div className={layoutStyles.shellRow} onClickCapture={keepLinksInMockups}>
+          <div className={`${layoutStyles.shellRow} ${shellFix.row}`} onClickCapture={keepLinksInMockups}>
             <WardRail />
             <div className={layoutStyles.shellContent} data-wf-scroller="">
               <WardBarMount />

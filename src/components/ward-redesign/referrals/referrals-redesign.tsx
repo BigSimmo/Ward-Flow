@@ -848,7 +848,7 @@ function ReferralBoardRedesign({
                 />
               }
               foot={
-                <div className={a.heroBand}>
+                <div className={cx(a.heroBand, redesign.heroBand)}>
                   <WaitRunway
                     queued={queued}
                     now={now}

@@ -31,7 +31,7 @@ import { openReferralSheet } from "@/components/ward-management/shell/ward-drawe
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "@/components/ward-management/ed/ed-screen-actions";
 import { EdBoardSection } from "@/components/ward-management/ed/ed-screen-board";
-import { EdAccessRiskCard } from "@/components/ward-management/forecast/forecast-lazy";
+import { EdAccessRiskCard } from "./ed-access-risk-redesign";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { deriveEdScreen } from "@/components/ward-management/ed/ed-screen-derivations";
 import { EdListsSection } from "@/components/ward-management/ed/ed-screen-lists";

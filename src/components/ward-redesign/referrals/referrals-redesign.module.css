@@ -141,3 +141,16 @@
     display: none;
   }
 }
+
+/* Laptop and tablet: the waiting chart takes the band's full width, with beds ready below it.
+   Side by side it shrank to a sliver and its 24h and 72h labels printed over each other. */
+@media (max-width: 85rem) {
+  .heroBand.heroBand {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .heroBand.heroBand > :last-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+}

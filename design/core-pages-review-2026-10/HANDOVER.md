@@ -55,7 +55,7 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`. No pull
 | My ward              | Real screen + styles  | Full names on tiles, 3 actions plus More, busiest Ward flow list                    |
 | Stays and discharges | Fork                  | Ward home hero, one figures line, one notice, five cards a row                      |
 | ED board             | Fork                  | One table, Lists folded, form number only, links in the footer                      |
-| Transport            | Fork (not committed)  | Surname first, jobs line beside the title, "from → to" routes, missing forms marked |
+| Transport            | Fork                  | Surname first, jobs line beside the title, "from → to" routes, missing forms marked |
 
 Popups working so far: bed meeting sheet, try a scenario, Capacity ward panel, phone bed forecast, and the
 real movement drawer.
@@ -109,29 +109,43 @@ opening it on the first bed that needs a look instead of leaving it empty.
 5. **Broken styling:** a visual pass of every built page at every width, light and dark, fixing what looks
    wrong, before the remaining pages.
 
+### Done on 30 October
+
+- Referrals: Filter queue removed; phone chips wrap; the waiting chart takes the full band width below
+  1360 px, so its 24h and 72h labels no longer print over each other.
+- New referral button (preview shell override, `_preview/preview-shell.module.css`): even padding (it had
+  14 px left, 5 px right) and a 16 px gap from the screen edge. Needs moving into `ward-bar.module.css`.
+- Tablet pass on every built page: Capacity hero figures apart from its chips and Planned admissions'
+  Book button; Home's checks chip and footer; Waiting's tablet list in three wait bands; Handover keeps one
+  Sign off (the sticky bar) and its phone chips wrap; Stays and the ED access-risk card name people surname
+  first; the ED board's On TV sits with the other hero actions.
+- Still open from the pass: the horizontally scrolling ED strip on Home and the ED board cuts its last card
+  at the screen edge by design (it scrolls). Consider a fade at the edge so it reads as scrollable.
+
 ## Remaining plan, in order
 
-1. Commit Transport (fix the "3 missing" label wrapping first).
-2. Josh's 30 October feedback (above) on the pages already built, then point 11's check on those pages.
-3. Stays: open the record column on the first bed that needs a look.
-4. Work and reports: Patients, Discharges (point 20), All wards (point 21), Statistics.
-5. Reference: Alerts (points 15 and 17), Legal forms (keep "Not legally checked", D-77; point 18), Out of
+1. Done: Transport, Josh's 30 October feedback and the tablet pass (above). Phone pass on the built pages
+   is partly done (Capacity, Home, Handover, Referrals); finish Movements, Waiting, All EDs, ED board,
+   My ward, Stays and Transport.
+2. Stays: open the record column on the first bed that needs a look.
+3. Work and reports: Patients, Discharges (point 20), All wards (point 21), Statistics.
+4. Reference: Alerts (points 15 and 17), Legal forms (keep "Not legally checked", D-77; point 18), Out of
    area, On-call, Seclusion (full width, every secure ward), Governance (opens on the first item).
-6. Bed meeting: TV (bare page), Agenda (full width, one Add action), Downtime pack, Chronology (opens on the
+5. Bed meeting: TV (bare page), Agenda (full width, one Add action), Downtime pack, Chronology (opens on the
    first patient).
-7. Places and records: Places (point 21), Community, Community team (one caseload table), Patient record,
+6. Places and records: Places (point 21), Community, Community team (one caseload table), Patient record,
    Add a patient, Ward answer, Settings (Profile tab), Sign in (bare page).
-8. Statistics: Compare, Ward list, One ward (admissions table), Weekly.
-9. Popups: Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu, Create, Bed
+7. Statistics: Compare, Ward list, One ward (admissions table), Weekly.
+8. Popups: Alerts drawer, Activity, Tools, Search, Help, Shortcuts, Demo menu, phone Menu, Create, Bed
    record, Confirm beds, ED actions, Log transport, Broadcast, Record a form, Ward notices, officer job
    panel, ward switcher, shift brief, Record exam, Refer to a ward, Go to a desk, Add the time, service
    picker, More pages, tour.
-10. States (point 9), as one "States" group in the viewer.
-11. Final pass: text-size check (`npm run check:ward-text-size`), lint, typecheck, `npm run check:mockups`,
+9. States (point 9), as one "States" group in the viewer.
+10. Final pass: text-size check (`npm run check:ward-text-size`), lint, typecheck, `npm run check:mockups`,
     `npm run docs:update`, `npm run ward:organise:check`; update `README.md` here to describe the React
     mock-ups; build the shareable bundle; publish it to the existing artifact
     (https://claude.ai/artifact/GaVWBYM1Gkh8GdUtJvJapE, read it first); push.
-12. Report to Josh: each recommendation and what he needs to approve, page by page.
+11. Report to Josh: each recommendation and what he needs to approve, page by page.
 
 ## Things found while building (for the real app)
 

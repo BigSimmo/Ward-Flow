@@ -117,6 +117,7 @@ import { HandoverOpenPromises } from "@/components/ward-management/handover/hand
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "@/components/ward-management/handover/handover-print-sheet";
 import { HandoverPhone } from "@/components/ward-management/handover/handover-phone";
 import styles from "@/components/ward-management/handover/handover-refined.module.css";
+import phoneChips from "./handover-redesign.module.css";
 import { ShowMoreRow, SignOffBar, SinceLine, signOffWaitReason } from "./handover-redesign-parts";
 
 const DUE_FIRST = 4; // Due by rows shown before Show more.
@@ -857,7 +858,7 @@ export function HandoverRedesign() {
 
   if (isPhoneWidth) {
     return (
-      <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6">
+      <main id="main-content" data-testid="ward-handover-page" data-ward-design="v6" className={phoneChips.page}>
         <HandoverPhone
           shift={shift}
           onShift={setShift}
@@ -995,7 +996,7 @@ export function HandoverRedesign() {
           />
           {/* With the rail beside the table its Sign off is the one; below 1201px the rail is a
               drawer and this opens it. */}
-          {signOffInRail ? null : signOffButton}
+          {signOffInRail || tab === "pts" ? null : signOffButton}
         </>
       }
       bar={

@@ -870,14 +870,15 @@ export function DelaysBoardRedesign({
         selected: selectedId === row.movement.id,
       };
     };
+    // Redesign: the same three wait bands as the desktop table, each one foldable.
     return flat
-      ? [
-          {
-            id: "flat",
-            title: "Longest wait first",
-            rows: [...shown].sort(byWait).map(portraitRow),
-          },
-        ]
+      ? WAIT_BANDS.map((band) => ({
+          id: band.id,
+          title: band.title,
+          tone: band.tone,
+          note: band.note,
+          rows: shown.filter(band.test).sort(byWait).map(portraitRow),
+        })).filter((group) => group.rows.length > 0)
       : groups.map((group) => {
           const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
           return {

@@ -51,3 +51,9 @@
 .listsFold[open] > summary {
   border-bottom: 1px solid var(--wf-line);
 }
+
+/* On TV sits with the other hero actions: the empty "since you looked" slot held 240px open
+   between them and left On TV alone mid-band. */
+.board [class*="since-last-look-pill_slot"][data-empty="true"] {
+  display: none;
+}
