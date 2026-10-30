@@ -115,8 +115,19 @@
     grid-column: 1 / -1;
     color: var(--wf-ink-2);
   }
-  .offerLink {
+  /* The whole row is the tap target, so the name needs no tall box of its own. */
+  .offersTable tr {
+    position: relative;
+    row-gap: 2px;
     min-height: 48px;
+  }
+  .offerLink {
+    min-height: 0;
+  }
+  .offerLink::after {
+    content: "";
+    position: absolute;
+    inset: 0;
   }
   .historyToggle {
     min-height: 48px;

@@ -57,3 +57,18 @@
 .board [class*="since-last-look-pill_slot"][data-empty="true"] {
   display: none;
 }
+
+/* Phone: Raise referral and Add patient share one row, half each, instead of one full-width button
+   with a small one under it. */
+@media (max-width: 48rem) {
+  .board [class*="phone_heroActions__"] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--wf-s-2);
+  }
+  .board [class*="phone_heroActions__"] > * {
+    width: auto;
+    min-height: 48px;
+    justify-content: center;
+  }
+}

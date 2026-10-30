@@ -867,7 +867,7 @@ export function MovementsRedesign({ openOnLoad }: { openOnLoad?: string }) {
       data-ward-design="third-edition"
       data-ward-rebuilt-screen="movements"
     >
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" className={`${styles.main} ${redesign.page}`}>
         {/* v6 Movements (7 Oct 2026): the hero band carries the page's figures; the h1 stays for
             assistive technology and the tests that pin it. */}
         <h1 className="sr-only">Movements</h1>
