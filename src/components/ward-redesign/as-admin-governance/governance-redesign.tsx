@@ -222,7 +222,9 @@ function GovernanceSession({
   const patientOf: typeof resolvePatient = (subject) => {
     const id = subject && "id" in subject && !("movementId" in subject) ? subject.id : undefined;
     const stay = id ? flow?.admissions.find((admission) => admission.id === id) : undefined;
-    return resolvePatient(stay ?? subject);
+    const info = resolvePatient(stay ?? subject);
+    // Redesign (D-83): every row, pane and phone line names the person surname first.
+    return { ...info, displayName: info.formalName };
   };
   const [category, setCategory] = useState<"all" | AuditCategory | "record-views">("all");
   const [outcome, setOutcome] = useState<"all" | AuditEvent["outcome"]>("all");
