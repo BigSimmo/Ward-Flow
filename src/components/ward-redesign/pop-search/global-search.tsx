@@ -68,14 +68,7 @@ import { WardSearchCommands } from "@/components/ward-management/ward-global-sea
 import { askWardHelp, looksLikeHelpQuestion } from "@/components/ward-management/help/ward-help-events";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 
-export {
-  needsYouMeta,
-  patientResultTitle,
-  smartSearchGroups,
-  type SearchResultGroup,
-  type SearchResultItem,
-} from "@/components/ward-management/ward-global-search-groups";
-export { SearchResultIcon } from "@/components/ward-management/ward-global-search-icon";
+export { type SearchResultItem } from "@/components/ward-management/ward-global-search-groups";
 
 /**
  * WARD FLOW'S GLOBAL SEARCH — one control, mounted once in the header of every ward route.
@@ -196,7 +189,7 @@ export type WardGlobalSearchProps = {
 const allowSearchChoice = () => true;
 
 /** Navigation permission never changes the catalogue or supplies a record entitlement. */
-export function permittedSearchResult(
+function permittedSearchResult(
   item: SearchResultItem,
   canOpenHref: (href: string) => boolean,
   canRunAction: NonNullable<WardGlobalSearchProps["canRunAction"]> = allowSearchChoice,
@@ -330,7 +323,7 @@ function rememberRecent(item: SearchResultItem, lifetime: string | null) {
 }
 
 /** Test seam: recents are module memory, so a suite that asserts the start screen clears them first. */
-export function clearGlobalSearchRecents() {
+function clearGlobalSearchRecents() {
   setSessionRecents(NO_RECENTS);
 }
 
@@ -367,8 +360,6 @@ function headerBox(root: HTMLElement | null): { top: number; height: number } {
   const rect = bar.getBoundingClientRect();
   return { top: Math.max(0, Math.round(rect.top)), height: Math.max(0, Math.round(rect.height)) };
 }
-
-export { WardPublicSearch } from "@/components/ward-management/ward-public-search";
 
 export function GlobalSearch({
   movements,

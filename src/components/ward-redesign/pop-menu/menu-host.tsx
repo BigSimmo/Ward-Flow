@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useMemo, useRef, useState, type RefObject } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Bell, ListChecks, Plus } from "lucide-react";
 
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
@@ -108,17 +108,6 @@ const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonl
 /** Counted pages that are work waiting on someone. Capacity counts free beds, so it is not here. */
 /** Pages whose count joins Needs you, only while it is urgent (overdue). */
 const OVERDUE_NEED_IDS = ["delays", "discharges"] as const;
-
-export type WardPhoneMenuProps = {
-  /** The bar's Menu button, where focus returns when the menu closes. */
-  returnFocusRef: RefObject<HTMLButtonElement | null>;
-  tasksCount: number;
-  activityUnread: number;
-  /** Opens one of the bar's own drawers once the menu has closed. */
-  /** `opener` is the dock button that opened the drawer, where its close returns focus (DR-08). */
-  onOpenDrawer: (id: "tasks" | "activity" | "tools", opener?: HTMLElement) => void;
-  onNewReferral: () => void;
-};
 
 export type CountMap = ReturnType<typeof useWardNavCounts>["counts"];
 export type DrawerId = "tasks" | "activity" | "tools";

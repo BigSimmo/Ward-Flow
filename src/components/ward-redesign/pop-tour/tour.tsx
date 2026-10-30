@@ -64,7 +64,7 @@ function shown(element: HTMLElement): boolean {
 }
 
 /** The step's control on screen now, or null. See `TourTarget`. */
-export function findTourTarget(target: TourTarget): HTMLElement | null {
+function findTourTarget(target: TourTarget): HTMLElement | null {
   const match = Array.from(document.querySelectorAll<HTMLElement>(target.sel)).find(
     (element) => shown(element) && (!target.text || (element.textContent ?? "").includes(target.text)),
   );

@@ -91,7 +91,7 @@ type BuzzEntry = {
  * one card with how many times it came, newest first, so a run of repeats is answered once. Nothing
  * is merged in the record: each buzz keeps its own key and is acknowledged on its own.
  */
-export function groupRepeatedBuzzes(entries: readonly BuzzEntry[]): BuzzEntry[][] {
+function groupRepeatedBuzzes(entries: readonly BuzzEntry[]): BuzzEntry[][] {
   const groups = new Map<string, BuzzEntry[]>();
   for (const entry of entries) {
     const key = [entry.buzz.byRole, entry.buzz.message ?? "", entry.buzz.urgent === true].join("\u0000");

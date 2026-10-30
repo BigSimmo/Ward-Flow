@@ -34,7 +34,7 @@ import { originName } from "@/components/ward-management/ward-movement-origin";
  * from the records the palette already holds. Nothing is scored, ranked or computed as a deadline:
  * a wait is the time since the movement's own `openedAt`.
  */
-export type GlobalSearchPreviewItem = {
+type GlobalSearchPreviewItem = {
   kind: string;
   id: string;
   title: string;

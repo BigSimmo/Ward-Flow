@@ -107,7 +107,7 @@ const SERVICE_SWATCH: Record<string, string> = {
 };
 
 /** How long the page a desk switch leaves may say the desk is opening (`markDeskSwitch`). */
-export const DESK_SWITCH_WAIT_MS = 15_000;
+const DESK_SWITCH_WAIT_MS = 15_000;
 let deskSwitchTimer: number | undefined;
 
 /** The page left behind says the desk is opening until the new home arrives or the wait ends. */

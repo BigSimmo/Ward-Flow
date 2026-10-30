@@ -123,7 +123,7 @@ const DEFAULT_PART_NAMES: Record<TransportBookingPart, string> = {
   failure: "book-transport-failure",
 };
 
-export function transportBookingTestId(ids: TransportBookingTestIds, part: TransportBookingPart, option?: string) {
+function transportBookingTestId(ids: TransportBookingTestIds, part: TransportBookingPart, option?: string) {
   const name = ids.names?.[part] ?? DEFAULT_PART_NAMES[part];
   return [ids.prefix, name, option, ids.suffix].filter(Boolean).join("-");
 }
@@ -181,7 +181,7 @@ function clockText(instant: Instant): string {
 }
 
 /** A preset's time and day. "Today" or "tomorrow" is read from the same day count the field uses. */
-export function etaPresetAnswers(
+function etaPresetAnswers(
   now: Instant,
   offset: number,
 ): Pick<TransportBookingAnswers, "estimatedTime" | "estimatedDay"> {
@@ -196,7 +196,7 @@ type LegalNowRecord = Pick<Movement, "legalStatus" | "legalForm"> & Partial<Pick
  * The complete booking, or `undefined` while any answer is missing or refused. The one rule every
  * screen submits through, so no screen can dispatch a booking the form says is not ready.
  */
-export function transportBookingSubmission(
+function transportBookingSubmission(
   answers: TransportBookingAnswers,
   legalReason: TransportExceptionReason | "",
   record: LegalNowRecord | undefined,
