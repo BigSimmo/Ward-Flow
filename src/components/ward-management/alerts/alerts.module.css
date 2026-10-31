@@ -303,51 +303,8 @@ button.check[aria-pressed="true"] {
   background: var(--wf-line);
 }
 
-/* One line: the owner chips scroll inside their row rather than wrap the toolbar. */
-.chipRow {
-  position: relative;
-  display: flex;
-  flex: 0 1 auto;
-  align-items: center;
-  gap: var(--wf-s-1);
-  min-width: 0;
-  overflow-x: auto;
-  padding-block: var(--wf-s-1);
-  scrollbar-width: thin;
-  scroll-padding-inline: var(--wf-s-1);
-}
-
-.chipRow > * {
-  flex: none;
-}
-
-/* Device sweep R3-18/L12/A12 (24 Oct 2026): the owner chips run off the right edge ("FSH Adult S")
-   with no sign there are more. The right edge is drawn while there is more to the right, the same
-   scroll-driven edge as the shared ward table: a border, never a fade. */
-@keyframes chipsMoreRight {
-  from,
-  97% {
-    border-right-color: var(--wf-ink-3);
-  }
-  to {
-    border-right-color: transparent;
-  }
-}
-
-@supports (animation-timeline: scroll()) {
-  .chipRow {
-    border-right: 2px solid transparent;
-    animation: chipsMoreRight linear both;
-    animation-timeline: scroll(self inline);
-  }
-}
-
 .toolbar > * {
   flex-shrink: 0;
-}
-
-.toolbar > .chipRow {
-  flex-shrink: 1;
 }
 
 .tabBody {
@@ -439,7 +396,8 @@ button.check[aria-pressed="true"] {
 }
 
 .row[data-act][data-selected] {
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+  /* No side edges (Josh, 31 Oct 2026): selected is the selected tint with a neutral border. */
+  box-shadow: inset 0 0 0 1px var(--wf-line-ctl);
 
   background: var(--wf-selected);
 }
@@ -457,10 +415,10 @@ button.check[aria-pressed="true"] {
   white-space: nowrap;
 }
 
-/* The selected row carries a marker on its leading edge (a table row marker, not a card stripe). */
+/* The selected row: the selected tint with a neutral border, no side edge (Josh, 31 Oct 2026). */
 .row[data-selected] {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+  box-shadow: inset 0 0 0 1px var(--wf-line-ctl);
 }
 
 .row[data-snoozed] .cell,
@@ -1577,31 +1535,6 @@ button.check[aria-pressed="true"] {
 .phoneCardMeta b {
   color: var(--wf-ink-1);
   font-weight: 700;
-}
-
-.phoneChips {
-  display: flex;
-  gap: var(--wf-s-2);
-  margin: 0 calc(-1 * var(--wf-s-3)) var(--wf-s-3);
-  padding: 2px var(--wf-s-3);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.phoneChips::-webkit-scrollbar {
-  display: none;
-}
-
-.phoneChips > * {
-  flex: none;
-  gap: 6px;
-  border-radius: var(--wf-r-ctl);
-}
-
-.phoneChips b {
-  margin-right: 6px;
-  font-weight: 600;
-  font-size: var(--wf-fs-13);
 }
 
 /* One inset card: group bands, then rows. */

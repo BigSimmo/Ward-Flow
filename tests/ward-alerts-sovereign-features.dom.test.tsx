@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 const NOW = NOW_ANCHOR;
 
@@ -53,8 +54,13 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     fireEvent.click(clear);
     expect(container.querySelectorAll("li[data-highlighted]")).toHaveLength(0);
 
-    const owners = screen.getByRole("group", { name: "Highlight by owner" });
-    fireEvent.click(within(owners).getByRole("button", { name: /ED team/ }));
+    // Alerts redesign (31 Oct 2026): the owner highlight is one menu, not a row of chips.
+    const owners = screen.getByRole("combobox", { name: "Highlight by owner" });
+    const edTeam = within(owners).getByRole("option", { name: /ED team/ }) as HTMLOptionElement;
+    fireEvent.change(owners, { target: { value: edTeam.value } });
+    // Runs of one kind are group rows (point 17); open them to read each alert's own row.
+    openAlertKindGroups(container);
+    expect(container.querySelectorAll("li[data-highlighted]").length).toBeGreaterThan(0);
     for (const row of container.querySelectorAll("li[data-highlighted]")) {
       expect(row).toHaveTextContent("ED mental health team");
     }

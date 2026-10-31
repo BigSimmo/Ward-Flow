@@ -16,6 +16,7 @@ import { activeTaskItems, taskItems } from "@/components/ward-management/ward-ac
 import { wardPlannedAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 /**
  * **THE ALERTS SCREEN — and the tests are mostly about what it says when nothing is firing.**
@@ -78,7 +79,14 @@ const CONDITIONS = [
   "Override recorded",
 ] as const;
 
+/**
+ * The hero's Checking list. Alerts redesign (Josh, 31 Oct 2026): the strip is one chip ("6 flagged ·
+ * 7 clear") that opens the full list in place, so the chip is opened first when the list is closed.
+ */
 function checkingList() {
+  const open = screen.queryByRole("list", { name: "Conditions checked" });
+  if (open) return open;
+  fireEvent.click(screen.getByRole("button", { name: /^Checking \d+ flagged · \d+ clear$/u }));
   return screen.getByRole("list", { name: "Conditions checked" });
 }
 
@@ -95,9 +103,9 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     expect(seen).toHaveAttribute("aria-disabled", "true");
     const take = screen.queryByRole("button", { name: /^Take / });
     if (take) fireEvent.click(take);
-    // P019: the owner is offered Release in place of the greyed "Yours".
-    const yours = screen.getByRole("button", { name: /^Release (?!pulled bed)/ });
-    expect(yours).toHaveTextContent("Release");
+    // P019: the owner is offered Hand back (the Alerts redesign's name for Release) in place of the greyed "Yours".
+    const yours = screen.getByRole("button", { name: /^Hand back / });
+    expect(yours).toHaveTextContent("Hand back");
   });
 
   it("renders every named condition, including the ones with nothing to show", () => {
@@ -217,6 +225,8 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     expect(rows, "no inbox row in the fixture — every assertion in this file would be vacuous").toBeGreaterThan(0);
 
     const { container } = renderScreen();
+    // Alerts redesign (point 17): runs of one kind are group rows; each alert keeps its own row inside.
+    openAlertKindGroups(container);
     /*
      * 🔴 THIS USED TO ASSERT THE FIXTURE HAD ROWS AND THEN CHECK ONLY THAT THE PAGE EXISTED.
      * Deleting the row-rendering branch from `Condition` left every test in this file green — the
@@ -253,20 +263,24 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
 
   it("names the condition it does not check instead of a bare count, and never says All clear", () => {
     renderScreen();
-    expect(screen.getByText("Not checked: handover sheets")).toBeInTheDocument();
+    expect(within(checkingList()).getByText("Not checked: handover sheets")).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/All clear/i);
   });
 });
 
-describe("Alerts owner chips (remaining-pages audit ops-15, 13 Oct 2026)", () => {
-  it("names a booking ward on its chip, never the bare word Ward", () => {
+describe("Alerts owner menu (remaining-pages audit ops-15, 13 Oct 2026; one menu, 31 Oct 2026)", () => {
+  it("names a booking ward in the owner menu, never the bare word Ward", () => {
     renderScreen();
     const planned = taskItems(seedWardFlowState(), NOW).find((item) => item.plannedAdmission !== undefined);
     expect(planned, "the seed has a planned arrival owned by its booking ward").toBeDefined();
-    const chips = within(screen.getByRole("group", { name: "Highlight by owner" })).getAllByRole("button");
-    const labels = chips.map((chip) => chip.textContent ?? "");
+    const menu = screen.getByRole("combobox", { name: "Highlight by owner" });
+    const labels = within(menu)
+      .getAllByRole("option")
+      .filter((option) => (option as HTMLOptionElement).value !== "")
+      .map((option) => option.textContent ?? "");
+    expect(labels.length).toBeGreaterThan(0);
     expect(labels.some((label) => label.includes(planned!.owner))).toBe(true);
-    for (const label of labels) expect(label.replace(/\d+/gu, "").trim(), labels.join("|")).not.toBe("Ward");
+    for (const label of labels) expect(label.replace(/\(\d+\)/gu, "").trim(), labels.join("|")).not.toBe("Ward");
   });
 });
 

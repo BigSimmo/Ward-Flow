@@ -81,6 +81,8 @@ describe("Alerts — all-clear KPI captions state a count (F3.2)", () => {
 
   it("shows a counted caption against a real denominator when each condition is clear", () => {
     renderScreen();
+    // Alerts redesign (31 Oct 2026): the Checking strip is one chip that opens the full list in place.
+    fireEvent.click(screen.getByRole("button", { name: /^Checking \d+ flagged · \d+ clear$/u }));
 
     const openMovements = wardMovements.filter(isOpen);
     const inbox = buildActionInbox(openMovements, NOW, allUnits());
