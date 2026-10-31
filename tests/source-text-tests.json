@@ -217,6 +217,7 @@
     "tests/ward-word-list.test.ts",
     "tests/ward-workstation-desks.test.ts",
     "tests/ward-zero-gap-capacity-copy.test.ts",
+    "tests/wf-no-side-stripes.test.ts",
     "tests/wf-phone-parts.dom.test.tsx",
     "tests/wf-primitives.dom.test.tsx",
     "tests/wf-segmented-text-spacing.dom.test.tsx"
