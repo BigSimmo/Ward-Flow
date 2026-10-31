@@ -1,4 +1,4 @@
-/* Downtime pack redesign: tabs for one table at a time on screen; print keeps all four. */
+/* Downtime pack (Josh, 31 Oct 2026): tabs show one table at a time on screen; print keeps all four. */
 
 .tabBar {
   position: sticky;
@@ -82,7 +82,7 @@
 }
 
 /* Phone (Josh, 31 Oct 2026): New snapshot and Print are Home's hero pills, side by side
-   (phone-rows.module.css), so they no longer share the row half each as the pack's phone hero sets. */
+   (phoneRows in the kit), so they no longer share the row half each as the pack's phone hero sets. */
 @media (max-width: 48rem) {
   .heroPillActions.heroPillActions > div:last-child > * {
     flex: 0 1 auto;

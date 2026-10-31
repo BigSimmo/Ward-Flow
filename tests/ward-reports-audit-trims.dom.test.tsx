@@ -67,14 +67,26 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     expect(within(card).getByRole("button", { name: /^Show all \d+$/u })).toBeInTheDocument();
   });
 
-  it("names the downtime pack's tables in the jump row without repeating the hero totals", () => {
+  it("names the downtime pack's tables in its tabs without repeating the hero totals", () => {
     renderInProvider(<DowntimePackScreen />);
-    const jump = screen.getByRole("navigation", { name: "Jump to a table" });
+    const tabs = screen.getByRole("tablist", { name: "Downtime pack section" });
     expect(
-      within(jump)
-        .getAllByRole("button")
-        .map((button) => button.textContent),
-    ).toEqual(["Beds", "ED queue", "Pending moves", "Legal forms"]);
+      within(tabs)
+        .getAllByRole("tab")
+        .map((tab) => tab.textContent),
+    ).toEqual(["Beds by ward", "ED queue", "Pending moves", "Legal forms"]);
+  });
+
+  it("shows one downtime table on screen at a time and keeps the rest for the printout (Josh, 31 Oct 2026)", () => {
+    renderInProvider(<DowntimePackScreen />);
+    const panels = screen.getAllByRole("tabpanel", { hidden: true });
+    expect(panels).toHaveLength(4);
+    expect(screen.getByRole("tab", { name: "Beds by ward" })).toHaveAttribute("aria-selected", "true");
+    // Every table stays in the page, so Print or save PDF still holds all four.
+    expect(screen.getByText("Beds by ward", { selector: "h2, h3" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Legal forms" }));
+    expect(screen.getByRole("tab", { name: "Legal forms" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByText(/Print or save PDF holds all four tables\./u)).toBeInTheDocument();
   });
 
   it("opens a hospital's details under its own row, not beside the chart", () => {

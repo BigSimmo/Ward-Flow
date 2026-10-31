@@ -1,5 +1,5 @@
-/* Patient chronology redesign: one patient search in the header (the one page search field, D-91)
-   and a start page. */
+/* Patient chronology (Josh, 31 Oct 2026): one patient search in the header (the one page search
+   field, D-91) and a start page. */
 
 .heroSearch {
   flex: 1 1 32rem;
@@ -172,4 +172,10 @@
   .start {
     display: none;
   }
+}
+
+/* The open event: the selected tint, no coloured edge (Josh, 31 Oct 2026, "No side edges"). */
+.eventSelected > th,
+.eventSelected > td {
+  background: var(--wf-selected);
 }
