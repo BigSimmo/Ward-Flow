@@ -6,7 +6,6 @@ import type { PhoneChip } from "@/components/ward-management/referrals/referral-
 import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { cx } from "@/components/wf";
 
-
 /**
  * The highlight chips under the phone hero, the same chips as today. Josh, 31 Oct 2026: one row that
  * slides sideways in Home's style, with chips at 0 muted at the end, instead of wrapping onto two rows.
