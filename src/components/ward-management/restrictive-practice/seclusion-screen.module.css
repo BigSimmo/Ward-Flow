@@ -9,6 +9,26 @@
   padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
 }
 
+/* The hero figures: above 900px they keep their full labels and wrap onto a second line when the
+   title leaves too little room. At 900px and below the kit lays them out (full-width row, phone grid). */
+.heroStats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  row-gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.heroStats > * {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .heroStats {
+    display: contents;
+  }
+}
+
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1fr);
@@ -187,11 +207,8 @@
   gap: var(--wf-s-2);
 }
 
-/* P090: the room status buttons are small buttons elsewhere; here they keep the 44px touch target. */
-.controls > button {
-  height: auto;
-  min-height: var(--wf-touch);
-}
+/* P090 / kit sizes (31 Oct 2026): the room status and record buttons are the kit's standard size,
+   44px on a touch screen and 40px on a phone (with the kit's 48px tap cover), never hand-set. */
 
 .list {
   display: flex;

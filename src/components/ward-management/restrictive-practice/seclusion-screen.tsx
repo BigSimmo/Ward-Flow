@@ -197,37 +197,41 @@ export function SeclusionScreen() {
         title="Seclusion, restraint and incidents"
         titleMeta={titleMeta}
         stats={
-          own
-            ? // One ward: what is in use on it; the room's state opens the record.
-              [
-                <HeroStat
-                  key="seclusion"
-                  value={own.row.inUse.filter((episode) => episode.practice === "seclusion").length}
-                  label="Seclusion in use"
-                  tone={own.row.inUse.some((episode) => episode.practice === "seclusion") ? "danger" : undefined}
-                />,
-                <HeroStat
-                  key="restraint"
-                  value={restraint}
-                  label="Restraint in use"
-                  tone={restraint > 0 ? "danger" : undefined}
-                />,
-                <HeroStat key="incidents" value={own.row.incidents} label="Incidents, last day" />,
-              ]
-            : ROOM_STATES.map((entry) => (
-                <HeroStat
-                  key={entry.id}
-                  value={counts[entry.id]}
-                  // Short labels that stay on one line; "Seclusion rooms" is spoken before each.
-                  label={
-                    <>
-                      <SrOnly>Seclusion rooms </SrOnly>
-                      {entry.label}
-                    </>
-                  }
-                  tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
-                />
-              ))
+          // QA (31 Oct 2026): the figures wrap onto a second line rather than clip a label when the
+          // title leaves them too little room (a 1024px laptop). Phone and tablet keep the kit layout.
+          <div className={styles.heroStats}>
+            {own
+              ? // One ward: what is in use on it; the room's state opens the record.
+                [
+                  <HeroStat
+                    key="seclusion"
+                    value={own.row.inUse.filter((episode) => episode.practice === "seclusion").length}
+                    label="Seclusion in use"
+                    tone={own.row.inUse.some((episode) => episode.practice === "seclusion") ? "danger" : undefined}
+                  />,
+                  <HeroStat
+                    key="restraint"
+                    value={restraint}
+                    label="Restraint in use"
+                    tone={restraint > 0 ? "danger" : undefined}
+                  />,
+                  <HeroStat key="incidents" value={own.row.incidents} label="Incidents, last day" />,
+                ]
+              : ROOM_STATES.map((entry) => (
+                  <HeroStat
+                    key={entry.id}
+                    value={counts[entry.id]}
+                    // Short labels that stay on one line; "Seclusion rooms" is spoken before each.
+                    label={
+                      <>
+                        <SrOnly>Seclusion rooms </SrOnly>
+                        {entry.label}
+                      </>
+                    }
+                    tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
+                  />
+                ))}
+          </div>
         }
       />
       <p className={styles.note} data-testid="seclusion-scope-note">
@@ -461,7 +465,6 @@ function WardCard({
           </p>
           <div className={styles.controls}>
             <Button
-              size="sm"
               variant="sec"
               aria-disabled={roomStatus === "available" ? "true" : undefined}
               onClick={() => askRoom("available")}
@@ -470,7 +473,6 @@ function WardCard({
               Mark available
             </Button>
             <Button
-              size="sm"
               variant="sec"
               aria-disabled={roomStatus === "out_of_service" ? "true" : undefined}
               onClick={() => askRoom("out_of_service")}
@@ -667,7 +669,6 @@ function EpisodeRow({
         </span>
         {onEnd ? (
           <Button
-            size="sm"
             variant="light"
             aria-expanded={ending}
             aria-controls={formId}
@@ -682,7 +683,6 @@ function EpisodeRow({
         <div id={formId} className={styles.form}>
           <TimeField label="Ended at" time={time} testId="seclusion-episode-end-time" />
           <Button
-            size="sm"
             variant="pri"
             aria-disabled={time.refusal || save.pending ? "true" : undefined}
             aria-describedby={time.refusal ? `${formId}-reason` : undefined}
@@ -761,7 +761,6 @@ function StartForm({
       </Field>
       <TimeField label="Started at" time={time} testId="seclusion-start-time" />
       <Button
-        size="sm"
         variant="pri"
         aria-disabled={refusal || save.pending ? "true" : undefined}
         aria-describedby={refusal ? `${formId}-reason` : undefined}
@@ -822,7 +821,6 @@ function IncidentForm({
       </Field>
       <TimeField label="Happened at" time={time} testId="seclusion-incident-time" />
       <Button
-        size="sm"
         variant="pri"
         aria-disabled={refusal || save.pending ? "true" : undefined}
         aria-describedby={refusal ? `${formId}-reason` : undefined}
