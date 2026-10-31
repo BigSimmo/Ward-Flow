@@ -36,6 +36,7 @@ export function useSliceGatedDispatch(
   shared: WardCommandDispatch | null,
   /** The provider's local command counter, shared so a failed command still gets a fresh id. */
   commands: { readonly current: { sequence: number } },
+  captureLifetime?: () => () => boolean,
 ): WardCommandDispatch {
   const localRef = useRef(dispatchLocal);
   useLayoutEffect(() => {
@@ -49,11 +50,20 @@ export function useSliceGatedDispatch(
     (event: WardFlowEvent) => {
       if (shared) return shared(event);
       if (reducerSlicesLoaded() && !queueRef.current) return dispatchLocal(event);
+      const isCurrent = captureLifetime?.();
       const queued: Promise<WardCommandOutcome> = (queueRef.current ?? Promise.resolve())
         .catch(() => undefined)
         .then(() => loadReducerSlices())
         .then(
-          () => localRef.current(event),
+          () =>
+            isCurrent && !isCurrent()
+              ? {
+                  commandId: `local-${++commands.current.sequence}`,
+                  status: "cancelled",
+                  message:
+                    "The workspace changed before this action finished loading. Check the board before trying again.",
+                }
+              : localRef.current(event),
           (): WardCommandOutcome => ({
             commandId: `local-${++commands.current.sequence}`,
             status: "failed",
@@ -69,6 +79,6 @@ export function useSliceGatedDispatch(
         .catch(() => undefined);
       return queued;
     },
-    [shared, dispatchLocal, commands],
+    [shared, dispatchLocal, commands, captureLifetime],
   );
 }
