@@ -118,3 +118,39 @@ describe("patient census locations and next steps", () => {
     expect(census(state).rows.some((row) => row.key === queued.id)).toBe(false);
   });
 });
+
+describe("patient census legal status on referral rows (from #1114, 31 Oct 2026)", () => {
+  it("shows the referral's recorded legal status instead of Not recorded", () => {
+    const seed = seedWardFlowState();
+    const referralRow = census(seed).rows.find((row) => row.kind === "referral");
+    expect(referralRow, "the seed has no waiting referral, so this proves nothing").toBeDefined();
+    const withStatus = {
+      ...seed,
+      referrals: seed.referrals.map((referral) =>
+        referral.id === referralRow!.key
+          ? { ...referral, intake: { ...referral.intake, legalStatus: "Voluntary" } }
+          : referral,
+      ),
+    } as typeof seed;
+    const row = census(withStatus).rows.find((entry) => entry.key === referralRow!.key)!;
+    expect(row.legal).toBe("Voluntary");
+    expect(row.legalSub).toBe("On the referral");
+  });
+
+  it("says Not recorded only when neither the referral nor the person's record has a status", () => {
+    const seed = seedWardFlowState();
+    const referralRow = census(seed).rows.find((row) => row.kind === "referral")!;
+    const blank = {
+      ...seed,
+      referrals: seed.referrals.map((referral) =>
+        referral.id === referralRow.key
+          ? { ...referral, intake: { ...referral.intake, legalStatus: undefined } }
+          : referral,
+      ),
+      patients: seed.patients.map((patient) => ({ ...patient, legalStatus: undefined })),
+    } as typeof seed;
+    const row = census(blank).rows.find((entry) => entry.key === referralRow.key)!;
+    expect(row.legal).toBe("Not recorded");
+    expect(row.legalSub).toBe("On the referral");
+  });
+});
