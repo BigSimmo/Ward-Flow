@@ -72,7 +72,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "out-of-area", label: "Out of area", group: "Reference", appPath: "/ward-flow/out-of-area" },
   { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
-  { slug: "seclusion", label: "Seclusion", group: "Reference", appPath: "/ward-flow/seclusion" },
   { slug: "governance", label: "Governance", group: "Reference", appPath: "/ward-flow/governance" },
   {
     slug: "bed-meeting-tv",
@@ -180,13 +179,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Statistics",
     group: "As nurse in charge",
     appPath: "/ward-flow/statistics",
-    role: ROLE_DESKS["ward"],
-  },
-  {
-    slug: "as-ward-seclusion",
-    label: "Seclusion",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/seclusion",
     role: ROLE_DESKS["ward"],
   },
   {
@@ -341,13 +333,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Statistics",
     group: "As site bed manager",
     appPath: "/ward-flow/statistics",
-    role: ROLE_DESKS["bed-manager"],
-  },
-  {
-    slug: "as-bed-manager-seclusion",
-    label: "Seclusion",
-    group: "As site bed manager",
-    appPath: "/ward-flow/seclusion",
     role: ROLE_DESKS["bed-manager"],
   },
   {

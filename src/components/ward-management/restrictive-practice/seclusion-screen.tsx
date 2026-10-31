@@ -1,19 +1,25 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 
 import {
   Button,
   Card,
   CardBody,
   CardHead,
+  cx,
   Dialog,
   DisabledReason,
   Field,
   Hero,
+  HeroStat,
   Select,
+  SrOnly,
   StatusGlyph,
+  tableClasses,
   TextInput,
+  useIsPhone,
+  type WfTone,
 } from "@/components/wf";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
@@ -28,6 +34,7 @@ import { usePatientOf } from "../ward-patient-name";
 import { unitInScope } from "../ward-role-access";
 import { canDispatch } from "../ward-role-permissions";
 import type { WardCommandDispatch } from "../ward-shared-client";
+import { siteByCode } from "../ward-sites";
 import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import {
   RESTRICTIVE_PRACTICES,
@@ -47,11 +54,38 @@ import {
 } from "./ward-restrictive-practice";
 import styles from "./seclusion-screen.module.css";
 
+/** The room's four states, in the order the table lists them: what needs a look first. */
+type RoomState = "in_use" | "out_of_service" | "not_recorded" | "available";
+
+// Listed in the table's own order (ROOM_ORDER), so the phone hero's three figures are the three that
+// need a look; the phone says the available count in the title line.
+const ROOM_STATES: readonly { id: RoomState; label: string; tone: WfTone }[] = [
+  { id: "in_use", label: "In use", tone: "warning" },
+  { id: "out_of_service", label: "Out of service", tone: "danger" },
+  { id: "not_recorded", label: "Not recorded", tone: "neutral" },
+  { id: "available", label: "Available", tone: "success" },
+];
+const ROOM_ORDER: Record<RoomState, number> = { in_use: 0, out_of_service: 1, not_recorded: 2, available: 3 };
+
+/**
+ * How the page is drawn for this desk. `table`: the table of secure wards with the chosen ward's
+ * record beside it. `ward`: a ward desk's own ward, its record alone. `site`: a site bed manager's one
+ * secure ward, its record alone.
+ */
+type SeclusionView = "table" | "ward" | "site";
+
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
 /**
  * D-72 (21 Oct 2026): seclusion, restraint and incidents, OPERATIONAL VIEW ONLY. What is in use on
  * each ward now, whether its seclusion room can be used, and the incidents it recorded in the last
  * day. Times are typed and shown as typed; nothing here computes an order length, a review time or
  * any legal limit. The legal register stays in the health service's own system.
+ *
+ * Redesign (Josh, 31 Oct 2026): one table of every secure ward's room, with the header counting each
+ * state, instead of one ward at a time from a picker. Choosing a ward opens its record beside the
+ * table; it opens on the first ward that needs a look. A ward desk, and a site bed manager with one
+ * secure ward, open straight on that ward's record.
  */
 export function SeclusionScreen() {
   const { units, admissions, now } = useWardFlowSelect("units", "admissions", "now");
@@ -59,85 +93,314 @@ export function SeclusionScreen() {
   const role: WardFlowRole =
     access.role === "ward" ? "ward" : access.role === "bed_manager" ? "bed_manager" : "coordinator";
   const patientOf = usePatientOf();
+  const isPhone = useIsPhone();
   const [chosen, setChosen] = useState<string>("");
-  // Only the wards this desk may see: a ward or site desk never lists another ward's episodes, and
-  // the picker opens on the desk's own ward.
+  const recordRef = useRef<HTMLDivElement>(null);
+  // Only the wards this desk may see: a ward or site desk never lists another ward's episodes.
   const places = wardPlaceLookup(units);
   const visible = units.filter((unit) => unitInScope(access.scope, unit.id, places));
-  const wardId = visible.some((unit) => unit.id === chosen) ? chosen : (visible[0]?.id ?? "");
-  const ward = visible.find((unit) => unit.id === wardId);
   // Audit S-3 (26 Oct 2026): an episode whose patient has left the ward is not "in use now" and
   // does not hold the room; the ward still sees it on its own card to record when it ended.
   const isOnWard = (unitId: string) => (admissionId: string) =>
     admissions.some((stay) => stay.id === admissionId && stay.unitId === unitId && stay.state === "occupied");
-  const inUse = visible.flatMap((unit) =>
-    openEpisodes(unit.restrictivePractice)
-      .filter((episode) => isOnWard(unit.id)(episode.admissionId))
-      .map((episode) => ({ unit, episode })),
+  const roomRow = (unit: Unit, index: number) => {
+    const room = seclusionRoomView(unit.restrictivePractice, isOnWard(unit.id));
+    const recorded = room.kind === "recorded" ? room : room.kind === "in_use" ? room.recorded : undefined;
+    const state: RoomState =
+      room.kind === "in_use" ? "in_use" : room.kind === "recorded" ? room.status : "not_recorded";
+    const inUse = openEpisodes(unit.restrictivePractice).filter((episode) => isOnWard(unit.id)(episode.admissionId));
+    return { unit, index, state, recorded, inUse, incidents: recentIncidents(unit.restrictivePractice, now).length };
+  };
+  // A secure ward has locked beds. A ward with anything recorded stays listed, so no record hides.
+  const rows = visible
+    .filter(
+      (unit) =>
+        unit.lockedBeds > 0 ||
+        (unit.restrictivePractice?.episodes.length ?? 0) > 0 ||
+        (unit.restrictivePractice?.incidents.length ?? 0) > 0 ||
+        unit.restrictivePractice?.seclusionRoom !== undefined,
+    )
+    .map(roomRow)
+    .sort((a, b) => ROOM_ORDER[a.state] - ROOM_ORDER[b.state] || a.index - b.index);
+  // ROLE BRANCH (bed_manager): the page is headed with its own site, and says how many of the site's
+  // wards are listed, so one listed ward does not read as the whole network.
+  const siteName =
+    role === "bed_manager" && access.scope.kind === "site"
+      ? (siteByCode(access.scope.siteCode)?.name ?? access.scope.siteCode)
+      : undefined;
+  // ROLE BRANCH (ward): a ward desk sees only its own ward, so the page is that ward's record, with or
+  // without locked beds (today's desk records there either way). ROLE BRANCH (bed_manager): with one
+  // secure ward at the site, the one-row table would repeat the record beside it, so it opens on that.
+  const own =
+    role === "ward" && visible.length === 1
+      ? { view: "ward" as const, row: roomRow(visible[0]!, 0) }
+      : siteName !== undefined && rows.length === 1
+        ? { view: "site" as const, row: rows[0]! }
+        : undefined;
+  const view: SeclusionView = own?.view ?? "table";
+  const listed = own ? [own.row] : rows;
+  const counts = Object.fromEntries(
+    ROOM_STATES.map((entry) => [entry.id, rows.filter((row) => row.state === entry.id).length]),
+  ) as Record<RoomState, number>;
+  const restraint = listed.reduce(
+    (sum, row) => sum + row.inUse.filter((episode) => episode.practice !== "seclusion").length,
+    0,
   );
+  // Point 16: the record opens on the first ward that needs a look, never on an empty panel. Once
+  // shown it stays chosen, so a row moving when its room is marked never swaps the record for
+  // another ward's under the person's hands.
+  const firstRow = rows[0]?.unit.id ?? "";
+  const listedChoice = rows.some((row) => row.unit.id === chosen);
+  if (!own && firstRow !== "" && !listedChoice) setChosen(firstRow);
+  const wardId = own ? own.row.unit.id : listedChoice ? chosen : firstRow;
+  const ward = own ? own.row.unit : rows.find((row) => row.unit.id === wardId)?.unit;
   const nameOf = (admissionId: string) => {
     const stay = admissions.find((admission) => admission.id === admissionId);
     if (!stay) return "No longer on this ward";
-    const name = patientOf(stay).displayName;
+    // D-83: surname first.
+    const name = patientOf(stay).formalName;
     return stay.state === "occupied" ? name : `${name} (left the ward, end not recorded)`;
   };
+  const choose = (id: string) => {
+    setChosen(id);
+    // On a phone or narrow tablet the record sits under the table, so bring it into view.
+    if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 1099px)").matches)
+      requestAnimationFrame(() => recordRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+  };
+  const asAt = formatInstantWithDay(now, now);
+  const available = plural(counts.available, "room", "rooms");
+  const titleMeta =
+    view === "ward"
+      ? // ROLE BRANCH (ward): the room's state is the first line of the record below, so only the time here.
+        `As at ${asAt}`
+      : view === "site"
+        ? // ROLE BRANCH (bed_manager): no "as at" time; the top bar's clock already says it.
+          `${own!.row.unit.name}, the one secure ward of ${visible.length} at the site`
+        : siteName
+          ? `${plural(rows.length, "secure ward", "secure wards")} of ${visible.length} at the site${isPhone ? ` · ${available} available` : ""}`
+          : isPhone
+            ? `${plural(rows.length, "secure ward", "secure wards")} · ${available} available · as at ${asAt}`
+            : `Seclusion rooms on ${plural(rows.length, "secure ward", "secure wards")} · as at ${asAt}`;
 
   return (
     <main id="main-content" className={styles.main} data-testid="seclusion-screen">
       {/* C3 (25 Oct 2026 design re-score): the shared header band every other screen opens with. */}
       <Hero
         level={1}
-        eyebrow="Restrictive practice"
+        eyebrow={
+          view === "ward"
+            ? `Restrictive practice · ${own!.row.unit.name}`
+            : siteName
+              ? `Restrictive practice · ${siteName}`
+              : "Restrictive practice"
+        }
         title="Seclusion, restraint and incidents"
-        titleMeta={`as at ${formatInstantWithDay(now, now)}`}
+        titleMeta={titleMeta}
+        stats={
+          own
+            ? // One ward: what is in use on it; the room's state opens the record.
+              [
+                <HeroStat
+                  key="seclusion"
+                  value={own.row.inUse.filter((episode) => episode.practice === "seclusion").length}
+                  label="Seclusion in use"
+                  tone={own.row.inUse.some((episode) => episode.practice === "seclusion") ? "danger" : undefined}
+                />,
+                <HeroStat
+                  key="restraint"
+                  value={restraint}
+                  label="Restraint in use"
+                  tone={restraint > 0 ? "danger" : undefined}
+                />,
+                <HeroStat key="incidents" value={own.row.incidents} label="Incidents, last day" />,
+              ]
+            : ROOM_STATES.map((entry) => (
+                <HeroStat
+                  key={entry.id}
+                  value={counts[entry.id]}
+                  // Short labels that stay on one line; "Seclusion rooms" is spoken before each.
+                  label={
+                    <>
+                      <SrOnly>Seclusion rooms </SrOnly>
+                      {entry.label}
+                    </>
+                  }
+                  tone={counts[entry.id] > 0 && entry.id !== "not_recorded" ? entry.tone : undefined}
+                />
+              ))
+        }
       />
       <p className={styles.note} data-testid="seclusion-scope-note">
         Operational view only. Times are shown as they were typed, and nothing here works out an order length, a review
         or any legal limit. The legal register stays in the health service&apos;s own system.
       </p>
 
-      <Card data-testid="seclusion-in-use">
-        <CardHead title="In use now" meta={`${inUse.length}`} level={2} />
-        <CardBody>
-          {inUse.length === 0 ? (
-            <p className={styles.note}>No seclusion or restraint is recorded as in use.</p>
-          ) : (
-            <ul className={styles.list}>
-              {inUse.map(({ unit, episode }) => (
-                <li key={episode.id} className={styles.row}>
-                  <span className={styles.rowText}>
-                    <span className={styles.name}>
-                      <StatusGlyph tone="warning" size={8} /> {restrictivePracticeLabel(episode.practice)} ·{" "}
-                      {nameOf(episode.admissionId)}
-                    </span>
-                    <span className={styles.detail}>
-                      {unit.name} · since {formatInstantWithDay(episode.startedAt, now)}
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+      <div className={styles.layout} data-one-ward={own ? own.view : undefined}>
+        {own ? null : (
+          <WardTable
+            rows={rows}
+            wardId={wardId}
+            now={now}
+            restraint={restraint}
+            siteName={siteName}
+            onChoose={choose}
+          />
+        )}
 
-      {visible.length > 1 ? (
-        <Field label="Ward">
-          <Select value={wardId} onChange={(event) => setChosen(event.target.value)} data-testid="seclusion-ward">
-            {visible.map((unit) => (
-              <option key={unit.id} value={unit.id}>
-                {unit.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      ) : null}
-
-      {ward ? (
-        <WardCard key={ward.id} ward={ward} role={role} now={now} nameOf={nameOf} isOnWard={isOnWard(ward.id)} />
-      ) : null}
+        <div ref={recordRef} className={styles.record}>
+          {ward ? (
+            <WardCard
+              key={ward.id}
+              ward={ward}
+              role={role}
+              now={now}
+              nameOf={nameOf}
+              isOnWard={isOnWard(ward.id)}
+              view={view}
+            />
+          ) : null}
+        </div>
+      </div>
       <WardPrototypeFooter testId="seclusion-footer" />
     </main>
+  );
+}
+
+type RoomRow = {
+  unit: Unit;
+  state: RoomState;
+  recorded?: { status: string; at: Instant; by: string };
+  inUse: RestrictivePracticeEpisode[];
+  incidents: number;
+};
+
+/** Every secure ward's seclusion room in this desk's view, rows needing a look first. */
+function WardTable({
+  rows,
+  wardId,
+  now,
+  restraint,
+  siteName,
+  onChoose,
+}: {
+  rows: readonly RoomRow[];
+  wardId: string;
+  now: Instant;
+  restraint: number;
+  siteName?: string;
+  onChoose: (id: string) => void;
+}) {
+  return (
+    <Card data-testid="seclusion-wards" className={styles.tableCard}>
+      <CardHead
+        title="Seclusion rooms by ward"
+        meta={
+          restraint > 0
+            ? `${plural(restraint, "restraint episode", "restraint episodes")} in use`
+            : "No restraint recorded as in use"
+        }
+        level={2}
+      />
+      {rows.length === 0 ? (
+        <CardBody>
+          <p className={styles.note}>No secure ward is in this desk&apos;s view.</p>
+        </CardBody>
+      ) : (
+        <div className={styles.tableScroll}>
+          <table className={cx(tableClasses.table, styles.table)} data-testid="seclusion-ward-table">
+            <colgroup>
+              <col className={styles.colWard} />
+              <col className={styles.colRoom} />
+              <col className={styles.inUseCol} />
+              <col className={cx(styles.colIncidents, styles.wide)} />
+              <col className={cx(styles.colMarked, styles.wide)} />
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">Ward</th>
+                <th scope="col">Seclusion room</th>
+                <th scope="col" className={styles.inUseCol}>
+                  In use now
+                </th>
+                <th scope="col" className={cx(tableClasses.num, styles.wide)}>
+                  Incidents, last day
+                </th>
+                <th scope="col" className={styles.wide}>
+                  Room last marked
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const selected = row.unit.id === wardId;
+                const state = ROOM_STATES.find((entry) => entry.id === row.state)!;
+                return (
+                  <tr
+                    key={row.unit.id}
+                    className={cx(styles.row, selected && tableClasses.selected)}
+                    onClick={() => onChoose(row.unit.id)}
+                    data-testid={`seclusion-ward-row-${row.unit.id}`}
+                  >
+                    <td>
+                      <button
+                        type="button"
+                        className={styles.wardButton}
+                        aria-pressed={selected}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onChoose(row.unit.id);
+                        }}
+                      >
+                        <b>{row.unit.name}</b>
+                        <span className={styles.detail}>
+                          {/* ROLE BRANCH (bed_manager): the site is in the page's eyebrow, so only the beds here. */}
+                          {siteName ? "" : `${row.unit.siteCode} · `}
+                          {plural(row.unit.lockedBeds, "locked bed", "locked beds")}
+                        </span>
+                        {row.inUse.length > 0 ? (
+                          <span className={styles.phoneInUse}>
+                            {row.inUse.map((episode) => restrictivePracticeLabel(episode.practice)).join(", ")} in use
+                          </span>
+                        ) : null}
+                      </button>
+                    </td>
+                    <td>
+                      <span className={styles.state} data-state={row.state}>
+                        <StatusGlyph tone={state.tone} size={8} /> {state.label}
+                      </span>
+                    </td>
+                    <td className={styles.inUseCol}>
+                      {row.inUse.length === 0 ? (
+                        <span className={styles.detail}>None</span>
+                      ) : (
+                        <span className={styles.stack}>
+                          {row.inUse.map((episode) => (
+                            <span key={episode.id}>
+                              {restrictivePracticeLabel(episode.practice)}, since{" "}
+                              {formatInstantWithDay(episode.startedAt, now)}
+                            </span>
+                          ))}
+                        </span>
+                      )}
+                    </td>
+                    <td className={cx(tableClasses.num, styles.wide)}>{row.incidents}</td>
+                    <td className={styles.wide}>
+                      <span className={styles.detail}>
+                        {row.recorded
+                          ? `${row.recorded.by}, ${formatInstantWithDay(row.recorded.at, now)}`
+                          : siteName
+                            ? "Not recorded"
+                            : "Never"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -147,12 +410,15 @@ function WardCard({
   now,
   nameOf,
   isOnWard,
+  view,
 }: {
   ward: Unit;
   role: WardFlowRole;
   now: Instant;
   nameOf: (admissionId: string) => string;
   isOnWard: (admissionId: string) => boolean;
+  /** `ward` and `site` draw one ward alone, whose name the page's header already gives. */
+  view: SeclusionView;
 }) {
   const raise = useWardRaise(role);
   // D-80: a record about one patient on one ward is made by the ward that is present. The site's bed
@@ -183,7 +449,7 @@ function WardCard({
 
   return (
     <Card data-testid="seclusion-ward-card">
-      <CardHead title={ward.name} level={2} />
+      {view === "table" ? <CardHead title={ward.name} level={2} /> : null}
       <CardBody>
         <section className={styles.section} aria-labelledby={`${ward.id}-room`}>
           <h3 id={`${ward.id}-room`} className={styles.sectionTitle}>
@@ -192,7 +458,7 @@ function WardCard({
           <p className={styles.line} data-testid="seclusion-room-status">
             {room.kind === "in_use"
               ? `In use since ${formatInstantWithDay(room.since, now)}${recordedLine ? `. Last marked ${recordedLine}` : ""}`
-              : (recordedLine ?? "Not recorded yet")}
+              : (recordedLine ?? "Not recorded")}
           </p>
           <div className={styles.controls}>
             <Button
@@ -246,8 +512,14 @@ function WardCard({
           <h3 id={`${ward.id}-use`} className={styles.sectionTitle}>
             Seclusion and restraint in use
           </h3>
-          {open.length === 0 ? (
-            <p className={styles.note}>None recorded as in use on this ward.</p>
+          {open.length === 0 && !mayRecord ? (
+            // D-80: one quiet line; this desk sees it, the ward records it.
+            <p className={styles.note} data-testid="seclusion-recorded-by-ward">
+              None in use · recorded by the ward
+            </p>
+          ) : open.length === 0 ? (
+            // ROLE BRANCH (ward): the ward desk's own record says it shortly.
+            <p className={styles.note}>{view === "ward" ? "None in use." : "None recorded"}</p>
           ) : (
             <ul className={styles.list}>
               {open.map((episode) => (
@@ -274,7 +546,7 @@ function WardCard({
                 raise("RECORD_RESTRICTIVE_PRACTICE_START", { ...acting, admissionId, practice, startedAt })
               }
             />
-          ) : (
+          ) : open.length === 0 ? null : (
             <p className={styles.note} data-testid="seclusion-recorded-by-ward">
               Recorded by the ward.
             </p>
@@ -283,14 +555,15 @@ function WardCard({
 
         <section className={styles.section} aria-labelledby={`${ward.id}-incidents`}>
           <h3 id={`${ward.id}-incidents`} className={styles.sectionTitle}>
-            Incidents in the last day
+            {/* ROLE BRANCH (ward): "Incidents, last day", as the ward desk's header says it. */}
+            {view === "ward" ? "Incidents, last day" : "Incidents in the last day"}
           </h3>
           {incidents.length === 0 ? (
-            <p className={styles.note}>None recorded in the last day.</p>
+            <p className={styles.note}>{view === "ward" ? "None recorded." : "None recorded"}</p>
           ) : (
             <ul className={styles.list} data-testid="seclusion-incidents">
               {incidents.map((incident) => (
-                <li key={incident.id} className={styles.row}>
+                <li key={incident.id} className={styles.listRow}>
                   <span className={styles.rowText}>
                     <span className={styles.name}>{wardIncidentLabel(incident.category)}</span>
                     <span className={styles.detail}>
@@ -384,7 +657,7 @@ function EpisodeRow({
   const save = useWardFormSave(episode.id);
   return (
     <li className={styles.episode} data-testid="seclusion-episode">
-      <div className={styles.row}>
+      <div className={styles.listRow}>
         <span className={styles.rowText}>
           <span className={styles.name}>
             {restrictivePracticeLabel(episode.practice)} · {name}
@@ -468,7 +741,7 @@ function StartForm({
           <option value="">Choose a patient</option>
           {stays.map((stay) => (
             <option key={stay.id} value={stay.id}>
-              {patientOf(stay).displayName}
+              {patientOf(stay).formalName}
             </option>
           ))}
         </Select>

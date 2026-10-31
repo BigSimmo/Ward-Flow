@@ -1,8 +1,0 @@
-/* Seclusion as a site bed manager: with one secure ward, its record alone, without the table beside it. */
-.oneLayout.oneLayout {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.oneRecord.oneRecord {
-  position: static;
-}

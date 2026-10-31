@@ -65,9 +65,6 @@ const OutOfAreaPage = dynamic<MockupPageProps>(() =>
 const OnCallRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
 );
-const SeclusionRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/seclusion/seclusion-redesign").then((module) => module.SeclusionRedesign),
-);
 const GovernancePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/governance/governance-page").then((module) => module.GovernancePage),
 );
@@ -155,11 +152,6 @@ const AsWardHandoverPage = dynamic<MockupPageProps>(() =>
 const AsWardStatisticsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page").then(
     (module) => module.AsWardStatisticsPage,
-  ),
-);
-const AsWardSeclusionPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-seclusion/as-ward-seclusion-page").then(
-    (module) => module.AsWardSeclusionPage,
   ),
 );
 const AsWardAlertsPage = dynamic<MockupPageProps>(() =>
@@ -260,11 +252,6 @@ const AsBedManagerStatisticsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsBedManagerStatisticsPage,
   ),
 );
-const AsBedManagerSeclusionPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-seclusion/as-bed-manager-seclusion-page").then(
-    (module) => module.AsBedManagerSeclusionPage,
-  ),
-);
 const AsExecutiveHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-executive-home/as-executive-home-page").then(
     (module) => module.AsExecutiveHomePage,
@@ -315,7 +302,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "legal-forms": LegalFormsPage,
   "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
-  seclusion: SeclusionRedesign,
   governance: GovernancePage,
   "bed-meeting-tv": BedMeetingTvPage,
   downtime: DowntimePage,
@@ -341,7 +327,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ward-legal-forms": AsWardLegalFormsPage,
   "as-ward-handover": AsWardHandoverPage,
   "as-ward-statistics": AsWardStatisticsPage,
-  "as-ward-seclusion": AsWardSeclusionPage,
   "as-ward-alerts": AsWardAlertsPage,
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
@@ -364,7 +349,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-bed-manager-discharges": AsBedManagerDischargesPage,
   "as-bed-manager-referrals": AsBedManagerReferralsPage,
   "as-bed-manager-statistics": AsBedManagerStatisticsPage,
-  "as-bed-manager-seclusion": AsBedManagerSeclusionPage,
   "as-executive-home": AsExecutiveHomePage,
   "as-executive-capacity": AsExecutiveCapacityPage,
   "as-executive-settings": AsExecutiveSettingsPage,

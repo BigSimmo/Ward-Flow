@@ -4,12 +4,146 @@
   flex-direction: column;
   gap: var(--wf-s-4);
   width: 100%;
-  max-width: 880px;
   min-width: 0;
-  /* A3 / L22 (device sweep, 24 Oct 2026): centred on a wide screen, as Settings is, rather than a
-     narrow column on the left with the rest of the screen empty. */
-  margin-inline: auto;
-  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-6);
+  /* Redesign (31 Oct 2026): the full work column, so the table and the chosen ward's record sit side by side. */
+  padding: var(--wf-s-4) var(--wf-s-6) var(--wf-s-6);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(360px, 1fr);
+  align-items: start;
+  gap: var(--wf-s-4);
+}
+
+.record {
+  min-width: 0;
+  scroll-margin-top: calc(var(--wf-s-6) * 2);
+}
+
+@media (min-width: 1100px) {
+  .record {
+    position: sticky;
+    top: var(--wf-s-4);
+  }
+}
+
+/* ROLE BRANCH (ward, bed_manager): one ward's record, without the table of secure wards beside it. */
+.layout[data-one-ward] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.layout[data-one-ward] .record {
+  position: static;
+}
+
+@media (max-width: 1099px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 48rem) {
+  .main {
+    padding-inline: var(--wf-s-3);
+  }
+}
+
+.tableCard {
+  min-width: 0;
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+}
+
+.table {
+  --wf-cell-pad-y: var(--wf-s-2);
+}
+
+/* Review point 6: cells wrap rather than cut a ward name short. */
+.table th,
+.table td {
+  white-space: normal;
+  overflow: visible;
+  max-width: none;
+  vertical-align: top;
+}
+
+.colWard {
+  width: 30%;
+}
+
+.colRoom {
+  width: 19%;
+}
+
+.colIncidents {
+  width: 13%;
+}
+
+.colMarked {
+  width: 18%;
+}
+
+.row {
+  cursor: pointer;
+}
+
+.wardButton {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: var(--wf-touch);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-14);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wardButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--wf-ink-1);
+}
+
+.state[data-state="not_recorded"] {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+/* On a phone the table keeps the ward, the room and what is in use; the record carries the rest. */
+@media (max-width: 48rem) {
+  .wide {
+    display: none;
+  }
 }
 
 .note,
@@ -76,7 +210,7 @@
   flex-direction: column;
 }
 
-.row {
+.listRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -85,7 +219,7 @@
 }
 
 /* The row's action keeps its whole label; the text beside it wraps instead. */
-.row > :last-child:not(.rowText) {
+.listRow > :last-child:not(.rowText) {
   flex: none;
 }
 
@@ -115,7 +249,33 @@
   padding: 0 0 var(--wf-s-3);
 }
 
+/* ROLE BRANCH (ward): on a wide screen the record button is sized to its words, like Mark available,
+   not stretched to a field's width. Phone keeps the full-width button. */
+@media (min-width: 48.0625rem) {
+  .layout[data-one-ward="ward"] .form > button {
+    justify-self: start;
+  }
+}
+
 /* The reason a button cannot be used yet takes its own row, under the fields, at every width. */
 .formReason {
   grid-column: 1 / -1;
+}
+
+.phoneInUse {
+  display: none;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-warning-ink);
+}
+
+/* On a phone what is in use moves under the ward name, so the ward and room keep their width. */
+@media (max-width: 48rem) {
+  .inUseCol {
+    display: none;
+  }
+
+  .phoneInUse {
+    display: block;
+  }
 }

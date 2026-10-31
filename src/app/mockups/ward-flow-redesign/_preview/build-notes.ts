@@ -22,12 +22,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** one barrier panel and the shared Discharges changes (see Discharges).",
     "**Review round (30 October):** as the coordinator's Discharges: '4 to work now · of 14 open', '4 to work · 1 discharged', Held up as the one word, barrier and day clicks stay on Now, the day chart counts releases (closed wards left out), Chase opens Barriers and Confirm date the date control. Own-ward wording and filters kept.",
   ],
-  "as-ward-seclusion": [
-    "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
-    "**New:** the header counts this ward (seclusion in use, restraint in use, incidents in the last day).",
-    "**Kept:** the operational-only safeguard wording, word for word.",
-    "**Round 2:** the card head drops 'Dabakarn' (the eyebrow names it). 'None in use.' and 'None recorded.'; the section reads 'Incidents, last day', as the hero does.",
-  ],
   "as-ward-handover": [
     "**As the nurse in charge**, the sheet is titled for Dabakarn, with no scope picker.",
     "**New:** empty groups fold into one line, so the table opens on real rows; the footer says '1 bed ready on Dabakarn' instead of the statewide finding-a-ward bar.",
@@ -183,11 +177,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** the shared counts hook treats this desk as full detail although its grant is counts; the copy applies counts only.",
     "**Round 2:** with one ED, Open ED journeys is one row of five figures. The one-site 'Site codes' key, the ward filter (two wards) and the title's meta are gone. The first tab reads 'Site', not 'Network'.",
     "**Still open:** the rail's 'Capacity 26' is the network figure on a site desk (shared chrome).",
-  ],
-  "as-bed-manager-seclusion": [
-    "**As the site bed manager**, the page is headed for Royal Perth ('1 secure ward of 2 at the site').",
-    "**Kept:** Mark available or out of service (this desk may), and the operational-only safeguard note.",
-    "**Round 2:** with one secure ward at the site, the page opens straight on Dabakarn's record, as the ward desk's view does. The header counts Seclusion in use, Restraint in use and Incidents, last day. 'Not recorded' is the one wording. The scope note stays word for word.",
   ],
   "as-executive-home": [
     "**As the executive**, one line under the hero explains the small-number rule once, instead of unexplained 'not shown' values in every card.",
@@ -751,16 +740,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
     "**Round 2:** Gaps reads 'Form gaps' ('67 form gaps across 9 sites'). The phone hero drops a line that repeated the title, tabs and footer. The phone switch is back to today's size; wrapping cells now live in copied files, not overrides.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  seclusion: [
-    "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",
-    "**New:** one table of every secure ward's seclusion room (in use, available, out of service or not recorded), with what is in use, the last day's incident count and who last marked the room. The header counts rooms in each state. Rows needing a look come first.",
-    "**New:** choosing a ward opens its record beside the table, on the first ward that needs a look rather than an empty panel. On a phone the record sits under the table and the page scrolls to it.",
-    "**Which wards:** a secure ward here is one with locked beds, plus any ward with something recorded, so no record is hidden. Please confirm that is the right list.",
-    "**Kept word for word:** the Operational view only notice. Nothing works out an order length, a review or a legal limit; times show as typed.",
-    "**Demo night:** nothing is recorded yet, so every room starts as Not recorded. Marking a room or recording a start updates the table and header at once.",
-    "**Round 2:** the phone hero shows In use, Out of service and Not recorded (it missed '7 Not recorded', the only figure that is not nought); Available moves into the phone title line. Short labels such as 'In use', with 'Seclusion rooms' spoken.",
-    "**Proposals for you:** amber with words for out of service, and one line instead of a table of empty rows until something is recorded.",
   ],
   "on-call": [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
