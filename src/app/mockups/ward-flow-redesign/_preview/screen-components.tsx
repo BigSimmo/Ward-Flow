@@ -39,9 +39,12 @@ const EdBoardPage = dynamic<MockupPageProps>(() =>
 // Legal forms is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the Record
 // exam pop-up draws over, so it shows the real screen, fed by the preview world.
 const LegalFormsScreen = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-management/legal-forms/legal-forms-screen").then((module) => () => (
-    <module.LegalFormsScreen />
-  )),
+  import("@/components/ward-management/legal-forms/legal-forms-screen").then(
+    (module) =>
+      function LegalFormsBackdrop() {
+        return <module.LegalFormsScreen />;
+      },
+  ),
 );
 // The patient record is built into the app (lane L, 31 Oct 2026). Its slug stays as the backdrop the
 // Medical clearance pop-up draws over: the real screen, opened on the sample record's coded address
@@ -50,7 +53,7 @@ const PatientNowBackdrop = dynamic<MockupPageProps>(() =>
   Promise.all([
     import("@/components/ward-management/patients/patient-now-screen"),
     import("@/components/ward-management/shell/ward-record-address"),
-  ]).then(([screen, address]) => () => {
+  ]).then(([screen, address]) => function PatientNowBackdropScreen() {
     const id = address.decodeRecordAddress("196zcp24w5t0") ?? "196zcp24w5t0";
     return (
       <screen.PatientNowScreen
