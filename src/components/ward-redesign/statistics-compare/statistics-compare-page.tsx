@@ -1,7 +1,7 @@
 "use client";
 
 import { StatisticsCompareRedesign } from "./statistics-compare-redesign";
-import chipFade from "@/components/ward-redesign/statistics/statistics-chip-fade.module.css";
+import chipFade from "@/components/ward-management/statistics/statistics-nav.module.css";
 
 /** Ward and ED comparisons, as the app's `/ward-flow/statistics/compare` opens. */
 export function StatisticsComparePage() {

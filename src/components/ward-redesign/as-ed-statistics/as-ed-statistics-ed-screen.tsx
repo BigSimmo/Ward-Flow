@@ -40,7 +40,7 @@ import {
   STATISTICS_EDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
 // D-91: the one unit finder, on the Summary page.
-import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-redesign/statistics/statistics-view-switch";
+import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-management/statistics/statistics-view-switch";
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
