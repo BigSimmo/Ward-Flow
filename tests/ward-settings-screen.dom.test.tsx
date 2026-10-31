@@ -23,6 +23,8 @@ vi.mock("next/navigation", () => ({
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
+import { SETTINGS_SEARCH_ENTRIES } from "@/components/ward-management/settings/settings-search-index";
+import { findRedesignSettings } from "@/components/ward-management/settings/settings-tabs";
 
 /**
  * 🔴 **THE SETTINGS SCREEN, AND ITS ONE RULE: A CONTROL THAT WRITES STATE NOTHING READS IS WORSE
@@ -111,14 +113,34 @@ describe("the settings screen", () => {
     expect(screen.getByTestId("ward-settings-rail")).toBeInTheDocument();
   });
 
-  // Audit settings-27: "workstation" finds Go to a desk, and choosing it opens the desk drawer.
-  it("finds Go to a desk by the old word and opens the desk drawer", () => {
+  // Audit settings-27: "workstation" finds the desk switcher, and choosing it opens the desk drawer.
+  // Settings by login (31 Oct 2026): the row reads "Switch login (demo)"; the drawer keeps its name.
+  it("finds Switch login (demo) by the old word and opens the desk drawer", () => {
     renderSettings();
     fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
       target: { value: "workstation" },
     });
-    fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
+    fireEvent.click(screen.getByRole("option", { name: /Switch login \(demo\)/ }));
     expect(screen.getByRole("dialog", { name: "Go to a desk" })).toBeInTheDocument();
+  });
+
+  // Settings by login (31 Oct 2026): a Find a setting result that lands on no row highlights and
+  // focuses nothing. Early warning, Final warning and You once did (their rows had other ids).
+  it("lands every Find a setting result for this desk on a row on screen", () => {
+    renderSettings();
+    const main = screen.getByRole("main");
+    const targets = new Set(
+      Array.from(main.querySelectorAll<HTMLElement>("[data-setting]")).map((el) => el.dataset.setting),
+    );
+    const sections = ["rules", "device", "you", "help", "demo"] as const;
+    const offered = new Map<string, string>();
+    // Today's names, and the names the rows had before (Find still knows them as keywords or labels).
+    const queries = [...SETTINGS_SEARCH_ENTRIES.map((entry) => entry.label), "you", "warning", "rules", "demo"];
+    for (const query of queries) {
+      for (const found of findRedesignSettings(query, sections, 99)) offered.set(found.id, found.label);
+    }
+    for (const id of ["early-warning", "final-warning", "role"]) expect(offered.has(id), id).toBe(true);
+    expect([...offered].filter(([id]) => !targets.has(id))).toEqual([]);
   });
 
   it("finding Fixed defaults opens the Data tab with that reference panel showing", () => {

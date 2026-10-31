@@ -41,7 +41,7 @@ export function SettingsProfileCard({
   const roleIsName = deskProfile.name === deskProfile.role;
 
   return (
-    <Card aria-labelledby="profile-title" data-testid="ward-settings-profile-card" data-setting="profile">
+    <Card aria-labelledby="profile-title" data-testid="ward-settings-profile-card" data-setting="role">
       <CardHead
         iconPlain
         id="profile-title"
