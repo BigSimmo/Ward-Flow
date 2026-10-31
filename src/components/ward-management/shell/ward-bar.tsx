@@ -24,7 +24,7 @@ import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
 import type { HealthService } from "@/components/ward-management/ward-model";
-import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
 import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
@@ -62,7 +62,7 @@ import { useWardChecks } from "./ward-checks";
 import { useDeskRoleLabel } from "./ward-access-store";
 import { setServiceScope, useServiceScope } from "./ward-service-store";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
-import { useAccessNavFilter, useDeskHomeHref } from "./ward-access";
+import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-access";
 import { useNavigationPendingRef, useWardBarActivity, useWardBarTasks } from "./ward-bar-state";
 import { useEffectiveWardAccess } from "./ward-access-store";
 import { deskHomeRouteTitle, deskPlaceLabel } from "./ward-bar-desk-place";
@@ -332,6 +332,10 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   const onAlertsScreen = oneAlertsQueue && path === WARD_ALERTS_HREF;
   const onPatientsPage = path === patientSearchHref();
   const roleCategory = roleReferralCategory(role);
+  // Access audit (31 Oct 2026): the referral slide-out is referral intake, so a desk that may not
+  // open the intake (a bed manager, officer, executive or admin) never gets it, by any of the three
+  // ways in below (Shift+R and other drawer requests, a link click, arriving on its route).
+  const canOpenReferral = useCanOpenHref()(WARD_REFERRAL_INTAKE_HREF);
   const checksPublication = useWardChecks();
 
   const [openPanel, setOpenPanel] = useState<WardBarPopoverId | null>(null);
@@ -647,7 +651,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       routeReferralOpenedRef.current = false;
       return undefined;
     }
-    if (routeReferralOpenedRef.current) return undefined;
+    // The page's own access gate answers a desk that may not open the intake; no slide-out over it.
+    if (!canOpenReferral || routeReferralOpenedRef.current) return undefined;
     routeReferralOpenedRef.current = true;
     const search = new URLSearchParams(window.location.search);
     const request = withRoleCategory(referralSheetRequestFromSearch(search), search, roleCategory);
@@ -664,7 +669,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       // Not yet opened (a Strict Mode re-run, say): let the next run open it. Once open, never again.
       if (!opened) routeReferralOpenedRef.current = false;
     };
-  }, [pathname, roleCategory]);
+  }, [canOpenReferral, pathname, roleCategory]);
 
   // Once the slide-out has closed, arriving on its route again (browser Forward) must open it again.
   const referralWasOpenRef = useRef(false);
@@ -685,6 +690,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       if (!(anchor instanceof HTMLAnchorElement)) return;
       if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
       if (primaryPanelRef.current?.contains(anchor)) return;
+      // A desk that may not open the intake keeps the link's ordinary behaviour; no slide-out.
+      if (!canOpenReferral) return;
       const request = referralSheetRequestFromHref(anchor.href, window.location.origin);
       if (!request) return;
       event.preventDefault();
@@ -704,7 +711,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
     };
     window.addEventListener("click", onClick, true);
     return () => window.removeEventListener("click", onClick, true);
-  }, [openReferral, roleCategory]);
+  }, [canOpenReferral, openReferral, roleCategory]);
 
   useEffect(() => {
     function onHistoryTraversalCancelled() {
@@ -739,6 +746,8 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
   useEffect(() => {
     const unsubOpen = subscribeWardDrawer((drawerId, href) => {
       if (drawerId === "referral") {
+        // Shift+R and every Refer button reach here: nothing opens for a desk without the intake.
+        if (!canOpenReferral) return;
         const opener = document.activeElement;
         // A button that raises a referral from where it sits (ED, community team, Home) passes the
         // same link a Refer link would, so the slide-out opens prefilled from that place.
@@ -766,7 +775,7 @@ export function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceC
       unsubOpen();
       unsubClose();
     };
-  }, [openPopover, openReferral, roleCategory]);
+  }, [canOpenReferral, openPopover, openReferral, roleCategory]);
 
   const selectService = useCallback(
     (next: HealthService | null) => {
