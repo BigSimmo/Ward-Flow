@@ -194,10 +194,10 @@
 .notice {
   margin: 0;
   border: 0;
-  border-inline-start: 0.1875rem solid var(--warn);
   border-radius: 0;
   padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
-  /* v10: the amber edge carries the tone; the words stay neutral ink. */
+  /* No side edges (Josh, 31 Oct 2026): the amber glyph before the words carries the tone; the
+     words stay neutral ink. */
   color: var(--wf-ink-1);
   font-size: var(--t-1);
   line-height: var(--ward-leading-relaxed);
@@ -206,7 +206,6 @@
 /* Quieter than the notices above: it qualifies the lists rather than disclaiming a claim. */
 .provenance {
   margin: 0;
-  border-left: 0.125rem solid var(--line);
   padding-left: var(--ward-space-10);
   color: var(--muted);
   font-size: var(--t-0);
@@ -248,7 +247,6 @@
 .ratifiedNotice {
   margin: 0;
   border: 0;
-  border-inline-start: 0.1875rem solid var(--line-strong);
   border-radius: 0;
   padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
   color: var(--accent-ink);
@@ -266,7 +264,6 @@
 .absenceNotice {
   margin: 0;
   border: 0;
-  border-inline-start: 0.1875rem solid var(--warn);
   border-radius: 0;
   padding: var(--ward-space-2) 0 var(--ward-space-2) var(--ward-space-12);
   color: var(--warn);
@@ -509,7 +506,7 @@
   border-color: var(--wf-line);
 }
 
-/* Admitted-table Actions cluster — drawing look (btnSm*) + 48px tap faces for book/cancel. */
+/* Admitted-table transport cell: the kit's standard buttons (no 48px controls, Josh, 31 Oct 2026). */
 .actionsCol {
   text-align: right;
 }
@@ -525,44 +522,6 @@
   justify-content: flex-end;
   align-items: center;
   gap: var(--ward-space-8);
-}
-
-.rowActions .btnSmPrimary,
-.rowActions .btnSmSec,
-.rowActions .transportCancelButton {
-  min-height: 3rem;
-  min-width: 3rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ward-space-8) var(--ward-space-12);
-  font-size: var(--t-1);
-  line-height: 1.2;
-  text-align: center;
-  white-space: normal;
-}
-
-.transportCancelButton {
-  background: var(--danger-soft, var(--surface));
-  color: var(--danger, var(--ink));
-  border: 1px solid var(--danger, var(--line));
-  padding: 0.3125rem 0.625rem;
-  font-size: var(--t-0);
-  font-weight: 600;
-  border-radius: var(--r2);
-  cursor: pointer;
-  transition:
-    background-color 0.12s,
-    border-color 0.12s,
-    color 0.12s,
-    box-shadow 0.12s,
-    transform 0.12s,
-    opacity 0.12s;
-}
-
-.transportCancelButton:hover {
-  background: var(--danger-soft, var(--sunk));
-  border-color: var(--danger, var(--line-strong));
 }
 
 .transportBookedNote {
@@ -757,7 +716,6 @@
 }
 
 .attentionItem {
-  border-inline-start: 0.1875rem solid var(--line-strong);
   padding-inline-start: var(--ward-space-10);
   color: var(--ink);
   font-size: var(--t-1);
@@ -1065,7 +1023,8 @@
 .absenceNotice,
 .ratifiedNotice,
 .provenance {
-  border: 0;
+  /* No side edges (Josh, 31 Oct 2026): a plain box with a neutral 1px border. */
+  border: 1px solid var(--wf-line);
   border-radius: var(--r2);
   background: var(--surface-2);
   padding: 0.75rem;
@@ -1073,8 +1032,12 @@
 }
 .notice,
 .absenceNotice {
-  border-inline-start: 0.1875rem solid var(--warn);
   color: var(--wf-ink-1);
+}
+/* The warning tone sits in the glyph before the words, never in an edge. */
+.noticeGlyph {
+  margin-inline-end: var(--wf-s-2);
+  vertical-align: 0;
 }
 .ratifiedNotice {
   color: var(--accent-ink);
@@ -3539,67 +3502,13 @@ button.searchBox:hover {
   border-radius: var(--r2);
 }
 
-/* The existing MDT summary prints alone and flows naturally on A4. */
+/* The catchment counts print alone and flow on A4. The dialog is the kit Dialog, portalled out of
+   the page, so the page itself is hidden on paper; `community-screen-modals.module.css` puts the
+   dialog back as a plain block. */
 @media print {
-  .main:has(:global(#handoverModal)) > :not(.modalOverlay) {
+  :global(body):has(:global(#handoverModal)) .main {
     display: none !important;
   }
-
-  .main:has(:global(#handoverModal)) .modalOverlay {
-    position: static;
-    inset: auto;
-    display: block;
-    padding: 0;
-    background: transparent;
-    backdrop-filter: none;
-  }
-
-  .modalBox:global(#handoverModal) {
-    position: static;
-    width: auto;
-    max-width: none;
-    max-height: none;
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-    box-shadow: none;
-    animation: none;
-  }
-
-  .modalBox:global(#handoverModal) .modalCloseBtn,
-  .modalBox:global(#handoverModal) .modalFoot {
-    display: none !important;
-  }
-}
-
-/* Device sweep (24 Oct 2026): at 1280 px the Inner City Clinic caseload table scrolls sideways
-   beside the side panel, which hid Actions and "View dossier" with no sign. The right edge is
-   drawn while there is more to the right, the same scroll-driven edge as the shared ward table
-   (ward-table.module.css): a border, never a fade, and nothing on a table that fits. After the
-   `border: 0` rule above, so it wins. */
-@keyframes communityMoreRight {
-  from,
-  97% {
-    border-right-color: var(--wf-ink-3);
-  }
-  to {
-    border-right-color: transparent;
-  }
-}
-
-@supports (animation-timeline: scroll()) {
-  .tableScroll {
-    border-right: 2px solid transparent;
-    animation: communityMoreRight linear both;
-    animation-timeline: scroll(self inline);
-  }
-}
-
-/* Layout sweep MEET-12: the admitted-while-already-with-the-team table wraps its long headings and
-   names, so all five columns fit inside the card. */
-.tableScroll[data-testid="ward-community-accepted-before-admission-table"] th,
-.tableScroll[data-testid="ward-community-accepted-before-admission-table"] .patientIdWrap {
-  white-space: normal;
 }
 
 /* Layout sweep MEET-15: the follow-up filter keeps a field's width, not the panel's. */
@@ -3624,4 +3533,74 @@ button.searchBox:hover {
 /* Layout sweep MEET-17: a dialog's status line reads above its buttons, which close the dialog. */
 .stackLg > .modalFootInline {
   order: 1;
+}
+
+/* The In a bed tab's one table (redesign, approved 31 Oct 2026). Names are in the normal font and
+   wrap in full; the UMRN is mono. The whole row opens the record, and the name is its keyboard
+   target. The side-scroll edge cue went with the second table: this one fits (and no coloured
+   side edges, Josh, 31 Oct 2026). */
+.personButton {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: start;
+  cursor: pointer;
+}
+
+.personButton:hover .personName {
+  text-decoration: underline;
+}
+
+.personButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.personName {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.personMeta {
+  display: block;
+  margin-top: 2px;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.personUmrn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowOpens {
+  cursor: pointer;
+}
+
+.rowOpens:hover > td {
+  background: var(--wf-hover, var(--wf-surface-2));
+}
+
+.inBedTable td {
+  vertical-align: top;
+}
+
+.inBedTable th[scope="col"] {
+  white-space: normal;
+}
+
+.inBedTable td:first-child {
+  min-width: 11rem;
+}
+
+/* How to reach: the caveat and the recorded and paired lines are one footnote under the details. */
+.contactFootnote {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }

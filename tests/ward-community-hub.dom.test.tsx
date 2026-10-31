@@ -207,7 +207,9 @@ describe("community hub — who the page shows is who the referral named", () =>
     ).toBeInTheDocument();
     expect(admittedIds()).toHaveLength(1);
     expect(screen.getByTestId("ward-community-admitted-AD-A")).toBeTruthy();
-    expect(screen.getByTestId("ward-community-admitted-count").textContent).toContain("1");
+    // Redesign (31 Oct 2026): the count sits in the panel head only; the sentence repeating it is gone.
+    expect(admittedPanelCount()).toBe("1");
+    expect(screen.queryByTestId("ward-community-admitted-count")).toBeNull();
     // The rule is stated on the page, once, above every list that depends on it.
     expect(screen.getByTestId("ward-community-association").textContent).toContain(
       "destination team written on the referral, never home region",
@@ -232,7 +234,7 @@ describe("community hub — who the page shows is who the referral named", () =>
     expect(admittedIds()).toHaveLength(1);
     expect(screen.getByTestId("ward-community-admitted-AD-A")).toBeTruthy();
     expect(screen.queryByTestId("ward-community-admitted-AD-B")).toBeNull();
-    expect(screen.getByTestId("ward-community-admitted-count").textContent).toContain("1");
+    expect(admittedPanelCount()).toBe("1");
     first.unmount();
 
     // The converse, on the same fixture: the exclusion above is a consequence of the referral and
@@ -262,7 +264,7 @@ describe("community hub — who the page shows is who the referral named", () =>
 
     expect(screen.queryByTestId("ward-community-admitted-list")).toBeNull();
     expect(screen.getByTestId("ward-community-admitted-empty")).toBeTruthy();
-    expect(screen.getByTestId("ward-community-admitted-count").textContent).toContain("0");
+    expect(admittedPanelCount()).toBe("0");
   });
 });
 
@@ -1010,6 +1012,11 @@ function acceptTeamReferral(
  *  hard-coded index — exactly what the brief asks for: address a column by its name, not its
  *  position, so a reordered or renamed column fails loudly instead of silently comparing the
  *  wrong cell. */
+/** The In a bed panel's count, in its head (the sentence repeating it went in the 31 Oct 2026 redesign). */
+function admittedPanelCount(): string {
+  return screen.getByTestId("ward-community-admitted").querySelector("[data-ward-panel-count]")?.textContent ?? "";
+}
+
 function cellByHeader(table: HTMLElement, row: HTMLElement, headerName: string): string {
   const headers = within(table)
     .getAllByRole("columnheader")
@@ -1090,10 +1097,17 @@ describe("admitted while already with this team — the acceptance-before-admiss
     const { admissions, referrals } = buildThreeShapeFixture();
     renderTeam(ACCEPTED_TEAM.id, admissions, referrals);
 
-    const table = screen.getByTestId("ward-community-accepted-before-admission-table");
-    expect(within(table).queryByTestId("ward-community-accepted-before-admission-AD-ACCEPTED-FIRST")).toBeTruthy();
-    expect(within(table).queryByTestId("ward-community-accepted-before-admission-AD-REFERRED-DURING")).toBeNull();
-    expect(within(table).queryByTestId("ward-community-accepted-before-admission-AD-PULLED")).toBeNull();
+    // Redesign (31 Oct 2026): one table. Every row carries a "With team before bed" cell, and only
+    // the admission accepted before its bed began has a duration there; the others say why in words.
+    const table = screen.getByTestId("ward-community-admitted-list");
+    const accepted = within(table).getByTestId("ward-community-admitted-AD-ACCEPTED-FIRST");
+    expect(cellByHeader(table, accepted, "With team before bed")).toMatch(/\d/u);
+    const referredDuring = within(table).getByTestId("ward-community-admitted-AD-REFERRED-DURING");
+    expect(cellByHeader(table, referredDuring, "With team before bed")).toBe("Referred during this stay");
+    expect(cellByHeader(table, referredDuring, "Since accepted")).toBe("Not counted");
+    const pulled = within(table).getByTestId("ward-community-admitted-AD-PULLED");
+    expect(cellByHeader(table, pulled, "With team before bed")).toBe("Not arrived");
+    expect(cellByHeader(table, pulled, "Since accepted")).toBe("Not counted");
   });
 
   it("excludes a referral raised during the admission the person is still in, and names it in the other-groups count", () => {
@@ -1115,11 +1129,11 @@ describe("admitted while already with this team — the acceptance-before-admiss
     const { admissions, referrals } = buildThreeShapeFixture();
     renderTeam(ACCEPTED_TEAM.id, admissions, referrals);
 
-    const table = screen.getByTestId("ward-community-accepted-before-admission-table");
-    const row = within(table).getByTestId("ward-community-accepted-before-admission-AD-ACCEPTED-FIRST");
+    const table = screen.getByTestId("ward-community-admitted-list");
+    const row = within(table).getByTestId("ward-community-admitted-AD-ACCEPTED-FIRST");
     // 15 days accepted before now, 5 days into the bed — the gap between acceptance and arrival is
-    // 10 days, resolved by the column NAMED "Accepted before the bed began".
-    const gapCell = cellByHeader(table, row, "Accepted before the bed began");
+    // 10 days, resolved by the column NAMED "With team before bed" (redesign, 31 Oct 2026).
+    const gapCell = cellByHeader(table, row, "With team before bed");
     expect(gapCell.length, "the gap column rendered nothing").toBeGreaterThan(0);
     expect(gapCell.toLowerCase()).not.toContain("overdue");
   });
@@ -1214,9 +1228,9 @@ describe("admitted while already with this team — the acceptance-before-admiss
 
     renderTeam(ACCEPTED_TEAM.id, [shortGapAdmission, longGapAdmission], [shortReferral, longReferral]);
 
-    const table = screen.getByTestId("ward-community-accepted-before-admission-table");
-    const shortRow = within(table).getByTestId("ward-community-accepted-before-admission-AD-SHORT-GAP");
-    const longRow = within(table).getByTestId("ward-community-accepted-before-admission-AD-LONG-GAP");
+    const table = screen.getByTestId("ward-community-admitted-list");
+    const shortRow = within(table).getByTestId("ward-community-admitted-AD-SHORT-GAP");
+    const longRow = within(table).getByTestId("ward-community-admitted-AD-LONG-GAP");
     // Same class list on both rows regardless of a roughly sixty-fold difference in the gap they
     // render — the only thing distinguishing them is their own identity, never a rule keyed to
     // how long the gap is.
@@ -1229,8 +1243,12 @@ describe("admitted while already with this team — the acceptance-before-admiss
     const [toTeam] = referralsNaming([ACCEPTED_TEAM.name], "Perth Metropolitan");
     renderTeam(ACCEPTED_TEAM.id, [admission({ id: "AD-A", referralId: toTeam.id, state: "occupied" })], [toTeam]);
 
-    const empty = screen.getByTestId("ward-community-accepted-before-admission-empty").textContent ?? "";
-    expect(empty.length).toBeGreaterThan(10);
+    // Redesign (31 Oct 2026): the one table names the gap in words on the row itself.
+    const table = screen.getByTestId("ward-community-admitted-list");
+    const row = within(table).getByTestId("ward-community-admitted-AD-A");
+    const empty = cellByHeader(table, row, "With team before bed");
+    expect(["Referred during this stay", "Not arrived"]).toContain(empty);
+    expect(cellByHeader(table, row, "Since accepted")).toBe("Not counted");
     expect(empty.trim()).not.toBe("");
     expect(empty.trim()).not.toBe("-");
     expect(empty.trim()).not.toBe("—");

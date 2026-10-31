@@ -1,19 +1,22 @@
 /*
  * The community team screen's second desktop list: people referred to this team in a bed or
- * holding one, and those admitted while already with the team.
+ * holding one, with the "admitted while already with the team" figures on the same row.
  *
- * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor:
- * the markup, text, class names and behaviour are unchanged. Comments moved with the code, so
- * "this file" or "this screen" in them still means the community team screen as a whole.
+ * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026). Redesign (Josh, approved
+ * 31 Oct 2026): the live (non-demo) list is one table. "In a bed" and "Admitted while already with
+ * the team" listed the same people twice, so their columns now sit side by side on one row. The
+ * demo branch is unchanged.
  */
 
-import { daysInBed } from "@/components/ward-management/ward-admissions";
+import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { SrOnly, StatusGlyph, buttonClass } from "@/components/wf";
 import { daysBetween, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import styles from "./community.module.css";
 import { DEMO_COMMUNITY_INPATIENTS } from "./community-demo-cohort";
-import { unitName, bedStateLabel, stayLabel, elapsedSinceOrUnderADay } from "./community-screen-helpers";
+import { unitName, bedStateLabel, elapsedSinceOrUnderADay } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 
 /** Tab 2: people referred to this team in a bed or with one pulled. */
@@ -24,7 +27,6 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
     movements,
     patients,
     now,
-    identityOf,
     demoUmrnOf,
     team,
     setActiveDrawer,
@@ -42,7 +44,35 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
     referredDuringThisAdmission,
     bedPulledNotYetArrived,
     activeTab,
+    umrnLookup,
   } = view;
+  // Redesign: the "before the bed" figures, looked up by admission so they sit on the same row.
+  const acceptedById = new Map(admittedWhileAlreadyWithTeam.map((entry) => [entry.admission.id, entry]));
+  const referredDuringIds = new Set(referredDuringThisAdmission.map((entry) => entry.admission.id));
+  function transportFor(admission: Admission) {
+    const movement =
+      admission.state === "pulled" && admission.movementId !== null
+        ? movements.find((candidate) => candidate.id === admission.movementId)
+        : undefined;
+    const transport = movement?.transport;
+    const ownUncollectedBooking =
+      transport !== undefined &&
+      transport.bookedBy?.role === "community" &&
+      transport.bookedBy.placeId === teamId &&
+      transport.collectedAt === undefined;
+    const otherBooking = transport !== undefined && !ownUncollectedBooking;
+    const canBook =
+      admission.state === "pulled" &&
+      admission.movementId !== null &&
+      movement !== undefined &&
+      transport === undefined;
+    return { movement, transport, ownUncollectedBooking, otherBooking, canBook };
+  }
+  // The transport column shows only when a row has a transport control or note to carry.
+  const anyTransport = lists.currentlyAdmitted.some((admission) => {
+    const row = transportFor(admission);
+    return row.canBook || row.ownUncollectedBooking || row.otherBooking;
+  });
   return (
     <div
       className={activeTab === "tab-inpatients" ? styles.tabPanelActive : styles.tabPanelHidden}
@@ -189,13 +219,8 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
             </>
           ) : (
             <>
-              <p id="inpatientSummaryNote" className={styles.count} data-testid="ward-community-admitted-count">
-                {lists.currentlyAdmitted.length}{" "}
-                {lists.currentlyAdmitted.length === 1
-                  ? "person referred to this team is"
-                  : "people referred to this team are"}{" "}
-                in a bed or have one pulled for them.
-              </p>
+              {/* Redesign: the count is in the panel head and the tab, and an empty list has its own
+                  line below, so the sentence repeating the count is gone. */}
               {lists.currentlyAdmitted.length === 0 ? (
                 <p className={styles.emptyNote} data-testid="ward-community-admitted-empty">
                   {cannotResolve ? (
@@ -208,235 +233,197 @@ export function CommunityScreenInBedTab({ view }: { view: CommunityScreenView })
                   )}
                 </p>
               ) : (
+                /*
+                 * Redesign: ONE table. "In a bed" and "Admitted while already with the team" listed
+                 * the same people twice; their columns now sit side by side on one row. The whole row
+                 * opens the record (the name is the keyboard target), so the nine "Open record"
+                 * buttons are gone; transport controls stay in their own cell, as before.
+                 */
                 <WardTable
                   id="inpatientTable"
-                  className={styles.table}
+                  className={`${styles.table} ${styles.inBedTable}`}
                   wrapperClassName={styles.tableScroll}
                   testId="ward-community-admitted-list"
-                  hasScrollThreshold
                 >
                   <caption>People referred to this team in a bed or with one pulled</caption>
                   <thead>
                     <tr>
-                      {/*
-                              v6 columns (`CommunityTeam--in-a-bed`), where the record holds the
-                              figure: no key clinician or liaison column, since nothing records
-                              either, and no invented bed number.
-                            */}
                       <th scope="col">Person</th>
                       <th scope="col">Unit</th>
                       <th scope="col">Legal status</th>
                       <th scope="col" className={styles.n}>
                         In bed
                       </th>
-                      {/*
-                          Drawing Actions column shows Open Dossier only. Owner decision 1
-                          (22 Sep 2026): drawings own look; book/cancel stays as behaviour and
-                          the Actions cluster adjusts to fit (dossier + transport controls).
-                        */}
-                      <th scope="col" className={styles.actionsCol}>
-                        Actions
-                      </th>
+                      <th scope="col">With team before bed</th>
+                      <th scope="col">Since accepted</th>
+                      {anyTransport ? (
+                        <th scope="col" className={styles.actionsCol}>
+                          Transport
+                        </th>
+                      ) : null}
                     </tr>
                   </thead>
                   <tbody>
                     {lists.currentlyAdmitted.map((admission) => {
-                      const movement =
-                        admission.state === "pulled" && admission.movementId !== null
-                          ? movements.find((candidate) => candidate.id === admission.movementId)
-                          : undefined;
-                      const transport = movement?.transport;
-                      const ownUncollectedBooking =
-                        transport !== undefined &&
-                        transport.bookedBy?.role === "community" &&
-                        transport.bookedBy.placeId === teamId &&
-                        transport.collectedAt === undefined;
-                      const otherBooking = transport !== undefined && !ownUncollectedBooking;
-                      const canBook =
-                        admission.state === "pulled" &&
-                        admission.movementId !== null &&
-                        movement !== undefined &&
-                        transport === undefined;
+                      const row = transportFor(admission);
+                      const { movement, transport, ownUncollectedBooking, otherBooking, canBook } = row;
                       const dossierPatientId = admission.patientId;
                       const pt = patients.find((p) => p.id === admission.patientId);
+                      const person = resolveSubjectPatient(admission, umrnLookup);
                       const stayDays = daysInBed(admission, now);
+                      const accepted = acceptedById.get(admission.id);
+                      const openRecord =
+                        dossierPatientId !== null
+                          ? () => {
+                              setSelectedPatientId(dossierPatientId);
+                              setActiveDrawer("pxDrawer");
+                            }
+                          : undefined;
                       return (
-                        <tr key={admission.id} data-testid={`ward-community-admitted-${admission.id}`}>
-                          <td className={styles.cellNowrap}>
-                            <b className={styles.patientIdWrap}>{identityOf(admission)}</b>
-                            {pt ? ` (${pt.sex === "Male" ? "M" : "F"})` : ""}
+                        <tr
+                          key={admission.id}
+                          data-testid={`ward-community-admitted-${admission.id}`}
+                          className={openRecord ? styles.rowOpens : undefined}
+                          onClick={openRecord}
+                        >
+                          <td>
+                            {openRecord ? (
+                              <button
+                                type="button"
+                                className={styles.personButton}
+                                data-testid={`ward-community-open-dossier-${admission.id}`}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openRecord();
+                                }}
+                              >
+                                <span className={styles.personName}>{person.formalName}</span>
+                                <SrOnly>, open record</SrOnly>
+                              </button>
+                            ) : (
+                              <span className={styles.personName}>{person.formalName}</span>
+                            )}
+                            <span className={styles.personMeta}>
+                              <span className={styles.personUmrn}>{person.umrn}</span>
+                              {pt ? ` · ${pt.sex === "Male" ? "M" : "F"}` : ""}
+                            </span>
                           </td>
                           <td>
                             <span className={styles.cellLead}>{unitName(admission.unitId, units)}</span>
-                            <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                            {/* Redesign: the panel is "In a bed or with one pulled", so only a bed that is not
+                                simply occupied (pulled, or its person at an ED) says so. */}
+                            {bedStateLabel(admission) === "In the bed" ? null : (
+                              <span className={styles.cellSub}>{bedStateLabel(admission)}</span>
+                            )}
                           </td>
                           <td>{pt?.legalStatus ?? "Not recorded"}</td>
                           <td className={styles.n}>{stayDays === null ? "Not arrived" : `${stayDays}d`}</td>
-                          <td
-                            className={styles.actionsCell}
-                            data-testid={`ward-community-transport-cell-${admission.id}`}
-                          >
-                            <div className={styles.rowActions}>
-                              {dossierPatientId !== null ? (
-                                <button
-                                  type="button"
-                                  className={styles.btnSmSec}
-                                  data-testid={`ward-community-open-dossier-${admission.id}`}
-                                  onClick={() => {
-                                    setSelectedPatientId(dossierPatientId);
-                                    setActiveDrawer("pxDrawer");
-                                  }}
-                                >
-                                  Open record
-                                </button>
-                              ) : null}
-                              {canBook ? (
-                                <button
-                                  type="button"
-                                  className={styles.btnSmPrimary}
-                                  data-testid={`ward-community-book-transport-${admission.movementId}`}
-                                  onClick={() => openTransportBook(admission.movementId!)}
-                                >
-                                  Log transport booking
-                                </button>
-                              ) : null}
-                              {ownUncollectedBooking ? (
-                                <button
-                                  type="button"
-                                  className={styles.transportCancelButton}
-                                  data-testid={`ward-community-cancel-transport-${admission.movementId}`}
-                                  onClick={() => openTransportCancel(admission.movementId!)}
-                                >
-                                  Cancel this team&apos;s booking
-                                </button>
-                              ) : null}
-                            </div>
-                            {ownUncollectedBooking && transport.estimatedAt !== undefined ? (
-                              <p
-                                className={styles.transportBookedNote}
-                                data-testid={`ward-community-transport-eta-${admission.movementId}`}
-                              >
-                                Estimated {formatInstantWithDay(transport.estimatedAt, now)} ·{" "}
-                                {transportEtaRemainingLabel(transport.estimatedAt, now)}
-                              </p>
-                            ) : null}
-                            {otherBooking ? (
-                              <p
-                                className={styles.transportBookedNote}
-                                data-testid={`ward-community-transport-booked-${admission.movementId}`}
-                              >
-                                Transport already booked
-                                {transport.bookedBy?.role === "ed"
-                                  ? " by the emergency department"
-                                  : transport.bookedBy?.role === "ward"
-                                    ? " by a ward"
-                                    : transport.bookedBy?.role === "community" && transport.bookedBy.placeId !== teamId
-                                      ? " by another community team"
-                                      : ""}
-                                {transport.estimatedAt !== undefined
-                                  ? ` · estimated ${formatInstantWithDay(transport.estimatedAt, now)} · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
-                                  : ""}
-                                .
-                              </p>
-                            ) : null}
+                          <td>
+                            {accepted
+                              ? elapsedSinceOrUnderADay(daysBetween(accepted.acceptedAt, accepted.arrivedAt))
+                              : referredDuringIds.has(admission.id)
+                                ? "Referred during this stay"
+                                : "Not arrived"}
                           </td>
+                          <td>
+                            {accepted ? elapsedSinceOrUnderADay(daysBetween(accepted.acceptedAt, now)) : "Not counted"}
+                          </td>
+                          {anyTransport ? (
+                            <td
+                              className={styles.actionsCell}
+                              data-testid={`ward-community-transport-cell-${admission.id}`}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <div className={styles.rowActions}>
+                                {canBook && movement ? (
+                                  <button
+                                    type="button"
+                                    className={buttonClass({ variant: "pri" })}
+                                    data-testid={`ward-community-book-transport-${admission.movementId}`}
+                                    onClick={() => openTransportBook(admission.movementId!)}
+                                  >
+                                    Log transport booking
+                                  </button>
+                                ) : null}
+                                {ownUncollectedBooking ? (
+                                  <button
+                                    type="button"
+                                    className={buttonClass({ variant: "sec" })}
+                                    data-testid={`ward-community-cancel-transport-${admission.movementId}`}
+                                    onClick={() => openTransportCancel(admission.movementId!)}
+                                  >
+                                    Cancel this team&apos;s booking
+                                  </button>
+                                ) : null}
+                              </div>
+                              {ownUncollectedBooking && transport?.estimatedAt !== undefined ? (
+                                <p
+                                  className={styles.transportBookedNote}
+                                  data-testid={`ward-community-transport-eta-${admission.movementId}`}
+                                >
+                                  Estimated {formatInstantWithDay(transport.estimatedAt, now)} ·{" "}
+                                  {transportEtaRemainingLabel(transport.estimatedAt, now)}
+                                </p>
+                              ) : null}
+                              {otherBooking && transport ? (
+                                <p
+                                  className={styles.transportBookedNote}
+                                  data-testid={`ward-community-transport-booked-${admission.movementId}`}
+                                >
+                                  Transport already booked
+                                  {transport.bookedBy?.role === "ed"
+                                    ? " by the emergency department"
+                                    : transport.bookedBy?.role === "ward"
+                                      ? " by a ward"
+                                      : transport.bookedBy?.role === "community" &&
+                                          transport.bookedBy.placeId !== teamId
+                                        ? " by another community team"
+                                        : ""}
+                                  {transport.estimatedAt !== undefined
+                                    ? ` · estimated ${formatInstantWithDay(transport.estimatedAt, now)} · ${transportEtaRemainingLabel(transport.estimatedAt, now)}`
+                                    : ""}
+                                  .
+                                </p>
+                              ) : null}
+                            </td>
+                          ) : null}
                         </tr>
                       );
                     })}
                   </tbody>
                 </WardTable>
               )}
+              {/*
+               * Kept from the second table, word for word: the groups the "before the bed" column
+               * cannot speak for, named rather than silently dropped.
+               */}
+              {lists.currentlyAdmitted.length === 0 ? null : (
+                <>
+                  {/* Redesign: an Excluded box that excludes nobody is an empty panel, so it shows only
+                      when someone is excluded, in the same words. */}
+                  {referredDuringThisAdmission.length + bedPulledNotYetArrived.length === 0 ? null : (
+                    <p
+                      className={styles.absenceNotice}
+                      data-testid="ward-community-accepted-before-admission-other-groups"
+                    >
+                      <StatusGlyph tone="warning" className={styles.noticeGlyph} />
+                      Excluded: {referredDuringThisAdmission.length} referred during the current admission and{" "}
+                      {bedPulledNotYetArrived.length} with a bed pulled but no arrival. Neither establishes care before
+                      admission.
+                    </p>
+                  )}
+                  <p
+                    className={styles.footnote}
+                    data-testid="ward-community-accepted-before-admission-not-active-claim"
+                  >
+                    Acceptance before admission does not establish current care; no community-team closure is recorded.
+                  </p>
+                </>
+              )}
             </>
           )}
         </div>
       </section>
-
-      {/* ── Admitted while already with this team — the owner's most delicate request ──
-                 See `categoriseTeamAdmission`'s doc comment above for the exact rule this table
-                 draws on, and this file's header block (third edition) for why the wording below is
-                 constrained the way it is. */}
-      <div style={{ display: isDemoMode ? "none" : "block" }} aria-hidden={isDemoMode ? "true" : undefined}>
-        <section
-          className={styles.cardPanel}
-          aria-label="Admitted while already with the team"
-          data-testid="ward-community-accepted-before-admission"
-        >
-          <div className={styles.panelHead}>
-            <h3 className={styles.panelTitle}>
-              <span>Admitted while already with the team</span>
-            </h3>
-            <span className={styles.badgePill} data-ward-panel-count>
-              {admittedWhileAlreadyWithTeam.length} of {lists.currentlyAdmitted.length}
-            </span>
-          </div>
-          <div
-            className={styles.panelBody}
-            role="region"
-            aria-label="Admitted while already with the team details"
-            tabIndex={0}
-          >
-            {admittedWhileAlreadyWithTeam.length === 0 ? (
-              <p className={styles.emptyNote} data-testid="ward-community-accepted-before-admission-empty">
-                {cannotResolve ? (
-                  <>
-                    A bed carries no link back to the referral that named this team, so this list cannot be built for{" "}
-                    {team.name}. Its emptiness is a gap in the record rather than an answer about the team.
-                  </>
-                ) : (
-                  <>
-                    Nobody this team can currently see in a bed or with one pulled was accepted before that bed began.
-                  </>
-                )}
-              </p>
-            ) : (
-              <WardTable
-                className={styles.table}
-                wrapperClassName={styles.tableScroll}
-                testId="ward-community-accepted-before-admission-table"
-                hasScrollThreshold
-              >
-                <caption>Admissions this team had already accepted before the bed began</caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Admission</th>
-                    <th scope="col">Unit</th>
-                    <th scope="col">In a bed for</th>
-                    <th scope="col">Accepted before the bed began</th>
-                    <th scope="col">Accepted altogether</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {admittedWhileAlreadyWithTeam.map(({ admission, acceptedAt, arrivedAt }) => (
-                    <tr key={admission.id} data-testid={`ward-community-accepted-before-admission-${admission.id}`}>
-                      <th scope="row">
-                        <span className={styles.patientIdWrap}>{identityOf(admission)}</span>
-                      </th>
-                      <td>{unitName(admission.unitId, units)}</td>
-                      <td>{stayLabel(admission, now)}</td>
-                      <td>{elapsedSinceOrUnderADay(daysBetween(acceptedAt, arrivedAt))} before the bed began</td>
-                      <td>{elapsedSinceOrUnderADay(daysBetween(acceptedAt, now))} since acceptance</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </WardTable>
-            )}
-            {/*
-             * The two groups the table above deliberately excludes, named rather than silently
-             * dropped — a referral made from the ward is the ward reaching out, not a relapse
-             * under this team's care, and a pulled bed with nobody arrived yet has no admission
-             * start to compare an acceptance against at all.
-             */}
-            <p className={styles.absenceNotice} data-testid="ward-community-accepted-before-admission-other-groups">
-              Excluded: {referredDuringThisAdmission.length} referred during the current admission and{" "}
-              {bedPulledNotYetArrived.length} with a bed pulled but no arrival. Neither establishes care before
-              admission.
-            </p>
-            <p className={styles.footnote} data-testid="ward-community-accepted-before-admission-not-active-claim">
-              Acceptance before admission does not establish current care; no community-team closure is recorded.
-            </p>
-          </div>
-        </section>
-      </div>
     </div>
   );
 }

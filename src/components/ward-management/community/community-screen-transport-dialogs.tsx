@@ -3,24 +3,25 @@
  * team's own booking. Since A34 (26 Oct 2026) the booking questions are the one transport booking
  * form every screen uses.
  *
- * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026) as a pure refactor:
- * the markup, text, class names and behaviour are unchanged. Comments moved with the code, so
- * "this file" or "this screen" in them still means the community team screen as a whole.
+ * Split out of `community-screen.tsx` (fix list 2.5 and 9.6, 15 Oct 2026). Redesign (Josh, approved
+ * 31 Oct 2026): both sit on the kit Dialog, with a one-line title and the person (surname first,
+ * D-83) under it. The booking form, the reasons, the checks, the saves and their answers are
+ * unchanged. The booking form itself is the shared one; its redesign is lane E's.
  */
 
+import { useCallback, useState } from "react";
+import { Button, Dialog, Field, Select } from "@/components/wf";
 import {
   CANCEL_TRANSPORT_REASONS,
   changeReasonLabels,
   type CancelTransportReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { useState } from "react";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import styles from "./community.module.css";
+import styles from "./community-screen-transport-dialogs.module.css";
 import type { CommunityScreenView } from "./community-screen";
 
 /** Audit 24-3 SV-2: a save still out, or why it was not recorded. The dialog and its answers stay. */
@@ -28,12 +29,12 @@ function TransportSaveAnswer({ save, testId }: { save: WardFormSave; testId: str
   // A save held for the status bar's Retry is pending and not confirmed: say why it is held.
   if (save.pending && !save.error)
     return (
-      <p className={styles.transportHint} role="status">
+      <p className={styles.hint} role="status">
         Saving…
       </p>
     );
   return save.error ? (
-    <p className={styles.transportHint} role="alert" data-testid={testId}>
+    <p className={styles.error} role="alert" data-testid={testId}>
       {save.error}
     </p>
   ) : null;
@@ -60,48 +61,48 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     setReasonFor(transportBookFor);
     setLegalReason("");
   }
+  // The page's own focus hook holds this ref; it points at the kit Dialog's panel.
+  const bindPage = useCallback(
+    (node: HTMLDivElement | null) => {
+      transportBookDialogRef.current = node?.closest<HTMLDivElement>('[role="dialog"]') ?? null;
+    },
+    [transportBookDialogRef],
+  );
   if (transportBookFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportBookFor);
   // The patient's name, surname first as every record shows it. The movement id is never a person's name.
   const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : "the patient";
   return (
-    // A stray tap on the backdrop does not close the booking, because closing clears every answer
-    // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape still do.
-    <div className={styles.modalBackdrop} role="presentation">
-      <div
-        ref={transportBookDialogRef}
-        className={styles.modalDialog}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`ward-community-book-transport-title-${transportBookFor}`}
-        data-testid={`ward-community-book-transport-dialog-${transportBookFor}`}
-      >
-        <div className={styles.modalHeader}>
-          <h3 id={`ward-community-book-transport-title-${transportBookFor}`} className={styles.modalTitle}>
-            Log the transport booking made by phone for {patientName}
-          </h3>
-          <button type="button" className={styles.modalCloseBtn} onClick={closeTransportBook} aria-label="Close dialog">
-            &times;
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <TransportBookingForm
-            answers={transportDraft}
-            onAnswers={setTransportDraft}
-            legalReason={legalReason}
-            onLegalReason={setLegalReason}
-            record={movement}
-            patientName={patientName}
-            now={now}
-            testIds={{ prefix: "ward-community", suffix: transportBookFor }}
-            pending={save.pending}
-            error={save.error}
-            onSubmit={(booking) => submitBookTransport(transportBookFor, booking, save.submit)}
-            onCancel={closeTransportBook}
-          />
-        </div>
+    <Dialog
+      open
+      onClose={closeTransportBook}
+      // A stray tap on the backdrop does not close the booking, because closing clears every answer
+      // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape still do.
+      closeOnScrim={false}
+      title="Log transport booking"
+      description={`${patientName} · booked by phone. Read each answer off the call with the provider.`}
+      closeLabel="Close dialog"
+      size="md"
+      className={styles.bookPanel}
+      data-testid={`ward-community-book-transport-dialog-${transportBookFor}`}
+    >
+      <div ref={bindPage}>
+        <TransportBookingForm
+          answers={transportDraft}
+          onAnswers={setTransportDraft}
+          legalReason={legalReason}
+          onLegalReason={setLegalReason}
+          record={movement}
+          patientName={patientName}
+          now={now}
+          testIds={{ prefix: "ward-community", suffix: transportBookFor }}
+          pending={save.pending}
+          error={save.error}
+          onSubmit={(booking) => submitBookTransport(transportBookFor, booking, save.submit)}
+          onCancel={closeTransportBook}
+        />
       </div>
-    </div>
+    </Dialog>
   );
 }
 
@@ -122,102 +123,87 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
   // A held offline command needs the connection bar's Retry. Once its error is shown,
   // permit an explicit close while keeping submission locked to the original command.
   const saving = save.pending && !save.error;
-  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, () => {
+  const closeUnlessSaving = () => {
     if (!saving) closeTransportCancel();
-  });
+  };
+  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, closeUnlessSaving);
+  // The page's own focus hook holds this ref; it points at the kit Dialog's panel.
+  const bindPage = useCallback(
+    (node: HTMLDivElement | null) => {
+      transportCancelDialogRef.current = node?.closest<HTMLDivElement>('[role="dialog"]') ?? null;
+    },
+    [transportCancelDialogRef],
+  );
   if (transportCancelFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportCancelFor);
-  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : "the patient";
+  // The person, surname first (D-83), under the title; the booking's id only when no person resolves.
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : undefined;
   return (
-    <div className={styles.modalBackdrop} role="presentation">
-      <div
-        ref={transportCancelDialogRef}
-        className={styles.modalDialog}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`ward-community-cancel-transport-title-${transportCancelFor}`}
-        data-testid={`ward-community-cancel-transport-dialog-${transportCancelFor}`}
-      >
-        <div className={styles.modalHeader}>
-          <h3 id={`ward-community-cancel-transport-title-${transportCancelFor}`} className={styles.modalTitle}>
-            Cancel this team&apos;s transport booking for {patientName}
-          </h3>
-          <button
-            type="button"
-            className={styles.modalCloseBtn}
-            onClick={closeTransportCancel}
-            disabled={saving}
-            aria-label="Close dialog"
+    <Dialog
+      open
+      onClose={closeUnlessSaving}
+      // While the cancellation is saving the dialog stays: no close button, and Escape waits.
+      closable={!saving}
+      title="Cancel this team's transport booking"
+      description={
+        patientName ? <strong className={styles.who}>{patientName}</strong> : `Booking ${transportCancelFor}`
+      }
+      closeLabel="Close dialog"
+      size="md"
+      data-testid={`ward-community-cancel-transport-dialog-${transportCancelFor}`}
+    >
+      <div ref={bindPage} className={styles.body}>
+        <Field
+          label="Why is the job being cancelled?"
+          id={`ward-community-cancel-transport-reason-${transportCancelFor}`}
+        >
+          <Select
+            data-testid={`ward-community-cancel-transport-reason-${transportCancelFor}`}
+            value={cancelTransportReason ?? ""}
+            onChange={(event) => {
+              const value = event.target.value;
+              setCancelTransportReason(
+                CANCEL_TRANSPORT_REASONS.includes(value as CancelTransportReason)
+                  ? (value as CancelTransportReason)
+                  : undefined,
+              );
+            }}
           >
-            &times;
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.declineForm}>
-            <label
-              className={styles.declineLabel}
-              htmlFor={`ward-community-cancel-transport-reason-${transportCancelFor}`}
-            >
-              Why is the job being cancelled?
-              <select
-                id={`ward-community-cancel-transport-reason-${transportCancelFor}`}
-                className={styles.declineSelect}
-                data-testid={`ward-community-cancel-transport-reason-${transportCancelFor}`}
-                value={cancelTransportReason ?? ""}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setCancelTransportReason(
-                    CANCEL_TRANSPORT_REASONS.includes(value as CancelTransportReason)
-                      ? (value as CancelTransportReason)
-                      : undefined,
-                  );
-                }}
-              >
-                <option value="">Choose a reason…</option>
-                {CANCEL_TRANSPORT_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {changeReasonLabels[reason]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className={styles.transportHint}>
-              Cancel the booking with the provider by phone. This records the cancellation for the transport officer and
-              receiving ward.
-            </p>
-            <button
-              type="button"
-              className={styles.transportConfirmButton}
-              data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
-              aria-disabled={cancelTransportBlocked === undefined && !save.pending ? undefined : "true"}
-              aria-describedby={
-                cancelTransportBlocked === undefined
-                  ? undefined
-                  : `ward-community-cancel-transport-blocked-${transportCancelFor}`
-              }
-              title={cancelTransportBlocked}
-              onClick={
-                cancelTransportBlocked === undefined && !save.pending
-                  ? () => submitCancelTransport(transportCancelFor, save.submit)
-                  : ignoreUnavailableActivation
-              }
-            >
-              Confirm cancel
-            </button>
-            {cancelTransportBlocked === undefined ? null : (
-              <span id={`ward-community-cancel-transport-blocked-${transportCancelFor}`} className="sr-only">
-                {cancelTransportBlocked}
-              </span>
-            )}
-            <TransportSaveAnswer save={save} testId={`ward-community-cancel-transport-failure-${transportCancelFor}`} />
-            {save.pending && save.error ? (
-              <p className={styles.transportHint}>
-                This cancellation may still be confirmed. Close this dialog to use Retry in the connection bar.
-              </p>
-            ) : null}
-          </div>
+            <option value="">Choose a reason…</option>
+            {CANCEL_TRANSPORT_REASONS.map((reason) => (
+              <option key={reason} value={reason}>
+                {changeReasonLabels[reason]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <p className={styles.hint}>
+          Cancel the booking with the provider by phone. This records the cancellation for the transport officer and
+          receiving ward.
+        </p>
+        <TransportSaveAnswer save={save} testId={`ward-community-cancel-transport-failure-${transportCancelFor}`} />
+        {save.pending && save.error ? (
+          <p className={styles.hint}>
+            This cancellation may still be confirmed. Close this dialog to use Retry in the connection bar.
+          </p>
+        ) : null}
+        <div className={styles.actions}>
+          <Button variant="ghost" onClick={closeUnlessSaving} disabled={saving}>
+            Keep booking
+          </Button>
+          <Button
+            variant="pri"
+            data-testid={`ward-community-cancel-transport-confirm-${transportCancelFor}`}
+            // Held for Retry (pending with an answer shown): submission stays locked to that command.
+            loading={save.pending}
+            // The kit shows why it is unavailable (the earlier screen-reader-only reason, now visible).
+            disabledReason={cancelTransportBlocked}
+            onClick={() => submitCancelTransport(transportCancelFor, save.submit)}
+          >
+            Confirm cancel
+          </Button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
