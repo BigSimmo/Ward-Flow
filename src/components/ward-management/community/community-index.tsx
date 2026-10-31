@@ -181,6 +181,23 @@ function clinicKey(name: string): string {
 
 type TeamFacts = { service: string; suburbs: number };
 
+/**
+ * What the team search reads for one team: its name, service labels, suburbs and their postcodes,
+ * each its own field. Kept apart so a number matches within one postcode: joined into one string,
+ * the digits ran together and "626" matched a team covering 6062 and 6063 (A1 finding, 31 Oct 2026).
+ */
+export function communityTeamSearchFields(
+  teamName: string,
+  suburbs: readonly string[],
+  postcodesBySuburb: ReadonlyMap<string, ReadonlySet<string>>,
+): string[] {
+  const mapping = mapClinicToServiceAndHospital(teamName);
+  const postcodes = suburbs.flatMap((suburb) => [...(postcodesBySuburb.get(suburb) ?? [])]);
+  return [teamName, mapping.code, mapping.name, mapping.displayName, ...suburbs, ...postcodes].filter(
+    (field): field is string => Boolean(field),
+  );
+}
+
 export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: readonly CommunityTeam[] }) {
   // Sorted here rather than trusted from upstream: this page makes the alphabetical claim in its own
   // copy, so it holds the sort itself. The id tie-break keeps the order total.
@@ -251,15 +268,10 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
       bucket.add(row.postcode);
       postcodesBySuburb.set(row.suburb, bucket);
     }
-    const map = new Map<string, string>();
+    const map = new Map<string, string[]>();
     for (const team of allTeams) {
-      const mapping = mapClinicToServiceAndHospital(team.name);
       const suburbs = [...(suburbsByClinicKey.get(clinicKey(team.name)) ?? [])];
-      const postcodes = suburbs.flatMap((suburb) => [...(postcodesBySuburb.get(suburb) ?? [])]);
-      map.set(
-        team.name,
-        [team.name, mapping.code, mapping.name, mapping.displayName, ...suburbs, ...postcodes].join(" "),
-      );
+      map.set(team.name, communityTeamSearchFields(team.name, suburbs, postcodesBySuburb));
     }
     return map;
   }, [allTeams, suburbsByClinicKey]);
@@ -369,8 +381,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
         if (alikeOnly && !collisionByName.has(team.name)) return false;
         if (sharedSuburbOnly && !sharedSuburbs.teams.has(team.name)) return false;
         if (normalizedQuery) {
-          const haystack = teamSearchHaystack.get(team.name) ?? team.name;
-          if (!fieldsMatchEveryWord(normalizedQuery, [haystack])) return false;
+          const fields = teamSearchHaystack.get(team.name) ?? [team.name];
+          if (!fieldsMatchEveryWord(normalizedQuery, fields)) return false;
         }
         return true;
       }),
