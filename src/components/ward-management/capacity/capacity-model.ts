@@ -17,7 +17,7 @@ import {
 import { bedsForecast } from "./beds-forecast";
 import { bedMapWards, groupBedMapWardsByService } from "./bed-map";
 import { isConfirmationFresh } from "./capacity-gap-words";
-import { shiftConfirmations } from "./shift-confirmations";
+import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
 import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { horizonDays, sevenDayHorizon } from "@/components/ward-management/forecast/forecast-horizon";
 import { useForecastModel } from "@/components/ward-management/forecast/use-forecast-model";
@@ -37,7 +37,7 @@ const NO_PLANNED: never[] = [];
 export function useCapacityModel() {
   const {
     movements,
-    units: allUnits,
+    units: everyUnit,
     bedReleases,
     admissions,
     leaveBeds,
@@ -52,8 +52,8 @@ export function useCapacityModel() {
   // would read as a mismatch that is not there. Other sites stay as bed counts (`otherSiteRows`).
   const siteCode = access.role === "bed_manager" && access.scope.kind === "site" ? access.scope.siteCode : undefined;
   const units = useMemo(
-    () => (siteCode === undefined ? allUnits : [...ownUnits(access, allUnits)]),
-    [siteCode, access, allUnits],
+    () => (siteCode === undefined ? everyUnit : [...ownUnits(access, everyUnit)]),
+    [siteCode, access, everyUnit],
   );
 
   const gapRows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
@@ -99,13 +99,13 @@ export function useCapacityModel() {
       siteCode === undefined
         ? []
         : networkWardRows(
-            allUnits.filter((unit) => unit.siteCode !== siteCode),
+            everyUnit.filter((unit) => unit.siteCode !== siteCode),
             now,
             bedReleases,
             admissions,
             leaveBeds,
           ),
-    [siteCode, allUnits, now, bedReleases, admissions, leaveBeds],
+    [siteCode, everyUnit, now, bedReleases, admissions, leaveBeds],
   );
   const otherSiteGroups = useMemo(
     () =>
@@ -113,13 +113,13 @@ export function useCapacityModel() {
         ? []
         : groupBedMapWardsByService(
             bedMapWards(
-              allUnits.filter((unit) => unit.siteCode !== siteCode),
+              everyUnit.filter((unit) => unit.siteCode !== siteCode),
               [...bedReleases],
               admissions,
               leaveBeds,
             ),
           ),
-    [siteCode, allUnits, bedReleases, admissions, leaveBeds],
+    [siteCode, everyUnit, bedReleases, admissions, leaveBeds],
   );
 
   const mapGroups = useMemo(
@@ -146,6 +146,9 @@ export function useCapacityModel() {
     [weekUnits, forecastModel.admissions, forecastModel.planned, now],
   );
   const confirmations = useMemo(() => shiftConfirmations(units, now), [units, now]);
+  // Josh, 31 Oct 2026: the wards that confirmed the same number 3 or more shifts running come back
+  // into This shift (smart features idea 6's safety note), named only.
+  const unchanged = useMemo(() => unchangedConfirmations(units), [units]);
   const sources = forecast.sources;
   const upcoming = sources.windows.filter((window) => window.id !== "overdue");
   const sourceSummary = {
@@ -192,6 +195,7 @@ export function useCapacityModel() {
     days,
     week,
     confirmations,
+    unchanged,
     sourceSummary,
     heldUp,
     wardsToCheck,

@@ -1139,6 +1139,11 @@
 .shiftTagList .tag {
   font-family: var(--wf-font);
 }
+/* A ward name wraps in full rather than running off the card. */
+.shiftTagList .tagWrap {
+  flex: initial;
+  white-space: normal;
+}
 
 /* Nearest ready beds (road-time-card.tsx). */
 .rtPicker {
