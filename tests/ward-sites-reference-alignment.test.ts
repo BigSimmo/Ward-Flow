@@ -20,6 +20,15 @@ import { allUnits, wardSites } from "../src/components/ward-management/ward-site
  * a guessed name; a test that demanded full coverage would pressure somebody into inventing the
  * mapping it was meant to verify.
  */
+/**
+ * The pack writes some ward names with their type after a dash ("Maali (Ward 4.2) — open"). A unit
+ * shows its type in its own field, so its name is the ward's name without that note. Everything
+ * before the dash must still match the pack exactly.
+ */
+function wardNameWithoutType(name: string): string {
+  return name.replace(/ — open(?: ward)?$/u, "");
+}
+
 describe("demo wards borrow real WA names", () => {
   it("every referenceUnitId names a ward that exists in the register", () => {
     for (const unit of allUnits()) {
@@ -31,8 +40,14 @@ describe("demo wards borrow real WA names", () => {
   it("a unit pointing at a real ward shows that ward's real name", () => {
     for (const unit of allUnits()) {
       if (unit.referenceUnitId === undefined) continue;
-      expect(unit.name, unit.id).toBe(referenceEntity(unit.referenceUnitId)!.name);
+      expect(unit.name, unit.id).toBe(wardNameWithoutType(referenceEntity(unit.referenceUnitId)!.name));
     }
+  });
+
+  it("keeps the real name whole and drops only the pack's trailing ward-type note (bug list row 27)", () => {
+    expect(wardNameWithoutType("Maali (Ward 4.2) — open")).toBe("Maali (Ward 4.2)");
+    expect(wardNameWithoutType("Boodalung — open ward")).toBe("Boodalung");
+    expect(wardNameWithoutType("Wardong (Ward 4.3)")).toBe("Wardong (Ward 4.3)");
   });
 
   it("every referenceSiteId names a facility that exists in the register", () => {

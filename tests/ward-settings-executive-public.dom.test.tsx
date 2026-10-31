@@ -195,7 +195,7 @@ describe("executive Settings from public authority only", () => {
       configuration: report.configuration,
     });
     expect(Object.keys(JSON.parse(exported)).sort()).toEqual(
-      ["product", "version", "exportedAt", "configuration", "appearance", "railOpen"].sort(),
+      ["product", "version", "exportedAt", "configuration"].sort(),
     );
     sessionStorage.setItem("wf-draft:synthetic-preview", "synthetic");
     fireEvent.click(screen.getByTestId("btn-clear-cache"));

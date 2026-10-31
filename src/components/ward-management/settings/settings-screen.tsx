@@ -475,9 +475,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         product: "Ward Flow Statewide Bed Coordination",
         version: 6,
         exportedAt: new Date().toISOString(),
-        configuration: draft,
-        appearance,
-        railOpen,
+        // Bug list row 2: the saved rules only, the one thing Import reads back (no draft, theme or sidebar).
+        configuration,
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const day = perthCalendarDay(new Date());
@@ -780,6 +779,12 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
           <span className={styles.scopeTag}>Read only</span>
           <span>Public rules for executive reporting.</span>
         </p>
+      ) : configurationBlockReason ? (
+        // Bug list row 4: the reason follows on its own line, so no "Save to apply" for a desk that cannot save.
+        <p className={styles.scopeLine}>
+          <span className={styles.scopeTag}>Read only</span>
+          <span>Rules change what every screen shows.</span>
+        </p>
       ) : (
         <ScopeLine kind="save" />
       )}
@@ -916,7 +921,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             />
             <RuleRow
               unavailableReason={configurationBlockReason}
-              setting="second-warning"
+              setting="early-warning"
               testId="setting-due-soon-row"
               title="Early warning"
               sub="Shown as due soon"
@@ -949,7 +954,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             />
             <RuleRow
               unavailableReason={configurationBlockReason}
-              setting="first-warning"
+              setting="final-warning"
               testId="setting-due-soon-urgent-row"
               title="Final warning"
               sub="Before a legal due time"
@@ -1355,7 +1360,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
               sheetTab === "rules"
                 ? source.kind === "executive"
                   ? "Read only · Coordinator only"
-                  : "Save to apply. Each save is recorded in the audit"
+                  : configurationBlockReason
+                    ? `Read only · ${configurationBlockReason}`
+                    : "Save to apply. Each save is recorded in the audit"
                 : "Saves at once · this browser only"
             }
             primary={

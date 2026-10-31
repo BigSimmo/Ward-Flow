@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Copy, Mail, Search, Star } from "lucide-react";
-import { Button, Icon, Sheet, StatusGlyph, cx } from "@/components/wf";
+import { Button, Icon, RadioGroup, Sheet, StatusGlyph, cx } from "@/components/wf";
 import {
   SERVICE_META,
   availability,
@@ -106,13 +106,13 @@ export function PhoneFocal({
   return (
     <div className={styles.focalWrap} id="ward-reach-bed" tabIndex={-1}>
       <div className={styles.focal}>
-        <div className={styles.focalSeg} role="radiogroup" aria-label="Bed flow for">
+        <RadioGroup className={styles.focalSeg} aria-label="Bed flow for">
           {FOCAL.map(([id, label]) => (
             <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
               {label}
             </button>
           ))}
-        </div>
+        </RadioGroup>
         <span className={styles.focalLabel}>
           <ServiceTag service={entry.service} label="" />
           {keyLineLabel(entry)}

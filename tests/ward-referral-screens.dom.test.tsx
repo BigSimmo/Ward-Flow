@@ -1828,6 +1828,52 @@ function regionWhere(predicate: (bands: (TravelBand | undefined)[]) => boolean):
   return HOME_REGIONS.find((homeRegion) => predicate(bandsAcrossNetwork(homeRegion))) ?? null;
 }
 
+describe("ReferralMatchView — keyboard candidate selection", () => {
+  it("moves the selected candidate without recording a placement decision", () => {
+    const dispatch = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralMatchView
+          referral={bandReferral()}
+          units={allUnits()}
+          now={NOW_ANCHOR}
+          dispatch={dispatch}
+          rejections={[]}
+        />
+      </WardFlowProvider>,
+    );
+    const groups = screen
+      .getAllByRole("radiogroup")
+      .filter((group) => group.querySelector('[data-testid^="ward-referral-match-phone-cand-"]'));
+    expect(groups.length).toBeGreaterThan(1);
+    for (const group of groups) {
+      expect(
+        within(group)
+          .getAllByRole("radio")
+          .filter((radio) => radio.tabIndex === 0),
+      ).toHaveLength(1);
+    }
+    const group = groups.find((entry) => within(entry).getAllByRole("radio").length > 1)!;
+    expect(group).toBeDefined();
+    const radios = within(group).getAllByRole("radio");
+    const current = radios.find((radio) => radio.getAttribute("aria-checked") === "true") ?? radios[0]!;
+    const next = radios[(radios.indexOf(current) + 1) % radios.length]!;
+    current.focus();
+    fireEvent.keyDown(current, { key: "ArrowDown" });
+    expect(next).toHaveFocus();
+    expect(next).toHaveAttribute("aria-checked", "true");
+    for (const entry of groups) {
+      expect(
+        within(entry)
+          .getAllByRole("radio")
+          .filter((radio) => radio.tabIndex === 0),
+      ).toHaveLength(1);
+    }
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("ward-referral-match-decided")).not.toBeInTheDocument();
+  });
+});
+
 describe("ReferralMatchView — every ward names its travel band, and every ward is on the screen", () => {
   it("names an unrecorded band in words on the row itself, never as a blank", () => {
     // A blank cell in a distance column is read as "close", which is the one reading an unrecorded

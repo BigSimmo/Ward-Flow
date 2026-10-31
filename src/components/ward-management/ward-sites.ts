@@ -508,7 +508,9 @@ export const STANDARD_WARD_SITES: Site[] = [
         id: "fre-adult-open",
         siteCode: "FRE",
         referenceUnitId: "fre-maali",
-        name: "Maali (Ward 4.2) — open",
+        // The reference pack adds " — open" (the ward type). The unit shows its type on its own, so
+        // the name stops at the ward, never "… to Maali (Ward 4.2) — open" (bug list row 27).
+        name: "Maali (Ward 4.2)",
         cohort: "Adult",
         // Genuinely mixed — see the note above `WARD_LOCKED_BED_SPLITS`: the naive Open->0 mapping
         // left the mixed-bed path resting on a single fixture row, so this unit was widened.

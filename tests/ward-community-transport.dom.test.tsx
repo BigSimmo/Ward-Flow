@@ -239,7 +239,7 @@ describe("community admitted table — transport booking and cancel", () => {
     expect(within(cell).queryByTestId(`ward-community-cancel-transport-${movementId}`)).toBeNull();
 
     fireEvent.click(within(cell).getByTestId("ward-community-open-dossier-AD-TRANSPORT-01"));
-    const dossier = screen.getByRole("dialog", { name: /Patient record: Farah Davenporton · UM100010/i });
+    const dossier = screen.getByRole("dialog", { name: /Patient record: Davenporton, Farah · UM100010/i });
     // Moved here from the removed team-page search's test (30 Oct 2026): the dossier says what Ward
     // Flow does not record rather than inventing a clinician, care tier, review date or form.
     expect(within(dossier).getAllByText("Not recorded in Ward Flow")).toHaveLength(3);
