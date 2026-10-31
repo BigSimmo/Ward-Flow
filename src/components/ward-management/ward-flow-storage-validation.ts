@@ -713,6 +713,7 @@ const bedRelease = z.looseObject({
   expectedAt: finite,
   confirmedAt: finite,
   confirmedBy: text,
+  blockerRecordedAt: z.optional(finite),
   preparing: bool,
   // #398: each service is notified at most once.
   supportNoticesSent: z.optional(

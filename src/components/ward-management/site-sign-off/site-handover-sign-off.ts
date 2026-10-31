@@ -154,8 +154,10 @@ export function bedFigureUnconfirmed(unit: Unit, now: Instant): boolean {
 
 /**
  * The stays on the site's wards whose discharge blocker nobody has reviewed today. A review is the
- * blocker recorded again (`RECORD_STAY_DISCHARGE_BLOCKER`), which stamps the stay's bed release; a
- * stay with no bed release keeps no review time, so it stays listed until its blocker is cleared.
+ * blocker recorded again (`RECORD_STAY_DISCHARGE_BLOCKER` or `BLOCK_BED_RELEASE`), which stamps the
+ * bed release's `blockerRecordedAt`. Not `confirmedAt`: a stage report or bed preparation change
+ * restates that without anyone looking at the blocker. A stay with no bed release, or a release
+ * with no recorded review time, stays listed until its blocker is recorded again or cleared.
  */
 export function siteBlockersNotReviewedToday(
   state: Pick<WardFlowState, "admissions" | "bedReleases" | "units">,
@@ -173,7 +175,8 @@ export function siteBlockersNotReviewedToday(
             release.admissionId === admission.id &&
             release.state !== "discharged" &&
             release.blocker !== null &&
-            release.confirmedAt >= dayStart,
+            release.blockerRecordedAt !== undefined &&
+            release.blockerRecordedAt >= dayStart,
         ),
     )
     .map((admission) => ({ admissionId: admission.id, unitId: admission.unitId }));

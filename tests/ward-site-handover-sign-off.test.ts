@@ -7,6 +7,7 @@ import { handoverSignedBefore } from "@/components/ward-management/handover/hand
 import {
   inSignOffWindow,
   outstandingWardSignOffs,
+  siteBlockersNotReviewedToday,
   siteSignOffChecks,
   siteSignOffFor,
   siteWardSignOffs,
@@ -160,6 +161,18 @@ describe("Q61: the site bed manager signs off its own site, never a ward", () =>
     }
   });
 
+  it("lets the site bed manager take back the coordinator's cover sign-off (Q75)", () => {
+    const covered = signSite(seed, "RPH", "coordinator");
+    const undone = wardFlowReducer(covered, {
+      type: "UNDO_SITE_HANDOVER_SIGN_OFF",
+      role: "bed_manager",
+      now: NOW + 1,
+      siteCode: "RPH",
+    });
+    expect(undone.rejections).toEqual(covered.rejections);
+    expect(undone.siteHandoverSignOffs ?? []).toEqual([]);
+  });
+
   it("uses the ward sign-off window exactly as the handover sheet does", () => {
     for (const at of [SHIFT_AT - 8 * 60 - 1, SHIFT_AT - 8 * 60, NOW, SHIFT_AT - 1, SHIFT_AT]) {
       const signOffs = [{ at, by: "ward" as const, unitId: rphA!.id }];
@@ -263,6 +276,39 @@ describe("Q63: open checks inform, and an unanswered bed call is named and stays
     expect(checks[1]?.ids).toEqual(["AD-RPHS-01", "AD-RPHS-15"]);
     expect(checks[2]?.open).toBe(0);
     expect(checks[3]?.open).toBe(0);
+  });
+
+  it("counts a blocker as reviewed only when it is recorded again, not when its release changes", () => {
+    const listed = () => siteBlockersNotReviewedToday(state, "RPH", NOW).map((row) => row.admissionId);
+    let state: WardFlowState = seed;
+    const release = state.bedReleases.find(
+      (row) => row.admissionId === "AD-RPHS-01" && row.state !== "discharged" && row.blocker !== null,
+    )!;
+    expect(listed()).toContain("AD-RPHS-01");
+    // A bed preparation change restates the release's `confirmedAt`, but nobody looked at the blocker.
+    state = wardFlowReducer(state, {
+      type: "SET_BED_PREPARATION",
+      role: "ward",
+      now: NOW,
+      actingUnitId: release.unitId,
+      releaseId: release.id,
+      preparing: true,
+    });
+    expect(state.rejections).toEqual([]);
+    expect(state.bedReleases.find((row) => row.id === release.id)?.confirmedAt).toBe(NOW);
+    expect(listed()).toContain("AD-RPHS-01");
+    // Recording the blocker again today is the review.
+    state = wardFlowReducer(state, {
+      type: "RECORD_STAY_DISCHARGE_BLOCKER",
+      role: "ward",
+      now: NOW,
+      actingUnitId: release.unitId,
+      admissionId: "AD-RPHS-01",
+      blocker: release.blocker!,
+    });
+    expect(state.rejections).toEqual([]);
+    expect(listed()).not.toContain("AD-RPHS-01");
+    expect(listed()).toContain("AD-RPHS-15");
   });
 });
 
