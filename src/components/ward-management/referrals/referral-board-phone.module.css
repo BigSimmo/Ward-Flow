@@ -317,3 +317,9 @@
   background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
   color: var(--wf-hero-ink);
 }
+
+/* Community desk (Josh, 31 Oct 2026): the median line on its own (nothing waiting on the team)
+   starts with a capital. The words come from the page, which writes them for " · median". */
+.leadCap::first-letter {
+  text-transform: uppercase;
+}

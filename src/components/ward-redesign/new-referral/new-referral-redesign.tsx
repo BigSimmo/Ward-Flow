@@ -6,7 +6,7 @@ import { Sheet } from "@/components/wf/sheet";
 import shell from "@/components/ward-management/shell/ward-bar.module.css";
 
 import styles from "./new-referral-redesign.module.css";
-import { ReferralsRedesign } from "../referrals/referrals-redesign";
+import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { ReferralDrawerRedesign } from "./referral-drawer-redesign";
 
 /**
@@ -22,7 +22,7 @@ export function NewReferralRedesign() {
   const close = () => setOpen(false);
   return (
     <>
-      <ReferralsRedesign />
+      <ReferralBoard defaultSelectFirst />
       {!open ? (
         <button
           type="button"

@@ -6,13 +6,6 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
-  "as-ward-referrals": [
-    "**As the nurse in charge**, Referrals opens on 'Nothing for Dabakarn to answer' (or 'N for Dabakarn to answer'): only this ward's own incoming lines.",
-    "**Removed:** destination pills and Refused once (every line is to this ward, and a ward never learns another ward's refusal, FD-23), Next overdue, the Bed meeting list, the waiting runway and the statewide Beds ready figure.",
-    "**New:** an empty queue shows one line plus a link to the people already coming and going.",
-    "**Round 2:** the empty decision panel goes, so an empty queue takes the full width. The phone hero drops Overdue, Tier 1 and Beds ready for a ward desk, as desktop does. 'No referral or bed offer for Dabakarn.'",
-    "**Review round (30 October):** the coordinator's Referrals fixes, from its own components (Fit in wards, Needs in words, ward names in History, Legal status not recorded, Since referral, one disclosure style, the median's basis); Offered to your ward rows are two lines on a phone.",
-  ],
   "as-ward-legal-forms": [
     "**As the nurse in charge**, the title reads '2 forms on moves to Dabakarn'. Times show only as typed; 'Not legally checked' is kept word for word.",
     "**New:** an 'Admitted on a form' group carries the app's own sentence on who records the next form.",
@@ -39,12 +32,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** the hero's Raise referral and the app bar's New referral open the same sheet. Keep only one on this desk?",
     "**Changed (Josh, 30 October):** no access forecast card on the ED desk. Worked out from the records this desk can see, it disagreed with the coordinator's board for the same ED; the coordinator's ED board keeps it.",
   ],
-  "as-ed-referrals": [
-    "**As the ED clinician**, Referrals opens on 'Raised from Peel ED' (9 open), because the coordinator's queue was empty for this desk. Rows show tier, surname first, time since referral and where it stands; after 8 rows, Show more.",
-    "**Removed:** the Bed meeting list, 'statewide' and the median decision time; the highlight pills and runway show only while an ED review waits on this desk.",
-    "**Round 2:** the card reads 'Open referrals'. Journey is a quiet link with the person's name spoken, not eight outlined buttons. The phone figure reads 'Finding a ward', as the table does.",
-    "**Review round (30 October):** the coordinator's Referrals fixes, from its own components; the phone hero says Decision overdue. This desk shows no median, as before.",
-  ],
   "as-ed-legal-forms": [
     "**As the ED clinician**, the page already lists only Peel ED's people on forms, with times as typed and 'Not legally checked' word for word. Nothing needed changing for this role.",
   ],
@@ -53,13 +40,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
     "**Removed:** three panels that only said people are not listed; that sentence is said once.",
     "**Round 2:** the chart leads and Declines is the side column, so both cards end level. '8 still in ED · 1 in transit' is the chart's aside, and 'Counts only' sits once in the eyebrow. Over 24h carries the amber dot, as Longest does.",
-  ],
-  "as-community-referrals": [
-    "**As the community clinician**, the board is read only, and with nothing waiting it opens on History with the latest decided referral, not an empty queue.",
-    "**Removed:** the runway, statewide Beds ready, bed-type highlights and the all-zero decisions chart; 'Open the team's Waiting list' replaces the Bed meeting list.",
-    "**Round 2:** decided rows show '30 days ago' (the clock time in the tooltip), so names are not cut on a phone. The decided list shows 8 rows, then Show more. Titles and buttons match at every width.",
-    "**For the build:** the shared referral alerts show a literal 'Not recorded' as a legal chip.",
-    "**Review round (30 October):** the coordinator's Referrals fixes in this desk's own sections (Fit in wards, Needs in words, ward names), Legal status not recorded and 'Median time to decide 10d 0h (all 9 decided)'. History stays hidden for this desk.",
   ],
   "as-community-movements": [
     "**As the community clinician**, Midland has no journey in the demo data, so the page shows one panel saying what puts a journey there and that the team books its transport from it (D-76), with Refer from team.",
@@ -81,12 +61,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
     "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
     "**Round 2:** empty Broadcast, Notices and History tabs go on this desk, and so does Copy for handover (the officer's copy is on My jobs). No stray ' · ' when the UMRN is withheld.",
-  ],
-  "as-bed-manager-referrals": [
-    "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
-    "**Removed:** the destination chips and statewide Beds ready (placing is the coordinator's job).",
-    "**Round 2:** with an empty queue, zero chips, the empty Waiting band and sort notes go; they return when a referral waits. The title reads 'Nothing awaiting a decision', as on the phone. The side pane says 'Read only' and who answers each referral.",
-    "**Review round (30 October):** the coordinator's Referrals fixes, from its own components; the hero reads 'median time to decide … (… decided)' and the phone hero Decision overdue. The desk stays read-only.",
   ],
   "as-executive-settings": [
     "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
@@ -366,19 +340,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   ],
   waiting: [
     "**Built into the app (31 October):** this is the real Waiting page (round 8, approved by Josh on 31 October), with the nurse in charge's and ED clinician's views as role branches in the same screen. It stays here only as the backdrop for the Loading (Waiting) pop-up.",
-  ],
-  referrals: [
-    "**Built from a copy of today's Referrals board**, so the queue, History, highlights, the keyboard shortcuts, the decline-reason rule and Accept presentation all work as now.",
-    "**New:** queue rows wrap instead of cutting the patient line off, and Offered to wards is a table (patient, ward offered to, waiting time and what the wards have answered so far).",
-    "**Decision pane:** Written history and Corrections fold behind one button, so Decline and Accept sit higher. The Timeline tab still shows them in full.",
-    "**Kept as today:** the waiting chart already marks the 1, 4 and 24 hour due times, so it is unchanged here.",
-    "**Your 30 October feedback:** the Filter queue box is gone on every device. On a phone the highlight chips wrap onto a second row instead of running off the edge, and the empty strip under Queue and History is gone.",
-    "**Round 2:** the Written history button sits where the history opens, as a small text button; for ward-bed referrals it was opening nothing and is gone. Phone Offered to wards rows are two lines and list every ward. The 48 px rows and toggles are back to normal size.",
-    "**Review round (30 October):** the queue says what its figures are: Fit reads '11 wards', and Needs uses short words (Locked, Transport) instead of icons alone. History names the ward that declined (FSH Older Adult), not its internal code, and drops the queue's 'Longest wait first' note.",
-    "**Review round (30 October):** a missing legal status reads 'Legal status not recorded' under the name; the waiting chart is headed 'Since referral' and ends at '72h all tiers'; the median reads 'median time to decide 6h 38m (all 24 decided)'. One word for late decisions: Decision overdue (phone too). The decision pane's show-more controls are one chevron row.",
-    "**Phone:** Offered to wards rows are two lines, the patient and waiting time over the ward and its answer.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "new-referral": [
     "**Built from a copy of today's referral slide-out**, in the same panel and steps, so finding a patient, the four steps, the Before you send list, Save draft and the ask-before-closing guard all work as now.",

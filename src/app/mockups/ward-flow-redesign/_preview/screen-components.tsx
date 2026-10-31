@@ -16,9 +16,6 @@ const HomeActivityPage = dynamic<MockupPageProps>(() =>
 const NewReferralRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/new-referral/new-referral-redesign").then((module) => module.NewReferralRedesign),
 );
-const ReferralsRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/referrals/referrals-redesign").then((module) => module.ReferralsRedesign),
-);
 const MovementsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/movements/movements-redesign").then((module) => module.MovementsRedesign),
 );
@@ -80,11 +77,6 @@ const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
     (module) => module.StatisticsWeeklyPage,
   ),
 );
-const AsWardReferralsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-referrals/as-ward-referrals-page").then(
-    (module) => module.AsWardReferralsPage,
-  ),
-);
 const AsWardLegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-legal-forms/as-ward-legal-forms-page").then(
     (module) => module.AsWardLegalFormsPage,
@@ -106,9 +98,6 @@ const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
 const AsEdHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-home/as-ed-home-page").then((module) => module.AsEdHomePage),
 );
-const AsEdReferralsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ed-referrals/as-ed-referrals-page").then((module) => module.AsEdReferralsPage),
-);
 const AsEdLegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-legal-forms/as-ed-legal-forms-page").then(
     (module) => module.AsEdLegalFormsPage,
@@ -117,11 +106,6 @@ const AsEdLegalFormsPage = dynamic<MockupPageProps>(() =>
 const AsEdStatisticsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-statistics/as-ed-statistics-page").then(
     (module) => module.AsEdStatisticsPage,
-  ),
-);
-const AsCommunityReferralsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-community-referrals/as-community-referrals-page").then(
-    (module) => module.AsCommunityReferralsPage,
   ),
 );
 const AsCommunityMovementsPage = dynamic<MockupPageProps>(() =>
@@ -144,11 +128,6 @@ const AsOfficerAlertsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsOfficerAlertsPage,
   ),
 );
-const AsBedManagerReferralsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-referrals/as-bed-manager-referrals-page").then(
-    (module) => module.AsBedManagerReferralsPage,
-  ),
-);
 const AsExecutiveSettingsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-executive-settings/as-executive-settings-page").then(
     (module) => module.AsExecutiveSettingsPage,
@@ -168,7 +147,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   home: HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingPage,
-  referrals: ReferralsRedesign,
   "new-referral": NewReferralRedesign,
   ward: RealWardScreen,
   "ed-board": EdBoardPage,
@@ -183,21 +161,17 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "statistics-list": StatisticsListPage,
   "statistics-unit": StatisticsUnitPage,
   "statistics-weekly": StatisticsWeeklyPage,
-  "as-ward-referrals": AsWardReferralsPage,
   "as-ward-legal-forms": AsWardLegalFormsPage,
   "as-ward-statistics": AsWardStatisticsPage,
   "as-ward-alerts": AsWardAlertsPage,
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
-  "as-ed-referrals": AsEdReferralsPage,
   "as-ed-legal-forms": AsEdLegalFormsPage,
   "as-ed-statistics": AsEdStatisticsPage,
-  "as-community-referrals": AsCommunityReferralsPage,
   "as-community-movements": AsCommunityMovementsPage,
   "as-community-patient": AsCommunityPatientPage,
   "as-community-statistics": AsCommunityStatisticsPage,
   "as-officer-alerts": AsOfficerAlertsPage,
-  "as-bed-manager-referrals": AsBedManagerReferralsPage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

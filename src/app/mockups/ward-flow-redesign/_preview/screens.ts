@@ -50,7 +50,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
   { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
-  { slug: "referrals", label: "Referrals", group: "Coordinator", appPath: "/ward-flow/referrals" },
   {
     slug: "new-referral",
     label: "New referral",
@@ -76,13 +75,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
   },
   { slug: "statistics-weekly", label: "Weekly", group: "Statistics pages", appPath: "/ward-flow/statistics/weekly" },
-  {
-    slug: "as-ward-referrals",
-    label: "Referrals",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/referrals",
-    role: ROLE_DESKS["ward"],
-  },
   {
     slug: "as-ward-legal-forms",
     label: "Legal forms",
@@ -119,13 +111,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["ed"],
   },
   {
-    slug: "as-ed-referrals",
-    label: "Referrals",
-    group: "As ED clinician",
-    appPath: "/ward-flow/referrals",
-    role: ROLE_DESKS["ed"],
-  },
-  {
     slug: "as-ed-legal-forms",
     label: "Legal forms",
     group: "As ED clinician",
@@ -138,13 +123,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     group: "As ED clinician",
     appPath: "/ward-flow/statistics",
     role: ROLE_DESKS["ed"],
-  },
-  {
-    slug: "as-community-referrals",
-    label: "Referrals",
-    group: "As community clinician",
-    appPath: "/ward-flow/referrals",
-    role: ROLE_DESKS["community"],
   },
   {
     slug: "as-community-movements",
@@ -173,13 +151,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     group: "As transport officer",
     appPath: "/ward-flow/alerts",
     role: ROLE_DESKS["officer"],
-  },
-  {
-    slug: "as-bed-manager-referrals",
-    label: "Referrals",
-    group: "As site bed manager",
-    appPath: "/ward-flow/referrals",
-    role: ROLE_DESKS["bed-manager"],
   },
   {
     slug: "as-executive-settings",

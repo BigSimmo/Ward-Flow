@@ -1,4 +1,6 @@
 "use client";
+// Copied from src/components/ward-management/referrals/referral-match-not-a-bed.tsx (Referrals redesign).
+// Final round (31 Oct 2026): reason and recipient choices use the kit Select, same options, nothing pre-chosen (D-71).
 
 import { type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -23,6 +25,9 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
+import { Select } from "@/components/wf";
+// Final round: the kit Select box sizing for this panel (see the file).
+import rs from "./referral-match.module.css";
 import {
   DECLINE_REASON_UNCHOSEN_ED,
   DECLINE_REASON_UNCHOSEN_COMMUNITY,
@@ -30,7 +35,7 @@ import {
   REJECTED_DECISION_LABELS,
   revealConfirmRow,
 } from "./referral-match-model";
-import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
+import { Disclosure, FoldedHistory } from "./folded-history";
 import type { ReferralMatchState } from "./use-referral-match-state";
 
 /*
@@ -64,8 +69,9 @@ export function renderNotABedPhoneReview({
     phoneDeclining,
     setPhoneDeclining,
     gpSourceNotice,
-    wholeWithdrawControl,
+    wholeWithdrawControl: withdrawDetails,
   } = s;
+  const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
   return (
     <section
       className={`${styles.matchPanel} ${ph.sheet}`}
@@ -170,7 +176,14 @@ export function renderNotABedPhoneReview({
           </>
         ) : (
           <>
-            <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
+            {/* Referrals redesign (31 Oct 2026): the ward sheet's own Decline id, so the board's D key
+                opens these reasons here too, now that desktop uses this ED review. */}
+            <button
+              type="button"
+              className={ph.sec}
+              data-testid="ward-referral-match-decline-open"
+              onClick={() => setPhoneDeclining(true)}
+            >
               Decline
             </button>
             <button
@@ -200,6 +213,7 @@ export function renderNotABedPanel({
   handleEdAccept,
   handleCommunityDecline,
   handleCommunityAccept,
+  hideCommunityDecision = false,
 }: {
   s: ReferralMatchState;
   referral: Referral;
@@ -211,6 +225,9 @@ export function renderNotABedPanel({
   handleEdAccept: () => void;
   handleCommunityDecline: () => void;
   handleCommunityAccept: () => void;
+  /** Josh, 31 Oct 2026 (answer 33): the community desk does not answer the community arm here,
+      because the answer would be recorded as the coordinator's. */
+  hideCommunityDecision?: boolean;
 }) {
   const {
     edDeclineReason,
@@ -223,8 +240,9 @@ export function renderNotABedPanel({
     gpSourceNotice,
     edAddressing,
     communityAddressing,
-    wholeWithdrawControl,
+    wholeWithdrawControl: withdrawDetails,
   } = s;
+  const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
   return (
     <section className={styles.matchPanel} data-testid="ward-referral-match-not-a-bed-question">
       {/* v10: an eyebrow naming the ask, one plain card for where it went, then the decision. */}
@@ -258,10 +276,10 @@ export function renderNotABedPanel({
               Decline reason (emergency department)
             </label>
             <div className={styles.selectWithActionRow}>
-              <select
+              <Select
                 id="ward-referral-match-decline-reason-emergency_department"
                 data-testid="ward-referral-match-decline-reason-emergency_department"
-                className={styles.select}
+                boxClassName={rs.reasonSelect}
                 value={edDeclineReason ?? ""}
                 onChange={(event) => {
                   const chosen = event.target.value;
@@ -279,7 +297,7 @@ export function renderNotABedPanel({
                     {DECLINE_REASON_LABELS[reason] ?? reason}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 className={styles.declineButton}
@@ -361,16 +379,16 @@ export function renderNotABedPanel({
           </div>
         ) : null}
 
-        {communityAddressing && communityAddressing.state === "queued" ? (
+        {communityAddressing && communityAddressing.state === "queued" && !hideCommunityDecision ? (
           <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
               Decline reason (community team)
             </label>
             <div className={styles.selectWithActionRow}>
-              <select
+              <Select
                 id="ward-referral-match-decline-reason-community_team"
                 data-testid="ward-referral-match-decline-reason-community_team"
-                className={styles.select}
+                boxClassName={rs.reasonSelect}
                 value={communityDeclineReason ?? ""}
                 onChange={(event) => {
                   const chosen = event.target.value;
@@ -388,7 +406,7 @@ export function renderNotABedPanel({
                     {COMMUNITY_DECLINE_REASON_LABELS[reason]}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 className={styles.declineButton}
@@ -413,7 +431,7 @@ export function renderNotABedPanel({
           </div>
         ) : null}
 
-        {communityAddressing && communityAddressing.state === "queued" ? (
+        {communityAddressing && communityAddressing.state === "queued" && !hideCommunityDecision ? (
           <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
             {/*
              * RB5 (item 16, 2026-09-17) — "a community team may accept, for follow-up only". Same
@@ -456,7 +474,7 @@ export function renderNotABedPanel({
           recorded: {lastRejection.reason}
         </p>
       ) : null}
-      <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
+      <FoldedHistory referral={referral} now={now} dispatch={dispatch} />
       {phone}
     </section>
   );

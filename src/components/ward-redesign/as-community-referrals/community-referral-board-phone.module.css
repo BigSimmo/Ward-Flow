@@ -1,5 +1,0 @@
-/* The median line on its own (nothing waiting on the team) starts with a capital: "Median time to
-   decide 6h 38m (all 24 decided)". The words come from the page, which writes them for " · median". */
-.leadCap::first-letter {
-  text-transform: uppercase;
-}

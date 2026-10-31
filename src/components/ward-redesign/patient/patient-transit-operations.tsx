@@ -56,7 +56,7 @@ import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-iden
 import { clock, dur } from "@/components/ward-management/patients/patient-now-records";
 import ph from "@/components/ward-management/referrals/referral-match-phone.module.css";
 import styles from "@/components/ward-management/patients/patient-transit-operations.module.css";
-import { FindAWard, wardMatchesQuery } from "@/components/ward-redesign/referrals/find-a-ward";
+import { FindAWard, wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 
 /** All operational facts and eligibility are calculated from the current provider state. */
 /**
