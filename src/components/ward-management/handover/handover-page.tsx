@@ -514,9 +514,15 @@ export function HandoverPage() {
   const routeRole = useRouteRole();
   const gate = useRoleGate();
   const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
-  // Decision 41 (Josh, 31 Oct 2026): a sign-off names its sheet's ward: the ward chosen in the
-  // scope, or a one-ward desk's own ward. A wider sheet's sign-off names none.
-  const signOffUnitId = handoverSignOffUnitId(scope) ?? ownWard?.id;
+  // Decision 41 (Josh, 31 Oct 2026): a sign-off names its sheet's ward: a one-ward desk's own ward,
+  // or the scope's ward when the desk holds it (a link never signs another ward's sheet). A wider
+  // sheet's sign-off names none.
+  const scopedWard = handoverSignOffUnitId(scope);
+  const signOffUnitId =
+    ownWard?.id ??
+    (scopedWard !== undefined && (accessIsWholeNetwork(access) || unitInScope(access.scope, scopedWard, deskPlaces))
+      ? scopedWard
+      : undefined);
   const { signedAt, signedBy } = useMemo(
     () => sheetSignOff(handoverSignOffs, shiftAt, signOffUnitId),
     [handoverSignOffs, shiftAt, signOffUnitId],

@@ -12,7 +12,7 @@ import type { WardAccess } from "@/components/ward-management/ward-role-access";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow/handover",
-  useSearchParams: () => new URLSearchParams(),
+  useSearchParams: () => new URLSearchParams(window.location.search),
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
@@ -31,7 +31,8 @@ function Probe() {
   return null;
 }
 
-function renderAtDesk(access: WardAccess) {
+function renderAtDesk(access: WardAccess, search = "") {
+  window.history.replaceState(null, "", `/ward-flow/handover${search}`);
   setWardFeatureFlagOnDevice("role-access", true);
   setWardAccess(access);
   render(
@@ -59,6 +60,24 @@ describe("Handover sign-off names its ward", () => {
     const button = screen.queryByTestId("ward-handover-sign-off-button");
     if (button) fireEvent.click(button);
     expect(flow.handoverSignOffs).toHaveLength(0);
+  });
+
+  it("a two-ward desk that chooses one of its wards signs off that ward", () => {
+    renderAtDesk(
+      { role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure", "fsh-older-adult"] } },
+      "?scope=ward:fsh-older-adult",
+    );
+    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    expect(flow.handoverSignOffs).toEqual([expect.objectContaining({ at: 600, unitId: "fsh-older-adult" })]);
+  });
+
+  it("a link naming another ward never signs that ward's sheet from a one-ward desk", () => {
+    renderAtDesk(
+      { role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } },
+      "?scope=ward:fsh-older-adult",
+    );
+    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    expect(flow.handoverSignOffs).toEqual([expect.objectContaining({ at: 600, unitId: "brm-adult-secure" })]);
   });
 
   it("one ward's sign-off never marks another ward's sheet, or a wider sheet, signed", () => {
