@@ -230,7 +230,7 @@ describe("the orphaned-transport panel's cancel-authority copy", () => {
     // Matched as a string, not a regex: the real ward name contains parentheses, which a regex
     // literal would read as a capture group and silently stop matching.
     expect(
-      within(panel).getByText((content) => content.includes("Maali (Ward 4.2) — open, which booked it")),
+      within(panel).getByText((content) => content.includes("Maali (Ward 4.2), which booked it")),
     ).toBeInTheDocument();
     // And the receiving ward — Ward 2K, distinct from the booking ward above — is told
     // it may not cancel this job itself: "No other ward — including the ward receiving this
