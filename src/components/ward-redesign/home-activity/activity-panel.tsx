@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { Button, ChipGroup, Drawer, FilterChip, PillTabs, StatusGlyph, TabPanel, useIsPhone } from "@/components/wf";
+import { NextAlertsTabs } from "@/components/ward-redesign/shell-next/next-bar-parts";
 import {
   ACTIVITY_CATEGORY_CHIPS,
   ACTIVITY_GLYPH,
@@ -76,6 +77,7 @@ export function ActivityPanel({
   onTab,
   review,
   now,
+  toAlerts,
 }: {
   open: boolean;
   onClose: () => void;
@@ -83,6 +85,9 @@ export function ActivityPanel({
   onTab: (tab: ActivityTab) => void;
   review: Review;
   now: Instant;
+  /** The sidebar and header redesign (`?shell=next`) opens this panel from its Alerts | Activity tabs,
+   *  so the panel shows the same tabs with a way back to Alerts. */
+  toAlerts?: { label: string; count: number; onChoose: () => void };
 }) {
   const isPhone = useIsPhone();
   const network = useWardNetwork();
@@ -204,6 +209,15 @@ export function ActivityPanel({
       closeButtonClassName={styles.panelClose}
       headerBottom={
         <div className={styles.panelTabs}>
+          {toAlerts ? (
+            <NextAlertsTabs
+              current="activity"
+              alertsLabel={toAlerts.label}
+              alertsCount={toAlerts.count}
+              unreadNotices={unreadCount}
+              onChoose={(next) => (next === "alerts" ? toAlerts.onChoose() : undefined)}
+            />
+          ) : null}
           <PillTabs items={tabs} value={tab} onChange={onTab} label="Activity" idPrefix="home-activity" fill />
         </div>
       }
