@@ -82,16 +82,27 @@ describe("current-capacity explorer", () => {
     expect(fiona).not.toHaveAttribute("data-dim");
   });
 
-  it("switches to wards and searches within a hospital rather than including unmatched wards", () => {
+  it("switches to wards and lists every ward, with no typed search (D-91)", () => {
     chart();
     fireEvent.click(screen.getByRole("radio", { name: "Wards" }));
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Beta" } });
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Beta: 1 ready, 0 pulled, 1 closed, 8 occupied of 10 beds/ }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/ready of 10 (synthetic )?beds/)).toBeInTheDocument();
-    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent("Showing 1 of 3 wards matched");
-    expect(screen.queryByRole("button", { name: /Alpha: 3 ready/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alpha: 3 ready/ })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent("Showing 3 of 3 wards");
+  });
+
+  it("lists the first seven rows, then Show all and Show fewer", () => {
+    const many = Array.from({ length: 9 }, (_, index) => unit(`Ward ${index + 1}`, "RPH", 10, 2, 1));
+    render(<StatisticsCapacityChart units={many} bedReleases={[]} initialGroup="ward" />);
+    const showing = screen.getByTestId("ward-statistics-capacity-showing");
+    expect(showing).toHaveTextContent("Showing 7 of 9 wards");
+    expect(screen.getAllByRole("button", { name: /^Ward \d: / })).toHaveLength(7);
+    fireEvent.click(within(showing).getByRole("button", { name: "Show all 9" }));
+    expect(screen.getAllByRole("button", { name: /^Ward \d: / })).toHaveLength(9);
+    fireEvent.click(within(showing).getByRole("button", { name: "Show fewer" }));
+    expect(screen.getAllByRole("button", { name: /^Ward \d: / })).toHaveLength(7);
   });
 
   it("normalises each bar to its own denominator in percentage mode", () => {
@@ -150,14 +161,10 @@ describe("current-capacity explorer", () => {
     expect(fiona).toHaveFocus();
   });
 
-  it("recovers from an empty result and resets every view control", () => {
+  it("resets every view control", () => {
     chart();
     fireEvent.click(screen.getByRole("radio", { name: "Beds" }));
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "missing hospital" } });
-    expect(screen.getByText("No matching wards")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Chart CSV/ })).toBeDisabled();
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(screen.getByRole("searchbox")).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
     // v6: every view control returns to its default, which is now the percentage scale.
     expect(screen.getByRole("radio", { name: "%" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toBeInTheDocument();
