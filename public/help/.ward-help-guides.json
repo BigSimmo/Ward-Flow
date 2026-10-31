@@ -1,8 +1,8 @@
 {
   "format": "wardflow-help-guides-v1",
   "files": {
-    "coordinator.md": "4e8bf70bdf6bb695b68db67164da48dfdf36810083be7fd6a63f75fa98cb5e79",
-    "coordinator.html": "f03fa2cbbffaff47c4ed9cc2dd8a5f4c2a5a9f545ee4683c66d0033e713b3fba",
+    "coordinator.md": "f7096dfb7bce44aba7d24922bfe85a19881365ef8f49ee6f1061d7878c45c9c6",
+    "coordinator.html": "6276549bd0493452c9e5827cd31428136d4649628653f173c246a59f9683e1cb",
     "bed_manager.md": "b34912b5cb76c2853b1f978bce81640bf49e9f3217f1292d9b8b605369766747",
     "bed_manager.html": "bb35b8fc75eca7b4ce81703460537d6fd1a9badd2c89551f05f4c77c5d341d42",
     "ward.md": "135619655b72d864736952bdb586ebeeb0a6fdcd81d898cc7227d2750fe8a1a6",
@@ -13,10 +13,10 @@
     "community.html": "ed7b4a48694a54e108139a690f97639010864e5e85c3d731cd9462b0839028cf",
     "officer.md": "9d2c356f8ffade57087362fa038355d081d294ddaa10636d6b91f63ef88d16bf",
     "officer.html": "220114085f02b9f273a1a618346e1d7b827c8e66c583e2fd125959423f7b2f53",
-    "executive.md": "4fe507cb16e49c5d7dbf514f343daa83c49ec581bd846eb2d2e71e45162c28f7",
-    "executive.html": "b20495bd0126605ebe385ebac1b7b7c980ac54aa4dfe0ac26bec2d7e2aed1340",
-    "admin.md": "86e61a08239384e678ce30be512b0947664937bc666aded585e57b51aa1fec6d",
-    "admin.html": "6cde42950da0887911a81f6980c651e12f9a98dea1400fced520cc3b5f276274",
+    "executive.md": "3bf964d862f17f530478bd1e9e6767111745eb3f82ca9f5930b2512ef7fca754",
+    "executive.html": "29d4a1c4930c43a82c33c9067c845ce4ef283840eb937f498dae147c43b721ea",
+    "admin.md": "426d4e184d3ccd137a6afcab83d4f7ddd8423bd811d1c19553d12b5abf8c3743",
+    "admin.html": "39a58aac30637c733979c74edcf518d04d1e47faf45526e8fced8b8d910ecf95",
     "tv.md": "5a20c810ba8c46c6a2600921a4923d730dcce33128e227c80bb7508a77d789f1",
     "tv.html": "11989f8915f22b4086435b3b4ba98ada7c112aec7cb144540764988e888dc4b8"
   }

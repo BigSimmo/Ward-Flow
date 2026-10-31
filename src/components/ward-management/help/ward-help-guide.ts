@@ -39,11 +39,11 @@ const NO_MHA_TIMES =
 
 export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   coordinator: {
-    homeName: "My list",
+    homeName: "Home",
     summary:
       "You see the whole network or your own health service, decide referrals and keep patients moving to a bed.",
     startsAt:
-      "My list is your home: Act now, Since you last looked and Referrals to decide. Your menu holds Capacity, Movements, Referrals and Handover. On a desktop, Open on TV on Capacity puts the bed meeting figures on the meeting room screen.",
+      "Home opens My list: Act now, Since you last looked and Referrals to decide. Your menu holds Home, Capacity, Movements, Waiting, All EDs, Referrals and Handover. On a desktop, Open on TV on Capacity puts the bed meeting figures on the meeting room screen.",
     jobs: [
       {
         job: "Decide a referral",
@@ -90,7 +90,8 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   },
   ward: {
     homeName: "My ward",
-    summary: "You run your own ward's beds and answer the referrals sent to it.",
+    summary:
+      "You run your own ward's beds and answer the referrals sent to it. This desk is Nurse in charge; its recorded role label is Ward manager.",
     startsAt:
       "My ward is your home: the bed board, this shift's jobs and Awaiting your answer. Your menu holds Coming and going, Referrals to answer and Handover. On a desktop, On TV in the ward's toolbar opens a read only screen for the ward's own TV.",
     jobs: [
@@ -207,9 +208,10 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   },
   community: {
     homeName: "My team",
-    summary: "You work for one community mental health team. You send referrals and answer the ones sent to your team.",
+    summary:
+      "You work for one community mental health team. You send referrals and answer the ones sent to your team. This desk is Community clinician; its recorded role label is Community service.",
     startsAt:
-      "My team is your home: referrals waiting for your answer, people in a bed and your caseload. Your menu holds Referrals, New referral and Movements.",
+      "My team is your home: referrals waiting for your answer, people in a bed and your caseload. Your menu holds Referrals and New referral. Find Movements under More on desktop or Menu on a phone.",
     jobs: [
       {
         job: "Send a referral",
@@ -227,7 +229,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       { job: "Record contact", how: "Use Record contact after you reach the person.", go: "home" },
       {
         job: "Follow a move",
-        how: "An accepted referral is moved, transported and arrived. Follow it on Movements.",
+        how: "Open Movements from your menu to follow the journey. After collection, ask the bed coordinator if the journey needs to stop.",
         go: "movements",
       },
     ],
@@ -277,9 +279,11 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
   executive: {
     homeName: "Statistics",
     summary: "You see how the network or your health service is going, as numbers. You do not see patients.",
-    startsAt: "Statistics is your home and your only working screen, apart from Settings.",
+    startsAt:
+      "Statistics is your home. Your menu holds Statistics and Capacity. Capacity shows bed counts; both screens are read only. Your own Settings is also available.",
     jobs: [
-      { job: "See the network", how: "The Network page shows beds, occupancy and waits in one place.", go: "home" },
+      { job: "See the network", how: "Statistics shows beds, occupancy and ED waits in one place.", go: "home" },
+      { job: "Check beds", how: "Open Capacity for bed counts across your network or health service.", go: "capacity" },
       { job: "Compare", how: "Set two wards or departments side by side.", go: "home" },
       { job: "Look for pressure", how: "Check ED waits, blocked discharges and expected discharges.", go: "home" },
       { job: "Export", howTo: "statistics", how: "Use CSV to save a table of figures.", go: "home" },

@@ -8,9 +8,9 @@ Statistics
 
 ## Jobs you do most
 
-1. See the network. The Network page shows beds, occupancy and waits in one place.
-2. Compare. Set two wards or departments side by side.
-3. Look for pressure. Check ED waits, blocked discharges and expected discharges.
+1. See the network. Statistics shows beds, occupancy and ED waits in one place.
+2. Check beds. Open Capacity for bed counts across your network or health service.
+3. Compare. Set two wards or departments side by side.
 
 ## What you cannot do
 
@@ -31,7 +31,6 @@ Statistics
 
 - /: Search, from the box in the header. On Settings it finds a setting.
 - Ctrl+K: Search, even with single-key shortcuts off. Cmd+K on a Mac.
-- Shift+T: Open Alerts, called Tasks on some desks.
 - Shift+A: Open Activity.
 - [: Fold the side menu to icons, or open it again.
 - Alt+N: Jump to the newest notice's button, and back. Option+N on a Mac.
