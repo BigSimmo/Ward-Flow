@@ -35,6 +35,7 @@ import {
 } from "./delays-board-model";
 import { BandBar, causeTitle } from "./delays-board-parts";
 import styles from "./delays-board.module.css";
+import { rowTypedTime } from "./delays-board-rows";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 type Graph = "spread" | "runway" | "matrix";
@@ -225,8 +226,7 @@ function Spread({
                           {row.dueIn !== undefined && row.movement.legalForm ? (
                             <>
                               <br />
-                              {`Form ${row.movement.legalForm.code} ${row.dueIn < 0 ? "overdue" : "due in"} `}
-                              <span className={styles.num}>{splitDuration(Math.abs(row.dueIn))}</span>
+                              {`Form ${row.movement.legalForm.code} ${rowTypedTime(row) ?? ""}`}
                             </>
                           ) : null}
                         </>,

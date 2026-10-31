@@ -14,7 +14,13 @@ import {
   type QueueEntry,
   type QueueHandlers,
 } from "@/components/ward-management/alerts/alerts-queue";
-import { extractOverdue, minutesText } from "@/components/ward-management/alerts/alerts-model";
+import {
+  extractOverdue,
+  legalTypedEnd,
+  minutesText,
+  shownAgeFrom,
+} from "@/components/ward-management/alerts/alerts-model";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -195,17 +201,22 @@ function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instan
   const owner = isYours(entry) ? undefined : `With ${ownerShort(entry.owner)}`;
   const state = entry.seen ? `Acknowledged ${formatInstantWithDay(entry.seen.at, now)}` : undefined;
   const extra = [owner, state].filter(Boolean).join(" · ") || undefined;
-  const age = entry.raised === undefined ? undefined : minutesText(Math.max(0, now - entry.raised));
+  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+  const legalEnded = legalTypedEnd(entry.item);
+  const ageFrom = shownAgeFrom(entry.item, entry.raised);
+  const age = ageFrom === undefined ? undefined : minutesText(Math.max(0, now - ageFrom));
   // "10m" over "10m overdue" says the time twice; the second line keeps only what it adds.
   const overdue = entry.raised === undefined ? null : extractOverdue(entry.item.detail);
   const ageNote =
-    entry.raised === undefined
-      ? "Time not recorded"
-      : overdue
-        ? overdue.startsWith(`${age} `)
-          ? overdue.slice(age!.length + 1)
-          : overdue
-        : `since ${formatInstantWithDay(entry.raised, now)}`;
+    legalEnded !== undefined
+      ? typedTimeLine(legalEnded, now)
+      : entry.raised === undefined
+        ? "Time not recorded"
+        : overdue
+          ? overdue.startsWith(`${age} `)
+            ? overdue.slice(age!.length + 1)
+            : overdue
+          : `since ${formatInstantWithDay(entry.raised, now)}`;
   return (
     <HomeRow
       data={{ "data-alert-id": entry.item.id, "data-movement-id": entry.item.movementId || undefined }}
@@ -331,7 +342,13 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
       name={subject.displayName}
       umrn={subject.umrn}
       line={subject.to ? `${shortPlace(subject.from)} to ${subject.to}` : shortPlace(subject.from)}
-      age={entry.raised === undefined ? undefined : minutesText(Math.max(0, now - entry.raised))}
+      age={
+        legalTypedEnd(entry.item) !== undefined
+          ? typedTimeLine(legalTypedEnd(entry.item)!, now)
+          : entry.raised === undefined
+            ? undefined
+            : minutesText(Math.max(0, now - entry.raised))
+      }
       owner={isYours(entry) ? undefined : ownerShort(entry.owner)}
     />
   );

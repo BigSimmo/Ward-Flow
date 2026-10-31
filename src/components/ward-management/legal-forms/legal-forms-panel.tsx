@@ -15,26 +15,27 @@ import {
   cx,
   type TimelineItem,
 } from "@/components/wf";
-import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
 import { formProgression } from "./legal-form-progression";
+import { typedClock } from "./legal-time-as-typed";
 import { currentLegalDueAt, isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
 import {
   STANDING_TONE,
   clockStanding,
-  elapsedFraction,
   formEvents,
   formTitle,
   instantFromDateAndTimeInputs,
   isOwnedLegalFormCode,
-  leftText,
   needsExamination,
   receiptEventAccepts,
   recordedFacts,
+  standingSuffix,
   standingWord,
+  typedTimeStanding,
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
@@ -170,10 +171,11 @@ export function FocusPanel({
     );
   };
 
-  const elapsed = elapsedFraction(movement, now);
   // Audit S-6: a form ended by the examination or arrival keeps its typed expiry as history only.
+  // Legal times only as typed (Josh, 31 Oct 2026): the typed clock time and its warning words, never
+  // a running figure or a bar filling towards it.
   const dueAt = currentLegalDueAt(movement);
-  const remaining = dueAt !== undefined ? minutesUntil(dueAt, now) : undefined;
+  const typedStanding = typedTimeStanding(movement, now, thresholds);
 
   return (
     <section className={styles.panel} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
@@ -192,13 +194,13 @@ export function FocusPanel({
       <div className={styles.focusClock} data-tone={STANDING_TONE[standing]}>
         <div className={styles.focusClockLine}>
           <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
-          {remaining !== undefined ? (
+          {dueAt !== undefined ? (
             <>
-              <span className={styles.clockBig}>{leftText(movement, now)}</span>
+              <span className={cx(styles.mono, styles.clockBig)}>{typedClock(dueAt, now)}</span>
               <span className={styles.clockWord}>
-                {remaining < 0 ? "since the typed expiry" : "until the typed expiry"}
+                {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
+                {standingSuffix(typedStanding)}
               </span>
-              <span className={cx(styles.mono, styles.clockAt)}>{formatInstantWithDay(dueAt!, now)}</span>
             </>
           ) : (
             <>
@@ -209,16 +211,6 @@ export function FocusPanel({
             </>
           )}
         </div>
-        {remaining !== undefined ? (
-          <>
-            <span className={styles.progress} data-tone={STANDING_TONE[standing]} aria-hidden="true">
-              <span style={{ width: `${Math.round(elapsed * 100)}%` }} />
-            </span>
-            <span className={styles.srOnly}>
-              {remaining < 0 ? "Expired" : "Expires"} {formatInstantWithDay(dueAt!, now)}, typed from the form
-            </span>
-          </>
-        ) : null}
       </div>
 
       <Segmented<FocusTab>

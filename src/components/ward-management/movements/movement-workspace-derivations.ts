@@ -4,7 +4,6 @@ import {
   formatInstantWithDay,
   formatRemaining,
   type Instant,
-  isClockBreached,
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
 import {
@@ -15,6 +14,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { DECLINE_REASON_LABELS } from "@/components/ward-management/ward-referrals";
 import {
   MOVEMENT_STAGES,
@@ -101,11 +101,9 @@ export function legalFormReadinessLine(legalForm: LegalForm, now: Instant): stri
   // guessed expansion and never by the word "undefined".
   const named = legalFormNameLabelFirst(legalForm);
   if (legalForm.dueAt === undefined) return `${named} · no deadline recorded`;
-  const when = formatInstantWithDay(legalForm.dueAt, now);
-  if (isClockBreached(legalForm.dueAt, now)) {
-    return `${named} · due ${when} — ${formatRemaining(minutesUntil(legalForm.dueAt, now))}`;
-  }
-  return `${named} · due ${when}`;
+  // Legal times only as typed (31 Oct 2026): "ends 15:42 as typed", or "ended … as typed" once
+  // passed, which still says the breach in words; never "1h 15m overdue".
+  return `${named} · ${typedTimePhrase(legalForm.dueAt, now)}`;
 }
 
 /**
@@ -378,7 +376,7 @@ export function attentionItems({
         who: legalFormNameLabelFirst(movement.legalForm),
         chip: "Overdue",
         level: "urgent",
-        say: `The deadline recorded on this form passed at ${formatInstantWithDay(deadline, now)} — ${formatRemaining(minutesUntil(deadline, now))}. Nothing on this record says it has been dealt with.`,
+        say: `The form ${typedTimePhrase(deadline, now)}. Nothing on this record says it has been dealt with.`,
       });
     } else if (state === "critical" || state === "due") {
       items.push({
@@ -386,7 +384,7 @@ export function attentionItems({
         who: legalFormNameLabelFirst(movement.legalForm),
         chip: "Due soon",
         level: "stalled",
-        say: `This form's recorded deadline is ${formatInstantWithDay(deadline, now)} — ${formatRemaining(minutesUntil(deadline, now))}.`,
+        say: `The form ${typedTimePhrase(deadline, now)}.`,
       });
     }
   }

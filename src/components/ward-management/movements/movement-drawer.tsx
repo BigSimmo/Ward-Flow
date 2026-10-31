@@ -20,6 +20,7 @@ import {
   transportNeedState,
 } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -265,9 +266,8 @@ export function MovementDrawer({
       ? movement.legalForm
         ? "no recorded expiry"
         : ""
-      : dueAt < now
-        ? `recorded expiry passed ${splitDuration(now - dueAt)} ago`
-        : `recorded expiry ${formatInstantWithDay(dueAt, now)}`;
+      : // Legal times only as typed (31 Oct 2026): "ended 15:42 as typed", never a count.
+        typedTimePhrase(dueAt, now);
 
   // Every ward ever asked: live requests, recorded declines and the accepting ward. A decline
   // removes the ward from the live list, so the live list alone would read "None yet".

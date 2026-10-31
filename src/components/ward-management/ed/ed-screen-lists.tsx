@@ -4,6 +4,7 @@
 // Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { KeyboardEvent } from "react";
 import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
@@ -451,12 +452,11 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
                         <span>{m.sex}</span>
                       </span>
                       <span className={styles.lstWhy}>
+                        {/* Legal times only as typed (31 Oct 2026): never "passed … ago" or "… away". */}
                         Form {m.legalForm ? m.legalForm.code : ""}.{" "}
                         {due === null || due === undefined
                           ? "No deadline is recorded against it."
-                          : due < now
-                            ? `The deadline passed ${splitDuration(Math.max(now - due, 0))} ago.`
-                            : `The deadline is ${splitDuration(Math.max(due - now, 0))} away.`}
+                          : `${typedTimeLine(due, now)}.`}
                       </span>
                     </span>
                     <span className={styles.lstEnd}>
