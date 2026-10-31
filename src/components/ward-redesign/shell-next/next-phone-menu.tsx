@@ -41,6 +41,7 @@ import {
 } from "@/components/ward-management/shell/ward-rail-entries";
 import { nextRoleMenu } from "@/components/ward-redesign/shell-next/next-role-menu";
 import { NextPhoneMenuTop } from "@/components/ward-redesign/shell-next/next-phone-menu-top";
+import nextParts from "@/components/ward-redesign/shell-next/next-rail.module.css";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useAccessNavFilter } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -460,7 +461,7 @@ function PhoneDock({
   const tabCount = places.length + right.length;
   return (
     <nav
-      className={styles.dock}
+      className={`${styles.dock} ${nextParts.dockLabels}`}
       aria-label="Quick open"
       data-testid="ward-phone-dock"
       style={canCreate || tabCount === 0 ? undefined : { gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }}

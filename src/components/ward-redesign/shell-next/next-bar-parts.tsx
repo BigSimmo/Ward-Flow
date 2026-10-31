@@ -18,6 +18,9 @@ const OWN_ACTIVITY_PANEL = "[data-mockup-activity-panel]";
 const OPEN_ACTIVITY_EVENT = "wf-mockup:open-activity";
 const ALERTS_PANEL = '[data-testid="ward-bar-tasks-sheet"]';
 
+/** Sent when a header action opens a sheet of its own, so the rail's More and Menu sheets close. */
+export const CLOSE_MENUS_EVENT = "wf-next:close-menus";
+
 export function pageDrawsOwnActivity(): boolean {
   return typeof document !== "undefined" && document.querySelector(OWN_ACTIVITY_PANEL) !== null;
 }

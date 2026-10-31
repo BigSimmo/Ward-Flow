@@ -15,6 +15,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
+  formatOccupancyPercent,
   isBedAlert,
   type ServiceBedAlertsSummary,
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -99,6 +100,17 @@ export function deskCapacityRows(
     : [ownRow];
 }
 
+/** Read aloud as the rows show: "Metro 85.9% full, over 85%. East Metro 86.7% full, over 85%". */
+export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
+  return rows
+    .map((row) => {
+      if (row.percent === null) return `${row.name} not recorded`;
+      const over = isBedAlert(row.percent) ? `, over ${BED_ALERT_THRESHOLD_PERCENT}%` : "";
+      return `${row.name} ${formatOccupancyPercent(row.percent)} full${over}`;
+    })
+    .join(". ");
+}
+
 /** "1 over 85%", "None over 85%": the chip's words, so the alert never rests on colour alone. */
 export function overLineLabel(rows: readonly CapacityRow[]): { label: string; over: number } {
   const over = rows.filter((row) => row.percent !== null && isBedAlert(row.percent)).length;
@@ -130,6 +142,18 @@ export function countScopeNote(access: WardAccess, service: string | null): stri
     default:
       return service ? `for ${service}` : "across the whole network";
   }
+}
+
+/**
+ * Whose figures the capacity card shows: its own place for a site, service or ward desk, else the
+ * network ("26 beds ready now, across the whole network", never "for your ED").
+ */
+export function cardScopeNote(rows: readonly CapacityRow[], access: WardAccess, service: string | null): string {
+  return rows[0]?.key === "own"
+    ? countScopeNote(access, service)
+    : service
+      ? `for ${service}`
+      : "across the whole network";
 }
 
 type NavCount = NonNullable<WardNavCounts[keyof WardNavCounts]>;

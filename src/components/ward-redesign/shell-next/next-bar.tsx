@@ -95,6 +95,7 @@ import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import polish from "@/components/ward-redesign/shell-next/next-bar.module.css";
+import { CLOSE_MENUS_EVENT } from "@/components/ward-redesign/shell-next/next-bar-parts";
 /**
  * ROLE BRANCH (every desk but the coordinator), Josh, 30 Oct 2026: the bar's place chip names the
  * desk's own place, not the service or "Statewide". The words are the app's own (`accessPlaceLabel`),
@@ -659,9 +660,13 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       event.stopPropagation();
       const search = new URL(anchor.href, window.location.origin).searchParams;
       openReferral(withRoleCategory(request, search, roleCategory), anchor);
+      // shell-next: this capture stops the click before the rail's More or Menu sheet sees it, so
+      // tell those sheets to close, or the referral opens over a menu that stays open underneath.
+      window.dispatchEvent(new Event(CLOSE_MENUS_EVENT));
       // Show the route in the address bar (P150) on the drawer's own history entry, so Back and close
       // step off it together. Marked opened first so arriving on the route does not open it again.
-      if (window.history.state?.wardDrawer === "referral") {
+      // Mock-up only: inside the preview the address stays the mock-up's own.
+      if (window.history.state?.wardDrawer === "referral" && window.location.pathname.startsWith("/ward-flow")) {
         routeReferralOpenedRef.current = true;
         const url = new URL(anchor.href, window.location.origin);
         window.history.replaceState(window.history.state, "", url.pathname + url.search);
