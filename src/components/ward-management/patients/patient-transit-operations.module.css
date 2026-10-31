@@ -247,8 +247,7 @@
   padding: 18px;
 }
 .destination {
-  border-left: 3px solid var(--accent);
-  padding: 3px 0 3px 12px;
+  padding: 3px 0;
 }
 .destination > span {
   display: block;
@@ -634,8 +633,7 @@
 .destination {
   background: var(--good-soft);
   border: 0;
-  border-left: 3px solid var(--good);
-  border-radius: 0 9px 9px 0;
+  border-radius: 9px;
   padding: 12px;
 }
 .destination strong {
