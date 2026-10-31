@@ -52,7 +52,8 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
   const summary = `${rows.length} ${rows.length === 1 ? "person" : "people"} will pass the ${hours} access target before a suitable bed is due.${
     over > 0 ? ` ${over} already ${over === 1 ? "has" : "have"}.` : ""
   }`;
-  const name = (row: EdAccessRiskRow) => patientOf({ movementId: row.movementId }).displayName;
+  // Redesign (D-83): surname first, as on the board below it.
+  const name = (row: EdAccessRiskRow) => patientOf({ movementId: row.movementId }).formalName;
 
   return (
     <Card className={styles.riskCard} aria-labelledby="forecast-ed-risk-title" data-testid="forecast-ed-risk">
@@ -97,7 +98,7 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
                 <th scope="col">Person</th>
                 <th scope="col">Needs</th>
                 <th scope="col">Passes {hours} target</th>
-                <th scope="col">Earliest suitable release on record</th>
+                <th scope="col">Earliest release on record</th>
                 <th scope="col">
                   <span className="sr-only">Action</span>
                 </th>

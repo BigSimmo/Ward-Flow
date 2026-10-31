@@ -303,7 +303,7 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
     expect(ed("/ward-flow/ed/peel-ed")).toBe(true);
   });
 
-  it("offers an ED desk no TV link and no links to other departments, but keeps their figures", () => {
+  it("offers an ED desk no TV link and no department strip; the coordinator keeps both", () => {
     const department = (id: string, code: string) => ({
       id,
       name: `${code} Emergency Department`,
@@ -329,13 +329,10 @@ describe("a ward or ED desk is not offered pages outside its role (DA-09)", () =
     try {
       atDesk(ED_DESK);
       const { unmount } = render(wrap(overview));
-      const strip = screen.getByRole("navigation", { name: "Emergency departments" });
-      expect(
-        within(strip)
-          .getAllByRole("link")
-          .map((link) => link.getAttribute("href")),
-      ).toEqual(["/ward-flow/ed/peel-ed"]);
-      expect(within(strip).getByText("RPH")).toBeInTheDocument();
+      // ED desk redesign (Josh, 30 Oct 2026): the strip is left out for an ED desk, whose copy holds
+      // only its own department (it showed one link and "Not shown at this desk" tiles before).
+      expect(screen.queryByRole("navigation", { name: "Emergency departments" })).toBeNull();
+      expect(screen.queryByRole("link", { name: /RPH/u })).toBeNull();
       expect(screen.queryByTestId("ward-ed-open-tv")).toBeNull();
       unmount();
 

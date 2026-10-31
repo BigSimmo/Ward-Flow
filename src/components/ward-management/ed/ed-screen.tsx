@@ -24,6 +24,7 @@ import { EdOverview } from "./ed-overview";
 import { SinceLastLookPill } from "../since-last-look-pill";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { edScreenActions } from "./ed-screen-actions";
@@ -174,10 +175,15 @@ export function EdScreen({ edId }: EdScreenProps) {
     },
     {
       href: "/ward-flow/governance",
-      title: "Seen in the last 24 hours",
+      title: "Last 24 hours of events",
       sub: "This department's recorded events, in the Governance audit",
     },
   ].filter((link) => canOpen(link.href));
+  // ED desk redesign (Josh, 30 Oct 2026): no access forecast card on the ED desk. Worked out from the
+  // records this desk can see, it disagreed with the coordinator's board for the same ED; the
+  // coordinator's ED board keeps it. The hero's Raise referral and the department strip follow the
+  // same role in `ed-overview.tsx`.
+  const edDesk = useEffectiveWardAccess().role === "ed";
   const isTabletPortrait = useIsTabletPortrait();
   /** Mockups: the board is list rows with one Next button on every width; edits live in the sheet. */
   /*
@@ -476,7 +482,7 @@ export function EdScreen({ edId }: EdScreenProps) {
         {isPhone ? <EdPhonePanes ctx={ctx} /> : null}
 
         {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. */}
-        <EdAccessRiskCard edId={thisEdId} now={now} />
+        {edDesk ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
 
         <EdBoardSection ctx={ctx} />
 
@@ -488,7 +494,30 @@ export function EdScreen({ edId }: EdScreenProps) {
         {/* Device audit 11 Oct 2026: the Statewide capacity table and the 24 hour timeline left the
             page; each is one link to the page that owns it. */}
         {fullscreenBoard || elsewhereLinks.length === 0 ? null : <EdElsewhereLinks links={elsewhereLinks} />}
-        {fullscreenBoard ? null : <EdListsSection ctx={ctx} />}
+        {/* ED board redesign (31 Oct 2026): the Lists repeat the board's people, so on the larger screen
+            they fold behind one closed row that counts each list; nothing in them is lost. The phone
+            keeps its Lists pane. */}
+        {fullscreenBoard ? null : isPhone ? (
+          <EdListsSection ctx={ctx} />
+        ) : (
+          <details className={styles.listsFold} data-testid="ward-ed-lists-fold">
+            <summary>
+              Lists by step{" "}
+              <span>
+                {[
+                  ["Awaiting review", ctx.awaitingReviewPatients.length],
+                  ["Medical clearance", ctx.clearedPatients.length],
+                  ["Expects", ctx.expects.length],
+                  ["Forms", ctx.underFormPatients.length],
+                  ["Referred", ctx.outbox.length + ctx.answeredAll.length],
+                ]
+                  .map(([label, count]) => `${label} ${count}`)
+                  .join(" · ")}
+              </span>
+            </summary>
+            <EdListsSection ctx={ctx} />
+          </details>
+        )}
 
         {selectedPatient ? <EdPatientDialog ctx={ctx} selectedPatient={selectedPatient} /> : null}
 

@@ -535,8 +535,8 @@
   gap: 4px 10px;
   padding: 10px 14px;
   background: var(--surface);
+  /* No coloured side edge (Josh, 31 Oct 2026): the row's tone is its .tick dot. */
   border: 1px solid var(--line);
-  border-left: 3px solid var(--line-strong);
   border-radius: var(--r2, 6px);
   box-shadow: var(--lift-sm);
   transition:
@@ -554,20 +554,7 @@
 }
 
 .lstRow[data-tone="danger"] {
-  border-left-color: var(--danger);
   background: var(--danger-soft);
-}
-
-.lstRow[data-tone="warn"] {
-  border-left-color: var(--warn);
-}
-
-.lstRow[data-tone="good"] {
-  border-left-color: var(--good);
-}
-
-.lstRow[data-tone="quiet"] {
-  border-left-color: var(--line-strong);
 }
 
 .tick {
@@ -1656,7 +1643,6 @@
   padding: 12px 14px;
   border: 0;
   border-bottom: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
   border-radius: 0;
   background: var(--surface);
   box-shadow: none;
@@ -3464,43 +3450,20 @@
   padding: 10px 16px;
   border-bottom: 1px solid var(--line);
 }
+/* D-91: the board's patient search is the kit's one page search field, at the width the old box had;
+   a row of its own on a narrow screen. */
 .patientSearch {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
+  flex: 1 1 14rem;
   max-width: 300px;
   min-width: 0;
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface-2);
-  color: var(--muted);
 }
-.patientSearch input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: 12px var(--body);
-}
+/* The sort is the kit's Segmented, as the other redesigned pages' sorts (Patients, Transport). */
 .patientSort {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
   color: var(--ink-soft);
-}
-.patientSort select {
-  min-height: 34px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface-2);
-  color: var(--ink-soft);
-  font: 12px var(--body);
 }
 .draftNote {
   margin-left: auto;
@@ -4149,10 +4112,6 @@
     display: none;
   }
 
-  .boardTools .patientSort select {
-    min-height: 2.75rem;
-  }
-
   /* Lists: the name keeps its 44px target; the dot and the time line up with it, and the facts
    * under it read as plain tokens rather than a wrapped run of dividers. */
   .lstWrap .lstRow .tick {
@@ -4184,19 +4143,6 @@
   }
 
   .boardChips > .boardChip {
-    min-height: var(--spacing-tap, 3rem);
-  }
-
-  .boardTools .patientSearch {
-    min-height: var(--spacing-tap, 3rem);
-  }
-
-  .boardTools .patientSearch input {
-    align-self: stretch;
-    height: auto;
-  }
-
-  .boardTools .patientSort select {
     min-height: var(--spacing-tap, 3rem);
   }
 
@@ -4343,7 +4289,6 @@
 }
 
 .lstRow[data-tone] {
-  border-left-color: var(--wf-line);
   background: none;
 }
 
@@ -4956,7 +4901,8 @@
   background: var(--wf-selected);
 }
 
-/* Act now: the approved inset rounded marker and subtle tint (#249), never a box. */
+/* Act now: a subtle tint (#249), never a box. The inset red marker left with the other side edges
+   (Josh, 31 Oct 2026); the wait column's danger glyph says it in words and shape. */
 .a2Row[data-act-now="true"] > td {
   background: var(--wf-act-tint);
 }
@@ -4967,28 +4913,6 @@
 
 .a2Row[data-act-now="true"][data-selected="true"] > td {
   background: var(--wf-selected);
-}
-
-.a2Row[data-act-now="true"] > td:first-child {
-  position: relative;
-}
-
-.a2Row[data-act-now="true"] > td:first-child::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .a2Row[data-act-now="true"] > td:first-child::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
 }
 
 .a2Row[data-dim="true"] > td {
@@ -5417,31 +5341,8 @@
   gap: var(--wf-s-3);
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.arrivalLate,
-.lstRow[data-tone="danger"] {
-  position: relative;
-}
-
-.arrivalLate::before,
-.lstRow[data-tone="danger"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .arrivalLate::before,
-  .lstRow[data-tone="danger"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* No rounded side markers (Josh, 31 Oct 2026): a late arrival is its tinted tag, a danger list row
+   its tint and .tick dot. */
 
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */
 .inboxName {
@@ -5600,4 +5501,55 @@
 }
 .sentForBedClock {
   color: var(--muted);
+}
+
+/* ED board redesign (31 Oct 2026): Lists by step, folded on the larger screen, because the board
+   already shows these people. */
+.listsFold {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.listsFold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  min-height: var(--wf-row-compact);
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.listsFold > summary span {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.listsFold[open] > summary {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.listsFold > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+/* Legal times (Josh, 31 Oct 2026): the form's typed time under the form wraps in full, tag and all,
+   rather than the cell's two-line clamp ending in "…". */
+.formTyped {
+  display: block;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+/* The shared "(limits not legally checked)" tag keeps to one line elsewhere; in this narrow cell it
+   wraps rather than being cut. */
+.formTyped > span {
+  white-space: normal;
 }
