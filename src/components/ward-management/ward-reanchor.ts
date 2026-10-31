@@ -66,6 +66,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
   // Stream A, 9 Oct 2026: a snooze's return time (inbox snooze history and its audit entry).
   "until",
   "arrivedAt",
+  // 31 Oct 2026: when a bed release's discharge blocker was last recorded (site sign-off review).
+  "blockerRecordedAt",
   "at",
   "pullExpiresAt",
   // Global alerts (10 Oct 2026): a Pull now's answer time and a ward's "bed ready at".

@@ -369,6 +369,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
@@ -638,6 +639,7 @@ export function captureAuditEvent(
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
     case "UNDO_HANDOVER_SIGN_OFF":
+    case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":

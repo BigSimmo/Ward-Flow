@@ -493,6 +493,7 @@ describe("who may raise which event", () => {
     RECORD_HOME_SERVICE_RETURN: ["coordinator"],
     RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
+    RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
     RECORD_CLINICAL_CONTACT: ["community", "coordinator"],
     DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
@@ -532,6 +533,7 @@ describe("who may raise which event", () => {
     UNDO_DEPARTURE: ["ward", "coordinator"],
     UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
     UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+    UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {
