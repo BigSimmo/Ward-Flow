@@ -1,81 +1,92 @@
 /* Waiting redesign, round 4 (Josh, 31 Oct 2026): a fuller header, a calmer "By blocker" table, a
    lined-up search, clearer register tabs and the rebuilt graphs. Tokens only, so dark mode follows. */
 
-/* ---------- Header: one row of high-yield tiles on the dark band ---------- */
+/* ---------- Header (round 5): one slim line in the dark band, no boxes ---------- */
 .heroBar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--wf-s-2);
-  width: 100%;
-  padding-top: var(--wf-s-1);
-}
-.heroTile {
-  --tone: var(--wf-hero-info);
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
   align-items: center;
-  gap: var(--wf-s-3);
+  gap: 4px 0;
+  width: 100%;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-on-hero-div);
+}
+.strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  padding: 10px 12px;
+  min-height: 28px;
+  padding: 2px 14px 2px 0;
+  border: 0;
+  background: none;
+  color: var(--wf-hero-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+}
+.strip + .strip {
+  padding-left: 14px;
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+button.strip {
+  border-radius: 0;
+  cursor: pointer;
+}
+button.strip:hover:not(:disabled) .stripValue {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+button.strip:disabled {
+  cursor: default;
+}
+.stripIcon {
+  flex: none;
+  color: var(--wf-hero-info);
+}
+.stripIcon[data-tone="warning"] {
+  color: var(--wf-hero-warning);
+}
+.stripIcon[data-tone="danger"] {
+  color: var(--wf-hero-danger);
+}
+.stripIcon[data-tone="success"] {
+  color: var(--wf-hero-success);
+}
+.stripLabel {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.stripValue {
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.stripSub {
+  color: var(--wf-hero-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.stripAct {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  margin-left: 4px;
+  padding: 0 10px;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-lg);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-on-hero-fill);
   color: var(--wf-hero-ink);
   font: inherit;
-  text-align: left;
-}
-button.heroTile {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
   cursor: pointer;
 }
-button.heroTile:hover:not(:disabled) {
+.stripAct:hover {
   background: var(--wf-on-hero-hl);
-}
-button.heroTile:disabled {
-  cursor: default;
-}
-.heroTile[data-tone="warning"] {
-  --tone: var(--wf-hero-warning);
-}
-.heroTile[data-tone="danger"] {
-  --tone: var(--wf-hero-danger);
-}
-.heroTile[data-tone="success"] {
-  --tone: var(--wf-hero-success);
-}
-.heroIcon {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--tone) 22%, transparent);
-  color: var(--tone);
-}
-.heroTileText {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.heroTileLabel {
-  color: var(--wf-hero-ink-2);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.heroTileValue {
-  color: var(--wf-hero-ink);
-  font-size: var(--wf-fs-14);
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-.heroTileSub {
-  color: var(--wf-hero-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
 }
 .heroNum {
   font-family: var(--wf-mono);
@@ -90,8 +101,80 @@ button.heroTile:disabled {
   color: var(--wf-hero-ink-3);
 }
 
-.heroBtn {
-  flex: none;
+/* ---------- Whose move tiles (round 5) ---------- */
+.owners {
+  overflow: hidden;
+}
+.ownGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.own.own {
+  gap: 8px;
+}
+.own.own[aria-pressed="true"] {
+  box-shadow: none;
+}
+.ownTop.ownTop {
+  align-items: baseline;
+}
+.ownLongest {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.ownLongest.ownLongest b {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: inherit;
+  font-weight: 600;
+}
+.ownFacts.ownFacts {
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  color: var(--wf-ink-2);
+  white-space: normal;
+}
+.ownFacts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ownKey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px var(--wf-s-4);
+  margin: 0;
+  padding: 7px 14px;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.ownKeyBands {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.ownKeyBands > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ownKeyBands i {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Josh, 31 Oct 2026: no coloured side edges anywhere. The phone act-now row keeps its tint and
+   glyph without the coral edge. */
+.noEdge tr[data-act="true"]::before {
+  display: none;
 }
 
 /* The daily check's opened list, under the header. */
@@ -138,22 +221,9 @@ button.heroTile:disabled {
 }
 
 /* ---------- "By blocker": quieter group headers with a coloured edge ---------- */
-.groupRow {
-  --tone: transparent;
-}
-.groupRow[data-tone="danger"] {
-  --tone: var(--wf-danger);
-}
-.groupRow[data-tone="warning"] {
-  --tone: var(--wf-warning);
-}
-.groupRow[data-tone="accent"] {
-  --tone: var(--wf-accent);
-}
 .groupRow > td {
   height: 44px;
   border-top: 1px solid var(--wf-line);
-  box-shadow: inset 3px 0 0 var(--tone);
 }
 .groupRow > td > button {
   height: 44px;
@@ -247,9 +317,8 @@ button.heroTile:disabled {
   background: var(--wf-surface-2);
 }
 .regTab[aria-selected="true"] {
-  border-color: color-mix(in srgb, var(--tone) 50%, var(--wf-line));
-  background: color-mix(in srgb, var(--tone) 9%, var(--wf-surface));
-  box-shadow: inset 0 -2px 0 var(--tone);
+  border-color: var(--wf-line-2);
+  background: var(--wf-accent-tint);
   color: var(--wf-ink-1);
 }
 .regTabTop {
@@ -306,25 +375,19 @@ button.heroTile:disabled {
   margin: 0;
 }
 .nxSum > div {
-  --tone: var(--wf-info);
+  display: flex;
+  flex-direction: column;
   min-width: 8.5rem;
   padding: 8px 12px;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
-  box-shadow: inset 3px 0 0 var(--tone);
 }
-.nxSum > div[data-tone="warning"] {
-  --tone: var(--wf-warning);
-}
-.nxSum > div[data-tone="danger"] {
-  --tone: var(--wf-danger);
-}
-.nxSum dt {
+.nxSumL {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
-}
-.nxSum dd {
-  margin: 0;
 }
 .nxSumN {
   color: var(--wf-ink-1);
@@ -413,16 +476,13 @@ button.heroTile:disabled {
   width: 1px;
   background: var(--wf-line);
 }
-.nxRun,
-.nxWhat {
+.nxRun {
   --tone: var(--wf-info);
 }
-.nxRun[data-tone="warning"],
-.nxWhat[data-tone="warning"] {
+.nxRun[data-tone="warning"] {
   --tone: var(--wf-warning);
 }
-.nxRun[data-tone="danger"],
-.nxWhat[data-tone="danger"] {
+.nxRun[data-tone="danger"] {
   --tone: var(--wf-danger);
 }
 .nxRun {
@@ -444,8 +504,9 @@ button.heroTile:disabled {
   transform: translate(-50%, -50%);
 }
 .nxWhat {
-  padding-left: 8px;
-  border-left: 2px solid var(--tone);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   font-weight: 500;

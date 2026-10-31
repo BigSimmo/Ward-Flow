@@ -106,7 +106,7 @@ import { currentLegalDueAt } from "@/components/ward-management/legal-forms/lega
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
 import polish from "@/components/ward-redesign/waiting/waiting-polish.module.css";
 import { WaitingHeroBar, WaitingKeyRow, moveWord } from "@/components/ward-redesign/waiting/waiting-hero-bar";
-import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
+import { WaitingOwnerTiles } from "@/components/ward-redesign/waiting/waiting-owner-tiles";
 import { SearchField } from "@/components/ward-redesign/parts/search-field";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
@@ -1125,8 +1125,8 @@ export function DelaysBoardRedesign({
           </div>
         }
         aside={<LiveChip state="live" onHero />}
-        // Round 4 (Josh, 31 Oct 2026): a fuller header. Under the counts, one row of high-yield
-        // tiles: the daily check, the longest wait and who passes 8h next. Laptop only.
+        // Round 5 (Josh, 31 Oct 2026): one slim line in the dark band under the counts: the daily
+        // check, the longest wait and who passes 8h next. Laptop only.
         bar={isPhone ? undefined : heroBar}
         foot={
           // This page watches conditions, so it says what it checked. Counts only, never "All clear".
@@ -1157,52 +1157,14 @@ export function DelaysBoardRedesign({
         </div>
       ) : (
         <>
-          <section
-            // Phone (Josh, 31 Oct 2026): one sliding row with Home's fade, in place of two by two.
-            className={`${styles.card} ${styles.owners} ${phoneRows.chipRow}`}
-            aria-label="Whose move"
-            data-ward-primitive="panel"
-          >
-            {tiles.map((tile) => (
-              <button
-                key={tile.owner}
-                type="button"
-                className={`${styles.own} ${phoneRows.chip} ${tile.rows.length === 0 ? phoneRows.zero : ""}`}
-                aria-pressed={filters.owner === tile.owner}
-                onClick={() =>
-                  setFilters((current) => ({
-                    ...current,
-                    owner: current.owner === tile.owner ? null : tile.owner,
-                    cause: null,
-                  }))
-                }
-                data-testid={`delays-owner-${tile.owner}`}
-              >
-                <span className={`${styles.ownTop} ${waitingKeys.countFirst}`}>
-                  <b className={styles.num}>{tile.rows.length}</b>
-                  <span className={styles.ownName}>{tile.name}</span>
-                </span>
-                <BandBar bands={tile.bands} />
-                {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}
-                {isPhone ? (
-                  tile.sub.count > 0 ? (
-                    <small>
-                      <Glyph tone={tile.sub.tone} />
-                      <span className="sr-only">{`${tile.sub.count} ${tile.sub.text}`}</span>
-                    </small>
-                  ) : null
-                ) : (
-                  <small>
-                    <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
-                    <span>
-                      <b className={styles.ownSubCount}>{tile.sub.count}</b>
-                      <span className={styles.ownSubText}>{` ${tile.sub.text}`}</span>
-                    </span>
-                  </small>
-                )}
-              </button>
-            ))}
-          </section>
+          <WaitingOwnerTiles
+            tiles={tiles}
+            pressed={filters.owner}
+            isPhone={isPhone}
+            onPress={(owner) =>
+              setFilters((current) => ({ ...current, owner: current.owner === owner ? null : owner, cause: null }))
+            }
+          />
 
           <div
             className={styles.split}
@@ -1285,7 +1247,7 @@ export function DelaysBoardRedesign({
                 {/* Decision 1 (Josh, 30 Oct 2026): the one colour key for typed legal times sits beside
                     the tier key, on the list it explains. */}
                 <WaitingKeyRow anyTypedTime={anyTypedTime} />
-                <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
+                <table className={`${styles.tbl} ${polish.noEdge}`} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
                     <col className={styles.colW} />
