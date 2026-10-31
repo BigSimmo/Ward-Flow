@@ -1546,6 +1546,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     });
   }
 
+  // The dialog's Confirm beds buttons call this, not a form submit, so the number input's own
+  // checks never run: a typed 2.5 must be refused, never saved as 2.
+  function confirmBedsFromDialog() {
+    if (!unit) return;
+    const parsed = Number(capacityValue);
+    if (capacityValue.trim() === "" || !Number.isInteger(parsed) || parsed < 0 || parsed > unit.beds) {
+      warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
+      return;
+    }
+    submitCapacity();
+  }
+
   function handleConfirmBedsAndMorningRollup() {
     if (!unit) return;
     const parsed = Number(capacityValue);
@@ -2337,7 +2349,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           isRollupConfirmedToday={isRollupConfirmedToday}
           morningRollupTimeLabel={morningRollupTimeLabel}
           releasesTodayCount={releasesCountedToday.length}
-          onConfirmBeds={submitCapacity}
+          onConfirmBeds={confirmBedsFromDialog}
           onConfirmBedsAndRollup={handleConfirmBedsAndMorningRollup}
         />
 
