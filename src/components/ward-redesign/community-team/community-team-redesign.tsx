@@ -96,15 +96,11 @@ import { CommunityTeamInBedTab } from "./community-team-in-bed";
 import { CommunityTeamHowToReach } from "./community-team-contact";
 import { CommunityScreenBackTab } from "@/components/ward-management/community/community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "@/components/ward-management/community/community-screen-caseload-tab";
-import {
-  CommunityScreenTransportBookDialog,
-  CommunityScreenTransportCancelDialog,
-} from "@/components/ward-management/community/community-screen-transport-dialogs";
-import {
-  CommunityScreenReferralModal,
-  CommunityScreenNoteModal,
-} from "@/components/ward-management/community/community-screen-modals";
-import { CommunityScreenDrawer } from "@/components/ward-redesign/community-team/community-screen-drawer-redesign";
+import { CommunityTransportBookDialog as CommunityScreenTransportBookDialog } from "@/components/ward-redesign/pop-community-transport-book/community-transport-book-dialog";
+import { CommunityTransportCancelDialog as CommunityScreenTransportCancelDialog } from "@/components/ward-redesign/pop-community-transport-cancel/community-transport-cancel-dialog";
+import { CommunityReferralDialog as CommunityScreenReferralModal } from "@/components/ward-redesign/pop-community-referral/community-referral-dialog";
+import { CommunityNoteDialog as CommunityScreenNoteModal } from "@/components/ward-redesign/pop-community-note/community-note-dialog";
+import { CommunityRecordDrawer as CommunityScreenDrawer } from "@/components/ward-redesign/pop-community-record/community-record-drawer";
 import { useCommunityScreenDemoLists } from "@/components/ward-management/community/use-community-screen-demo-lists";
 import { useCommunityDrawerTestOpeners } from "@/components/ward-management/community/community-drawer-test-openers";
 import {

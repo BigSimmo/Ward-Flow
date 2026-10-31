@@ -1,0 +1,67 @@
+/* Redesign of the community team's Assign referral dialog. Kit tokens only. */
+.who {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.factRow {
+  display: grid;
+  grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+}
+
+.factRow dt {
+  color: var(--wf-ink-3);
+}
+
+.factRow dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.note {
+  margin: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.result {
+  margin: 0;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* Close at the left, the one filled button at the right. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+}
+
+.actions > :last-child {
+  margin-left: auto;
+}

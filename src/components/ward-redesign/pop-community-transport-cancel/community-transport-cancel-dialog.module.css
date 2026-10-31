@@ -1,0 +1,60 @@
+/* Redesign of the community team's Cancel this team's transport booking dialog. Kit tokens only. */
+.who {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.hint {
+  margin: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+
+.error {
+  margin: 0;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-danger-ink);
+}
+
+/* Keep booking at the left, the one filled button at the right. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+}
+
+.actions > :last-child {
+  margin-left: auto;
+}
+
+/* Until a reason is chosen, the kit names why Confirm cancel is unavailable. That sentence is long, so it
+   takes its own line above, at the right, and Keep booking and Confirm cancel share the row under it
+   (as the Legal forms popups do on a phone). */
+.actions > span:has(> button) {
+  display: contents;
+}
+
+.actions > span:has(> button) > span {
+  order: -1;
+  flex: 1 1 100%;
+  justify-content: flex-end;
+  /* The whole sentence, wrapped, never cut off. */
+  white-space: normal;
+  overflow: visible;
+  text-align: right;
+}
+
+.actions > span:has(> button) > button {
+  margin-left: auto;
+}
