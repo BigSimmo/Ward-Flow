@@ -1052,11 +1052,6 @@
   font-size: var(--wf-fs-15);
 }
 
-.showMoreCount {
-  color: var(--wf-ink-3);
-  font-weight: 400;
-}
-
 /* The preview's Beds row points to the two pages that carry beds. */
 .bedsElsewhere {
   display: inline-flex;

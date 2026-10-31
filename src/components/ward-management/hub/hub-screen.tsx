@@ -42,6 +42,8 @@ import {
   PhoneSheet,
   Segmented,
   ShowMoreRow,
+  foldHidden,
+  foldLimit,
   SrOnly,
   StatusGlyph,
   TextInput,
@@ -1113,8 +1115,11 @@ export function HubScreen() {
   );
 }
 
-/** A group's rows, the first eight then "Show more" (owner rule for long lists). */
-function GroupList({
+/**
+ * A group's rows, the first eight then "Show N more" (owner rule for long lists). The list folds only
+ * when two or more rows would be hidden (Josh, answer 21): a group of nine shows all nine.
+ */
+export function GroupList({
   id,
   entries,
   renderRow,
@@ -1127,18 +1132,17 @@ function GroupList({
   selectedId: string | undefined;
 }) {
   const [limit, setLimit] = useState(GROUP_ROWS);
-  const shown = Math.max(limit, entries.findIndex((entry) => entry.id === selectedId) + 1);
-  const rest = entries.length - shown;
+  const reach = Math.max(limit, entries.findIndex((entry) => entry.id === selectedId) + 1);
+  const shown = foldLimit(entries.length, reach);
+  const hidden = foldHidden(entries.length, reach);
   return (
     <>
       <ul className={styles.groupList} id={id}>
         {entries.slice(0, shown).map(renderRow)}
       </ul>
-      {rest > 0 ? (
+      {hidden > 0 ? (
         <ShowMoreRow controls={id} onClick={() => setLimit(shown + GROUP_ROWS * 2)}>
-          <span>
-            Show more <span className={styles.showMoreCount}>{rest} more</span>
-          </span>
+          Show {hidden} more
         </ShowMoreRow>
       ) : null}
     </>
