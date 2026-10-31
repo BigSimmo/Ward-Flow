@@ -1,5 +1,6 @@
 "use client";
 
+import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
@@ -827,7 +828,7 @@ export function MovementsScreen() {
               community && teamName
                 ? `Movements · ${teamName} team`
                 : isPhone
-                  ? `Movements · ${service ?? "Statewide"}`
+                  ? `Movements · ${deskPlaceLabel(access, units) ?? service ?? "Statewide"}`
                   : "Movements"
             }
             title={

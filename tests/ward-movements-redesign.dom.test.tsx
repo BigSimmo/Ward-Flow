@@ -14,6 +14,7 @@ const desk = vi.hoisted(() => ({
     scope: { kind: string; teamName?: string };
   },
   noMovements: false,
+  phone: false,
 }));
 
 vi.mock("next/link", () => ({
@@ -22,6 +23,10 @@ vi.mock("next/link", () => ({
       {children}
     </a>
   ),
+}));
+vi.mock("@/components/wf", async (original) => ({
+  ...(await original<typeof import("../src/components/wf")>()),
+  useIsPhone: () => desk.phone,
 }));
 vi.mock("@/components/ward-management/shell/ward-access-store", async (original) => ({
   ...(await original<typeof import("../src/components/ward-management/shell/ward-access-store")>()),
@@ -41,7 +46,7 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (original) => {
 
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 function renderScreen() {
   return render(
@@ -55,6 +60,23 @@ beforeEach(() => {
   window.sessionStorage.clear();
   desk.access = { role: "coordinator", scope: { kind: "statewide" } };
   desk.noMovements = false;
+  desk.phone = false;
+});
+
+describe("Movements: the phone eyebrow names a placed desk's own place (Q84)", () => {
+  it("names the site bed manager's site, not Statewide", () => {
+    desk.access = { role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } as never };
+    desk.phone = true;
+    renderScreen();
+    expect(screen.getByText(`Movements · ${siteByCode("FSH")?.name}`)).toBeInTheDocument();
+    expect(screen.queryByText("Movements · Statewide")).not.toBeInTheDocument();
+  });
+
+  it("keeps Statewide for the coordinator", () => {
+    desk.phone = true;
+    renderScreen();
+    expect(screen.getByText("Movements · Statewide")).toBeInTheDocument();
+  });
 });
 
 describe("Movements redesign: the coordinator's board", () => {
