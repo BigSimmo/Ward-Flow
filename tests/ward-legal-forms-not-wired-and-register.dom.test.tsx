@@ -8,7 +8,7 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { legalFormGroupRows } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
-import { dateInputFor } from "./helpers/ward-date-input";
+import { typedDateFor } from "./helpers/ward-date-input";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { formTitleForCode } from "@/lib/form-register";
@@ -117,7 +117,7 @@ describe("Legal forms — wired confirm controls (F2.1)", () => {
       // Audit CS3-05: a time alone is not enough; the date written on the form is compulsory.
       expect(screen.getByTestId("ward-legal-forms-renew-confirm")).toHaveAttribute("aria-disabled", "true");
       fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
-        target: { value: dateInputFor(NOW, screenDayZero) },
+        target: { value: typedDateFor(NOW, screenDayZero) },
       });
       const enabledRenewConfirm = screen.getByTestId("ward-legal-forms-renew-confirm");
       expect(enabledRenewConfirm).not.toHaveAttribute("aria-disabled", "true");
@@ -161,7 +161,7 @@ describe("Legal forms — extension shows the day it will record", () => {
     renderSheet();
     const later = formatInstant(dueAt + 30);
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
-      target: { value: dateInputFor(NOW + 1440, dayZero) },
+      target: { value: typedDateFor(NOW + 1440, dayZero) },
     });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: later } });
     expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent(
@@ -173,7 +173,7 @@ describe("Legal forms — extension shows the day it will record", () => {
     renderSheet();
     const earlier = formatInstant(dueAt - 30);
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
-      target: { value: dateInputFor(NOW, dayZero) },
+      target: { value: typedDateFor(NOW, dayZero) },
     });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: earlier } });
     expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent(

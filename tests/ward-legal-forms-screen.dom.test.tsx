@@ -15,7 +15,7 @@ import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-managemen
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { dateInputFor } from "./helpers/ward-date-input";
+import { typedDateFor } from "./helpers/ward-date-input";
 
 const NOW = NOW_ANCHOR;
 const seed = seedWardFlowState();
@@ -125,7 +125,7 @@ describe("the Forms screen", () => {
     expect(noDeadline.length, "no rows without a deadline - the screen's whole subject is untested").toBeGreaterThan(0);
 
     renderScreen();
-    // Audit A3-6 (13 Oct 2026): "Time not written" is no longer folded; the helper is a no-op now.
+    // Time not written folds after six rows (redesign, 31 Oct 2026); the helper opens it.
     openFoldedGroup();
     const lists = screen.getAllByRole("list");
     // Owner, 26 Sept 2026: the visible id slot now carries the patient's name, never the WF journey
@@ -281,19 +281,29 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(screen.queryByTestId("ward-legal-tasks-sheet")).toBeNull();
   });
 
-  it("never folds Time not written: every row shows with no Show all (audit A3-6)", () => {
+  // Redesign (Josh, 31 Oct 2026; replaces audit A3-6's "never folded"): Time not written shows its
+  // first six rows, then Show more, as every long list does. A highlight still never hides a row.
+  it("shows the first six rows of Time not written, then Show more, and a highlight shows every row", () => {
+    expect(noDeadline.length, "too few rows without a deadline to fold - this case proves nothing").toBeGreaterThan(6);
     renderScreen();
     const region = screen.getByRole("region", { name: "Legal forms list" });
-    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
-    expect(screen.queryByRole("button", { name: /^Show all \d+$/ })).toBeNull();
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(withDeadline.length + 6);
     expect(screen.getAllByText("Time not written").length).toBeGreaterThan(0);
+    const more = screen.getByRole("button", { name: `Show ${noDeadline.length - 6} more with no time written` });
+    fireEvent.click(more);
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
+    fireEvent.click(screen.getByRole("button", { name: "Show fewer" }));
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(withDeadline.length + 6);
+    fireEvent.click(screen.getByRole("button", { name: /to act on/ }));
+    expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
+    expect(screen.queryByRole("button", { name: /more with no time written/ })).toBeNull();
   });
 
   it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
     renderScreen();
     openFoldedGroup();
     const before = document.querySelectorAll("[data-record-key]").length;
-    fireEvent.click(screen.getByRole("button", { name: /Time not written/ }));
+    fireEvent.click(screen.getByRole("button", { name: /time not written/ }));
     expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
     const dimmed = document.querySelectorAll('[data-record-key][data-dim="true"]').length;
     expect(dimmed).toBe(before - noDeadline.length);
@@ -317,7 +327,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
 
     fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
-      target: { value: dateInputFor(NOW_ANCHOR + 240, screenDayZero) },
+      target: { value: typedDateFor(NOW_ANCHOR + 240, screenDayZero) },
     });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
@@ -418,8 +428,9 @@ function AdvanceClock({ minutes }: { minutes: number }) {
 }
 
 function openFoldedGroup() {
-  const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });
-  if (showAll) fireEvent.click(showAll);
+  // Redesign (Josh, 31 Oct 2026): Time not written folds after six rows behind Show more.
+  const showMore = screen.queryByRole("button", { name: /^Show \d+ more with no time written$/ });
+  if (showMore) fireEvent.click(showMore);
 }
 
 it("clears an unsaved paper-form region on Clear and when the movement changes", () => {

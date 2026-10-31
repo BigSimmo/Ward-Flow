@@ -29,6 +29,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { DischargeRecordDetail } from "@/components/ward-management/discharges/discharge-detail-panes";
 import { useDischargeWorkspaceState } from "@/components/ward-management/discharges/use-discharge-workspace-state";
 import { DischargePopulationSwitch } from "@/components/ward-management/discharges/discharge-board-filters";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 function Override({
   dispatch,
@@ -377,6 +378,7 @@ describe("role restrictions and record actors", () => {
     });
     const dispatch = vi.fn();
     renderCommand(<AlertsScreen />, dispatch);
+    openAlertKindGroups();
     const row = [...document.querySelectorAll<HTMLElement>("li[data-alert-id]")].find((entry) =>
       entry.textContent?.includes("ED mental health team"),
     )!;
