@@ -144,12 +144,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
     "**Carried from the approved Capacity design (31 Oct 2026):** the same Mismatch strip (the site's own bed types only), forecast (named Site), full-width bed map with Other sites under it, and the lower row. Nearest ready beds ranks every site from the site's own ED; This shift offers Confirm on the ward's page instead of Ask, which is the coordinator's step.",
   ],
-  "as-bed-manager-wards": [
-    "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
-    "**Removed from other sites' cards:** Enter, Stays and discharges and ask NUM, which this desk cannot use.",
-    "**Round 2:** Ready by 15:00 and Pulled become one quiet line beside the title, because they filter nothing. The Ready now chip reads 'Wards with a ready bed'. Order 'By service' reads 'By site', and the phone says 'Wards full', the Status filter's word.",
-    "**Question for you:** Occupancy by service still shows network services on a site desk. Recommend scoping it to the site.",
-  ],
   "as-bed-manager-places": [
     "**As the site bed manager**, Places opens on '2 wards at your site', Dabakarn in the preview.",
     "**Changed:** a place this desk cannot open shows Open greyed with the app's own sentence; Ask to confirm becomes Confirm beds on the site's wards.",
@@ -649,13 +643,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** one word, 'Held up', for a release with a blocker. The barrier panel and the day chart count bed releases, the list's own rows, so they match the hero, and a click on either highlights within Now instead of jumping to History.",
     "**Review round (30 October):** Chase opens the release on its barriers and Confirm date on its 'New expected out' control. Before the weekend or public holiday is a short notice above the list, person first. Each group shows its first 6 rows then Show more; on a wide screen the day chart sits under the barrier panel. Phone rows are three lines with the button beside the stage.",
     "**Agrees with Capacity:** the day chart leaves closed wards out, as Capacity's forecast does (Josh, 30 October).",
-  ],
-  wards: [
-    "**Built from a copy of today's All wards page**, so the cards, the Table view, Occupancy by service, Counts to check and every filter work as now.",
-    "**New:** Status, Cohort and Order are three menus beside the service tabs, so the controls take two short rows instead of four. The bed key and the ward count share one line above the cards.",
-    '**New:** card text wraps ("Sir Charles Gairdner · Older adult") instead of ending in "…". The stale-count warning was already on the card and stays.',
-    "**Point 21 (my pick for you to confirm):** All wards stays as the page to compare wards side by side. Capacity's bed map shows where the free beds are now, and Places becomes the directory to find a place.",
-    "**Round 2:** the count reads '22 wards', or '3 of 22 wards highlighted' when filtered. Names drop ' — open' (the security label shows it) and wrap. Bed strips sit at each card's foot, so they line up across a row.",
   ],
   statistics: [
     "**Built from a copy of today's Statistics page**, so the Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line, Samples and Export all work as now.",
