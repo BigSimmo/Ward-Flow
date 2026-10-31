@@ -8,9 +8,6 @@ import type { ComponentType } from "react";
 const CapacityRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/capacity/capacity-redesign").then((module) => module.CapacityRedesign),
 );
-const EdIndexRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/eds/eds-redesign").then((module) => module.EdIndexRedesign),
-);
 const HandoverRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/handover/handover-redesign").then((module) => module.HandoverRedesign),
 );
@@ -38,9 +35,6 @@ const StaysPage = dynamic<MockupPageProps>(() =>
 const EdBoardPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/ed-board/ed-board-page").then((module) => module.EdBoardPage),
 );
-const TransportRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/transport/transport-redesign").then((module) => module.TransportRedesign),
-);
 const PatientsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/patients/patients-redesign").then((module) => module.PatientsRedesign),
 );
@@ -58,9 +52,6 @@ const AlertsRedesign = dynamic<MockupPageProps>(() =>
 );
 const LegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/legal-forms/legal-forms-page").then((module) => module.LegalFormsPage),
-);
-const OutOfAreaPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/out-of-area/out-of-area-page").then((module) => module.OutOfAreaPage),
 );
 const OnCallRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
@@ -217,9 +208,6 @@ const AsCommunityStatisticsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsCommunityStatisticsPage,
   ),
 );
-const AsOfficerHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-officer-home/as-officer-home-page").then((module) => module.AsOfficerHomePage),
-);
 const AsOfficerAlertsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-officer-alerts/as-officer-alerts-page").then(
     (module) => module.AsOfficerAlertsPage,
@@ -299,21 +287,18 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   home: HomeActivityPage,
   movements: MovementsRedesign,
   waiting: WaitingRedesign,
-  eds: EdIndexRedesign,
   referrals: ReferralsRedesign,
   "new-referral": NewReferralRedesign,
   handover: HandoverRedesign,
   ward: WardRedesign,
   stays: StaysPage,
   "ed-board": EdBoardPage,
-  transport: TransportRedesign,
   patients: PatientsRedesign,
   discharges: DischargesPage,
   wards: WardsPage,
   statistics: StatisticsPage,
   alerts: AlertsRedesign,
   "legal-forms": LegalFormsPage,
-  "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
   seclusion: SeclusionRedesign,
   governance: GovernancePage,
@@ -355,7 +340,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-community-movements": AsCommunityMovementsPage,
   "as-community-patient": AsCommunityPatientPage,
   "as-community-statistics": AsCommunityStatisticsPage,
-  "as-officer-home": AsOfficerHomePage,
   "as-officer-alerts": AsOfficerAlertsPage,
   "as-bed-manager-home": AsBedManagerHomePage,
   "as-bed-manager-wards": AsBedManagerWardsPage,

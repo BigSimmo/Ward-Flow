@@ -255,6 +255,8 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     return (
       <Button
         variant={isNext && !blocked ? "pri" : "sec"}
+        // Final round (31 Oct 2026): a done step (`actionDone`) has a solid quiet edge, plain surface
+        // and green check, so only a step not open yet keeps the dashed unavailable edge.
         className={done ? `${styles.actionButton} ${styles.actionDone}` : styles.actionButton}
         data-testid={`${testId}-${movement.id}`}
         aria-disabled={blocked ? "true" : undefined}
@@ -275,6 +277,14 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     destinationUnit ? siteByCode(destinationUnit.siteCode)?.referenceSiteId : undefined,
   );
   const stepLabels = ["Accepted", "En route", "Collected", "Arrived at ward"] as const;
+  // Redesign: the booking facts the call did not record, named once on one line.
+  const transportLoggedRecorded = transportLegalStatusLabel(transport) !== "Not recorded";
+  // Final check (30 Oct 2026): each fact is named in full ("the transport's legal status"), not by
+  // its field label, so the line reads as a sentence.
+  const notRecorded = [
+    transportLoggedRecorded ? null : "the transport's legal status",
+    transport.estimatedAt === undefined ? "estimated time" : null,
+  ].filter((fact): fact is string => fact !== null);
   const phoneTop = (
     <>
       <dl className={styles.phGrid}>
@@ -357,6 +367,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
       )}
 
       {isPhone ? null : (
+        // Redesign (31 Oct 2026): two by two, so "Arrived at ward" is never cut to "Arrived at w…".
         <div className={styles.actionRow}>
           {step(0, "Accepted", "ward-officer-accept", acceptedBlocked, () => runAccepted(movement))}
           {step(1, "En route", "ward-officer-enroute", enRouteBlocked, () => runEnRoute(movement))}
@@ -450,6 +461,12 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
 
       <section className={styles.section} aria-label="Booking">
         <h3 className={styles.sectionTitle}>Booking</h3>
+        {/* Redesign: facts the booking did not record share one line instead of a box each. */}
+        {notRecorded.length > 0 ? (
+          <p className={styles.notRecorded} data-testid={`ward-officer-not-recorded-${movement.id}`}>
+            Not recorded: {notRecorded.join(" and ")}
+          </p>
+        ) : null}
         <dl className={styles.facts}>
           {isPhone ? null : (
             <>
@@ -459,25 +476,28 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
               </div>
               <div data-testid={`ward-officer-cad-number-${movement.id}`}>
                 <dt>CAD (dispatch) number</dt>
-                <dd>
+                {/* Redesign: a gap between the glyph and its words. */}
+                <dd className={styles.glyphLine}>
                   {cadNumberToFollow(transport) ? <StatusGlyph tone="warning" size={9} /> : null}
                   {cadNumberLabel(transport)}
                 </dd>
               </div>
             </>
           )}
-          <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
-            <dt>Transport logged as</dt>
-            <dd>
-              {transportStatusClashes(movement, transport.transportLegalStatus) ? (
-                <StatusGlyph tone="warning" size={9} />
-              ) : null}
-              {transportLegalStatusLabel(transport)}
-              {transportStatusClashes(movement, transport.transportLegalStatus)
-                ? `, Legal now ${legalNowText(movement)}`
-                : null}
-            </dd>
-          </div>
+          {transportLoggedRecorded ? (
+            <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
+              <dt>Transport logged as</dt>
+              <dd>
+                {transportStatusClashes(movement, transport.transportLegalStatus) ? (
+                  <StatusGlyph tone="warning" size={9} />
+                ) : null}
+                {transportLegalStatusLabel(transport)}
+                {transportStatusClashes(movement, transport.transportLegalStatus)
+                  ? `, Legal now ${legalNowText(movement)}`
+                  : null}
+              </dd>
+            </div>
+          ) : null}
           <div>
             <dt>Escort required</dt>
             <dd>{transport.escortRequired ? "Yes" : "No"}</dd>
@@ -493,10 +513,12 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             <dt>Form named at booking</dt>
             <dd>{formRequiredLabel(transport)}</dd>
           </div>
-          <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
-            <dt>Estimated time</dt>
-            <dd>{estimatedTimeLabel(transport, now)}</dd>
-          </div>
+          {transport.estimatedAt !== undefined ? (
+            <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
+              <dt>Estimated time</dt>
+              <dd>{estimatedTimeLabel(transport, now)}</dd>
+            </div>
+          ) : null}
           {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
           {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
             <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
