@@ -1,4 +1,5 @@
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
+import { type CountedFigure, nextUnchangedShifts } from "./capacity/shift-confirmations";
 import { isDischargeBarrier, liveMovementForAdmission } from "./ward-admissions";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { nextStepUndoSeq, withUndoRecord } from "./ward-undo";
@@ -377,7 +378,10 @@ export function reduceBedEvent(
           confirmedAt: event.now,
           revision: (unit.allocatable.revision ?? 0) + 1,
           confirmations: (unit.allocatable.confirmations ?? 0) + 1,
-        },
+          // The run of shifts the ward has confirmed the same number (Capacity's This shift lists
+          // a run of 3 or more): one more for a new shift, back to 0 when the number changes.
+          unchangedShifts: nextUnchangedShifts(unit.allocatable, event.value, event.now),
+        } as CountedFigure,
       };
       return replaceUnit(state, unit.id, updatedUnit);
     }

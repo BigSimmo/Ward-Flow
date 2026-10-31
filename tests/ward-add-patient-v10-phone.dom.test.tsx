@@ -57,7 +57,9 @@ describe("Add a patient v10", () => {
       renderForm();
       expect(screen.queryByTestId("ward-add-patient-phone-landing")).not.toBeInTheDocument();
       expect(screen.queryByText("Add a patient needs a larger screen")).not.toBeInTheDocument();
-      expect(screen.getByTestId("ward-add-patient-phone-hero")).toHaveTextContent("0/4");
+      // Redesign (30 Oct 2026): the hero carries no figure; the Identity card's head holds the count.
+      expect(screen.getByTestId("ward-add-patient-phone-hero")).not.toHaveTextContent("0/4");
+      expect(screen.getByTestId("ward-add-patient-form")).toHaveTextContent("0 of 4 required");
       expect(screen.getByText("Gender and Aboriginal status")).toBeInTheDocument();
       expect(screen.getByTestId("ward-add-patient-form").closest("main")).toHaveAttribute("data-phone-form", "true");
       expect(screen.getByTestId("ward-add-patient-submit")).toBeInTheDocument();

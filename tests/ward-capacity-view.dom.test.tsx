@@ -50,6 +50,15 @@
  * It was retired anyway because a permanently red gate is the worse hazard: it stands over a screen
  * no coordinator can open, so it protects nothing, and a gate everybody knows is red is a gate
  * nobody reads when it goes red for a new reason.
+ *
+ * ## The Capacity redesign (Josh, 31 Oct 2026)
+ *
+ * The network ward table these cases read is gone. Each ward's facts now sit in its ward drawer,
+ * opened from its bed map card: Mental Health Act authorisation ("Authorised hospital"), "Ask the
+ * ward" (the capacity-refresh control) and the ward's discharge records and bed releases. The
+ * excluded-beyond-the-horizon count is stated on Capacity's bed meeting sheet ("N more expected after
+ * tomorrow, left out of these figures"), and held-up releases are counted in "This shift". Every
+ * case below is the same rule read in its new place.
  */
 
 // The setup file already loads these matchers; importing them here as well lets the commit-time
@@ -81,7 +90,6 @@ import { CapacityScreen } from "@/components/ward-management/capacity/capacity-s
 import { BED_RELEASE_BLOCKERS } from "@/components/ward-management/ward-change-reasons";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * Raises a real `FLAG_BED_RELEASE` with no `blocker` — Phase 5 spec D3: a flag with no blocker
@@ -127,11 +135,55 @@ function ExpectedReleaseFlagger({ unitId, expectedAt }: { unitId: string; expect
 /** Reads the live `refreshRequests` list straight from the shared provider, so a test can prove
  * a click on the coordinator's control actually reached the reducer rather than merely changing
  * on-screen text the reducer never saw. */
-/** The number in "N releases outside today, excluded from today's figures". Since 25 September
- *  2026 the derived seed carries releases beyond today, so the tests below diff this number rather
- *  than assert the line is absent. */
+/** A ward card's visible name: its text without the spelled-out code a screen reader hears. */
+function visibleName(element: Element | null): string {
+  if (!element) return "";
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll("abbr + span").forEach((node) => node.remove());
+  return (clone.textContent ?? "").trim();
+}
+
+/** Opens a ward's drawer from its bed map card, as a coordinator would. */
+function openWardDrawer(unitId: string): HTMLElement {
+  const unit = unitById(unitId);
+  if (!unit) throw new Error(`no unit ${unitId}`);
+  const map = document.getElementById("capacity-bed-map");
+  if (!map) throw new Error("no bed map on the Capacity screen");
+  const card = Array.from(map.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="dialog"]')).find(
+    (button) => visibleName(button.firstElementChild) === unit.name,
+  );
+  if (!card) throw new Error(`no bed map card for ${unitId}`);
+  fireEvent.click(card);
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  expect(drawer).toHaveAccessibleName(unit.name);
+  return drawer;
+}
+
+/** The value beside a label in the drawer's facts ("Authorised hospital" → "Yes"). */
+function drawerFact(drawer: HTMLElement, label: string): string {
+  return within(drawer).getByText(label, { selector: "dt" }).nextElementSibling?.textContent ?? "";
+}
+
+/** Opens Capacity's bed meeting sheet from the hero's Bed meeting menu. */
+function openMeetingSheet(): HTMLElement {
+  fireEvent.click(screen.getByRole("button", { name: "Bed meeting" }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Print the meeting sheet" }));
+  return screen.getByTestId("bed-meeting-sheet-print-copy");
+}
+
+/** The number in the sheet's "N more expected after tomorrow, left out of these figures" (0 when
+ *  the line is absent). Since 25 September 2026 the derived seed carries releases beyond today, so
+ *  the tests below diff this number rather than assert the line is absent. */
 function excludedBeyondTodayCount(): number {
-  return Number(screen.getByTestId("ward-capacity-excluded-beyond-today").textContent?.match(/\d+/)?.[0]);
+  const discharges = within(screen.getByTestId("bed-meeting-sheet-print-copy")).getByTestId("bed-meeting-discharges");
+  const line = within(discharges).queryByText(/more expected after tomorrow, left out of these figures/u);
+  return line ? Number(line.textContent?.match(/\d+/)?.[0]) : 0;
+}
+
+/** The "This shift" card's held-up release count. */
+function heldUpCount(): number {
+  const section = screen.getByRole("region", { name: "Held-up releases" });
+  return Number(/(\d+)\s*held-up/u.exec(section.textContent ?? "")?.[1]);
 }
 
 function ConfirmCapacityProbe({ unitId, now }: { unitId: string; now: number }) {
@@ -198,15 +250,11 @@ describe("ward capacity board", () => {
         <CapacityScreen />
       </WardFlowProvider>,
     );
-    showWardTable();
 
-    const unauthorised = screen.getByTestId("ward-capacity-authorised-sjgs-adult-secure");
-    expect(unauthorised).toHaveTextContent("No");
+    expect(drawerFact(openWardDrawer("sjgs-adult-secure"), "Authorised hospital")).toBe("No");
 
-    // Both directions, or this would pass on a screen that said "No" on every row.
-    const authorised = screen.getByTestId("ward-capacity-authorised-scgh-adult-open");
-    expect(authorised).toHaveTextContent("Yes");
-    expect(authorised).not.toHaveTextContent("No");
+    // Both directions, or this would pass on a screen that said "No" on every ward.
+    expect(drawerFact(openWardDrawer("scgh-adult-open"), "Authorised hospital")).toBe("Yes");
   });
 
   /*
@@ -314,18 +362,20 @@ describe("ward capacity headline (Task 7)", () => {
         <RefreshRequestsProbe />
       </WardFlowProvider>,
     );
-    showWardTable();
 
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("0");
-    const table = screen.getByTestId("ward-capacity-network-table");
-    const refreshButton = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
-    // The button's own label is the on-row acknowledgement; every other figure on the row must stay put.
-    const rowFigures = () =>
-      (within(table).getByTestId("ward-capacity-network-row-rph-adult-secure").textContent ?? "").replace(
-        refreshButton.textContent ?? "",
-        "",
-      );
-    const readyBefore = rowFigures();
+    const drawer = openWardDrawer("rph-adult-secure");
+    const refreshButton = within(drawer).getByRole("button", { name: "Ask the ward" });
+    // Every figure in the drawer's "Beds now" and its facts must stay put.
+    const wardFigures = () =>
+      [
+        within(drawer).getByRole("region", { name: "Beds now" }).textContent,
+        ...within(drawer)
+          .getAllByRole("region")
+          .filter((region) => ["Today", "Ward"].includes(region.getAttribute("aria-label") ?? ""))
+          .map((region) => region.textContent),
+      ].join(" | ");
+    const readyBefore = wardFigures();
 
     // A real, wired <button> — never an advisory element with no handler.
     expect(refreshButton.tagName).toBe("BUTTON");
@@ -336,16 +386,18 @@ describe("ward capacity headline (Task 7)", () => {
 
     // The one observable effect: a real dispatch reached the reducer's own `refreshRequests` list.
     expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
-    expect(refreshButton).toHaveTextContent("Update requested");
-    // The acknowledged control must not append a duplicate request on a second click.
-    expect(refreshButton).toBeDisabled();
-    fireEvent.click(refreshButton);
-    expect(screen.getByTestId("test-refresh-requests-count")).toHaveTextContent("1");
+    expect(within(drawer).getByRole("status")).toHaveTextContent(/^Update requested/u);
     expect(
-      rowFigures(),
-      "asking a ward to restate its numbers moved a figure on its row; this control records that " +
+      wardFigures(),
+      "asking a ward to restate its numbers moved one of its figures; this control records that " +
         "somebody asked and must change nothing else",
     ).toBe(readyBefore);
+    // The acknowledged control must not append a duplicate request on a second click.
+    fireEvent.click(within(drawer).getByRole("button", { name: "Ask the ward" }));
+    expect(
+      screen.getByTestId("test-refresh-requests-count"),
+      "a second press while the ward has not yet answered appended a duplicate request",
+    ).toHaveTextContent("1");
   });
 
   it("lets the coordinator ask again once the ward has confirmed its capacity", () => {
@@ -355,12 +407,13 @@ describe("ward capacity headline (Task 7)", () => {
         <ConfirmCapacityProbe unitId="rph-adult-secure" now={NOW_ANCHOR + 5} />
       </WardFlowProvider>,
     );
-    showWardTable();
-    const refreshButton = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
-    fireEvent.click(refreshButton);
-    expect(refreshButton).toBeDisabled();
+    const drawer = openWardDrawer("rph-adult-secure");
+    fireEvent.click(within(drawer).getByRole("button", { name: "Ask the ward" }));
+    expect(within(drawer).getByRole("status")).toHaveTextContent(/^Update requested/u);
     fireEvent.click(screen.getByTestId("test-confirm-capacity"));
-    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
+    // The confirmation answered the request, so it is no longer outstanding and asking is open again.
+    expect(within(drawer).queryByText(/^Update requested/u)).not.toBeInTheDocument();
+    expect(within(drawer).getByRole("button", { name: "Ask the ward" })).toBeEnabled();
   });
 
   // DEC-L5-04 (21 Oct 2026): the confirmation stamps the request answered, so events order it, not
@@ -372,10 +425,12 @@ describe("ward capacity headline (Task 7)", () => {
         <ConfirmCapacityProbe unitId="rph-adult-secure" now={NOW_ANCHOR} />
       </WardFlowProvider>,
     );
-    showWardTable();
-    fireEvent.click(screen.getByTestId("ward-capacity-refresh-rph-adult-secure"));
+    const drawer = openWardDrawer("rph-adult-secure");
+    fireEvent.click(within(drawer).getByRole("button", { name: "Ask the ward" }));
+    expect(within(drawer).getByRole("status")).toHaveTextContent(/^Update requested/u);
     fireEvent.click(screen.getByTestId("test-confirm-capacity"));
-    expect(screen.getByTestId("ward-capacity-refresh-rph-adult-secure")).toBeEnabled();
+    expect(within(drawer).queryByText(/^Update requested/u)).not.toBeInTheDocument();
+    expect(within(drawer).getByRole("button", { name: "Ask the ward" })).toBeEnabled();
   });
 
   /*
@@ -397,7 +452,7 @@ describe("ward capacity headline (Task 7)", () => {
         <ExpectedReleaseFlagger unitId="fre-adult-open" expectedAt={NOW_ANCHOR + 2 * MINUTES_PER_DAY} />
       </WardFlowProvider>,
     );
-    showWardTable();
+    openMeetingSheet();
 
     // CHANGED 25 September 2026: the derived seed already carries releases beyond today, so the
     // count starts above zero; the property survives as the change: one more far-future release
@@ -518,7 +573,23 @@ function StaleBlockedReleaseSetup({ unitId, daysAgo }: { unitId: string; daysAgo
 }
 
 describe("a discharge held up for days keeps counting, and shows since when (WLQ-10)", () => {
-  it("still counts in the ward's blocked figure and states since when, once blocked two days ago", () => {
+  /** The ward drawer's bed release entries (Discharges tab) expected two days ago, which the drawer
+   *  states as "HH:MM, 2 days ago". The seed already carries some, so the cases below diff them. */
+  function staleReleaseEntries(unitId: string): HTMLElement[] {
+    const drawer = openWardDrawer(unitId);
+    fireEvent.click(within(drawer).getByRole("radio", { name: /^Discharges/u }));
+    const heading = within(drawer).queryByRole("heading", { name: "Bed releases without a name" });
+    const list = heading?.nextElementSibling as HTMLElement | null | undefined;
+    if (!list) return [];
+    return within(list)
+      .queryAllByText(/, 2 days ago$/u)
+      .map((line) => line.closest("li") as HTMLElement)
+      .filter(Boolean);
+  }
+  const blocked = (entries: HTMLElement[]) =>
+    entries.filter((entry) => entry.textContent?.includes(BED_RELEASE_BLOCKERS[0])).length;
+
+  it("still counts in the held-up figure and states since when, once blocked two days ago", () => {
     const unitId = "fre-adult-open";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -526,11 +597,11 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
         <StaleBlockedReleaseSetup unitId={unitId} daysAgo={2} />
       </WardFlowProvider>,
     );
-    showWardTable();
 
-    const row = () => screen.getByTestId(`ward-capacity-network-row-${unitId}`);
-    expect(within(row()).getByTestId("ward-capacity-network-blocked")).toHaveTextContent("none");
-    expect(within(row()).queryByTestId("ward-capacity-network-blocked-since")).not.toBeInTheDocument();
+    const heldBefore = heldUpCount();
+    expect(Number.isFinite(heldBefore), "the This shift card states no held-up count").toBe(true);
+    const entriesBefore = staleReleaseEntries(unitId);
+    openMeetingSheet();
     // CHANGED 25 September 2026: the derived seed already counts releases beyond today, so "never
     // reported as excluded" is checked as "this release does not move that count".
     const excludedBefore = excludedBeyondTodayCount();
@@ -538,25 +609,27 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
     fireEvent.click(screen.getByTestId("test-flag-stale-release"));
     fireEvent.click(screen.getByTestId("test-block-stale-release"));
 
-    const blockedCell = within(row()).getByTestId("ward-capacity-network-blocked");
-    expect(
-      blockedCell,
-      "a discharge held up since two days ago must still count in today's held-up figure",
-    ).toHaveTextContent("1");
+    expect(heldUpCount(), "a discharge held up since two days ago must still count in today's held-up figure").toBe(
+      heldBefore + 1,
+    );
 
-    const since = within(row()).getByTestId("ward-capacity-network-blocked-since");
-    expect(since, "the screen must say since when the oldest held-up release was expected").toHaveTextContent(
-      "2 days ago",
+    const entriesAfter = staleReleaseEntries(unitId);
+    expect(entriesAfter.length, "the ward must say since when the held-up release was expected").toBe(
+      entriesBefore.length + 1,
+    );
+    expect(blocked(entriesAfter), "the held-up release must name what it is waiting on").toBe(
+      blocked(entriesBefore) + 1,
     );
 
     // And it must never be reported as excluded — the false pair this ruling exists to prevent.
+    openMeetingSheet();
     expect(
       excludedBeyondTodayCount(),
       "a discharge held up in the past is not 'beyond today'; flagging and blocking it must not move this figure",
     ).toBe(excludedBefore);
   });
 
-  it("shows no since-when once the release is no longer held up", () => {
+  it("shows no held-up mark once the release is no longer held up", () => {
     const unitId = "fre-adult-open";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -564,13 +637,18 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
         <StaleBlockedReleaseSetup unitId={unitId} daysAgo={2} />
       </WardFlowProvider>,
     );
-    showWardTable();
+    const heldBefore = heldUpCount();
+    const entriesBefore = staleReleaseEntries(unitId);
 
     fireEvent.click(screen.getByTestId("test-flag-stale-release"));
     // Deliberately NOT clicking "block stale release" — a release that was never held up must
-    // never grow a since-when, or the field would be describing something that never happened.
-    const row = () => screen.getByTestId(`ward-capacity-network-row-${unitId}`);
-    expect(within(row()).getByTestId("ward-capacity-network-blocked")).toHaveTextContent("none");
-    expect(within(row()).queryByTestId("ward-capacity-network-blocked-since")).not.toBeInTheDocument();
+    // never be counted or named as held up, or the screen would be describing something that never
+    // happened.
+    expect(heldUpCount()).toBe(heldBefore);
+    const entriesAfter = staleReleaseEntries(unitId);
+    expect(entriesAfter.length, "the flagged release is not on the ward's Discharges tab").toBe(
+      entriesBefore.length + 1,
+    );
+    expect(blocked(entriesAfter), "a release never held up is named as held up").toBe(blocked(entriesBefore));
   });
 });

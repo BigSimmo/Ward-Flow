@@ -6,7 +6,8 @@
         "scripts/**/*.{ts,mjs,cjs}",
         "eslint-rules/**/*.mjs",
         "tests/**/*.{test.ts,dom.test.tsx,spec.ts}",
-        "*.config.{ts,mts,mjs,cjs}"
+        "*.config.{ts,mts,mjs,cjs}",
+        "src/app/mockups/ward-flow-redesign/_preview/preview-screen-production.tsx"
       ],
       "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{ts,mjs,cjs}", "eslint-rules/**/*.mjs"],
       "vitest": {

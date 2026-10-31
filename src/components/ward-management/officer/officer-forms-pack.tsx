@@ -147,12 +147,9 @@ export function FormsPack({ movement, now, who }: { movement: Movement; now: Ins
             </div>
           );
         })}
-        <div className={styles.packFoot}>
-          <span className={styles.packCount}>
-            <b>{done}</b> of {PACK_SLOTS.length} uploaded
-          </span>
-          {/* Audit round 2, A4-17: no "Send to officer" here; this pack is the officer's own. */}
-        </div>
+        {/* Redesign (31 Oct 2026): the count is said once, beside the heading ("3 to upload"), so the
+            "0 of 3 uploaded" foot is gone. Audit round 2, A4-17: no "Send to officer" here; this pack
+            is the officer's own. */}
       </div>
       {uploading ? (
         <PackUploadDialog

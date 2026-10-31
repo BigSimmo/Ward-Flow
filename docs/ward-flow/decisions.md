@@ -9,7 +9,7 @@ when a decision here depends on one.
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
 
-_Updated 2026-10-27 - added D-87 (D-36 and D-37 replaced by the real-data gate; they overstated governance readiness) and D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
+_Updated 2026-10-30 - added D-89 (redesign mock-up copies of large screens may pass the 1,500-line cap through the line-cap list); 2026-10-27 - added D-87 (D-36 and D-37 replaced by the real-data gate; they overstated governance readiness) and D-86 (no second approver for role grants; overrides D-80 item 17); 2026-10-26 - added D-84 (the live app stays on Railway Singapore for now; no server-side TV account yet; both revisited before real data), D-83 (patient names shown in full on every screen and TV; privacy work must not make the app less useful; the locking read-only TV login still goes ahead) and D-82 (phone size limits may rise up to 5 KB per screen per PR without asking); 2026-10-25 - subsequent notes on names that no longer exist in D-20, D-26, D-45, D-51 and the D-72 plan path; 2026-10-24 added D-81 (Pulled and Pull time limit for incoming beds); 2026-10-23 added D-72 to D-80 (21 October fix plan, merge safeguards, owner answers, UX audit follow-up, community gaps, the bigger UX changes, one decline list, the ward referral detail view and the role access plan); Documentation owns. Historical decision text and dates preserved._
 
 ---
 
@@ -1005,6 +1005,14 @@ is inferred.
 - **Not yet decided:** switching the front door on, on either hosted site. The switch stays off until Josh has seen the built screens and says yes. Setting `WARD_PASS_SECRET` and `WARD_DEMO_CODE` in Railway also needs his yes (AGENTS.md rule 3).
 - **Why:** the demo shows the whole synthetic network and should be shared on purpose, not found by chance.
 
+## D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026)
+
+- **Date:** 30 October 2026 (`2026-10-30`). **Decided by:** Josh, in the redesign mock-up work (draft PR #1118), when told some mock-up copies of today's screens would pass the cap: raising the limit is fine.
+- **Decision:** a mock-up page under `src/components/ward-redesign/` that copies a real screen may pass the 1,500-line cap when splitting it would break the line-by-line match with the real file. It gets its own entry in `eslint-rules/max-lines-baseline.mjs`, with the reason in the change, as any other file over the cap. Never make room by changing on-screen words (Josh, 26 October 2026).
+- **First use:** `src/components/ward-redesign/ward-answer/ward-answer-view.tsx` (1,717 lines), the copy of the Ward answer view, whose real file already has its own entry.
+- **Boundary:** mock-up copies only. It does not raise the default cap, change any real screen (D-74) or approve any page for building.
+- **Why:** each mock-up is a copy of today's screen, so the difference between the two files is exactly the design change to build. Splitting a large copy makes that difference much harder to read and apply.
+
 ## D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026)
 
 - **Date:** 30 October 2026 (`2026-10-30`). **Decided by:** Josh, in the Ward Flow project, asking for the Help menu to be reviewed against the PR #1118 mock-up and the Core Pages artifact, then perfected, with "common tasks or questions specifically for the app and when clicked on there is launched the interactive help part that highlights where it is with steps". He then answered three questions: build the real Help now; switch Show me on everywhere; and put the tasks in a new "How do I…" tab.
@@ -1015,6 +1023,40 @@ is inferred.
 - **Why:** staff should be able to browse the common jobs and be walked through each one on the real screen, not only find them by typing a question.
 - **Safeguards kept:** Show me only lights controls; it never presses anything. Tasks are grouped, never ranked. Nothing typed in Help is stored or sent. Mental Health Act times stay as typed (D-70), so that how-to has no Show me.
 - **Later change:** D-91 (31 October 2026, recorded with the redesign mock-ups) overrides item 2: Show me stays off on the demo and live sites until Josh has seen it in the mock-ups, so `help-ask` is on in development only. Items 1 and 3 stand.
+
+## D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)
+
+- **Date:** 31 October 2026 (`2026-10-31`). **Decided by:** Josh, in the redesign mock-up work (draft PR #1118), answering the 26 questions from the alignment review of #1119, #1122, #1123 and #1124. His words: "Yes to all your recommendations." (D-90 is reserved by draft PR #1119.)
+- **Decision, how the work fits together:**
+  - All visual design lives in the redesign mock-up viewer (`/mockups/ward-flow-redesign`, PR #1118). Until Josh approves a page, the real-app pull requests carry only behaviour and accessibility fixes.
+  - Merge order into `main`, each fixed first and each with Josh's yes: #1120, #1119, the behaviour part of #1124, then #1123.
+  - Clear-cut real-app bugs go in small separate pull requests: restore says nine rules where there are twelve; Settings Export and Import do not match; Community save failures vanish (CT-09).
+  - #1118 stays a draft until Josh approves the design direction. It then merges with the mock-ups still blocked in production, and each page build deletes its own mock-up copy (`docs/mockup-retirement-policy.md`).
+  - Build order after Josh's page-by-page review: the shared frame, control sizes and notice position first, then Home, then one page per pull request.
+- **Help (#1119):** the live switch for Show me stays off until Josh has seen it in the mock-ups. The first tab is "How do I…", and the sidebar's Help opens on it with this screen's tasks first. Phone tabs sit on one sliding row at the kit size.
+- **Settings (#1122):** round 3 merges into the mock-ups after its four conflicts and small fixes. In the new frame, Settings drops its own "Go to a desk", which the sidebar already offers.
+- **Search and forms (#1123):**
+  - Phone search opens full height, like Help. Computers keep today's popover, with matched words highlighted.
+  - Every page search box has one look.
+  - Forms get time buttons (Now, +15m, +30m, +1h) form by form, starting with ED expected arrival and the discharge care dates. Any legal-form time offers Now only (D5, D-70).
+  - The duplicate finders become one each: the two Statistics "Open a unit", the two "Find a ward" lists and the three suburb lookups.
+  - Help answers show in the header search for queries of three letters or more, after people unless the query is a question.
+  - The search box reads "Search Ward Flow".
+  - The search boxes #1123 removed are ratified here: the community team patient search, the record History and Documents filters, the executive phone "Filter pages", the Referrals "Filter queue", the All EDs keyword box, and the Statistics ward and ED table filters. Josh approved them on 30 October without a mock-up.
+- **Notifications (#1124):**
+  - Missed notices go into Activity's "Recent activity" tab, not a separate Recent chip, and clear on idle lock and desk switch.
+  - Notices sit clear of the phone's bottom bar.
+  - The folded stack and the corner-card moves are mocked up before they are built.
+  - Confirmed: each notice is read aloud once; undo windows keep running in a hidden tab; On-call keeps its notice inside its sheet.
+- **The mock-ups:**
+  - The new sidebar and header (`shell-next`) is the default frame, with a switch back to today's.
+  - On computers the bell shows its icon and count. The word "Alerts" is in the phone dock and the button's spoken label.
+  - Waiting's and Patients' phone chips put the count first.
+  - The TV view and printouts keep a small synthetic-data mark.
+  - Pinned pages last for one browser tab; remembering them per person needs a privacy decision before the real build.
+  - Handover stays off the phone dock for the nurse in charge and the bed manager.
+- **Boundary:** this approves mock-up work and the order of work. It approves no page for building, no merge, release or deployment, and no real data.
+- **Why:** four pull requests changed the same screens in different directions. One design home and one order stop them breaking each other and leaving the mock-ups out of date.
 
 ## D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)
 

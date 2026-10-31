@@ -129,6 +129,12 @@ function rowClock(row: EdRow): WaitClock {
   return row.pastTarget > 0 ? "past" : row.severe > 0 ? "severe" : "in";
 }
 
+/**
+ * October 2026 design review (Josh, 31 Oct 2026): the title counts every department ("62 waiting
+ * across 10 EDs · 8 with someone waiting"), hospital names wrap on the cards instead of ending in
+ * "…", and departments with nobody waiting share one line with an Enter button each, rather than a
+ * full empty card.
+ */
 export function EdIndex() {
   const { movements, patients, referrals, units, configuration } = useWardFlowSelect(
     "movements",
@@ -153,8 +159,8 @@ export function EdIndex() {
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
 
-  // The keyword box over these ~15 EDs went in the search and forms review (Josh, 30 Oct 2026):
-  // the header search finds an ED by name or site, and "/" now reaches it here too.
+  // D-91: the keyword box over these ~15 EDs went in the search and forms review (Josh, 30 Oct
+  // 2026). The header search finds an ED by name or site.
 
   const rows: EdRow[] = useMemo(() => {
     // D-14: names come through the shared resolver, the same one the ED board uses.
@@ -324,7 +330,7 @@ export function EdIndex() {
           level={1}
           title={
             <>
-              <SrOnly>All EDs,</SrOnly> {waiting} waiting in {withWaiting.length} EDs
+              <SrOnly>All EDs,</SrOnly> {waiting} waiting across {rows.length} EDs
             </>
           }
           titleMeta={
@@ -333,7 +339,7 @@ export function EdIndex() {
               ? waiting > 0 && longestRow
                 ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
                 : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-              : undefined
+              : `${withWaiting.length} with someone waiting`
           }
           aside={
             isPhone ? (
@@ -415,9 +421,18 @@ export function EdIndex() {
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
             {isPhone ? (
-              // v10 phone: the status and order button keeps its row, so the view switch below runs
-              // the full width.
-              <div className={styles.phoneSearchRow}>
+              // D-91: with the keyword box gone, the status and order button sits at the end of the
+              // health service chips, so the view switch below still runs the full width.
+              <div className={styles.phoneFilterRow}>
+                <ScrollRow className={styles.phoneServices}>
+                  <Segmented
+                    label="Health service"
+                    items={serviceItems}
+                    value={service}
+                    onChange={setService}
+                    size="md"
+                  />
+                </ScrollRow>
                 <Button
                   variant="sec"
                   iconOnly
@@ -425,20 +440,10 @@ export function EdIndex() {
                   aria-label={`Status and order${status !== "all" ? ", status filtered" : ""}`}
                   aria-haspopup="dialog"
                   onClick={() => setPhoneFiltersOpen(true)}
+                  className={styles.phoneFilterButton}
                   data-testid="ed-index-phone-filters"
                 />
               </div>
-            ) : null}
-            {isPhone ? (
-              <ScrollRow className={styles.phoneServices}>
-                <Segmented
-                  label="Health service"
-                  items={serviceItems}
-                  value={service}
-                  onChange={setService}
-                  size="md"
-                />
-              </ScrollRow>
             ) : null}
             {isPhone ? null : (
               <Segmented
@@ -464,7 +469,6 @@ export function EdIndex() {
               </>
             )}
             <span className={styles.shownCount}>
-              <span className={styles.filterHint}>Filters and chips highlight, all EDs stay</span>
               {isFiltered ? (
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -497,7 +501,7 @@ export function EdIndex() {
             <EmptyState
               icon={Search}
               title="No match"
-              meta={`No ED matches these filters. All ${rows.length} stay below, dimmed.`}
+              meta={`No ED matches. All ${rows.length} stay below, dimmed.`}
               action={
                 <Button variant="sec" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -529,15 +533,36 @@ export function EdIndex() {
           // eleventh card, and a full-width strip under them at tablet portrait.
           <div className={styles.cardsWithRail}>
             <section className={styles.cardGrid} aria-label="Emergency department cards">
-              {ordered.map((row) => (
-                <EdCard
-                  key={row.summary.ed.id}
-                  row={row}
-                  dim={isDim(row)}
-                  highlight={highlight}
-                  onPreview={() => setPreviewId(row.summary.ed.id)}
-                />
-              ))}
+              {ordered
+                .filter((row) => row.summary.waiting > 0)
+                .map((row) => (
+                  <EdCard
+                    key={row.summary.ed.id}
+                    row={row}
+                    dim={isDim(row)}
+                    highlight={highlight}
+                    onPreview={() => setPreviewId(row.summary.ed.id)}
+                  />
+                ))}
+              {ordered.some((row) => row.summary.waiting === 0) ? (
+                <div className={styles.clearLine} aria-label="Departments with no one waiting" role="group">
+                  <span className={styles.clearLabel}>No one waiting</span>
+                  {ordered
+                    .filter((row) => row.summary.waiting === 0)
+                    .map((row) => (
+                      <span
+                        key={row.summary.ed.id}
+                        className={styles.clearEd}
+                        data-service={row.summary.service}
+                        data-dim={isDim(row) ? "true" : undefined}
+                        data-testid={`ed-index-clear-${row.summary.ed.id}`}
+                      >
+                        <b title={row.summary.ed.name}>{row.short}</b>
+                        <EnterLink row={row} />
+                      </span>
+                    ))}
+                </div>
+              ) : null}
             </section>
             <div className={styles.serviceRail} data-wf-rail>
               {servicePicker}
@@ -719,11 +744,23 @@ function EdCard({
         <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" />
       </div>
       <PeoplePips row={row} highlight={highlight} />
+      {/* The figures wrap between figures, never mid-phrase, so none ends in "…". */}
       <p className={styles.figures}>
-        <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.noBed}</b> no bed <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.held}</b> accepted <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.forms}</b> form
+        <span className={styles.fig}>
+          <b className={styles.num}>{summary.waiting}</b> waiting
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={styles.fig}>
+          <b className={styles.num}>{row.noBed}</b> no bed
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={styles.fig}>
+          <b className={styles.num}>{row.held}</b> accepted
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={styles.fig}>
+          <b className={styles.num}>{row.forms}</b> under a form
+        </span>
       </p>
       <div className={styles.cardFoot}>
         <Longest row={row} />
@@ -1046,7 +1083,7 @@ function PhoneEdList({
               <span className={styles.phoneMeta}>
                 <PeoplePips row={item} highlight={highlight} />
                 <span>
-                  {item.noBed} no bed · {item.held} accepted · {item.forms} form
+                  {item.noBed} no bed · {item.held} accepted · {item.forms} under a form
                 </span>
               </span>
             ) : (

@@ -35,6 +35,8 @@ type Projector = typeof import("../statistics/executive-statistics-projector").p
 export function WardAuthorisedExecutivePreview({ source, children }: { source: PreviewSource; children: ReactNode }) {
   const identity = useMemo(() => ({ source }), [source]);
   const [projector, setProjector] = useState<{ project: Projector } | null>(null);
+  // A projector that fails to load is not "still loading": the desk then reads as unavailable.
+  const [importFailed, setImportFailed] = useState(false);
   const [held, setHeld] = useState<ExecutiveLivePreviewProjection | null>(null);
   useEffect(() => {
     let current = true;
@@ -43,7 +45,9 @@ export function WardAuthorisedExecutivePreview({ source, children }: { source: P
       ({ projectExecutiveReportingFoundation }) => {
         if (current) setProjector({ project: projectExecutiveReportingFoundation });
       },
-      () => undefined,
+      () => {
+        if (current) setImportFailed(true);
+      },
     );
     return () => {
       current = false;
@@ -73,6 +77,8 @@ export function WardAuthorisedExecutivePreview({ source, children }: { source: P
       enabled
       identity={held?.identity ?? identity}
       projection={selected}
+      // Loading only until the projector arrives. A projection that throws is unavailable, not loading.
+      loading={held === null && projector === null && !importFailed}
       controls={{
         paused: held !== null,
         togglePause: selected ? () => setHeld((value) => (value ? null : live)) : null,

@@ -3,111 +3,20 @@
 import { useId } from "react";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { DUE_SORT_OPTIONS, type DueSortMode } from "@/components/ward-management/ward-due-sort";
-import { Button, Card, Select, StatusGlyph } from "@/components/wf";
+import { Button, Card, Select } from "@/components/wf";
 import pageStyles from "./discharges-third-edition.module.css";
-import {
-  type WorkStatus,
-  WORK_STATUS_LABELS,
-  WORK_ORDER,
-  BLOCKER_CATEGORIES,
-  barrierLabel,
-} from "./discharge-board-model";
+import { type WorkStatus, WORK_STATUS_LABELS, WORK_ORDER, BLOCKER_CATEGORIES } from "./discharge-board-model";
+import { useDischargeDeskView } from "./discharge-desk-view";
+import { HELD_UP } from "./discharge-release-actions";
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 
-/* The discharge board's barrier table, Now/History switch and filter card, moved unchanged. */
-
-/** Blocked discharges grouped by barrier, largest group first. */
-export function DischargeBarrierTable({ s }: { s: DischargeWorkspaceState }) {
-  const { population, dimmed, litFirst, unblockedCount, barrierGroups, barrierMax } = s;
-  return (
-    <table className={pageStyles.workTable} data-testid="ward-discharge-barrier-table">
-      <caption className={pageStyles.localTitle}>
-        Blocked discharges grouped by barrier, largest group first. Highlighted people come first in each group.
-      </caption>
-      <thead>
-        <tr>
-          <th scope="col">{population === "releases" ? "Ward / service" : "Patient / ward"}</th>
-          <th scope="col">Expected</th>
-          <th scope="col">Recorded blocker</th>
-        </tr>
-      </thead>
-      {barrierGroups.map((group) => (
-        <tbody key={group.id} data-testid={`ward-discharge-barrier-group-${group.id}`}>
-          <tr className={pageStyles.groupRow}>
-            <th colSpan={3} scope="rowgroup">
-              <div className={pageStyles.groupHead}>
-                <StatusGlyph tone="danger" size={9} />
-                <h3>
-                  {barrierLabel(group.id)} <span className={pageStyles.groupCount}>{group.rows.length}</span>
-                </h3>
-                <span className={pageStyles.barrierShare} aria-hidden="true">
-                  <i style={{ width: `${Math.round((group.rows.length / barrierMax) * 100)}%` }} />
-                </span>
-              </div>
-            </th>
-          </tr>
-          {litFirst(group.rows, (row) => row.lit).map((row) => (
-            <tr
-              key={row.id}
-              data-selected={row.selected}
-              data-highlighted={row.lit || undefined}
-              data-dim={dimmed(row.lit)}
-              className={pageStyles.interactiveRow}
-              tabIndex={0}
-              onClick={(e) => row.open(e.currentTarget)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  row.open(e.currentTarget);
-                }
-              }}
-            >
-              <td data-label={population === "releases" ? "Ward / service" : "Patient / ward"}>
-                <button
-                  type="button"
-                  className={pageStyles.recordButton}
-                  aria-pressed={row.selected}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    row.open(e.currentTarget);
-                  }}
-                >
-                  {row.title}
-                </button>
-                {row.mono ? <span className={pageStyles.secondaryMono}>{row.mono}</span> : null}
-                <span className={pageStyles.secondary}>{row.sub}</span>
-              </td>
-              <td data-label="Expected" className={pageStyles.timingCell}>
-                <strong className={pageStyles.due}>{row.when}</strong>
-              </td>
-              <td data-label="Recorded blocker">
-                <span className={pageStyles.blocker}>{row.blocker}</span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      ))}
-      <tbody data-testid="ward-discharge-barrier-group-none">
-        <tr className={pageStyles.groupRow}>
-          <th colSpan={3} scope="rowgroup">
-            <div className={pageStyles.groupHead}>
-              <StatusGlyph tone="success" size={9} />
-              <h3>
-                No barrier recorded <span className={pageStyles.groupCount}>{unblockedCount}</span>
-              </h3>
-              <span className={pageStyles.groupSub}>These are listed in the List view.</span>
-            </div>
-          </th>
-        </tr>
-      </tbody>
-    </table>
-  );
-}
+/* The Now/History switch and filter card. Redesign (approved 31 Oct 2026): the Barriers table view is gone;
+   the one barrier panel sits beside the list. */
 
 /** Now and History: in the hero on desktop and tablet, under it on a phone (v10). */
 export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState }) {
   const {
-    bedReleases,
+    releaseGroups,
     population,
     setPopulation,
     setStatus,
@@ -142,7 +51,11 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
           }}
         >
           Now
-          <span className="sr-only">, bed releases {bedReleases.length}</span>
+          {/* Josh, 30 Oct: Now says the hero's figure, the releases listed to work on. */}
+          <span className="sr-only">
+            , {releaseGroups.blocked.length + releaseGroups.confirmed.length + releaseGroups.expected.length} to work
+            now
+          </span>
         </button>
         <button
           type="button"
@@ -189,54 +102,64 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
     services,
     scopedUnits,
     counts,
-    total,
     clearSelection,
     clearAllFilters,
     filtersActive,
   } = s;
   const baseId = useId();
+  // ROLE BRANCHES (approved 31 Oct 2026). Nurse in charge: a ward desk sees only its own wards, so the
+  // Service filter is left out, and with one ward the Ward filter too (one choice each). Site bed manager:
+  // one site is one service, so the Service filter is left out and the Ward filter stays. Every other
+  // filter stays.
+  const { wardDesk, ownWard, siteName } = useDischargeDeskView(s.units);
+  const showService = !wardDesk && siteName === undefined;
+  const showWard = ownWard === undefined;
   return (
     <Card as="div" className={pageStyles.filterCard} aria-label="Discharge filters" role="region">
       <div className={pageStyles.filters}>
-        <label htmlFor={`${baseId}-discharges-filter-service`} className={pageStyles.filterField}>
-          <span className={pageStyles.filterLabelText}>Service</span>
-          <Select
-            id={`${baseId}-discharges-filter-service`}
-            name="dischargesFilterService"
-            value={service}
-            boxClassName={pageStyles.filterSelect}
-            onChange={(event) => {
-              setService(event.target.value);
-              setWard("all");
-              clearSelection();
-            }}
-          >
-            <option value="all">All services</option>
-            {services.map((item) => (
-              <option key={item}>{item}</option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`${baseId}-discharges-filter-ward`} className={pageStyles.filterField}>
-          <span className={pageStyles.filterLabelText}>Ward</span>
-          <Select
-            id={`${baseId}-discharges-filter-ward`}
-            name="dischargesFilterWard"
-            value={ward}
-            boxClassName={pageStyles.filterSelect}
-            onChange={(event) => {
-              setWard(event.target.value);
-              clearSelection();
-            }}
-          >
-            <option value="all">All wards</option>
-            {scopedUnits.map((unit) => (
-              <option key={unit.id} value={unit.id}>
-                {unit.name}
-              </option>
-            ))}
-          </Select>
-        </label>
+        {showService ? (
+          <label htmlFor={`${baseId}-discharges-filter-service`} className={pageStyles.filterField}>
+            <span className={pageStyles.filterLabelText}>Service</span>
+            <Select
+              id={`${baseId}-discharges-filter-service`}
+              name="dischargesFilterService"
+              value={service}
+              boxClassName={pageStyles.filterSelect}
+              onChange={(event) => {
+                setService(event.target.value);
+                setWard("all");
+                clearSelection();
+              }}
+            >
+              <option value="all">All services</option>
+              {services.map((item) => (
+                <option key={item}>{item}</option>
+              ))}
+            </Select>
+          </label>
+        ) : null}
+        {showWard ? (
+          <label htmlFor={`${baseId}-discharges-filter-ward`} className={pageStyles.filterField}>
+            <span className={pageStyles.filterLabelText}>Ward</span>
+            <Select
+              id={`${baseId}-discharges-filter-ward`}
+              name="dischargesFilterWard"
+              value={ward}
+              boxClassName={pageStyles.filterSelect}
+              onChange={(event) => {
+                setWard(event.target.value);
+                clearSelection();
+              }}
+            >
+              <option value="all">All wards</option>
+              {scopedUnits.map((unit) => (
+                <option key={unit.id} value={unit.id}>
+                  {unit.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+        ) : null}
         {/* Decision 5 (review 12 Oct 2026): one control per filter. Status narrows from this one
             dropdown (its counts are the hero chips' counts); the hero chips highlight. The tab
             row over the table and the blocker chip row are gone. */}
@@ -254,10 +177,12 @@ export function DischargeFilterCard({ s }: { s: DischargeWorkspaceState }) {
               clearSelection();
             }}
           >
-            <option value="all">{`All statuses · ${total}`}</option>
+            {/* Josh, 30 Oct: "All statuses" with no count, so no third total beside the hero's two; each
+                status keeps its count, and a blocker reads "Held up". */}
+            <option value="all">All statuses</option>
             {WORK_ORDER.map((key) => (
               <option key={key} value={key}>
-                {`${population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
+                {`${key === "blocked" ? HELD_UP : population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
               </option>
             ))}
           </Select>

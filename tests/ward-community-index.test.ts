@@ -308,8 +308,11 @@ describe("Community team index — every team the prototype can name has a way i
     // one list; a second heading here would be the first step towards a grouping nobody decided.
     // v6 (7 Oct 2026): the side column's cards (suburb lookup, names that read alike, teams by
     // service) carry their own headings; the rule is about the team list, so it is counted there.
+    // Core pages review (approved by Josh, 31 Oct 2026): the suburb lookup is now a full-width bar
+    // ABOVE the list, with its own heading, so the team list is counted from its own card onwards.
+    const directoryAt = main.indexOf('data-testid="community-index-teams"');
     const sideAt = main.indexOf('data-testid="community-index-side"');
-    const directory = sideAt === -1 ? main : main.slice(0, sideAt);
+    const directory = main.slice(directoryAt === -1 ? 0 : directoryAt, sideAt === -1 ? undefined : sideAt);
     expect((directory.match(/<h2/g) ?? []).length, "the index grew a second heading — it renders one flat list").toBe(
       1,
     );
@@ -384,7 +387,23 @@ describe("Community team index — every team the prototype can name has a way i
      * **PROVED, not asserted: mutating "All names" back to "All teams" makes this RED again.** The
      * narrowing did not cost the original catch. Run that mutation before touching this line.
      */
-    const numbered = serviceCountClaimsIn(main);
+    /*
+     * ⚠️ **ONE APPROVED EXCEPTION, AND ONLY WITH ITS CAVEAT ON THE SAME SCREEN.** Josh approved the
+     * core pages redesign on 31 Oct 2026 ("Yes to all"), whose Community heading reads "64 community
+     * teams" (a live count) with the line "Names from referral catchment documents, not verified
+     * services" under it. That one heading is lifted out here, and only while the caveat line is
+     * rendered beside it; every other heading, badge or label is still held to the rule below.
+     */
+    const APPROVED_TITLE = /^\s*Community:\s*\d+\s+community teams\s*$/u;
+    const CAVEAT = "Names from referral catchment documents, not verified services";
+    const approvedTitles = serviceCountClaimsIn(main).filter(
+      (element) => element.startsWith("<h1") && APPROVED_TITLE.test(element.replace(/<[^>]*>/gu, " ")),
+    );
+    expect(approvedTitles.length, "the approved title is missing or appears more than once").toBeLessThanOrEqual(1);
+    if (approvedTitles.length === 1) {
+      expect(main, "the team count heading lost the line that says the names are not verified").toContain(CAVEAT);
+    }
+    const numbered = serviceCountClaimsIn(main).filter((element) => !approvedTitles.includes(element));
 
     /*
      * The floor is on the POPULATION that could trip it — furniture carrying a numeral at all —

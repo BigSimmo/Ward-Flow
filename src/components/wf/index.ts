@@ -46,7 +46,7 @@ export {
   type JourneyStage,
 } from "./v10-pass2";
 export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";
-export { Stat, StatGroup, Meter, StackBar, Legend, type WfFill, type StackSegment, type LegendItem } from "./stat";
+export { Meter, StackBar, Legend, type WfFill, type StackSegment, type LegendItem } from "./stat";
 export {
   Tabs,
   PillTabs,
@@ -96,3 +96,10 @@ export {
 export { PortraitList, PortraitRail, type PortraitGroup } from "./portrait";
 
 export { RadioGroup } from "./radio-group";
+// Kit standard (lane C, from the #1118 mock-ups; Josh, 30-31 October 2026).
+export { ShowMoreRow, SHOW_MORE_MIN_HIDDEN, foldHidden, foldLimit } from "./show-more-row";
+export { SearchField, type SearchFieldProps } from "./search-field";
+export { TimePresets, timePresetClockText } from "./time-presets";
+export { phoneRows } from "./phone-rows";
+export { ConfirmHost, hasConfirmHost, requestConfirm, type ConfirmRequest } from "./confirm-dialog";
+export { DateField, isoDateAsTyped, parseTypedDate, type DateFieldProps } from "./date-field";

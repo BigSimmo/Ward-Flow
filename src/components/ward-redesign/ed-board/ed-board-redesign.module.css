@@ -1,0 +1,110 @@
+/* ED board, redesigned. */
+
+/* The two links to other pages, as one quiet footer line under the board. */
+.linksFoot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-6);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+.linksFoot a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 32px;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.linksFoot a:hover {
+  text-decoration: underline;
+}
+
+/* Lists by step, folded: the board already shows these people. */
+.listsFold {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+.listsFold > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  min-height: var(--wf-row-compact);
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+.listsFold > summary span {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.listsFold[open] > summary {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+/* On TV sits with the other hero actions: the empty "since you looked" slot held 15rem open between
+   them and left On TV alone mid-band. It leaves the flow but stays in the page, so focus can return
+   to it (the source does this on phone only). */
+.slotEmpty.slotEmpty {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+/* Raise referral and Add patient: the hero's own row on the larger screen. */
+.phoneActions {
+  display: contents;
+}
+/* Phone (Josh, 31 Oct 2026): Raise referral and Add patient are Home's hero pills, side by side
+   (phone-rows.module.css), in place of two stretched half-width buttons. */
+
+/* D-91: the board's patient search is the one page search field (parts/search-field.tsx), at the
+   width the old box had; a row of its own on a phone. */
+.boardSearch {
+  flex: 1 1 14rem;
+  max-width: 300px;
+}
+
+@media (max-width: 48rem) {
+  .boardSearch {
+    flex-basis: 100%;
+    max-width: none;
+  }
+}
+
+/* D-91: the arrival plan's time buttons sit under the typed ETA, clear of the Day label below. */
+.etaPresets {
+  margin-block: 2px var(--wf-s-3);
+}
+
+/* Legal times (Josh, 31 Oct 2026): the form's typed time under "Form 1A" wraps in full, tag and all,
+   rather than the cell's two-line clamp ending in "…". */
+.formTyped {
+  display: block;
+  white-space: normal;
+  overflow-wrap: break-word;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+/* The shared "(limits not legally checked)" tag keeps to one line elsewhere; in this narrow cell it
+   wraps rather than being cut. */
+.formTyped > span {
+  white-space: normal;
+}
+
+/* Final round (31 Oct 2026): the department pills use the kit's sliding chip row (.chipRow, soft
+   fade at the right edge). The row bleeds 12px past each side of the page (ed-overview.module.css),
+   so the kit's max-width: 100% would stop it, and its fade, 12px short of the screen's edge. */
+@media (max-width: 48rem) {
+  .deptRow.deptRow.deptRow {
+    max-width: none;
+  }
+}

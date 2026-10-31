@@ -79,7 +79,9 @@ function fill() {
   fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: own.umrn } });
   fireEvent.change(screen.getByLabelText("Given name"), { target: { value: own.givenName } });
   fireEvent.change(screen.getByLabelText("Family name"), { target: { value: own.familyName } });
-  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: own.dateOfBirth } });
+  fireEvent.change(screen.getByLabelText("Date of birth"), {
+    target: { value: own.dateOfBirth.split("-").reverse().join("/") },
+  });
 }
 
 beforeEach(() => router.push.mockClear());
@@ -251,6 +253,10 @@ describe("escalation feedback", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
+    // Round 8 (31 Oct 2026): "Under 8 hours" is folded; a user unfolds the wait bands first.
+    for (const band of screen.queryAllByTestId(/^delays-band-/u)) {
+      if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+    }
     showEveryDelayRow();
     const movement = seedWardFlowState().movements.find((entry) => isOpen(entry) && !entry.escalation)!;
     const panel = inspectDelayPerson(movement.id);

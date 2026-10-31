@@ -1,0 +1,1378 @@
+/*
+ * Tasks drawer, v6 (TasksDrawer*.webp). The sheet around it owns the chrome; this file styles the
+ * content inside it. Tokens only (`--wf-*`); colour is a glyph, never a fill, and the expanded row
+ * is the one stripe the design allows (a selected row).
+ */
+.drawer {
+  composes: descendantKillWithScroll from "../../ward-management/ward-reduced-motion.module.css";
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  background: var(--wf-glass-thick);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  -webkit-font-smoothing: antialiased;
+}
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: var(--wf-scrim);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Header */
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+}
+
+.headerIcon {
+  display: inline-flex;
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+  color: var(--wf-ink-2);
+}
+
+.headerIcon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+
+.headerText {
+  min-width: 0;
+  flex: 1;
+}
+
+.heading {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  line-height: var(--wf-lh-16);
+  letter-spacing: -0.005em;
+}
+
+.headerNote {
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headingCount {
+  display: inline-flex;
+  height: var(--wf-h-chip);
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-1);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.kbd {
+  flex: none;
+  padding: 3px 5px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.closeButton {
+  display: inline-flex;
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+
+.closeButton svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+
+.closeButton:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+/* Figures, filters and state */
+.controls {
+  display: grid;
+  flex: none;
+  gap: var(--wf-s-3);
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.stat {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.stat + .stat {
+  border-left: 1px solid var(--wf-line);
+}
+
+.stat strong {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  line-height: var(--wf-lh-16);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: var(--wf-s-1);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-track);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-hero-2) 6%, transparent);
+}
+
+.segment {
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--wf-m-base) var(--wf-ease);
+}
+
+.segment[aria-pressed="true"] {
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-hero-2) 12%, transparent),
+    0 0 0 1px var(--wf-line-ctl);
+}
+
+.count {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  box-sizing: border-box;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-line);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  font-weight: 600;
+  line-height: 1;
+  font-feature-settings:
+    "zero" 1,
+    "tnum" 1;
+}
+
+/* Mock-up: a filter with nothing in it keeps its place but its zero goes quiet. */
+.count[data-zero] {
+  background: transparent;
+  color: var(--wf-ink-3);
+}
+
+.filterMeta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.filterStatus {
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filterStatus strong {
+  color: var(--wf-ink-1);
+}
+
+.selectWrap {
+  position: relative;
+  display: inline-flex;
+  height: var(--wf-h-sm);
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--wf-s-2) 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-hero-2) 6%, transparent);
+  color: var(--wf-ink-1);
+}
+
+.selectWrap:hover {
+  border-color: var(--wf-line-3);
+}
+
+.selectWrap:focus-within {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.selectWrap > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--wf-ink-2);
+  stroke-width: 1.75;
+}
+
+.selectWrap select {
+  min-width: 0;
+  max-width: 11rem;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+}
+
+.selectWrap select:focus-visible {
+  outline: none;
+}
+
+/* Body */
+.drawerBody {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--wf-s-4) var(--wf-s-4);
+}
+
+.drawerBody > * {
+  flex: none;
+}
+
+.section {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.sectionHead {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.sectionHead > svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--wf-ink-2);
+  stroke-width: 1.75;
+}
+
+.sectionTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+  white-space: nowrap;
+}
+
+.sectionNote {
+  min-width: 0;
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: 10px var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row[data-expanded="true"] {
+  background: var(--wf-selected);
+  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+}
+
+.rowHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+}
+
+.rowIcon {
+  display: inline-flex;
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow: inset 0 1px 0 var(--wf-hl);
+  color: var(--wf-ink-2);
+}
+
+.rowIcon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.75;
+}
+
+.rowText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.rowTitle {
+  min-width: 0;
+  max-width: 100%;
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-xs);
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+  text-align: left;
+  /* Alert titles wrap in full, as on the Alerts page: a phone has no hover to read a cut title. */
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.rowTitle:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.row[data-done="true"] .rowTitle {
+  color: var(--wf-ink-3);
+  text-decoration: line-through;
+}
+
+.rowMeta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 5px;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  overflow-wrap: anywhere;
+}
+
+.rowMeta strong {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+}
+
+.rowWhen {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+
+.rowValue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.rowWord {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.detailMeta > svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  stroke-width: 1.75;
+}
+
+.rowState {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+.rowState[data-tone="danger"] {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+
+.rowState[data-tone="warning"] {
+  color: var(--wf-warning-ink);
+  font-weight: 600;
+}
+
+.rowDetail {
+  display: grid;
+  gap: var(--wf-s-1);
+  padding-left: calc(var(--wf-h-sm) + var(--wf-s-3));
+}
+
+.detailLine {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+.detailMeta,
+.ackStatus {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.ackStatus {
+  padding-left: calc(var(--wf-h-sm) + var(--wf-s-3));
+  color: var(--wf-ink-2);
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-left: calc(var(--wf-h-sm) + var(--wf-s-3));
+}
+
+/* Buttons (v6 `.b.sec.sm`, `.b.pri.sm`, `.b.ghost.sm`) */
+.btn {
+  display: inline-flex;
+  height: var(--wf-h-sm);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: linear-gradient(180deg, var(--wf-surface), var(--wf-surface-2));
+  box-shadow:
+    inset 0 1px 0 var(--wf-hl),
+    0 1px 2px color-mix(in srgb, var(--wf-hero-2) 6%, transparent);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform var(--wf-m-fast) var(--wf-ease),
+    background var(--wf-m-base) var(--wf-ease);
+}
+
+.btn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  stroke-width: 1.75;
+}
+
+.btn:hover {
+  border-color: var(--wf-line-3);
+}
+
+.btn:active {
+  background: var(--wf-track);
+  transform: scale(0.98);
+}
+
+.btnIcon {
+  width: var(--wf-h-sm);
+  padding: 0;
+}
+
+.btnPrimary {
+  border-color: var(--wf-pri-edge);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--wf-on-accent) 18%, transparent),
+    0 1px 2px color-mix(in srgb, var(--wf-hero-2) 22%, transparent);
+  color: var(--wf-on-accent);
+}
+
+.btnPrimary:hover {
+  border-color: var(--wf-pri-edge);
+  filter: brightness(1.08);
+}
+
+.btnPrimary:active {
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  filter: brightness(0.9);
+}
+
+.btnGhost {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-accent-ink);
+}
+
+.btnGhost:hover {
+  border-color: transparent;
+  background: var(--wf-hover);
+}
+
+.btn:disabled {
+  border: 1px dashed var(--wf-line-3);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+  color: var(--wf-ink-off);
+  filter: none;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn .count {
+  margin-left: 2px;
+}
+
+.btnPrimary .count {
+  background: color-mix(in srgb, var(--wf-on-accent) 16%, transparent);
+  color: var(--wf-on-accent);
+}
+
+.btn:focus-visible,
+.closeButton:focus-visible,
+.segment:focus-visible,
+.rowTitle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Escalation, recorded only */
+.escalationForm {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin-left: calc(var(--wf-h-sm) + var(--wf-s-3));
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.escalationLabel {
+  display: grid;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.escalationInput {
+  display: flex;
+  height: var(--wf-h-md);
+  box-sizing: border-box;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--wf-hero-2) 5%, transparent);
+}
+
+.escalationInput:focus-within {
+  border-color: var(--wf-accent);
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.escalationInput input {
+  min-width: 0;
+  flex: 1;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
+}
+
+.escalationInput input:focus-visible {
+  outline: none;
+}
+
+.escalationInput input::placeholder {
+  color: var(--wf-ink-3);
+}
+
+.escalationCount {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.escalationPicks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pick {
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pick:hover {
+  border-color: var(--wf-line-3);
+}
+
+.pick[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--wf-accent) 22%, transparent);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.pick:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Who to call for a task, and each escalation pick's number (ops-5, ops-6). Mock numbers. */
+.callList {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.callRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+}
+
+.callText,
+.callNumber {
+  display: grid;
+  min-width: 0;
+  color: var(--wf-ink-3);
+}
+
+.callText b {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.callNumber {
+  justify-items: end;
+}
+
+.callNumber b {
+  color: var(--wf-ink-1);
+}
+
+.escalationFoot {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.escalationNote {
+  min-width: 0;
+  margin-right: auto;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Empty state */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-4) var(--wf-s-4) 20px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  width: var(--wf-h-sm);
+  height: var(--wf-h-sm);
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--wf-s-1);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+}
+
+.emptyIcon svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.75;
+}
+
+.empty h3 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+}
+
+.empty p {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* Footer */
+.drawerFoot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.drawerFoot > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 30rem) {
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stat:nth-child(3) {
+    border-left: 0;
+  }
+
+  .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--wf-line);
+  }
+
+  .kbd {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .closeButton,
+  .segment,
+  .selectWrap,
+  .btn,
+  .rowTitle {
+    min-height: 3rem;
+  }
+
+  .btnIcon,
+  .closeButton {
+    min-width: 3rem;
+  }
+
+  /* The footer quick jumps are text links about 18px tall, so reach them by their hook. */
+  .drawer [data-testid="ward-tasks-quick-jumps"] {
+    align-items: center;
+  }
+
+  .drawer [data-testid^="ward-tasks-jump-"] {
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .segment {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .section,
+  .summary,
+  .closeButton,
+  .selectWrap,
+  .btn,
+  .segment,
+  .escalationInput {
+    border-color: ButtonBorder;
+    box-shadow: none;
+  }
+
+  .row[data-expanded="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+
+/*
+ * Phone (v10 Tasks sheet, 11 Oct 2026): a plain list sheet. Title and one note line, the status
+ * switch across the width, then state and order as two equal selects on one row, then the rows.
+ * No accent stripe or tinted fill on an open row (Josh); the row icon is a bare glyph, not a tile.
+ * Buttons are 44px pills sharing their row. Phone only; desktop and tablet are unchanged.
+ */
+@media (max-width: 48rem) {
+  .drawer {
+    background: var(--wf-surface-2);
+  }
+
+  .header {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+    border-bottom: 1px solid var(--wf-line);
+  }
+
+  .headerIcon,
+  .kbd {
+    display: none;
+  }
+
+  .heading {
+    font-size: var(--wf-fs-15);
+    line-height: var(--wf-lh-15);
+  }
+
+  .headingCount {
+    height: 24px;
+    border-radius: var(--wf-r-tag);
+  }
+
+  .closeButton {
+    width: 48px;
+    min-width: 48px;
+    height: 48px;
+    border-radius: var(--wf-r-ctl);
+  }
+
+  .controls {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+  }
+
+  /* The four figures repeat the switch's own counts: one quiet line instead of four boxes. */
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px var(--wf-s-3);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .summary .stat {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    padding: 0;
+    border: 0;
+  }
+
+  .summary .stat strong {
+    font-size: var(--wf-fs-13);
+    line-height: var(--wf-lh-13);
+  }
+
+  .filterBar {
+    display: block;
+  }
+
+  /* The filter switch takes the shared phone segmented size (`--wf-phone-seg-*`): a 34px track
+     with 28px options, each with a transparent 48px hit area. */
+  .segmented {
+    display: flex;
+    width: 100%;
+    height: var(--wf-phone-seg-h);
+    box-sizing: border-box;
+    margin-block: var(--wf-phone-seg-band);
+    padding: 2px;
+    border-radius: var(--wf-r-track);
+  }
+
+  .segment {
+    position: relative;
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    height: var(--wf-phone-seg-item-h);
+    min-height: 0;
+    padding: 0 var(--wf-s-2);
+    border-radius: var(--wf-r-seg-item);
+    font-size: var(--wf-phone-pill-fs);
+    font-weight: 600;
+  }
+
+  .segment::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-seg-item-hit)) 0;
+  }
+
+  .segment .count {
+    font-size: var(--wf-phone-pill-count-fs);
+  }
+
+  .filterMeta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+
+  /* The "N of M" line stays for screen readers; the switch already shows the counts. */
+  .filterStatus {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .selectWrap {
+    min-width: 0;
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--wf-s-3);
+    border-radius: var(--wf-r-ctl);
+    background: var(--wf-surface);
+    box-shadow: none;
+  }
+
+  .selectWrap select {
+    flex: 1 1 auto;
+    max-width: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--wf-fs-13);
+  }
+
+  .drawerBody {
+    padding: var(--wf-s-1) var(--wf-s-4) var(--wf-s-4);
+  }
+
+  .row {
+    gap: var(--wf-s-2);
+    min-height: 60px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+    box-sizing: border-box;
+  }
+
+  /* No stripe and no fill on the open row: its actions under it say it is open. */
+  .row[data-expanded="true"] {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .rowHead {
+    gap: 10px;
+  }
+
+  .rowIcon {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--wf-ink-3);
+  }
+
+  .rowTitle {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
+  }
+
+  .rowValue {
+    font-size: var(--wf-fs-13);
+  }
+
+  .rowDetail,
+  .ackStatus,
+  .rowActions {
+    padding-left: 30px;
+  }
+
+  .rowActions {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+    gap: var(--wf-s-2);
+  }
+
+  .btn {
+    height: 44px;
+    min-height: 44px;
+    padding: 0 var(--wf-s-3);
+    border-radius: var(--wf-r-ctl);
+    font-size: var(--wf-fs-13);
+    box-shadow: none;
+  }
+
+  .btnIcon {
+    width: auto;
+  }
+
+  /* v10 Tasks sheet (phone): the title, one note line ("11 open · due first") and the rows. The
+     filter and sort controls and the count chip leave; the list is due first. Every action stays
+     on its row: tap a row to open it. */
+  .headingCount,
+  .controls,
+  .rowMeta[data-phone-hidden],
+  .rowWhen[data-phone-hidden] {
+    display: none;
+  }
+
+  .sectionHead[data-phone-quiet] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .drawerBody {
+    padding-top: var(--wf-s-3);
+  }
+
+  .rowHead {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  /* Site review (12 Oct 2026): the title was a 20px target. It spans the row's text column and
+     its 12px block padding is taken back by a negative margin, so the target is 44px tall and the
+     row keeps its layout. A press on the patient line under it opens the same row. */
+  .rowTitle {
+    justify-self: stretch;
+    min-height: 3rem;
+    margin-block: -12px;
+    padding-block: 12px;
+    font-size: var(--wf-fs-14);
+  }
+
+  .rowWho {
+    min-width: 0;
+  }
+
+  /* An acknowledged row says so while collapsed, so Acknowledge visible shows what it did. */
+  .rowSeen {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    color: var(--wf-ink-2);
+  }
+
+  .rowDue {
+    color: var(--wf-ink-2);
+    font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row {
+    cursor: pointer;
+  }
+}
+
+/* Moved from inline styles (styles cleanup, 16 Oct 2026). The footer quick jumps to the network
+   exception boards. */
+.quickJumps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  font-size: 0.75rem;
+}
+
+.quickJump {
+  color: var(--wf-ink-1);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.quickJumpSep {
+  color: var(--wf-ink-3);
+}
+
+/* A-5 (fresh audit, 26 Oct 2026): these class rules outrank the global 16px floor for phone form
+   controls (globals.css), so iOS Safari zoomed in on focus. The same floor, at the same widths. */
+@media (max-width: 40rem), (pointer: coarse) and (max-height: 500px) {
+  .selectWrap select,
+  .escalationInput input {
+    font-size: var(--wf-fs-16);
+  }
+}
+
+/* Redesign: alerts of the same kind share one row, one line per person. */
+.groupTitle {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: var(--wf-lh-13);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groupList {
+  display: grid;
+  margin: 0;
+  padding: 0 0 0 calc(var(--wf-h-sm) + var(--wf-s-3));
+  list-style: none;
+}
+
+.groupMember {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.memberWho {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 6px;
+  overflow: hidden;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+.memberWho strong {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.memberText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.memberWhen {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+
+.memberWhen .rowValue {
+  font-size: var(--wf-fs-12);
+}
+
+.memberActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 48rem) {
+  .groupList {
+    padding-left: 0;
+  }
+
+  .groupMember {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--wf-s-2) 0;
+  }
+
+  .memberActions {
+    grid-column: 1 / -1;
+  }
+}

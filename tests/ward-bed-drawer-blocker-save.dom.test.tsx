@@ -29,6 +29,7 @@ import { allUnits, NOW_ANCHOR, unitById } from "@/components/ward-management/war
 import { WardBedDossierDrawer } from "@/components/ward-management/ward/ward-bed-dossier-drawer";
 import type { BedItem } from "@/components/ward-management/ward/ward-bed-tone";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
 
 /*
  * Live test, 26 Oct 2026: a bed manager's "Save blocker" in the bed drawer closed the form and sent
@@ -86,7 +87,7 @@ function asPhone() {
 function openEditor() {
   const tab = screen.queryByRole("tab", { name: "Plan to leave" });
   if (tab) fireEvent.click(tab);
-  fireEvent.click(screen.getByRole("button", { name: /^(Record|Update) blocker$/ }));
+  fireEvent.click(getBedStep(/^(Record|Update) blocker$/));
 }
 
 afterEach(() => {
@@ -105,12 +106,12 @@ describe.each([
   it("offers no blocker control where this desk has no handler", () => {
     setup();
     render(drawer(bed()));
-    expect(screen.queryByRole("button", { name: /^(Record|Update) blocker$/ })).toBeNull();
+    expect(queryBedStep(/^(Record|Update) blocker$/)).toBeNull();
     cleanup();
     render(drawer(bed("Awaiting clean")));
     const tab = screen.queryByRole("tab", { name: "Plan to leave" });
     if (tab) fireEvent.click(tab);
-    expect(screen.queryByRole("button", { name: /^(Record|Update) blocker$/ })).toBeNull();
+    expect(queryBedStep(/^(Record|Update) blocker$/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Clear blocker" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Save blocker" })).toBeNull();
   });
@@ -213,7 +214,7 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   fireEvent.click(occupied.at(-1)!);
   const drawerEl = await screen.findByTestId("bed-telemetry-drawer");
   fireEvent.click(within(drawerEl).getByRole("tab", { name: "Plan to leave" }));
-  fireEvent.click(within(drawerEl).getByRole("button", { name: "Record blocker" }));
+  fireEvent.click(getBedStep("Record blocker", drawerEl));
   fireEvent.change(within(drawerEl).getByRole("combobox", { name: "Discharge blocker" }), {
     target: { value: "Awaiting clean" },
   });

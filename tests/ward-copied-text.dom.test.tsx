@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -10,19 +10,14 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
-import { LAST_LOOK_STORAGE_KEY, takeLastLookSnapshot } from "@/components/ward-management/coordinator/since-last-look";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { bedsReadySummary, type MeetingRow } from "@/components/ward-management/referrals/referral-board-parts";
 import { BedMeetingSheet, IsbarSheet } from "@/components/ward-management/referrals/referral-board-sheets";
-import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { referralQueueOrder } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 
 /**
  * D-71 item 7 (Josh, 21 Oct 2026): every Ward Flow copy goes through `copyTextToClipboard`, so a
@@ -74,58 +69,8 @@ describe("copied text from Ward Flow screens opens with the synthetic line and c
     expect(text).toMatch(/^Discharges, /m);
   });
 
-  it("Home on a phone: the Since you looked sheet's Copy as handover text", async () => {
-    vi.stubGlobal(
-      "matchMedia",
-      vi.fn((query: string) => ({
-        matches: query === WF_PHONE_QUERY,
-        media: query,
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-      })),
-    );
-    // A remembered look missing one referral and one ready bed, so the hero shows the pill.
-    const state = seedWardFlowState();
-    const snapshot = takeLastLookSnapshot(
-      {
-        scenario: state.scenario,
-        referrals: state.referrals,
-        movements: state.movements,
-        units: state.units,
-        bedReleases: state.bedReleases,
-      },
-      NOW,
-      DEFAULT_DUE_SOON_THRESHOLDS,
-    );
-    const droppedReferral = snapshot.referralIds[snapshot.referralIds.length - 1]!;
-    const unitId = Object.keys(snapshot.readyByUnit).find((id) => snapshot.readyByUnit[id]! > 0)!;
-    window.sessionStorage.setItem(
-      LAST_LOOK_STORAGE_KEY,
-      JSON.stringify({
-        ...snapshot,
-        at: NOW - 60,
-        referralIds: snapshot.referralIds.filter((id) => id !== droppedReferral),
-        readyByUnit: { ...snapshot.readyByUnit, [unitId]: snapshot.readyByUnit[unitId]! - 1 },
-      }),
-    );
-
-    render(
-      <WardFlowProvider initialNow={NOW}>
-        <WardLiveRegion />
-        <CoordinatorScreen />
-      </WardFlowProvider>,
-    );
-    fireEvent.click(screen.getByRole("button", { name: /(new since|since you looked at) \d\d:\d\d/ }));
-    const sheet = await screen.findByTestId("ward-home-since-sheet");
-    fireEvent.click(within(sheet).getByRole("button", { name: "Copy as handover text" }));
-    const text = await copied();
-    expectSafeCopy(text);
-    expect(text.split("\n")[1]).toMatch(/^Since you looked: /);
-    // H-0346: the copy is announced, in the Handover page's words.
-    await waitFor(() =>
-      expect(screen.getByTestId("ward-live-region").textContent).toContain("Changes copied as handover text."),
-    );
-  });
+  // Home and Activity (Josh, 31 Oct 2026, "Yes to all"): the phone "Since you looked" sheet and its
+  // Copy as handover text moved into Activity, which has no copy button, so that case left here.
 
   describe("Referral board sheets", () => {
     const state = seedWardFlowState();

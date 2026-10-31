@@ -1,0 +1,18 @@
+/* Community clinician desk: the no-journeys page's spacing and its two links. */
+.body {
+  display: grid;
+  gap: var(--wf-s-4);
+}
+
+/* The live EmptyState, with its links on their own row under the words. */
+.empty {
+  flex-wrap: wrap;
+}
+
+.actions {
+  display: flex;
+  flex-basis: 100%;
+  padding-inline-start: calc(30px + var(--wf-s-3)); /* under the words, past the kit's 30 px mark */
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}

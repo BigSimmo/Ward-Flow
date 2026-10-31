@@ -4,7 +4,7 @@
 // screens and a list on a phone. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6,
 // 15 Oct 2026).
 import type { ReactNode } from "react";
-import { PortraitRail } from "@/components/wf";
+import { PortraitRail, SearchField, Segmented } from "@/components/wf";
 import { EdBoardChips } from "./ed-board-chips";
 import { EdNeedsYou } from "./ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
@@ -108,25 +108,32 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           beside Board, Needs you and Lists (ed-screen-phone.tsx). */}
       {isPhone ? null : <EdBoardChips ctx={ctx} />}
       <div className={styles.boardTools}>
-        <label className={styles.patientSearch}>
-          <span aria-hidden="true">⌕</span>
-          <input
-            type="search"
-            aria-label="Find a patient or UMRN"
-            placeholder="Find a patient or UMRN…"
-            value={patientQuery}
-            onChange={(event) => setPatientQuery(event.target.value)}
-          />
-        </label>
+        {/* D-91: the kit's one page search field. Search highlights like the chips, so the "of … match"
+            line beside it stays the count; the placeholder names what is searched, with no "…". */}
+        <SearchField
+          className={styles.patientSearch}
+          label="Find a patient or UMRN"
+          placeholder="Name or UMRN"
+          value={patientQuery}
+          onValueChange={setPatientQuery}
+        />
         {boardTable ? (
-          <label className={styles.patientSort}>
-            Sort{" "}
-            <select value={patientSort} onChange={(event) => setPatientSort(event.target.value)}>
-              <option value="current">Current order</option>
-              <option value="longest">Longest in ED</option>
-              <option value="name">Patient name</option>
-            </select>
-          </label>
+          // Final round (31 Oct 2026): the kit's Segmented sort, as the other redesigned pages' sorts
+          // (Patients, Transport), in place of a browser-default select. Same three orders.
+          <span className={styles.patientSort}>
+            <span aria-hidden="true">Sort</span>
+            <Segmented<string>
+              label="Sort patients"
+              size="sm"
+              value={patientSort}
+              onChange={setPatientSort}
+              items={[
+                { id: "current", label: "Current order" },
+                { id: "longest", label: "Longest in ED" },
+                { id: "name", label: "Patient name" },
+              ]}
+            />
+          </span>
         ) : null}
         <span className={styles.draftNote} role="status">
           {/* Overall review (20 Oct 2026): says something only when there is something unsaved;

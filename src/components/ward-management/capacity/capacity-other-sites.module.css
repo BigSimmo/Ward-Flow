@@ -1,0 +1,97 @@
+/* Other sites, bed counts only: the site bed manager's view of the rest of the network. */
+.groups {
+  margin: 0;
+  padding: 0 var(--wf-s-4);
+  list-style: none;
+}
+.group {
+  border-top: 1px solid var(--wf-line);
+}
+.toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) 0;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-2);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: start;
+  cursor: pointer;
+}
+.toggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+.name {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-1);
+}
+.muted {
+  color: var(--wf-ink-3);
+}
+.figures {
+  margin-inline-start: auto;
+}
+.figures b {
+  color: var(--wf-ink-1);
+}
+.table {
+  width: 100%;
+  margin-bottom: var(--wf-s-3);
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.table th,
+.table td {
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+.table thead th {
+  border-top: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.table th:first-child {
+  padding-inline-start: 0;
+  text-align: start;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.site {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.foot {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-3);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.table tr.focus > * {
+  background: var(--wf-selected);
+}

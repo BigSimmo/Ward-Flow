@@ -1,0 +1,302 @@
+/* The community team's record drawer (dossier, referral triage and samples) on the kit Sheet
+   (redesign, approved 31 Oct 2026): a side sheet on a computer, a full-height sheet on a phone, cards on the glass as the bed
+   record. Kit tokens only. Names, places and legal wording wrap in full. Imported only by
+   `community-screen-drawer.tsx`. */
+.panel {
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+@media (min-width: 40rem) {
+  .panel.panel {
+    max-width: 32rem;
+  }
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Head: what the drawer is, the person or sample, the record line, the legal status as recorded. */
+.head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.kicker {
+  margin: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+.name {
+  margin: 0;
+  font: 650 var(--wf-fs-20) / 1.2 var(--wf-font);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.subline {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  margin-top: var(--wf-s-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 2px var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-12) / 1.3 var(--wf-font);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.chipStrong {
+  border-color: var(--wf-line-3);
+  font-weight: 600;
+}
+
+/* The cards on the glass. */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  box-shadow: var(--wf-e1);
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: 10px 14px 0;
+}
+
+.cardTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.cardText {
+  margin: 0;
+  padding: 8px 14px 12px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.cardText + .choices {
+  padding: 0 14px 12px;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 14px 12px;
+}
+
+.row {
+  display: grid;
+  /* One label width in every card, so the values line up from card to card. */
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+}
+
+.rowLabel {
+  color: var(--wf-ink-3);
+}
+
+.rowValue {
+  margin: 0;
+  min-width: 0;
+  font-weight: 500;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.timeline,
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 4px 14px 8px;
+  list-style: none;
+}
+
+.timeline li,
+.list li {
+  display: flex;
+  gap: var(--wf-s-3);
+  padding: 8px 0;
+  font-size: var(--wf-fs-13);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.timeline li:last-child,
+.list li:last-child {
+  border-bottom: 0;
+}
+
+.when {
+  flex: none;
+  width: 3.5rem;
+  font: 500 var(--wf-fs-12) / var(--wf-lh-13) var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.footnote {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.alert {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+.care {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+/* Illustrative tasks: one row each, the button at the right. */
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 10px 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.task[data-dim="true"] {
+  background: var(--wf-surface-2);
+}
+
+.taskText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.taskLabel {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.task[data-dim="true"] .taskLabel {
+  text-decoration: line-through;
+  color: var(--wf-ink-2);
+}
+
+.taskPrio {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Footer: the plain step, then the one filled button at the right. */
+.footer {
+  padding-bottom: calc(var(--wf-s-3) + env(safe-area-inset-bottom, 0px));
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+
+@media (max-width: 39.99rem) {
+  /* Full height on a phone, as the bed record: the sheet rises to just under the top bar. */
+  .panel.panel {
+    height: calc(100dvh - 2rem);
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr);
+  }
+
+  .foot > * {
+    flex: 1 1 0;
+  }
+}

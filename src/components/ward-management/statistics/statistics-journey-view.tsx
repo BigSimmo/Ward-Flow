@@ -32,6 +32,7 @@ import {
   statisticsCountText,
   type StatisticsCount,
 } from "./statistics-small-numbers";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 export type JourneyStageId = "waiting" | "referred" | "accepted" | "moving" | "ward" | "planned" | "discharged";
@@ -366,6 +367,8 @@ function OperationalJourneyView({
   const live = liveProp ?? ownLive;
   const { units, admissions, bedReleases, leaveBeds, movements } = live.state;
   const now = live.now;
+  // An ED links to its page only where this desk may open it (access audit, 31 Oct 2026).
+  const canOpen = useCanOpenHref();
 
   const stages = useMemo(
     () => journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now }),
@@ -408,7 +411,7 @@ function OperationalJourneyView({
             id: ed.id,
             // The short ED name ("SCGH", "Midland"), so the name fits the field's label column.
             name: edShortName(ed).replace(/ ED$/, ""),
-            href: edStatisticsHref(ed.id),
+            href: canOpen(edStatisticsHref(ed.id)) ? edStatisticsHref(ed.id) : undefined,
             entries: figures.waitingMovements,
             longest: figures.longestWait?.waitMinutes ?? 0,
           };
@@ -416,7 +419,7 @@ function OperationalJourneyView({
         .filter((row) => row.entries.length > 0)
         .sort((a, b) => b.entries.length - a.entries.length || b.longest - a.longest)
         .map(({ id, name, href, entries }) => ({ id, name, href, entries })),
-    [movements, now],
+    [movements, now, canOpen],
   );
   const totalWaiting = waitingRows.reduce((sum, row) => sum + row.entries.length, 0);
   const totalReady = hospitals.reduce((sum, row) => sum + row.ready, 0);

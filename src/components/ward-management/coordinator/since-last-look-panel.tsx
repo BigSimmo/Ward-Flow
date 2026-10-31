@@ -2,8 +2,8 @@
 
 import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
-import { StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { StatusGlyph, type WfTone } from "@/components/wf";
+import type { Instant } from "@/components/ward-management/ward-clock";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import { plural } from "@/components/ward-management/ward-plural";
 
@@ -63,6 +63,15 @@ function writeSnapshot(snapshot: LastLookSnapshot, key: string): void {
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
 
+function clearSnapshot(key: string): void {
+  try {
+    window.sessionStorage.removeItem(key);
+  } catch {
+    // Nothing stored to clear.
+  }
+  window.dispatchEvent(new Event(CHANGE_EVENT));
+}
+
 function subscribe(onChange: () => void) {
   window.addEventListener("storage", onChange);
   window.addEventListener(CHANGE_EVENT, onChange);
@@ -107,9 +116,11 @@ export function sinceLastLookCount(changes: ChangesSinceLastLook | undefined): n
 export function useSinceLastLook(
   passedWorld: LastLookWorld,
   now: Instant,
-  options?: { scopeKey: string; windowMinutes?: number },
+  options?: { scopeKey?: string; windowMinutes?: number; explicit?: boolean },
 ) {
   const scopeKey = options?.scopeKey;
+  // Home's Activity panel (Josh, 30 Oct 2026): review is explicit, so leaving the screen saves nothing.
+  const explicit = options?.explicit ?? false;
   const windowMinutes = options?.windowMinutes ?? 15;
   // Closing-the-loop (package E): "discharge date moved" reads the stays from the store when the
   // caller's world does not carry them.
@@ -148,7 +159,7 @@ export function useSinceLastLook(
     const timer = pendingLeaveSaves.get(storageKey);
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
-    if (scopeKey) return;
+    if (scopeKey || explicit) return;
     const ticket = wardLeaveSaveTicket(account);
     const saveOnLeave = () => {
       // A cleanup from another account/world must never write that world's picture, and none may
@@ -173,7 +184,7 @@ export function useSinceLastLook(
         }, 0),
       );
     };
-  }, [storageKey, userId, generation, scopeKey, account]);
+  }, [storageKey, userId, generation, scopeKey, account, explicit]);
 
   // Before any look this session, count what the record says happened since the shift started, so
   // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
@@ -186,21 +197,21 @@ export function useSinceLastLook(
     [previous, current, world, now, scopeKey, windowMinutes],
   );
   const markSeen = useCallback(() => writeSnapshot(latest.current, storageKey), [storageKey]);
-  return { changes, markSeen };
+  /** Explicit review: save a given picture (the one taken when Activity opened), or clear it. */
+  const saveReview = useCallback(
+    (snapshot: LastLookSnapshot | undefined) => {
+      // A press from a screen whose session has ended (A4-07) writes nothing.
+      if (!wardLeaveSaveAllowed(wardLeaveSaveTicket(account))) return;
+      if (snapshot) writeSnapshot(snapshot, storageKey);
+      else clearSnapshot(storageKey);
+    },
+    [storageKey, account],
+  );
+  return { changes, markSeen, previous, current, saveReview };
 }
 
 /** One group row of the phone sheet: a glyph, a bold count line, and a quiet detail line. */
 type SinceGroup = { key: string; tone: WfTone; title: string; detail?: string; links?: SinceRecordLink[] };
-
-/** The phone sheet's quiet line under its title: when the last look was, and how long ago. */
-export function sinceSheetDescription(changes: ChangesSinceLastLook | undefined, now: Instant): string {
-  if (!changes) return "First look this session";
-  if (changes.basis === "shift")
-    return `First look this session. Counted from the shift start, ${formatInstantWithDay(changes.since, now)}`;
-  const minutesAgo = Math.max(0, now - changes.since);
-  const ago = minutesAgo < 1 ? "just now" : `${durMinutes(minutesAgo)} ago`;
-  return `Your last visit ${formatInstantWithDay(changes.since, now)}, ${ago}`;
-}
 
 function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
   const groups: SinceGroup[] = [];
@@ -325,12 +336,4 @@ export function SinceLastLookSheetBody({
       ))}
     </ul>
   );
-}
-
-/** The phone sheet's digest as plain handover text, one line per group. */
-export function sinceHandoverText(changes: ChangesSinceLastLook | undefined, now: Instant): string {
-  const head = `Since you looked: ${sinceSheetDescription(changes, now)}`;
-  const groups = changes ? sinceGroups(changes) : [];
-  if (groups.length === 0) return `${head}\n${changes ? "Nothing new." : "First look this session."}`;
-  return [head, ...groups.map((group) => (group.detail ? `${group.title}: ${group.detail}` : group.title))].join("\n");
 }

@@ -1,135 +1,135 @@
 "use client";
 
-// Capacity's "Where the mismatch is", condensed for Home's "Beds that fit" card (Home mock-up v7)
-// and read from the same derivation (`bedKindGaps`), so Home and Beds can never disagree.
-
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronRight } from "lucide-react";
+import { BedDouble, ChevronDown, ChevronRight } from "lucide-react";
 
-import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
-import { formatGap, gapRangeWord, gapWord } from "@/components/ward-management/capacity/capacity-gap-words";
-import type { Admission } from "@/components/ward-management/ward-admissions";
-import type { Instant } from "@/components/ward-management/ward-clock";
-import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { Card, CardHead, StatusGlyph } from "@/components/wf";
+import { bedKindGaps, bedKindTotals } from "@/components/ward-management/capacity/capacity-derivations";
+import { gapRangeWord, gapWord } from "@/components/ward-management/capacity/capacity-gap-words";
 import { forecastByKind } from "@/components/ward-management/forecast/forecast-by-kind";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import type { Instant } from "@/components/ward-management/ward-clock";
 
-import styles from "./home-list.module.css";
+import styles from "./home-cards.module.css";
 
+/** Beds that fit's Forecast link opens the forecast panel on Capacity itself. */
+export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
+
+/** "A locked adult bed" reads "Locked adult" in a row heading. */
 function shortNeed(need: string): string {
   const words = need.replace(/^(a|an)\s+/i, "").replace(/\s+bed$/i, "");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
-/** "6 short", "1 spare" or "Enough": the state in words, never a bare minus sign. */
-function GapFigure({ gap }: { gap: number }) {
-  if (gap === 0) return <span className={styles.gapNum}>Enough</span>;
-  return (
-    <span>
-      <span className={styles.gapNum}>{Math.abs(gap)}</span> {gapWord(gap).text}
-    </span>
-  );
-}
-
 /**
- * Written out rather than imported from `beds-forecast-panel.tsx`, so Home's first load does not pull
- * in the panel's code (phone budget). `tests/ward-forecast-share.dom.test.tsx` checks it still
- * matches `CAPACITY_FORECAST_HREF`.
+ * Beds that fit (Home and Activity design, approved by Josh 31 Oct 2026): a small table by bed kind,
+ * so no label is cut off. It folds to one line while someone is chosen, so Placement sits high in
+ * the column instead of under the four-row table. The line
+ * keeps the totals ("23 short now · 14 short tomorrow"); the table opens in place.
  */
-export const HOME_FORECAST_HREF = "/ward-flow/capacity#capacity-forecast";
-
-export function BedsGapCard({
-  movements,
-  units,
-  admissions,
-  now,
-  bedsReady,
-}: {
-  movements: Movement[];
-  units: Unit[];
-  admissions: readonly Admission[];
-  now: Instant;
-  bedsReady: number;
-}) {
+export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsReady: number; condensed: boolean }) {
+  const { movements, units, admissions, bedReleases, plannedAdmissions } = useWardFlowSelect(
+    "movements",
+    "units",
+    "admissions",
+    "bedReleases",
+    "plannedAdmissions",
+  );
   const rows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
   const totals = useMemo(() => bedKindTotals(rows), [rows]);
-  const totalWord = gapWord(totals.gap);
-  // P122: each Tomorrow tile names its bed type, the same words as the tile above it.
-  const needById = useMemo(() => new Map(rows.map((row) => [row.id, shortNeed(row.need)])), [rows]);
-  // Forecasting build (Josh, 23 Oct 2026, screen 1): tomorrow per bed type, from the same records.
-  const { bedReleases, plannedAdmissions } = useWardFlowSelect("bedReleases", "plannedAdmissions");
   const tomorrow = useMemo(
     () => forecastByKind(units, bedReleases, admissions, movements, now, 1, plannedAdmissions ?? []),
     [units, bedReleases, admissions, movements, now, plannedAdmissions],
   );
+  const tomorrowById = new Map(tomorrow.kinds.map((kind) => [kind.id, kind]));
+  const [open, setOpen] = useState(false);
+  const folded = condensed && !open;
+  const capacityLink = (
+    <Link href="/ward-flow/capacity" className={styles.headLink}>
+      Capacity
+      <ChevronRight size={14} aria-hidden="true" />
+    </Link>
+  );
   return (
-    <Card className={styles.gapCard} data-testid="home-beds-gap">
+    <Card data-testid="home-beds-fit" data-folded={folded ? "true" : undefined} aria-labelledby="home-beds-fit-title">
       <CardHead
+        id="home-beds-fit-title"
         title="Beds that fit"
-        meta={`${bedsReady} ready · whole network`}
+        meta={
+          folded
+            ? `${gapRangeWord(totals.gap)} now · ${gapRangeWord(tomorrow.total.likely)} tomorrow`
+            : `${bedsReady} ready · whole network`
+        }
         icon={BedDouble}
         iconPlain
         action={
-          <Link href="/ward-flow/capacity" className={styles.headLink}>
-            Beds
-            <ChevronRight size={14} aria-hidden="true" />
-          </Link>
+          condensed ? (
+            <span className={styles.foldActions}>
+              {capacityLink}
+              <button
+                type="button"
+                className={styles.foldToggle}
+                aria-expanded={!folded}
+                aria-controls="home-beds-fit-table"
+                aria-label={folded ? "Show the beds that fit table" : "Fold the beds that fit table"}
+                onClick={() => setOpen((value) => !value)}
+              >
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
+            </span>
+          ) : (
+            capacityLink
+          )
         }
       />
-      <ul className={styles.gapTiles}>
-        {rows.map((row) => {
-          const word = gapWord(row.gap);
-          return (
-            <li key={row.id} className={styles.gapTile} data-short={row.gap < 0 ? "true" : undefined}>
-              <span className={styles.gapNeed}>{shortNeed(row.need)}</span>
-              <span className={styles.gapValue}>
-                <StatusGlyph tone={word.tone} size={9} />
-                <GapFigure gap={row.gap} />
-              </span>
-              <span className={styles.gapSub}>
-                {row.waiting} waiting
-                <br />
-                {row.bedsThatFit} {row.bedsThatFit === 1 ? "bed fits" : "beds fit"}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <ul className={styles.gapTiles} aria-label="Tomorrow, likely" data-testid="home-beds-gap-tomorrow">
-        {tomorrow.kinds.map((kind) => {
-          const word = gapWord(kind.likely);
-          return (
-            <li key={kind.id} className={styles.gapTile} data-short={kind.likely < 0 ? "true" : undefined}>
-              <span className={styles.gapNeed}>{needById.get(kind.id) ?? "Beds"} tomorrow</span>
-              <span className={styles.gapValue}>
-                <StatusGlyph tone={word.tone} size={9} />
-                <GapFigure gap={kind.likely} />
-              </span>
-              <span className={styles.gapSub}>
-                {gapRangeWord(kind.low)} to
-                <br />
-                {gapRangeWord(kind.high)}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-      <p className={styles.gapTotal}>
-        <StatusGlyph tone={totalWord.tone} size={9} />
-        <span>
-          <b className={styles.mono}>{formatGap(totals.gap)}</b> across all four: {totals.waiting} waiting for{" "}
-          {totals.bedsThatFit} beds of the right kind. Tomorrow likely{" "}
-          <b className={styles.mono}>{gapRangeWord(tomorrow.total.likely)}</b>, range {gapRangeWord(tomorrow.total.low)}{" "}
-          to {gapRangeWord(tomorrow.total.high)}.{" "}
-          {/* Forecast integration (Josh, 27 Oct 2026): straight to the full forecast on Capacity. */}
-          <Link href={HOME_FORECAST_HREF} className={styles.headLink} data-testid="home-beds-gap-forecast-link">
-            See tomorrow&apos;s forecast
-            <ChevronRight size={14} aria-hidden="true" />
-          </Link>
-        </span>
-      </p>
+      {folded ? null : (
+        <div id="home-beds-fit-table">
+          <table className={styles.fitTable}>
+            <thead>
+              <tr>
+                <th scope="col">Bed type</th>
+                <th scope="col">Now</th>
+                <th scope="col">Tomorrow</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => {
+                const nowWord = gapWord(row.gap);
+                const next = tomorrowById.get(row.id);
+                const nextWord = next ? gapWord(next.likely) : undefined;
+                return (
+                  <tr key={row.id}>
+                    <th scope="row">
+                      {shortNeed(row.need)}
+                      <span>
+                        {row.waiting} waiting · {row.bedsThatFit} fit
+                      </span>
+                    </th>
+                    <td>
+                      <StatusGlyph tone={nowWord.tone} size={9} /> <b>{Math.abs(row.gap) || "Enough"}</b>{" "}
+                      {row.gap ? nowWord.text : ""}
+                    </td>
+                    <td className={next && next.likely < 0 ? styles.warnInk : styles.okInk}>
+                      {next ? gapRangeWord(next.likely) : "Not known"}
+                      {nextWord ? <span className={styles.srOnly}> ({nextWord.text})</span> : null}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className={styles.fitFoot}>
+            <b>{gapRangeWord(totals.gap)}</b> across all four. Tomorrow likely{" "}
+            <b>{gapRangeWord(tomorrow.total.likely)}</b>, range {gapRangeWord(tomorrow.total.low)} to{" "}
+            {gapRangeWord(tomorrow.total.high)}.{" "}
+            <Link href={HOME_FORECAST_HREF} className={styles.headLink} data-testid="home-beds-gap-forecast-link">
+              Forecast
+              <ChevronRight size={14} aria-hidden="true" />
+            </Link>
+          </p>
+        </div>
+      )}
     </Card>
   );
 }

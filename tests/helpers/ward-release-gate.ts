@@ -1,8 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, type TestInfo } from "playwright/test";
 
-import { escapeForRegExp } from "./ward-place-names";
-
 /**
  * Shared steps for the four release-gate journeys (`tests/release-gate-journeys.spec.ts`).
  *
@@ -401,45 +399,26 @@ export async function wardFigure(page: Page, figure: "occupied" | "ready"): Prom
 }
 
 /**
- * Ready beds for one ward on the coordinator's capacity board. Desktop reads the bed map's Table
- * layout; the phone shows the same figure in the Wards view, in each ward's bed strip label.
+ * Ready beds for one ward on the coordinator's capacity board. Since the Capacity redesign (31 Oct
+ * 2026) every ward is a card on the bed map, on a computer and in the phone's Wards view alike; a
+ * card reads "<ward> <N> ready", with zero spelt "None", and carries the ward's id.
  */
 export async function capacityReady(page: Page, unitId: string, unitName: string): Promise<number> {
   if (isPhoneLayout(page)) {
     const wards = page.getByRole("radio", { name: /^Wards/u });
     if ((await wards.getAttribute("aria-checked")) !== "true") await wards.click();
-    const strip = page.getByRole("img", { name: new RegExp(`^${escapeForRegExp(unitName)}: `, "u") }).first();
-    await expect(strip).toBeVisible();
-    const label = (await strip.getAttribute("aria-label")) ?? "";
-    const match = /: (\d+) ready/u.exec(label);
-    expect(match, `the ${unitName} bed strip must state its ready count: "${label}"`).not.toBeNull();
-    return Number(match![1]);
   }
-  await openCapacityTable(page, unitId);
-  return capacityFigure(page, unitId, "ward-capacity-network-ready");
-}
-
-/** The capacity board's per-ward table is the bed map's Table layout; press until it shows. */
-async function openCapacityTable(page: Page, unitId: string) {
-  const table = page.getByRole("group", { name: "Bed map layout" }).getByRole("button", { name: "Table", exact: true });
-  await expect(async () => {
-    if ((await table.getAttribute("aria-pressed")) !== "true") await table.click();
-    await expect(table).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
-  }).toPass({ timeout: 15_000 });
-  await expect(page.getByTestId(`ward-capacity-network-row-${unitId}`)).toBeVisible();
-}
-
-/** A capacity table cell's own figure. "none" reads as 0; the "still being made ready" note is ignored. */
-async function capacityFigure(page: Page, unitId: string, testId: string): Promise<number> {
-  const text = (
-    await page
-      .getByTestId(`ward-capacity-network-row-${unitId}`)
-      .getByTestId(testId)
-      .evaluate((cell) => {
-        const copy = cell.cloneNode(true) as HTMLElement;
-        copy.querySelector('[data-testid="ward-capacity-network-pending"]')?.remove();
-        return copy.textContent ?? "";
-      })
-  ).trim();
-  return text === "none" ? 0 : Number.parseInt(text, 10);
+  const map = page.locator("#capacity-bed-map");
+  await expect(map, `the bed map must show for ${unitId}`).toBeVisible();
+  // Services past the first few start folded; open every one so the ward's card is drawn.
+  const folded = map.locator('button[aria-expanded="false"][aria-controls^="capacity-map-"]');
+  while ((await folded.count()) > 0) await folded.first().click();
+  // Found by the ward's id, not its text: the card spells out a site code in the name ("BTY
+  // (Bentley Health Service) Adult Secure"), so the text does not start with the plain ward name.
+  const card = map.locator(`button[aria-haspopup="dialog"][data-unit-id="${unitId}"]`).first();
+  await expect(card, `the bed map must draw ${unitName}`).toBeVisible();
+  const text = (await card.textContent()) ?? "";
+  const match = /(\d+|None) ready/u.exec(text);
+  expect(match, `the ${unitName} card must state its ready count: "${text}"`).not.toBeNull();
+  return match![1] === "None" ? 0 : Number(match![1]);
 }

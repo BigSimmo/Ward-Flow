@@ -55,11 +55,16 @@ function Harness({ movementId }: { movementId: string }) {
 }
 
 function renderPanel(movementId: string) {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <Harness movementId={movementId} />
     </WardFlowProvider>,
   );
+  // Placement redesign (Josh, 31 Oct 2026): wards that need an override reason sit behind their own
+  // disclosure. This movement's wards are all of that kind, so open it as a coordinator would.
+  const toggle = screen.queryByTestId("ward-shortlist-review-toggle");
+  if (toggle && toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
+  return view;
 }
 
 /**

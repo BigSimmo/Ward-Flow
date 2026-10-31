@@ -16,6 +16,20 @@
   position: relative;
 }
 
+/* Audit (31 Oct 2026): every control in Settings is at least 40px tall on a desktop too. The kit's
+   sizes are raised inside Settings only; touch keeps its own 44px. */
+@media not (pointer: coarse) {
+  .screen {
+    --wf-h-sm: 40px;
+    --wf-h-md: 40px;
+    --wf-target: 40px;
+  }
+}
+
+.screen [role="switch"] {
+  min-height: 40px;
+}
+
 .main {
   min-width: 0;
   max-width: 104rem;
@@ -84,7 +98,7 @@
 .tabs > button {
   border-radius: var(--wf-r-seg-item);
   padding: 0 14px;
-  height: 30px;
+  height: 40px;
 }
 
 .find {
@@ -96,7 +110,7 @@
   align-items: center;
   gap: var(--wf-s-2);
   width: 16rem;
-  height: 34px;
+  height: 40px;
   padding: 0 6px 0 12px;
   box-sizing: border-box;
   border-radius: var(--wf-r-ctl);
@@ -160,7 +174,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-3);
-  min-height: 34px;
+  min-height: 40px;
   padding: 0 12px;
   border-radius: var(--wf-r-ctl);
   font: 500 var(--wf-fs-13) / 1 var(--wf-font);
@@ -350,8 +364,9 @@
   transition: background var(--wf-m-base) var(--wf-ease);
 }
 
+/* A changed rule reads by its tint and its "Changed" words, never a coloured side edge. */
 .ruleChanged {
-  box-shadow: inset 2px 0 0 var(--wf-accent);
+  background: var(--wf-accent-tint);
 }
 
 .resetCell {
@@ -361,8 +376,8 @@
 
 .resetButton {
   position: relative;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border-radius: var(--wf-r-ctl);
   border: 1px solid var(--wf-line-2);
@@ -811,12 +826,6 @@
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
-}
-
-.phoneGrow {
-  flex: 1 1 auto;
-  width: 100%;
-  min-height: var(--wf-touch);
 }
 
 /* Find a setting sits on the page here, not on the band: page ink and a 44px box. */

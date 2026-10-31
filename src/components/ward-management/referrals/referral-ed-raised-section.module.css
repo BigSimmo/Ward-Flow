@@ -1,0 +1,143 @@
+/* ED desk view (Josh, 31 Oct 2026): the open journeys this ED raised, on Referrals. */
+.card {
+  margin-block-end: var(--wf-s-4);
+  overflow: hidden;
+}
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.note {
+  margin-inline-start: auto;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.table thead th {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-3);
+}
+.table tbody th,
+.table td {
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  text-align: start;
+  vertical-align: middle;
+  color: var(--wf-ink-1);
+}
+.tier {
+  width: 3rem;
+}
+.who {
+  font-weight: 400;
+}
+.name {
+  display: block;
+  font-weight: 600;
+}
+.umrn,
+.statusLine {
+  display: block;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.umrn,
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+.statusTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-weight: 600;
+}
+.open {
+  width: 1%;
+  text-align: end;
+  white-space: nowrap;
+}
+.openLink {
+  text-decoration: none;
+}
+
+/* Phone: each journey is one card row; the tier and Journey sit beside the name and wait. */
+@media (max-width: 48rem) {
+  .title {
+    padding: var(--wf-s-3);
+  }
+  .note {
+    margin-inline-start: 0;
+    flex-basis: 100%;
+  }
+  .table thead {
+    display: none;
+  }
+  .table tr {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas:
+      "tier who wait"
+      "tier status open";
+    column-gap: var(--wf-s-3);
+    row-gap: var(--wf-s-1);
+    align-items: center;
+    padding: var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+  }
+  .table tbody th,
+  .table td {
+    padding: 0;
+    border: 0;
+  }
+  .tier {
+    grid-area: tier;
+    width: auto;
+    align-self: start;
+  }
+  .who {
+    grid-area: who;
+  }
+  .mono {
+    grid-area: wait;
+    text-align: end;
+    font-weight: 600;
+  }
+  .status {
+    grid-area: status;
+  }
+  .open {
+    grid-area: open;
+    width: auto;
+  }
+}
+
+/* ED desk: the queue takes the full width when no decision pane is shown (nothing asked of it). */
+[data-referral-layout="queue-panel"] .single.single.single.single.single {
+  grid-template-columns: minmax(0, 1fr);
+}

@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Copy, Mail, Search, Star } from "lucide-react";
-import { Button, Icon, RadioGroup, Sheet, StatusGlyph, cx } from "@/components/wf";
+import { Button, Icon, RadioGroup, Sheet, SrOnly, StatusGlyph, cx } from "@/components/wf";
 import {
   SERVICE_META,
   availability,
@@ -143,7 +143,7 @@ export function PhoneFocal({
             <ServiceTag service={crisis.service} label="" />
             <b>MHERL crisis line</b>
             <span className={styles.spacer} />
-            <span className={styles.mono}>{numberAt(crisis, actions.minute) ?? ""}</span>
+            <span className={styles.mono}>{numberAt(crisis, actions.minute) ?? "Not recorded"}</span>
           </button>
           <CallButton entry={crisis} actions={actions} onHero />
         </div>
@@ -190,11 +190,17 @@ function PhoneRow({
           </b>
           <span className={styles.phoneRowMeta}>
             <Until entry={entry} minute={actions.minute} />
-            <span className={styles.phoneRowSub}>{sub ? `· ${sub}` : null}</span>
+            {/* Redesign: the place wraps rather than ending in "…" ("St John of God Midland Public …"). */}
+            <span className={cx(styles.phoneRowSub, styles.phoneRowSubWrap)}>{sub ? `· ${sub}` : null}</span>
           </span>
         </span>
         <span className={styles.phoneRowEnd}>
-          {number ? <span className={styles.number}>{number}</span> : <span className={styles.cellSub}>Email</span>}
+          {/* A line with no number says so; only an inbox (no lines at all) reads "Email". */}
+          {number ? (
+            <span className={styles.number}>{number}</span>
+          ) : (
+            <span className={styles.cellSub}>{entry.lines.length > 0 ? "Not recorded" : "Email"}</span>
+          )}
         </span>
       </button>
       <CallButton entry={entry} actions={actions} />
@@ -265,12 +271,14 @@ export function PhoneDirectory({
             <div className={styles.phoneServiceHead}>
               <ServiceTag service={block.service} label={SERVICE_META[block.service].name} strong />
               <span className={styles.spacer} />
+              {/* Redesign: "12 of 14", as the wider screen's group counts read; "answering" is spoken. */}
               <span className={cx(styles.cellSub, styles.mono)}>
                 {block.groups.reduce(
                   (total, group) => total + group.rows.filter((entry) => isAnswering(entry, actions.minute)).length,
                   0,
-                )}
-                /{block.groups.reduce((total, group) => total + group.rows.length, 0)}
+                )}{" "}
+                of {block.groups.reduce((total, group) => total + group.rows.length, 0)}
+                <SrOnly> answering</SrOnly>
               </span>
             </div>
           ) : null}
@@ -292,7 +300,8 @@ export function PhoneDirectory({
                       <span className={styles.spacer} />
                       {/* The count never truncates; the hospital name does (device audit 11 Oct 2026). */}
                       <span className={cx(styles.cellSub, styles.mono, styles.phoneGroupCount)}>
-                        {on}/{group.rows.length}
+                        {on} of {group.rows.length}
+                        <SrOnly> answering</SrOnly>
                       </span>
                       <Icon icon={ChevronDown} size={16} className={cx(styles.chevron, !open && styles.chevronShut)} />
                     </button>

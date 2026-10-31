@@ -1,6 +1,7 @@
 "use client";
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
@@ -391,7 +392,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [phoneDeclining, setPhoneDeclining] = useState(false);
   const declineSave = useWardFormSave(`community-decline:${declineOpenFor ?? phoneReferralId ?? ""}`);
   const [phoneDepartureId, setPhoneDepartureId] = useState<string | null>(null);
-  const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(false);
+  // The phone's Caseload list opens on the whole caseload, matching its count (Josh, 30 Oct 2026).
+  const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(true);
+  // A community team desk opens its own team only (ROLE_SCREENS community: "own"), so the hero and
+  // the phone offer no way across to the other teams. Read once here for every section.
+  const ownTeamOnly = useEffectiveWardAccess().role === "community";
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -982,6 +987,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     switchQuery,
     setSwitchQuery,
     switchTriggerRef,
+    ownTeamOnly,
     acceptanceError,
     setAcceptanceError,
     showCareEditor,

@@ -20,7 +20,6 @@ function renderDrawer(movement: Movement, phone: boolean) {
       referrals={[]}
       patients={[]}
       edAccessTargetMinutes={ED_ACCESS_TARGET_MINUTES}
-      legalUrgentMinutes={60}
       dispatch={() => {}}
       onClose={() => {}}
     />,

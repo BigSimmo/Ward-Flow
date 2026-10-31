@@ -71,11 +71,16 @@ export type ExecutiveStatisticsControl = {
   /** Null means pause is unavailable; a screen must not offer an inert control. */
   togglePause: (() => void) | null;
 };
-const ExecutiveStatisticsControlContext = createContext<ExecutiveStatisticsControl & { ready: boolean }>({
+/** `loading`: the executive view is still being worked out, so screens say so calmly instead of
+ * "unavailable" (Josh, 31 Oct 2026: the unavailable line flashed on every executive start). */
+const ExecutiveStatisticsControlContext = createContext<
+  ExecutiveStatisticsControl & { ready: boolean; loading: boolean }
+>({
   executive: false,
   paused: false,
   togglePause: null,
   ready: false,
+  loading: false,
 });
 
 /** A live preview is computed from an already-authorised local/coordinator source. Its identity
@@ -98,12 +103,15 @@ export function ExecutiveStatisticsLivePreviewProvider({
   enabled,
   identity,
   projection,
+  loading,
   controls,
   children,
 }: {
   enabled: boolean;
   identity: object | null;
   projection: ExecutiveLivePreviewProjection | null;
+  /** The host says whether a missing projection is still on its way; without it, missing means loading. */
+  loading?: boolean;
   controls?: Pick<ExecutiveStatisticsControl, "paused" | "togglePause">;
   children?: ReactNode;
 }) {
@@ -113,6 +121,8 @@ export function ExecutiveStatisticsLivePreviewProvider({
       value={{
         executive: enabled,
         ready: data !== null,
+        // The preview's projector loads on demand; until its first report the view is loading.
+        loading: enabled && identity !== null && projection === null && loading !== false,
         paused: controls?.paused ?? false,
         togglePause: controls?.togglePause ?? null,
       }}
@@ -133,13 +143,15 @@ export function ExecutiveStatisticsProvider({
   binding: ExecutiveReportingBinding | null;
   snapshot: ExecutiveReportingSnapshot | null;
   now: number;
-  controls?: ExecutiveStatisticsControl;
+  controls?: ExecutiveStatisticsControl & { loading?: boolean };
   children?: ReactNode;
 }) {
   const data = controls?.executive === false ? null : selectExecutiveReportingSnapshot(binding, snapshot, now);
   const currentControls = controls ?? { executive: binding !== null, paused: false, togglePause: null };
   return (
-    <ExecutiveStatisticsControlContext.Provider value={{ ...currentControls, ready: data !== null }}>
+    <ExecutiveStatisticsControlContext.Provider
+      value={{ ...currentControls, ready: data !== null, loading: data === null && controls?.loading === true }}
+    >
       <ExecutiveStatisticsContext.Provider value={data}>{children}</ExecutiveStatisticsContext.Provider>
     </ExecutiveStatisticsControlContext.Provider>
   );

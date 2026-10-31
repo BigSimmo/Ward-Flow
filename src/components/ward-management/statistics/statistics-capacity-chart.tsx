@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, Search, X } from "lucide-react";
+import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
 
 import {
   Button,
@@ -15,7 +15,6 @@ import {
   Segmented,
   SrOnly,
   StatusGlyph,
-  TextInput,
   type MenuItem,
 } from "@/components/wf";
 import { BED_ALERT_THRESHOLD_PERCENT } from "../shell/ward-service-bed-alerts";
@@ -31,6 +30,7 @@ import { StatCard } from "./statistics-hero";
 import styles from "./statistics-capacity-chart.module.css";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { ExecutiveStatisticsUnavailable } from "./statistics-small-numbers";
 
@@ -95,6 +95,9 @@ const SORT_LABELS: Record<SortKey, string> = {
   beds: "Largest capacity",
   name: "Name A to Z",
 };
+
+/** The chart lists its first seven rows, the rest behind Show all. */
+const FIRST_ROWS = 7;
 
 /** "North Metro" reads "North" on the filter track; the full name stays in the accessible name. */
 const shortService = (name: string) => name.replace(/ Metro$/, "");
@@ -170,14 +173,16 @@ function CapacityChartView({
   title?: string;
 }) {
   const rowButtons = useRef(new Map<string, HTMLButtonElement>());
+  // A ward links to its page only where this desk may open it (access audit, 31 Oct 2026).
+  const canOpen = useCanOpenHref();
   const [groupBy, setGroupBy] = useState<"hospital" | "ward">(initialGroup);
   const [scale, setScale] = useState<"beds" | "share">("share");
   const [service, setService] = useState("all");
   const [overOnly, setOverOnly] = useState(false);
-  const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortKey>("ready");
   const [alertLine, setAlertLine] = useState(BED_ALERT_THRESHOLD_PERCENT);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const services = [
     ...new Set(units.map((unit) => unit.service).filter((name): name is NonNullable<typeof name> => !!name)),
@@ -216,13 +221,9 @@ function CapacityChartView({
       }
       return [...grouped.values()];
     };
-    const needle = query.trim().toLowerCase();
-    // The service choice highlights and dims (v10 filter rule); only the typed search narrows.
-    const matched = units.filter((unit) => {
-      const search = `${unit.name} ${unit.hospital} ${unit.siteCode}`.toLowerCase();
-      return !needle || search.includes(needle);
-    });
-    const sorted = group(matched).sort((a, b) => {
+    // The service choice highlights and dims (v10 filter rule). The typed filter went in the search
+    // and forms review (D-91, Josh, 30 Oct 2026): 23 wards need none, and the header search finds one.
+    const sorted = group(units).sort((a, b) => {
       const difference =
         sort === "ready"
           ? b.ready - a.ready
@@ -233,8 +234,8 @@ function CapacityChartView({
               : 0;
       return difference || a.name.localeCompare(b.name);
     });
-    return { rows: sorted, allCount: group(units).length };
-  }, [units, query, groupBy, sort]);
+    return { rows: sorted, allCount: sorted.length };
+  }, [units, groupBy, sort]);
 
   const inService = (row: CapacityRow) => service === "all" || row.services.has(service);
   const isLit = (row: CapacityRow) => inService(row) && (!overOnly || occupancyOf(row) >= alertLine);
@@ -255,8 +256,7 @@ function CapacityChartView({
       ? { maximum: 100, ticks: [0, 25, 50, 75, 100] }
       : statisticsChartScale(Math.max(0, ...rows.map((row) => row.beds)));
   const overLine = rows.filter((row) => inService(row) && occupancyOf(row) >= alertLine).length;
-  const hasFilters = highlighting || query !== "";
-  const changed = hasFilters || groupBy !== initialGroup || scale !== "share" || sort !== "ready";
+  const changed = highlighting || groupBy !== initialGroup || scale !== "share" || sort !== "ready";
   const noun = groupBy === "hospital" ? (allCount === 1 ? "hospital" : "hospitals") : allCount === 1 ? "ward" : "wards";
 
   function closeDetails() {
@@ -267,7 +267,6 @@ function CapacityChartView({
   function reset() {
     setService("all");
     setOverOnly(false);
-    setQuery("");
     setGroupBy(initialGroup);
     setScale("share");
     setSort("ready");
@@ -342,12 +341,18 @@ function CapacityChartView({
       </dl>
       <div className={styles.wardList}>
         {selected.units.map((unit) => {
-          return (
-            <Link key={unit.id} href={`/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`}>
+          const href = `/ward-flow/statistics/ward/${encodeURIComponent(unit.id)}`;
+          return canOpen(href) ? (
+            <Link key={unit.id} href={href}>
               <span>{unit.name}</span>
               <strong>{unit.available} ready</strong>
               <Icon icon={ChevronRight} size={14} />
             </Link>
+          ) : (
+            <div key={unit.id}>
+              <span>{unit.name}</span>
+              <strong>{unit.available} ready</strong>
+            </div>
           );
         })}
       </div>
@@ -393,15 +398,6 @@ function CapacityChartView({
       }
     >
       <div className={styles.toolbar}>
-        <TextInput
-          type="search"
-          icon={Search}
-          boxClassName={styles.search}
-          aria-label="Search capacity"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={groupBy === "ward" ? "Find a ward" : "Find a hospital"}
-        />
         {services.length > 1 ? (
           <Segmented
             label="Health service filter"
@@ -497,7 +493,8 @@ function CapacityChartView({
               </Button>
             </div>
           ) : (
-            rows.map((row, index) => {
+            // A highlight never hides a row, so every row shows while one is on.
+            (showAll || highlighting ? rows : rows.slice(0, FIRST_ROWS)).map((row, index) => {
               const denominator = scale === "share" ? row.beds || 1 : maximum;
               const over = occupancyOf(row) >= alertLine;
               const wards = row.units.length;
@@ -588,8 +585,13 @@ function CapacityChartView({
               </>
             ) : (
               <>
-                Showing <b>{rows.length}</b> of {allCount} {noun}
-                {query !== "" ? " matched" : ` ${scopeLabel}`}
+                Showing <b>{showAll ? rows.length : Math.min(rows.length, FIRST_ROWS)}</b> of {allCount} {noun}
+                {` ${scopeLabel}`}
+                {rows.length > FIRST_ROWS ? (
+                  <Button variant="ghost" size="sm" onClick={() => setShowAll((all) => !all)}>
+                    {showAll ? "Show fewer" : `Show all ${rows.length}`}
+                  </Button>
+                ) : null}
               </>
             )}
             {scale === "share" ? (

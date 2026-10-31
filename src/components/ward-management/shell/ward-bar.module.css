@@ -276,10 +276,10 @@
   }
 }
 
-/* Tablet portrait and phone: the bar has no room once a ward name and Back are in it (measured: up
- * to 83px over at 770 to 1000px). The time stays in the Menu sheet's "Board time" line there, and in
- * the phone's page Live chips. */
-@media (max-width: 1000px) {
+/* Phone: the lean bar has no room. The time stays in the phone's page Live chips. Board time stays
+ * on tablet (Josh, 30 Oct 2026): it was hidden at 1000px and below for want of room, and the dropped
+ * Prototype pill gives that room back. Container queries above drop its words first. */
+@media (max-width: 48rem) {
   .demoClock {
     display: none;
   }
@@ -1156,6 +1156,14 @@
   padding-right: 5px;
 }
 
+/* New referral was "poorly spaced" (Josh, 30 Oct 2026): 14px of padding on its left and 5px on its
+   right, cut for a caret segment this button does not have. Even padding and the label centred;
+   the narrow-width and phone rules for it sit at the end of this sheet. */
+.primary.primaryEven {
+  justify-content: center;
+  padding-inline: 14px;
+}
+
 .primaryIcon {
   width: 16px;
   height: 16px;
@@ -1214,6 +1222,14 @@
 
   .searchWrap {
     flex-basis: 16rem;
+  }
+}
+
+/* From 1001px to 1300px both sides match (Josh, 30 Oct 2026): 12px on the right crowded New
+   referral against the edge. Tablet widths keep their own padding. */
+@media (min-width: 1001px) and (max-width: 1300px) {
+  .bar {
+    padding-inline-end: 14px;
   }
 }
 
@@ -3872,5 +3888,33 @@
 @media (min-width: 48.0625rem) {
   .phoneOnly.phoneBack {
     display: none;
+  }
+}
+
+/* ── New referral's even padding (Josh, 30 Oct 2026), after the width rules it adjusts ────── */
+
+/* Its blue pill was 38px tall beside 36px Activity, Alerts and Tools pills: the neighbours' 6px inset. */
+@media (min-width: 48.0625rem) {
+  .primary.primaryEven::before {
+    inset: 6px 0;
+  }
+}
+
+/* Icon only (the bar's own narrow widths): the + sits centred in its pill. */
+@media (min-width: 48.0625rem) and (max-width: 860px) {
+  .bar .primary.primaryEven {
+    padding-inline: 10px;
+  }
+}
+
+@container ward-bar (max-width: 50rem) {
+  .primary.primaryEven {
+    padding-inline: 10px;
+  }
+}
+
+@media (max-width: 40rem) {
+  .primary.primaryEven {
+    padding: 0;
   }
 }

@@ -33,6 +33,7 @@ import { ExecutiveStatisticsProvider } from "../src/components/ward-management/s
 import { projectExecutiveReportingFoundation } from "../src/components/ward-management/statistics/executive-statistics-projector";
 import type { ExecutiveReportingFoundation } from "../src/components/ward-management/statistics/executive-statistics-contract";
 import { downloadCsv } from "../src/components/ward-management/statistics/statistics-csv";
+import { exactStatisticsCount } from "../src/components/ward-management/statistics/statistics-small-numbers";
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { wardPlaceLookup } from "../src/components/ward-management/ward-access-places";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -95,12 +96,23 @@ describe("Summary's executive aggregate view", () => {
     const pressure = screen.getByTestId("ward-statistics-pressure");
     fireEvent.click(within(pressure).getByRole("button", { name: /^Show all/ }));
     expect(pressure.querySelectorAll("tbody tr")).toHaveLength(base.wards.length);
-    // The two tables' typed filters went in the search and forms review (Josh, 30 Oct 2026).
+    // D-91 (Josh, 30 Oct 2026): the two tables' typed filters went; the header search finds a unit.
     expect(screen.queryByRole("searchbox", { name: "Filter wards or hospitals" })).not.toBeInTheDocument();
     expect(screen.queryByRole("searchbox", { name: "Filter emergency departments" })).not.toBeInTheDocument();
     const stages = screen.getByTestId("statistics-overview-stages-chart");
-    fireEvent.click(within(stages).getByRole("radio", { name: "Data" }));
-    expect(screen.getByTestId("ward-statistics-overview-stage-table")).toBeInTheDocument();
+    // Every stage held back under the small number rule: the card is one line, with no Chart/Data.
+    const stagesHeld = Object.values(base.network.admissionStages).every(
+      (count) => exactStatisticsCount(count) === null,
+    );
+    if (stagesHeld) {
+      expect(within(stages).getByTestId("ward-statistics-overview-stages-held")).toHaveTextContent(
+        "not shown under the small number rule",
+      );
+      expect(within(stages).queryByRole("radio", { name: "Data" })).not.toBeInTheDocument();
+    } else {
+      fireEvent.click(within(stages).getByRole("radio", { name: "Data" }));
+      expect(screen.getByTestId("ward-statistics-overview-stage-table")).toBeInTheDocument();
+    }
     expect(screen.queryByRole("link", { name: "Open referrals" })).not.toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
   });
@@ -139,9 +151,9 @@ describe("Summary's executive aggregate view", () => {
     const chart = screen.getByTestId("ward-statistics-capacity-chart");
     fireEvent.click(within(chart).getByRole("radio", { name: /^Wards$/ }));
     const ward = base.wards[0];
-    fireEvent.change(within(chart).getByRole("searchbox", { name: "Search capacity" }), {
-      target: { value: ward.name },
-    });
+    // The chart lists its first seven rows; Show all brings the rest (the typed search went, D-91).
+    const showAll = within(chart).queryByRole("button", { name: /^Show all/ });
+    if (showAll) fireEvent.click(showAll);
     const row = within(chart).getByRole("button", { name: new RegExp(`^${ward.name}:`) });
     fireEvent.click(row);
     const details = screen.getByTestId("capacity-details");
@@ -204,6 +216,8 @@ describe("Summary's executive aggregate view", () => {
     );
     summary(data);
     expect(screen.getByText(/Statistics · North Metro · as at/)).toBeInTheDocument();
+    // D-91: the one unit finder opens from "Open a unit" on the statistics tab row.
+    fireEvent.click(screen.getByTestId("ward-statistics-tool-open-unit"));
     const finder = screen.getByTestId("ward-statistics-unit-finder");
     fireEvent.click(within(finder).getByRole("radio", { name: /^EDs/ }));
     const links = within(finder)

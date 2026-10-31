@@ -16,8 +16,8 @@
  * services, comparisons between units, and detail for one named unit. The third is served by two
  * dynamic routes — one for wards, one for emergency departments — because a ward and an emergency
  * department are different records with different fields, not one list with a flag. So the third
- * section has no index page of its own: it is reached by choosing a unit, and the chooser lives on
- * the comparisons page, which is the one page whose whole subject is the set of units. That is what
+ * section has no index page of its own: it is reached by choosing a unit, and the one unit finder
+ * lives on the statistics home page, opened from "Open a unit" on the tab row (D-91). That is what
  * `STATISTICS_UNIT_CHOOSER_ID` and the fragment on the third section's `href` are for. It is stated
  * here rather than left to be inferred, because a hub entry that lands somewhere other than a page
  * of its own is exactly the kind of thing a later reader "tidies up" into a wrong shape.
@@ -66,22 +66,22 @@ export const STATISTICS_EDS_HREF = "/ward-flow/statistics/eds";
 export const STATISTICS_TEAMS_HREF = "/ward-flow/statistics/teams";
 
 /**
- * The id of the unit chooser on the comparisons page. The third section's `href` points at it, and
- * the comparisons screen puts it on the chooser's own heading — one constant, so a rename cannot
+ * The id of the one unit finder on the statistics home page (D-91). The third section's `href` points
+ * at it, and the home screen puts it on the finder's wrapper — one constant, so a rename cannot
  * leave the hub linking at an anchor that no longer exists.
  */
 export const STATISTICS_UNIT_CHOOSER_ID = "choose-a-unit";
 
 /**
- * The link to the chooser — the comparisons route plus its anchor.
+ * The link to the chooser — the statistics home route plus its anchor, which opens the finder.
  *
- * ⚠️ **Every link to the chooser uses this, never a bare `STATISTICS_COMPARE_HREF`.** Fix round 1
+ * ⚠️ **Every link to the chooser uses this, never a bare `STATISTICS_HOME_HREF`.** Fix round 1
  * found the four in-page links back to the chooser had each dropped the fragment, so a reader who
  * clicked "choose a ward" landed at the top of a page that opens with two sections about why no
  * comparison exists and had to scroll to find the list — and a test asserting the bare href had
  * blessed it. A constant is what makes the correct link the cheap one to write.
  */
-export const STATISTICS_UNIT_CHOOSER_HREF = `/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`;
+export const STATISTICS_UNIT_CHOOSER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}`;
 
 /**
  * The id of the health-service chooser on the statistics hub, and the link to it — the fourth
@@ -144,7 +144,8 @@ export const STATISTICS_SECTIONS: readonly StatisticsSection[] = [
   {
     id: "units",
     label: "One ward or emergency department in detail",
-    description: "Everything the model can honestly say about a single named unit, chosen from the comparisons page.",
+    description:
+      "Everything the model can honestly say about a single named unit, chosen from the unit finder on this page.",
     href: STATISTICS_UNIT_CHOOSER_HREF,
   },
   {

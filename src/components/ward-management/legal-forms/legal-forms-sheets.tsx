@@ -9,13 +9,16 @@ import { ChevronLeft, Clock } from "lucide-react";
 import {
   Badge,
   Button,
+  DateField,
   ErrorSummary,
   Field,
   Select,
   Sheet,
+  SrOnly,
   StatusGlyph,
   TextInput,
   cx,
+  parseTypedDate,
   type ErrorSummaryItem,
 } from "@/components/wf";
 import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
@@ -40,6 +43,7 @@ import {
   type TellSubject,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import asWritten from "./legal-forms-add-time.module.css";
 import { typedTimeLine } from "./legal-time-as-typed";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
@@ -183,6 +187,8 @@ export function RecordFormSheet({
   const [timeClearedNote, setTimeClearedNote] = useState(false);
   const [timeOnForm, setTimeOnForm] = useState("");
   const [dateOnForm, setDateOnForm] = useState("");
+  // Text in the DD/MM/YYYY box that is not yet a real day. It never counts as blank (today).
+  const [dateUnread, setDateUnread] = useState(false);
   // Finding 203 (27 Oct 2026): a Form 1A's region, as in the side panel. Opens blank, never guessed.
   const [region, setRegion] = useState<"" | "metro" | "country">("");
   const [saving, setSaving] = useState(false);
@@ -200,7 +206,7 @@ export function RecordFormSheet({
   );
   const { clearDraft, draftRestored, draftSaved } = useDirtyStateGuard({
     storageKey: world && !world.sessionAdopted ? undefined : storageKey,
-    isDirty: !!timeOnForm || !!dateOnForm || !!draft.movement,
+    isDirty: !!timeOnForm || !!dateOnForm || dateUnread || !!draft.movement,
     value: JSON.stringify({ ...draft, timeOnForm, dateOnForm }),
     onRestore: (raw) => {
       try {
@@ -241,7 +247,8 @@ export function RecordFormSheet({
     }
     priorMovement.current = draft.movement;
   }, [draft.movement, clearDraft]);
-  const typeRef = useRef<HTMLSelectElement | null>(null);
+  // Redesign (Josh, 31 Oct 2026): the movement first, then the form from the paper, then its time.
+  const movementRef = useRef<HTMLSelectElement | null>(null);
   const baseId = useId();
   const parsedWrittenAt = parseWrittenInstant(timeOnForm, now, dayZero ? dateOnForm : "", dayZero);
   const selectedMovement = openMovements.find((movement) => movement.id === draft.movement);
@@ -258,14 +265,17 @@ export function RecordFormSheet({
           ? `Form ${draft.form} written time is not recorded on this sheet.`
           : draft.form === "3C" && movementRefuses3C(selectedMovement)
             ? "Form 3C is refused when the person arrived on a Form 3D."
-            : parsedWrittenAt === null
-              ? dayZero && dateOnForm !== ""
-                ? "Enter the date and time written on the form, no later than now."
-                : "Enter the time written on the form as HH:MM, no later than now."
-              : undefined);
+            : dateUnread
+              ? "Enter the date written on the form as DD/MM/YYYY, or leave it blank for today."
+              : parsedWrittenAt === null
+                ? dayZero && dateOnForm !== ""
+                  ? "Enter the date and time written on the form, no later than now."
+                  : "Enter the time written on the form as HH:MM, no later than now."
+                : undefined);
   const typeId = `${baseId}-legal-forms-new-instrument`;
   const movementId = `${baseId}-legal-forms-new-movement`;
   const timeId = `${baseId}-legal-forms-new-time`;
+  const dateId = `${baseId}-legal-forms-new-date`;
   // Every missing answer at once, in field order, for the summary and the fields. A system reason
   // (saving, or this route cannot record) is not the person's to fix, so it stays on the button.
   const typeProblem = !draft.form
@@ -279,8 +289,8 @@ export function RecordFormSheet({
     saving || recordUnavailable
       ? []
       : [
-          ...(typeProblem ? [{ id: typeId, text: typeProblem }] : []),
           ...(!draft.movement ? [{ id: movementId, text: "Choose a movement" }] : []),
+          ...(typeProblem ? [{ id: typeId, text: typeProblem }] : []),
           ...(parsedWrittenAt === null
             ? [
                 {
@@ -292,6 +302,9 @@ export function RecordFormSheet({
                 },
               ]
             : []),
+          ...(dateUnread
+            ? [{ id: dateId, text: "Enter the date written on the form as DD/MM/YYYY, or leave it blank for today" }]
+            : []),
         ];
   const problemFor = (id: string) =>
     refusedSaves > 0 || (id === timeId && timeLeft && timeOnForm.trim() !== "")
@@ -301,13 +314,13 @@ export function RecordFormSheet({
     <Sheet
       open={open}
       onClose={dismiss}
-      initialFocusRef={typeRef}
+      initialFocusRef={movementRef}
       title="Record a form"
-      description="Attach a form to an open movement and record the time written on the paper"
+      description="Record the time written on the paper form"
       portal={false}
       testId="ward-legal-record"
       footer={
-        <div className={styles.sheetFoot}>
+        <div className={styles.recordFoot}>
           <Button
             variant="ghost"
             onClick={() => {
@@ -317,6 +330,7 @@ export function RecordFormSheet({
               onDraft({ form: "", movement: "" });
               setTimeOnForm("");
               setDateOnForm("");
+              setDateUnread(false);
               setRegion("");
               setRefusedSaves(0);
               setSaveRefusal(null);
@@ -326,7 +340,6 @@ export function RecordFormSheet({
           >
             Clear
           </Button>
-          <span className={styles.footSpacer} />
           <Button
             variant="pri"
             data-testid="ward-legal-forms-register-confirm"
@@ -384,41 +397,16 @@ export function RecordFormSheet({
       }
     >
       {!draftSaved ? <p role="status">Session recovery unavailable. This draft stays in memory in this tab.</p> : null}
-      {draftRestored ? <p role="status">Draft restored in this tab — use Clear to remove it.</p> : null}
+      {draftRestored ? (
+        <p role="status" className={styles.draftNote}>
+          Draft restored · Clear removes it
+        </p>
+      ) : null}
       <div key={formKey} className={styles.recordForm}>
         {refusedSaves > 0 ? <ErrorSummary items={problems} action="before saving" focusKey={refusedSaves} /> : null}
-        <Field label="Form type" id={typeId} error={problemFor(typeId)}>
-          <Select
-            ref={typeRef}
-            disabled={saving}
-            value={draft.form}
-            onChange={(event) => onDraft({ ...draft, form: event.target.value })}
-          >
-            {/* MHA forms are never prefilled: the form type is chosen from the paper every time. */}
-            <option value="">Choose a form type</option>
-            {SELECTABLE_LEGAL_FORMS.map((form) => (
-              <option key={form.code} value={form.code}>
-                {legalFormName(form)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        {draft.form === "1A" ? (
-          <Field label="Region" id={`${typeId}-region`}>
-            <Select
-              disabled={saving}
-              value={region}
-              onChange={(event) => setRegion(event.target.value as "" | "metro" | "country")}
-              data-testid="ward-legal-forms-record-region"
-            >
-              <option value="">Choose metro or country</option>
-              <option value="metro">Metro</option>
-              <option value="country">Country</option>
-            </Select>
-          </Field>
-        ) : null}
         <Field label="Movement" id={movementId} error={problemFor(movementId)}>
           <Select
+            ref={movementRef}
             disabled={saving}
             value={draft.movement}
             onChange={(event) => {
@@ -447,10 +435,39 @@ export function RecordFormSheet({
             Time cleared because the patient changed.
           </p>
         ) : null}
+        <Field label="Form type" id={typeId} error={problemFor(typeId)}>
+          <Select
+            disabled={saving}
+            value={draft.form}
+            onChange={(event) => onDraft({ ...draft, form: event.target.value })}
+          >
+            {/* MHA forms are never prefilled: the form type is chosen from the paper every time. */}
+            <option value="">Choose a form type</option>
+            {SELECTABLE_LEGAL_FORMS.map((form) => (
+              <option key={form.code} value={form.code}>
+                {legalFormName(form)}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {draft.form === "1A" ? (
+          <Field label="Region" id={`${typeId}-region`}>
+            <Select
+              disabled={saving}
+              value={region}
+              onChange={(event) => setRegion(event.target.value as "" | "metro" | "country")}
+              data-testid="ward-legal-forms-record-region"
+            >
+              <option value="">Choose metro or country</option>
+              <option value="metro">Metro</option>
+              <option value="country">Country</option>
+            </Select>
+          </Field>
+        ) : null}
         <div className={styles.fieldPair}>
           <Field label="Time on form" id={timeId} error={problemFor(timeId)}>
+            {/* The HH:MM placeholder says it is a typed 24-hour time, so no clock icon. */}
             <TextInput
-              icon={Clock}
               placeholder="HH:MM"
               inputMode="numeric"
               autoComplete="off"
@@ -464,20 +481,35 @@ export function RecordFormSheet({
           {dayZero ? (
             <Field
               label="Date on form"
-              id={`${baseId}-legal-forms-new-date`}
-              help="Leave blank for today. Use it for a form written before midnight."
+              id={dateId}
+              error={problemFor(dateId)}
+              hint="DD/MM/YYYY"
+              help={
+                <>
+                  Leave blank for today
+                  <SrOnly>. Use it for a form written before midnight.</SrOnly>
+                </>
+              }
             >
-              <TextInput
-                type="date"
+              {/* The kit's typed DD/MM/YYYY box (bug list row 25), never the browser's date picker. */}
+              <DateField
                 data-testid="ward-legal-forms-new-date"
-                autoComplete="off"
                 disabled={saving}
                 value={dateOnForm}
-                onChange={(event) => setDateOnForm(event.target.value)}
+                onValueChange={setDateOnForm}
+                onInput={(event) =>
+                  setDateUnread(
+                    parseTypedDate(event.currentTarget.value) === null && event.currentTarget.value.trim() !== "",
+                  )
+                }
               />
             </Field>
           ) : null}
         </div>
+        {/* Redesign: one line, so nobody reads a deadline into the time typed here (D5, D-70). */}
+        <p className={asWritten.asWritten} data-testid="ward-legal-forms-record-as-written">
+          Only the written time is recorded. No expiry is calculated.
+        </p>
         {saveRefusal ? (
           <p className={styles.note} role="alert" data-testid="ward-legal-forms-record-refusal">
             {saveRefusal}
@@ -619,17 +651,14 @@ function ExtendSheetContent({
             <TextInput locked readOnly value={label} />
           </Field>
           <div className={styles.fieldPair}>
-            <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`}>
-              <TextInput
-                type="date"
+            <Field label="New expiry date" id={`${baseId}-legal-forms-renew-date`} hint="DD/MM/YYYY">
+              {/* The kit's typed DD/MM/YYYY box (bug list row 25), never the browser's date picker. */}
+              <DateField
                 data-testid="ward-legal-forms-renew-date"
-                autoComplete="off"
                 aria-required="true"
                 disabled={saving}
                 value={expiryDate}
-                onChange={(event) =>
-                  setExpiryState({ targetId: target.id, value: expiryValue, date: event.target.value })
-                }
+                onValueChange={(date) => setExpiryState({ targetId: target.id, value: expiryValue, date })}
               />
             </Field>
             <Field label="New expiry time" id={`${baseId}-legal-forms-renew-expiry`}>

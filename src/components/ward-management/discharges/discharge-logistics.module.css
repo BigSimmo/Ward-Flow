@@ -63,7 +63,9 @@
 .recheck {
   margin: 0;
   padding: var(--wf-s-1) var(--wf-s-2);
-  border-left: 3px solid var(--wf-warning, var(--wf-ink-2));
+  /* Owner ruling (31 Oct 2026): no side edge; a small tinted tag instead. */
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-warning) 10%, transparent);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }

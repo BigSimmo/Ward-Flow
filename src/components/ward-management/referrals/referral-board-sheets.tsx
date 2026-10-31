@@ -10,6 +10,7 @@ import { ClipboardCopy } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { Button, Sheet, TierTile, cx } from "@/components/wf";
 
@@ -305,10 +306,13 @@ export function IsbarSheet({
 }
 
 export function ShortcutsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  // Josh, 31 Oct 2026 (answer 35): M is off on the ED desk, so its list leaves it out.
+  const edDesk = useEffectiveWardAccess().role === "ed";
+  const shortcuts = edDesk ? REFERRAL_SHORTCUTS.filter(([key]) => key !== "M") : REFERRAL_SHORTCUTS;
   return (
     <Sheet open={open} onClose={onClose} title="Keyboard shortcuts">
       <dl className={styles.keys}>
-        {REFERRAL_SHORTCUTS.map(([key, words]) => (
+        {shortcuts.map(([key, words]) => (
           <div key={key}>
             <dt>
               {key.split(" ").map((part) => (

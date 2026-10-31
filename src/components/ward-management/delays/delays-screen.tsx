@@ -2,7 +2,9 @@
 
 import dynamic from "next/dynamic";
 
-import { useMemo, useRef } from "react";
+import { useId, useMemo, useRef, useState } from "react";
+
+import { useIsPhone } from "@/components/wf";
 
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
@@ -27,12 +29,14 @@ import {
 } from "@/components/ward-management/ward-service-scope";
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
+import { retitledGroups } from "./wait-bands";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import styles from "./delays.module.css";
 
-// Coordinators only: loaded on demand so other screens that include Delays stay small.
-const MissedRequestsPanel = dynamic(() =>
-  import("@/components/ward-management/coordinator/missed-requests-panel").then((m) => m.MissedRequestsPanel),
-);
+// Coordinators only: the daily check is loaded on demand so other screens that include Waiting stay small.
+const DailyCheckLine = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckLine));
+const DailyCheckList = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckList));
+const DailyCheckHeroTile = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckHeroTile));
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
@@ -45,13 +49,26 @@ export interface DelaysScreenProps {
  * (`delays-board.tsx`); this screen owns the data scope (chosen service),
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
+/**
+ * Waiting (October 2026 redesign, Josh approved round 8 on 31 Oct 2026): the slim header strip, the
+ * whose-move tiles, the table by wait band, the person panel and the graphs (`delays-board.tsx`).
+ * On a laptop the coordinator's daily check is a tile in the header strip whose list opens under
+ * the header; the phone keeps the one-line check (`daily-check-line.tsx`).
+ */
 export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
   const accessRole = useEffectiveWardAccess().role;
   const showMissedRequests = accessRole === "coordinator";
+  // Round 4 (Josh, 31 Oct 2026): on a laptop the daily check is a tile in the dark header and its
+  // list opens under the header; the phone keeps the one-line check.
+  const isPhone = useIsPhone();
+  const [checkOpen, setCheckOpen] = useState(false);
+  const checkListId = useId();
 
   const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
+  // Role views (nurse in charge, ED clinician): the coordinator's own group named from the desk's side.
+  const desk = useWaitingDeskWords(units);
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
@@ -74,7 +91,11 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
     () => (movements === allMovements ? open : allMovements.filter(isOpen)),
     [movements, allMovements, open],
   );
-  const groups = useMemo(() => delayGroups(movements, units, now, thresholds), [movements, units, now, thresholds]);
+  // Josh, 30 Oct 2026: this page's blocker titles (`wait-bands.ts`), so no "(as written)" group title.
+  const groups = useMemo(
+    () => desk.groups(retitledGroups(delayGroups(movements, units, now, thresholds))),
+    [movements, units, now, thresholds, desk],
+  );
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
   // never dropped.
@@ -85,7 +106,7 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   // Q-12: "Attention" is never dropped. The severe causes across the whole network, plus any urgent
   // movement outside the chosen service, each marked rather than hidden.
   const networkGroups = useMemo(
-    () => (movements === allMovements ? groups : delayGroups(allMovements, units, now, thresholds)),
+    () => (movements === allMovements ? groups : retitledGroups(delayGroups(allMovements, units, now, thresholds))),
     [movements, allMovements, groups, units, now, thresholds],
   );
   const urgentOutsideMovements = useMemo(
@@ -165,7 +186,13 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           }}
         />
       )}
-      {showMissedRequests ? <MissedRequestsPanel /> : null}
+      {showMissedRequests ? (
+        isPhone ? (
+          <DailyCheckLine />
+        ) : (
+          <DailyCheckList open={checkOpen} listId={checkListId} onClose={() => setCheckOpen(false)} />
+        )
+      ) : null}
     </>
   );
 
@@ -183,12 +210,27 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           isOutsideService={isOutsideService}
           onEscalate={escalate}
           banner={banner}
+          heroCheck={
+            showMissedRequests && !isPhone ? (
+              <DailyCheckHeroTile
+                open={checkOpen}
+                onToggle={() => setCheckOpen((current) => !current)}
+                listId={checkListId}
+              />
+            ) : null
+          }
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
-                {service === null
-                  ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
-                  : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
+                {desk.wardDesk
+                  ? // Role view (nurse in charge): the list holds only people coming to this ward.
+                    "Nobody is waiting in an emergency department for your ward right now. That is a measured count over every open movement to your ward."
+                  : desk.edDesk
+                    ? // Role view (as ED clinician): an ED desk's copy holds only its own department.
+                      "Nobody is waiting in this emergency department right now. That is a measured count over its open movements."
+                    : service === null
+                      ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
+                      : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
               </p>
             ) : undefined
           }

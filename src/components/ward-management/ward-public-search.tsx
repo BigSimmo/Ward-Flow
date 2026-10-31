@@ -76,9 +76,11 @@ function PublicSearchPalette({
   };
   const navigate = (href: string) => {
     if (!canOpenHref(href)) return;
-    const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-      .__wardFlowConfirmNavigation;
-    if (confirmNavigation && !confirmNavigation()) return;
+    const confirmNavigation = (
+      window as typeof window & { __wardFlowConfirmNavigation?: (proceed?: () => void) => boolean }
+    ).__wardFlowConfirmNavigation;
+    // With unsaved work the kit's styled confirm asks; on Leave without saving it runs this same step again.
+    if (confirmNavigation && !confirmNavigation(() => navigate(href))) return;
     close();
     if (onNavigate) onNavigate(href);
     else router.push(href);

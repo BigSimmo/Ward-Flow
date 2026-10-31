@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronDown, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
+import { Bell, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -35,7 +35,6 @@ import {
   capacityBreakdown,
   releaseBand,
 } from "@/components/ward-management/ward-bed-availability";
-import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import {
@@ -72,7 +71,6 @@ import {
 } from "./use-ward-command-completion";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { HIGH_ACUITY_STAFFING_REFUSAL, OVERRIDE_REASON_REQUIRED } from "@/components/ward-management/ward-flow-reducer";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { type DeclineReason, type Rejection } from "@/components/ward-management/ward-model";
 import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
@@ -84,7 +82,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
-import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
+import { CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
@@ -130,7 +128,9 @@ import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardScreenBedDrawer, WardScreenCapacityModal } from "./ward-screen-overlays";
+import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
+import { WardScreenBedDrawer } from "./ward-screen-overlays";
+import { WardSwitchMenu } from "./ward-switch-menu";
 import { WardScreenTabSections } from "./ward-screen-tab-sections";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
@@ -456,7 +456,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const warnToast = (text: string) => setToastMessage({ warning: text });
   const bedTriggerRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
   const confirmTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const capacityModalRef = useRef<HTMLDivElement | null>(null);
   const bedDrawerRef = useRef<HTMLElement | null>(null);
   const notificationTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -750,7 +749,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       capacityOpenerRef.current = null;
     }, 0);
   }, []);
-  useWardModalFocus(confirmNumbersOpen, capacityModalRef, closeCapacityModal);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -849,7 +847,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // Design audit DA-11 (main): a pull says it worked, and focus stays with the arrival it changed.
     // Audit CS3-16: the message names who the bed was pulled for.
     if (!refused && check.attempted === "PULL_PATIENT") {
-      const who = resolvePatientIdentity(movements.find((movement) => movement.id === check.movementId)).displayName;
+      const who = resolvePatientIdentity(movements.find((movement) => movement.id === check.movementId)).formalName;
       toast?.push({ tone: "success", title: `Bed pulled for ${who}.` });
       focusWardArrival(check.movementId);
     }
@@ -1154,7 +1152,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       .map((entry) => ({
         id: entry.id,
         accepted: entry.state === "accepted",
-        name: resolvePatientIdentity(entry).displayName,
+        name: resolvePatientIdentity(entry).formalName,
         umrn: resolvePatientIdentity(entry).umrn,
         sex: entry.destination.sex === "Female" ? "F" : entry.destination.sex === "Male" ? "M" : entry.destination.sex,
         waitedMinutes: Math.max(0, now - entry.raisedAt),
@@ -1167,7 +1165,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     ...incoming.map((movement) => ({
       kind: "movement" as const,
       id: movement.id,
-      name: resolvePatientIdentity(movement).displayName,
+      name: resolvePatientIdentity(movement).formalName,
       umrn: resolvePatientIdentity(movement).umrn,
       sex: movement.sex === "Female" ? "F" : movement.sex === "Male" ? "M" : "Not recorded",
       waitedMinutes: Math.max(0, now - (movement.referredAt ?? movement.openedAt)),
@@ -1530,8 +1528,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     );
   }
 
-  function submitCapacity(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function submitCapacity() {
     const parsed = Number(capacityValue);
     if (!Number.isFinite(parsed) || parsed < 0) return;
     // `actingUnitId` is this screen's own route parameter — the unit this screen is displaying and
@@ -1547,6 +1544,18 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       value: Math.floor(parsed),
       expectedRevision: capacityRevision,
     });
+  }
+
+  // The dialog's Confirm beds buttons call this, not a form submit, so the number input's own
+  // checks never run: a typed 2.5 must be refused, never saved as 2.
+  function confirmBedsFromDialog() {
+    if (!unit) return;
+    const parsed = Number(capacityValue);
+    if (capacityValue.trim() === "" || !Number.isInteger(parsed) || parsed < 0 || parsed > unit.beds) {
+      warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
+      return;
+    }
+    submitCapacity();
   }
 
   function handleConfirmBedsAndMorningRollup() {
@@ -1601,75 +1610,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     );
   }
 
-  const capacityConfirmationForm = () => {
-    return (
-      <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
-        <label className={styles.capacityLabel} htmlFor="ward-capacity-input">
-          Confirm allocatable beds for {unit.name}
-        </label>
-        <div className={styles.capacityRow}>
-          <input
-            id="ward-capacity-input"
-            data-testid="ward-capacity-input"
-            type="number"
-            min={0}
-            max={unit.beds}
-            value={capacityValue}
-            onChange={(event) => {
-              setCapacityValue(event.target.value);
-            }}
-            className={`${styles.capacityInput} ${styles.capacityInputMono}`}
-          />
-          <button
-            type="submit"
-            data-testid="ward-capacity-submit"
-            className={`${styles.capacitySubmit} ${styles.tapTarget}`}
-          >
-            Confirm capacity
-          </button>
-          {!isRollupConfirmedToday ? (
-            <button
-              type="button"
-              data-testid="ward-confirm-beds-and-rollup-btn"
-              className={buttonClass({ variant: "sec", size: "sm" })}
-              onClick={() => {
-                handleConfirmBedsAndMorningRollup();
-              }}
-            >
-              Confirm beds and morning bed numbers ({morningRollupTimeLabel})
-            </button>
-          ) : null}
-          <button
-            type="button"
-            data-testid="ward-capacity-review-discharges-btn"
-            className={buttonClass({ variant: "ghost", size: "sm" })}
-            onClick={() => {
-              closeCapacityModal();
-              openDischargesTab();
-            }}
-          >
-            Review today&apos;s expected discharges → ({releasesCountedToday.length})
-          </button>
-        </div>
-        <p className={`${styles.capacityConfirmed} ${styles.tabularNums}`}>
-          {capacityRevision !== (unit.allocatable.revision ?? 0) && (
-            <button
-              type="button"
-              onClick={() => {
-                setCapacityValue(String(unit.allocatable.value));
-                setCapacityRevision(unit.allocatable.revision ?? 0);
-              }}
-            >
-              Start a new capacity observation from the current count
-            </button>
-          )}{" "}
-          Currently confirmed {unit.allocatable.value} at {formatInstant(unit.allocatable.confirmedAt)}. Writes to{" "}
-          {unit.name} only &mdash; never any other ward.
-        </p>
-      </form>
-    );
-  };
-
   // Task 5 (spec D10): the ward moving its OWN bed release through its own lifecycle —
   // `actingUnitId` is this screen's own route parameter, exactly like `submitCapacity` above.
   // `expected -> confirmed` is the only transition
@@ -1700,7 +1640,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   // Name departures through the scoped resolver. Released beds retain no patient label.
   function bedRecordLabel(admissionId: string): string {
-    const who = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId)).displayName;
+    const who = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId)).formalName;
     return `${who} (bed not recorded)`;
   }
 
@@ -1780,7 +1720,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const answerBlockedReason = routeRole === "bed_manager" ? `${unit.name} answers its own referrals.` : undefined;
   const intakeDecisions = visibleIncoming.map((movement) => ({
     id: movement.id,
-    title: resolvePatientIdentity(movement).displayName,
+    title: resolvePatientIdentity(movement).formalName,
     onAccept:
       answerBlockedReason === undefined
         ? () => {
@@ -1883,32 +1823,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const phoneCardOpen = isPhone && phoneWalking && activeTab === "attn"; // Option B: a bed's card has the page
   const wardSwitchMenu =
     switchUnits.length > 0 ? (
-      <Menu
-        label="Switch ward"
-        align="start"
-        className={styles.wardSwitchAnchor}
-        items={switchUnits.map((candidate) => ({
-          id: candidate.id,
-          label: candidate.name,
-          meta: candidate.siteCode,
-          onSelect: () => {
-            const href = unitHref(candidate.id);
-            if (router) router.push(href);
-            else window.location.assign(href);
-          },
-        }))}
-        trigger={(props) => (
-          <button
-            type="button"
-            {...props}
-            className={isPhone ? styles.wardSwitchName : styles.wardSwitch}
-            aria-label={`Switch ward, now ${unit.name}`}
-            data-testid="ward-switch-btn"
-          >
-            {isPhone ? <span className={styles.phoneHeroName}>{unit.name}</span> : null}
-            <ChevronDown size={isPhone ? 18 : 16} aria-hidden="true" />
-          </button>
-        )}
+      <WardSwitchMenu
+        unit={unit}
+        switchUnits={switchUnits}
+        onChoose={(id) => {
+          const href = unitHref(id);
+          if (router) router.push(href);
+          else window.location.assign(href);
+        }}
       />
     ) : null;
   const wardRibbon = (
@@ -1942,7 +1864,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
         <span>{shiftLine(now)}</span>
         {" · "}
-        {unit.cohort} · {designationSummary(unit).toLowerCase()} ·{" "}
         <Link
           className={styles.heroBedListLink}
           href="#bed-capacity"
@@ -1958,7 +1879,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {" · "}
         {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
         <span>Roster not recorded</span> · {staffedSpecialling} staff on constant observation ·{" "}
-        {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
+        {unit.authorised ? "authorised for involuntary admissions" : "not set up for involuntary admissions (demo)"}
         {(unit.intakeConstraints ?? []).length > 0
           ? ` · ${(unit.intakeConstraints ?? [])
               .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)
@@ -2051,7 +1972,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           type="button"
           {...props}
           className={triggerClassName}
-          aria-label={tablet ? undefined : "More ward actions"}
+          // One name on every layout, so the ward tour's Shift brief step lights this trigger on a
+          // desk too; it starts with the visible word "More".
+          aria-label="More ward actions"
           data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
         >
           <MoreHorizontal size={tablet ? 16 : 20} aria-hidden="true" />
@@ -2282,7 +2205,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           setCheckToken={setCheckToken}
           recentAnswers={recentAnswers}
           breakdown={breakdown}
-          capacityConfirmationForm={capacityConfirmationForm}
           pendingBedReleases={pendingBedReleases}
           unitLeaveBeds={unitLeaveBeds}
           resolvePatientIdentity={resolvePatientIdentity}
@@ -2412,16 +2334,25 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         />
 
         {/* ─── Confirmation Modal (Confirm Capacity Figures) ───────────── */}
-        <WardScreenCapacityModal
-          confirmNumbersOpen={confirmNumbersOpen}
-          closeCapacityModal={closeCapacityModal}
-          capacityModalRef={capacityModalRef}
+        <WardConfirmBedsDialog
+          open={confirmNumbersOpen}
+          onClose={closeCapacityModal}
           unit={unit}
           occupancy={occupancy}
           capacity={capacity}
           states={states}
           capacityValue={capacityValue}
-          capacityConfirmationForm={capacityConfirmationForm}
+          setCapacityValue={setCapacityValue}
+          staleRevision={capacityRevision !== (unit.allocatable.revision ?? 0)}
+          onStartFromCurrent={() => {
+            setCapacityValue(String(unit.allocatable.value));
+            setCapacityRevision(unit.allocatable.revision ?? 0);
+          }}
+          isRollupConfirmedToday={isRollupConfirmedToday}
+          morningRollupTimeLabel={morningRollupTimeLabel}
+          releasesTodayCount={releasesCountedToday.length}
+          onConfirmBeds={confirmBedsFromDialog}
+          onConfirmBedsAndRollup={handleConfirmBedsAndMorningRollup}
         />
 
         {/* ─── Ward Daily Sheet Modal Overlay ───────────────────────────── */}

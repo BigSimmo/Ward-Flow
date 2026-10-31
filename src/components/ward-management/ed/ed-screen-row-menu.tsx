@@ -96,16 +96,24 @@ export function EdUnavailableNote({
   testId,
   line,
   menuItem = false,
+  expanded = false,
 }: {
   testId: string;
   line: EdUnavailableLine;
   /** Set by the row's actions menu, as for `EdConfirmedStep`. */
   menuItem?: boolean;
+  /**
+   * Set by the row's actions menu, where the note sits under its greyed item in "Not available
+   * yet" (redesign, Josh 31 Oct 2026): the reason, why, who acts next and the one fix all show at
+   * once, in that order, with nothing to tap open.
+   */
+  expanded?: boolean;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const hasDetail = line.why !== undefined;
   useEffect(() => {
+    if (expanded) return;
     // The greyed action is the element just before this note, in the menu and in the sheet alike.
     const note = ref.current;
     const blocked = note?.previousElementSibling;
@@ -126,7 +134,51 @@ export function EdUnavailableNote({
       blocked.removeEventListener("focusout", leave);
       note.removeEventListener("focusout", leave);
     };
-  }, [hasDetail]);
+  }, [hasDetail, expanded]);
+  const fix = line.fix ? (
+    <button
+      type="button"
+      role={menuItem ? "menuitem" : undefined}
+      className={styles.unavailableFix}
+      data-unavailable-fix=""
+      data-testid={line.fix.testId}
+      onClick={line.fix.run}
+    >
+      {line.fix.label}
+    </button>
+  ) : null;
+  const detail = (
+    <>
+      <span>{line.why}</span>
+      {line.next ? (
+        <span className={styles.unavailableNext}>
+          Next: <b>{line.next}</b>
+        </span>
+      ) : null}
+    </>
+  );
+  if (expanded)
+    return (
+      <span
+        ref={ref}
+        className={styles.unavailableNote}
+        data-unavailable-note=""
+        data-unavailable-expanded=""
+        data-unavailable-detail={hasDetail ? "" : undefined}
+        data-testid={testId}
+      >
+        {/* The item already names the full reason to screen readers; this is the short visible copy. */}
+        <span aria-hidden="true">
+          <DisabledReason id={`${testId}-words`}>{line.because}</DisabledReason>
+        </span>
+        {hasDetail ? (
+          <span className={styles.unavailableDetail} data-testid={`${testId}-detail`}>
+            {detail}
+          </span>
+        ) : null}
+        {fix}
+      </span>
+    );
   return (
     <span
       ref={ref}
@@ -139,30 +191,10 @@ export function EdUnavailableNote({
       <span aria-hidden="true">
         <DisabledReason id={`${testId}-words`}>{line.because}</DisabledReason>
       </span>
-      {line.fix ? (
-        <button
-          type="button"
-          role={menuItem ? "menuitem" : undefined}
-          className={styles.unavailableFix}
-          data-unavailable-fix=""
-          data-testid={line.fix.testId}
-          onClick={line.fix.run}
-        >
-          {line.fix.label}
-        </button>
-      ) : null}
+      {fix}
       {hasDetail ? (
         <span role="status" className={styles.unavailableDetail} data-testid={`${testId}-detail`}>
-          {open ? (
-            <>
-              <span>{line.why}</span>
-              {line.next ? (
-                <span className={styles.unavailableNext}>
-                  Next: <b>{line.next}</b>
-                </span>
-              ) : null}
-            </>
-          ) : null}
+          {open ? detail : null}
         </span>
       ) : null}
     </span>
@@ -317,6 +349,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
           aria-describedby={examBlocked ? `ward-ed-examine-unavailable-${movement.id}` : undefined}
           title={examBlocked ?? undefined}
           aria-expanded={examOpen}
+          data-next-step={primaryAction === "exam" ? "" : undefined}
           className={`${styles.declineButton}${primaryAction === "exam" ? ` ${styles.primaryActionButton}` : ""}`}
           onClick={examBlocked ? ignoreUnavailableActivation : () => toggleExamination(movement.id)}
         >
@@ -331,6 +364,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         aria-describedby={edOutcomeBlocked ? `ward-ed-outcome-unavailable-${movement.id}` : undefined}
         title={edOutcomeBlocked ?? undefined}
         aria-expanded={edOutcomeOpen}
+        data-next-step={primaryAction === "outcome" ? "" : undefined}
         className={`${styles.declineButton}${primaryAction === "outcome" ? ` ${styles.primaryActionButton}` : ""}`}
         onClick={
           edOutcomeBlocked
@@ -352,6 +386,7 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         aria-disabled={handoverBlocked ? "true" : undefined}
         aria-describedby={handoverBlocked ? `ward-ed-handover-unavailable-${movement.id}` : undefined}
         title={handoverBlocked ?? undefined}
+        data-next-step={primaryAction === "handover" ? "" : undefined}
         className={`${styles.acceptButton}${primaryAction === "handover" ? ` ${styles.primaryActionButton}` : ""}`}
         onClick={
           handoverBlocked
@@ -376,13 +411,15 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
         title={transportBlocked ?? undefined}
         aria-expanded={transportOpen}
         aria-haspopup="dialog"
+        data-next-step={primaryAction === "transport" ? "" : undefined}
         className={`${styles.acceptButton}${primaryAction === "transport" ? ` ${styles.primaryActionButton}` : ""}`}
         onClick={transportBlocked ? ignoreUnavailableActivation : () => toggleBookTransport(movement.id)}
       >
         {/* Owner's third ruling, 2026-09-17, verbatim: "you click a button saying it is
-                                booked" — this logs a booking already made by phone, so the button states that,
-                                never "Book transport" as though the app were doing the booking. */}
-        Transport booked
+            booked" — this logs a booking already made by phone, so the button states that, never
+            "Book transport" as though the app were doing the booking. Redesign (Josh, 31 Oct
+            2026): a verb, as the popup's own title and the blocker's fix say. */}
+        Log transport booking
       </button>
       {note("transport", unavailable.transport)}
       {canSetArrivalPlan(movement) ? (
@@ -427,13 +464,14 @@ export function renderEdRowMenuItems(row: EdBoardRowModel, ctx: EdScreenContext)
             })
           }
         >
-          No transport needed
+          {/* Redesign (Josh, 31 Oct 2026): an action word, not the state it records. */}
+          Record no transport needed
         </button>
       ) : null}
       {movement.referralId === undefined && movementReferralLink(movement, referrals).kind === "not_recorded" ? (
         // Audit 1 CS-07: the engine has no undo for this record, so it asks first.
         <EdConfirmedStep
-          label="No referral raised"
+          label="Record no referral"
           title={`Record that no referral was raised for ${row.patientInfo.displayName}?`}
           consequence="This cannot be undone here."
           who={row.patientInfo.displayName}

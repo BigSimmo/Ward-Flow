@@ -55,6 +55,37 @@ interface ResolvedIndex {
   formattedMap: Map<Patient, ResolvedPatientInfo>;
   /** Stream D: a converted planned admission, by the admission it became. */
   bookingByAdmissionId: Map<string, PlannedAdmission>;
+  /** Ids this desk's scoped copy leaves out (`markRecordsWithheld`); empty for a whole workspace. */
+  withheld: ReadonlySet<string>;
+}
+
+const NOTHING_WITHHELD: ReadonlySet<string> = new Set();
+const withheldByPatients = new WeakMap<readonly Patient[], ReadonlySet<string>>();
+
+/**
+ * Bug list row 28 (Josh, 31 Oct 2026, Q29): a desk's scoped copy leaves some people, referrals and
+ * movements out. A link to one of those is not broken: the name is recorded, just not shown to this
+ * login. The scoping step marks its own `patients` array with the ids it left out, so a resolver
+ * call built from that array reads "Name not shown on this desk" instead of "Name not recorded".
+ * Only ids are kept, never a name, so nothing new becomes visible. A link missing from the whole
+ * workspace is not marked and still reads as broken.
+ */
+export function markRecordsWithheld(patients: readonly Patient[], withheldIds: ReadonlySet<string>): void {
+  if (withheldIds.size > 0) withheldByPatients.set(patients, withheldIds);
+}
+
+type IdRows = {
+  readonly patients: readonly { id: string }[];
+  readonly referrals: readonly { id: string }[];
+  readonly movements: readonly { id: string }[];
+};
+
+/** The people, referrals and movements in the whole workspace that a desk's scoped copy leaves out. */
+export function withheldRecordIds(whole: IdRows, shown: IdRows): Set<string> {
+  const rows = (state: IdRows) =>
+    [state.patients, state.referrals, state.movements].flatMap((list) => list.map(({ id }) => id));
+  const shownIds = new Set(rows(shown));
+  return new Set(rows(whole).filter((id) => !shownIds.has(id)));
 }
 
 const stateIndexCache = new WeakMap<object, ResolvedIndex>();
@@ -105,7 +136,8 @@ function buildPatientResolverIndex(state: {
     if (booking.admissionId !== null) bookingByAdmissionId.set(booking.admissionId, booking);
   }
 
-  return { patientMap, referralMap, movementMap, formattedMap, bookingByAdmissionId };
+  const withheld = (state.patients && withheldByPatients.get(state.patients)) ?? NOTHING_WITHHELD;
+  return { patientMap, referralMap, movementMap, formattedMap, bookingByAdmissionId, withheld };
 }
 
 function getOrBuildIndex(
@@ -166,11 +198,26 @@ export function patientHeldBedUnitId(
 
 export const NAME_NOT_RECORDED = "Name not recorded";
 export const UMRN_NOT_RECORDED = "UMRN not recorded";
+/** The person is recorded, but this desk's access scope leaves their record out (Q29). */
+export const NAME_NOT_SHOWN = "Name not shown on this desk";
+const UMRN_NOT_SHOWN = "UMRN not shown on this desk";
+
+/** Whether a resolved name is one of the resolver's placeholders rather than a person's name. */
+export function isPlaceholderName(name: string): boolean {
+  return name === NAME_NOT_RECORDED || name === NAME_NOT_SHOWN;
+}
 
 const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
   displayName: NAME_NOT_RECORDED,
   formalName: NAME_NOT_RECORDED,
   umrn: UMRN_NOT_RECORDED,
+  initials: "UP",
+});
+
+const WITHHELD_PATIENT: ResolvedPatientInfo = Object.freeze({
+  displayName: NAME_NOT_SHOWN,
+  formalName: NAME_NOT_SHOWN,
+  umrn: UMRN_NOT_SHOWN,
   initials: "UP",
 });
 
@@ -180,6 +227,7 @@ const UNKNOWN_PATIENT: ResolvedPatientInfo = Object.freeze({
  * Display only: nothing here accepts or stores a name or UMRN.
  */
 export function patientIdentityLine(info: Pick<ResolvedPatientInfo, "formalName" | "umrn">): string {
+  if (info.formalName === NAME_NOT_SHOWN) return NAME_NOT_SHOWN;
   const name = info.formalName.replace(/[\s,]+/gu, "") === "" ? NAME_NOT_RECORDED : info.formalName.trim();
   const umrn = info.umrn.trim() === "" ? UMRN_NOT_RECORDED : info.umrn.trim();
   return `${name} · ${umrn}`;
@@ -204,11 +252,15 @@ function resolveSubjectWithIndex(subject: PatientResolutionSubject, index: Resol
   // Only explicit, unambiguous episode links can attribute a patient's identity.
   const ids = new Set<string>();
   let invalidLink = false;
+  // A link to a record this desk's copy leaves out is treated as cut, as the server copy cuts it
+  // (`closeReferences`): it names nobody, and nobody is shown through it.
+  let withheldLink = false;
   const collect = (link: { patientId?: string | null; referralId?: string | null }) => {
     if (link.patientId) ids.add(link.patientId);
     if (link.referralId) {
       const match = index.referralMap.get(link.referralId);
-      if (!match || match === DUPLICATE || !match.patientId) invalidLink = true;
+      if (!match && index.withheld.has(link.referralId)) withheldLink = true;
+      else if (!match || match === DUPLICATE || !match.patientId) invalidLink = true;
       else ids.add(match.patientId);
     }
   };
@@ -217,7 +269,8 @@ function resolveSubjectWithIndex(subject: PatientResolutionSubject, index: Resol
   const movementId = (subject as { movementId?: string }).movementId;
   if (movementId) {
     const match = index.movementMap.get(movementId);
-    if (!match || match === DUPLICATE) invalidLink = true;
+    if (!match && index.withheld.has(movementId)) withheldLink = true;
+    else if (!match || match === DUPLICATE) invalidLink = true;
     else collect(match);
   }
 
@@ -236,9 +289,12 @@ function resolveSubjectWithIndex(subject: PatientResolutionSubject, index: Resol
     ids.add(subject.id);
   }
 
-  if (invalidLink || ids.size !== 1) return UNKNOWN_PATIENT;
+  if (invalidLink) return UNKNOWN_PATIENT;
+  if (ids.size === 0 && withheldLink) return WITHHELD_PATIENT;
+  if (ids.size !== 1) return UNKNOWN_PATIENT;
   const [singleId] = ids;
   const match = index.patientMap.get(singleId);
+  if (!match && index.withheld.has(singleId)) return WITHHELD_PATIENT;
   return match && match !== DUPLICATE ? formatResolvedPatient(match, index.formattedMap) : UNKNOWN_PATIENT;
 }
 

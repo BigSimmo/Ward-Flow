@@ -41,6 +41,10 @@ import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/war
 // header, filter and footer, so a ward and a coordinator read one pattern.
 import drawer from "../ward-tasks-drawer.module.css";
 import styles from "./ward-notification-center.module.css";
+import { ShowMoreRow } from "@/components/wf";
+
+/** A list longer than this (and two more) shows these rows first, then Show more. */
+const FIRST_ROWS = 6;
 
 export interface WardNotificationCenterProps {
   unitId: string;
@@ -117,7 +121,8 @@ function getPatientIdentity(
     const resolved = resolveIdentity
       ? resolveIdentity(movement)
       : resolveSubjectPatient(movement, { movements, patients });
-    return { name: resolved.displayName, umrn: resolved.umrn === UMRN_NOT_RECORDED ? undefined : resolved.umrn };
+    // Redesign (owner rule D-83): surname first, the record name rather than the display name.
+    return { name: resolved.formalName, umrn: resolved.umrn === UMRN_NOT_RECORDED ? undefined : resolved.umrn };
   } catch {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return { name: NAME_NOT_RECORDED };
@@ -200,6 +205,65 @@ function NoticeRow({
   );
 }
 
+/** One person inside a shared row: name, record number, when, and their own step. */
+type GroupMember = { key: string; name: string; umrn?: string; when: string; action: ReactNode; testId?: string };
+
+/**
+ * Redesign: notices of the same kind share one row ("Medical clearance not recorded · 2 people"), with
+ * the shared sentence once and one line per person, as the Alerts drawer mock-up groups its alerts.
+ */
+function NoticeGroupRow({
+  tone,
+  icon: RowIcon,
+  title,
+  status,
+  detail,
+  members,
+}: {
+  tone: WfTone;
+  icon: LucideIcon;
+  title: string;
+  status: string;
+  detail: string;
+  members: readonly GroupMember[];
+}) {
+  return (
+    <li className={drawer.row} data-tone={tone} data-expanded="true" data-done="false" data-group="">
+      <div className={drawer.rowHead}>
+        <span className={drawer.rowIcon} aria-hidden="true">
+          <RowIcon aria-hidden="true" />
+        </span>
+        <div className={drawer.rowText}>
+          <span className={`${drawer.rowTitle} ${styles.rowTitleWraps}`}>{title}</span>
+          <p className={`${drawer.rowMeta} ${styles.rowMetaWraps}`}>
+            <StatusGlyph tone={tone} size={9} />
+            <span>{status}</span>
+            <span aria-hidden="true">·</span>
+            <span>{members.length} people</span>
+          </p>
+        </div>
+      </div>
+      <div className={drawer.rowDetail}>
+        <p className={drawer.detailLine}>{detail}</p>
+      </div>
+      <ul className={styles.groupList} aria-label={`${title}, ${members.length} people`}>
+        {members.map((member) => (
+          <li key={member.key} className={styles.groupMember} data-testid={member.testId}>
+            <span className={styles.memberText}>
+              <span className={styles.memberWho}>
+                <strong>{member.name}</strong>
+                {member.umrn ? <span className={drawer.mono}>{member.umrn}</span> : null}
+              </span>
+              <span className={styles.memberWhen}>{member.when}</span>
+            </span>
+            {member.action}
+          </li>
+        ))}
+      </ul>
+    </li>
+  );
+}
+
 function PatientMeta({ name, umrn }: { name: string; umrn?: string }) {
   return (
     <>
@@ -254,6 +318,19 @@ export function WardNotificationCenter({
   const rollupTimeLabel = `${String(rollupHour).padStart(2, "0")}:${String(rollupMin).padStart(2, "0")}`;
   const [filter, setFilter] = useState<FilterKey>("all");
   const [openGroups, setOpenGroups] = useState<ReadonlySet<string>>(new Set());
+  // Redesign (owner rule): a long list shows its first rows, then Show more.
+  const [shownAll, setShownAll] = useState<ReadonlySet<string>>(new Set());
+  const firstRows = (id: string, rows: ReactNode[]) => {
+    if (rows.length <= FIRST_ROWS + 2 || shownAll.has(id)) return rows;
+    return [
+      ...rows.slice(0, FIRST_ROWS),
+      <li key={`${id}-more`} className={styles.moreRow}>
+        <ShowMoreRow onClick={() => setShownAll((previous) => new Set(previous).add(id))}>
+          Show {rows.length - FIRST_ROWS} more
+        </ShowMoreRow>
+      </li>,
+    ];
+  };
   const [soundEnabled, setSoundEnabled] = useAudioBuzzPreference();
   const baseId = useId();
 
@@ -311,11 +388,12 @@ export function WardNotificationCenter({
 
   // Option A: a clearance row opens that patient's request in the ward's Answer view, or the transfer
   // once accepted. The request is named in the query, so the Answer view does not land on the oldest one.
-  const transferAction = (m: Movement) => {
+  // Redesign: the filled button is kept for Act now rows; a Check row's step is a plain button.
+  const transferAction = (m: Movement, filled = true) => {
     const accepted = m.acceptedUnitId === unitId;
     return (
       <Link
-        className={`${drawer.btn} ${drawer.btnPrimary}`}
+        className={filled ? `${drawer.btn} ${drawer.btnPrimary}` : drawer.btn}
         href={
           accepted
             ? movementHref(m.id)
@@ -346,57 +424,76 @@ export function WardNotificationCenter({
   const showCoordinator = filter === "all" || filter === "coordinator";
   const attentionShown = (showAct ? actCount : 0) + (showCheck ? checkCount : 0);
 
-  const attentionRows = (
-    <>
-      {showAct && isCensusOverdue ? (
-        <NoticeRow
-          tone="danger"
-          icon={ClipboardCheck}
-          title="Morning numbers not confirmed"
-          status="Act now"
-          meta={
-            <>
-              <span aria-hidden="true">·</span>
-              <span>Due {rollupTimeLabel}</span>
-            </>
-          }
-          value={censusLateMinutes > 0 ? splitDuration(censusLateMinutes) : undefined}
-          state="Overdue"
-          detail="Confirm today's discharges and the beds you can offer."
-          testId="ward-census-overdue"
-          actions={
-            <button
-              type="button"
-              className={`${drawer.btn} ${drawer.btnPrimary}`}
-              onClick={() => onConfirmMorningRollup?.()}
-            >
-              Confirm numbers
-            </button>
-          }
-        />
-      ) : null}
-      {showAct
-        ? overdueArrivals.map((m) => {
-            const who = identityOf(m);
-            const eta = formatInstantWithDay(m.arrivalDetails!.estimatedArrivalAt, now);
-            return (
-              <NoticeRow
-                key={`overdue-${m.id}`}
-                tone="danger"
-                icon={Truck}
-                title="Arrival overdue"
-                status="Act now"
-                meta={<PatientMeta {...who} />}
-                value={`ETA ${eta}`}
-                state="Overdue"
-                detail={`Expected ${eta}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes late.`}
-                actions={transferAction(m)}
-              />
-            );
-          })
-        : null}
-      {showAct
-        ? missingClearances.map((m) => (
+  const attentionRows = [
+    showAct && isCensusOverdue ? (
+      <NoticeRow
+        tone="danger"
+        icon={ClipboardCheck}
+        title="Morning numbers not confirmed"
+        status="Act now"
+        meta={
+          <>
+            <span aria-hidden="true">·</span>
+            <span>Due {rollupTimeLabel}</span>
+          </>
+        }
+        value={censusLateMinutes > 0 ? splitDuration(censusLateMinutes) : undefined}
+        // Redesign: "Overdue" is kept for legal form times; this is a ward's own daily time.
+        state="Late"
+        detail="Confirm today's discharges and the beds you can offer."
+        key="census-overdue"
+        testId="ward-census-overdue"
+        actions={
+          <button
+            type="button"
+            className={`${drawer.btn} ${drawer.btnPrimary}`}
+            onClick={() => onConfirmMorningRollup?.()}
+          >
+            Confirm numbers
+          </button>
+        }
+      />
+    ) : null,
+    ...(showAct
+      ? overdueArrivals.map((m) => {
+          const who = identityOf(m);
+          const eta = formatInstantWithDay(m.arrivalDetails!.estimatedArrivalAt, now);
+          return (
+            <NoticeRow
+              key={`overdue-${m.id}`}
+              tone="danger"
+              icon={Truck}
+              title="Late arrival"
+              status="Act now"
+              meta={<PatientMeta {...who} />}
+              // Redesign: "Overdue" is kept for legal form times.
+              value={eta}
+              state="Past ETA"
+              detail={`Expected ${eta}. More than ${LATE_ARRIVAL_GRACE_MINUTES} minutes late.`}
+              actions={transferAction(m)}
+            />
+          );
+        })
+      : []),
+    ...(showAct
+      ? missingClearances.length > 1
+        ? [
+            <NoticeGroupRow
+              key="clearance-missing-group"
+              tone="danger"
+              icon={Stethoscope}
+              title="Medical clearance not given"
+              status="Act now"
+              detail="The transfer cannot go ahead until it is signed off."
+              members={missingClearances.map((m) => ({
+                key: m.id,
+                ...identityOf(m),
+                when: "Blocks transfer",
+                action: transferAction(m),
+              }))}
+            />,
+          ]
+        : missingClearances.map((m) => (
             <NoticeRow
               key={`clearance-${m.id}`}
               tone="danger"
@@ -409,9 +506,28 @@ export function WardNotificationCenter({
               actions={transferAction(m)}
             />
           ))
-        : null}
-      {showCheck
-        ? unrecordedClearances.map((m) => (
+      : []),
+    ...(showCheck
+      ? unrecordedClearances.length > 1
+        ? [
+            <NoticeGroupRow
+              key="clearance-unrecorded-group"
+              tone="warning"
+              icon={Stethoscope}
+              title="Medical clearance not recorded"
+              status="Check"
+              detail="Not recorded on the transfer. Check with the sending team."
+              members={unrecordedClearances.map((m) => ({
+                key: m.id,
+                ...identityOf(m),
+                when: m.acceptedUnitId === unitId ? "Before arrival" : "Before you accept",
+                action: transferAction(m, false),
+                testId: "ward-clearance-not-recorded",
+              }))}
+            />,
+          ]
+        : unrecordedClearances.map((m) => (
+            // Redesign: "Before arrival" is in the sentence; the right column keeps figures.
             <NoticeRow
               key={`clearance-unrecorded-${m.id}`}
               tone="warning"
@@ -419,19 +535,17 @@ export function WardNotificationCenter({
               title="Medical clearance not recorded"
               status="Check"
               meta={<PatientMeta {...identityOf(m)} />}
-              state="Before arrival"
               detail={
                 m.acceptedUnitId === unitId
                   ? "Not recorded on the transfer. Check with the sending team before arrival."
                   : "Not recorded on the transfer. Check with the sending team before you accept."
               }
               testId="ward-clearance-not-recorded"
-              actions={transferAction(m)}
+              actions={transferAction(m, false)}
             />
           ))
-        : null}
-    </>
-  );
+      : []),
+  ].filter(Boolean);
 
   const buzzRows = buzzGroups.map((group, groupIndex) => {
     const [latest] = group;
@@ -588,7 +702,8 @@ export function WardNotificationCenter({
           </span>
           <div className={drawer.headerText}>
             <h2 className={drawer.heading}>Notices</h2>
-            <p className={drawer.headerNote}>{unitName} · this ward only</p>
+            {/* Redesign: the page already says this is the ward's own panel. */}
+            <p className={drawer.headerNote}>{unitName}</p>
           </div>
           <span className={drawer.headingCount} data-testid="ward-notification-count">
             <span className={drawer.mono}>{totalUnreadAlerts}</span> open
@@ -599,6 +714,8 @@ export function WardNotificationCenter({
               type="button"
               className={drawer.closeButton}
               onClick={onClose}
+              // Redesign: focus starts on Close, so the sheet itself never draws a focus outline on open.
+              data-sheet-autofocus="true"
               aria-label="Close notices"
               title="Close notices"
               data-testid="ward-notification-close-btn"
@@ -645,9 +762,10 @@ export function WardNotificationCenter({
                   {attentionShown}
                   <span className="sr-only"> sample records</span>
                 </span>
-                <span className={drawer.sectionNote}>Leaves when done</span>
+                {/* Redesign: the Alerts drawer mock-up's wording for the same rule. */}
+                <span className={drawer.sectionNote}>Leaves when no longer true</span>
               </div>
-              <ul className={drawer.list}>{attentionRows}</ul>
+              <ul className={drawer.list}>{firstRows("attention", attentionRows)}</ul>
             </section>
           ) : filter !== "all" ? (
             quiet(`Nothing to ${filter === "check" ? "check" : "act on"} on ${unitName}.`)
@@ -673,20 +791,19 @@ export function WardNotificationCenter({
                   <span className="sr-only"> sample records</span>
                 </span>
               </div>
-              <ul className={drawer.list}>
-                {buzzRows}
-                {noticeRows}
-              </ul>
+              <ul className={drawer.list}>{firstRows("coordinator", [...buzzRows, ...noticeRows])}</ul>
             </section>
           )
         ) : null}
       </div>
 
-      <div className={`${drawer.drawerFoot} ${styles.foot}`}>
-        <span className={styles.footNote}>Urgent buzzes from the coordinator play a sound.</span>
+      <div className={`${drawer.drawerFoot} ${styles.foot} ${styles.footEnd}`}>
+        {/* Redesign: the explaining sentence moves into the switch's tooltip and spoken label. */}
         <button
           type="button"
           data-testid="ward-buzz-audio-toggle"
+          title="Urgent buzzes from the coordinator play a sound."
+          aria-describedby={`${baseId}-sound-note`}
           className={drawer.btn}
           aria-pressed={soundEnabled}
           onClick={() => setSoundEnabled(!soundEnabled)}
@@ -694,6 +811,9 @@ export function WardNotificationCenter({
           {soundEnabled ? <Bell aria-hidden="true" /> : <BellOff aria-hidden="true" />}
           {soundEnabled ? "Buzz sound on" : "Buzz sound off"}
         </button>
+        <span id={`${baseId}-sound-note`} className="sr-only">
+          Urgent buzzes from the coordinator play a sound.
+        </span>
       </div>
     </section>
   );

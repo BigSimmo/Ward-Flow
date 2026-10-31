@@ -97,10 +97,13 @@
  * pin sits just above its table's own content (592px and 520px) and is never inert. The browser
  * threshold sweep then measured the departments table's min-content at 528px in CI, above the
  * 520px pin, so that pin moved to 560px (35rem). CI then measured the wards table's min-content at
-597px, above its 592px pin, so that pin moved to 640px (40rem).
+597px, above its 592px pin, so that pin moved to 640px (40rem). 31 Oct 2026: the redesign added an
+Occupancy column (6 columns). Re-measured in Playwright chromium on the dev server, 1440x900, min-width
+cleared to 0px and read back: min-content 583.14px, max-content 692.33px. The pin sits clear of
+max-content at 704px (44rem).
  */
 .wardTable {
-  min-width: 40rem;
+  min-width: 44rem;
 }
 
 .edTable {
@@ -173,67 +176,6 @@ table.pinTable {
   margin-left: 0;
 }
 
-/* "Open a unit": every unit as a link, four to a row on desktop. */
-.chooserAnchor {
-  scroll-margin-top: var(--wf-s-4);
-}
-
-.chooserAnchor:focus {
-  outline: none;
-}
-
-.chooserSearch {
-  flex: 0 1 220px;
-  min-width: 160px;
-}
-
-.chooserGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--wf-line);
-}
-
-.chooserGrid li {
-  min-width: 0;
-  border-right: 1px solid var(--wf-line);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.chooserLink {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 16px;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-height: 36px;
-  padding: 0 var(--wf-s-3) 0 var(--wf-s-4);
-  color: var(--wf-ink-1);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.chooserLink:hover {
-  background: var(--wf-hover);
-}
-
-.chooserLink:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
-.noSite {
-  color: var(--wf-ink-3);
-  font-weight: 400;
-}
-
-@media (max-width: 640px) {
-  .chooserLink {
-    min-height: var(--ward-tap, 48px);
-  }
-}
-
 /* Phone polish (8 Oct 2026): CSV export is left to the larger screen so the card titles keep
  * their room, the search takes its own row, and the bar charts give the bars the width.
  * Under 48rem only. */
@@ -246,8 +188,7 @@ table.pinTable {
     padding: 0 var(--wf-s-3) var(--wf-s-3);
   }
 
-  .toolbarTight > .wardSearch,
-  .chooserAnchor .chooserSearch {
+  .toolbarTight > .wardSearch {
     flex: 1 1 100%;
     min-width: 0;
   }
@@ -268,19 +209,43 @@ table.pinTable {
   .pinSelect {
     width: 8.5rem;
   }
+}
 
-  .chooserLink {
-    padding: 0 var(--wf-s-3);
+/* the first eight rows, then Show all. */
+.showRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.showRow b {
+  color: var(--wf-ink-1);
+}
+
+/* Josh, 30 Oct 2026: phone controls keep their real size (no 48px enlargement). Show all keeps
+   a comfortable touch area that does not show. */
+@media (max-width: 48rem) {
+  .showRow button {
+    position: relative;
   }
 
-  .chooserGrid li {
-    border-right: 0;
+  .showRow button::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
   }
 }
 
-/* Layout sweep STATS-12: a full touch target for each chooser row on a touch tablet. */
-@media (pointer: coarse) and (min-width: 48.0625rem) {
-  .chooserLink {
-    min-height: var(--wf-touch);
-  }
+/* The phone "Compare two wards" row (statistics-compare-sheet-row.tsx): its second line names both
+   wards, so it wraps in full rather than ending in "…". Doubled to sit over the shared row's cut. */
+.navSubWrap.navSubWrap {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
 }

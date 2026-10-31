@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { PlannedAdmissionsPanel } from "@/components/ward-management/capacity/planned-admissions-panel";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { isOpen } from "@/components/ward-management/ward-derivations";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
+import { patientListName } from "@/components/ward-management/ward-patients";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const selected = vi.hoisted(() => ({
@@ -157,7 +157,8 @@ describe("planned admission chooser work", () => {
     ]);
     const expected = [...selected.value.patients]
       .filter((patient) => !busy.has(patient.id))
-      .sort((a, b) => patientDisplayName(a).localeCompare(patientDisplayName(b)));
+      // The Capacity redesign lists people surname first (D-83), in that order.
+      .sort((a, b) => patientListName(a).localeCompare(patientListName(b)));
     expect(expected.length).toBeGreaterThan(1);
     const beforeBook = passes();
     fireEvent.click(screen.getByTestId("ward-planned-book"));

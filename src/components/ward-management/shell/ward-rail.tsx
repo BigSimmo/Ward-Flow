@@ -26,13 +26,14 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { surnameFirst } from "@/components/ward-management/settings/settings-profile";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
-import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
 import { edById } from "@/components/ward-management/ward-sites";
@@ -64,6 +65,18 @@ import {
   type RoleMenuAction,
   roleMenu,
 } from "./ward-rail-entries";
+import {
+  BedAlertMeter,
+  PinButton,
+  countScopeNote,
+  countTitle,
+  deskCapacityRows,
+  CLOSE_MENUS_EVENT,
+  capacityRowsSpoken,
+  cardScopeNote,
+  overLineLabel,
+  usePinnedPages,
+} from "./ward-rail-parts";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import {
@@ -84,9 +97,10 @@ export type { ServiceBedAlert } from "./ward-service-bed-alerts";
  * mockups, 7 October 2026). The layout and element placement are the third edition's; only the
  * skin changed. Josh's decisions for this pass:
  *
- * - The occupancy card is now "Bed alerts": an alert count, Metro and the hottest health service,
- *   each with a meter and an 85% tick. Its dropdown lists every health service. Every figure comes
- *   from `deriveServiceBedAlerts`, never typed here.
+ * - The occupancy card is now "Bed alerts": how many places are over 85%, one row per place with a
+ *   meter and an 85% tick (the desk's own place first, `deskCapacityRows`), and the beds ready now.
+ *   Its dropdown lists every health service. Every figure comes from `deriveServiceBedAlerts` and
+ *   the desk's own wards, never typed here.
  * - The "Reconciliation not published" line is removed from the rail. `ward-reconciliation-line.tsx`
  *   stays (the Search hub still imports its sentence composer) but is no longer mounted here.
  * - The rail carries no New referral (v10, Josh 10 Oct 2026): the header holds the one primary,
@@ -194,7 +208,7 @@ const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
-  { id: "glare", label: "Glare" },
+  { id: "glare", label: "Bright light" },
 ] as const;
 
 type AppearanceChoice = (typeof APPEARANCE_CHOICES)[number]["id"];
@@ -245,21 +259,6 @@ function viewingDeskLine(
 export type WardRailProps = {
   onOpenOperatorModal?: () => void;
 };
-
-/** One meter row: a label, a 5px track with the 85% tick, and the mono percentage. */
-function BedAlertMeter({ percent }: { percent: number }) {
-  const width = Math.max(0, Math.min(100, percent));
-  return (
-    <span className={styles.meter} aria-hidden="true">
-      <span
-        className={styles.meterFill}
-        data-alert={isBedAlert(percent) ? "true" : undefined}
-        style={{ width: `${width}%` }}
-      />
-      <span className={styles.meterTick} style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }} />
-    </span>
-  );
-}
 
 /** The Ward Flow mark: a care cross whose right arm runs on as an arrow, for flow (8 October 2026). */
 function WardFlowMark({ className }: { className?: string }) {
@@ -351,7 +350,13 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const deskHome = useDeskHomeHref();
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
-  const currentPersona = useEffectiveWardAccess().role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  const deskAccess = useEffectiveWardAccess();
+  const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  // Q58 (Josh, 31 Oct 2026): the person card names the person surname first ("Okafor, A."), as
+  // Settings does; a desk named by its role keeps its name.
+  const personaName = surnameFirst(currentPersona.name);
+  // The access admin is named for itself, not the executive chrome it borrows (as the phone menu does).
+  const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
   // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
   const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
@@ -360,17 +365,24 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const shiftProgress = computeShiftProgress(boardMinute);
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
+  // The new sidebar (Josh, 30-31 Oct 2026): whose figures these are, the bed alert rows for the
+  // desk's own place, and the pages pinned under the role's menu.
+  const countNote = countScopeNote(deskAccess, service);
+  const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
+  const overLine = overLineLabel(capacityRows);
+  const firstRow = capacityRows[0];
+  const capacityRowsLabel = capacityRowsSpoken(capacityRows);
+  const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
+  const readyLabel = `${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now`;
+  const pinnedIds = usePinnedPages();
+  // Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card.
+  const showHandover = role !== "executive" && deskAccess.role !== "admin";
+  // The tablet Menu (no rail on screen) shows the capacity card; the rail's own More does not need it.
+  const sheetAlertsClass = sheetShowsMain ? `${styles.sheetAlerts} ${styles.sheetAlertsShow}` : styles.sheetAlerts;
 
-  // Every figure below comes from the derivation; nothing is typed here.
+  // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
-  const alertCount = bedAlerts.services.filter((svc) => isBedAlert(svc.occupancyPercent)).length;
-  // Says what it counts, services over the bed alert line, so it is never read as the Alerts page's
-  // own list (#793: "2 alerts" here while Alerts said no alert needs you).
-  const alertCountLabel = `${alertCount === 0 ? "None" : alertCount} over ${BED_ALERT_THRESHOLD_PERCENT}%`;
-  const metroPercent = bedAlerts.metroOccupancyPercent;
-  const metroLabel = metroPercent === null ? "Metro —" : `Metro ${formatOccupancyPercent(metroPercent)}`;
-  const hottestLabel = hottest ? `${hottest.shortName} ${formatOccupancyPercent(hottest.occupancyPercent)}` : "";
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -395,6 +407,13 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
       }),
     [],
   );
+
+  // A header action that opens its own sheet (New referral from this menu) closes the menu.
+  useEffect(() => {
+    const close = () => setMoreOpen(false);
+    window.addEventListener(CLOSE_MENUS_EVENT, close);
+    return () => window.removeEventListener(CLOSE_MENUS_EVENT, close);
+  }, []);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -459,8 +478,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
 
   // B1 (Josh, 19 Oct 2026): the role's own short menu on the rail, everything else under More, in
   // the one per-role order `ward-rail-entries.ts` defines (H-0281).
-  const menu = roleMenu(entries, role);
-  const menuLabel = CHROME_ROLE_LABELS[role];
+  // The access admin borrows the executive's chrome; its own menu is named for it and leads with
+  // Governance, which it may open (Josh, 30 Oct 2026).
+  const menu = roleMenu(entries, role, deskAccess.role === "admin");
+  const menuLabel = deskRoleLabel;
   const activeEntry = entries.find((entry) => isActiveRailEntry(pathname, entry));
   // A5 (overall review, 20 Oct 2026): Handover shows once. Where the countdown card above the menu
   // opens the handover board, the menu does not repeat it. On the rail that is CSS (the open rail
@@ -479,12 +500,19 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // The rail's More holds the rest; the sheet also leads with the role's menu when the rail is hidden.
   // Every group in the sheet leaves Handover out under the sheet's countdown, More's groups too
   // (an ED desk keeps Handover under More).
-  const sheetGroups = (sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...menu.more] : menu.more).map(
-    (group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
-      label: group.label,
-      entries: withoutHandover([...group.entries]),
-    }),
-  );
+  // Pinned pages: any page in More the person pinned, under the role's own menu (this tab only).
+  const mainIds = new Set(menu.main.map((item) => item.id));
+  const pinnedEntries = pinnedIds
+    .map((id) => entries.find((entry) => entry.id === id))
+    .filter((entry): entry is RailEntry => entry !== undefined && !mainIds.has(entry.id));
+  // The Menu sheet (no rail on screen) lists the pinned pages after the role's menu, as the rail does.
+  const pinnedGroup = sheetShowsMain && pinnedEntries.length > 0 ? [{ label: "Pinned", entries: pinnedEntries }] : [];
+  const sheetGroups = (
+    sheetShowsMain ? [{ label: menuLabel, entries: menu.main }, ...pinnedGroup, ...menu.more] : menu.more
+  ).map((group: { label: string; entries: readonly (RailEntry | RoleMenuAction)[] }) => ({
+    label: group.label,
+    entries: withoutHandover([...group.entries]),
+  }));
   const firstSheetId = sheetGroups[0]?.entries[0]?.id;
   const capacityOpen = canOpen(WARD_CAPACITY_HREF);
   const handoverCountdown = (
@@ -573,11 +601,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
     const Icon = entry.icon;
     const active = isActiveRailEntry(pathname, entry);
     const count = counts[entry.id as keyof typeof counts];
-    const label = wardNavCountLabel(entry.label, count);
+    // Each count says whose figure it is ("Waiting: 6 waiting in ED, for RPH and the EDs this desk covers").
+    const label = count ? `${wardNavCountLabel(entry.label, count)}, ${countNote}` : entry.label;
     const compactLabel = COMPACT_LABELS[entry.id] ?? entry.label;
     const abbreviated = compactLabel !== entry.label;
     const showClosedRailCard = !options.sheet && !shownOpen && isClosedRailCardViewport;
-    const hoverCard = count ? `${entry.label} · ${count.value}\n${sentenceStart(count.noun)}` : entry.label;
+    const hoverCard = count
+      ? `${entry.label} · ${count.value}\n${sentenceStart(count.noun)}, ${countNote}`
+      : entry.label;
     const link = (
       <Link
         ref={options.firstInSheet ? firstMoreLinkRef : undefined}
@@ -587,7 +618,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         data-two-line={count ? "true" : undefined}
         aria-current={active ? "page" : undefined}
         aria-label={label}
-        title={showClosedRailCard ? undefined : label}
+        title={showClosedRailCard ? undefined : count ? countTitle(entry.label, count, countNote) : entry.label}
         data-testid="ward-rail-link"
         onClick={() => {
           announceToWardShell(active ? `${entry.label}. This is the screen you are on.` : `${entry.label}.`);
@@ -629,47 +660,46 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         className={itemClass || undefined}
         data-countdown-twin={options.countdownTwin ? "true" : undefined}
       >
-        <Tooltip
-          content={hoverCard}
-          placement="right"
-          presentationOnly
-          disabled={!showClosedRailCard}
-          wrapperClassName={styles.railTooltipTrigger}
-          className={styles.railFlyCard}
-        >
-          {link}
-        </Tooltip>
+        {options.sheet ? (
+          <div className={styles.pinRow}>
+            {link}
+            {/* A page already in the role's own menu has nothing to pin. */}
+            {mainIds.has(entry.id) ? null : (
+              <PinButton id={entry.id} label={entry.label} pinned={pinnedIds.includes(entry.id)} />
+            )}
+          </div>
+        ) : (
+          <Tooltip
+            content={hoverCard}
+            placement="right"
+            presentationOnly
+            disabled={!showClosedRailCard}
+            wrapperClassName={styles.railTooltipTrigger}
+            className={styles.railFlyCard}
+          >
+            {link}
+          </Tooltip>
+        )}
       </li>
     );
   }
 
+  // The Menu sheet's bed alert rows are the rail card's rows, the desk's own place first.
   function renderBedAlertRows() {
-    return (
-      <>
-        <span className={styles.alertRow}>
-          <span className={styles.alertRowName}>Metro</span>{" "}
-          {metroPercent === null ? (
-            <span className={styles.meter} aria-hidden="true" />
-          ) : (
-            <BedAlertMeter percent={metroPercent} />
-          )}
-          <span className={styles.alertRowPercent}>
-            {metroPercent !== null ? <Dot tone={isBedAlert(metroPercent) ? "warning" : "neutral"} /> : null}
-            {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
-          </span>
+    return capacityRows.map((row) => (
+      <span key={row.key} className={styles.alertRow}>
+        <span className={styles.alertRowName}>{row.name}</span>{" "}
+        {row.percent === null ? (
+          <span className={styles.meter} aria-hidden="true" />
+        ) : (
+          <BedAlertMeter percent={row.percent} />
+        )}
+        <span className={styles.alertRowPercent}>
+          {row.percent !== null ? <Dot tone={isBedAlert(row.percent) ? "warning" : "neutral"} /> : null}
+          {row.percent === null ? "—" : formatOccupancyPercent(row.percent)}
         </span>
-        {hottest ? (
-          <span className={styles.alertRow}>
-            <span className={styles.alertRowName}>{hottest.shortName}</span>{" "}
-            <BedAlertMeter percent={hottest.occupancyPercent} />
-            <span className={styles.alertRowPercent}>
-              <Dot tone={isBedAlert(hottest.occupancyPercent) ? "warning" : "neutral"} />
-              {formatOccupancyPercent(hottest.occupancyPercent)}
-            </span>
-          </span>
-        ) : null}
-      </>
-    );
+      </span>
+    ));
   }
 
   return (
@@ -764,51 +794,55 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         </p>
       ) : null}
 
-      <div className={styles.shiftCockpit}>
-        <div
-          className={styles.shiftCockpitTop}
-          title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
-        >
-          <span className={styles.shiftAvatar} aria-hidden="true">
-            {currentPersona.initials}
-          </span>
-          <span className={styles.shiftMeta}>
-            <span className={styles.shiftTitle}>
-              {shiftProgress.shiftName}
-              <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
-            </span>
-            <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
-              {currentPersona.name} · {currentPersona.role}
-            </span>
-            {viewing ? (
-              <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
-                {viewing}
-              </span>
-            ) : null}
-          </span>
-        </div>
-        {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
-            (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
-        {handoverCardLinks ? (
-          <Link
-            href={handoverHref()}
-            className={styles.shiftTimerLink}
-            title="Open shift handover board"
-            aria-label={
-              handoverText === null
-                ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-                : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-            }
+      {/* Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card. */}
+      {showHandover ? (
+        <div className={styles.shiftCockpit}>
+          <div
+            className={styles.shiftCockpitTop}
+            title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
           >
-            {handoverCountdown}
-          </Link>
-        ) : (
-          // DA-09: a desk without the handover board still sees the countdown, as plain text.
-          <span className={styles.shiftTimerLink} data-static="true" data-testid="ward-rail-handover-countdown">
-            {handoverCountdown}
-          </span>
-        )}
-      </div>
+            {/* Josh, 31 Oct 2026: the person's name stays on the shift card, and wraps in full. */}
+            <span className={styles.shiftAvatar} aria-hidden="true">
+              {currentPersona.initials}
+            </span>
+            <span className={styles.shiftMeta}>
+              <span className={styles.shiftTitle}>
+                {shiftProgress.shiftName}
+                <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
+              </span>
+              <span className={styles.shiftSub}>
+                {personaName} · {currentPersona.role}
+              </span>
+              {viewing ? (
+                <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
+                  {viewing}
+                </span>
+              ) : null}
+            </span>
+          </div>
+          {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
+            (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
+          {handoverCardLinks ? (
+            <Link
+              href={handoverHref()}
+              className={styles.shiftTimerLink}
+              title="Open shift handover board"
+              aria-label={
+                handoverText === null
+                  ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+                  : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+              }
+            >
+              {handoverCountdown}
+            </Link>
+          ) : (
+            // DA-09: a desk without the handover board still sees the countdown, as plain text.
+            <span className={styles.shiftTimerLink} data-static="true" data-testid="ward-rail-handover-countdown">
+              {handoverCountdown}
+            </span>
+          )}
+        </div>
+      ) : null}
 
       {hottest ? (
         <div className={styles.alertsContainer} ref={alertsRef}>
@@ -816,7 +850,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               Device audit (11 Oct 2026): the bare "86%" was cryptic, so the accessible name and the
               tooltip both lead with what it counts — "Metro occupancy 85.9%". */}
           <Tooltip
-            content={`${metroLabel} occupied\nBed alerts: ${alertCountLabel}${hottestLabel ? `. Fullest ${hottestLabel}` : ""}`}
+            content={capacityRows
+              .map((row) => `${row.name} ${row.percent === null ? "—" : formatOccupancyPercent(row.percent)} full`)
+              .concat(`Bed alerts: ${overLine.label}`)
+              .join("\n")}
             placement="right"
             presentationOnly
             disabled={shownOpen}
@@ -826,36 +863,36 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             <button
               type="button"
               className={styles.compactAlertPip}
-              data-alert={alertCount > 0 ? "true" : undefined}
+              data-alert={overLine.over > 0 ? "true" : undefined}
               data-testid="ward-rail-compact-alert-pip"
-              aria-label={`${metroLabel} occupied. Bed alerts: ${alertCountLabel}. ${hottestLabel}`}
+              aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyLabel}, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
               aria-expanded={alertsOpen}
               aria-haspopup="dialog"
               onClick={(event) => {
                 alertsTriggerRef.current = event.currentTarget;
                 const nextOpen = !alertsOpen;
                 setOpenOverlay(nextOpen ? "alerts" : null);
-                if (nextOpen) announceToWardShell(`Bed alerts: ${alertCountLabel}. ${metroLabel}. ${hottestLabel}.`);
+                if (nextOpen) announceToWardShell(`Bed alerts: ${overLine.label}.`);
               }}
             >
-              {alertCount > 0 ? <Dot tone="warning" /> : null}
+              {overLine.over > 0 ? <Dot tone="warning" /> : null}
               <span className={styles.compactAlertVal}>
-                {metroPercent === null ? "—" : `${Math.round(metroPercent)}%`}
+                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
               </span>
             </button>
           </Tooltip>
 
-          {/* One line (Josh, 8 October 2026): the Metro figure and the fullest service by its short
-              name ("East"), with the dot only when a service is at or over the threshold. The full
-              names are in the label and the list that opens below. */}
+          {/* Bed alerts stay about capacity (Josh, 30 Oct 2026). The card leads with occupancy, one
+              row per place with its meter and the 85% tick, says in words how many are over the
+              line, and gives the ready beds as the second line. A site, service or ward desk reads
+              its own wards first. The card still opens the full list below. */}
           <button
             type="button"
-            className={styles.capacityPulseStrip}
+            className={`${styles.capacityPulseStrip} ${styles.capacityCard}`}
             data-open={alertsOpen ? "true" : undefined}
-            data-alert={alertCount > 0 ? "true" : undefined}
+            data-alert={overLine.over > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            aria-label={`${metroLabel} ${SERVICE_SHORT_LABEL[hottest.shortName]} ${formatOccupancyPercent(hottest.occupancyPercent)}. Bed alerts: ${alertCountLabel}. ${hottestLabel}.`}
-            title={`Bed alerts: ${alertCountLabel}. Occupancy against ${BED_ALERT_THRESHOLD_PERCENT}%.`}
+            aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyLabel}, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={(event) => {
@@ -863,24 +900,51 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               setOpenOverlay((prev) => (prev === "alerts" ? null : "alerts"));
             }}
           >
-            {alertCount > 0 ? <Dot tone="warning" className={styles.alertLineDot} /> : null}
-            <span className={styles.alertFigure}>
-              <span className={styles.alertFigureName}>Metro</span>{" "}
-              <span className={styles.alertFigureValue}>
-                {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
+            <span className={styles.capacityHead} aria-hidden="true">
+              <span className={styles.alertsEyebrow}>Bed alerts</span>
+              <span className={styles.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
+                {overLine.over > 0 ? <Dot tone="warning" /> : null}
+                {overLine.label}
+              </span>
+              <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
+                <ChevronDown aria-hidden="true" strokeWidth={1.75} />
               </span>
             </span>
-            <span className={styles.alertFigure} data-flex="true">
-              <span className={styles.alertFigureName}>{SERVICE_SHORT_LABEL[hottest.shortName]}</span>{" "}
-              <span className={styles.alertFigureValue}>{formatOccupancyPercent(hottest.occupancyPercent)}</span>
+            <span className={styles.capacityRows} aria-hidden="true">
+              {capacityRows.map((row) => (
+                <span key={row.key} className={styles.alertRow} title={`${row.counts}, beds in use`}>
+                  <span className={styles.alertRowName}>{row.name}</span>
+                  {row.percent === null ? <span className={styles.meter} /> : <BedAlertMeter percent={row.percent} />}
+                  <span className={styles.alertRowPercent}>
+                    {row.percent !== null && isBedAlert(row.percent) ? <Dot tone="warning" /> : null}
+                    {row.percent === null ? "—" : formatOccupancyPercent(row.percent)}
+                  </span>
+                </span>
+              ))}
             </span>
-            <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
-              <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+            <span className={styles.capacityReady} aria-hidden="true">
+              <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
             </span>
           </button>
 
           {alertsOpen ? (
-            <div className={styles.capacityAlertsDropdown} role="dialog" aria-label="Bed alerts">
+            <div
+              className={styles.capacityAlertsDropdown}
+              role="dialog"
+              aria-label="Bed alerts"
+              tabIndex={-1}
+              ref={(node) => {
+                // Focus moves into the list when it opens (its first row, or the list).
+                if (node && !node.contains(document.activeElement)) {
+                  (node.querySelector<HTMLElement>("a[href]") ?? node).focus({ preventScroll: true });
+                }
+              }}
+              onBlur={(event) => {
+                // Leaving the list by Tab closes it, as Escape does.
+                const next = event.relatedTarget as Node | null;
+                if (next && !alertsRef.current?.contains(next)) setOpenOverlay(null);
+              }}
+            >
               <div className={styles.alertsDropdownHeader}>
                 <div>
                   <strong className={styles.alertsDropdownTitle}>Bed alerts</strong>
@@ -906,6 +970,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                         <span className={styles.alertPercent}>
                           <Dot tone={atRisk ? "warning" : "neutral"} />
                           {formatOccupancyPercent(svc.occupancyPercent)}
+                          {atRisk ? <SrOnly>{`, over ${BED_ALERT_THRESHOLD_PERCENT}%`}</SrOnly> : null}
                         </span>
                       </span>
                       <span className={styles.alertFacts}>
@@ -989,6 +1054,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               )}
             </ul>
           </section>
+          {pinnedEntries.length > 0 ? (
+            <section aria-label="Pinned pages" className={styles.railGroup} data-testid="ward-rail-pinned">
+              <div className={`${styles.groupHead} ${styles.pinnedHead}`}>
+                <p className={styles.eyebrow}>Pinned</p>
+              </div>
+              <ul className={styles.railList}>{pinnedEntries.map((entry) => renderItem(entry))}</ul>
+            </section>
+          ) : null}
           {shownOpen ? <WardMyWards variant="rail" /> : null}
           {menu.more.length > 0 ? (
             // B1: everything else is one tap away. One More in every desktop shape (open, strip, tablet).
@@ -1083,6 +1156,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           <Link
             href={settingsHref()}
             className={styles.utilityLink}
+            aria-current={pathname.replace(/\/+$/u, "") === settingsHref() ? "page" : undefined}
             aria-label="Settings"
             title="Settings"
             data-testid="ward-rail-settings-link"
@@ -1116,14 +1190,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             }}
             aria-expanded={deskModalOpen}
             aria-haspopup="dialog"
-            aria-label={`${currentPersona.name}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
-            title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+            aria-label={`${personaName}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
+            title={`${personaName} · ${currentPersona.role}. Go to a desk`}
           >
             <span className={styles.userAvatar} aria-hidden="true">
               {currentPersona.initials}
             </span>
             <span className={styles.userMeta}>
-              <span className={styles.userName}>{currentPersona.name}</span>
+              <span className={styles.userName}>{personaName}</span>
               <span className={styles.userRole}>{currentPersona.role}</span>
             </span>
             <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
@@ -1178,14 +1252,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 setDeskModalOpen(true);
               }}
               aria-haspopup="dialog"
-              aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
-              title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+              aria-label={`${personaName}, ${currentPersona.role}. Go to a desk.`}
+              title={`${personaName} · ${currentPersona.role}. Go to a desk`}
             >
               <span className={styles.userAvatar} aria-hidden="true">
                 {currentPersona.initials}
               </span>
               <span className={styles.userMeta}>
-                <span className={styles.userName}>{currentPersona.name}</span>
+                <span className={styles.userName}>{personaName}</span>
                 <span className={styles.userRole}>{currentPersona.role}</span>
               </span>
               <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
@@ -1232,7 +1306,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
               <strong>{boardClock}</strong> AWST
             </span>
           </p>
-          {handoverCardLinks ? (
+          {!showHandover ? null : handoverCardLinks ? (
             <Link
               href={handoverHref()}
               className={`${styles.menuContextCell} ${styles.menuContextLink}`}
@@ -1267,26 +1341,32 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
         </div>
         {hottest ? (
           capacityOpen ? (
-            <Link href={WARD_CAPACITY_HREF} className={styles.sheetAlerts} onClick={() => setMoreOpen(false)}>
+            <Link href={WARD_CAPACITY_HREF} className={sheetAlertsClass} onClick={() => setMoreOpen(false)}>
               <span className={styles.alertsHead}>
                 <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
-                <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
-                  {alertCount > 0 ? <Dot tone="warning" /> : null}
-                  {alertCountLabel}
+                <span className={styles.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
+                  {overLine.over > 0 ? <Dot tone="warning" /> : null}
+                  {overLine.label}
                 </span>
               </span>
               {renderBedAlertRows()}
+              <span className={styles.capacityReady}>
+                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              </span>
             </Link>
           ) : (
-            <div className={styles.sheetAlerts}>
+            <div className={sheetAlertsClass}>
               <span className={styles.alertsHead}>
                 <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
-                <span className={styles.alertsChip} data-alert={alertCount > 0 ? "true" : undefined}>
-                  {alertCount > 0 ? <Dot tone="warning" /> : null}
-                  {alertCountLabel}
+                <span className={styles.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
+                  {overLine.over > 0 ? <Dot tone="warning" /> : null}
+                  {overLine.label}
                 </span>
               </span>
               {renderBedAlertRows()}
+              <span className={styles.capacityReady}>
+                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              </span>
             </div>
           )
         ) : null}
@@ -1294,6 +1374,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
           group.entries.length ? (
             <section key={group.label} aria-label={group.label}>
               <p className={styles.eyebrow}>{group.label}</p>
+              {/* Touch screens have no hover, so the menu says once whose figures these are. */}
+              {sheetShowsMain && group.label === menuLabel ? (
+                <p className={styles.countNote}>Counts {countNote}</p>
+              ) : null}
               <ul className={styles.moreList}>
                 {group.entries.map((item) =>
                   renderItem(item, {

@@ -10,6 +10,7 @@ import { ArrowLeftRight, BedDouble, CalendarClock, ChevronDown, ChevronUp, Lock 
 
 import {
   BarList,
+  Button,
   CardBody,
   CardFoot,
   FilterChip,
@@ -18,6 +19,7 @@ import {
   Icon,
   PhoneListRow,
   Segmented,
+  ShowMoreRow,
   SrOnly,
   StatusGlyph,
   cx,
@@ -45,7 +47,9 @@ import { ServiceDot } from "./statistics-services-index";
 import { PhoneBody, PhoneDotKey, PhoneList, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import styles from "./statistics-v6.module.css";
 import index from "./statistics-index.module.css";
+import list from "./statistics-wards-list.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import {
   ExecutiveStatisticsUnavailable,
@@ -98,6 +102,10 @@ function stayDays(arrivedAt: number | null, now: number): number | null {
 }
 
 const plural = (count: StatisticsCount, one: string, many: string) => (count === 1 ? one : many);
+
+/** How much of the list shows before Show more. */
+const FIRST_SERVICES = 2;
+const FIRST_ROWS = 8;
 
 /**
  * ALL WARDS — the Wards index page (Statistics A, 9 Oct 2026).
@@ -224,6 +232,8 @@ function WardsIndexView({
   scopeLabel?: string;
   releasedBlockedTotal?: StatisticsCount;
 }) {
+  // Compare is offered only to a desk that may open it (access audit, 31 Oct 2026).
+  const canCompare = useCanOpenHref()(STATISTICS_COMPARE_HREF);
   const section = statisticsSectionById("units");
   if (!section) throw new Error("statistics-sections.ts no longer defines the units section");
   const shown = (count: StatisticsCount) => statisticsCountText(count);
@@ -235,6 +245,8 @@ function WardsIndexView({
   const [asc, setAsc] = useState(false);
   const [group, setGroup] = useState<"service" | "none">("service");
   const [chips, setChips] = useState<ReadonlySet<WardChip>>(new Set());
+  const [showMore, setShowMore] = useState(false);
+  const [blockedAll, setBlockedAll] = useState(false);
   const isPhone = useIsPhone();
 
   type Row = WardIndexRow;
@@ -283,6 +295,29 @@ function WardsIndexView({
           { service: undefined, rows: sorted.filter((row) => row.service === undefined) },
         ].filter((entry) => entry.rows.length > 0)
       : [{ service: undefined, rows: sorted }];
+
+  // a long list opens on its first rows. By service shows the first two services and One
+  // list its first eight wards, the rest behind Show more. A pressed chip shows every ward, because
+  // highlighting never hides one.
+  const everything = showMore || chips.size > 0;
+  const visibleGroups = everything
+    ? groups
+    : group === "service"
+      ? groups.slice(0, FIRST_SERVICES)
+      : groups.map((entry) => ({ ...entry, rows: entry.rows.slice(0, FIRST_ROWS) }));
+  const visibleCount = visibleGroups.reduce((total, entry) => total + entry.rows.length, 0);
+  const hiddenServices = groups.length - visibleGroups.length;
+  const moreLabel = showMore
+    ? "Show fewer"
+    : group === "service"
+      ? `Show ${hiddenServices} more ${plural(hiddenServices, "service", "services")}, ${rows.length - visibleCount} ${plural(rows.length - visibleCount, "ward", "wards")}`
+      : `Show all ${rows.length} wards`;
+  const moreButton =
+    chips.size > 0 || (group === "service" ? groups.length <= FIRST_SERVICES : rows.length <= FIRST_ROWS) ? null : (
+      <ShowMoreRow expanded={showMore} onClick={() => setShowMore((more) => !more)}>
+        {moreLabel}
+      </ShowMoreRow>
+    );
 
   const onSort = (key: WardSortKey) => {
     if (key === sort) setAsc((value) => !value);
@@ -337,16 +372,20 @@ function WardsIndexView({
       paused={paused}
       onTogglePause={togglePause ?? undefined}
       tools={
-        <HeroTool
-          href={STATISTICS_COMPARE_HREF}
-          icon={<ArrowLeftRight size={14} aria-hidden="true" />}
-          testId="ward-statistics-wards-compare"
-        >
-          Compare wards
-        </HeroTool>
+        canCompare ? (
+          <HeroTool
+            href={STATISTICS_COMPARE_HREF}
+            icon={<ArrowLeftRight size={14} aria-hidden="true" />}
+            testId="ward-statistics-wards-compare"
+          >
+            Compare wards
+          </HeroTool>
+        ) : undefined
       }
       phone={{
-        title: `${overLine} ${plural(overLine, "ward", "wards")} over ${BED_ALERT_THRESHOLD_PERCENT}%`,
+        // the title names the page, as on desktop. It said "14 wards over 85%", the same
+        // fact as the Over 85% figure under it, which stays because it is the phone's highlight toggle.
+        title: "All wards",
         sub: `${readyBeds} ready ${plural(readyBeds, "bed", "beds")} · ${shown(blockedTotal)} ${plural(blockedTotal, "discharge", "discharges")} held up`,
         stats: (
           <>
@@ -422,20 +461,19 @@ function WardsIndexView({
             }}
             items={[
               { id: "service", label: "By service" },
-              { id: "none", label: "Fullest first" },
+              // the desktop switch's own words, so one control has one name.
+              { id: "none", label: "One list" },
             ]}
           />
           <PhoneList label="Every ward">
-            {groups.map((entry) => (
+            {visibleGroups.map((entry) => (
               <Fragment key={entry.service ?? "all"}>
                 {group === "service" ? (
                   <li className={phone.listHead}>
                     <GroupHead
                       title={
-                        <span className={phone.dotName}>
-                          <ServiceDot service={entry.service} />
-                          {entry.service ?? "Service not recorded"}
-                        </span>
+                        // no service colour dot beside the service's own name (calm colour).
+                        <span className={phone.dotName}>{entry.service ?? "Service not recorded"}</span>
                       }
                       aside={<b className={phone.mono}>{entry.rows.length}</b>}
                     />
@@ -449,7 +487,17 @@ function WardsIndexView({
                       as="li"
                       className={cx(chips.size > 0 && !hit && phone.dim)}
                       name={row.name}
-                      meta={`${row.hospital.replace(/ (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u, "")} · ${row.ready} ready · ${shown(row.blocked)} blocked`}
+                      // "held up", the hero's word, and only the parts that are not nought.
+                      meta={[
+                        row.hospital.replace(
+                          / (Memorial |General |Public )?(Hospital|Health Campus|Health Service)$/u,
+                          "",
+                        ),
+                        row.ready > 0 ? `${row.ready} ready` : null,
+                        positive(row.blocked) ? `${shown(row.blocked)} held up` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                       value={
                         <span className={phone.flagged}>
                           {row.rate >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
@@ -464,6 +512,7 @@ function WardsIndexView({
               </Fragment>
             ))}
           </PhoneList>
+          {moreButton}
           <PhoneDotKey testId="ward-statistics-wards-dot-key">
             {`Amber dot: ${BED_ALERT_THRESHOLD_PERCENT}% or more of beds in use`}
           </PhoneDotKey>
@@ -476,12 +525,25 @@ function WardsIndexView({
             className={index.anchorTarget}
             title="Every ward"
             aside={
-              <span className={cx(styles.muted, index.phoneHide)}>Sort by any column. Open a ward for its page.</span>
+              <span className={list.headTools}>
+                <span className={index.matchCount} data-testid="ward-statistics-wards-match-count">
+                  {chips.size > 0 ? `${matched} of ${rows.length} highlighted` : `${rows.length} wards`}
+                </span>
+                <Segmented
+                  label="Group wards"
+                  value={group}
+                  onChange={setGroup}
+                  items={[
+                    { id: "service", label: "By service" },
+                    { id: "none", label: "One list" },
+                  ]}
+                />
+              </span>
             }
             data-testid="ward-statistics-wards-table-card"
           >
-            <div className={styles.toolbar}>
-              <div className={index.chips} role="group" aria-label="Highlight wards">
+            <div className={cx(styles.toolbar, list.chipRow)}>
+              <div className={list.chips} role="group" aria-label="Highlight wards">
                 {chipItems.map((chip) => (
                   <FilterChip
                     key={chip.id}
@@ -494,18 +556,6 @@ function WardsIndexView({
                   </FilterChip>
                 ))}
               </div>
-              <Segmented
-                label="Group wards"
-                value={group}
-                onChange={setGroup}
-                items={[
-                  { id: "service", label: "By service" },
-                  { id: "none", label: "One list" },
-                ]}
-              />
-              <span className={index.matchCount} data-testid="ward-statistics-wards-match-count">
-                {chips.size > 0 ? `${matched} of ${rows.length} highlighted` : `${rows.length} wards`}
-              </span>
             </div>
             <div className={index.tableScroll} tabIndex={0} role="region" aria-label="Every ward, scrollable">
               <table className={cx(tableClasses.table, styles.table)} data-testid="ward-statistics-wards-table">
@@ -528,13 +578,12 @@ function WardsIndexView({
                   </tr>
                 </thead>
                 <tbody>
-                  {groups.map((entry) => (
+                  {visibleGroups.map((entry) => (
                     <Fragment key={entry.service ?? "all"}>
                       {group === "service" ? (
                         <tr className={index.groupRow}>
                           <th scope="colgroup" colSpan={10}>
                             <span className={index.groupLabel}>
-                              <ServiceDot service={entry.service} />
                               {entry.service ?? "Service not recorded"}
                               <span className={styles.muted}>{entry.rows.length}</span>
                             </span>
@@ -594,6 +643,7 @@ function WardsIndexView({
                 </tbody>
               </table>
             </div>
+            {moreButton}
             <CardFoot
               meta={`Ready includes beds being made ready. Highlighting never hides a ward. Stays count whole days since arrival.`}
             />
@@ -644,7 +694,7 @@ function WardsIndexView({
                     label="Current admissions with a block reason, by ward"
                     track
                     labelWidth="9.5rem"
-                    rows={blockedRows.map((row) => ({
+                    rows={(blockedAll ? blockedRows : blockedRows.slice(0, FIRST_ROWS)).map((row) => ({
                       id: row.id,
                       label: row.name,
                       ...withheldBar(exactStatisticsCount(row.blocked) ?? 0, shown(row.blocked)),
@@ -652,6 +702,24 @@ function WardsIndexView({
                   />
                 )}
               </CardBody>
+              {blockedRows.length > FIRST_ROWS ? (
+                <CardFoot
+                  meta={
+                    <>
+                      Showing <b>{blockedAll ? blockedRows.length : FIRST_ROWS}</b> of {blockedRows.length} wards
+                    </>
+                  }
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-expanded={blockedAll}
+                    onClick={() => setBlockedAll((all) => !all)}
+                  >
+                    {blockedAll ? "Show fewer" : `Show all ${blockedRows.length}`}
+                  </Button>
+                </CardFoot>
+              ) : null}
             </StatCard>
           </FlushRow>
         </>

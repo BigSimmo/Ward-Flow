@@ -1,8 +1,9 @@
 "use client";
+// Copied from src/components/ward-management/referrals/referral-match-lazy.tsx (Referrals redesign).
 
 import dynamic from "next/dynamic";
 
-import { preloadWhenIdle } from "../preload-when-idle";
+import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 
 /**
  * Phone script budget (19 October 2026): the match panel and its tiers are about 16 KB of the

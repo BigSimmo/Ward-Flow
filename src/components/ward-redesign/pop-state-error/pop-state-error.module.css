@@ -1,0 +1,16 @@
+/* Preview only: the error panel fills the page area; the prototype footer stays under it. */
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100%;
+}
+
+.main > :first-child {
+  flex: 1 0 auto;
+}
+
+.footer.footer {
+  margin-inline: var(--wf-s-4);
+  width: auto;
+}

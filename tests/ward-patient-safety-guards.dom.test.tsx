@@ -193,7 +193,7 @@ describe("AddPatientForm Patient Safety & Privacy Defenses", () => {
     fireEvent.change(screen.getByLabelText(/medical record number/i), { target: { value: "MRN999888" } });
     fireEvent.change(screen.getByLabelText(/given name/i), { target: { value: "Sarah" } });
     fireEvent.change(screen.getByLabelText(/family name/i), { target: { value: "Connor" } });
-    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: "1985-05-15" } });
+    fireEvent.change(screen.getByLabelText(/date of birth/i), { target: { value: "15/05/1985" } });
 
     const submitBtn = screen.getByTestId("ward-add-patient-submit");
     expect(submitBtn).not.toHaveAttribute("aria-disabled");

@@ -5,6 +5,8 @@ import { describe, expect, it, vi } from "vitest";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 
+import { isRedesignFork } from "./helpers/redesign-design-copies";
+
 /**
  * Fix list 1.5: screens raise events by name (`useWardRaise(role)`), not by building event objects
  * with a desk role and the time at each call. Raw `dispatch({` calls may only go down, file by file.
@@ -14,9 +16,8 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/alerts/alerts-screen.tsx": 7,
   "src/components/ward-management/alerts/global-alert-panels.tsx": 1,
-  "src/components/ward-management/capacity/capacity-phone-wards.tsx": 1,
   "src/components/ward-management/capacity/capacity-screen.tsx": 1,
-  "src/components/ward-management/capacity/capacity-ward-sidebar.tsx": 1,
+  "src/components/ward-management/capacity/capacity-ward-drawer.tsx": 1,
   "src/components/ward-management/capacity/planned-admissions-panel.tsx": 4,
   "src/components/ward-management/capacity/step-down-board.tsx": 1,
   "src/components/ward-management/community/community-screen.tsx": 1,
@@ -61,11 +62,15 @@ function screenFiles(dir: string): string[] {
 
 describe("screens raise events by name", () => {
   it("adds no raw dispatch calls to any screen", () => {
-    const over = screenFiles("src").flatMap((path) => {
-      const count = readFileSync(path, "utf8").match(/dispatch\(\{/g)?.length ?? 0;
-      const allowed = RAW_DISPATCH_BASELINE[path] ?? 0;
-      return count > allowed ? [`${path}: ${count} raw dispatch calls, ${allowed} allowed`] : [];
-    });
+    // The redesign fork copies (D-89, D-91) are design-only and deleted as each page is built; the
+    // real screens they copy are still counted here.
+    const over = screenFiles("src")
+      .filter((path) => !isRedesignFork(path))
+      .flatMap((path) => {
+        const count = readFileSync(path, "utf8").match(/dispatch\(\{/g)?.length ?? 0;
+        const allowed = RAW_DISPATCH_BASELINE[path] ?? 0;
+        return count > allowed ? [`${path}: ${count} raw dispatch calls, ${allowed} allowed`] : [];
+      });
     expect(over, "use useWardRaise(role) from ward-flow-raise.ts instead").toEqual([]);
   });
 

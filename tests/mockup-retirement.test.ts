@@ -598,9 +598,12 @@ describe("the committed repository", () => {
   it("indexes every mockup route it ships", () => {
     const result = auditIndex(process.cwd());
     expect(result.violations).toEqual([]);
-    // No mockup page routes are left since Ward Flow moved out of /mockups (19 October 2026); the
-    // digest is a route handler, not a page. A new mockup page must be indexed to pass.
-    expect(result.routeCount).toBe(0);
+    // No mockup page routes were left once Ward Flow moved out of /mockups (19 October 2026); the
+    // digest is a route handler, not a page. A new mockup page must be indexed to pass. The one page
+    // since is the redesign viewer (D-91), recorded in mockups/README.md as an active study and
+    // blocked in production. Named rather than counted, so a second page still fails here.
+    expect(result.routeCount).toBe(1);
+    expect(listRouteSlugs(process.cwd())).toEqual(["ward-flow-redesign"]);
   });
 
   it("declares no developer-gated prefixes now that Ward Flow has left /mockups", () => {

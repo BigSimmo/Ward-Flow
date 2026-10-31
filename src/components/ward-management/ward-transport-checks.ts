@@ -181,15 +181,16 @@ export function minutesFromTimeInput(value: string): number | undefined {
 /**
  * A typed `HH:MM` plus "today" or "tomorrow" (owner's third ruling, 2026-09-17: a time read off a
  * phone call, not a date picker) as an `Instant`, finding "today" by rounding `now` down to its day.
- * `undefined` when the time cannot be read.
+ * `undefined` when the time cannot be read or no day is chosen.
  */
 export function instantFromEstimatedTimeInputs(
   timeValue: string,
-  day: "today" | "tomorrow",
+  day: "today" | "tomorrow" | undefined,
   now: Instant,
 ): number | undefined {
   const minuteOfDay = minutesFromTimeInput(timeValue);
-  if (minuteOfDay === undefined) return undefined;
+  // No day chosen yet (Josh, 31 Oct 2026: the booking form starts with neither Today nor Tomorrow).
+  if (minuteOfDay === undefined || day === undefined) return undefined;
   const startOfToday = Math.floor(now / MINUTES_PER_DAY) * MINUTES_PER_DAY;
   return startOfToday + (day === "tomorrow" ? MINUTES_PER_DAY : 0) + minuteOfDay;
 }
@@ -220,13 +221,18 @@ export type TransportBookingAnswers = {
   cadNumber: string;
   transportLegalStatus: TransportLegalStatus | undefined;
   estimatedTime: string;
-  estimatedDay: "today" | "tomorrow";
+  /**
+   * Josh, 31 Oct 2026 (yes): the booking form starts with nothing chosen, so neither Today nor
+   * Tomorrow is ticked until the person picks one. `undefined` is a missing answer.
+   */
+  estimatedDay?: "today" | "tomorrow";
 };
 
 /** What each unanswered booking question asks, in the order the popups show them. */
 const TRANSPORT_ANSWER_ASKS = {
   provider: "choose who is collecting the patient",
   time: "enter the estimated time",
+  day: "choose today or tomorrow",
   escort: "answer the escort question",
   legalStatus: "state whether the transport is voluntary or involuntary",
 } as const;
@@ -250,7 +256,11 @@ export function transportCadToFollow(draft: Pick<TransportBookingAnswers, "provi
 export function transportAnswersMissing(draft: TransportBookingAnswers, now: Instant): TransportAnswer[] {
   const missing: TransportAnswer[] = [];
   if (draft.provider === undefined) missing.push("provider");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) missing.push("time");
+  // The time and the day are separate answers (Josh, 31 Oct 2026): a readable time with no day yet
+  // is missing only the day.
+  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay ?? "today", now) === undefined)
+    missing.push("time");
+  if (draft.estimatedDay === undefined) missing.push("day");
   if (draft.escortRequired === undefined) missing.push("escort");
   if (draft.transportLegalStatus === undefined) missing.push("legalStatus");
   return missing;

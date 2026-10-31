@@ -71,11 +71,6 @@
   min-width: 0;
 }
 
-.searchBox {
-  flex: 1 1 220px;
-  min-width: 180px;
-}
-
 .controlLabel {
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-2);
@@ -93,8 +88,8 @@
 .listHead,
 .resultMain {
   display: grid;
-  /* Beds is 112px so "1 being made ready" stays whole at the 12px floor. */
-  grid-template-columns: minmax(0, 1fr) 112px 104px 56px;
+  /* Review point 21: two columns, the place and when its bed count was last confirmed. */
+  grid-template-columns: minmax(0, 1fr) 150px;
   align-items: center;
   column-gap: var(--wf-s-3);
 }
@@ -110,10 +105,6 @@
   text-transform: uppercase;
   color: var(--wf-ink-3);
   white-space: nowrap;
-}
-
-.listHeadReady {
-  text-align: right;
 }
 
 .listScroll {
@@ -154,12 +145,6 @@
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.groupMeta {
-  font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
   white-space: nowrap;
 }
@@ -207,30 +192,9 @@
   transform: rotate(-90deg);
 }
 
-.subGroupName {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .subGroupCount {
   color: var(--wf-ink-2);
   white-space: nowrap;
-}
-
-.subGroupMeta {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  margin-left: auto;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.subGroupShare {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-  color: var(--wf-ink-1);
 }
 
 .groupList {
@@ -283,11 +247,10 @@
   min-width: 0;
 }
 
+/* Names wrap in full, never cut with an ellipsis (Josh's design rule). */
 .resultName,
 .resultSub {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .resultName {
@@ -303,44 +266,12 @@
   color: var(--wf-ink-2);
 }
 
-.resultBeds {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.resultFigures,
-.resultPrep {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-/* The figures are words now ("2 ready · 2 pulled · 3 closed of 24 beds"), so they wrap, but only
-   between figures, and in the text face so they fit the Beds column. */
-.resultFigures {
-  font-family: var(--wf-font);
-  white-space: normal;
-}
-
-.resultFigures > span {
-  white-space: nowrap;
-}
-
-.resultPrep {
-  overflow: hidden;
-  font-family: var(--wf-font);
-  font-size: var(--wf-fs-11);
-  color: var(--wf-ink-3);
-  text-overflow: ellipsis;
-}
-
 .resultConfirmed {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 5px;
+  padding-right: var(--wf-s-2);
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-1);
@@ -349,26 +280,6 @@
 
 .resultAgo {
   font-family: var(--wf-font);
-  color: var(--wf-ink-2);
-}
-
-.resultReady {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  white-space: nowrap;
-}
-
-.resultReadyNum {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-16);
-  line-height: var(--wf-lh-16);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.resultReadyWord {
-  font-size: var(--wf-fs-11);
   color: var(--wf-ink-2);
 }
 
@@ -451,41 +362,6 @@
   outline-offset: 1px;
 }
 
-/* A highlight that does not match a place dims its row by colour (v10 data-dim). The row stays. */
-.resultRow[data-dim="true"]
-  :is(
-    .resultName,
-    .resultSub,
-    .resultFigures,
-    .resultPrep,
-    .resultConfirmed,
-    .resultAgo,
-    .resultReadyNum,
-    .resultReadyWord
-  ) {
-  color: var(--wf-dim);
-}
-
-/* Hero chips: one row, never wrapping; phone scrolls them sideways. */
-.heroChips {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-@media (max-width: 48rem) {
-  .heroChips {
-    max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .heroChips > * {
-    flex: none;
-  }
-}
-
 /* Pills on the preview */
 .detailBadges {
   display: flex;
@@ -545,43 +421,17 @@
 
 .previewTitle {
   margin: 2px 0 0;
-  overflow: hidden;
   font-size: var(--wf-fs-16);
   line-height: var(--wf-lh-16);
   font-weight: 600;
   color: var(--wf-ink-1);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .previewSite {
   margin: 2px 0 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
-}
-
-.closeDetailBtn {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: transparent;
-  color: var(--wf-ink-2);
-  cursor: pointer;
-}
-
-.closeDetailBtn:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
-}
-
-.closeDetailBtn:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 .detailBody {
@@ -591,47 +441,6 @@
 .detailBody:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
-}
-
-.capacityGrid {
-  position: relative;
-  display: flex;
-  gap: 0;
-  padding: 0 var(--wf-s-3) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.capacityCell {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-  padding: 0 var(--wf-s-3);
-  border-left: 1px solid var(--wf-line);
-}
-
-.capacityCell:first-of-type {
-  padding-left: 0;
-  border-left: 0;
-}
-
-.capacityNum,
-.capacityNumMuted {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-20);
-  line-height: var(--wf-lh-20);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.capacityNumMuted {
-  color: var(--wf-ink-3);
-}
-
-.capacityLbl {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
 }
 
 .factList {
@@ -659,6 +468,11 @@
   min-width: 0;
   margin: 0;
   color: var(--wf-ink-1);
+}
+
+/* The row's action (Ask to confirm, Confirm beds, Asked at) keeps its own width at the row's end. */
+.factRow dd.factAction {
+  flex: none;
 }
 
 .metaTimestamp {
@@ -746,74 +560,6 @@
   border-top: 1px solid var(--wf-line);
 }
 
-.capacityBar {
-  display: flex;
-  gap: 2px;
-  height: 8px;
-  overflow: hidden;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-data-3);
-}
-
-.capacityBar span {
-  height: 100%;
-  border-radius: var(--wf-r-pill);
-}
-
-.barReady {
-  width: var(--bar-ready, 0%);
-  background: var(--good);
-}
-
-.barPulled {
-  width: var(--bar-pulled, 0%);
-  background: var(--warn);
-}
-
-/* Closed: empty but not offered, so a hatch rather than a colour. */
-.barNotYet {
-  width: var(--bar-not-yet, 0%);
-  background: repeating-linear-gradient(-45deg, var(--line-strong) 0 2px, var(--surface) 2px 4px);
-}
-
-.barLegend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--wf-s-1) var(--wf-s-3);
-  margin: var(--wf-s-2) 0 0;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-
-.barLegend b {
-  font-family: var(--wf-mono);
-  color: var(--wf-ink-1);
-}
-
-.legendItem {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-
-.legendSwatch {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  flex: none;
-  border-radius: var(--wf-r-pill);
-}
-
-.legendShare {
-  margin-left: auto;
-  font-family: var(--wf-mono);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-  white-space: nowrap;
-}
-
 .sectionHeadRow {
   display: flex;
   align-items: baseline;
@@ -838,64 +584,6 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
-}
-
-.servicesGrid {
-  display: grid;
-}
-
-.serviceRow {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 28px;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 30px;
-  padding: 0;
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: transparent;
-  color: var(--wf-ink-1);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.serviceRow:hover .serviceName {
-  text-decoration: underline;
-}
-
-.serviceRow:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
-.serviceName {
-  overflow: hidden;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.serviceTrack {
-  display: block;
-  height: 6px;
-  overflow: hidden;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-}
-
-.serviceFill {
-  display: block;
-  width: var(--service-fill, 0%);
-  height: 100%;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-data-1);
-}
-
-.serviceNum {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-  text-align: right;
 }
 
 .nothing {
@@ -1022,29 +710,17 @@
   }
 
   .resultMain {
-    grid-template-columns: minmax(0, 1fr) 56px;
+    grid-template-columns: minmax(0, 1fr) auto;
     row-gap: 4px;
     min-height: 3rem;
   }
 
-  .resultBeds,
-  .resultConfirmed {
-    grid-column: 1;
-  }
-
-  .resultReady {
-    grid-column: 2;
-    grid-row: 1;
-  }
-
-  .pinButton,
-  .closeDetailBtn {
+  .pinButton {
     width: 3rem;
     min-height: 3rem;
   }
 
   .foldButton,
-  .serviceRow,
   .memoryRow {
     min-height: 3rem;
   }
@@ -1062,12 +738,6 @@
 }
 
 @media (forced-colors: active) {
-  .capacityBar span,
-  .legendSwatch,
-  .serviceFill {
-    border: 1px solid CanvasText;
-  }
-
   .resultRowActive {
     outline: 2px solid Highlight;
     outline-offset: -2px;
@@ -1075,17 +745,15 @@
 }
 
 @media print {
-  .pinButton,
-  .closeDetailBtn {
+  .pinButton {
     display: none;
   }
 }
 
-/* Phone (simplified): one tidy list of places. Kind chips, search and "Ready beds only" stay; the
- * order switch and the preview pane (glance, region chart, needs a check, recent places) stay on
- * the larger screen, and a tap on a row opens the place (hub-screen.tsx). Each ward row is two
- * lines: name and site with the ready figure, then the bed bar and counts with the age of the
- * figure. Desktop is unchanged. */
+/* Phone (simplified): one tidy list of places. The preview pane (glance, needs a check, recent
+ * places) stays on the larger screen, and a tap on a row opens the place's preview sheet
+ * (hub-screen.tsx). Review point 21: each row is the place's two lines, with a stale count's
+ * "Stale 5h" on the right of them (round 2). Desktop is unchanged. */
 @media (max-width: 48rem) {
   .hubRight {
     display: none;
@@ -1112,38 +780,12 @@
     grid-row: 1;
   }
 
-  .resultBeds {
-    grid-column: 1;
-    grid-row: 2;
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    column-gap: var(--wf-s-2);
-  }
-
-  .resultBeds > :first-child {
-    flex: 1 1 4rem;
-    min-width: 0;
-  }
-
-  .resultPrep {
-    flex: 1 1 100%;
-  }
-
-  .resultReady {
-    grid-column: 2;
-    grid-row: 1;
-    flex-direction: row;
-    align-items: baseline;
-    align-self: start;
-    justify-self: end;
-    gap: var(--wf-s-1);
-  }
-
   .resultConfirmed {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1;
+    align-self: center;
     justify-self: end;
+    padding-right: 0;
   }
 
   .pinButton {
@@ -1158,9 +800,7 @@
     align-content: center;
   }
 
-  .resultBeds:empty,
-  .resultConfirmed:empty,
-  .resultReady:empty {
+  .resultConfirmed:empty {
     display: none;
   }
 }
@@ -1202,7 +842,8 @@
  * (`.seg .segItem`), so at 360px the four kinds ran 15px past the track and cut "Teams 64". Here
  * they share the track and tighten their sides instead. Doubled class to outrank the kit rule. */
 .phoneKindBar.phoneKindBar > div > button {
-  flex: 1 1 0;
+  /* QA 31 Oct: widths follow the labels, so "Teams 64" keeps its own room off the track's edge. */
+  flex: 1 1 auto;
   min-width: 0;
   padding-inline: 6px;
 }
@@ -1235,36 +876,6 @@
   color: var(--wf-ink-1);
   white-space: nowrap;
   cursor: pointer;
-}
-
-.phoneListHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  margin: 0 var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-}
-
-.phoneListHead b {
-  font-size: var(--wf-fs-14);
-  color: var(--wf-ink-1);
-}
-
-.phoneListHead > span {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--wf-s-3);
-  white-space: nowrap;
-}
-
-.phoneShownCount {
-  margin: var(--wf-s-3) 0 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  text-align: center;
 }
 
 .phoneCheckFirst {
@@ -1319,19 +930,12 @@
 }
 
 .phonePreviewSheet .previewHead > :first-child,
-.phonePreviewSheet :is(.previewEyebrow, .previewTitle, .previewSite, .closeDetailBtn) {
+.phonePreviewSheet :is(.previewEyebrow, .previewTitle, .previewSite) {
   display: none;
 }
 
 .phonePreviewSheet .detailBody {
   padding: 0;
-}
-
-.phonePreviewSheet .capacityGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  row-gap: var(--wf-s-3);
-  padding: var(--wf-s-3) 0;
 }
 
 @media (max-width: 48rem) {
@@ -1359,8 +963,7 @@
     background: var(--wf-surface-2);
   }
 
-  .groupHead,
-  .subGroupName {
+  .groupHead {
     font-size: var(--wf-fs-12);
     font-weight: 600;
     letter-spacing: var(--wf-tr-caps);
@@ -1377,22 +980,9 @@
     font-weight: 600;
   }
 
-  .resultBeds {
-    display: none;
-  }
-
   /* The age shows only when it is stale, the one time it changes what you do. */
   .resultConfirmed:not(:has(.flagPill)) {
     display: none;
-  }
-
-  .resultReady {
-    grid-row: 1 / span 2;
-    align-self: center;
-  }
-
-  .resultReadyNum {
-    font-size: var(--wf-fs-15);
   }
 }
 
@@ -1428,85 +1018,6 @@
   display: none;
 }
 
-.phonePreviewBody {
-  display: grid;
-  gap: var(--wf-s-4);
-}
-
-.phoneTiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  overflow: hidden;
-}
-
-.phoneTiles > div {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  padding: var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.phoneTiles > div:nth-of-type(odd) {
-  border-right: 1px solid var(--wf-line);
-}
-
-.phoneTiles > div:nth-last-of-type(-n + 2) {
-  border-bottom: 0;
-}
-
-.phoneTiles span {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.phoneTiles b {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--wf-ink-1);
-  font: 700 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-mono);
-  white-space: nowrap;
-}
-
-.phoneStrip {
-  max-width: 100%;
-}
-
-.phoneFacts {
-  display: grid;
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-
-.phoneFacts > div {
-  display: grid;
-  grid-template-columns: 9rem minmax(0, 1fr);
-  gap: var(--wf-s-2);
-  align-items: baseline;
-}
-
-.phoneFacts dt {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
-  line-height: var(--wf-lh-13);
-}
-
-.phoneFacts dd {
-  margin: 0;
-  overflow: hidden;
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  line-height: var(--wf-lh-13);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .phonePreviewLinks {
   display: flex;
   flex-wrap: wrap;
@@ -1534,28 +1045,167 @@
   }
 }
 
-/* Audit 11 Oct 2026, iPad: pinning moves to the preview, so the rows lose their column of stars.
-   Device sweep (24 Oct 2026): without the star the Ready figures sat flush on the card edge and the
-   header still kept the star's 36px, so Beds and Ready sat left of their figures. Both keep the
-   same right padding instead. */
-@media (min-width: 48.0625rem) and (max-width: 73.75rem) {
-  .pinButton {
-    display: none;
-  }
+/* Review point 21 (Josh approved 31 Oct 2026): Places is a directory. Search sits in the header. */
+.heroSearch {
+  flex: 1 1 32rem;
+  max-width: 44rem;
+  min-width: 0;
+}
 
-  .listHead {
-    padding-right: var(--wf-s-3);
-  }
+.heroSearch input {
+  min-height: var(--wf-h-lg);
+  font-size: var(--wf-fs-15);
+}
 
-  .resultMain {
-    padding-right: var(--wf-s-3);
+/* The preview's Beds row points to the two pages that carry beds. */
+.bedsElsewhere {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.bedsElsewhere > span {
+  min-width: 0;
+}
+
+.bedsElsewhere a {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+/* Wards by service: a count of wards, not beds. Each row searches its service. */
+.serviceList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.serviceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / 1.2 var(--wf-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.serviceRow:hover {
+  background: var(--wf-hover);
+}
+
+.serviceRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.serviceCount {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+/* Round 2: a service head inside Wards reads in sentence case, quieter than the section heading. */
+.foldName {
+  color: var(--wf-ink-2);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Round 2: in All, the EDs' and teams' section heading is itself the fold row. */
+.sectionHead {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sectionFold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+/* The whole heading row is the hit area, without a bigger-looking control. */
+.sectionFold::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--wf-s-2)) calc(-1 * var(--wf-s-3));
+}
+
+.sectionFold:hover {
+  color: var(--wf-ink-1);
+}
+
+.sectionFold:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.sectionFold:disabled {
+  cursor: default;
+}
+
+.sectionFoldIcon {
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform 120ms ease;
+}
+
+.sectionFold[aria-expanded="false"] .sectionFoldIcon {
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sectionFoldIcon {
+    transition: none;
   }
 }
 
-/* Phone review F-24: one plain line for the hero's "Pulled" and "Stale counts". */
-.phoneKey {
-  margin: 0 var(--wf-s-1);
+/* ROLE BRANCH (bed_manager), polish r2: a place's fixed facts as one quiet line in the preview. */
+.factsLine {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+
+/* QA 31 Oct: the confirmed column's heading sits over its right-aligned figures and wraps rather
+   than running past the card edge. */
+.listHead > :last-child {
+  justify-self: end;
+  text-align: right;
+  white-space: normal;
+}
+
+/* ROLE BRANCH (bed_manager): the closed page's sentence beside a greyed Open, in full. */
+.closedReason {
+  margin: 0;
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
+  text-align: right;
+}
+
+.phonePreviewSheet .closedReason {
+  margin-top: var(--wf-s-2);
+  text-align: left;
 }

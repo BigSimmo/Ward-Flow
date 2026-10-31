@@ -247,9 +247,10 @@
   font-family: var(--wf-mono);
 }
 
+/* Kit sizes (Josh, "no 48px controls"): the small button shows 32px; the cover below keeps 48px. */
 .bannerAction {
   flex: 0 0 auto;
-  min-height: var(--ph-tap);
+  min-height: 32px;
 }
 
 /* ---------------------------------------------------------------- one inset list, group bands */
@@ -282,7 +283,8 @@
   gap: 8px;
   width: 100%;
   min-width: 0;
-  min-height: var(--ph-tap);
+  /* Drawn 40px (kit standard, "no 48px controls"); the cover below keeps the 48px tap floor. */
+  min-height: 40px;
   margin: 0;
   padding: 0 12px;
   box-sizing: border-box;
@@ -647,10 +649,11 @@
   background: var(--wf-canvas);
 }
 
+/* The kit's 40px phone button, whose own invisible cover keeps the 48px tap floor. */
 .stickyButton {
   flex: 1 1 0;
   min-width: 0;
-  min-height: var(--ph-tap);
+  min-height: 40px;
   justify-content: center;
   border-radius: var(--wf-r-ctl);
 }
@@ -768,25 +771,4 @@
   }
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.prow[data-act="true"] {
-  position: relative;
-}
-
-.prow[data-act="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .prow[data-act="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* No side edges (Josh, 31 Oct 2026): act-now rows sit under the Act now group's danger glyph, with no left stripe. */

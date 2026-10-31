@@ -16,6 +16,10 @@ import { Button, Dialog, useOptionalToast } from "@/components/wf";
  * coordinator has taken an alert, the button reads "Release". It asks "Hand <alert> back to the
  * queue?", records `RELEASE_INBOX_ITEM_OWNERSHIP`, and the toast "Released <alert>" offers Undo,
  * which takes the alert again. Outside the provider (a screen rendered alone) `fallback` shows.
+ *
+ * Alerts redesign (Josh, 31 Oct 2026, "Yes to all"): the button and the dialog's confirm say Hand back,
+ * because the detail pane's other Release (of a pulled bed) is a different act. The question and the
+ * "Released <alert>" toast are unchanged.
  */
 export function ReleaseOwnershipButton(props: {
   item: InboxItem;
@@ -105,17 +109,17 @@ function ReleaseOwnershipControl({
         size="sm"
         disabledReason={disabledReason}
         reasonDisplay="tooltip"
-        aria-label={`Release ${subjectLine}`}
+        aria-label={`Hand back ${subjectLine}`}
         onClick={() => setAsking(true)}
       >
-        Release
+        Hand back
       </Button>
       <Dialog
         open={asking}
         onClose={() => setAsking(false)}
         title={`Hand ${item.title} back to the queue?`}
         size="sm"
-        primary={{ label: "Release", onAction: confirm }}
+        primary={{ label: "Hand back", onAction: confirm }}
         secondary={[{ label: "Cancel", onAction: () => setAsking(false) }]}
         data-testid="alerts-release-ownership-confirm"
       />

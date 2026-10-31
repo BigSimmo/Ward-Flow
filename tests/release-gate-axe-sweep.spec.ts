@@ -22,7 +22,7 @@ const ROUTES = [
   ["/alerts", "ward-alerts-page"],
   ["/bed-meeting", "bed-meeting-tv-off"],
   ["/board/rph-adult-secure", "ward-board"],
-  ["/capacity", "ward-capacity-page"],
+  ["/capacity", "ward-capacity-screen"],
   ["/community", "community-index"],
   ["/community/midland", "ward-community-screen"],
   ["/waiting", "ward-delays-page"],

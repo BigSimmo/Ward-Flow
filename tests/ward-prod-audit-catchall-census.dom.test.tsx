@@ -19,6 +19,9 @@ import { PatientSearchPage } from "@/components/ward-management/search/patient-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
+
 afterEach(() => cleanup());
 
 /**
@@ -32,7 +35,7 @@ describe("Patients empty state offers near spellings before Add patient", () => 
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    const box = screen.getByLabelText("Search");
+    const box = screen.getByLabelText(SEARCH_LABEL);
     fireEvent.change(box, { target: { value: "Hallowey" } });
     const group = screen.getByRole("group", { name: "Did you mean?" });
     const link = within(group).getByRole("link", { name: /Talia Halloway/ });
@@ -47,7 +50,7 @@ describe("Patients empty state offers near spellings before Add patient", () => 
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    const box = screen.getByLabelText("Search");
+    const box = screen.getByLabelText(SEARCH_LABEL);
     fireEvent.change(box, { target: { value: "Zzqxv" } });
     expect(screen.queryByRole("group", { name: "Did you mean?" })).toBeNull();
   });

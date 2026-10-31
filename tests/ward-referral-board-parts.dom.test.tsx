@@ -1,7 +1,8 @@
 import "@testing-library/jest-dom/vitest";
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { ReferralAlerts, ReferralTimeline, wardArm } from "@/components/ward-management/referrals/referral-board-parts";
+import { ReferralAlerts } from "@/components/ward-management/referrals/referral-alerts";
+import { ReferralTimeline, wardArm } from "@/components/ward-management/referrals/referral-board-parts";
 import { referrals } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

@@ -20,6 +20,9 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
+
 function WorkflowHarness() {
   const { dispatch, now, patients, movements, admissions, rejections } = useWardFlow();
   const patient = patients.at(-1)!;
@@ -121,7 +124,7 @@ describe("record preview shares current bed hold truth", () => {
     expect(probe).toHaveAttribute("data-rejections", "0");
     expect(probe).toHaveAttribute("data-held", "false");
     const id = probe.getAttribute("data-mid")!;
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: id } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: id } });
     fireEvent.click(screen.getByTestId(`ward-patient-search-case-${id}`));
     // The imported legacy preview remains inert in this page's accepted design. Inspect its
     // DOM projection separately from the actual visible Patient details preview.
@@ -141,7 +144,7 @@ describe("record preview shares current bed hold truth", () => {
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "WF-318" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "WF-318" } });
     fireEvent.click(screen.getByTestId("ward-patient-search-case-WF-318"));
     expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveTextContent("Bed pulled");
     expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");

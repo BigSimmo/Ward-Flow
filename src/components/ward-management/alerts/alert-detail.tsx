@@ -44,7 +44,10 @@ import { DeclineLadder, WaitTrack, type TrackPoint } from "./alerts-visuals";
 import { AlertArrivedAtWard } from "./alert-arrived-at-ward";
 import { PullNowButton } from "./global-alert-panels";
 import { ReleaseOwnershipButton } from "./alert-release-ownership";
+import { officerHref } from "@/components/ward-management/shell/ward-facade";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import styles from "./alerts.module.css";
+import parts from "./alerts-screen-parts.module.css";
 
 export type AlertDetailHandlers = {
   onTake: (item: InboxItem) => void;
@@ -107,11 +110,20 @@ export function AlertDetail({
   const opened = raisedAt(item, movement);
   const openedShown = shownAgeFrom(item, opened);
   const seen = acknowledgements?.at(-1);
-  const action = alertActionFor(item, subject);
+  // Transport officer: the desk opens only its own jobs, Alerts, On-call and Settings (ROLE_SCREENS).
+  // The coordinator's forward link (a movement, a patient, the bed search) is a page this desk cannot
+  // open, so every alert's one action opens the officer's job list instead, and Patient is left out.
+  const officerDesk = useEffectiveWardAccess().role === "officer";
+  const action: ReturnType<typeof alertActionFor> = officerDesk
+    ? { kind: "link", label: "Open my jobs", href: officerHref() }
+    : alertActionFor(item, subject);
   // P085 (27 Oct 2026): when the action already opens the patient, one link to them is enough. A
   // snoozed alert shows no action, so it keeps the Patient link.
-  const patientLink =
-    !snoozedUntil && action.kind === "link" && action.href === subject.patientHref ? undefined : subject.patientHref;
+  const patientLink = officerDesk
+    ? undefined
+    : !snoozedUntil && action.kind === "link" && action.href === subject.patientHref
+      ? undefined
+      : subject.patientHref;
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
   // "for", not a comma: the family-first name has its own comma ("Smith, Alice").
   const subjectLine = `${item.title} for ${subject.displayName}`;
@@ -131,13 +143,15 @@ export function AlertDetail({
   if (movement?.transport) {
     facts.push(["Provider", movement.transport.provider]);
     facts.push(["Escort", movement.transport.escortRequired ? "Required" : "Not required"]);
-    if (movement.transport.acceptedAt !== undefined) {
+    // Transport officer: no Accepted fact; the recorded times and Activity both carry it.
+    if (movement.transport.acceptedAt !== undefined && !officerDesk) {
       facts.push(["Accepted", formatInstantWithDay(movement.transport.acceptedAt, now)]);
     }
   }
   if (movement?.legalForm?.dueAt !== undefined)
     facts.push(["Form due", formatInstantWithDay(movement.legalForm.dueAt, now)]);
-  facts.push(["Owner", item.owner]);
+  // An alert nobody owns (the transport officer's) has no Owner line, rather than a blank one.
+  if (item.owner) facts.push(["Owner", item.owner]);
 
   const declines = kind === "declines" ? [...(movement?.declines ?? [])].sort((a, b) => b.at - a.at) : [];
 
@@ -234,7 +248,8 @@ export function AlertDetail({
       {mine ? "Yours" : "Take"}
     </Button>
   );
-  // P019: an alert you took offers Release in place of the greyed "Yours".
+  // P019: an alert you took offers Hand back (the Alerts redesign's name for P019's Release) in place
+  // of the greyed "Yours".
   const takeButton = mine ? (
     <ReleaseOwnershipButton
       item={item}
@@ -327,7 +342,7 @@ export function AlertDetail({
     const phoneFacts: [string, string][] = facts.filter(([label]) => label !== "Owner" && label !== "Form due");
     const legal = movement?.legalForm ? `Form ${movement.legalForm.code}` : subject.legalStatus;
     if (!booking && legal) phoneFacts.push(["Legal status", legal]);
-    phoneFacts.push(["Owner", item.owner]);
+    if (item.owner) phoneFacts.push(["Owner", item.owner]);
     const formDue = facts.find(([label]) => label === "Form due");
     if (formDue) phoneFacts.push(formDue);
     return (
@@ -354,7 +369,10 @@ export function AlertDetail({
         </div>
 
         {declines.length > 0 ? null : (
-          <dl className={styles.phFacts} data-testid={booking ? "alerts-drawer-booking" : undefined}>
+          <dl
+            className={`${styles.phFacts} ${parts.phFactsWrap}`}
+            data-testid={booking ? "alerts-drawer-booking" : undefined}
+          >
             {phoneFacts.map(([label, value]) => (
               <div key={label}>
                 <dt>{label}</dt>
@@ -419,8 +437,16 @@ export function AlertDetail({
           </Field>
         ) : null}
 
-        <div className={styles.phActions}>{takeButton}</div>
-        {moreActions}
+        {/* Transport officer: Take, Acknowledge, Snooze and Escalate are the coordinator's, so they are
+            left out and the app's own sentence says why, once. */}
+        {officerDesk ? (
+          <p className={styles.quiet}>{actionDisabledReason}</p>
+        ) : (
+          <>
+            <div className={styles.phActions}>{takeButton}</div>
+            {moreActions}
+          </>
+        )}
 
         {activity.length > 0 ? (
           <section aria-label="Activity" className={styles.phActivity}>
@@ -483,8 +509,10 @@ export function AlertDetail({
             {subject.displayName}
           </h2>
           <span className={styles.detailSub}>
-            <span className={styles.mono}>{subject.umrn}</span>
-            {subject.legalStatus ? <> · {subject.legalStatus}</> : null}
+            {/* No leading " · " when this desk is not shown the UMRN (the transport officer). */}
+            {subject.umrn ? <span className={styles.mono}>{subject.umrn}</span> : null}
+            {subject.umrn && subject.legalStatus ? " · " : null}
+            {subject.legalStatus ?? null}
           </span>
         </div>
         {patientLink ? (
@@ -498,7 +526,9 @@ export function AlertDetail({
       <div className={styles.detailState}>
         <StatusGlyph tone={group === "act" ? "danger" : group === "wait" ? "warning" : "neutral"} />
         <span className={styles.detailTitle}>{item.title}</span>
-        {openedShown !== undefined ? (
+        {/* Transport officer: the age shows once, on Recorded times just below, when they show. */}
+        {openedShown !== undefined &&
+        (!officerDesk || track.length === 0 || (kind === "declines" && declines.length > 0)) ? (
           <span className={styles.quiet}>
             open <span className={styles.mono}>{minutesText(Math.max(0, now - openedShown))}</span>
           </span>
@@ -587,7 +617,7 @@ export function AlertDetail({
             {action.label}
           </Link>
         ) : (
-          <div className={styles.releaseRow}>
+          <div className={`${styles.releaseRow} ${parts.releaseRow}`}>
             <Field label="Reason for release" id={`alerts-release-${item.id}`}>
               <Select
                 ref={releaseRef}
@@ -602,19 +632,22 @@ export function AlertDetail({
                 ))}
               </Select>
             </Field>
-            <Button
-              variant="pri"
-              disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
-              reasonDisplay="tooltip"
-              onClick={() => {
-                if (releaseReason === "") return;
-                handlers.onRelease(item, releaseReason);
-                setReleaseReason("");
-              }}
-            >
-              {/* CT-19: the reason-gated release names its patient at the point of commit. */}
-              Release pulled bed for {subject.displayName}
-            </Button>
+            {/* Alerts redesign: one full-width Release, with "Choose a reason first" written under it. */}
+            <div className={parts.releaseAction}>
+              <Button
+                variant="pri"
+                disabledReason={actionDisabledReason ?? (releaseReason === "" ? "Choose a reason first" : undefined)}
+                reasonDisplay="inline"
+                onClick={() => {
+                  if (releaseReason === "") return;
+                  handlers.onRelease(item, releaseReason);
+                  setReleaseReason("");
+                }}
+              >
+                {/* CT-19: the reason-gated release names its patient at the point of commit. */}
+                Release pulled bed for {subject.displayName}
+              </Button>
+            </div>
             {movement ? (
               <AlertArrivedAtWard
                 movement={movement}
@@ -624,8 +657,16 @@ export function AlertDetail({
             ) : null}
           </div>
         )}
-        <div className={styles.actionRow}>{takeButton}</div>
-        {moreActions}
+        {/* Alerts redesign: Take or Hand back and More actions on one row. Transport officer: those
+            are the coordinator's, so the app's own sentence stands in their place. */}
+        {officerDesk ? (
+          <p className={styles.quiet}>{actionDisabledReason}</p>
+        ) : (
+          <div className={`${styles.actionRow} ${parts.actionsRow}`}>
+            {takeButton}
+            {moreActions}
+          </div>
+        )}
       </div>
 
       {activity.length > 0 ? (

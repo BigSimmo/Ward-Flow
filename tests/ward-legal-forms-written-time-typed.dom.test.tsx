@@ -67,7 +67,8 @@ describe("Record the time written takes a typed 24-hour time", () => {
     expect(time).toHaveValue("");
 
     // Typed as the form says, 24-hour, with or without the colon.
-    fireEvent.change(within(form).getByLabelText("Date written"), { target: { value: "2026-09-23" } });
+    // Date written is the kit DD/MM/YYYY box (Legal forms redesign, 31 Oct 2026).
+    fireEvent.change(within(form).getByLabelText("Date written"), { target: { value: "23/09/2026" } });
     fireEvent.change(time, { target: { value: "0005" } });
     fireEvent.click(within(form).getByRole("button", { name: /Save time written/ }));
     expect(onSaveWritten).toHaveBeenCalledOnce();

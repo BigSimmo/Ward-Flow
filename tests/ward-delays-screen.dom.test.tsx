@@ -1,4 +1,8 @@
-import { renderAllDelays, inspectDelayPerson, showEveryDelayRow } from "./helpers/delays-interactions";
+import {
+  renderAllDelays as renderAndShowGroups,
+  inspectDelayPerson,
+  showEveryDelayRow,
+} from "./helpers/delays-interactions";
 import { readFileSync } from "node:fs";
 
 import { fireEvent, screen, within } from "@testing-library/react";
@@ -27,6 +31,26 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
  */
 const seededMovements = seedWardFlowState().movements;
 const OPEN_COUNT = seededMovements.filter(isOpen).length;
+
+/**
+ * The redesign (round 8, 31 Oct 2026) opens on Longest wait, grouped in wait bands, with Under 8
+ * hours folded. A user opens each folded band, then every blocker group and "Show N more", so every
+ * live row is listed.
+ */
+function showEveryRow(): void {
+  const waiting = screen.queryByRole("region", { name: "Waiting" });
+  if (waiting === null) return;
+  for (const band of within(waiting).queryAllByTestId(/^delays-band-/u)) {
+    if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+  }
+  showEveryDelayRow();
+}
+
+function renderAllDelays(...args: Parameters<typeof renderAndShowGroups>): ReturnType<typeof renderAndShowGroups> {
+  const result = renderAndShowGroups(...args);
+  showEveryRow();
+  return result;
+}
 
 function renderScreen() {
   return renderAllDelays(
@@ -76,7 +100,17 @@ function renderScreenWithProbe() {
  * lookup scoped to the panel this helper returns (`within(panel)...`) finds only the detail row's.
  */
 function selectPerson(id: string): HTMLElement {
+  showEveryRow();
   return inspectDelayPerson(id);
+}
+
+/**
+ * Round 8 (Josh, 31 Oct 2026): the person panel opens on Summary; the wards asked, the candidate
+ * wards and the routes onward (override, release a pull) sit behind its Wards tab. Returns that pane.
+ */
+function openWardsTab(panel: HTMLElement): HTMLElement {
+  fireEvent.click(within(panel).getByRole("tab", { name: /^Wards/u }));
+  return within(panel).getByRole("tabpanel");
 }
 
 describe("the Delays screen", () => {
@@ -98,7 +132,7 @@ describe("the Delays screen", () => {
     expect(frame).not.toHaveBeenCalled();
     expect(scrollIntoView).not.toHaveBeenCalled();
 
-    inspectDelayPerson(wardMovements.find(isOpen)!.id);
+    selectPerson(wardMovements.find(isOpen)!.id);
     // One frame scrolls the details into view. The shared modal focus contract takes its own
     // frame to settle focus inside the sheet, so the count is not pinned to one.
     expect(frame).toHaveBeenCalled();
@@ -114,7 +148,7 @@ describe("the Delays screen", () => {
     expect(screen.queryByTestId("delays-detail-backdrop")).toBeNull();
 
     const openPatient = wardMovements.find(isOpen)!;
-    inspectDelayPerson(openPatient.id);
+    selectPerson(openPatient.id);
 
     const backdrop = screen.getByTestId("delays-detail-backdrop");
     expect(backdrop).toBeInTheDocument();
@@ -253,11 +287,14 @@ describe("the Delays screen", () => {
     const refused = wardMovements.filter((movement) => isOpen(movement) && movement.declines.length > 0);
     expect(refused.length, "no refusal rendered — this guard proved nothing").toBeGreaterThan(0);
     for (const movement of refused) {
-      const panel = selectPerson(movement.id);
-      // Scoped to "N declined" rather than a bare /declined/ — the panel also shows prose like
-      // "the last thing recorded was a ward declined" (`lastRecordedActivity`), which contains the
-      // same word and would otherwise make this an ambiguous, multi-match query.
-      expect(within(panel).getByText(/\d+ declined/u), `${movement.id}'s refusal is not stated`).toBeInTheDocument();
+      const panel = openWardsTab(selectPerson(movement.id));
+      // Scoped to the exact "N declined" on the Asked heading rather than a bare /declined/ — the
+      // panel also shows prose like "the last thing recorded was a ward declined"
+      // (`lastRecordedActivity`), and the Wards tab's own count reads "N declined · M to ask".
+      expect(
+        within(panel).getByText(`${movement.declines.length} declined`),
+        `${movement.id}'s refusal is not stated`,
+      ).toBeVisible();
       const offer = within(panel).getByRole("link", { name: /Override/u });
       expect(
         offer.getAttribute("href"),
@@ -300,7 +337,7 @@ describe("the Delays screen", () => {
      */
     const refused = wardMovements.filter((movement) => isOpen(movement) && movement.declines.length > 0);
     expect(refused.length, "no refusal rendered — this guard proved nothing").toBeGreaterThan(0);
-    const panel = selectPerson(refused[0].id);
+    const panel = openWardsTab(selectPerson(refused[0].id));
 
     const offers = within(panel).getAllByRole("link", { name: /Override/u });
     expect(offers.length, "no override affordance rendered — this guard proved nothing").toBeGreaterThan(0);
@@ -348,8 +385,9 @@ describe("the Delays screen", () => {
     // The release action is on the full `DelayRow`, which now renders only for whoever is
     // selected — see `selectPerson`'s own comment for why the panel scoping matters here.
     for (const movement of expired) {
-      const panel = selectPerson(movement.id);
-      const link = within(panel).getByTestId(`delays-release-pull-${movement.id}`);
+      const panel = openWardsTab(selectPerson(movement.id));
+      const link = within(panel).getByRole("link", { name: /release the bed/u });
+      expect(link).toHaveAttribute("data-testid", `delays-release-pull-${movement.id}`);
       expect(
         link.getAttribute("href"),
         `${movement.id}'s lapsed pull links nowhere, or to a ward other than the one holding its bed`,
@@ -364,7 +402,7 @@ describe("the Delays screen", () => {
    */
   it("states its two absences in words rather than rendering an empty panel", () => {
     renderScreen();
-    fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /System$/u }));
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
     expect(noPerson).toHaveTextContent(/records delays only against a movement/u);
     expect(noPerson).toHaveTextContent(/Ward-wide closures and transport outages are not represented/u);
@@ -374,7 +412,7 @@ describe("the Delays screen", () => {
      * "Escalations and resolved" (renamed from "Registers", task D1), alongside "Escalations",
      * and its absence sentence only renders once that tab is the active pane.
      */
-    fireEvent.click(screen.getByRole("tab", { name: /^Resolved/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /Resolved$/u }));
     const resolved = within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("tabpanel");
     expect(resolved).toHaveTextContent(/Kept until midnight for handover/u);
   });
@@ -391,7 +429,7 @@ describe("the Delays screen", () => {
    */
   it("does not present a computed zero in the 'no named person' panel's count slot", () => {
     renderScreen();
-    fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /System$/u }));
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
     expect(noPerson.querySelector("[data-ward-panel-count]")).toBeNull();
   });
@@ -459,6 +497,7 @@ describe("the Delays screen", () => {
    * from the product while every test stays green, which is why this assertion exists at all.
    */
   it("carries all three escalation facts onto the row: when, who to, and which wards were tried", () => {
+    const units = allUnits();
     renderScreen();
     const escalated = wardMovements.filter((movement) => isOpen(movement) && movement.escalation !== undefined);
     expect(escalated.length, "no escalated movement in the fixture — this guard proved nothing").toBeGreaterThan(0);
@@ -481,9 +520,17 @@ describe("the Delays screen", () => {
         movement.escalation?.contact ?? "",
       );
       // Every ward tried, by NAME rather than by id — an id is not a fact a coordinator can use.
-      expect(within(note).getAllByTestId("delays-tried-unit")).toHaveLength(
-        movement.escalation?.triedUnitIds.length ?? 0,
-      );
+      const tried = movement.escalation?.triedUnitIds ?? [];
+      if (tried.length === 0)
+        expect(within(note).getByTestId("delays-tried-none")).toHaveTextContent("No units recorded");
+      const named = within(note)
+        .queryAllByTestId("delays-tried-unit")
+        .map((element) => element.textContent?.replace(/^, /u, ""));
+      for (const unitId of tried) {
+        const name = units.find((unit) => unit.id === unitId)?.name;
+        expect(name, `${unitId} is not a known ward`).toBeDefined();
+        expect(named, `${movement.id}'s tried ward ${unitId} is not named on the note`).toContain(name);
+      }
     }
   });
 
@@ -545,7 +592,8 @@ describe("the Delays screen", () => {
      */
     for (const movement of openMovements) {
       const panel = selectPerson(movement.id);
-      expect(panel, `Owner missing for ${movement.id}`).toHaveTextContent(`Held by${movement.owner}`);
+      // Round 8: the Stage line reads "<stage> · held by <owner>".
+      expect(panel, `Owner missing for ${movement.id}`).toHaveTextContent(`held by ${movement.owner}`);
       expect(panel, `urgency tier missing for ${movement.id}`).toHaveTextContent(urgencyTierLabel(movement.urgency));
     }
   }, 90_000);
@@ -664,7 +712,7 @@ describe("the Delays filters narrow the table, and always say how many they hide
     renderScreen();
     const chip = screen.getByRole("button", { name: `Locked bed ${locked.length}` });
     fireEvent.click(chip);
-    showEveryDelayRow();
+    showEveryRow();
     expect(chip).toHaveAttribute("aria-pressed", "true");
     expect(listed(), "the chip showed somebody outside its population, or lost somebody inside it").toEqual(
       locked.map((movement) => movement.id).sort(),
@@ -697,7 +745,7 @@ describe("the Delays filters narrow the table, and always say how many they hide
       over8Before,
     );
     fireEvent.click(within(screen.getByTestId("delays-hidden-note")).getByRole("button", { name: "Show everyone" }));
-    showEveryDelayRow();
+    showEveryRow();
     expect(listed()).toEqual(open.map((movement) => movement.id).sort());
     expect(screen.queryByTestId("delays-hidden-note")).toBeNull();
   });

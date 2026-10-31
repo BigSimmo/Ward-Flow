@@ -11,7 +11,8 @@ import { parseStoredAccess } from "./ward-access-store";
 import { WardShellAuthorityProvider, WardShellPublicProvider, executiveShellPlaces } from "./ward-shell-public-context";
 import type { WardAccess } from "../ward-role-access";
 const ExecutiveChrome = dynamic(() => import("./ward-executive-chrome").then((module) => module.WardExecutiveChrome), {
-  loading: ExecutiveStatisticsUnavailable,
+  // While the executive chrome's code loads, say so calmly, not "unavailable" (Josh, 31 Oct 2026).
+  loading: () => <ExecutiveStatisticsUnavailable loading />,
 });
 /** Code-split independently of the operational phone chrome. */
 export function WardExecutiveChromeMount({ children }: { children: ReactNode }) {
@@ -225,6 +226,8 @@ function ExecutiveWorkspace({
       now={displayLifetime.now}
       controls={{
         executive: true,
+        // The first report is still on its way: screens say "Loading the executive view…".
+        loading: current === null && (connection.connecting === true || connection.status === "loading"),
         paused: held !== null,
         togglePause:
           ready && current

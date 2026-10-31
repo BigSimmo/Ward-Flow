@@ -23,7 +23,8 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
       "src/components/ward-management/ward/ward-answer-view.module.css",
       "src/components/ward-management/ward-global-search.module.css",
       "src/components/ward-management/search/patient-typeahead.module.css",
-      "src/components/ward-management/search/census.module.css",
+      // census.module.css left this list with the Patients redesign (D-91): its search and date of birth
+      // boxes are the kit's SearchField and DateField, whose `.control` carries the floor above.
       "src/components/ward-management/statistics/statistics-nav.module.css",
       "src/components/ward-management/community/community-team-phone.module.css",
       "src/components/ward-management/ed/ed-board-controls.module.css",
@@ -58,8 +59,11 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
 
   it("prevents 320px horizontal overflow when DOB filter is open in census.module.css", () => {
     const censusCss = readCss("src/components/ward-management/search/census.module.css");
-    expect(censusCss).not.toMatch(/\.searchForm:has\(\.dobSeg\)\s*\{[^}]*min-width:\s*380px/);
-    expect(censusCss).toMatch(/\.searchForm:has\(\.dobSeg\)\s*\{[^}]*min-width:\s*min\(380px,\s*100%\)/);
+    // The Patients redesign (D-91): with the date of birth open the form grows to at most 560px and
+    // never sets a fixed minimum width, so a 320px phone never scrolls sideways.
+    const dobOpen = /\.searchForm:has\(\.dobField\)\s*\{([^}]*)\}/u.exec(censusCss)?.[1];
+    expect(dobOpen).toBeDefined();
+    expect(dobOpen).not.toMatch(/min-width:\s*\d+px/u);
   });
 
   // out-of-area-third-edition.module.css left this case on 15 Oct 2026: nothing imported it, so it

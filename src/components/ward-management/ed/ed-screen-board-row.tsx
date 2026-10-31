@@ -71,18 +71,19 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   const formExpiryWarningText = movement.legalForm ? formExpiryWarning(movement.legalForm, now, thresholds) : undefined;
   const item = outstandingItem(movement);
   // Owner, 26 Sept 2026: resolved early so the blocked-reason sentences below can
-  // name the patient instead of the WF journey number.
+  // name the patient instead of the WF journey number. Surname first (D-83, ED board redesign 31 Oct
+  // 2026), as the board's own name column reads.
   const patientInfo = resolveSubjectPatient(movement, {
     patients: registryPatients,
     referrals,
     movements,
   });
-  const examBlocked = examinationBlockedReason(movement, patientInfo.displayName);
-  const handoverBlocked = handoverBlockedReason(movement, patientInfo.displayName);
-  const transportBlocked = bookTransportBlockedReason(movement, patientInfo.displayName);
+  const examBlocked = examinationBlockedReason(movement, patientInfo.formalName);
+  const handoverBlocked = handoverBlockedReason(movement, patientInfo.formalName);
+  const transportBlocked = bookTransportBlockedReason(movement, patientInfo.formalName);
   const transportLegalFormWarning = transportLegalFormNotice(movement);
   const transportOpen = transportOpenFor === movement.id;
-  const withdrawBlocked = withdrawReferralBlockedReason(movement, patientInfo.displayName);
+  const withdrawBlocked = withdrawReferralBlockedReason(movement, patientInfo.formalName);
   const withdrawOpen = withdrawOpenFor === movement.id;
   const transportAnswersBlocked = transportAnswersBlockedReason(transportDraft, now);
   const examOpen = examinationOpenFor === movement.id;

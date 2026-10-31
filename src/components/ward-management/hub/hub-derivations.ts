@@ -269,25 +269,6 @@ export function hubCounts(entries: HubEntry[], query: string): Record<HubKind | 
 }
 
 /**
- * Ready beds summed by health service, ward entries only (Ready is a ward-only figure). Ordered by
- * `wardServiceOrder` (`ward-derivations.ts`) — the app's own canonical service order — rather than
- * insertion order, which would otherwise follow whatever order `units` happened to arrive in.
- */
-export function readyByService(entries: HubEntry[]): { service: string; ready: number }[] {
-  const totals = new Map<string, number>();
-  for (const entry of entries) {
-    if (entry.kind !== "ward" || entry.service === undefined || entry.ready === undefined) continue;
-    totals.set(entry.service, (totals.get(entry.service) ?? 0) + entry.ready);
-  }
-  return wardServiceOrder
-    .filter((service) => totals.has(service))
-    .map((service) => ({
-      service,
-      ready: totals.get(service) ?? 0,
-    }));
-}
-
-/**
  * Which wards need a coordinator's attention, and why, in a sentence they can act on — never a
  * colour alone. The only two triggers are: no ready beds right now, and a stale ward confirmation.
  * Nothing else in `HubEntry` feeds this list, so it cannot silently grow a third reason nobody

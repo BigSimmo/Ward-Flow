@@ -8,6 +8,7 @@ import {
 } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import Link from "next/link";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import React, { useEffect, useMemo, useState, useTransition } from "react";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./ward-home-tab.module.css";
@@ -56,19 +57,13 @@ import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { pullBlockedReason } from "./ward-pull-blocked";
-import {
-  useWalkRound,
-  WalkRoundRowMarks,
-  WalkRoundTick,
-  WardWalkRound,
-  bedStripWord,
-  type WalkRoundBed,
-  type WalkRoundMark,
-} from "./ward-walk-round";
+import { useWalkRound, WardWalkRound, bedStripWord, type WalkRoundBed, type WalkRoundMark } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { declineTargetLeftNote } from "./decline-target-left";
+import { useBusiestFlowTabDefault } from "./ward-flow-busiest";
+import { WardPhoneRoundList } from "./ward-phone-round-list";
 import {
   canSubmitDecline,
   DECLINE_SUBMIT_UNAVAILABLE_REASON,
@@ -296,8 +291,13 @@ export function WardHomeTab({
   }
 
   const [innerFlowTab, setInnerFlowTab] = useState<WardFlowTab>("referrals");
-  const flowTab = flowTabProp ?? innerFlowTab;
+  // Ward flow opens on its busiest list (approved 31 Oct 2026). Shown only: it is never written to
+  // the address, and any list the person picks replaces it.
+  const [busiestFlowTab, setBusiestFlowTab] = useState<WardFlowTab | null>(null);
+  const chosenFlowTab = flowTabProp ?? innerFlowTab;
+  const flowTab = busiestFlowTab ?? chosenFlowTab;
   const setFlowTab = (next: WardFlowTab) => {
+    setBusiestFlowTab(null);
     startTransition(() => {
       (onFlowTabChange ?? setInnerFlowTab)(next);
     });
@@ -311,6 +311,9 @@ export function WardHomeTab({
   };
   const [boardView, setBoardView] = useState<"board" | "list">("board");
   const isPhone = useIsPhone();
+  // Site bed manager (approved 31 Oct 2026): it looks after the site's beds, not the ward's own round
+  // and reminder ticks, so those are left out for it and Morning bed numbers leads This shift.
+  const isSiteBedManager = useEffectiveWardAccess().role === "bed_manager";
 
   function focusAwaiting() {
     setFlowTab("referrals");
@@ -383,7 +386,7 @@ export function WardHomeTab({
       at: now,
       timeLabel: "Now",
       title: "Inbound accepted",
-      detail: `${resolvePatientIdentity(accepted[0]).displayName}${accepted.length > 1 ? ` and ${accepted.length - 1} more` : ""}`,
+      detail: `${resolvePatientIdentity(accepted[0]).formalName}${accepted.length > 1 ? ` and ${accepted.length - 1} more` : ""}`,
       status: "En route",
     });
   }
@@ -576,7 +579,13 @@ export function WardHomeTab({
   }));
   const [walkRound, setWalkRound] = useWalkRound(unit.id, walkBeds);
   const walkRowLabel = (name: string, marks: WalkRoundMark) =>
-    [name, marks.changed ? "changed this round" : "", marks.reviewed ? "reviewed" : "", "open in the round"]
+    [
+      name,
+      marks.changed ? "changed this round" : "",
+      marks.reviewed ? "reviewed" : "",
+      // The site bed manager has no round, so a row opens the bed.
+      isSiteBedManager ? "open the bed" : "open in the round",
+    ]
       .filter(Boolean)
       .join(", ");
   const walkingOnPhone = isPhone && phoneSheets && walkRound.walking !== null;
@@ -584,60 +593,14 @@ export function WardHomeTab({
     onWalkingChange?.(walkingOnPhone);
   }, [onWalkingChange, walkingOnPhone]);
   const phoneRoundList = (mark: (bedNumber: number) => WalkRoundMark, walkFrom: (bedNumber: number) => void) => (
-    <ul
-      className={styles.phoneRows}
-      aria-label={`Beds at ${unit.name}, in bed order`}
-      data-testid="ward-phone-round-list"
-    >
-      {[...bedRows]
-        .sort((left, right) => Number(left.bed.bedNumber) - Number(right.bed.bedNumber))
-        .map((row) => {
-          const marks = mark(Number(row.bed.bedNumber));
-          return (
-            <li key={row.bed.bedNumber}>
-              <button
-                type="button"
-                className={styles.phoneRow}
-                data-act={row.glyph === "danger" ? "true" : undefined}
-                data-dim={isLit(row) ? undefined : "true"}
-                data-reviewed={marks.reviewed ? "true" : undefined}
-                aria-label={walkRowLabel(row.accessibleName, marks)}
-                onClick={() => {
-                  walkFrom(Number(row.bed.bedNumber));
-                }}
-              >
-                <span className={styles.phoneRowNo} aria-hidden="true">
-                  {row.number}
-                </span>
-                <span className={styles.phoneRowText} aria-hidden="true">
-                  <span className={styles.phoneRowName}>{row.name}</span>
-                  <WalkRoundRowMarks mark={marks} />
-                  <span className={styles.phoneRowNote}>
-                    {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
-                    <span>
-                      {row.bed.stayDays === 0 && row.note === row.stateWord
-                        ? "Arrived today"
-                        : row.note === row.name
-                          ? row.free
-                            ? "Ready"
-                            : row.bed.status === "closed"
-                              ? "Not offered"
-                              : row.stateWord
-                          : row.note}
-                    </span>
-                    {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
-                  </span>
-                </span>
-                <span className={styles.phoneRowDays} aria-hidden="true">
-                  {row.days || (row.free ? "Ready" : "")}
-                  {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
-                </span>
-                <WalkRoundTick mark={marks} />
-              </button>
-            </li>
-          );
-        })}
-    </ul>
+    <WardPhoneRoundList
+      rows={bedRows}
+      unitName={unit.name}
+      mark={mark}
+      walkFrom={walkFrom}
+      isLit={isLit}
+      rowLabel={walkRowLabel}
+    />
   );
 
   const bedByAdmission = (admissionId: string | undefined) =>
@@ -663,7 +626,7 @@ export function WardHomeTab({
     const eta = movement.arrivalDetails?.estimatedArrivalAt;
     // WT-07: once Delivered, the patient is at the ward, so the ETA is no longer late.
     const late = eta !== undefined && eta < now && !deliveredAwaitingWard(movement);
-    const displayName = resolvePatientIdentity(movement).displayName;
+    const displayName = resolvePatientIdentity(movement).formalName;
     // A1-6 (audit round 2): an accepted patient waiting for a bed is pulled from this row, the
     // same action and the same check as All arrivals, so the sheet is no longer a detour.
     const canPull = movement.stage === "accepted_awaiting_bed" && onPullPatient !== undefined;
@@ -732,6 +695,12 @@ export function WardHomeTab({
         run: () => (bed ? onSelectBed?.(Number(bed.bedNumber)) : onOpenDischarges?.()),
       };
     });
+  // Ward flow opens on its busiest list instead of an empty one (approved 31 Oct 2026).
+  useBusiestFlowTabDefault(
+    { referrals: incoming.length, admissions: expectedRows.length + leaveRows.length, discharges: outRows.length },
+    chosenFlowTab,
+    setBusiestFlowTab,
+  );
 
   // This shift: one to do list, sorted into act now, later today and done. Every row is a recorded
   // fact or one of the ward's own reminder ticks, which are listed but never counted as to do.
@@ -820,7 +789,7 @@ export function WardHomeTab({
       title:
         heldAfterStop.length === 1 ? "Stopped transport, bed still pulled" : "Stopped transports, beds still pulled",
       detail: heldAfterStop
-        .map((movement) => `${resolvePatientIdentity(movement).displayName}, transport stopped after collection`)
+        .map((movement) => `${resolvePatientIdentity(movement).formalName}, transport stopped after collection`)
         .join("; "),
       meta: String(heldAfterStop.length),
       tone: "warning",
@@ -968,11 +937,19 @@ export function WardHomeTab({
       action: { label: "Check bed", run: () => onSelectBed?.(Number(bed.bedNumber)) },
     });
   }
-  for (const [id, label, hint, at] of [
-    ["drugs", "Controlled drug count", "Tick when the register has been checked.", localChecks.drugs],
-    ["seclusion", "Seclusion check", "Tick when the suite and duress alarm have been checked.", localChecks.seclusion],
-    ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed.", localChecks.afternoon],
-  ] as const) {
+  // The ward's own reminder ticks are not offered to the site bed manager.
+  for (const [id, label, hint, at] of isSiteBedManager
+    ? []
+    : ([
+        ["drugs", "Controlled drug count", "Tick when the register has been checked.", localChecks.drugs],
+        [
+          "seclusion",
+          "Seclusion check",
+          "Tick when the suite and duress alarm have been checked.",
+          localChecks.seclusion,
+        ],
+        ["afternoon", "Afternoon sign-off", "Tick when the midday numbers have been signed.", localChecks.afternoon],
+      ] as const)) {
     const row: TodoRow = {
       key: id,
       title: `${label} (reminder)`,
@@ -983,6 +960,11 @@ export function WardHomeTab({
       tick: id,
     };
     (at === null ? laterToday : doneRows).push(row);
+  }
+  // Site bed manager: Morning bed numbers, with its Confirm, leads its column of This shift.
+  if (isSiteBedManager) {
+    for (const rows of [actNow, laterToday])
+      rows.sort((a, b) => Number(b.key === "rollup") - Number(a.key === "rollup"));
   }
   const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
 
@@ -1013,7 +995,12 @@ export function WardHomeTab({
       <li key={row.key} className={styles.flowRow}>
         <StatusGlyph tone={row.tone} size={9} />
         <span className={styles.flowMain}>
-          <span className={styles.flowTitle}>{row.title}</span>
+          {/* Redesign: the time belongs to the bed or person it dates, so it sits on their line and
+              the detail under them has the row's full width (it was cut to "Awaiting…"). */}
+          <span className={styles.flowTitleLine}>
+            <span className={styles.flowTitle}>{row.title}</span>
+            {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
+          </span>
           <span className={styles.flowDetail}>{row.detail}</span>
           {row.movementId && lastActionRejection?.movementId === row.movementId ? (
             <span className={styles.noticeProminent} role="alert">
@@ -1022,7 +1009,6 @@ export function WardHomeTab({
             </span>
           ) : null}
         </span>
-        {row.when ? <span className={styles.flowWhen}>{row.when}</span> : null}
         {row.placement ? (
           <Button
             variant="pri"
@@ -1683,7 +1669,7 @@ export function WardHomeTab({
                         <span className={styles.phoneAwaitText}>
                           {/* D-79: a ward sees who is coming before it answers, never where else they were referred. */}
                           <span className={styles.phoneAwaitName}>
-                            {resolvePatientIdentity(movement).displayName} · {movement.cohort}
+                            {resolvePatientIdentity(movement).formalName} · {movement.cohort}
                           </span>
                           <span className={styles.phoneAwaitMeta}>
                             {[
@@ -1855,6 +1841,12 @@ export function WardHomeTab({
           ) : null}
           {bedRows.length === 0 ? (
             <p className={styles.v6Empty}>No beds are recorded for {unit.name}.</p>
+          ) : isPhone && isSiteBedManager ? (
+            // Site bed manager: the bed list without Start the round; a row opens the bed.
+            phoneRoundList(
+              () => ({ reviewed: false, changed: false }),
+              (bedNumber) => onSelectBed?.(bedNumber),
+            )
           ) : isPhone ? (
             <WardWalkRound
               beds={walkBeds}

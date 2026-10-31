@@ -578,12 +578,19 @@ describe("Kit CSS", () => {
     expect(block(css("live.module.css"), ".timer")).toMatch(/position:\s*relative/);
   });
 
-  it("lifts buttons, segmented options and hero track items to the 48px tap floor on a phone", () => {
+  it("keeps the 48px tap floor on a phone: segmented options lift, buttons use an invisible cover", () => {
     const button = css("button.module.css");
     const choice = css("choice.module.css");
     expect(button).toContain("@media (max-width: 48rem)");
     expect(choice).toContain("@media (max-width: 48rem)");
-    expect(block(phone(button), ".b")).toContain("min-height: var(--spacing-tap, 3rem)");
+    // Kit standard (Josh, 31 Oct 2026: no 48px controls): a phone button shows at 40px and its
+    // invisible cover reaches 48px (4px above and below); a small one shows at 32px with 8px.
+    expect(block(phone(button), ".b:not([data-placement-action])")).toContain("height: 40px");
+    expect(block(phone(button), ".b:not([data-placement-action])::after")).toContain("inset: -4px 0");
+    expect(block(phone(button), ".sm:not([data-placement-action])")).toContain("height: 32px");
+    expect(block(phone(button), ".sm:not([data-placement-action])::after")).toContain("inset: -8px 0");
+    // Placement decisions keep their full-size button, 48px on phones: the one exception (Josh, 31 Oct, 10:34).
+    expect(block(button, ".b[data-placement-action]")).toContain("min-height: var(--wf-h-md)");
     expect(phone(choice)).toMatch(/\.segItem,\s*\.trk \.segItem \{\s*min-height: var\(--spacing-tap, 3rem\)/);
   });
 
