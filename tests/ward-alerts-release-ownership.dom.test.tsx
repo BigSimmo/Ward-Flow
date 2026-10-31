@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { Bell } from "lucide-react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -11,7 +12,10 @@ vi.mock("next/link", () => ({
 }));
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
+import { ReleaseOwnershipButton } from "@/components/ward-management/alerts/alert-release-ownership";
+import type { InboxItem } from "@/components/ward-management/ward-derivations";
+import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf";
 
@@ -72,5 +76,95 @@ describe("alerts: release an alert you took (P019)", () => {
     const dialog = screen.getByRole("dialog", { name: `Hand ${title} back to the queue?` });
     fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(releaseButton(panel)).toBeInTheDocument();
+  });
+});
+
+const syntheticAlert: InboxItem = {
+  id: "transport-WF-SYNTHETIC",
+  title: "Synthetic alert",
+  detail: "Synthetic transport detail",
+  icon: Bell,
+  kind: "fact",
+  tone: "warning",
+  movementId: "WF-SYNTHETIC",
+  owner: "Bed coordinator",
+};
+
+function ReleaseOverride({ dispatch }: { dispatch: WardCommandDispatch }) {
+  const world = useWardFlow();
+  return (
+    <WardFlowOverride value={{ ...world, dispatch }}>
+      <ReleaseOwnershipButton item={syntheticAlert} subjectLine="Synthetic alert" fallback={null} />
+    </WardFlowOverride>
+  );
+}
+
+function confirmSyntheticRelease(dispatch: WardCommandDispatch) {
+  render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReleaseOverride dispatch={dispatch} />
+      </WardFlowProvider>
+    </ToastProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Release Synthetic alert" }));
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Release" }));
+}
+
+describe("shared Release confirmation and Undo lifetime", () => {
+  it.each(["refused", "failed"] as const)("does not report a %s Release as successful", (status) => {
+    confirmSyntheticRelease(() => ({ commandId: "release", status, message: "Synthetic release was not confirmed." }));
+    expect(screen.queryByText("Released Synthetic alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+    expect(screen.getByText(/Synthetic release was not confirmed/)).toBeTruthy();
+  });
+
+  it("waits for the shared answer before offering success or Undo", async () => {
+    let resolve!: (outcome: WardCommandOutcome) => void;
+    const pending = new Promise<WardCommandOutcome>((done) => {
+      resolve = done;
+    });
+    confirmSyntheticRelease(() => pending);
+    expect(screen.queryByText("Released Synthetic alert")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+    await act(async () => resolve({ commandId: "release", status: "accepted" }));
+    expect(screen.getByText("Released Synthetic alert")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
+  });
+
+  it("follows a recovered uncertain save to its definitive answer", async () => {
+    let resolve!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((done) => {
+      resolve = done;
+    });
+    confirmSyntheticRelease(() => ({ commandId: "release", status: "failed", confirmation }));
+    expect(screen.queryByText("Released Synthetic alert")).toBeNull();
+    await act(async () => resolve({ commandId: "release", status: "accepted" }));
+    expect(screen.getByText("Released Synthetic alert")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
+  });
+
+  it("explains a refused retake from Undo", () => {
+    confirmSyntheticRelease((event) =>
+      event.type === "RELEASE_INBOX_ITEM_OWNERSHIP"
+        ? { commandId: "release", status: "accepted" }
+        : { commandId: "retake", status: "refused", message: "Synthetic alert is held elsewhere." },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(screen.getByText(/Synthetic alert is held elsewhere/)).toBeTruthy();
+  });
+
+  it.each(["isCurrent", "canUndo"] as const)("does not retake an alert after %s becomes false", (fence) => {
+    let current = true;
+    const dispatch = vi.fn<WardCommandDispatch>(() => ({
+      commandId: "release",
+      status: "accepted",
+      [fence]: () => current,
+    }));
+    confirmSyntheticRelease(dispatch);
+    expect(screen.getByText("Released Synthetic alert")).toBeTruthy();
+    current = false;
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }));
+    expect(dispatch.mock.calls.filter(([event]) => event.type === "TAKE_INBOX_ITEM_OWNERSHIP")).toHaveLength(0);
   });
 });
