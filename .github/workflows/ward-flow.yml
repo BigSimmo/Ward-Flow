@@ -531,14 +531,15 @@ jobs:
     name: Ward Flow release gate ${{ matrix.project }} ${{ matrix.part }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Desktop Chromium and phone WebKit each run as two parallel jobs: the journeys part must pass
-    # every required journey on its own project, the checks part runs the accessibility sweep, and
-    # Ward Flow required needs all four. The parts split the release-gate files without overlap.
+    # Desktop Chromium and phone WebKit each run as three parallel jobs: the journeys and referrals
+    # parts must pass their required journeys on their own project (six in all), the checks part
+    # runs the accessibility sweep, and Ward Flow required needs all six jobs. The parts split the
+    # release-gate files without overlap (scripts/ward-flow/browser-run-contract.mjs).
     strategy:
       fail-fast: false
       matrix:
         project: [release-gate-desktop, release-gate-phone]
-        part: [journeys, checks]
+        part: [journeys, referrals, checks]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
