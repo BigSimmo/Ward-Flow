@@ -256,13 +256,40 @@
   text-overflow: ellipsis;
 }
 
-/* Phone: every button is at least the 48px tap floor, whatever its size. */
+/* Phone (kit standard, Josh 31 October 2026: "no 48px controls"; the #1118 mock-ups' button
+   sizing): a button shows at 40px (a small one at 32px) and keeps the 48px tap floor with an
+   invisible cover above and below (and beside an icon-only one), so it is never drawn 48px tall.
+   Placement decisions keep their full-size button (above). */
 @media (max-width: 48rem) {
-  .b {
-    min-height: var(--spacing-tap, 3rem);
+  .b:not([data-placement-action]) {
+    height: 40px;
+    min-height: 40px;
   }
-  .iconOnly {
-    min-width: var(--spacing-tap, 3rem);
+  .sm:not([data-placement-action]) {
+    height: 32px;
+    min-height: 32px;
+  }
+  .iconOnly:not([data-placement-action]) {
+    width: 40px;
+    min-width: 40px;
+  }
+  .sm.iconOnly:not([data-placement-action]) {
+    width: 32px;
+    min-width: 32px;
+  }
+  .b:not([data-placement-action])::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+  .sm:not([data-placement-action])::after {
+    inset: -8px 0;
+  }
+  .iconOnly:not([data-placement-action])::after {
+    inset: -4px;
+  }
+  .sm.iconOnly:not([data-placement-action])::after {
+    inset: -8px;
   }
 }
 
