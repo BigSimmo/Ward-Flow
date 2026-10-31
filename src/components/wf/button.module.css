@@ -236,24 +236,34 @@
 }
 
 /* Disabled with a visible reason. */
+/* Narrow panels (lane E's Transport job panel, Josh 31 Oct 2026): the button keeps its whole label
+   and the reason wraps onto more lines instead of being cut; when both cannot share a line, the pair
+   drops to two rows. Nothing is hidden. */
 .withReason {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
+  max-width: 100%;
+}
+
+.withReason > button {
+  flex: none;
 }
 
 .reason {
   display: inline-flex;
+  flex: 1 1 10rem;
   align-items: center;
   gap: 6px;
   min-width: 0;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
 /* Phone (kit standard, Josh 31 October 2026: "no 48px controls"; the #1118 mock-ups' button

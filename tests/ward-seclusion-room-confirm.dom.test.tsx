@@ -15,9 +15,9 @@ function renderScreen() {
   );
 }
 
+/** The chosen ward's name, from its record's heading. */
 function wardName(): string {
-  const picker = screen.getByTestId("seclusion-ward") as HTMLSelectElement;
-  return picker.options[picker.selectedIndex]!.text;
+  return within(screen.getByTestId("seclusion-ward-card")).getByRole("heading", { level: 2 }).textContent ?? "";
 }
 
 afterEach(cleanup);
@@ -39,6 +39,7 @@ describe("P090 seclusion room confirm", () => {
 
   it("saves out of service, then asks before marking it available", () => {
     renderScreen();
+    const ward = wardName();
     fireEvent.click(screen.getByTestId("seclusion-room-out-of-service"));
     const first = screen.getByRole("dialog", { name: "Mark seclusion room out of service?" });
     fireEvent.click(within(first).getByRole("button", { name: "Mark out of service" }));
@@ -49,5 +50,7 @@ describe("P090 seclusion room confirm", () => {
     expect(second).toHaveTextContent(`${wardName()}'s seclusion room will show as available to everyone.`);
     fireEvent.click(within(second).getByRole("button", { name: "Mark available" }));
     expect(screen.getByTestId("seclusion-room-status")).toHaveTextContent(/^Available · recorded by/);
+    // Its table row moved as the room changed, but the record stays on the same ward.
+    expect(wardName()).toBe(ward);
   });
 });

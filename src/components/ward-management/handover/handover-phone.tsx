@@ -22,7 +22,9 @@ import {
   SrOnly,
   StatusGlyph,
   StatusPill,
+  cx,
   durMinutes,
+  phoneRows,
   type SinceItem,
   type WfTone,
 } from "@/components/wf";
@@ -48,7 +50,10 @@ import {
   type RowGroup,
 } from "./handover-model";
 import { wardClosedLine } from "../capacity/ward-closure";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { handoverDeskOf, peopleToHandOver } from "./handover-desk";
 import styles from "./handover-phone.module.css";
+import parts from "./handover-sheet-parts.module.css";
 
 export type HandoverPhoneProps = {
   shift: HandoverShiftId;
@@ -431,6 +436,11 @@ export function HandoverPhone({
   onToggleMeeting,
   history,
 }: HandoverPhoneProps) {
+  // Role branches: the nurse in charge's one ward, and the ED desk (no Beds tab, no sign-off).
+  const { ownWard, edDesk } = handoverDeskOf(
+    useEffectiveWardAccess(),
+    wards.map((ward) => ward.unit),
+  );
   const [tab, setTab] = useState<PhoneTab>("pts");
   const [shiftSheetOpen, setShiftSheetOpen] = useState(false);
   const [sinceOpen, setSinceOpen] = useState(false);
@@ -457,7 +467,8 @@ export function HandoverPhone({
       <PhoneHero
         level={1}
         data-testid="ward-handover-phone-hero"
-        eyebrow={`${clock} ${current.label.toLowerCase()} · ${scopeLabel.toLowerCase()}`}
+        // ROLE BRANCH (ward): a ward's name keeps its capital, and its ready beds are on it.
+        eyebrow={`${clock} ${current.label.toLowerCase()} · ${ownWard?.name ?? scopeLabel.toLowerCase()}`}
         // F-08 (phone review, Oct 2026): the standard Demo pill sits beside the countdown.
         chip={
           <span className={styles.heroChips}>
@@ -467,11 +478,18 @@ export function HandoverPhone({
         }
         // A4-29 (audit round 2): the title counts every row listed under Act now and Due, so it
         // agrees with the two figures beneath it.
-        title={`${actCount + urgentCount + dueCount} to hand over`}
+        title={
+          ownWard
+            ? peopleToHandOver(actCount + urgentCount + dueCount)
+            : `${actCount + urgentCount + dueCount} to hand over`
+        }
         sub={
-          signedAt !== null
-            ? `Signed ${formatInstantWithDay(signedAt, now)} · ${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready across ${scopeLabel.toLowerCase()}`
-            : `${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready across ${scopeLabel.toLowerCase()}`
+          edDesk
+            ? // ROLE BRANCH (ed): this desk cannot sign off, so the line says who does, or when it was signed.
+              signedAt !== null
+              ? `Signed off ${formatInstantWithDay(signedAt, now)}`
+              : "Coordinator or ward signs off"
+            : `${signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)} · ` : ""}${readyCount} ${readyCount === 1 ? "bed" : "beds"} ready ${ownWard ? `on ${ownWard.name}` : `across ${scopeLabel.toLowerCase()}`}`
         }
         figures={[
           {
@@ -498,25 +516,32 @@ export function HandoverPhone({
           {
             id: "due",
             value: dueCount,
-            label: `Due ${formatInstantWithDay(ctx.cutoff, now)}`,
+            // ROLE BRANCH (ward): the desktop chip's words.
+            label: `${ownWard ? "Due by" : "Due"} ${formatInstantWithDay(ctx.cutoff, now)}`,
             tone: "warning",
             pressed: pill === "due",
             onPress: () => onPill("due"),
           },
-          {
-            id: "bed",
-            value: waitCount,
-            // Short form of the "Finding a ward" group so it fits a 375px phone chip untruncated.
-            label: "Finding ward",
-            tone: "neutral",
-            pressed: pill === "bed",
-            onPress: () => onPill("bed"),
-          },
+          // ROLE BRANCH (ward): finding a ward is the coordinator's work, so a ward desk has no such figure.
+          ...(ownWard
+            ? []
+            : [
+                {
+                  id: "bed",
+                  value: waitCount,
+                  // Short form of the "Finding a ward" group so it fits a 375px phone chip untruncated.
+                  label: "Finding ward",
+                  tone: "neutral" as const,
+                  pressed: pill === "bed",
+                  onPress: () => onPill("bed"),
+                },
+              ]),
         ]}
         actions={
-          <div className={styles.heroActions}>
+          <div className={phoneRows.heroPills}>
             <Button
               variant="onHero"
+              className={phoneRows.heroPill}
               icon={Clock}
               aria-haspopup="dialog"
               aria-expanded={shiftSheetOpen}
@@ -528,6 +553,7 @@ export function HandoverPhone({
             {/* Labelled, not a bare round icon (device audit 11 Oct 2026). */}
             <Button
               variant="onHero"
+              className={phoneRows.heroPill}
               icon={Timer}
               aria-pressed={meetingOn}
               aria-label={meetingOn ? "Stop the meeting timer" : "Start the meeting timer"}
@@ -573,7 +599,7 @@ export function HandoverPhone({
             fill
             items={[
               { id: "pts", label: "Patients", count: rows.length },
-              { id: "beds", label: "Beds" },
+              ...(edDesk ? [] : [{ id: "beds" as const, label: "Beds" }]),
               { id: "hist", label: "History" },
             ]}
           />
@@ -586,15 +612,19 @@ export function HandoverPhone({
             aria-labelledby="ward-handover-phone-tab-pts"
             className={styles.panel}
           >
-            <div className={styles.chips} role="group" aria-label="Highlight">
+            <div className={cx(styles.chips, phoneRows.chipRow, parts.phChipRow)} role="group" aria-label="Highlight">
               {chips.map((chip) => (
                 <FilterChip
                   key={chip.id}
                   pressed={chip.pressed}
                   onPressedChange={chip.onToggle}
-                  className={styles.chip}
+                  className={cx(styles.chip, phoneRows.chip, chip.count === 0 && phoneRows.zero)}
                 >
                   <b className={styles.chipCount}>{chip.count}</b>
+                  {/* Home-style touch: the one urgent highlight carries the danger dot before its words. */}
+                  {chip.id === "esc" && chip.count > 0 ? (
+                    <StatusGlyph tone="danger" size={9} className={parts.chipGlyph} />
+                  ) : null}
                   {chip.label}
                 </FilterChip>
               ))}
@@ -682,15 +712,17 @@ export function HandoverPhone({
         >
           {copied ? "Copied" : "Copy summary"}
         </Button>
-        <Button
-          variant="pri"
-          icon={Check}
-          className={styles.stickyButton}
-          onClick={onShowSignOff}
-          data-testid="ward-handover-phone-sign-off"
-        >
-          {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
-        </Button>
+        {edDesk ? null : (
+          <Button
+            variant="pri"
+            icon={Check}
+            className={styles.stickyButton}
+            onClick={onShowSignOff}
+            data-testid="ward-handover-phone-sign-off"
+          >
+            {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
+          </Button>
+        )}
         <SrOnly role="status">{copied ? "Summary copied" : ""}</SrOnly>
       </div>
 
@@ -742,7 +774,7 @@ export function HandoverPhone({
           onCopy={() => onCopyIsbar(selected)}
           patientHref={patientHrefOf(selected)}
         />
-      ) : (
+      ) : edDesk ? null : (
         <Drawer
           open={drawerOpen && !flowPanel}
           onClose={onCloseDrawer}

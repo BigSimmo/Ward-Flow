@@ -9,9 +9,11 @@
   min-width: 0;
 }
 
+/* Final round (31 Oct 2026): the Ward flow panel keeps at least 21rem, so its three lists sit on one
+   line with room around each label; the bed board takes the rest. */
 .homeTop {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 5fr) minmax(21rem, 2fr);
   gap: var(--wf-s-3);
   align-items: stretch;
   min-width: 0;
@@ -142,7 +144,10 @@
   list-style: none;
 }
 
+/* Final round (31 Oct 2026): each tile fills its grid cell, so every tile in a row is one height and
+   the state line sits on one baseline across the row (rows are already equal, `grid-auto-rows`). */
 .bedTiles > li {
+  display: flex;
   min-width: 0;
 }
 
@@ -151,8 +156,10 @@
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  height: 100%;
-  min-height: 4.75rem;
+  /* Redesign: a tile grows to fit a whole name on two lines; the row takes its tallest tile's height. */
+  height: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
@@ -263,12 +270,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row. */
 .bedTileName {
-  overflow: hidden;
+  display: block;
   font-size: var(--wf-fs-13);
   font-weight: 500;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .bedTileState {
@@ -470,8 +478,10 @@
   flex-direction: column;
 }
 
+/* Final round (31 Oct 2026): 12px sides and tighter items (with the wider panel, `.homeTop`) keep the
+   three lists on one line at 1440. */
 .flowSwitch {
-  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  padding: var(--wf-s-2) var(--wf-s-3) 0;
 }
 
 /* Design audit DA-24: a label never shrinks under its own text. When the panel is too narrow (a 1280
@@ -486,9 +496,9 @@
 .flowSwitch > div > button {
   flex: 1 1 auto;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   min-width: max-content;
-  padding-inline: 2px;
+  padding-inline: 4px;
 }
 
 .flowBody {
@@ -579,13 +589,22 @@
   min-width: 0;
 }
 
+/* Redesign: the title and its time share the first line; the time keeps its size. */
+.flowTitleLine {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+/* A person's name wraps in full, never cut short (owner rule, 31 Oct 2026). */
 .flowTitle {
-  overflow: hidden;
+  min-width: 0;
   font-size: var(--wf-fs-13);
   font-weight: 600;
   color: var(--wf-ink-1);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .flowDetail {
@@ -599,6 +618,7 @@
 
 .flowWhen {
   flex: none;
+  margin-inline-start: auto;
   font-family: var(--wf-mono);
   font-size: var(--wf-fs-12);
   font-variant-numeric: tabular-nums;
@@ -929,6 +949,10 @@ label.todoMain:has(.todoTick:focus-visible) {
   grid-column: 2;
   max-width: none;
   text-align: left;
+  /* Redesign: a wordy note reads in the text face (figures stay tabular), so it fits on one line
+     instead of breaking in the narrow monospace column. */
+  font-family: var(--wf-font);
+  overflow-wrap: normal;
 }
 
 .paneHead {
@@ -1131,10 +1155,6 @@ label.todoMain:has(.todoTick:focus-visible) {
     padding: var(--wf-s-2);
   }
 
-  .bedTileName {
-    display: none;
-  }
-
   .bedTileNote {
     display: none;
   }
@@ -1275,16 +1295,17 @@ label.todoMain:has(.todoTick:focus-visible) {
   min-width: 0;
 }
 
-.phoneRowName,
 .phoneRowNote span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* A person's name wraps in full, never cut short (owner rule, 31 Oct 2026). */
 .phoneRowName {
   font-size: var(--wf-fs-13);
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .phoneRowNote {
@@ -1788,22 +1809,4 @@ label.todoMain:has(.todoTick:focus-visible) {
   position: relative;
 }
 
-.phoneRow[data-act="true"]::before,
-.bedTile[data-act="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .phoneRow[data-act="true"]::before,
-  .bedTile[data-act="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* No side marker (owner ruling, 31 Oct 2026): the danger glyph on the row or tile carries act now. */

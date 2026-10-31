@@ -144,11 +144,12 @@ describe("Statistics phone computation work", () => {
     const initialFigures = phoneFigures();
     setPhone(false);
     for (const count of Object.values(counts)) expect(count).toBeGreaterThan(0);
-    const query = "NO_MATCH_FOR_PERFORMANCE_TEST";
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter wards or hospitals" }), {
-      target: { value: query },
-    });
-    expect(result.container.querySelectorAll("#wardPressureTable tbody tr")).toHaveLength(0);
+    // The ward table's typed filter went (D-91, Josh, 30 Oct 2026); its sort is the state it keeps.
+    const wardHead = () =>
+      within(screen.getByTestId("ward-statistics-pressure")).getByRole("columnheader", { name: "Ward" });
+    fireEvent.click(within(wardHead()).getByRole("button"));
+    expect(wardHead()).toHaveAttribute("aria-sort", "ascending");
+    const firstWard = result.container.querySelector("#wardPressureTable tbody tr th")?.textContent;
     setPhone(true);
     expect(phoneFigures()).toEqual(initialFigures);
 
@@ -172,9 +173,8 @@ describe("Statistics phone computation work", () => {
     expect(counts).toEqual({ wardSort: 0, edTableCopy: 0, arrivalBands: 0, finderSort: 0 });
 
     setPhone(false);
-    expect(screen.getByRole("searchbox", { name: "Filter wards or hospitals" })).toHaveValue(query);
-    expect(result.container.querySelectorAll("#wardPressureTable tbody tr")).toHaveLength(0);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter wards or hospitals" }), { target: { value: "" } });
+    expect(wardHead()).toHaveAttribute("aria-sort", "ascending");
+    expect(result.container.querySelector("#wardPressureTable tbody tr th")?.textContent).toBe(firstWard);
     expect(result.container.querySelectorAll("#wardPressureTable tbody tr").length).toBeGreaterThan(0);
     for (const count of Object.values(counts)) expect(count).toBeGreaterThan(0);
     const chart = screen.getByText("Pull to arrival, admissions by band").closest("figure");

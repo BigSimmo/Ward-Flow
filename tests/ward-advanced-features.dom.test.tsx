@@ -193,7 +193,8 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
 
       // Bed 1 has 34 days stay in seed
       const bed1Btn = within(screen.getByTestId("ward-board-bed-1")).getByRole("button");
-      fireEvent.click(bed1Btn);
+      // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
+      if (bed1Btn.getAttribute("aria-pressed") !== "true") fireEvent.click(bed1Btn);
 
       // Long-stay occupant drawer must show the discharge barrier select
       const barrierSelect = screen.getByLabelText(/Primary Discharge Barrier/i);

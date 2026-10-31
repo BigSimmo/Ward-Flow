@@ -422,14 +422,15 @@
   }
 }
 
-/* In a narrow tile the state word drops under the label rather than squeezing it onto two lines. */
+/* Final polish (31 Oct 2026): the state word sits top right on every tile, and a long label wraps
+   beside it, so Act now and Watch are in the same place on every tile. */
 .tileLabel {
-  flex-wrap: wrap;
-  row-gap: var(--wf-s-1);
+  flex-wrap: nowrap;
 }
 
 .tileLabel > span:first-child {
-  flex: 1 1 8em;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .tileStatus {
@@ -657,6 +658,14 @@
   color: var(--wf-ink-2);
   font-size: var(--tv-small);
   font-weight: 600;
+  vertical-align: bottom;
+}
+
+/* Core pages redesign (31 Oct 2026): "Locked ready" (TV-11: locked beds among the ready ones) takes two short lines in
+   its narrow column rather than running into "Due out". */
+.table thead .headWrap {
+  line-height: 1.15;
+  white-space: normal;
 }
 
 .table tbody th {
@@ -688,11 +697,19 @@
 
 /* TV-10: underlined as well as red, so a long wait never rests on colour alone. The time itself says
  * so too: a wait past the 24 hour mark reads in days ("1d 1h"). */
-.table tr[data-long] td[data-wait],
-.list li[data-long] .wait {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.2em;
+/* Core pages redesign (31 Oct 2026): a long wait is marked with a triangle as well as red, instead of an underline that read
+ * as a link. The time itself still reads in days past 24 hours ("1d 1h"). */
+.table tr[data-long] td[data-wait]::before {
+  content: "▲";
+  margin-right: 0.35em;
+  font-size: 0.55em;
+  vertical-align: 0.25em;
+}
+
+.list .wait {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
 }
 
 .list {
@@ -872,5 +889,105 @@
 
   .table tbody th {
     overflow-wrap: normal;
+  }
+}
+
+/* Core pages redesign (31 Oct 2026): the line under the tiles that carries what each tile used to say in small print. */
+.checking {
+  margin: 0;
+  font-size: var(--tv-row);
+  color: var(--wf-ink-2);
+}
+
+.checking:empty {
+  display: none;
+}
+
+/* Core pages redesign (31 Oct 2026): the all-services meeting reads as three equal tables (By health service, Beds that fit,
+ * Longest ED waits), then Waiting by cause beside a Brief in larger type, at every width wide enough
+ * for three columns and narrower than a TV. The service table no longer runs the full width with an
+ * empty middle. A TV keeps today's 1080p layout (DR-02), which already fits one screen. */
+@container (min-width: 60rem) and (max-width: 89.99rem) {
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) {
+    grid-auto-flow: row;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "main fit waits"
+      "delays brief brief";
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="main"] {
+    grid-area: main;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="fit"] {
+    grid-area: fit;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="waits"] {
+    grid-area: waits;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="delays"] {
+    grid-area: delays;
+  }
+
+  .panels[data-layout="meeting"]:has(> [data-area="brief"]) > [data-area="brief"] {
+    grid-area: brief;
+  }
+}
+
+/* The Brief: four short lines, two by two, at the room's reading size, below TV size. */
+@container (max-width: 89.99rem) {
+  .panel[data-area="brief"] dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--tv-gap);
+    row-gap: calc(var(--tv-gap) * 0.75);
+  }
+
+  .panel[data-area="brief"] dd {
+    font-size: calc(var(--tv-row) * 1.15);
+    line-height: 1.35;
+  }
+
+  .panel[data-area="brief"] dt {
+    font-size: calc(var(--tv-row) * 0.7);
+  }
+}
+
+/* A health service's short name stays on one line in the narrower service table. */
+.panel[data-area="main"] .table th[scope="row"],
+.panel[data-area="main"] .table tbody th {
+  white-space: nowrap;
+}
+
+/* On a TV (today's 1080p layout, DR-02) the checking line sits in the header's empty right side
+ * under the controls, so the meeting still fits one screen with surname-first names. */
+.tv {
+  position: relative;
+}
+
+@container (min-width: 90rem) {
+  .checking {
+    position: absolute;
+    inset-block-start: calc(var(--tv-gap) * 4.6);
+    inset-inline-end: var(--tv-gap);
+    max-inline-size: 45%;
+    font-size: var(--tv-least);
+    text-align: end;
+  }
+
+  /* The panel is titled Longest ED waits, so the word after each time can go and the name and
+   * time share a line, as today. */
+  .panel[data-area="waits"] .waitWord {
+    display: none;
+  }
+}
+
+/* Core pages redesign (31 Oct 2026): a row of tiles with no second detail line keeps four rows, so no empty row pads it. */
+@supports (grid-template-rows: subgrid) {
+  .tiles:not([data-ages]) > .tile {
+    grid-row: span 4;
   }
 }

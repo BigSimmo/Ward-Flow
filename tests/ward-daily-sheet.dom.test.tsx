@@ -410,7 +410,6 @@ describe("dailySheetGroups — a partition of the board's rows, never a second d
     pastDate: false,
     sex: "Female",
     homeRegion: "Peel",
-    tentativeDiagnosis: null,
     expectedDays: 3,
     blockReason: null,
     awayAtEdHours: null,
@@ -571,9 +570,12 @@ describe("every count on the sheet is POSSIBLE for this ward, not merely compute
     const statewide = sinceYesterday(wardAdmissions, WARD_ADMISSIONS_ANCHOR);
     const line = screen.getByTestId("ward-daily-sheet-since").textContent ?? "";
 
-    expect(line).toContain(`${movement.discharged} left this ward`);
-    expect(line).toContain(`${movement.pulled} bed`);
-    expect(line).toContain(`${movement.datesMoved} expected date`);
+    // Redesign (Josh, 31 Oct 2026): each tile names its period, so "pulled now" and "pulled in 24h"
+    // no longer read as one figure with two values.
+    expect(line).toContain(`${movement.discharged} left in 24h`);
+    expect(line).toContain(`${movement.pulled} pulled in 24h`);
+    expect(line).toContain(`${movement.datesMoved} date`);
+    expect(line).toContain("moved in 24h");
 
     // Non-vacuity: the statewide figure really is bigger, so "this ward's" is a claim with teeth.
     // Without this, a board handed all 267 records would satisfy the three assertions above by
@@ -627,19 +629,17 @@ describe("the unit-only sheet (ward-screen) reads the live provider, not zeros o
 });
 
 describe("what the sheet may never show", () => {
-  it("labels every diagnosis tentative, and leads the line with the word", () => {
+  it("prints no diagnosis at all, tentative or not (Josh, 30 Oct 2026: the brief is printed)", () => {
     renderWardBoard(UNIT_ID);
     const sheet = screen.getByTestId("ward-daily-sheet");
+    // Non-vacuity: the sheet really lists people, so "no diagnosis line" is not an empty sheet.
+    expect(sheet.querySelectorAll("p").length).toBeGreaterThan(0);
     const lines = [...sheet.querySelectorAll("p")]
       .map((node) => node.textContent ?? "")
-      .filter((text) => text.includes("iagnosis"));
-
-    expect(lines.length).toBeGreaterThan(0);
-    for (const line of lines) {
-      // A reader scanning a column takes the first words of each line, so a qualification at the
-      // end is the half that gets skipped.
-      expect(line.startsWith("Tentative diagnosis:")).toBe(true);
-    }
+      .filter((text) => /diagnos/iu.test(text));
+    // A printed sheet can be left lying around, so no diagnosis reaches it. The board's own record
+    // panel still shows the tentative diagnosis on screen.
+    expect(lines).toEqual([]);
   });
 
   it("never numbers a bed and never names a person", () => {

@@ -76,10 +76,9 @@ describe("H-0842: form codes carry their register titles", () => {
 describe("H-0187: codes on Home and Capacity are spelt out", () => {
   it("Capacity shows no known code without its full name", () => {
     const view = renderInProvider(<CapacityScreen />);
-    // Held: bed-map.tsx and capacity-screen.tsx (freeing names) overlap open PR #1013; the CAHS
-    // footer note is left as it is.
-    const held = '[data-testid^="ward-bed-map"], [aria-label="Bed map service shortcuts"], [class*="freeing"], footer';
-    expect(bareCodes(view.container, held)).toEqual([]);
+    // Held: the CAHS footer note is left as it is. The old bed map and freeing list held here for
+    // PR #1013 went with the Capacity redesign (31 Oct 2026), so the new bed map is checked too.
+    expect(bareCodes(view.container, "footer")).toEqual([]);
   });
 
   it("Home shows no known code without its full name, apart from the two held strings", () => {

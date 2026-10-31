@@ -4,6 +4,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
+import { isRedesignMockup } from "./helpers/redesign-design-copies";
 
 const WARD_DIR = "src/components/ward-management";
 
@@ -622,6 +623,10 @@ describe("one source of truth", () => {
   it("lets only the ledger screen read the admission seed, so its 'this is not live' sentence keeps a guard", () => {
     const offenders = srcDirFiles()
       .filter(({ normalizedFile }) => !ADMISSION_SEED_ALLOWLIST.has(normalizedFile))
+      // The redesign mock-ups (D-89, D-91) are design-only copies, blocked in production and deleted
+      // as each page is built; the built page lands under ward-management and is judged here then.
+      // The dispatch rule below still reads them.
+      .filter(({ normalizedFile }) => !isRedesignMockup(normalizedFile))
       .filter(({ source }) => /from "[^"]*ward-admissions-seed"/.test(source))
       .map(({ normalizedFile }) => normalizedFile);
     expect(
@@ -732,6 +737,9 @@ describe("one source of truth", () => {
   it("restricts every read of NOW_ANCHOR under src to the named allow-list", () => {
     const offenders = srcDirFiles()
       .filter(({ normalizedFile }) => !NOW_ANCHOR_ALLOWLIST.has(normalizedFile))
+      // The mock-up viewer seeds its synthetic world from NOW_ANCHOR as the provider does; it and the
+      // fork copies are design-only (D-89, D-91), blocked in production and deleted page by page.
+      .filter(({ normalizedFile }) => !isRedesignMockup(normalizedFile))
       .filter(({ file, source }) => readsNowAnchor(source, file))
       .map(({ file }) => file);
     expect(offenders).toEqual([]);
@@ -757,6 +765,8 @@ describe("one source of truth", () => {
   it("restricts every read of allUnits/unitById under src to the named allow-list", () => {
     const offenders = srcDirFiles()
       .filter(({ normalizedFile }) => !UNITS_FIXTURE_ALLOWLIST.has(normalizedFile))
+      // Design-only redesign copies (D-89, D-91), as for NOW_ANCHOR above.
+      .filter(({ normalizedFile }) => !isRedesignMockup(normalizedFile))
       .filter(({ file, source }) => readsUnitsFixture(source, file))
       .map(({ file }) => file);
     expect(offenders).toEqual([]);

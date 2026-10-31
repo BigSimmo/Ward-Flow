@@ -6,8 +6,7 @@
   gap: var(--wf-s-2);
   margin: 0;
   padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line-2);
-  border-left: 3px solid var(--wf-warning);
+  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   font-size: var(--wf-fs-13);

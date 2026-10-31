@@ -52,7 +52,7 @@ const EXPECTED_MODEL_CLAIMS = 77;
  */
 const EXPECTED_UNEVIDENCED_CLAIMS = 11;
 // 8 -> 7 on 25 October 2026 (USC-07): `statistics-section-frame.tsx` was deleted as dead code.
-const EXPECTED_REGISTERED_SURFACES = 7;
+const EXPECTED_REGISTERED_SURFACES = 8;
 
 // Q004 removed these implementation explanations from the page, not their historical evidence.
 // This exact set is the only locator exemption; arbitrary retirement metadata cannot bypass it.

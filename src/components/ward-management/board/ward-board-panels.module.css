@@ -1,0 +1,144 @@
+/* Stays and discharges: the bed grid, its bar and the bed record on the kit's controls and radii
+   (redesign approved 31 Oct 2026). Doubled selectors outrank board.module.css, which these sit beside. */
+/* Bed cards: five to a row beside a narrower record column. */
+@media (min-width: 64rem) {
+  .zones.zones {
+    grid-template-columns: minmax(0, 1fr) 19rem;
+  }
+  .beds.beds {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+}
+
+/* Names wrap rather than cut off (D-83: full names, surname first). */
+.bedName.bedName {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* ── The bed list's own bar, in the kit's controls ── */
+.gridHead.gridHead.gridHead {
+  background: var(--wf-surface);
+  border-bottom: 1px solid var(--wf-line);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.gridHead.gridHead > h2 {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  letter-spacing: 0;
+}
+.gridCount.gridCount {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.boardBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+}
+.order {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+.orderBox {
+  width: auto;
+  min-width: 12rem;
+}
+.phoneBar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-bottom: var(--wf-s-3);
+}
+.phoneBar > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ── The bed record panel on the kit's card, radii and controls ── */
+.detail.detail.detail {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  padding: 0 16px 16px;
+}
+.detailBar.detailBar.detailBar {
+  align-items: center;
+  margin: 0 -16px 16px;
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg) var(--wf-r-lg) 0 0;
+  background: var(--wf-surface);
+  box-shadow: none;
+}
+.person.person.person {
+  border-top: 0;
+  padding: 0;
+}
+.detailHeading.detailHeading {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+.detailClose.detailClose {
+  position: relative;
+  flex: none;
+  color: var(--wf-ink-2);
+}
+.detailClose.detailClose::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+.idCard.idCard {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  box-shadow: none;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.sectionCard.sectionCard {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: none;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.chip.chip {
+  border-radius: var(--wf-r-tag);
+}
+.detailButtonWide.detailButtonWide {
+  width: 100%;
+}
+/* Bed record buttons wrap a long label onto a second line rather than running past the panel edge
+   (QA 31 Oct 2026, 390 to 1440). They keep the kit's height as a floor, and the kit's phone tap cover. */
+.detailButtonWrap.detailButtonWrap.detailButtonWrap {
+  height: auto;
+  min-height: var(--wf-h-md);
+  max-width: 100%;
+  padding-block: 6px;
+  justify-content: flex-start;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 18px;
+}
+@media (max-width: 48rem) {
+  .detailButtonWrap.detailButtonWrap.detailButtonWrap {
+    min-height: 40px;
+  }
+}
+.fieldLabel.fieldLabel {
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  letter-spacing: 0;
+  text-transform: none;
+}

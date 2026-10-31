@@ -22,6 +22,7 @@ import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/wa
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 afterEach(() => cleanup());
 
@@ -71,7 +72,7 @@ describe("Bed board move to an open bed (audit CS3-12)", () => {
     );
     fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${lockedStayBed}`));
-    fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+    fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${freeOpenBed}`));
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Not recorded: .*is an open bed/);
@@ -99,7 +100,7 @@ describe("Bed board move to an open bed (audit CS3-12)", () => {
     fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const before = screen.getByTestId(`ward-board-bed-${lockedStayBed}`).getAttribute("aria-label");
     fireEvent.click(screen.getByTestId(`ward-board-bed-${lockedStayBed}`));
-    fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+    fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${freeOpenBed}`));
     fireEvent.click(within(screen.getByTestId("ward-bed-move-reason")).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByTestId("ward-bed-move-reason")).not.toBeInTheDocument();

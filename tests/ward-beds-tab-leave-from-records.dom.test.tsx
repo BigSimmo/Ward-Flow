@@ -42,7 +42,7 @@ function ExposeWardFlowFacts({ unitId }: { unitId: string }) {
     <div data-testid="expose-ward-flow-facts" style={{ display: "none" }}>
       {unitLeave.map((leaveBed) => {
         const admission = admissions.find((a) => a.id === leaveBed.admissionId);
-        const name = admission ? resolvePatientIdentity(admission).displayName : undefined;
+        const name = admission ? resolvePatientIdentity(admission).formalName : undefined;
         return (
           <span key={leaveBed.id} data-testid={`expected-leave-name-${leaveBed.id}`}>
             {name ?? "NO MATCHING ADMISSION"}

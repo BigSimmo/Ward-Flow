@@ -1,0 +1,94 @@
+/* Downtime pack (Josh, 31 Oct 2026): tabs show one table at a time on screen; print keeps all four. */
+
+.tabBar {
+  position: sticky;
+  /* Under the 60px top bar, which is sticky in the same scroll box (as the old jump row). */
+  top: 3.75rem;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  background: var(--wf-canvas);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.tabs {
+  flex: 1 1 auto;
+  border-bottom: 0;
+}
+
+.tabs [role="tab"] {
+  height: 44px;
+  font-size: var(--wf-fs-14);
+}
+
+.tabNote {
+  padding-bottom: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* A table that is not the chosen tab: hidden on screen, printed in full. */
+.printOnlyPanel {
+  display: none;
+}
+
+@media print {
+  .printOnlyPanel {
+    display: block;
+  }
+}
+
+/* Service rows read as group headers: a stronger band with a rule above. */
+.groupHead > th,
+.groupHead > td {
+  border-top: 2px solid var(--wf-line-2);
+  background: var(--wf-track);
+  font-weight: 700;
+}
+
+.groupHead > th {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Ready counts in green, as the ward rows already mark them. */
+.readyGreen {
+  color: var(--wf-success-ink);
+  font-weight: 700;
+}
+
+/* A ready count in a table cell: green ink on a light green tint (ward, service and total rows). */
+.readyChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--wf-success) 45%, transparent);
+  border-radius: var(--wf-r-tag);
+  background: color-mix(in srgb, var(--wf-success) 14%, transparent);
+  color: var(--wf-success-ink);
+  font-weight: 700;
+}
+
+@media print {
+  .readyChip {
+    border-color: currentColor;
+  }
+}
+
+/* Phone (Josh, 31 Oct 2026): New snapshot and Print are Home's hero pills, side by side
+   (phoneRows in the kit), so they no longer share the row half each as the pack's phone hero sets. */
+@media (max-width: 48rem) {
+  .heroPillActions.heroPillActions > div:last-child > * {
+    flex: 0 1 auto;
+  }
+  .heroPillActions.heroPillActions > div:last-child > * > button,
+  .heroPillActions.heroPillActions > div:last-child > button {
+    width: auto;
+  }
+}

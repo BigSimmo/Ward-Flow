@@ -17,7 +17,7 @@ vi.mock("@/components/ward-management/shell/ward-access", async (load) => ({
   useCanOpenHref: () => (href: string) => access.canOpen(href),
 }));
 
-import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-sidebar";
+import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-drawer";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -25,7 +25,8 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 
 /**
  * Bug list row 21 (31 Oct 2026): Capacity's ward panel offered Open ward and Discharge board to
- * every desk, without asking whether this desk may open them. Synthetic seed only.
+ * every desk, without asking whether this desk may open them. Since the Capacity redesign
+ * (31 Oct 2026) the panel is the ward drawer, which keeps the same check. Synthetic seed only.
  */
 function renderSidebar() {
   const [row] = networkWardRows(allUnits(), NOW_ANCHOR);

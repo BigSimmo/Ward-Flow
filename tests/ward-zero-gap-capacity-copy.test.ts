@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { rowSentence, totalsSentence } from "@/components/ward-management/capacity/capacity-screen";
+import { rowSentence, totalsSentence } from "@/components/ward-management/capacity/capacity-gap-words";
 import type { BedKindGap } from "@/components/ward-management/capacity/capacity-derivations";
 
 describe("audit rule zero-gap copy in capacity-screen", () => {

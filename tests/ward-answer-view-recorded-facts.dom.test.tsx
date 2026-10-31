@@ -111,6 +111,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
       }),
     );
     expect(shownId()).toBe(id);
+    fireEvent.click(within(dialog).getByRole("radio", { name: /standard$/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm acceptance" }));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);
@@ -122,28 +123,68 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     const dispatch = renderAnswer("sjgm-adult-open");
     const dialog = openDialog();
     expect(dialog).not.toHaveTextContent(/not wired|not saved|nurse unit manager endorsement/i);
-    const hold = within(dialog).getByLabelText("Pull time limit");
-    expect(hold).toHaveValue("standard");
-    fireEvent.change(hold, { target: { value: "extended" } });
+    const hold = within(dialog).getByRole("group", { name: "Pull time limit" });
+    fireEvent.click(within(hold).getByRole("radio", { name: /extra travel$/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm acceptance" }));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts.at(-1)).toMatchObject({ extendedHold: true });
 
-    // Reopened, the choice starts at the standard hold again.
-    expect(within(openDialog()).getByLabelText("Pull time limit")).toHaveValue("standard");
+    // Reopened, nothing is chosen again.
+    const reopened = within(openDialog()).getByRole("group", { name: "Pull time limit" });
+    for (const radio of within(reopened).getAllByRole("radio")) expect(radio).not.toBeChecked();
+  });
+
+  // Redesign (Josh, 31 Oct 2026): nothing pre-selected in any choice. The pull time limit starts
+  // with neither choice chosen, and Confirm acceptance waits for one and says why.
+  it("starts the pull time limit with neither choice chosen, and holds Confirm until one is", () => {
+    const dispatch = renderAnswer("sjgm-adult-open");
+    const dialog = openDialog();
+    expect(dialog).toHaveTextContent("Accepting does not allocate a bed. No bed number is recorded.");
+    const hold = within(dialog).getByRole("group", { name: "Pull time limit" });
+    const radios = within(hold).getAllByRole("radio");
+    expect(radios).toHaveLength(2);
+    for (const radio of radios) expect(radio).not.toBeChecked();
+
+    const confirm = within(dialog).getByRole("button", { name: "Confirm acceptance" });
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    expect(confirm).toHaveAccessibleDescription("Choose a pull time limit first");
+    expect(dialog).toHaveTextContent("Choose a pull time limit first");
+    fireEvent.click(confirm);
+    expect(dispatch.mock.calls.some(([event]) => event.type === "ACCEPT_IN_PRINCIPLE")).toBe(false);
+    expect(screen.getByRole("dialog", { name: /accept/i })).toBeInTheDocument();
+
+    fireEvent.click(within(hold).getByRole("radio", { name: /standard$/ }));
+    expect(within(hold).getByRole("radio", { name: /standard$/ })).toBeChecked();
+    // The kit Button drops its reason wrapper once available, so read the button afresh.
+    const ready = within(dialog).getByRole("button", { name: "Confirm acceptance" });
+    expect(ready).not.toHaveAttribute("aria-disabled");
+    expect(dialog).not.toHaveTextContent("Choose a pull time limit first");
+    fireEvent.click(ready);
+    const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
+    expect(accepts).toHaveLength(1);
+    expect(accepts[0]).not.toHaveProperty("extendedHold");
   });
 
   it("offers the bed hold choice beside the desk's one-step Accept in principle", () => {
     const dispatch = renderAnswer("sjgm-adult-open");
     const id = shownId();
     const hold = screen.getByRole("combobox", { name: "Pull time limit" });
-    expect(hold).toHaveValue("standard");
+    // Nothing pre-selected (Josh, 31 Oct 2026): the choice starts empty and Accept says why it waits.
+    expect(hold).toHaveValue("");
     expect(
       within(hold)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["240 minutes, standard", "300 minutes, extra travel"]);
+    ).toEqual(["Choose a time limit", "240 minutes, standard", "300 minutes, extra travel"]);
+    const waiting = screen.getByTestId(`ward-accept-${id}`);
+    expect(waiting).toHaveAttribute("aria-disabled", "true");
+    expect(waiting).toHaveAccessibleDescription("Choose a pull time limit first");
+    fireEvent.click(waiting);
+    expect(dispatch.mock.calls.some(([event]) => event.type === "ACCEPT_IN_PRINCIPLE")).toBe(false);
+
     fireEvent.change(hold, { target: { value: "extended" } });
+    expect(screen.getByTestId(`ward-accept-${id}`)).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryByText("Choose a pull time limit first")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);
@@ -175,7 +216,9 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
     // Audit 24-1 D-01: the panel no longer swaps to the next request by itself; the user picks it.
     fireEvent.click(screen.getByRole("button", { name: /^Show request 1 of / }));
     expect(shownId()).toBe("WF-AUDIT-NEXT");
-    expect(screen.getByRole("combobox", { name: "Pull time limit" })).toHaveValue("standard");
+    // The next request starts with nothing chosen; the ward picks the standard hold for it.
+    expect(screen.getByRole("combobox", { name: "Pull time limit" })).toHaveValue("");
+    fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), { target: { value: "standard" } });
     fireEvent.click(screen.getByTestId("ward-accept-WF-AUDIT-NEXT"));
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);

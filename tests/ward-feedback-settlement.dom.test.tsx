@@ -249,6 +249,10 @@ describe("escalation feedback", () => {
         </Override>
       </WardFlowProvider>,
     );
+    // Round 8 (31 Oct 2026): "Under 8 hours" is folded; a user unfolds the wait bands first.
+    for (const band of screen.queryAllByTestId(/^delays-band-/u)) {
+      if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+    }
     showEveryDelayRow();
     const movement = seedWardFlowState().movements.find((entry) => isOpen(entry) && !entry.escalation)!;
     const panel = inspectDelayPerson(movement.id);

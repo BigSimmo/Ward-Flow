@@ -29,8 +29,15 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "community/community-screen.tsx": { cover: "held" },
   "community/use-community-screen-overlays.ts": { cover: "popup", why: "Transport booking is a modal sheet." },
   "coordinator/coordinator-screen.tsx": { cover: "popup", why: "Exceptions open in a sheet." },
-  "coordinator/missed-requests-panel.tsx": { cover: "no form", why: "A fold with a seen tick, no fields." },
   "coordinator/shortlist-panel.tsx": { cover: "held" },
+  "delays/daily-check-line.tsx": {
+    cover: "no form",
+    why: "The daily check moved from the coordinator panel: a fold and a one-tap Mark checked, no fields.",
+  },
+  "delays/delays-screen.tsx": {
+    cover: "no form",
+    why: "Escalate is one tap with no fields; checkOpen only folds the daily check list.",
+  },
   "discharges/discharge-care-journey.tsx": { cover: "page form" },
   "discharges/discharge-detail-panes.tsx": { cover: "page form" },
   "discharges/discharge-follow-up.tsx": { cover: "page form" },
