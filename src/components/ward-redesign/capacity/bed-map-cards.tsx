@@ -18,9 +18,9 @@ export type Highlight = "any" | "locked" | "open" | "stale";
 
 const HIGHLIGHTS: readonly { id: Highlight; label: string; test: (row: NetworkWardRow, fresh: boolean) => boolean }[] =
   [
-    { id: "any", label: "Any bed ready", test: (row) => row.ready > 0 },
-    { id: "locked", label: "Locked bed ready", test: (row) => row.lockedReady > 0 },
-    { id: "open", label: "Open bed ready", test: (row) => row.ready - row.lockedReady > 0 },
+    { id: "any", label: "Any ready", test: (row) => row.ready > 0 },
+    { id: "locked", label: "Locked ready", test: (row) => row.lockedReady > 0 },
+    { id: "open", label: "Open ready", test: (row) => row.ready - row.lockedReady > 0 },
     { id: "stale", label: "Count not confirmed", test: (_row, fresh) => !fresh },
   ];
 
@@ -46,7 +46,7 @@ export function BedMapCards({
   highlight: Highlight | null;
   onHighlight: (highlight: Highlight | null) => void;
 }) {
-  const { mapGroups, networkRows, totals, now } = model;
+  const { mapGroups, networkRows, now } = model;
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
   const lit = (unitId: string, id: Highlight | null) => {
@@ -80,42 +80,42 @@ export function BedMapCards({
 
   return (
     <Card aria-labelledby="capacity-map-title" className={styles.mapCard} id="capacity-bed-map">
+      {/* Polish (Josh, 31 Oct 2026): the highlight chips sit in the title row beside Grid and Rows,
+          so the controls take one row, and the grey bed and ward count is gone (the hero has it). */}
       <CardHead
         id="capacity-map-title"
         title="Bed map"
-        meta={`${totals.beds} beds · ${totals.wards} wards`}
         action={
-          <Segmented
-            label="Bed map layout"
-            items={[
-              { id: "grid" as const, label: "Grid" },
-              { id: "rows" as const, label: "Rows" },
-            ]}
-            value={layout}
-            onChange={setLayout}
-          />
+          <div className={styles.mapControls}>
+            <div className={styles.highlights} role="group" aria-label="Highlight wards">
+              {HIGHLIGHTS.map((entry) => {
+                // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as
+                // the hero's bed counts.
+                const wards = networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
+                return (
+                  <FilterChip
+                    key={entry.id}
+                    pressed={highlight === entry.id}
+                    onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
+                  >
+                    {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
+                  </FilterChip>
+                );
+              })}
+            </div>
+            <Segmented
+              label="Bed map layout"
+              items={[
+                { id: "grid" as const, label: "Grid" },
+                { id: "rows" as const, label: "Rows" },
+              ]}
+              value={layout}
+              onChange={setLayout}
+            />
+          </div>
         }
       />
       <div className={styles.mapBody}>
-        <div className={styles.highlights} role="group" aria-label="Highlight wards">
-          <span className={styles.kickerInline} aria-hidden="true">
-            Highlight
-          </span>
-          {HIGHLIGHTS.map((entry) => {
-            // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as the
-            // hero's bed counts.
-            const wards = networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
-            return (
-              <FilterChip
-                key={entry.id}
-                pressed={highlight === entry.id}
-                onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
-              >
-                {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
-              </FilterChip>
-            );
-          })}
-        </div>
         {mapGroups.map((group) => {
           if (group.wards.length === 0) return null;
           const groupRows = group.wards.map((ward) => rowOf.get(ward.unit.id)).filter((row) => row !== undefined);
@@ -143,7 +143,7 @@ export function BedMapCards({
                   <span className={styles.mapGroupName}>{group.service}</span>
                   <span className={styles.muted}>{group.wards.length} wards</span>
                   <span className={styles.mapGroupFigures}>
-                    <b>{ready} ready</b> · {closed} closed · {beds ? ((inUse / beds) * 100).toFixed(1) : "0"}% in use
+                    <b>{ready} ready</b> · {closed} closed · {beds ? Math.round((inUse / beds) * 100) : 0}% in use
                   </span>
                 </button>
               </h3>
@@ -210,6 +210,11 @@ function WardCard({
     ward.pendingPreparation ? `${ward.pendingPreparation} being made ready` : "",
   ].filter(Boolean);
   const occupied = ward.occupied + ward.pulled;
+  // Polish (Josh, 31 Oct 2026): the ready figure leads on the right, occupied of total beds sits
+  // under the name, the bed strip is always one line, and the note line shows only what needs a
+  // look (a stale count first, then pulled, closed, on leave, being made ready). A ward with
+  // nothing to note shows no line, instead of "All beds in use or ready".
+  const stale = !fresh && row !== undefined;
   return (
     <button
       type="button"
@@ -221,32 +226,43 @@ function WardCard({
       <span className={styles.wardName}>
         <SpelledCodes text={ward.unit.name} />
       </span>
-      <span className={styles.wardBeds}>{ward.unit.beds} beds</span>
-      <span className={styles.wardReady}>
+      <span className={`${styles.wardReady}${ward.ready ? "" : ` ${styles.wardReadyNone}`}`}>
         <b className={styles.wardReadyN}>{ward.ready}</b>
-        {ward.ready ? "ready" : "none ready"}
+        ready
       </span>
-      <span className={styles.wardOccupied}>{occupied} occupied</span>
+      <span className={styles.wardOccupied}>
+        {occupied} of {ward.unit.beds} occupied
+      </span>
       <BedCells beds={ward.unit.beds} ready={ward.ready} used={occupied} />
-      <span className={styles.wardNote}>
-        {!fresh && row ? (
-          <span className={styles.warnInk}>
-            <StatusGlyph tone="warning" size={9} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
-          </span>
-        ) : notes.length ? (
-          notes.join(" · ")
-        ) : (
-          "All beds in use or ready"
-        )}
-      </span>
+      {stale || notes.length ? (
+        <span className={styles.wardNote}>
+          {stale ? (
+            <span className={`${styles.wardNoteItem} ${styles.warnInk}`}>
+              <StatusGlyph tone="warning" size={8} /> Count {durMinutes(Math.max(0, now - row.confirmedAt))} old
+            </span>
+          ) : null}
+          {notes.length ? (
+            // Each note keeps its words together, so a wrapped line never starts with a dot.
+            <span>{notes.map((note) => note.replace(/ /g, "\u00a0")).join(" · ")}</span>
+          ) : null}
+        </span>
+      ) : null}
     </button>
   );
 }
 
-/** One square per bed: ready, then occupied or pulled, then closed. Decorative; the card says it in words. */
-function BedCells({ beds, ready, used }: { beds: number; ready: number; used: number }) {
+/**
+ * One square per bed: ready, then occupied or pulled, then closed. The squares share one line at
+ * any bed count (a grid of equal columns), so a large ward never wraps. Decorative; the card says
+ * it in words.
+ */
+export function BedCells({ beds, ready, used }: { beds: number; ready: number; used: number }) {
   return (
-    <span className={styles.cells} aria-hidden="true">
+    <span
+      className={styles.cells}
+      aria-hidden="true"
+      style={{ gridTemplateColumns: `repeat(${beds}, minmax(0, var(--cell-max, 10px)))` }}
+    >
       {Array.from({ length: beds }, (_, index) => (
         <i
           key={index}
