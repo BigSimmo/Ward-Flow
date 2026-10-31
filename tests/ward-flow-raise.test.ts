@@ -14,9 +14,8 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 const RAW_DISPATCH_BASELINE: Record<string, number> = {
   "src/components/ward-management/alerts/alerts-screen.tsx": 7,
   "src/components/ward-management/alerts/global-alert-panels.tsx": 1,
-  "src/components/ward-management/capacity/capacity-phone-wards.tsx": 1,
   "src/components/ward-management/capacity/capacity-screen.tsx": 1,
-  "src/components/ward-management/capacity/capacity-ward-sidebar.tsx": 1,
+  "src/components/ward-management/capacity/capacity-ward-drawer.tsx": 1,
   "src/components/ward-management/capacity/planned-admissions-panel.tsx": 4,
   "src/components/ward-management/capacity/step-down-board.tsx": 1,
   "src/components/ward-management/community/community-screen.tsx": 1,
