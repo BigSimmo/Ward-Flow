@@ -40,8 +40,9 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
         <MovementsScreen />
       </WardFlowProvider>,
     );
-    const meta = within(screen.getByTestId("movements-needs-you")).getByText(/ of \d+ Tier 1 open journeys$/);
-    expect(Number(/of (\d+) Tier 1/.exec(meta.textContent ?? "")?.[1])).toBe(homeTierOne);
+    // Movements redesign (31 Oct 2026): the panel reads "3 of 18 open" under its "Tier 1 now" heading.
+    const meta = within(screen.getByTestId("movements-needs-you")).getByText(/^\d+ of \d+ open$/);
+    expect(Number(/of (\d+) open/.exec(meta.textContent ?? "")?.[1])).toBe(homeTierOne);
   });
 });
 

@@ -16,6 +16,9 @@ import { PatientSearchPage } from "@/components/ward-management/search/patient-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
+
 // jsdom applies no CSS module rules, so the side card's visibility (the stylesheet's call at 56rem
 // of page width) is set inline. The ResizeObserver stand-in notifies only observers of the card that
 // is mounted now, and matchMedia stands in for the phone layout (below 40rem).
@@ -77,7 +80,7 @@ function openRecordInDrawer() {
     </WardFlowProvider>,
   );
   setCardHidden(true);
-  fireEvent.change(screen.getByLabelText("Search"), { target: { value: "WF-318" } });
+  fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "WF-318" } });
   fireEvent.click(screen.getByTestId("ward-patient-search-case-WF-318"));
 }
 

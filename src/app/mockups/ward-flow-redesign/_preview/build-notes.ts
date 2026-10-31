@@ -6,16 +6,6 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
-  "as-ward-legal-forms": [
-    "**As the nurse in charge**, the title reads '2 forms on moves to Dabakarn'. Times show only as typed; 'Not legally checked' is kept word for word.",
-    "**New:** an 'Admitted on a form' group carries the app's own sentence on who records the next form.",
-    "**Removed:** the greyed Record a form (its reason now lives in that group) and the Next to end card, which repeated the table's first row.",
-  ],
-  "as-ward-alerts": [
-    "**As the nurse in charge**, the title reads 'No alert for Dabakarn', and a quiet ward's side panel lists the checks instead of 'Pick an alert'.",
-    "**Removed:** Broadcast alert (a ward never broadcasts, so it is left out rather than greyed), the owner lens and the Today chart while the ward is quiet.",
-    "**Round 2:** a quiet ward shows one line, 'Nothing in Act now or Waiting.' Next and Copy for handover go when nothing is in turn. The side panel reads 'Checked for Dabakarn'.",
-  ],
   "as-ward-settings": [
     "**As the nurse in charge**, Settings opens on Display and profile, not on rules the desk cannot change. Rules read 'Read only' and the save bar is gone.",
     "**Removed:** profile rows the header already shows, and Service in view (a one-ward desk picks no service).",
@@ -32,35 +22,17 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Still open:** the hero's Raise referral and the app bar's New referral open the same sheet. Keep only one on this desk?",
     "**Changed (Josh, 30 October):** no access forecast card on the ED desk. Worked out from the records this desk can see, it disagreed with the coordinator's board for the same ED; the coordinator's ED board keeps it.",
   ],
-  "as-ed-legal-forms": [
-    "**As the ED clinician**, the page already lists only Peel ED's people on forms, with times as typed and 'Not legally checked' word for word. Nothing needed changing for this role.",
-  ],
   "as-ed-statistics": [
     "**As the ED clinician**, Statistics is Peel ED's own page, as the real menu opens it (D-80), not the network hub.",
     "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
     "**Removed:** three panels that only said people are not listed; that sentence is said once.",
     "**Round 2:** the chart leads and Declines is the side column, so both cards end level. '8 still in ED · 1 in transit' is the chart's aside, and 'Counts only' sits once in the eyebrow. Over 24h carries the amber dot, as Longest does.",
   ],
-  "as-community-movements": [
-    "**As the community clinician**, Midland has no journey in the demo data, so the page shows one panel saying what puts a journey there and that the team books its transport from it (D-76), with Refer from team.",
-    "**Still open:** the view with journeys is unchecked by eye, because the data has none for Midland.",
-    "**Round 2:** the empty state is the kit's EmptyState, with 'Shows once a ward accepts a team referral'. The link reads 'Team's inpatients'.",
-  ],
-  "as-community-patient": [
-    "**As the community clinician**, the record shows Emberfall, Cassia, who is on Midland's caseload (the coordinator's example is Peel's).",
-    "**Removed:** the Record a change card, which held only greyed buttons; Why admitted takes its place.",
-    "**Still open:** the hero chips, the On ward card and Legal now repeat the same day count, date and legal status (the coordinator's copy).",
-  ],
   "as-community-statistics": [
     "**As the community clinician**, Statistics opens Midland's own team page as counts, where the real menu sends this desk.",
     "**New:** one 'Coming back to the team' card with only the new counts replaces two cards that repeated the hero.",
     "**Round 2:** the hero keeps In a bed and With a discharge date; the follow-up figures move into the card as six tiles (2 × 3 on the phone). 'Counts only' sits in the eyebrow, as on the ED desk.",
     "**Still open:** the app bar says 'Statewide' on Midland's own page (shared chrome).",
-  ],
-  "as-officer-alerts": [
-    "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
-    "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
-    "**Round 2:** empty Broadcast, Notices and History tabs go on this desk, and so does Copy for handover (the officer's copy is on My jobs). No stray ' · ' when the UMRN is withheld.",
   ],
   "as-executive-settings": [
     "**As the executive (new in round 3)**, Settings reads the executive report's public rules: Rules are read only with the timing set in words and no save bar, the last-change line and record counts say they are unavailable, and the live counts are left out because this desk holds no individual records.",
@@ -86,32 +58,11 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** all fields, and Save greyed until every answer is in. **Changed (Josh, 31 Oct 2026):** no legal-status prefill and no day chosen when the form opens; Legal now shows under the legal question as plain text.",
     "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
   ],
-  "pop-record-form": [
-    "**Built from a copy of today's Record a form sheet**: validation, error summary, draft keeping, save and Undo work as now.",
-    "**New:** movement first, then the form type, then the time and date as written on the paper, with one line under the time: 'Only the written time is recorded. No expiry is calculated.'",
-    "**Kept:** the form type always opens blank, and no legal period is worked out (D5, D-70).",
-    "**Round 2:** one line of description, one footer row (Clear at left, the reason with Save at right), no clock icon in the time field, and 'Draft restored · Clear removes it'. 'Only the written time is recorded. No expiry is calculated.' stays word for word.",
-    "**For the build:** the date is the browser's own field, so it shows mm/dd/yyyy in some browsers. Recommend a DD/MM/YYYY text field read by the same parser.",
-  ],
   "pop-record-exam": [
     "**Built from today's ED examination form**: the same four outcomes in the same words, the same 'Choose an outcome first' check and the same save, with Undo.",
     "**New:** its own popup, each outcome a kit radio and the button full width on a phone.",
     "**Still open:** today Legal forms does not record the exam; it sends you to the ED board ('Record on ED'). Drawn over Legal forms as a proposal: should Legal forms record it directly, or keep the link?",
     "**Round 2:** the title reads 'Examination outcome' with the person (surname first) under it, and the button 'Save outcome'. The four outcomes use the kit radio at its own size; their words are unchanged.",
-  ],
-  "pop-add-time": [
-    "**Built from the side panel's 'Record the time written' form**: the same fields (date, time, region, age band), checks and save, with Undo.",
-    "**New:** 'Add the time' opens it as its own popup on the person (today it opens the side panel and jumps to the form). Region and Age band have visible labels.",
-    "**Kept:** 'Only the written time is recorded. No expiry is calculated.' Region and age band open as Not recorded, never guessed.",
-    "**Round 2:** the time is the same typed HH:MM field Record a form uses, read by the same parser, replacing the browser's 12-hour picker. The title is 'Add the time', the link's own name. Phone controls are back to the kit's sizes.",
-    "**For the build:** today's side-panel form still uses the browser's 12-hour time picker.",
-  ],
-  "pop-broadcast": [
-    "**Built from a copy of today's broadcast composer** and the Alerts screen's draft and Dispatch, drawn over Alerts where it lives, so it sends the same network alert as now.",
-    "**New:** a wider dialog in the middle of the screen: the form on the left (Severity and Expires side by side), and on the right a preview of what each desk will see, with who it goes to and the desk count.",
-    "**New:** Dispatch stays greyed until the box is ticked and says what is left ('Tick the confirmation first.').",
-    "**Kept:** every field, the template list and the confirmation wording. One column, full screen, on a phone.",
-    "**Round 2:** the count is said once, on 'Goes to'. 'What each desk sees' replaces 'Preview on every desk'. The subtitle keeps the safeguard words: 'Records a synthetic directive. No external alert is sent.' The two-column dialog now always draws.",
   ],
   "pop-refer-ward": [
     "**Built from the ED row's own Refer to a ward link**, read into the same request the app bar opens, for the first person on the Peel ED board whose next step is Refer to a ward: ward chosen, sent from Peel ED, patient and referral filled in.",
@@ -288,12 +239,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
   ],
   patient: [
-    "**Built from a copy of today's Patient screen**, so the stepper, tabs, Cannot move checks, Destination, Withdraw, Copy handover and the forms work as now.",
-    "**New:** Journey so far is a timeline of what was recorded, newest first (opened, examination, declines, escalation), each with its recorded time, read the same way as the History tab and computing nothing. Over 8 events it shows the first 6, then Show more.",
-    '**New (D-83):** the name reads surname first ("Wren, Tobias") in the title and in Copy handover.',
-    '**Kept:** the 7-step stepper, the tabs, Copy handover, "Every figure on this screen is invented", and all legal and privacy wording. Cannot move and the right column (Why, Legal now, Who to call) already matched the review, so they stay.',
-    "**Phone:** today's phone layout, without the timeline; record tabs keep today's size.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Built into the app** (lane L, 31 Oct 2026): the patient record, with the community desk's view and the Journey so far timeline in the one real screen. This entry is the real screen, kept as the backdrop for Medical clearance.",
   ],
   "statistics-compare": [
     "**Built from a copy of today's Compare screen**, so Chart and Data, the measure switches, Pinned wards, CSV and the phone Compare two wards sheet all work as now.",
@@ -328,16 +274,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** all disclosure and synthetic-data wording, the waits table and the phone cards.",
     "**Still open:** on a phone, declines and overrides are still two cards.",
   ],
-  movements: [
-    "**Built from a copy of today's Movements screen**, so the timeline, worklist, drawer and every action work as they do now.",
-    '**New:** the stage pipeline under the hero (each stage\'s count and longest wait; choosing one highlights its rows), Tier 1 now in the side column above Transport now, every timeline name in full, and worklist rows that wrap instead of ending in "…".',
-    "**Kept:** Compact and Roomy, the 12h/24h/48h zoom, corridors, Next in my queue and the phone layout.",
-    "**Not yet redesigned:** the movement drawer that opens from a row is today's drawer (see Movement drawer under Page popups).",
-    "**Round 2:** the title drops '8 moving' (the pipeline's Moving stage shows it). Stages say 'longest', as the hero does, and their amber and red use the Over 8h and Past 24h lines, so colours always agree. Tier 1 reads '3 of 18 open' on one line.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-    "**Round 3:** the row's legal line shows the form time as typed with the not-legally-checked tag; no 'expiry in' or 'passed … ago' (a copy of the stage row).",
-  ],
   waiting: [
     "**Built into the app (31 October):** this is the real Waiting page (round 8, approved by Josh on 31 October), with the nurse in charge's and ED clinician's views as role branches in the same screen. It stays here only as the backdrop for the Loading (Waiting) pop-up.",
   ],
@@ -356,32 +292,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Proposals for you:** move 'May pass the access target' under the board, and drop the repeated Find a bed buttons (an ED desk does not find beds itself), making the name the link.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
-  patients: [
-    "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
-    "**Today's Patients page, with a redesign stylesheet on top.** The review kept almost all of it, so the search with date of birth, the stage chips, highlights, the groups with Show all, and This shift all work as now.",
-    '**New:** table cells wrap instead of ending in "…" ("Sent to 1 place", "RPH Community"), and the highlight chips wrap instead of running off the edge.',
-    "**Tablet:** today's tablet table already drops the Heading to column and reads well, so it is unchanged.",
-    "**Round 2:** the phone groups sit 3 by 2, so no label ends in '…'; phone lines wrap, so legal wording and places show in full. 'Show 20 not active records' is the same plain link as each group's Show all.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-    "**Round 3:** the phone highlight chips read count first ('6 Over 24 hours').",
-  ],
-  alerts: [
-    "**Built from a copy of today's Alerts page**, so Now, Broadcast, Notices and History, the Urgency, Lanes and Owner views, Notify me, Copy for handover and every row action work as now.",
-    '**New:** the Checking strip is one chip ("8 checks raised · 4 clear") that opens today\'s full list in place. The owner highlight is one menu instead of chips that ran off the panel.',
-    '**New (point 17):** three or more alerts of one recorded kind in a row become one group row ("Transport awaiting departure · 5 people"), opened with Show each. It groups by kind only, never by wording, and each alert keeps its own row and action inside.',
-    '**New:** the detail panel has one Release (for the pulled bed), with "Choose a reason first" written under it until a reason is chosen. The second button that also said Release meant handing the alert back, so it now says Hand back, on one row with More actions.',
-    "**Not done here:** a Chase all button for a group. Each person's Chase transport is inside the group; one button acting on all five needs a new command, so it waits for your yes.",
-    "**Round 2:** one word for checks ('8 flagged · 4 clear'). Group rows lead with the same urgency dot as their members and put the oldest wait on the right. On a phone, the owner chips become the desktop's owner menu and Checking opens straight onto its list.",
-    "**Question for you:** Owner appears twice (an Arrange by view and the Highlight menu). Recommend keeping the view and dropping the menu on desktop.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
   "legal-forms": [
-    "**Built from a copy of today's Legal forms page** (split into two files to stay under the line cap), so Clocks, Checklist, History, Record a form, Add the time and Record and tell all work as now.",
-    '**Kept word for word (point 22, D-77):** the "Not legally checked" notice. My pick is to keep it; say if you decide otherwise.',
-    "**New (point 18, D5, D-70):** times show only as typed: \"Ends 11:42, as typed on the form\". The countdown, the band word and the progress bar that were worked out from the typed time are gone, here and on the phone. The rows' warning glyph and the Act now edge are today's own rules and stay.",
-    '**New:** the form number stays in its tag and Form 1A\'s name is shortened to "Referral for examination" (the full title is in the record and the tooltip). Time not written shows its first 6 rows with Show more. Copy for handover and Record and tell are drawn as buttons, apart from the figures.',
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
+    "**Built into the app** (lane L, 31 Oct 2026): the Legal forms screen, with the ward's and the ED's views as branches of the one real screen. This entry is the real screen, kept as the backdrop for Record exam.",
   ],
   home: [
     "**31 October (Josh, D-92):** clicking a referral row in My list now opens that referral in the right-hand panel, as Act now rows and the Waiting tab already do. Only its Decide button goes to the Referrals board (WS-04 kept). Build: in `coordinator/my-list-card.tsx`, the referral row gets `onOpen` (select the referral) in place of `href`, and the coordinator screen passes `onSelectReferral`.",
@@ -413,9 +325,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone, tablet and every desk (Josh, 31 Oct 2026):** the bell and 'Alerts' on every desk, in the bar and the dock; the dock keeps its Activity tab. The phone Menu and the tablet Menu start with the desk's capacity card, with beds ready, and the tablet Menu says once under the role's heading whose counts these are, since touch has no hover. The executive and access admin desks have no shift card.",
     "**Phone dock per desk (Josh, 31 Oct 2026):** the bed coordinator's dock is kept as designed; every other desk gets the pages it uses most. Nurse in charge: My ward, Referrals, +, Alerts, Coming and going. ED: unchanged. Community: My team, Referrals, +, Alerts, Movements. Transport officer: unchanged. Site bed manager: Capacity, Wards, +, Alerts, Waiting. Executive: Statistics, Capacity, Activity. Access admin: Governance, Activity. A page that leaves the dock stays in the phone Menu. Handover stays off the phone dock for the nurse in charge and the bed manager (Josh, 31 Oct 2026); it remains on My ward and in the Menu.",
     "**Still open:** pins last for one browser tab; remembering them per person needs Josh's privacy sign-off before the real build. Closed-sidebar count badges already existed.",
-  ],
-  "pop-movement": [
-    "**Round 3:** the movement drawer's legal line shows the form time as typed with the not-legally-checked tag, never 'recorded expiry in' or 'passed … ago'. On the phone the Legal, From and To cells wrap in full and the typed time appears once (copies of the drawer parts).",
   ],
   "pop-clearance": [
     "**Built from a copy of today's medical clearance form** (the `showClearanceModal` block in `patients/patient-now-screen.tsx`), with its permission check and save, so saving and errors work as now.",

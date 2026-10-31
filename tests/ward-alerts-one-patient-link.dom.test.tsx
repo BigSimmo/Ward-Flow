@@ -5,6 +5,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 function SnoozeEveryRow() {
   const { movements, units, dispatch } = useWardFlow();
@@ -70,7 +71,9 @@ describe("selected alert: one link to the patient", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Snooze every row" }));
-    const rows = within(screen.getByTestId("ward-alerts-snoozed")).getAllByRole("listitem");
+    // Alerts redesign (point 17): runs of one kind are group rows; each alert keeps its own row inside.
+    openAlertKindGroups(screen.getByTestId("ward-alerts-snoozed"));
+    const rows = [...screen.getByTestId("ward-alerts-snoozed").querySelectorAll<HTMLElement>("li[data-alert-id]")];
     expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) {
       fireEvent.click(within(row).getByTestId("ward-alerts-open"));

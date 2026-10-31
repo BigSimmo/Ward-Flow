@@ -10,7 +10,7 @@ import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-redu
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { clearSessionDrafts } from "@/components/ward-management/ward-session-drafts";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
-import { dateInputFor } from "./helpers/ward-date-input";
+import { typedDateFor } from "./helpers/ward-date-input";
 
 // Audit CS3-05: every extension types the date written on the form as well as the time.
 const SHEET_DAY_ZERO = perthMidnight(2026, 9, 24);
@@ -64,7 +64,7 @@ describe("legal extension completion and recovery", () => {
     await waitFor(() => expect(trigger).toHaveFocus());
     await user.click(trigger);
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
-      target: { value: dateInputFor(1242, flow.dayZero) },
+      target: { value: typedDateFor(1242, flow.dayZero) },
     });
     const input = screen.getByTestId("ward-legal-forms-renew-expiry");
     fireEvent.change(input, { target: { value: "23:59" } });
@@ -103,7 +103,7 @@ describe("legal extension completion and recovery", () => {
         />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-24" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "24/10/2026" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:59" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
     expect(closed).toBe(0);
@@ -128,7 +128,7 @@ describe("legal extension completion and recovery", () => {
         />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-24" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "24/10/2026" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:59" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
     clearSessionDrafts();
@@ -162,7 +162,7 @@ describe("legal extension typed date", () => {
         />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-26" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "26/10/2026" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "09:00" } });
     expect(screen.getByTestId("ward-legal-forms-renew-resolved")).toHaveTextContent("09:00");
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
@@ -186,7 +186,7 @@ describe("legal extension typed date", () => {
         />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "2026-10-24" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), { target: { value: "24/10/2026" } });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "08:00" } });
     expect(screen.queryByTestId("ward-legal-forms-renew-resolved")).toBeNull();
     const confirm = screen.getByTestId("ward-legal-forms-renew-confirm");

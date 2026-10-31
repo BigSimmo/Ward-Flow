@@ -90,42 +90,6 @@
     ],
     "keep": "Home v7's structure, the ED strip, the access-target notice, My list and Everyone waiting."
   },
-  "movements": {
-    "role": "Every open journey from referral to arrival, for the coordinator to push along stage by stage.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**The stages appear twice**: as header chips (Referred 21, Review 19…) and again as worklist groups."
-      },
-      {
-        "devices": ["Desktop", "Laptop"],
-        "text": "**The worklist is cramped**: routes and barriers end in \"…\" (\"SJGM Adult…\", \"No secure bed available…\", \"Form 1A (Referral for examination by a…\"), and Arrived rows overlap (\"· Handover complete… in journey before it ended\")."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "Timeline names are cut off (\"Finchgrove, Call…\", \"Ridgeholt, Bram…\")."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The worklist runs about 3,700 pixels, every stage fully expanded."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**One stage pipeline** across the top, with each stage's count and oldest wait. Choosing a stage filters the worklist."
-      },
-      {
-        "text": "**Worklist rows wrap instead of cutting off**, with ED codes in the route and the legal form on its own line. Each stage shows its first rows, and later stages collapse into one \"Show\" link."
-      },
-      {
-        "text": "Timeline bars show full names, with taller lanes when a ward has several arrivals at once."
-      },
-      {
-        "text": "The side column holds Tier 1 now, Transport now and the busiest corridors."
-      }
-    ],
-    "keep": "The 48-hour timeline, service filter, Compact and Roomy, Next in my queue, and the phone's collapsed stage groups."
-  },
   "waiting": {
     "role": "Everyone waiting in or travelling from an ED, sorted by wait and by who is holding them up.",
     "issues": [
@@ -259,29 +223,6 @@
     ],
     "keep": "The ED peer strip, the access-target notice, the Record exam and Log transport actions, and On TV."
   },
-  "patients": {
-    "role": "Statewide census of everyone in the system, searchable, grouped by where their journey stands.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "\"Heading to\" is cut off (\"Sent to 1 pla…\", \"RPH Com…\")."
-      },
-      {
-        "devices": ["Tablet"],
-        "text": "The table keeps its desktop columns at tablet width."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Cells wrap instead of cutting off. Each group shows its first rows with \"Show all\"."
-      },
-      {
-        "devices": ["Tablet", "Phone"],
-        "text": "Rows restack into two lines: patient and time on the first, next step on the second."
-      }
-    ],
-    "keep": "Most of this page works well: the search with date of birth, the stage chips, highlights and the This shift panel."
-  },
   "wards": {
     "role": "Every ward's beds at a glance, filterable by service, status and cohort.",
     "issues": [
@@ -332,46 +273,6 @@
       }
     ],
     "keep": "The Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line and Export."
-  },
-  "alerts": {
-    "role": "Every alert on the network, ordered by urgency, with the selected alert's detail and action beside the list.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**The \"Checking\" strip shows 13 counters**, most of them 0, across two lines of the header."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "**Five identical \"Transport awaiting departure\" rows**, each with its own Chase transport button."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The Highlight chips run off the panel (\"Maali (Wa…\")."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "**The detail pane has two release buttons**: a dashed \"Release pulled bed for Cadwaller, Rhys\" and a separate \"Release\", plus an empty \"More actions\" box."
-      },
-      {
-        "devices": ["Phone"],
-        "text": "Forecast rows are cut off (\"Open adult short tomo…\")."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "The checks become one dashed chip: \"6 checks raised · 7 clear\"."
-      },
-      {
-        "text": "**Same-kind alerts group into one row** (\"Transport awaiting departure · 5 people\") with one Chase all button."
-      },
-      {
-        "text": "The Highlight chips become an Owner menu."
-      },
-      {
-        "text": "**One Release button**, greyed until a reason is chosen, with a line saying why. Acknowledge, Snooze and More sit on one row."
-      }
-    ],
-    "keep": "Now, Broadcast, Notices and History; Urgency, Lanes and Owner views; Notify me; Copy for handover."
   },
   "legal-forms": {
     "role": "Every Mental Health Act form on an open move, with its typed due time, for the coordinator to keep track of.",
@@ -1000,24 +901,6 @@
     ],
     "keep": "Everything."
   },
-  "pop-movement": {
-    "role": "A movement's drawer, opened from the worklist.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Opens on an \"Add a condition\" form**, while the urgent fact (the pull expired) is further down."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**The urgent fact first**, then the stage bar, the key facts, and one main Next step."
-      },
-      {
-        "text": "Acceptance conditions fold away."
-      }
-    ],
-    "keep": "Open full record."
-  },
   "pop-ed-actions": {
     "role": "The actions menu on an ED board row.",
     "issues": [
@@ -1047,38 +930,5 @@
       }
     ],
     "keep": "All fields and the legal-status prefill."
-  },
-  "pop-broadcast": {
-    "role": "Broadcast a network alert to chosen desks.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "Good. A long form in a narrow drawer."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Severity and Expires side by side, and a preview of what each desk will see. Send stays greyed until the confirmation is ticked."
-      }
-    ],
-    "keep": "The confirmation wording and every field."
-  },
-  "pop-record-form": {
-    "role": "Record a Mental Health Act form from the paper copy.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "Good. The form type comes before the movement, which reverses the natural order."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**Movement first**, then the form, then the time and date as written."
-      },
-      {
-        "text": "One line: the time is shown as written and nothing is worked out from it."
-      }
-    ],
-    "keep": "No legal period is calculated (D5, D-70)."
   }
 }

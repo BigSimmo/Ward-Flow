@@ -21,7 +21,9 @@ import {
   type AlertGroup,
   type AlertSubject,
 } from "./alerts-model";
+import { UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import styles from "./alerts.module.css";
+import parts from "./alerts-screen-parts.module.css";
 
 /** One row of the queue, everything the row, the card and the panel read, computed once. */
 export type QueueEntry = {
@@ -177,7 +179,12 @@ function Who({ entry }: { entry: QueueEntry }) {
   return (
     <span className={styles.who}>
       <strong className={styles.name}>{entry.subject.displayName}</strong>{" "}
-      <strong className={styles.umrn}>{entry.subject.umrn}</strong>
+      {/* Alerts redesign: a missing UMRN reads as plain words, not in bold mono as if it were a number. */}
+      {entry.subject.umrn === UMRN_NOT_RECORDED ? (
+        <span className={parts.umrnMissing}>{entry.subject.umrn}</span>
+      ) : (
+        <strong className={styles.umrn}>{entry.subject.umrn}</strong>
+      )}
     </span>
   );
 }
@@ -204,13 +211,14 @@ export function AlertRow({
         <OpenButton entry={entry} handlers={handlers} />
         <Who entry={entry} />
       </span>
-      <span className={`${styles.cell} ${styles.cellWhere}`}>
+      {/* Alerts redesign: place and owner names wrap in full rather than ending in "…". */}
+      <span className={`${styles.cell} ${styles.cellWhere} ${parts.cellWrap}`}>
         <span className={styles.cellMain}>{entry.subject.to ?? entry.subject.from}</span>
         <span className={styles.quiet}>
           {entry.subject.to ? `from ${entry.subject.from}` : (entry.subject.legalStatus ?? "Status not recorded")}
         </span>
       </span>
-      <span className={styles.cell}>
+      <span className={`${styles.cell} ${parts.cellWrap}`}>
         <span className={styles.cellMain}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
         <span className={styles.quiet}>{state ?? entry.owner}</span>
       </span>

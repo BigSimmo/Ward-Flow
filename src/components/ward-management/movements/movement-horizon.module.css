@@ -860,16 +860,17 @@
   min-width: 0;
 }
 
-.corridorRoute,
 .corridorRanks li > span small {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 
+/* A corridor's place names wrap to a second line rather than ending in "…" (redesign, 31 Oct 2026). */
 .corridorRoute {
   color: var(--wf-ink-1);
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .corridorRanks li > span small {

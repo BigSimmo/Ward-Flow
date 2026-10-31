@@ -43,3 +43,9 @@ export function formTimeAsTyped(legalForm: LegalForm, now: Instant): string {
   if (legalForm.dueAt === undefined) return `${legalFormName(legalForm)} · no expiry recorded from the form`;
   return `${legalFormName(legalForm)} · ${typedTimePhrase(legalForm.dueAt, now)}`;
 }
+
+/**
+ * The one key line a page carries near a list of typed legal times, word for word wherever it shows
+ * (Josh, 30 Oct 2026): the colour compares the typed time with the clock and is not a legal check.
+ */
+export const TYPED_TIME_KEY = "Colours compare the time as typed with the clock. Not legally checked.";

@@ -320,7 +320,7 @@ describe("shared provider boundary", () => {
     fireEvent.click(screen.getByTestId("ward-alerts-broadcast-confirm"));
     expect(fake.connection!.dispatch).toHaveBeenCalledOnce();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
+    expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
     expect(screen.queryByRole("status", { name: "Broadcast feedback" })).toBeNull();
     expect(screen.queryByRole("alert", { name: "Broadcast feedback" })).toBeNull();
     const dispatched = vi.mocked(fake.connection!.dispatch).mock.calls[0][0] as WardFlowEvent;
@@ -342,7 +342,7 @@ describe("shared provider boundary", () => {
       expect(title.value).toBe(draft.title);
       expect(message.value).toBe(draft.message);
       expect(screen.getByLabelText(/^Target scope$/i)).toHaveValue("forensic");
-      expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeEnabled();
+      expect(screen.getByTestId("ward-alerts-broadcast-confirm")).not.toHaveAttribute("aria-disabled", "true");
     }
   });
   it("keeps the demonstration local when shared mode is disabled", () => {

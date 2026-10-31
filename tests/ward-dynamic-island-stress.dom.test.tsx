@@ -483,7 +483,8 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       expect(checklistBtn.getAttribute("aria-checked")).toBe("true");
       expect(screen.getByRole("region", { name: "Checklist" })).toBeInTheDocument();
 
-      const actNow = screen.getByRole("button", { name: /Act now/u });
+      // Every count names its noun (Josh, 30 Oct 2026): "forms to act on".
+      const actNow = screen.getByRole("button", { name: /to act on/u });
       fireEvent.click(actNow);
       expect(actNow.getAttribute("aria-pressed")).toBe("true");
     });

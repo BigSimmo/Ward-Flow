@@ -48,7 +48,6 @@ const ROLE_DESKS = {
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
-  { slug: "movements", label: "Movements", group: "Coordinator", appPath: "/ward-flow/movements" },
   { slug: "waiting", label: "Waiting", group: "Coordinator", appPath: "/ward-flow/waiting" },
   {
     slug: "new-referral",
@@ -59,8 +58,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   },
   { slug: "ward", label: "My ward", group: "Desks", appPath: "/ward-flow/ward/rph-adult-secure" },
   { slug: "ed-board", label: "ED board", group: "Desks", appPath: "/ward-flow/ed/peel-ed" },
-  { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
-  { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
@@ -75,24 +72,10 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   },
   { slug: "statistics-weekly", label: "Weekly", group: "Statistics pages", appPath: "/ward-flow/statistics/weekly" },
   {
-    slug: "as-ward-legal-forms",
-    label: "Legal forms",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/legal-forms",
-    role: ROLE_DESKS["ward"],
-  },
-  {
     slug: "as-ward-statistics",
     label: "Statistics",
     group: "As nurse in charge",
     appPath: "/ward-flow/statistics",
-    role: ROLE_DESKS["ward"],
-  },
-  {
-    slug: "as-ward-alerts",
-    label: "Alerts",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/alerts",
     role: ROLE_DESKS["ward"],
   },
   {
@@ -110,13 +93,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["ed"],
   },
   {
-    slug: "as-ed-legal-forms",
-    label: "Legal forms",
-    group: "As ED clinician",
-    appPath: "/ward-flow/legal-forms",
-    role: ROLE_DESKS["ed"],
-  },
-  {
     slug: "as-ed-statistics",
     label: "Statistics",
     group: "As ED clinician",
@@ -124,32 +100,11 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["ed"],
   },
   {
-    slug: "as-community-movements",
-    label: "Movements",
-    group: "As community clinician",
-    appPath: "/ward-flow/movements",
-    role: ROLE_DESKS["community"],
-  },
-  {
-    slug: "as-community-patient",
-    label: "Patient record",
-    group: "As community clinician",
-    appPath: "/ward-flow/people/196zcp24w5t0",
-    role: ROLE_DESKS["community"],
-  },
-  {
     slug: "as-community-statistics",
     label: "Statistics",
     group: "As community clinician",
     appPath: "/ward-flow/statistics",
     role: ROLE_DESKS["community"],
-  },
-  {
-    slug: "as-officer-alerts",
-    label: "Alerts",
-    group: "As transport officer",
-    appPath: "/ward-flow/alerts",
-    role: ROLE_DESKS["officer"],
   },
   {
     slug: "as-executive-settings",
@@ -169,7 +124,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
 export const MOCKUP_POPUPS: readonly MockupPopup[] = [
-  { slug: "pop-movement", label: "Movement drawer", group: "Page popups", over: "movements", pop: "movement" },
   { slug: "pop-alerts", label: "Alerts drawer", group: "Shell popups", over: "home", pop: "alerts" },
   { slug: "pop-activity", label: "Activity", group: "Shell popups", over: "home", pop: "activity-panel" },
   { slug: "pop-tools", label: "Tools", group: "Shell popups", over: "home", pop: "tools" },
@@ -183,13 +137,10 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-service-picker", label: "Service picker", group: "Shell popups", over: "home", pop: "service-picker" },
   { slug: "pop-more-pages", label: "More pages", group: "Shell popups", over: "home", pop: "more-pages" },
   { slug: "pop-tour", label: "Tour", group: "Shell popups", over: "home", pop: "tour" },
-  { slug: "pop-broadcast", label: "Broadcast", group: "Page popups", over: "alerts", pop: "broadcast" },
   { slug: "pop-refer-ward", label: "Refer to a ward", group: "Page popups", over: "ed-board", pop: "refer-ward" },
   { slug: "pop-ed-actions", label: "ED actions", group: "Page popups", over: "ed-board", pop: "ed-actions" },
   { slug: "pop-log-transport", label: "Log transport", group: "Page popups", over: "ed-board", pop: "log-transport" },
-  { slug: "pop-record-form", label: "Record a form", group: "Page popups", over: "legal-forms", pop: "record-form" },
   { slug: "pop-record-exam", label: "Record exam", group: "Page popups", over: "legal-forms", pop: "record-exam" },
-  { slug: "pop-add-time", label: "Add the time", group: "Page popups", over: "legal-forms", pop: "add-time" },
   { slug: "pop-clearance", label: "Medical clearance", group: "Older popups", over: "patient", pop: "clearance" },
   { slug: "pop-idle-warning", label: "Idle warning", group: "Older popups", over: "home", pop: "idle-warning" },
   { slug: "pop-idle-lock", label: "Idle lock", group: "Older popups", over: "home", pop: "idle-lock" },

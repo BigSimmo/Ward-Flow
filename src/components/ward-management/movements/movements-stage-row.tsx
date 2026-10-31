@@ -14,6 +14,8 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
 import { useEffect, useRef } from "react";
@@ -31,6 +33,7 @@ import { movementNextStep, nextStepTarget, type MovementNextStep } from "./movem
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
 import flow from "./movement-flow.module.css";
+import legalRow from "./movements-stage-row.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import {
   LEG_STATE_LABEL,
@@ -201,10 +204,11 @@ export function StageRow({
   const clockEnd = closure ? closure.at : now;
   const patientInfo = resolveSubjectPatient(movement, { patients, referrals });
 
-  // Legal line: register title plus the recorded expiry only. Never a computed limit (D5).
+  // Legal line: register title plus the typed expiry only, as typed. Never a computed limit (D5)
+  // and never a countdown (D-93). Its colour comes from the user's warning settings, always with
+  // its words ("within 1h", "within 3h", "passed").
   const dueAt = currentLegalDueAt(movement);
-  const isBreached = dueAt !== undefined && dueAt < now;
-  const isExpiring = dueAt !== undefined && dueAt >= now && dueAt - now < thresholds.urgentMinutes;
+  const standing = typedTimeStanding(movement, now, thresholds);
   let legalTagTone: "danger" | "warn" | undefined = undefined;
   let legalText = "";
   if (movement.legalForm) {
@@ -212,16 +216,14 @@ export function StageRow({
     const formTitle = legalFormName(movement.legalForm);
     if (dueAt === undefined && movement.legalForm.dueAt !== undefined) {
       // Ended at the examination or on arrival: its typed expiry is history, not a deadline (S-6).
-      legalText = `${formTitle} - ended`;
+      legalText = `${formTitle} · ended`;
     } else if (dueAt === undefined) {
-      legalText = `${formTitle} - no recorded expiry on this record`;
-    } else if (isBreached) {
-      legalTagTone = "danger";
-      // Legal times only as typed (31 Oct 2026): the typed time in words, never a count.
-      legalText = `${formTitle} - ${typedTimePhrase(dueAt, now)}`;
+      legalText = `${formTitle} · no recorded expiry on this record`;
     } else {
-      if (isExpiring) legalTagTone = "warn";
-      legalText = `${formTitle} - ${typedTimePhrase(dueAt, now)}`;
+      // "Form 4C (Transfer order) · ends 15:42 as typed · within 1h", or "· ended 15:42 as typed ·
+      // passed": the typed time in words, never a count.
+      if (standing.word) legalTagTone = standing.urgent ? "danger" : "warn";
+      legalText = `${formTitle} · ${typedTimePhrase(dueAt, now)}${standingSuffix(standing)}`;
     }
   } else if (movement.legalStatus === "Voluntary") {
     legalText = "Voluntary";
@@ -405,8 +407,21 @@ export function StageRow({
             {barrierText}
           </span>
         </span>
-        <span className={flow.sub} data-tone={legalTagTone} title={legalText}>
+        <span className={cx(flow.sub, legalRow.legalLine)} data-tone={legalTagTone} title={legalText}>
+          {dueAt !== undefined && legalTagTone ? (
+            <StatusGlyph
+              tone={legalTagTone === "danger" ? "danger" : "warning"}
+              size={9}
+              className={legalRow.legalGlyph}
+            />
+          ) : null}
           {legalText}
+          {dueAt !== undefined ? (
+            <span className={legalRow.legalTag}>
+              {" "}
+              <LegalLimitsNotChecked variant="tag" />
+            </span>
+          ) : null}
         </span>
       </span>
       <span className={flow.wait}>

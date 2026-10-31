@@ -18,6 +18,7 @@ import type {
   MovementHorizonLane,
   RefusedCorridorCount,
 } from "./movements-derivations";
+import { rankCorridorPairs } from "./movement-corridor-pairs";
 import styles from "./movement-horizon.module.css";
 
 export interface MovementHorizonGanttProps {
@@ -105,19 +106,10 @@ interface TooltipState {
   y: number;
 }
 
-/** Accepted corridors merged per ED and ward pair, busiest first (the rail and the phone sheet). */
 /** "02:42 tomorrow" as its clock face and day words, so the two can clip differently. */
 function splitClockAndDay(label: string): { clock: string; day: string } {
   const match = /^(\d{1,2}:\d{2})(?:,?\s*)(.*)$/.exec(label);
   return match ? { clock: match[1], day: match[2] } : { clock: label, day: "" };
-}
-
-export function rankCorridorPairs(corridors: MovementHorizonGanttProps["corridors"]) {
-  const acceptedPairs = new Set(corridors.map((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}`));
-  return Array.from(acceptedPairs, (key) => {
-    const stages = corridors.filter((corridor) => `${corridor.originEdId} ${corridor.acceptedUnitId}` === key);
-    return { ...stages[0], count: stages.reduce((total, stage) => total + stage.count, 0), stages };
-  }).sort((a, b) => b.count - a.count);
 }
 
 export function MovementHorizonGantt({

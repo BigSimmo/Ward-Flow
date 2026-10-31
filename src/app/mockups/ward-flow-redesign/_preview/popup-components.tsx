@@ -44,9 +44,6 @@ const PopMorePages = dynamic<{ page: ReactNode }>(() =>
 const PopTour = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-tour/pop-tour").then((module) => module.PopTour),
 );
-const PopBroadcast = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-broadcast/pop-broadcast").then((module) => module.PopBroadcast),
-);
 const PopReferWard = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-refer-ward/pop-refer-ward").then((module) => module.PopReferWard),
 );
@@ -56,14 +53,8 @@ const PopEdActions = dynamic<{ page: ReactNode }>(() =>
 const PopLogTransport = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-log-transport/pop-log-transport").then((module) => module.PopLogTransport),
 );
-const PopRecordForm = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-record-form/pop-record-form").then((module) => module.PopRecordForm),
-);
 const PopRecordExam = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-record-exam/pop-record-exam").then((module) => module.PopRecordExam),
-);
-const PopAddTime = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-add-time/pop-add-time").then((module) => module.PopAddTime),
 );
 const PopClearance = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
@@ -136,7 +127,7 @@ function PopMenuForFrame({ page }: { page: ReactNode }) {
  * Preview only: popups and states drawn by the preview itself rather than by their page. Keyed by
  * the `pop` name in `MOCKUP_POPUPS`. Each is given the page it opens over and returns what to draw:
  * usually the page with its overlay on top (shell overlays, page popups), or a state in its place.
- * The five page popups opened through `openOnLoad` (sheet, scenario, ward, movement, forecast) are
+ * The four page popups opened through `openOnLoad` (sheet, scenario, ward, forecast) are
  * not here; their pages open them.
  */
 export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ page: ReactNode }>>> = {
@@ -152,13 +143,10 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "service-picker": PopServicePicker,
   "more-pages": PopMorePages,
   tour: PopTour,
-  broadcast: PopBroadcast,
   "refer-ward": PopReferWard,
   "ed-actions": PopEdActions,
   "log-transport": PopLogTransport,
-  "record-form": PopRecordForm,
   "record-exam": PopRecordExam,
-  "add-time": PopAddTime,
   clearance: PopClearance,
   "idle-warning": PopIdleWarning,
   "idle-lock": PopIdleLock,

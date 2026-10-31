@@ -39,7 +39,9 @@ function setup() {
   // Gate board: the bed gate's one action opens the placement work on Now.
   fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
 }
-function referAndAccept() {
+// D-91 (31 Oct 2026): Ask wards is the one Find a ward list, A to Z, so the first ward that fits is
+// no longer the network's first. The bed counts below are read from the ward accepted, not fixed.
+function referAndAccept(): number {
   const shortlist = screen.getByRole("region", { name: "Ask wards" });
   fireEvent.click(
     within(shortlist)
@@ -55,6 +57,7 @@ function referAndAccept() {
   fireEvent.click(screen.getByRole("button", { name: /^Accept bed at / }));
   expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
   expect(screen.getByRole("heading", { name: "Placement & dispatch deck" })).toHaveFocus();
+  return Number(screen.getByTestId("live-bed-count").textContent);
 }
 describe("unified Patient Now clinical flight deck", () => {
   it("keeps the local toolbar, focus, and five dossier tabs", () => {
@@ -72,10 +75,10 @@ describe("unified Patient Now clinical flight deck", () => {
   });
   it("refers, accepts, pulls, books, dispatches and arrives through shared reducer state", () => {
     setup();
-    referAndAccept();
+    const ready = referAndAccept();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("pulled");
-    expect(screen.getByTestId("live-bed-count")).toHaveTextContent("0");
+    expect(screen.getByTestId("live-bed-count")).toHaveTextContent(String(ready - 1));
     fireEvent.click(screen.getByRole("button", { name: "Record transport booking" }));
     // A34: the one transport booking form. Escort opens unanswered.
     expect(screen.getByRole("radio", { name: "Escort required" })).not.toBeChecked();
@@ -120,7 +123,7 @@ describe("unified Patient Now clinical flight deck", () => {
   });
   it("requires a step-back reason and preserves the reserved bed when correcting only the stage", () => {
     setup();
-    referAndAccept();
+    const ready = referAndAccept();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     fireEvent.click(screen.getByText("Step back with recorded reason"));
     expect(screen.getByRole("button", { name: "Record step-back" })).toHaveAttribute("aria-disabled", "true");
@@ -131,7 +134,7 @@ describe("unified Patient Now clinical flight deck", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "Record step-back" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
-    expect(screen.getByTestId("live-bed-count")).toHaveTextContent("0");
+    expect(screen.getByTestId("live-bed-count")).toHaveTextContent(String(ready - 1));
   });
   it("pulls the bed with one named button, toasts Bed pulled, and Undo releases the pull (B5)", () => {
     render(
@@ -143,7 +146,7 @@ describe("unified Patient Now clinical flight deck", () => {
       </ToastProvider>,
     );
     fireEvent.click(within(screen.getByTestId("ward-patient-gate-bed")).getByRole("button"));
-    referAndAccept();
+    const ready = referAndAccept();
     // Once a ward has accepted, the sheet names it and no longer lists wards to refer to.
     expect(screen.queryByRole("region", { name: "Ask wards" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^(Ask \d+ wards?|Pick up to)/ })).not.toBeInTheDocument();
@@ -152,18 +155,18 @@ describe("unified Patient Now clinical flight deck", () => {
     expect(screen.getAllByText("Bed pulled").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
-    expect(screen.getByTestId("live-bed-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("live-bed-count")).toHaveTextContent(String(ready));
   });
   it("releases the pull only after an explicit reason and restores capacity", () => {
     setup();
-    referAndAccept();
+    const ready = referAndAccept();
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Pull the bed" }));
     fireEvent.click(screen.getByText("Release bed pull"));
     expect(screen.getByRole("button", { name: "Release pull" })).toHaveAttribute("aria-disabled", "true");
     fireEvent.change(screen.getByLabelText("Release reason"), { target: { value: RELEASE_PULL_REASONS[0] } });
     fireEvent.click(screen.getByRole("button", { name: "Release pull" }));
     expect(screen.getByTestId("live-stage")).toHaveTextContent("accepted_awaiting_bed");
-    expect(screen.getByTestId("live-bed-count")).toHaveTextContent("1");
+    expect(screen.getByTestId("live-bed-count")).toHaveTextContent(String(ready));
   });
   it("changes the live indicator to inactive when the bed search is withdrawn", () => {
     setup();

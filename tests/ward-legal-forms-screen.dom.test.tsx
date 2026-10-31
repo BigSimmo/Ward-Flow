@@ -15,7 +15,7 @@ import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-managemen
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { setDeskRole } from "@/components/ward-management/ward-role-gate";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { dateInputFor } from "./helpers/ward-date-input";
+import { typedDateFor } from "./helpers/ward-date-input";
 
 const NOW = NOW_ANCHOR;
 const seed = seedWardFlowState();
@@ -125,8 +125,7 @@ describe("the Forms screen", () => {
     expect(noDeadline.length, "no rows without a deadline - the screen's whole subject is untested").toBeGreaterThan(0);
 
     renderScreen();
-    // Audit A3-6 (13 Oct 2026): "Time not written" is no longer folded; the helper is a no-op now.
-    openFoldedGroup();
+    // Time not written folds after six rows (redesign, 31 Oct 2026); the helper opens it.
     const lists = screen.getAllByRole("list");
     // Owner, 26 Sept 2026: the visible id slot now carries the patient's name, never the WF journey
     // number, so a row is found here by its hidden `data-record-key` (the movement id) instead.
@@ -158,7 +157,6 @@ describe("the Forms screen", () => {
   // Owner, 26 Sept 2026: the patient's name, never the WF journey number.
   it("identifies a row by the hidden movement id, and names it by the resolved patient, never the WF number", () => {
     renderScreen();
-    openFoldedGroup();
     const expectedIds = rows.map((movement) => movement.id);
     const listRegion = screen.getByRole("region", { name: "Legal forms list" });
     const rowEls = Array.from(listRegion.querySelectorAll("[data-ward-primitive='record-row']"));
@@ -281,19 +279,21 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
     expect(screen.queryByTestId("ward-legal-tasks-sheet")).toBeNull();
   });
 
-  it("never folds Time not written: every row shows with no Show all (audit A3-6)", () => {
+  // Josh, 31 Oct 2026 ("yes to all", answer 15): every Time not written row shows, with no Show more
+  // fold (audit A3-6's "never folded" stands). A highlight never hides a row either.
+  it("shows every Time not written row with no Show more", () => {
+    expect(noDeadline.length, "too few rows without a deadline - this case proves nothing").toBeGreaterThan(6);
     renderScreen();
     const region = screen.getByRole("region", { name: "Legal forms list" });
     expect(region.querySelectorAll("[data-record-key]").length).toBe(rows.length);
-    expect(screen.queryByRole("button", { name: /^Show all \d+$/ })).toBeNull();
     expect(screen.getAllByText("Time not written").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: /more with no time written/ })).toBeNull();
   });
 
   it("highlights by dimming the other rows by colour, keeps every row and counts the highlighted rows", () => {
     renderScreen();
-    openFoldedGroup();
     const before = document.querySelectorAll("[data-record-key]").length;
-    fireEvent.click(screen.getByRole("button", { name: /Time not written/ }));
+    fireEvent.click(screen.getByRole("button", { name: /time not written/ }));
     expect(document.querySelectorAll("[data-record-key]").length).toBe(before);
     const dimmed = document.querySelectorAll('[data-record-key][data-dim="true"]').length;
     expect(dimmed).toBe(before - noDeadline.length);
@@ -317,7 +317,7 @@ describe("Forms v10 pass (10 Oct 2026)", () => {
 
     fireEvent.click(within(panel).getByRole("button", { name: "Extend recorded form" }));
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-date"), {
-      target: { value: dateInputFor(NOW_ANCHOR + 240, screenDayZero) },
+      target: { value: typedDateFor(NOW_ANCHOR + 240, screenDayZero) },
     });
     fireEvent.change(screen.getByTestId("ward-legal-forms-renew-expiry"), { target: { value: "23:45" } });
     fireEvent.click(screen.getByTestId("ward-legal-forms-renew-confirm"));
@@ -415,11 +415,6 @@ function AdvanceClock({ minutes }: { minutes: number }) {
     dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: NOW_ANCHOR, minutes });
   }, [dispatch, minutes]);
   return null;
-}
-
-function openFoldedGroup() {
-  const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });
-  if (showAll) fireEvent.click(showAll);
 }
 
 it("clears an unsaved paper-form region on Clear and when the movement changes", () => {
