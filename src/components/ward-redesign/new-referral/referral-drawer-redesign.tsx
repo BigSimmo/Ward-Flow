@@ -31,6 +31,7 @@ import {
   ReferralPhoneChecklistToggle,
 } from "@/components/ward-management/referrals/ward-referral-drawer-rail";
 import { ReferralSummaryRail } from "./referral-drawer-rail-redesign";
+import redesign from "./new-referral-redesign.module.css";
 
 /** Preview only: a fork of `WardReferralDrawer` that draws the redesigned patient step. */
 export function ReferralDrawerRedesign(props: WardReferralDrawerProps) {
@@ -95,7 +96,7 @@ function WardReferralDrawerContent(props: WardReferralDrawerContentProps) {
       {withBackdrop ? <div className={styles.drawerBackdrop} onClick={requestClose} aria-hidden="true" /> : null}
       <div
         ref={drawerRef}
-        className={styles.drawerWide}
+        className={`${styles.drawerWide} ${redesign.drawer}`}
         data-ph-mode={isPhone ? phMode : undefined}
         role={withBackdrop ? "dialog" : "complementary"}
         aria-modal={withBackdrop ? true : undefined}

@@ -1146,28 +1146,32 @@ export function GlobalSearch({
       )}
 
       {showQuickCommands && !refusal ? (
-        <WardSearchCommands
-          demoOff={demoOff}
-          demoOffId={demoOffId}
-          demoOffText={DEMO_CONTROLS_OFF}
-          resultsCurrent={resultsCurrent}
-          canRunAction={canRunAction}
-          canOpenHref={canOpenHref}
-          shortcutsExpanded={shortcutsExpanded}
-          onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
-          onAdvanceClock={() => {
-            if (wardFlow)
-              wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
-            close();
-          }}
-          onSwitchDesk={(role, href) => {
-            if (!confirmLeave()) return;
-            setDeskRole(role, href);
-            dispatchPersonaSyncForRole(role);
-            select(href, true);
-          }}
-          onHandover={() => select("/ward-flow/handover")}
-        />
+        // Final round: the wrapper lines the heading up with Go to and Do, and leaves room above the
+        // footer (search.module.css `.commands`).
+        <div className={local.commands}>
+          <WardSearchCommands
+            demoOff={demoOff}
+            demoOffId={demoOffId}
+            demoOffText={DEMO_CONTROLS_OFF}
+            resultsCurrent={resultsCurrent}
+            canRunAction={canRunAction}
+            canOpenHref={canOpenHref}
+            shortcutsExpanded={shortcutsExpanded}
+            onToggleShortcuts={() => setShowShortcuts((previous) => !previous)}
+            onAdvanceClock={() => {
+              if (wardFlow)
+                wardFlow.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: now ?? wardFlow.now, minutes: 15 });
+              close();
+            }}
+            onSwitchDesk={(role, href) => {
+              if (!confirmLeave()) return;
+              setDeskRole(role, href);
+              dispatchPersonaSyncForRole(role);
+              select(href, true);
+            }}
+            onHandover={() => select("/ward-flow/handover")}
+          />
+        </div>
       ) : null}
     </div>
   );

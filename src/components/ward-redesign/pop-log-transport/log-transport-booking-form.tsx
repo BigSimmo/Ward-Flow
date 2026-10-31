@@ -519,14 +519,9 @@ export function LogTransportBookingForm({
         </Field>
       ) : null}
 
-      {/* Redesign: the dialog footer order the app uses (Cancel, then the primary at the end), with
-          the short reason Save waits for beside it. */}
+      {/* Redesign: the dialog footer order the app uses (Cancel, then the primary at the end). Final
+          round: the count of answers left shows once, in the line at the top, not again here. */}
       <div className={styles.actions}>
-        {leftNames.length > 0 && blockedReason === undefined ? (
-          <span className={styles.actionsWait} aria-hidden="true">
-            {leftNames.length} {leftNames.length === 1 ? "answer" : "answers"} left
-          </span>
-        ) : null}
         {onCancel ? (
           <Button data-testid={tid("cancel")} disabled={pending} onClick={onCancel}>
             Cancel

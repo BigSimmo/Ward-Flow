@@ -6,7 +6,7 @@
    - the phone stack rests 24px above the dock (it touched the dock's + before);
    - the title and body wrap in full on every width (no "…" on a name or a ward);
    - desktop cards share one width, so folded cards line up behind the newest;
-   - the fold control sits just above the stack it opens. */
+   - the fold control heads the stack, and folded cards are not drawn behind the newest. */
 
 /* The region: bottom right on desktop, as the app's ToastProvider places it. It never blocks the
    page; each card opts back in. */
@@ -99,11 +99,12 @@
   transform-origin: bottom center;
 }
 
-/* Redesign: in a folded stack every card fills the row, so a one-line card behind a two-line newest
-   one still peeks above it. The newest card turns solid, so the cards behind show only as their top
-   edges, never through its glass; those cards show no words of their own. */
-.list[data-stack="folded"] > .live > .card {
-  align-self: stretch;
+/* Redesign (final round): a folded stack draws only the newest card. The cards behind it are not
+   drawn (no ghost edges peeking out); they stay in the live region, and focus inside opens the stack.
+   The newest card turns solid on desktop so nothing shows through its glass. */
+.list[data-stack="folded"] > .live > .card[data-depth] {
+  opacity: 0;
+  pointer-events: none;
 }
 
 @media (min-width: 48.0625rem) {
@@ -195,12 +196,10 @@
   color: var(--wf-ink-3);
 }
 
-/* "+N more": a small, quiet pill just above the stack it opens. Outside the live region.
-   Room below it for the two cards peeking up behind the newest (8px and 16px). */
+/* "+N more": a small, quiet pill heading the stack it opens. Outside the live region. */
 .fold {
   display: flex;
   justify-content: flex-end;
-  padding-bottom: 12px;
   pointer-events: none;
 }
 
@@ -291,7 +290,7 @@
   }
 
   .fold {
-    justify-content: center;
+    justify-content: flex-end;
   }
 
   .card {
@@ -369,22 +368,6 @@
 
   .card[data-auto-dismiss="true"] .close {
     display: none;
-  }
-
-  /* Redesign: the folded pills. Each one behind the newest is a step paler, so its top edge reads
-     as a card waiting behind. */
-  .card[data-depth="1"] {
-    background: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 78%, var(--wf-surface)),
-      color-mix(in srgb, var(--wf-track) 88%, var(--wf-ink-1))
-    );
-  }
-
-  .card[data-depth="2"] {
-    background: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 58%, var(--wf-surface)),
-      color-mix(in srgb, var(--wf-track) 80%, var(--wf-ink-1))
-    );
   }
 }
 

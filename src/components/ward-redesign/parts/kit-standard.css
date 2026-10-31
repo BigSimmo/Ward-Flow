@@ -69,3 +69,27 @@ html[data-mockup-kit] :is([class*="_footLink__"], [class$="_footLink"], [class*=
   font-size: var(--wf-fs-13);
   font-weight: 600;
 }
+
+/*
+ * Dialog and sheet close (x), final round. Every popup puts focus on its close button when it opens,
+ * and the kit drew its full focus ring there at once: a heavy dark ring on the first thing a person
+ * sees. The ring now shows only for keyboard focus (:focus-visible), as a calm 2px accent ring, and
+ * never for a pointer press. Chrome also treats focus moved by a page that has had no input yet as
+ * keyboard focus (so a popup opened on load shows it); the preview can mark pointer use with
+ * html[data-kit-input="pointer"] (set on load and on pointerdown, cleared on Tab), which hides that
+ * opening ring until the keyboard is used. Matched by role and accessible name, never class names:
+ * the wf Dialog and Sheet close buttons are named "Close" or "Close <thing>".
+ */
+html[data-mockup-kit] :is([role="dialog"], [aria-modal="true"]) button[aria-label^="Close"]:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+html[data-mockup-kit] :is([role="dialog"], [aria-modal="true"]) button[aria-label^="Close"]:focus:not(:focus-visible),
+html[data-mockup-kit][data-kit-input="pointer"]
+  :is([role="dialog"], [aria-modal="true"])
+  button[aria-label^="Close"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

@@ -145,13 +145,6 @@
   gap: var(--wf-s-2);
 }
 
-/* Redesign: what Save waits for, in a few words, beside it. */
-.actionsWait {
-  margin-right: auto;
-  color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
 .error {
   margin: 0;
   color: var(--wf-danger-ink);
@@ -166,15 +159,27 @@
   min-width: 0;
 }
 
-/* Save stays in view while a long popup scrolls on a phone. */
+/* Save stays in view while a long popup scrolls on a phone. Final round: a full-width footer, edge to
+   edge across the popup with a hairline on top (it was an inset grey band that cut the answers under
+   it in half). The margins undo the dialog body's 16px padding, so it meets both sides and the
+   bottom. */
 .actions {
   position: sticky;
-  bottom: 0;
+  bottom: calc(-1 * var(--wf-s-4));
   z-index: 1;
-  padding-block: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-4)) calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
   /* Redesign: the popup's own surface (its sheet colour), so the pinned Save row matches the dialog
      in light and dark instead of drawing a white box. */
   background: var(--wf-glass-sheet, var(--wf-overlay, var(--wf-surface)));
+}
+
+/* The phone popup is solid (wf dialog), so its footer is the same solid surface, not a grey band. */
+@media (max-width: 48rem) {
+  .actions {
+    background: var(--wf-overlay, var(--wf-surface));
+  }
 }
 
 /* Redesign: once nothing is left to answer, the top line says so. */

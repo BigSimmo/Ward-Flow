@@ -122,3 +122,19 @@ a.rowOption > span:first-child {
     padding-block: 7px;
   }
 }
+
+/* Final round: Quick commands sits in the same column as Go to and Do. Today's block added 8px of its
+   own inset, so its heading stood further in than theirs, and its last chip met the footer. The
+   wrapper draws no box; the real build changes `.quickCommands` and `.commandList` in
+   ward-global-search.module.css the same way. */
+.commands {
+  display: contents;
+}
+
+.commands > div {
+  padding: 6px 0 var(--wf-s-4);
+}
+
+.commands > div > div {
+  padding: 4px 10px 0;
+}

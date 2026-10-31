@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { WfTone } from "@/components/wf";
 
 import { NoticeCard } from "./notice-card";
-import { toastStackLayout, toastStaysInView } from "./notice-stack-layout";
+import { toastStackLayout } from "./notice-stack-layout";
 import styles from "./notices.module.css";
 
 /** One notice as the mock-up holds it. Oldest first, as #1124's provider renders them. */
@@ -35,8 +35,8 @@ const EXIT_MS = 160;
  * so it is never read aloud as an outcome.
  *
  * Redesign changes from #1124 (D-91):
- * - The fold control sits directly above the stack it opens, not in a tools row above every card, so
- *   it reads as part of the stack when a warning is shown too. Open, it heads the column.
+ * - The fold control heads the column, folded or open, so the count sits at one end of one tidy stack
+ *   (never between a warning and the folded cards). Folded cards are not drawn behind the newest.
  * - No hover-open. With the control beside the cards, opening on hover moved the control as the
  *   pointer went to it, and the stack folded again under the pointer. Click or focus opens it.
  * - No Recent chip: missed notices go into Activity's "Recent activity" tab (missed-notices.tsx).
@@ -66,10 +66,9 @@ export function NoticeStack({ notices: initial }: { notices: readonly MockNotice
   const needsPin = toastStackLayout(notices, false).folded;
   if (pinned && !needsPin) setPinned(false);
   const showControl = layout.folded || (expanded && needsPin);
-  // The folded stack's row is the newest self-closing card's row; the control takes a row just above.
-  const newestFolded = notices.filter((notice) => !notice.leaving && !toastStaysInView(notice)).at(-1);
-  const stackRow = (newestFolded && layout.slots.get(newestFolded.id)?.row) ?? 0;
-  const rowOf = (row: number) => (layout.folded && row >= stackRow ? row + 1 : row);
+  // Redesign (final round): the control heads the whole column, folded or open, so the count sits at
+  // one end of one stack rather than between two cards.
+  const rowOf = (row: number) => (layout.folded ? row + 1 : row);
 
   if (notices.length === 0) return null;
 
@@ -77,7 +76,7 @@ export function NoticeStack({ notices: initial }: { notices: readonly MockNotice
     <div className={styles.region} data-notice-stack="">
       <div className={styles.list} data-stack={layout.folded ? "folded" : undefined}>
         {showControl ? (
-          <div className={styles.fold} style={layout.folded ? { gridRow: stackRow } : undefined}>
+          <div className={styles.fold} style={layout.folded ? { gridRow: 1 } : undefined}>
             <button
               type="button"
               className={styles.foldButton}

@@ -26,6 +26,14 @@ export function DemoMenuMock({ onClose }: { onClose: (refocus?: boolean) => void
     const place = () => {
       const menu = root.current;
       if (!menu) return;
+      // Final round: on a phone the menu is a bottom sheet over the dock (pop-demo.module.css), so it
+      // is not placed under the pill.
+      if (window.matchMedia("(max-width: 48rem)").matches) {
+        menu.style.top = "";
+        menu.style.left = "";
+        menu.style.visibility = "visible";
+        return;
+      }
       const pill = document.querySelector('[data-data-mode="prototype"]');
       const rect = pill && pill.getClientRects().length > 0 ? pill.getBoundingClientRect() : null;
       const width = Math.min(560, window.innerWidth - 16);
@@ -57,6 +65,9 @@ export function DemoMenuMock({ onClose }: { onClose: (refocus?: boolean) => void
   }, [onClose]);
   return (
     <OverlayPortal layer="popover" name="demo-menu">
+      {/* Final round: the phone sheet's backdrop. A press on it closes the menu, as any press
+          outside does; on a wider screen it is not drawn. */}
+      <div className={styles.phoneScrim} aria-hidden="true" />
       <section
         ref={root}
         className={styles.menu}

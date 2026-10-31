@@ -159,7 +159,9 @@ button.row:hover {
     position: fixed;
     inset: 0;
     display: block;
-    background: color-mix(in srgb, var(--wf-ink-1) 40%, transparent);
+    /* Final round: the kit's dialog scrim, which darkens in both themes (ink-1 at 40% turned the
+       page grey in dark, where ink-1 is light). */
+    background: var(--wf-scrim-strong, var(--wf-scrim));
     pointer-events: auto;
   }
 

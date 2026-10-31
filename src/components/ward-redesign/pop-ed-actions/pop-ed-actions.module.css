@@ -19,7 +19,7 @@
 .head {
   display: grid;
   gap: 2px;
-  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) calc(var(--wf-s-2) + 4px) var(--wf-s-3);
 }
 
 .head b {
@@ -36,9 +36,11 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Redesign (final round): rows, the filled next step and the fold sit 4px further in than the
+   group's hairline, so a filled or hovered row never runs into the menu's edge. */
 .group {
   display: grid;
-  padding: var(--wf-s-1) 0;
+  padding: var(--wf-s-1) 4px;
   border-top: 1px solid var(--wf-line);
 }
 
@@ -85,6 +87,7 @@
 }
 
 .fold {
+  padding-inline: 4px;
   border-top: 1px solid var(--wf-line);
 }
 

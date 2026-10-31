@@ -262,7 +262,11 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
                     <span className={styles.stepLabel}>{label}</span>
                     {/* The hint describes the step; the button's name stays its label alone. */}
                     {isPhone ? (
-                      <span className={styles.phStepHint} id={`${sectionId}-${id}-hint`} aria-hidden="true">
+                      <span
+                        className={`${styles.phStepHint} ${redesign.phStepHintWrap}`}
+                        id={`${sectionId}-${id}-hint`}
+                        aria-hidden="true"
+                      >
                         {phStepHint(id)}
                       </span>
                     ) : null}

@@ -66,3 +66,26 @@
     margin-inline: var(--wf-s-4);
   }
 }
+
+/* The locked Send's padlock at the drawer's button icon size, 14px as on its other buttons (it drew
+   at lucide's own 24px beside the label). The foot is today's ReferralDrawerFoot, unforked; the real
+   build sizes the Lock there (ward-referral-drawer-rail.tsx). */
+.drawer :global([data-testid="ward-referral-send-locked"]) {
+  gap: 6px;
+}
+
+.drawer :global([data-testid="ward-referral-send-locked"]) svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.75;
+}
+
+/* Phone step rows: the hint under a step (the sending place, the patient) wraps in full rather than
+   ending in "…" ("Peel Health Campus Emergency D…"). */
+.phStepHintWrap.phStepHintWrap {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-overflow: clip;
+}

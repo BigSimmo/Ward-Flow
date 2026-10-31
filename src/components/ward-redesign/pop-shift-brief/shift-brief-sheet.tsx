@@ -832,7 +832,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
   return createPortal(
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
     <div
-      className={styles.scrim}
+      className={`${styles.scrim} ${mock.scrim}`}
       data-testid="ward-daily-sheet-scrim"
       onPointerDown={(event) => {
         scrimPressRef.current = event.target === event.currentTarget;
@@ -844,7 +844,7 @@ export function WardDailySheetDialog({ onClose, ...sheetProps }: WardDailySheetD
     >
       <div
         ref={panelRef}
-        className={styles.dialog}
+        className={`${styles.dialog} ${mock.dialog}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${dialogId}-ward-daily-sheet-dialog-title`}

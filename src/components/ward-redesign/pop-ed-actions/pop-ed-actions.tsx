@@ -206,6 +206,7 @@ function ActionList({
                 type="button"
                 role={menu ? "menuitem" : undefined}
                 data-real-testid={item.testId}
+                data-next-step={item.primary ? "" : undefined}
                 className={item.primary ? cx(buttonClass({ variant: "pri", size: "md" }), styles.primary) : styles.item}
                 onClick={() => run(byTestId(item.testId))}
               >
@@ -298,7 +299,11 @@ function AnchoredMenu({
       element.style.left = `${Math.max(12, Math.min(right - element.offsetWidth, window.innerWidth - element.offsetWidth - 12))}px`;
     };
     position();
-    element.querySelector<HTMLElement>("button")?.focus({ preventScroll: true });
+    // Redesign (final round): focus starts on the row's next step, the one filled item, so the menu
+    // opens with one active item rather than a ring on the first row beside the filled one.
+    (element.querySelector<HTMLElement>("[data-next-step]") ?? element.querySelector<HTMLElement>("button"))?.focus({
+      preventScroll: true,
+    });
     const observer = new ResizeObserver(position);
     observer.observe(element);
     window.addEventListener("resize", position);

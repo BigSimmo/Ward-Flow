@@ -12,6 +12,7 @@ import { useWardFormSave } from "@/components/ward-management/use-ward-form-save
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 
 import { BLANK_TRANSPORT_BOOKING, LogTransportBookingForm } from "./log-transport-booking-form";
+import pop from "./pop-log-transport.module.css";
 
 /** The department the ED board mock-up draws (`ed-board-page.tsx`). */
 const ED_ID = "peel-ed";
@@ -56,6 +57,7 @@ export function PopLogTransport({ page }: { page: ReactNode }) {
         title="Log transport booking"
         description={`${name} · booked by phone. Read each answer off the call with the provider.`}
         size="md"
+        className={pop.panel}
         data-testid={`ward-ed-book-transport-${target.id}`}
       >
         <LogTransportBookingForm
