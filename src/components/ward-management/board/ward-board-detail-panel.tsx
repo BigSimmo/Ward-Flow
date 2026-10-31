@@ -32,8 +32,10 @@ import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
-const SEC_BUTTON = buttonClass({ variant: "sec" });
-const PRI_BUTTON = cx(buttonClass({ variant: "pri" }), redesign.detailButtonWide);
+// Long labels ("Record that they have gone to an emergency department") wrap inside the panel
+// instead of running past its edge (QA 31 Oct 2026).
+const SEC_BUTTON = cx(buttonClass({ variant: "sec" }), redesign.detailButtonWrap);
+const PRI_BUTTON = cx(buttonClass({ variant: "pri" }), redesign.detailButtonWide, redesign.detailButtonWrap);
 
 export function WardBoardDetailPanel({
   admissions,

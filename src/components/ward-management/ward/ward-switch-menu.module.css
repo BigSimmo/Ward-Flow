@@ -50,13 +50,16 @@
 }
 
 .panel {
+  /* Defaults; the menu writes its anchored place onto the panel's inline style when it opens. */
+  --pick-top: 120px;
+  --pick-left: 8px;
   position: fixed;
-  top: var(--pick-top, 120px);
-  left: var(--pick-left, 8px);
+  top: var(--pick-top);
+  left: var(--pick-left);
   display: flex;
   flex-direction: column;
   width: min(400px, calc(100vw - 16px));
-  max-height: min(560px, calc(100dvh - var(--pick-top, 120px) - 16px));
+  max-height: min(560px, calc(100dvh - var(--pick-top) - 16px));
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg, 16px);
   background: var(--wf-surface);

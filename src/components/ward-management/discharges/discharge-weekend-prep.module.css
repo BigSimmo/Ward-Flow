@@ -29,12 +29,14 @@
   min-width: 0;
   margin: 0;
 }
+/* Drawn 40px (kit standard, "no 48px controls"); the invisible cover keeps the 48px tap floor. */
 .weekendFold {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
   width: calc(100% + 2 * var(--wf-s-3));
-  min-height: var(--spacing-tap, 3rem);
+  min-height: 40px;
   margin: calc(-1 * var(--wf-s-3));
   padding: 0 var(--wf-s-3);
   border: 0;
@@ -43,6 +45,11 @@
   font: inherit;
   text-align: start;
   cursor: pointer;
+}
+.weekendFold::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 .weekendFold:focus-visible {
   outline: 2px solid var(--wf-focus-ring);

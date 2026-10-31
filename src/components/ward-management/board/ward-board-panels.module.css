@@ -118,6 +118,24 @@
 .detailButtonWide.detailButtonWide {
   width: 100%;
 }
+/* Bed record buttons wrap a long label onto a second line rather than running past the panel edge
+   (QA 31 Oct 2026, 390 to 1440). They keep the kit's height as a floor, and the kit's phone tap cover. */
+.detailButtonWrap.detailButtonWrap.detailButtonWrap {
+  height: auto;
+  min-height: var(--wf-h-md);
+  max-width: 100%;
+  padding-block: 6px;
+  justify-content: flex-start;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 18px;
+}
+@media (max-width: 48rem) {
+  .detailButtonWrap.detailButtonWrap.detailButtonWrap {
+    min-height: 40px;
+  }
+}
 .fieldLabel.fieldLabel {
   color: var(--wf-ink-2);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
