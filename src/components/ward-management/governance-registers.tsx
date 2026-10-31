@@ -13,6 +13,8 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { WardFlowContext } from "./ward-flow-provider";
+import { useEffectiveWardAccess } from "./shell/ward-access-store";
+import eventList from "./governance-event-list.module.css";
 import type { WardCommandOutcome } from "./ward-shared-client";
 import type { AuditCategory, AuditEvent, AuditReview } from "./ward-audit";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
@@ -185,14 +187,29 @@ export function GovernanceAccessRecordPanel({ sessionCount }: { sessionCount?: n
 }
 
 export function GovernanceWorkbench(props: WorkbenchProps) {
+  // Role (access admin): this desk sees no patients and no clinical content, and comes to review who
+  // opened which record. Gaps by site, Registers (seclusion, restraint, incidents) and Reports (a
+  // patient's chronology, the downtime board) are not its to open, so it has Review and the Audit
+  // trail only, and always opens on Review, where record access is.
+  const adminDesk = useEffectiveWardAccess().role === "admin";
   // The open tab survives a demo reset; everything else in the session starts again. It opens on
   // Review when something waits (v10 mockup), and on Gaps by site when the session holds nothing.
   const [tab, setTab] = useState<GovernanceTab>(() => {
+    if (adminDesk) return "review";
     const read = readGovernanceEvents(props.api);
     const waiting = read?.status === "allowed" && read.value.some((event) => event.category !== "review");
     return waiting ? "review" : "gaps";
   });
-  return <GovernanceSession key={props.api?.worldGeneration ?? "unavailable"} {...props} tab={tab} setTab={setTab} />;
+  const shownTab = adminDesk && tab !== "review" && tab !== "audit" ? "review" : tab;
+  return (
+    <GovernanceSession
+      key={props.api?.worldGeneration ?? "unavailable"}
+      {...props}
+      tab={shownTab}
+      setTab={setTab}
+      adminDesk={adminDesk}
+    />
+  );
 }
 
 function GovernanceSession({
@@ -202,7 +219,8 @@ function GovernanceSession({
   api,
   tab,
   setTab,
-}: WorkbenchProps & { tab: GovernanceTab; setTab: (tab: GovernanceTab) => void }) {
+  adminDesk,
+}: WorkbenchProps & { tab: GovernanceTab; setTab: (tab: GovernanceTab) => void; adminDesk: boolean }) {
   const flow = useContext(WardFlowContext);
   const resolvePatient = usePatientOf();
   // An admission subject names only its id: resolve through the stay itself, so a bed record shows
@@ -210,12 +228,16 @@ function GovernanceSession({
   const patientOf: typeof resolvePatient = (subject) => {
     const id = subject && "id" in subject && !("movementId" in subject) ? subject.id : undefined;
     const stay = id ? flow?.admissions.find((admission) => admission.id === id) : undefined;
-    return resolvePatient(stay ?? subject);
+    const info = resolvePatient(stay ?? subject);
+    // Every row, pane and phone line names the person surname first (D-83).
+    return { ...info, displayName: info.formalName };
   };
   const [category, setCategory] = useState<"all" | AuditCategory | "record-views">("all");
   const [outcome, setOutcome] = useState<"all" | AuditEvent["outcome"]>("all");
   const [reviewFilter, setReviewFilter] = useState<"all" | "unreviewed" | AuditReview["decision"]>("all");
-  const [selection, setSelection] = useState<AuditEvent | null>(null);
+  // `undefined` until someone chooses, so the pane opens on the newest event waiting; `null` once
+  // they close it, so it stays closed.
+  const [selection, setSelection] = useState<AuditEvent | null | undefined>(undefined);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [pending, setPending] = useState<{
     command: number;
@@ -281,9 +303,11 @@ function GovernanceSession({
         (reviewFilter === "all" || (event.category !== "review" && reviewState(event) === reviewFilter)),
     )
     .reverse();
+  // On a phone or a portrait tablet the event opens over the list, so nothing opens unasked there.
+  const opening = selection === undefined && !isPhone && !isTabletPortrait ? (toReview[0] ?? visible[0]) : selection;
   const selected =
-    allowed && selection && rows.some((event) => event.id === selection.id && event.generation === selection.generation)
-      ? selection
+    allowed && opening && rows.some((event) => event.id === opening.id && event.generation === opening.generation)
+      ? opening
       : null;
   const history = selected ? historyFor(selected) : [];
   const reviewAttempt = pending
@@ -521,7 +545,7 @@ function GovernanceSession({
 
   const TAB_LABEL: Record<GovernanceTab, string> = {
     review: "Review",
-    gaps: "Gaps by site",
+    gaps: "Form gaps by site",
     audit: "Audit trail",
     registers: "Registers",
     reports: "Reports",
@@ -538,15 +562,18 @@ function GovernanceSession({
       ? reviewTitle
       : tab === "gaps"
         ? totalGaps === 0
-          ? "No gaps recorded"
-          : `${totalGaps} ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} ${sites.filter((entry) => entry.gaps > 0).length === 1 ? "site" : "sites"}`
+          ? "No form gaps recorded"
+          : `${totalGaps} form ${totalGaps === 1 ? "gap" : "gaps"} across ${sites.filter((entry) => entry.gaps > 0).length} ${sites.filter((entry) => entry.gaps > 0).length === 1 ? "site" : "sites"}`
         : tab === "audit"
           ? "Audit trail"
           : tab === "registers"
             ? "Restrictive practice and incidents"
             : "Reports";
+  // Role (access admin): with nothing to review, the counts, filters and review controls have nothing
+  // to act on, so the page shows the title, the tabs and one empty state with its Access log link.
+  const adminEmpty = adminDesk && toReview.length === 0;
   const heroStats =
-    tab === "review" ? (
+    tab === "review" && adminEmpty ? null : tab === "review" ? (
       <>
         <HeroStat
           inline
@@ -575,7 +602,7 @@ function GovernanceSession({
         <HeroStat
           inline
           value={patternCount}
-          label="Pattern"
+          label={adminDesk ? "Patterns" : "Pattern"}
           tone="warning"
           pressed={chip === "pattern"}
           onToggle={() => toggleChip("pattern")}
@@ -583,7 +610,7 @@ function GovernanceSession({
         <HeroStat
           inline
           value={followUp}
-          label="Follow-up"
+          label={adminDesk ? "For follow-up" : "Follow-up"}
           tone="warning"
           pressed={chip === "follow-up"}
           onToggle={() => toggleChip("follow-up")}
@@ -609,7 +636,7 @@ function GovernanceSession({
           Every captured event is reviewed.
         </p>
       ) : (
-        <p className={thirdEdition.quietText}>Choose an event from the list to review it.</p>
+        <p className={thirdEdition.quietText}>Choose an event</p>
       )}
     </div>
   );
@@ -669,6 +696,7 @@ function GovernanceSession({
   const phoneTree = (
     <GovernancePhone
       accessCount={accessCount}
+      adminDesk={adminDesk}
       allowed={allowed}
       announcement={announcement}
       canReview={canReview}
@@ -695,7 +723,6 @@ function GovernanceSession({
       reviewTitle={reviewTitle}
       reviewable={reviewable}
       reviewedCount={reviewedCount}
-      reviewedOf={reviewedOf}
       selected={selected}
       setAnnouncement={setAnnouncement}
       setPhoneAdvance={setPhoneAdvance}
@@ -721,121 +748,161 @@ function GovernanceSession({
         title={heroTitle}
         stats={heroStats}
         aside={
-          <span className={thirdEdition.heroActions}>
-            <span className={thirdEdition.reviewedRing}>
-              <span
-                className={thirdEdition.ringDial}
-                style={{
-                  ["--done" as string]: `${reviewedOf === 0 ? 0 : Math.round((reviewedCount / reviewedOf) * 360)}deg`,
-                }}
-                aria-hidden="true"
-              />
-              <span className={thirdEdition.stack}>
-                <strong>
-                  {reviewedCount} of {reviewedOf}
-                </strong>
-                <span>reviewed</span>
+          tab === "review" && adminEmpty ? undefined : (
+            <span className={thirdEdition.heroActions}>
+              <span className={thirdEdition.reviewedRing}>
+                <span
+                  className={thirdEdition.ringDial}
+                  style={{
+                    ["--done" as string]: `${reviewedOf === 0 ? 0 : Math.round((reviewedCount / reviewedOf) * 360)}deg`,
+                  }}
+                  aria-hidden="true"
+                />
+                <span className={thirdEdition.stack}>
+                  <strong>
+                    {reviewedCount} of {reviewedOf}
+                  </strong>
+                  <span>reviewed</span>
+                </span>
               </span>
+              <Button
+                variant="light"
+                size="sm"
+                disabledReason={
+                  !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
+                }
+                reasonDisplay="tooltip"
+                onClick={() => setEndorseOpen(true)}
+              >
+                Record review
+              </Button>
             </span>
-            <Button
-              variant="light"
-              size="sm"
-              disabledReason={
-                !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
-              }
-              reasonDisplay="tooltip"
-              onClick={() => setEndorseOpen(true)}
-            >
-              Record review
-            </Button>
-          </span>
+          )
         }
         bar={
           <HeroTrack<GovernanceTab>
             label="Governance views"
             value={tab}
             onChange={changeTab}
-            items={[
-              { id: "review", label: "Review", count: toReview.length },
-              { id: "gaps", label: "Gaps by site" },
-              { id: "audit", label: "Audit trail" },
-              { id: "registers", label: "Registers" },
-              { id: "reports", label: "Reports" },
-            ]}
+            items={
+              adminDesk
+                ? [
+                    { id: "review", label: "Review", count: toReview.length },
+                    { id: "audit", label: "Audit trail" },
+                  ]
+                : [
+                    { id: "review", label: "Review", count: toReview.length },
+                    { id: "gaps", label: "Form gaps by site" },
+                    { id: "audit", label: "Audit trail" },
+                    { id: "registers", label: "Registers" },
+                    { id: "reports", label: "Reports" },
+                  ]
+            }
           />
         }
         barAside={
           <span className={thirdEdition.heroActions}>
             {/* A notice, not a button: plain text (device audit 11 Oct 2026). */}
             <span className={thirdEdition.heroNotice}>Safety incidents not recorded here</span>
-            <Link href={PATIENT_CHRONOLOGY_HREF} className={buttonClass({ variant: "onHero", size: "sm" })}>
-              <History size={14} aria-hidden="true" />
-              PIR chronology
-            </Link>
+            {/* Role (access admin): a patient's chronology is not this desk's to open. */}
+            {adminDesk ? null : (
+              <Link href={PATIENT_CHRONOLOGY_HREF} className={buttonClass({ variant: "onHero", size: "sm" })}>
+                <History size={14} aria-hidden="true" />
+                PIR chronology
+              </Link>
+            )}
           </span>
         }
       />
 
       {tab === "review" ? (
         <div className={thirdEdition.govLayout}>
-          <Card className={thirdEdition.registerCard} aria-labelledby="governance-review-title">
-            <CardHead
-              id="governance-review-title"
-              icon={ShieldCheck}
-              title="Waiting for review"
-              meta={<Count n={toReview.length} />}
-              aside={
-                <span className={thirdEdition.quietText}>
-                  {chip
-                    ? `${chipCount} of ${toReview.length} highlighted, all rows stay`
-                    : "Overrides, refused actions and record access, now with break glass. Newest first."}
-                </span>
-              }
-            />
-            <div className={cx(thirdEdition.filterRow, thirdEdition.reviewFilter)}>
-              <Segmented<"all" | "override" | "refused" | "access">
-                label="Show in the review list"
-                value={chip === "override" || chip === "refused" || chip === "access" ? chip : "all"}
-                onChange={(next) => setChip(next === "all" ? null : next)}
-                items={[
-                  { id: "all", label: "All" },
-                  { id: "override", label: "Overrides" },
-                  { id: "refused", label: "Refused or stale" },
-                  { id: "access", label: "Record access" },
-                ]}
+          <Card
+            className={cx(thirdEdition.registerCard, adminEmpty && eventList.fullWidth)}
+            aria-labelledby="governance-review-title"
+          >
+            {adminEmpty ? (
+              <h2 id="governance-review-title" className="sr-only">
+                Waiting for review
+              </h2>
+            ) : (
+              <CardHead
+                id="governance-review-title"
+                icon={ShieldCheck}
+                title="Waiting for review"
+                meta={<Count n={toReview.length} />}
+                aside={
+                  <span className={thirdEdition.quietText}>
+                    {chip
+                      ? `${chipCount} of ${toReview.length} highlighted, all rows stay`
+                      : "Overrides, refused actions and record access, now with break glass. Newest first."}
+                  </span>
+                }
               />
-              <span className={thirdEdition.quietText} data-testid="ward-governance-break-glass-source">
-                {accessReview.problem
-                  ? "Break glass could not be read from the server"
-                  : accessReview.from === "server"
-                    ? "Break glass is read from the server"
-                    : "Break glass openings here are synthetic"}
-              </span>
-            </div>
-            <EventTable
-              label="Waiting for review"
-              isDim={(event) => !chipMatches(event)}
-              rows={toReview}
-              selected={selected}
-              now={now}
-              patientOf={patientOf}
-              reviewState={reviewState}
-              onChoose={choose}
-              onKey={(event) => rowKey(event, toReview)}
-              empty={
-                <div className={thirdEdition.emptyBlock}>
-                  <ClipboardList aria-hidden="true" size={16} />
-                  <h3>Nothing waiting for review</h3>
-                  <p>
-                    {reviewable.length > 0
-                      ? "Every recorded event has been reviewed."
-                      : "No override audit is recorded in this session."}
-                  </p>
-                </div>
-              }
-            />
+            )}
+            {adminEmpty ? null : (
+              <div className={cx(thirdEdition.filterRow, thirdEdition.reviewFilter)}>
+                <Segmented<"all" | "override" | "refused" | "access">
+                  label="Show in the review list"
+                  value={chip === "override" || chip === "refused" || chip === "access" ? chip : "all"}
+                  onChange={(next) => setChip(next === "all" ? null : next)}
+                  items={[
+                    { id: "all", label: "All" },
+                    { id: "override", label: "Overrides" },
+                    { id: "refused", label: "Refused or stale" },
+                    { id: "access", label: "Record access" },
+                  ]}
+                />
+                <span className={thirdEdition.quietText} data-testid="ward-governance-break-glass-source">
+                  {accessReview.problem
+                    ? "Break glass could not be read from the server"
+                    : accessReview.from === "server"
+                      ? "Break glass is read from the server"
+                      : "Break glass openings here are synthetic"}
+                </span>
+              </div>
+            )}
+            {adminEmpty ? (
+              <div className={thirdEdition.emptyBlock}>
+                <ClipboardList aria-hidden="true" size={16} />
+                <h3>Nothing waiting for review</h3>
+                <p>
+                  {reviewable.length > 0
+                    ? "Every recorded event has been reviewed."
+                    : "No override, refused action or record access this session."}{" "}
+                  {/* Role (access admin): who opened which record lives in Settings, so point there. */}
+                  <Link href="/ward-flow/settings#access" className={eventList.accessLink}>
+                    Open the Access log
+                  </Link>
+                </p>
+              </div>
+            ) : (
+              <EventTable
+                label="Waiting for review"
+                isDim={(event) => !chipMatches(event)}
+                rows={toReview}
+                selected={selected}
+                now={now}
+                patientOf={patientOf}
+                reviewState={reviewState}
+                onChoose={choose}
+                onKey={(event) => rowKey(event, toReview)}
+                empty={
+                  <div className={thirdEdition.emptyBlock}>
+                    <ClipboardList aria-hidden="true" size={16} />
+                    <h3>Nothing waiting for review</h3>
+                    <p>
+                      {reviewable.length > 0
+                        ? "Every recorded event has been reviewed."
+                        : "No override audit is recorded in this session."}
+                    </p>
+                  </div>
+                }
+              />
+            )}
           </Card>
-          {placedDetail}
+          {/* Role (access admin): with nothing waiting, the review panel has nothing to act on. */}
+          {adminEmpty ? null : placedDetail}
         </div>
       ) : null}
 
@@ -846,7 +913,7 @@ function GovernanceSession({
               <CardHead
                 id="governance-gaps-title"
                 title="Sites and requirements"
-                aside={<span className={thirdEdition.quietText}>Done of applicable. A name opens Forms.</span>}
+                aside={<span className={thirdEdition.quietText}>Done / due</span>}
               />
               {sites.length === 0 ? (
                 <p className={thirdEdition.emptyCell}>No open form or recent move to check.</p>

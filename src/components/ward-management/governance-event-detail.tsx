@@ -15,6 +15,7 @@ import { movementHref, unitHref } from "./shell/ward-facade";
 import { Badge, Button, Card, EmptyState, StatusGlyph, buttonClass, cx } from "@/components/wf";
 import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
 import thirdEdition from "./governance-third-edition.module.css";
+import local from "./governance-event-list.module.css";
 import { EventFacts, FactList } from "./governance-event-facts";
 import {
   OUTCOME_TONE,
@@ -56,7 +57,7 @@ export function EventTable({
   allowed?: boolean;
 }) {
   return (
-    <div className={thirdEdition.capturedList}>
+    <div className={cx(thirdEdition.capturedList, local.list)}>
       <div className={thirdEdition.eventHeader} aria-hidden="true">
         <span>When</span>
         <span>What</span>
@@ -66,7 +67,13 @@ export function EventTable({
         <span>Review</span>
       </div>
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
-      <div className={thirdEdition.registerBody} role="region" aria-label={label} tabIndex={0} onKeyDown={onKey}>
+      <div
+        className={cx(thirdEdition.registerBody, local.registerBody)}
+        role="region"
+        aria-label={label}
+        tabIndex={0}
+        onKeyDown={onKey}
+      >
         {!allowed ? (
           <div className={thirdEdition.emptyBlock}>
             <Fingerprint aria-hidden="true" size={16} />
@@ -87,33 +94,33 @@ export function EventTable({
                 key={`${event.generation}-${event.id}`}
                 data-audit-row={event.id}
                 data-dim={isDim?.(event) ? "true" : undefined}
-                className={thirdEdition.eventRow}
+                className={cx(thirdEdition.eventRow, local.eventRow)}
                 aria-pressed={selected?.id === event.id}
                 aria-controls="governance-event-detail"
                 onClick={() => onChoose(event)}
               >
                 <span className={thirdEdition.eventTime}>{when(event.at, now)}</span>
                 <span className={thirdEdition.stack}>
-                  <strong className={thirdEdition.clip}>{actionLabels[event.action]}</strong>
-                  <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+                  <strong className={local.wrap}>{actionLabels[event.action]}</strong>
+                  <span className={cx(thirdEdition.quietText, local.wrap)}>
                     {glass ? reasonLabel(glass.reason) : categoryLabels[event.category]}
                   </span>
                 </span>
                 <span className={thirdEdition.stack}>
-                  <span className={thirdEdition.clip}>{subjectLabel(event, patientOf)}</span>
+                  <span className={local.wrap}>{subjectLabel(event, patientOf)}</span>
                   {subjectPerson(event, patientOf) ? (
-                    <span className={cx(thirdEdition.quietText, thirdEdition.clip, thirdEdition.umrn)}>
+                    <span className={cx(thirdEdition.quietText, local.wrap, thirdEdition.umrn)}>
                       {subjectPerson(event, patientOf)!.umrn}
                     </span>
                   ) : null}
                 </span>
                 {glass?.desk ? (
                   <span className={thirdEdition.stack}>
-                    <span className={thirdEdition.clip}>{shortDeskLabel(glass.desk)}</span>
-                    <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>{glass.place}</span>
+                    <span className={local.wrap}>{shortDeskLabel(glass.desk)}</span>
+                    <span className={cx(thirdEdition.quietText, local.wrap)}>{glass.place}</span>
                   </span>
                 ) : (
-                  <span className={thirdEdition.clip}>
+                  <span className={local.wrap}>
                     {event.actor.role ? shortRoleLabel(deskRoleLabel(event.actor.role)) : "Role unavailable"}
                   </span>
                 )}
