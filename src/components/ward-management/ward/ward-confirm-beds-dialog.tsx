@@ -16,12 +16,14 @@ import { formatWardOccupancy, type OccupancyFigure } from "@/components/ward-man
 import { plural } from "@/components/ward-management/ward-plural";
 import { wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { Button, Dialog } from "@/components/wf";
-import type { DialogAction } from "@/components/wf/dialog";
 
 import styles from "./ward-confirm-beds-dialog.module.css";
 import { useOptionalRouter } from "./ward-screen-helpers";
 
 const beds = (count: number) => plural(count, "bed", "beds");
+
+/** One footer button, as the kit Dialog takes it. */
+type DialogAction = NonNullable<Parameters<typeof Dialog>[0]["secondary"]>[number];
 
 export type WardConfirmBedsDialogProps = {
   open: boolean;

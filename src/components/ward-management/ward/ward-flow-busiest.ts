@@ -10,7 +10,7 @@ import type { WardFlowTab } from "./ward-home-tab-model";
 const FLOW_TABS: readonly WardFlowTab[] = ["referrals", "admissions", "discharges"];
 
 /** The list with the most rows; on a tie, the first in panel order (Referrals, Admissions, Discharges). */
-export function busiestFlowTab(counts: Readonly<Record<WardFlowTab, number>>): WardFlowTab {
+function busiestFlowTab(counts: Readonly<Record<WardFlowTab, number>>): WardFlowTab {
   return FLOW_TABS.reduce((best, tab) => (counts[tab] > counts[best] ? tab : best));
 }
 

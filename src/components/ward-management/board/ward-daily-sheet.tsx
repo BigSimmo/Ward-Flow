@@ -504,16 +504,17 @@ export function WardDailySheet({
         that takes no box, so the line still reads "3 left this ward" end to end. */}
       <div className={styles.tiles}>
         <FigureTile value={resolvedOutgoingCount} label={outgoingTileLabel(resolvedOutgoingBasis)} />
-        {/* Each tile names its period, so "pulled now" and "pulled in 24h" no longer read as one
-            figure with two values. */}
+        {/* Each tile names its period, so "pulled now" and "pulled since yesterday" no longer read as
+            one figure with two values. The period is the record's own (since yesterday), never a typed
+            hour window. */}
         <FigureTile value={resolvedIncomingPulled} label="pulled now" />
         <FigureTile value={resolvedIncomingWaitlisted} label="waiting, no bed" />
         <div className={styles.tileGroup} data-testid="ward-daily-sheet-since" style={TNUM}>
-          <FigureTile value={resolvedMovement.discharged} label="left in 24h" />
-          <FigureTile value={resolvedMovement.pulled} label="pulled in 24h" />
+          <FigureTile value={resolvedMovement.discharged} label="left since yesterday" />
+          <FigureTile value={resolvedMovement.pulled} label="pulled since yesterday" />
           <FigureTile
             value={resolvedMovement.datesMoved}
-            label={`date${resolvedMovement.datesMoved === 1 ? "" : "s"} moved in 24h`}
+            label={`date${resolvedMovement.datesMoved === 1 ? "" : "s"} moved since yesterday`}
           />
         </div>
       </div>
