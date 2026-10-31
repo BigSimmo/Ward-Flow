@@ -24,3 +24,9 @@
   font-weight: 600;
   color: var(--wf-ink-1);
 }
+
+/* Compact key's arrow between the two ends. */
+.arrow {
+  margin-inline: var(--wf-s-1);
+  color: var(--wf-ink-3);
+}

@@ -115,7 +115,7 @@ describe("Q004 refinement interaction regressions", () => {
     // first tap to intercept, so neither list offers a Placement action at rest.
     renderCoordinator();
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
-    expect(screen.getByRole("radio", { name: /^My list/u })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: /^My List/u })).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
 
@@ -134,7 +134,7 @@ describe("Q004 refinement interaction regressions", () => {
     fireEvent.click(within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!);
     expect(screen.getByRole("complementary", { name: "Placement" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: /^My list/u }));
+    fireEvent.click(screen.getByRole("radio", { name: /^My List/u }));
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
   });
@@ -142,7 +142,7 @@ describe("Q004 refinement interaction regressions", () => {
   it("highlights exactly as many queue rows as the hero's Overdue count says", () => {
     renderCoordinator();
     const hero = screen.getByRole("region", { name: /^\d+ open ED journeys, \d+ beds? ready$/u });
-    const chip = within(hero).getByRole("button", { name: /Overdue/u });
+    const chip = within(hero).getByRole("button", { name: /Past target/u });
     const count = Number(chip.textContent!.match(/\d+/u)![0]);
     expect(count, "the seed has no overdue movement, so this test proves nothing").toBeGreaterThan(0);
 
