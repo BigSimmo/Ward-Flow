@@ -2,6 +2,7 @@
 
 // shell-next (Josh, 30 Oct 2026): the sidebar and header redesign, forked from shell/. Fork of src/components/ward-management/shell/ward-bar.tsx: the mock-ups' app bar, with Josh's 30 Oct 2026 fixes.
 
+import { nextRouteTitle } from "@/components/ward-redesign/shell-next/next-route-title";
 import dynamic from "next/dynamic";
 import { WardBarFrame } from "@/components/ward-management/shell/ward-chrome-frame";
 import { RotateCcwClock, Wrench } from "lucide-react";
@@ -398,7 +399,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
   }, []);
 
   const place = wardPlaceFor(pathname, units);
-  const routeTitle = wardBarRouteTitle(pathname, place, isPhone);
+  const appRouteTitle = wardBarRouteTitle(pathname, place, isPhone);
   // Back (Josh, 20 Oct 2026): drill-down screens lead with Back; rail and dock pages keep Menu.
   const deskHomeHref = useDeskHomeHref();
   const backHref = wardBackParent(pathname, deskHomeHref);
@@ -932,6 +933,8 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
   // The route's place, else the desk's own place (#838): a ward desk never reads "Statewide".
   const { scope } = deskAccess;
   const deskPlace = useMemo(() => deskPlaceLabel(deskAccess, units), [deskAccess, units]);
+  // A placed desk's own home page is named for the page, then the place ("My ward / Dabakarn").
+  const routeTitle = nextRouteTitle(appRouteTitle, pathname, deskHomeHref, deskAccess, deskPlace);
   const fixedService = useMemo(() => fixedServiceFor(pathname, place, units, scope), [pathname, place, units, scope]);
 
   const isFixedJurisdiction = fixedService !== undefined || deskPlace !== undefined;
@@ -1032,8 +1035,8 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       >
         {/* Josh, 31 Oct 2026 (after seeing the new frame): today's order is back, the page name first
             and then the place's dropdown, with no "›" and no "?" beside the title (Help stays in the
-            rail). A desk's own home page is named for its place ("Dabakarn"), so the place is not
-            repeated there. */}
+            rail). A desk's own home page reads "My ward", "My ED", "My team" or "My jobs", then its
+            place (`next-route-title.ts`), so the place is never said twice. */}
         <div className={styles.titleGroup}>
           <span
             className={styles.place}
