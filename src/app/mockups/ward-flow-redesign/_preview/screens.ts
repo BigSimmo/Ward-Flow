@@ -66,7 +66,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "transport", label: "Transport", group: "Desks", appPath: "/ward-flow/transport/officer" },
   { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
   { slug: "discharges", label: "Discharges", group: "Work and reports", appPath: "/ward-flow/discharges" },
-  { slug: "wards", label: "All wards", group: "Work and reports", appPath: "/ward-flow/wards" },
   { slug: "statistics", label: "Statistics", group: "Work and reports", appPath: "/ward-flow/statistics" },
   { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
@@ -299,13 +298,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Capacity",
     group: "As site bed manager",
     appPath: "/ward-flow/capacity",
-    role: ROLE_DESKS["bed-manager"],
-  },
-  {
-    slug: "as-bed-manager-wards",
-    label: "All wards",
-    group: "As site bed manager",
-    appPath: "/ward-flow/wards",
     role: ROLE_DESKS["bed-manager"],
   },
   {
