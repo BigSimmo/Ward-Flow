@@ -4,10 +4,10 @@ import { ChevronDown } from "lucide-react";
 
 import { Icon, Menu, buttonClass } from "@/components/wf";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { useOptionalRouter } from "@/components/ward-management/statistics/statistics-nav";
-import type { WardMetadata } from "@/components/ward-management/statistics/statistics-wards-index";
+import { useOptionalRouter } from "./statistics-nav";
+import type { WardMetadata } from "./statistics-wards-index";
 
-/** The hero's Change ward menu, moved out of the One ward fork to keep it under the file cap. */
+/** The hero's Change ward menu, split out of statistics-ward-screen.tsx to keep it under the file cap. */
 export function ChangeWard({
   units,
   currentId,

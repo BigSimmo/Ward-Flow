@@ -1,5 +1,6 @@
 /*
- * The phone bed grid on one ward's statistics (as-ward-statistics, coordinator review 31 Oct 2026).
+ * The phone bed grid on one ward's statistics, for a ward desk (coordinator review 31 Oct 2026), and
+ * the swatches of the compact bed map's legend.
  * An even grid (the columns divide the beds where they can, so no bed sits alone on a row), each
  * state its own fill in the Capacity bed map's colours, and a legend with the same swatches.
  * Tokens only; the fills are redefined by the theme, so dark mode follows.

@@ -11,11 +11,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** profile rows the header already shows, and Service in view (a one-ward desk picks no service).",
     "**Round 3:** this view is now the one Settings component with its ward differences marked ROLE BRANCH (ward), not a second copy. Rules show values as words (the near-empty steppers were fixed in round 2), the timing set reads 'Standard timings' instead of a greyed switch, and the profile card's Appearance row is gone (it repeated the Display card beside it).",
   ],
-  "as-ward-statistics": [
-    "**As the nurse in charge**, Statistics opens Dabakarn's own ward page as counts, where the real menu sends a ward desk (D-80), not the network page.",
-    "**Removed:** the Admission roster card that only said people are not listed.",
-    "**Still open:** the bed map, Beds now and the hero all show bed states; merge them?",
-  ],
   "as-ed-home": [
     "**As the ED clinician**, the page opens on Peel ED's own board. The strip of other EDs is gone: with scoped data each tile only said 'Not shown at this desk'.",
     "**New:** on the phone the board comes first, then the access-target card.",
@@ -239,15 +234,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** By service opens on the first two services, then "Show 3 more services, 11 wards"; One list opens on the first eight wards. Pressing a chip shows every ward, because highlighting never hides one.',
     '**Still open:** folding the empty teams into one "teams with nobody in a bed" row is not built here.',
     "**Round 2:** the phone title reads 'All wards', as on desktop; it said '14 wards over 85%', which the toggle under it already shows. Phone rows say 'held up' and show only parts that are not nought.",
-  ],
-  "statistics-unit": [
-    "**Built from a copy of today's ward statistics screen**, so Change ward, the next and previous arrows, Export the figures, the roster search, filters and CSV, and the phone view work as now.",
-    "**New:** the bed map uses small tiles, nine to a row, shaded darker the longer the stay (the four Length of stay bands), with a small key. The tiles still come from the app's own bed-state count.",
-    "**New:** the right column holds Beds now, Discharge planning and Referrals into ward; Discharge barriers moves under the two charts, so both columns end closer together.",
-    "**Point 10:** the admission roster is the admissions table, built only from the ward's real synthetic admissions. It shows the first 8 rows, then Show more; CSV still exports every matching row.",
-    '**Kept:** every figure, the legend, the screen-reader wording and the executive "people not listed" privacy notice.',
-    "**Still open:** the Referrals card ends with some empty space, and the phone bed strip is not yet shaded by stay.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "statistics-weekly": [
     "**Built from a copy of today's weekly report**, so the week picker, Print, the period line and every measure work as now, all from the app's own weekly and pilot measures.",

@@ -4,9 +4,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   BedDouble,
-  Building2,
   CalendarClock,
-  ChevronDown,
   Clock,
   Download,
   FileText,
@@ -23,16 +21,14 @@ import {
   CardBody,
   ColumnChart,
   HeroStat,
-  Icon,
-  Menu,
-  PhoneListRow,
   Segmented,
   SrOnly,
   StatusGlyph,
   TextInput,
-  buttonClass,
+  ShowMoreRow,
   durMinutes,
   cx,
+  phoneRows,
   tableClasses,
   useIsPhone,
 } from "@/components/wf";
@@ -50,13 +46,15 @@ import { wardReferralTally } from "@/components/ward-management/statistics/stati
 import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
-  STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
+// D-91: the one unit finder, on the Summary page. It still lives with the Statistics mock-up until
+// that page is built; repoint this import then.
+import { STATISTICS_UNIT_FINDER_HREF } from "./statistics-view-switch";
+import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
-import { MINUTES_PER_DAY, dayOf, splitDuration, formatSheetMoment } from "@/components/ward-management/ward-clock";
+import { MINUTES_PER_DAY, dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -64,20 +62,13 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { wardStatistics } from "@/components/ward-management/ward-statistics";
 
 import { countAxisMax } from "./statistics-axis";
-import {
-  BED_MAP_LABELS,
-  StatisticsBedMap,
-  StatisticsBedMapLegend,
-  bedMapCells,
-  type BedMap,
-} from "./statistics-bed-map";
-import { PhoneBody, PhoneList, PhonePinnedAction, phoneBodyStyles as phone } from "./statistics-phone-parts";
+import { StatisticsBedMap, StatisticsBedMapLegend, bedMapCells } from "./statistics-bed-map";
+import { PhoneBody, phoneBodyStyles as phone } from "./statistics-phone-parts";
 import { dateOf, fromToday, isPastDate, weekdayOf } from "./statistics-dates";
 import { downloadCsv } from "./statistics-csv";
 import { StatCard, StatisticsPage, useStatisticsLive } from "./statistics-hero";
 import { HeroTool, UnitStepper } from "./statistics-hero-tools";
-import { FlushRow, FlushStack, Follow } from "./statistics-layout";
-import { useOptionalRouter } from "./statistics-nav";
+import { FlushRow, FlushStack } from "./statistics-layout";
 import { occupancyPercent, occupiedBeds } from "./statistics-occupancy";
 import {
   ExecutiveStatisticsUnavailable,
@@ -89,11 +80,16 @@ import {
   withheldBar,
 } from "./statistics-small-numbers";
 import styles from "./statistics-v6.module.css";
+import { BedsNowCard, ReferralsCard } from "./statistics-ward-cards";
+import { ChangeWard } from "./statistics-ward-change-ward";
+import { CompactBedMap } from "./statistics-ward-compact-bed-map";
+import compact from "./statistics-ward-compact.module.css";
+import { ADMISSION_STATE_LABELS, ROSTER_FIRST_ROWS, WardPhone, stayDaysOf } from "./statistics-ward-phone";
 import ward from "./statistics-ward.module.css";
 
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import type { WardDetailModel, WardMetadata, ReadyView } from "./statistics-wards-index";
+import type { WardDetailModel, ReadyView } from "./statistics-wards-index";
 
 type WardSlots = { phone: ReactNode; bedMap: ReactNode; stay: ReactNode; roster: ReactNode };
 const exact = exactStatisticsCount;
@@ -347,8 +343,8 @@ function OperationalWardScreen({
               because a page showing the wrong ward under the right heading is worse than a page showing nothing.
             </p>
             <p>
-              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
-                Choose a ward from the comparisons page
+              <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ward-chooser-link">
+                Choose a ward with Open a unit
               </Link>{" "}
               to reach one that does exist.
             </p>
@@ -389,12 +385,9 @@ function OperationalWardScreen({
         phone: (
           <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
         ),
-        bedMap: (
-          <>
-            <StatisticsBedMapLegend counts={bedMap.counts} />
-            <StatisticsBedMap map={bedMap} wardName={unit.name} />
-          </>
-        ),
+        // Final round (31 Oct 2026): the compact map carries its own legend, with the swatches of
+        // its state fills (statistics-unit-bed-map.tsx), so the app's legend is not drawn above it.
+        bedMap: <CompactBedMap map={bedMap} wardName={unit.name} />,
         stay: (
           <StayCard
             bands={STAY_BANDS.map((band) => ({
@@ -418,8 +411,6 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
     site,
     statistics,
     capacity,
-    pendingPreparation,
-    openBeds,
     emptyBeds,
     allocatableBeds,
     wardOccupancy,
@@ -440,6 +431,8 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   } = model;
   const section = statisticsSectionById("units")!;
   const isPhone = useIsPhone();
+  // Role view (nurse in charge), D-80: the ward desk's Statistics is this page, as counts.
+  const wardDesk = useEffectiveWardAccess().role === "ward";
   const small = statisticsCountText;
   const parts = (counts: StatisticsCount[]) => counts.map((count) => small(count));
   const headlineTotal = ready === null ? statistics.readyToLeaveCannot : ready.total;
@@ -453,7 +446,6 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
   const outcomes = statistics.dischargeDateOutcomes;
   const [metShown = 0, missedShown = 0] = parts([outcomes.met, outcomes.missed]);
   const movedShown = small(outcomes.moved);
-  const excludedShown = small(statistics.emptyBedIncoherentCount);
 
   return (
     <StatisticsPage
@@ -464,8 +456,9 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
       title={unit.name}
       titleAction={
         openUnits.length > 1 ? (
-          <span className={ward.titleTools}>
-            <ChangeWard units={openUnits} currentId={unit.id} />
+          // Phone (Josh, 31 Oct 2026): previous, Change ward and next are Home's hero pills.
+          <span className={cx(ward.titleTools, compact.heroPillTools, phoneRows.heroPills)}>
+            <ChangeWard units={openUnits} currentId={unit.id} className={phoneRows.heroPill} />
             <UnitStepper
               noun="ward"
               currentId={unit.id}
@@ -539,20 +532,41 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
       stats={
         <>
           {/* Five figures at most (v10). Beds is on both bed cards' heads, so the hero leaves it
-              out; the export still carries it. */}
+              out; the export still carries it.
+              ROLE BRANCH (ward): the bed totals live here once (Josh, 30 Oct 2026). Beds now is gone: its
+              Empty and Allocatable join the hero, Pending is the legend's "Being made ready", Open now
+              (Ready less Being made ready) reads from those two, and the oldest pull is said on Pulled.
+              Average stay and Due out are on their own cards, so the hero keeps five bed figures. */}
           <HeroStat value={wardOccupancy.inUse} label={`In use, ${occupancyPct}%`} />
           <HeroStat
             value={wardOccupancy.pulled}
             label={
               <span className={styles.flagged}>
                 {wardOccupancy.pulled > 0 ? <StatusGlyph tone="warning" size={9} /> : null}
-                Pulled, not arrived
+                {wardDesk && oldestPulled !== null
+                  ? `Pulled, oldest ${durMinutes(oldestPulled)}`
+                  : "Pulled, not arrived"}
               </span>
             }
           />
           <HeroStat value={<span data-testid="ward-stat-capacity-ready">{capacity.available}</span>} label="Ready" />
-          {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
-          <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
+          {wardDesk ? (
+            <>
+              <HeroStat
+                value={<span data-testid="ward-stat-capacity-allocatable">{allocatableBeds}</span>}
+                label="Allocatable"
+              />
+              <HeroStat value={<span data-testid="ward-stat-capacity-empty">{emptyBeds}</span>} label="Empty" />
+              {/* The phone has no stay or discharge cards, so these two stay in its hero. */}
+              {isPhone && averageStay !== null ? <HeroStat value={`${averageStay} days`} label="Average stay" /> : null}
+              {isPhone ? <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" /> : null}
+            </>
+          ) : (
+            <>
+              {averageStay === null ? null : <HeroStat value={`${averageStay} days`} label="Average stay" />}
+              <HeroStat value={small(dueThisWeek)} label="Due out, 7 days" />
+            </>
+          )}
         </>
       }
     >
@@ -560,8 +574,11 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
         slots.phone
       ) : (
         <>
-          {/* Direction A: the bed map and its two charts beside the bed figures. Each column's last card
-          (or the chart row) takes the spare height, so both columns end on the same line. */}
+          {/* The bed map, length of stay and the discharge barriers on the left. The coordinator's page sets
+              referrals beside length of stay and keeps Beds now, Discharge planning and Expected discharges
+              on the right (Josh, 30 Oct 2026: referrals at the column's foot stretched into blank space).
+              ROLE BRANCH (ward): Beds now's figures are in the hero, so the right column is Discharge
+              planning, Expected discharges and Referrals, and both columns end near one height. */}
           <FlushRow layout="lead2" data-testid="ward-statistics-ward-measures">
             <FlushStack>
               <StatCard
@@ -573,74 +590,19 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
               >
                 <CardBody className={styles.bodyStack}>{slots.bedMap}</CardBody>
               </StatCard>
-              <FlushRow layout="halves" className={ward.chartRow}>
-                {slots.stay}
-                <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
-                  <CardBody className={styles.bodyStack}>
-                    <p className={ward.headFigure}>Next 7 days</p>
-                    <ColumnChart
-                      label="Expected discharges by day, next 7 days"
-                      columns={dueByDay.map((day) => ({
-                        id: String(day.offset),
-                        label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
-                        ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
-                      }))}
-                    />
-                  </CardBody>
-                </StatCard>
-              </FlushRow>
+              {wardDesk ? (
+                slots.stay
+              ) : (
+                <FlushRow layout="halves" className={ward.chartRow}>
+                  {slots.stay}
+                  <ReferralsCard referrals={referrals} statistics={statistics} halfWidth />
+                </FlushRow>
+              )}
+              <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
             </FlushStack>
 
             <FlushStack>
-              <StatCard
-                icon={BedDouble}
-                title="Beds now"
-                aside={`${unit.beds} beds`}
-                id="ward-beds"
-                data-testid="ward-statistics-ward-beds-now"
-              >
-                {/* Ready, pulled and closed are in the hero and the bed map legend, so this card keeps
-                    only the figures found nowhere else (UX audit 21 Oct 2026). */}
-                <CardBody className={styles.bodyStack}>
-                  <dl className={styles.tiles} aria-label="Current bed figures">
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Empty</dt>
-                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-empty">
-                        {emptyBeds}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Allocatable</dt>
-                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-allocatable">
-                        {allocatableBeds}
-                        {allocatableBeds === 0 && <small>no free bed</small>}
-                      </dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Open now</dt>
-                      <dd className={styles.tileValue}>{openBeds}</dd>
-                    </div>
-                    <div className={styles.tile}>
-                      <dt className={styles.tileLabel}>Pending</dt>
-                      <dd className={styles.tileValue} data-testid="ward-stat-capacity-pending-preparation">
-                        {pendingPreparation}
-                      </dd>
-                    </div>
-                  </dl>
-                  {oldestPulled === null ? null : (
-                    <p className={ward.factLine}>
-                      <span className={styles.flagged}>
-                        <StatusGlyph tone="warning" size={9} />
-                        Oldest pulled bed
-                      </span>
-                      <span>
-                        <b>{durMinutes(oldestPulled)}</b> not arrived
-                      </span>
-                    </p>
-                  )}
-                </CardBody>
-              </StatCard>
-
+              {wardDesk ? null : <BedsNowCard model={model} />}
               <StatCard
                 icon={FileText}
                 title="Discharge planning"
@@ -730,263 +692,45 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
                   </div>
                 </CardBody>
               </StatCard>
+              <StatCard icon={CalendarClock} title="Expected discharges" id="ward-discharges">
+                <CardBody className={styles.bodyStack}>
+                  {wardDesk ? (
+                    // Role view (nurse in charge): Due out leaves the hero, so its count heads the chart.
+                    <p className={ward.headFigure}>
+                      <b>{small(dueThisWeek)}</b> due in the next 7 days
+                    </p>
+                  ) : (
+                    <p className={ward.headFigure}>Next 7 days</p>
+                  )}
+                  <ColumnChart
+                    height={200}
+                    label="Expected discharges by day, next 7 days"
+                    columns={dueByDay.map((day) => ({
+                      id: String(day.offset),
+                      label: day.offset === 0 ? "Today" : weekdayOf(now + day.offset * MINUTES_PER_DAY, dayZero),
+                      ...withheldBar(exact(day.count) ?? 0, dueShown[day.offset] ?? small(day.count)),
+                    }))}
+                  />
+                </CardBody>
+              </StatCard>
+              {wardDesk ? <ReferralsCard referrals={referrals} statistics={statistics} /> : null}
             </FlushStack>
           </FlushRow>
 
-          <FlushRow layout="halves">
-            <StatCard
-              icon={Users}
-              title="Referrals into ward"
-              aside="Recorded for this ward"
-              id="ward-referrals"
-              data-testid="ward-statistics-ward-referrals-panel"
-            >
-              <CardBody className={styles.bodyStack}>
-                <section data-testid="ward-stat-referrals" aria-label="Referrals into this ward">
-                  <dl className={styles.figures}>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-stat-referrals-asked">
-                        {small(referrals.askedAndWaiting)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Asking now</dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-stat-referrals-accepted">
-                        {small(referrals.everAccepted)}
-                      </dd>
-                      <dt className={styles.figureLabel}>Acceptances still standing</dt>
-                    </div>
-                    <div className={styles.figure}>
-                      <dd className={styles.figureValue} data-testid="ward-stat-referrals-declined">
-                        {small(referrals.everDeclined)}
-                      </dd>
-                      <dt className={styles.figureLabel}>
-                        <StatusGlyph tone="closed" size={9} />
-                        Ever declined
-                      </dt>
-                    </div>
-                  </dl>
-                  <SrOnly>
-                    Asking now counts referrals waiting on this ward right now. Acceptances still standing includes
-                    arrivals, but excludes withdrawn acceptances. Ever declined counts recorded declines. One movement
-                    can appear in both accepted and declined counts, so the three do not add up.
-                  </SrOnly>
-                </section>
-                {statistics.averageEmptyBedMinutes !== null || positive(statistics.emptyBedIncoherentCount) ? (
-                  <div data-testid="ward-statistics-ward-admissions-discharges">
-                    <h3 className={ward.subHead}>Pull to arrival</h3>
-                    <div className={styles.tiles}>
-                      <div className={styles.tile} data-testid="ward-stat-empty-bed-minutes">
-                        <span className={styles.tileLabel}>Average</span>
-                        {statistics.averageEmptyBedMinutes === null ? (
-                          <span className={styles.tileValue}>
-                            <span aria-hidden="true">none</span>
-                            <SrOnly>
-                              No bed on this ward has a usable pair of instants, a bed given away and a person arriving,
-                              with the arrival not earlier than the pull, so there is no empty stretch to average.
-                            </SrOnly>
-                          </span>
-                        ) : (
-                          <span className={styles.tileValue}>{splitDuration(statistics.averageEmptyBedMinutes)}</span>
-                        )}
-                      </div>
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>Shortest</span>
-                        <span className={styles.tileValue} data-testid="ward-stat-empty-bed-shortest">
-                          {statistics.emptyBedMinutesShortest === null
-                            ? "none"
-                            : splitDuration(statistics.emptyBedMinutesShortest)}
-                        </span>
-                      </div>
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>Longest</span>
-                        <span className={styles.tileValue} data-testid="ward-stat-empty-bed-longest">
-                          {statistics.emptyBedMinutesLongest === null
-                            ? "none"
-                            : splitDuration(statistics.emptyBedMinutesLongest)}
-                        </span>
-                      </div>
-                      <div className={styles.tile} data-testid="ward-stat-empty-bed-incoherent">
-                        <span className={styles.tileLabel}>Excluded</span>
-                        <span className={styles.tileValue}>{excludedShown}</span>
-                        <SrOnly>
-                          {excludedShown === 1 ? "admission on this ward records" : "admissions on this ward record"} an
-                          arrival earlier than the bed was given away.
-                          {positive(statistics.emptyBedIncoherentCount)
-                            ? ` That cannot be true, so ${excludedShown === 1 ? "it is" : "they are"} excluded from the average and counted here instead.`
-                            : ""}
-                        </SrOnly>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-              </CardBody>
-            </StatCard>
-            <Follow className={ward.followShort}>
-              <Barriers ready={ready} error={blockedByReasonError} headlineTotal={headlineTotal} />
-            </Follow>
-          </FlushRow>
-
-          {countsOnly ? (
+          {/* Role view (nurse in charge), D-80: the ward desk's counts grant lists nobody, so the roster
+              card, which would only say so, is left out. Its counts are in the cards above. */}
+          {!countsOnly ? (
+            slots.roster
+          ) : wardDesk ? null : (
             <StatCard icon={Users} title="Admission roster" data-testid="ward-statistics-ward-roster">
               <CardBody>
                 <PeopleNotListed testId="ward-statistics-ward-roster-not-listed" />
               </CardBody>
             </StatCard>
-          ) : (
-            slots.roster
           )}
         </>
       )}
     </StatisticsPage>
-  );
-}
-
-/** The bed strip's legend order and words on the phone (v10 phone). */
-const PHONE_BED_LEGEND: { kinds: BedMap["cells"][number]["kind"][]; label: string }[] = [
-  { kinds: ["occupied", "leave"], label: BED_MAP_LABELS.occupied },
-  { kinds: ["pulled"], label: "Pulled" },
-  { kinds: ["closed"], label: BED_MAP_LABELS.closed },
-  { kinds: ["prep"], label: "Making ready" },
-  { kinds: ["ready"], label: BED_MAP_LABELS.ready },
-];
-
-/**
- * One ward on a phone (v10 phone): the beds as a strip of boxes grouped by state (the model has no
- * bed numbers), then the roster, the discharges due in seven days and the blocked discharges as
- * one list behind a segmented control, and "Open the ward" pinned at the foot.
- */
-function WardPhone({
-  unit,
-  map,
-  current,
-  now,
-  dayZero,
-  leaveBeds,
-}: {
-  unit: Unit;
-  map: BedMap;
-  current: Admission[];
-  now: number;
-  dayZero: Date;
-  leaveBeds: readonly { admissionId: string }[];
-}) {
-  const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
-  const { countsOnly } = useStatisticsCounts();
-  const byStay = (a: Admission, b: Admission) => (stayDaysOf(b, now) ?? -1) - (stayDaysOf(a, now) ?? -1);
-  const roster = [...current].sort(byStay);
-  const discharges = current
-    .filter(
-      (admission) =>
-        admission.state !== "pulled" &&
-        admission.expectedDischargeAt !== null &&
-        admission.expectedDischargeAt >= now &&
-        dayOf(admission.expectedDischargeAt) < dayOf(now) + 7,
-    )
-    .sort((a, b) => (a.expectedDischargeAt ?? 0) - (b.expectedDischargeAt ?? 0));
-  const blockers = current.filter((admission) => admission.blockReason !== null).sort(byStay);
-  const shown = tab === "roster" ? roster : tab === "discharges" ? discharges : blockers;
-
-  return (
-    <PhoneBody testId="ward-statistics-ward-phone">
-      <div className={phone.bedCard} data-testid="ward-statistics-ward-phone-beds">
-        <ul className={phone.bedStrip} aria-label={`${unit.name}, ${unit.beds} beds by state`}>
-          {map.cells.map((cell, index) => (
-            <li
-              key={index}
-              className={phone.bed}
-              data-kind={cell.kind}
-              title={BED_MAP_LABELS[cell.kind]}
-              aria-label={BED_MAP_LABELS[cell.kind]}
-            />
-          ))}
-        </ul>
-        <ul className={phone.bedLegend} aria-label="Beds by state">
-          {PHONE_BED_LEGEND.map((entry) => (
-            <li key={entry.label}>
-              {entry.label}
-              <b>{entry.kinds.reduce((sum, kind) => sum + map.counts[kind], 0)}</b>
-            </li>
-          ))}
-        </ul>
-      </div>
-      {countsOnly ? (
-        // The three lists are one row per admission, and their tab counts only count those rows.
-        <PeopleNotListed testId="ward-statistics-ward-phone-not-listed" />
-      ) : (
-        <>
-          <Segmented<"roster" | "discharges" | "blockers">
-            className={cx(phone.seg, phone.stickySeg)}
-            size="md"
-            label="Ward list"
-            value={tab}
-            onChange={setTab}
-            items={[
-              { id: "roster", label: "Roster", count: roster.length },
-              { id: "discharges", label: "Discharges", count: discharges.length },
-              { id: "blockers", label: "Blockers", count: blockers.length },
-            ]}
-          />
-          {shown.length === 0 ? (
-            <p className={phone.note}>
-              {tab === "roster"
-                ? "No current admissions recorded"
-                : tab === "discharges"
-                  ? "Nobody has a discharge date in the next 7 days"
-                  : "No current admission carries a blocker"}
-            </p>
-          ) : (
-            <PhoneList
-              label={
-                tab === "roster" ? "Admission roster" : tab === "discharges" ? "Due out, 7 days" : "Discharges held up"
-              }
-            >
-              {shown.map((admission) => {
-                const days = stayDaysOf(admission, now);
-                const onLeave = leaveBeds.some((bed) => bed.admissionId === admission.id);
-                const status = onLeave ? "On leave" : ADMISSION_STATE_LABELS[admission.state];
-                return (
-                  <PhoneListRow
-                    key={admission.id}
-                    as="li"
-                    name={<span className={phone.mono}>{admission.id}</span>}
-                    meta={`${tab === "blockers" && admission.blockReason ? admission.blockReason : status}${
-                      admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
-                        ? " · past date"
-                        : ""
-                    }`}
-                    value={
-                      days === null ? (
-                        "none"
-                      ) : (
-                        <>
-                          {days} <small className={phone.unit}>d</small>
-                        </>
-                      )
-                    }
-                    time={
-                      admission.expectedDischargeAt === null ? (
-                        "no date"
-                      ) : isPastDate(admission.expectedDischargeAt, now) ? (
-                        <span className={phone.flagged}>
-                          <StatusGlyph tone="warning" size={9} />
-                          {dateOf(admission.expectedDischargeAt, dayZero)}
-                        </span>
-                      ) : (
-                        dateOf(admission.expectedDischargeAt, dayZero)
-                      )
-                    }
-                  />
-                );
-              })}
-            </PhoneList>
-          )}
-        </>
-      )}
-      <PhonePinnedAction icon={Building2} href={unitHref(unit.id)} testId="ward-statistics-ward-phone-open">
-        Open the ward
-      </PhonePinnedAction>
-    </PhoneBody>
   );
 }
 
@@ -997,38 +741,6 @@ function WardPhone({
 function said(shown: number | string, one?: string, many?: string): string {
   if (shown === SMALL_NUMBER_NOT_SHOWN) return many ? `an unstated number of ${many}` : "an unstated number";
   return many ? `${shown} ${shown === 1 ? one : many}` : String(shown);
-}
-
-/** Whole days since arrival, or null when the person has not arrived (or the record says later). */
-function stayDaysOf(admission: Admission, now: number): number | null {
-  if (admission.arrivedAt === null || admission.arrivedAt > now) return null;
-  return Math.floor((now - admission.arrivedAt) / MINUTES_PER_DAY);
-}
-
-function ChangeWard({ units, currentId }: { units: WardMetadata[]; currentId: string }) {
-  const router = useOptionalRouter();
-  return (
-    <Menu
-      label="Change ward"
-      items={units.map((candidate) => ({
-        id: candidate.id,
-        label: candidate.name,
-        meta: candidate.siteCode,
-        disabled: candidate.id === currentId,
-        onSelect: () => {
-          const href = wardStatisticsHref(candidate.id);
-          if (router) router.push(href);
-          else window.location.assign(href);
-        },
-      }))}
-      trigger={(props) => (
-        <button {...props} type="button" className={buttonClass({ variant: "onHero", size: "sm" })}>
-          Change ward
-          <Icon icon={ChevronDown} size={14} />
-        </button>
-      )}
-    />
-  );
 }
 
 function StayCard({
@@ -1265,13 +977,6 @@ function Barriers({
 
 type RosterFilter = "all" | "no-date" | "long" | "blocked" | "pulled";
 
-const ADMISSION_STATE_LABELS: Record<Admission["state"], string> = {
-  waitlisted: "On waiting list",
-  pulled: "Pulled",
-  occupied: "In bed",
-  departed: "Departed",
-};
-
 const SEX_MARK: Record<string, string> = {
   Female: "F",
   Male: "M",
@@ -1294,6 +999,8 @@ function Roster({
 }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<RosterFilter>("all");
+  // Redesign (owner rule): a long roster opens on its first rows, then "Show more".
+  const [expanded, setExpanded] = useState(false);
 
   // The admission model records a ward, not a numbered bed: each row is a recorded admission.
   const rows = current.map((admission) => {
@@ -1324,6 +1031,7 @@ function Roster({
     if (!needle) return true;
     return `${row.admission.id} ${row.status} ${row.admission.blockReason ?? ""}`.toLowerCase().includes(needle);
   });
+  const visible = expanded ? shown : shown.slice(0, ROSTER_FIRST_ROWS);
 
   function exportCsv() {
     const lines = [
@@ -1409,7 +1117,7 @@ function Roster({
                 </td>
               </tr>
             ) : null}
-            {shown.map((row) => {
+            {visible.map((row) => {
               const { admission } = row;
               return (
                 <tr key={admission.id}>
@@ -1471,6 +1179,11 @@ function Roster({
           </tbody>
         </table>
       </div>
+      {shown.length > ROSTER_FIRST_ROWS ? (
+        <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
+          {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
+        </ShowMoreRow>
+      ) : null}
     </StatCard>
   );
 }

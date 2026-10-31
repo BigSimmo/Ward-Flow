@@ -5,16 +5,10 @@ import type { CSSProperties } from "react";
 import { SrOnly, StatusGlyph } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
-import {
-  BED_MAP_LABELS,
-  type BedMap,
-  type BedMapKind,
-} from "@/components/ward-management/statistics/statistics-bed-map";
-import base from "@/components/ward-management/statistics/statistics-bed-map.module.css";
-
-import legend from "@/components/ward-redesign/as-ward-statistics/ward-phone-beds.module.css";
-
-import styles from "./statistics-unit.module.css";
+import { BED_MAP_LABELS, type BedMap, type BedMapKind } from "./statistics-bed-map";
+import base from "./statistics-bed-map.module.css";
+import legend from "./statistics-ward-phone-beds.module.css";
+import styles from "./statistics-ward-compact.module.css";
 
 /** Which of the roster's own stay bands a whole-day stay falls in (the rule `stayBand` uses). */
 export function bandIndexOf(days: number): number {
@@ -23,10 +17,10 @@ export function bandIndexOf(days: number): number {
 }
 
 /**
- * Final round (31 Oct 2026): the legend of the phone grid (`as-ward-statistics`), the same five
+ * Final round (31 Oct 2026): the legend of a ward desk's phone grid, the same five
  * entries in the same order. A bed held for someone on leave shares the occupied fill and count.
  */
-const BED_LEGEND: { kinds: BedMapKind[]; label: string }[] = [
+export const BED_LEGEND: { kinds: BedMapKind[]; label: string }[] = [
   { kinds: ["occupied", "leave"], label: BED_MAP_LABELS.occupied },
   { kinds: ["pulled"], label: "Pulled" },
   { kinds: ["closed"], label: BED_MAP_LABELS.closed },
@@ -38,15 +32,15 @@ const BED_LEGEND: { kinds: BedMapKind[]; label: string }[] = [
  * The grid's columns, as the phone grid: ten at most, and where the beds divide evenly by 5 to 10,
  * that divisor, so no bed sits alone on a row (20 beds read 10 by 2, 24 read 8 by 3).
  */
-function bedColumns(count: number): number {
+export function bedColumns(count: number): number {
   if (count <= 10) return Math.max(count, 1);
   for (let cols = 10; cols >= 5; cols -= 1) if (count % cols === 0) return cols;
   return 10;
 }
 
 /**
- * Redesign: the ward's beds as small tiles in an even grid (final round, 31 Oct 2026: 20 beds read
- * 10 by 2, not 9, 9 and 2). Each state has its own fill, the phone grid's (`ward-phone-beds.module.css`),
+ * One ward's beds as small tiles in an even grid (final round, 31 Oct 2026: 20 beds read
+ * 10 by 2, not 9, 9 and 2). Each state has its own fill, the phone grid's (`statistics-ward-phone-beds.module.css`),
  * and the legend under the grid uses the same swatches, so the laptop and phone maps read alike. A bed
  * someone is in shows the stay in days; on leave says Leave. The cells come straight from the app's
  * `bedMapCells`, so the tiles still add up to the ward's beds.

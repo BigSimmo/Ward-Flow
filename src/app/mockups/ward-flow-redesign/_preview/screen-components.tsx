@@ -74,17 +74,9 @@ const StatisticsComparePage = dynamic<MockupPageProps>(() =>
 const StatisticsListPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/statistics-list/statistics-list-page").then((module) => module.StatisticsListPage),
 );
-const StatisticsUnitPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/statistics-unit/statistics-unit-page").then((module) => module.StatisticsUnitPage),
-);
 const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/statistics-weekly/statistics-weekly-page").then(
     (module) => module.StatisticsWeeklyPage,
-  ),
-);
-const AsWardStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-statistics/as-ward-statistics-page").then(
-    (module) => module.AsWardStatisticsPage,
   ),
 );
 const AsWardSettingsPage = dynamic<MockupPageProps>(() =>
@@ -122,9 +114,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   settings: SettingsPage,
   "statistics-compare": StatisticsComparePage,
   "statistics-list": StatisticsListPage,
-  "statistics-unit": StatisticsUnitPage,
   "statistics-weekly": StatisticsWeeklyPage,
-  "as-ward-statistics": AsWardStatisticsPage,
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
   "as-executive-settings": AsExecutiveSettingsPage,
