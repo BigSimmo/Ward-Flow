@@ -43,18 +43,11 @@
   gap: var(--wf-s-1);
   padding: var(--wf-s-3);
   border: 1px solid var(--wf-line);
-  border-left: 4px solid var(--wf-info);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
 }
 
-.preview[data-tone="danger"] {
-  border-left-color: var(--wf-danger);
-}
-
-.preview[data-tone="warning"] {
-  border-left-color: var(--wf-warning);
-}
+/* No side edges (Josh, 31 Oct 2026): the severity shows as the StatusGlyph in the preview's head. */
 
 .previewHead {
   display: flex;
