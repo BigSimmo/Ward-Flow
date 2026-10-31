@@ -154,7 +154,7 @@ export function WardBoardScreenNav({ unit }: { unit: Unit }) {
 export function WardBoardTools({
   sheetOpen,
   onToggleSheet,
-  units: allUnits,
+  units: everyWard,
   currentUnitId,
 }: {
   sheetOpen: boolean;
@@ -166,7 +166,7 @@ export function WardBoardTools({
   // lists only those, and is left out when there is just the one. Every other desk lists every ward.
   const access = useEffectiveWardAccess();
   const deskWardIds = access.role === "ward" && access.scope.kind === "ward" ? access.scope.unitIds : null;
-  const units = deskWardIds ? allUnits.filter((candidate) => deskWardIds.includes(candidate.id)) : allUnits;
+  const units = deskWardIds ? everyWard.filter((candidate) => deskWardIds.includes(candidate.id)) : everyWard;
   const showSwitch = !(deskWardIds && units.length <= 1);
   return (
     <div className={styles.tools}>

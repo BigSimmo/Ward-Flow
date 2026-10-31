@@ -545,17 +545,7 @@ export function WardDailySheet({
               <p className={styles.empty}>Nobody is recorded as coming in to this ward.</p>
             ) : (
               <ul className={styles.rows}>
-                <li className={styles.row}>
-                  <span className={styles.rowGlyph}>
-                    <StatusGlyph tone="info" />
-                  </span>
-                  <p className={styles.rowLead}>
-                    <span className={styles.rowLeadText}>Bed already given away</span>{" "}
-                    <span className={styles.rowValue} style={TNUM}>
-                      {resolvedIncomingPulled}
-                    </span>
-                  </p>
-                </li>
+                {/* Josh, 31 Oct 2026: no "Bed already given away" row; the Pulled now tile above says it. */}
                 <li className={styles.row}>
                   <span className={styles.rowGlyph}>
                     <StatusGlyph tone="neutral" />
