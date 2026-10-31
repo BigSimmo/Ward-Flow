@@ -43,9 +43,9 @@ export function WardShortcutsSheet({ onClose }: { onClose: () => void }) {
       }
     >
       <div className={styles.columns} data-testid="ward-shortcuts-list">
-        {SHORTCUT_GROUPS.map((group) => (
-          <section key={group} className={styles.column} aria-labelledby={`ward-shortcuts-${group}`}>
-            <h3 id={`ward-shortcuts-${group}`} className={styles.heading}>
+        {SHORTCUT_GROUPS.map((group, groupIndex) => (
+          <section key={group} className={styles.column} aria-labelledby={`ward-shortcuts-group-${groupIndex}`}>
+            <h3 id={`ward-shortcuts-group-${groupIndex}`} className={styles.heading}>
               {group}
             </h3>
             <dl className={styles.list}>

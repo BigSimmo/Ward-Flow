@@ -7,7 +7,7 @@ _Updated 2026-10-31 - Help redesign handover for PR #1119; Documentation owns._
 - **Built, not live.** The work is real app code on branch `claude/help-menu-design-review-a1isgp`, in draft
   pull request [#1119](https://github.com/BigSimmo/Ward-Flow/pull/1119). Staff see nothing until Josh merges it;
   the live site then picks it up at the next daily release (6 am Perth).
-- **Merging needs Josh's yes.** Merging also switches Show me on in demo and production (see D-90).
+- **Merging needs Josh's yes.** Merging does not switch Show me on in demo or production: D-91 and D-92 keep it off there.
 - **Screenshots** of the built Help (desktop, phone, dark mode, 31 October, synthetic data) are on a private page
   linked from a comment on #1119. Only Josh can open it unless he shares it.
 - **Open question for Josh:** is "How do I…" the right name for the first tab? Recommendation: keep it, because it
@@ -22,7 +22,7 @@ clicked on there is launched the interactive help part that highlights where it 
 He then answered three questions, recorded as **D-90** in `docs/ward-flow/decisions.md`:
 
 1. Build the real Help now, as an exception to the mock-up-first rule (D-74) for Help only.
-2. Switch Show me and Ask on everywhere (the `help-ask` switch was developer-only).
+2. Switch Show me and Ask on everywhere (the `help-ask` switch was developer-only). Later changed: D-91 and D-92 keep it on in development only.
 3. Put the common tasks in a new first tab, "How do I…".
 
 ## What staff will see
@@ -80,7 +80,7 @@ All paths are under `src/components/ward-management/help/` unless stated.
 | `ward-show-me.tsx`, `ward-tour.tsx`                               | The two players. Both use `ward-spotlight.ts` and `ward-tour.module.css`. Show me's card id `ward-show-me-card` keeps the phone dock visible (`shell/ward-phone-page-dock.module.css`).                                                          |
 | `ward-shortcuts-sheet.tsx`, `ward-help-content.ts`                | The shortcuts sheet, reading `KEYBOARD_SHORTCUTS` (each with `short` and `group`; `action` stays word for word with `desk-guides/interactions.md`).                                                                                              |
 | `ward-help-events.ts`, `ward-help-host.tsx`, `ward-help-link.tsx` | Opening Help (`HelpView` gains `"tasks"`; `openWardHelp(view, task)` can open a task), and the rail and phone-menu Help buttons, which open How do I….                                                                                           |
-| `ward-feature-flags.ts` (one folder up)                           | `help-ask` is on in development, demo and production.                                                                                                                                                                                            |
+| `ward-feature-flags.ts` (one folder up)                           | `help-ask` is on in development only (D-91, D-92).                                                                                                                                                                                               |
 
 **Adding a task with Show me:** add an entry to `HOW_TOS` with a `topic`, an answer under 330 characters, its `desks`
 and `go`, then `showMe` steps. Targets use `data-testid`, `id`, `data-setting` or visible text, never a class name;
@@ -125,6 +125,6 @@ Local runs on 30–31 October, on synthetic data:
 ## Next steps
 
 1. Josh reviews #1119 (the screenshot page is linked in its comments) and answers the tab-name question.
-2. Josh presses Merge when happy. Show me goes live at the next 6 am release.
+2. Josh presses Merge when happy. The Help redesign goes live at the next 6 am release. Show me stays off on demo and live (D-91, D-92).
 3. If hosted CI flags the phone script budget, follow D-82 (diagnose, trim, then raise by at most 5 KB with the reason).
 4. Whichever of #1118 and #1119 merges second resolves the two text conflicts as above.

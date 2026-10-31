@@ -54,7 +54,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     [target],
   );
   const { box, missing } = useSpotlight(targets, `${index}|${pathname}`);
-  usePlacedCard(cardRef, spotRef, box, device, step);
+  usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const { rootRef } = useModalFocus({
     open: true,

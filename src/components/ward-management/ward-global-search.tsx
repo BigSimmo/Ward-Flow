@@ -985,7 +985,9 @@ export function WardGlobalSearch({
       // want it (a surrounding form), and must never be turned into a navigation nobody chose.
       if (activeIndex >= 0) {
         event.preventDefault();
-        if (!openedAsHelp(options[activeIndex])) select(options[activeIndex].href);
+        const active = options[activeIndex];
+        // A Help row with nowhere to go never navigates.
+        if (!openedAsHelp(active) && active.href !== "") select(active.href);
       }
     } else if (event.key === "Tab" && !event.shiftKey && !isStart && groups.length > 1) {
       // Tab jumps to the next group's first row, the way the palette's footer says it does. From the
@@ -1213,7 +1215,8 @@ export function WardGlobalSearch({
                                 // not a result, so it keeps working.
                                 onClick={(event) => {
                                   if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
-                                    if (event.button === 0 && openedAsHelp(item)) {
+                                    const plain = !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+                                    if (event.button === 0 && plain && openedAsHelp(item)) {
                                       event.preventDefault();
                                       return;
                                     }
@@ -1477,7 +1480,7 @@ export function WardGlobalSearch({
               : trimmed.length === 0
                 ? ""
                 : resultCount === 0
-                  ? "No matches."
+                  ? (help.note ?? "No matches.")
                   : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
       </p>
       {palette && typeof document !== "undefined" ? createPortal(palette, document.body) : null}

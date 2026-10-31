@@ -206,6 +206,8 @@ export function usePlacedCard(
   box: SpotBox | null,
   device: TourDevice,
   step: unknown,
+  // The "not on this screen" line makes the card taller, so it is placed again when that appears.
+  missing = false,
 ): void {
   useLayoutEffect(() => {
     // The card is placed by transform, so a step with no control is placed again when the window
@@ -228,5 +230,5 @@ export function usePlacedCard(
     const sideBySide = rect.left >= box.left + box.width || rect.right <= box.left;
     spotElement.style.height =
       !sideBySide && rect.top > box.top && stop < box.height ? `${Math.max(24, stop)}px` : `${box.height}px`;
-  }, [box, cardRef, device, spotRef, step]);
+  }, [box, cardRef, device, missing, spotRef, step]);
 }

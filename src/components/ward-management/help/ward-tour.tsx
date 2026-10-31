@@ -64,7 +64,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const target = step?.target;
   const targets = useMemo(() => (target ? [target] : undefined), [target]);
   const { box, missing } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`);
-  usePlacedCard(cardRef, spotRef, box, device, step);
+  usePlacedCard(cardRef, spotRef, box, device, step, missing);
 
   const finish = useCallback(() => {
     markTourSeen(role);
