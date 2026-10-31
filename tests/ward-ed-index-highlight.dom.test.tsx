@@ -7,7 +7,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
  * All EDs, v10 (10 Oct 2026): the hero carries at most five highlight chips, and the hero chips,
- * the service and status filters and the search all highlight and dim. No ED is ever hidden.
+ * the service and status filters highlight and dim. No ED is ever hidden.
  */
 function renderIndex() {
   return render(
@@ -58,17 +58,13 @@ describe("All EDs — filters highlight and dim, they never hide", () => {
     );
   });
 
-  it("keeps every ED when a search matches nothing, and offers Reset", () => {
+  it('has no keyword box of its own and leaves "/" for the header search (30 Oct 2026)', () => {
     renderIndex();
-    const total = cards().length;
-    fireEvent.change(screen.getByRole("searchbox", { name: /Highlight emergency departments/u }), {
-      target: { value: "zzzz-no-such-ed" },
-    });
-    expect(cards()).toHaveLength(total);
-    expect(solidCards()).toHaveLength(0);
-    expect(screen.getByText("No match")).toBeInTheDocument();
-    fireEvent.click(screen.getAllByRole("button", { name: "Reset filters" })[0]);
-    expect(solidCards()).toHaveLength(total);
+    // Removed in the search and forms review: the header search finds an ED by name or site.
+    expect(screen.queryByRole("searchbox", { name: /Highlight emergency departments/u })).not.toBeInTheDocument();
+    const slash = new KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true });
+    window.dispatchEvent(slash);
+    expect(slash.defaultPrevented).toBe(false);
   });
 });
 

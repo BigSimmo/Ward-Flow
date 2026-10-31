@@ -248,6 +248,23 @@ export function AddPatientForm() {
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
+  /*
+   * Search and forms review (31 Oct 2026): on a larger screen the cursor starts in the first empty
+   * identity field, so typing can begin at once. A phone keeps the page still, as the keyboard
+   * would cover the form, and nothing moves focus already placed elsewhere.
+   */
+  useEffect(() => {
+    if (isPhone) return;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    const first = (["umrn", "date-of-birth", "given-name", "family-name"] as const).find((field) => {
+      const input = document.getElementById(`ward-add-patient-${field}`);
+      return input instanceof HTMLInputElement && input.value === "";
+    });
+    if (first) document.getElementById(`ward-add-patient-${first}`)?.focus();
+    // Only once, on open: later renders never take the cursor away from where someone put it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const priorSubmissionRef = useRef<{
     patients: typeof patients;
     umrn: string;
@@ -401,7 +418,7 @@ export function AddPatientForm() {
     lateSubmissionRef.current = null;
     if (late && isDirty) {
       // The save already finished and the form holds new typing: say where the record is, stay here.
-      setSavedOutsideView(`${added.givenName} ${added.familyName} added, ${added.umrn}. It is now in Recent records.`);
+      setSavedOutsideView(`${added.familyName}, ${added.givenName} added, ${added.umrn}. It is now in Recent records.`);
       return;
     }
     setSavedOutsideView(null);
@@ -409,10 +426,10 @@ export function AddPatientForm() {
     // record already had its "added" toast when the wait ended, so it only says it is opening.
     toast?.push(
       late
-        ? { tone: "info", title: `${added.givenName} ${added.familyName}, ${added.umrn}: record now available` }
+        ? { tone: "info", title: `${added.familyName}, ${added.givenName}, ${added.umrn}: record now available` }
         : {
             tone: "success",
-            title: `${added.givenName} ${added.familyName} added, ${added.umrn}`,
+            title: `${added.familyName}, ${added.givenName} added, ${added.umrn}`,
             // P143 (Josh, 8:57 PM): refer path only; in-app move, as a reload drops a demo-mode record.
             ...(prior.intent === "refer"
               ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
@@ -460,7 +477,7 @@ export function AddPatientForm() {
         (patient) => !priorIds.has(patient.id) && patient.umrn.trim().toLowerCase() === umrn,
       );
       if (arrived) return;
-      const saved = `${prior.givenName} ${prior.familyName} added, ${prior.umrn}`;
+      const saved = `${prior.familyName}, ${prior.givenName} added, ${prior.umrn}`;
       const note = "Saved. The record is outside this desk's view, so it does not open here.";
       // Clear only the submitted draft; anything typed during the wait is kept.
       if (JSON.stringify(latestRef.current.form) === JSON.stringify(prior.form)) clearForm();
@@ -881,7 +898,9 @@ export function AddPatientForm() {
                     placeholder="UMRN"
                     className={styles.mono}
                     value={draft.umrn}
-                    onChange={(event) => setDraftField("umrn")(event.target.value)}
+                    // A UMRN is one word in capitals ("UM100001"): spaces typed or pasted in go, and
+                    // letters are capitalised as typed, so "um 100001" is saved as the record reads.
+                    onChange={(event) => setDraftField("umrn")(event.target.value.replace(/\s+/g, "").toUpperCase())}
                   />
                 </Field>
                 <Field

@@ -5,11 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-demo-chip-ward-clock",
-    "date": "2026-10-27",
-    "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
-  },
-  {
     "id": "2026-10-27-movements-wait-labels",
     "date": "2026-10-27",
     "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
@@ -98,5 +93,10 @@
     "id": "2026-10-30-help-how-do-i",
     "date": "2026-10-31",
     "line": "Help now opens on How do I…: your desk's common tasks, each with its steps and a Go there link."
+  },
+  {
+    "id": "2026-10-31-smarter-search",
+    "date": "2026-10-31",
+    "line": "Search now forgives small typos and finds Help answers, contacts and suburbs; there are fewer search boxes."
   }
 ]

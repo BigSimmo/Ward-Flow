@@ -11,7 +11,7 @@ import {
   KEY_LINE_IDS,
   availability,
   buildOnCallDirectory,
-  entrySearchFields,
+  entryMatchesQuery,
   hhmm,
   isAnswering,
   keyLineLabel,
@@ -136,8 +136,8 @@ function ContactsBody({
           : which === "recent"
             ? recent.includes(entry.id)
             : true;
-  const matchesQuery = (entry: DirectoryEntry) =>
-    terms.every((term) => entrySearchFields(entry).some((field) => field.toLowerCase().includes(term)));
+  // The same matcher as the On-call page and the header search (`entryMatchesQuery`).
+  const matchesQuery = (entry: DirectoryEntry) => entryMatchesQuery(entry, query);
   // A search looks across everything, so a name typed from the Key lines view is still found.
   const rows = entries
     .filter((entry) => (terms.length > 0 ? matchesQuery(entry) : inView(entry, view)))

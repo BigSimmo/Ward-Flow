@@ -137,7 +137,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     title: "All EDs",
     purpose: "Every emergency department, with the people there waiting for a mental health bed.",
     actions: [
-      "Search by ED, hospital or service, or filter by status and order.",
+      "Filter by health service or status, and choose the order.",
       "Use Past target to find EDs with someone past the access target.",
       "Open an ED to see its board and each patient's next step.",
     ],

@@ -123,83 +123,15 @@
   gap: var(--wf-s-2);
 }
 
-/* ---- Search popover ---- */
-
-.searchPanel {
-  width: 24rem;
-  max-width: calc(100vw - 2 * var(--wf-s-4));
-}
-
-.search {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3);
-}
-
-.searchNote {
-  margin: 0;
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.searchList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  max-height: 20rem;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  list-style: none;
-}
-
-.searchHit {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  padding: var(--wf-s-2);
-  border: 0;
-  border-radius: var(--wf-r-sm);
-  background: none;
-  color: var(--wf-ink-1);
-  text-align: left;
-  cursor: pointer;
-}
-
-.searchHit:hover {
-  background: var(--wf-hover);
-}
-
-.searchHit:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
-.searchHitTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-}
-
-.searchHitMeta {
-  color: var(--wf-ink-3);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-/* Layout sweep MEET-16: a touch iPad gets touch-sized track tabs, search hits and team menu, not
-   the mouse sizes. The phone band below keeps its larger size. */
+/* Layout sweep MEET-16: a touch iPad gets touch-sized track tabs and team menu, not the mouse
+   sizes. The phone band below keeps its larger size. */
 @media (pointer: coarse) {
   .heroMenuButton {
     width: var(--wf-touch);
     height: var(--wf-touch);
   }
 
-  .trackItem,
-  .searchHit {
+  .trackItem {
     min-height: var(--wf-touch);
   }
 }
@@ -227,8 +159,7 @@
     height: var(--spacing-tap, 3rem);
   }
 
-  .trackItem,
-  .searchHit {
+  .trackItem {
     min-height: var(--spacing-tap, 3rem);
   }
 }

@@ -43,7 +43,7 @@ import {
   SERVICE_META,
   availability,
   buildOnCallDirectory,
-  entrySearchFields,
+  entryMatchesQuery,
   hhmm,
   isAnswering,
   keyLineLabel,
@@ -112,11 +112,8 @@ const SECTION_LABEL: Record<DirectorySection, string> = {
   statewide: "Statewide",
 };
 
-function matchesQuery(entry: DirectoryEntry, query: string): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return false;
-  return entrySearchFields(entry).some((value) => value.toLowerCase().includes(needle));
-}
+// Every word, in any order, and numbers with spaces ignored, as the Tools sheet and header search.
+const matchesQuery = entryMatchesQuery;
 
 function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favourites: readonly string[]) {
   return tab === "mine"

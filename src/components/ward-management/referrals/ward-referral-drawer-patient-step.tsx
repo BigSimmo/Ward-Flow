@@ -264,7 +264,10 @@ export function ReferralPatientStep({
                     autoCapitalize="characters"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, umrn: value }))}
+                    // One word in capitals, as Add a patient writes it (31 Oct 2026).
+                    onChange={({ target: { value } }) =>
+                      setNewPatient((p) => ({ ...p, umrn: value.replace(/\s+/g, "").toUpperCase() }))
+                    }
                   />
                 </Field>
                 {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
