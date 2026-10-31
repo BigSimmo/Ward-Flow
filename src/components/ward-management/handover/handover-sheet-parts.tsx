@@ -2,9 +2,8 @@
 
 import type { SignOffCheck } from "./handover-panels";
 import { useEffect, useState } from "react";
-import { Button, Checkbox, StatusGlyph, type SinceItem } from "@/components/wf";
+import { Button, Checkbox, ShowMoreRow as OneShowMoreRow, StatusGlyph, type SinceItem } from "@/components/wf";
 
-import { ShowMoreRow as OneShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./handover-sheet-parts.module.css";
 import refined from "./handover-refined.module.css";
 

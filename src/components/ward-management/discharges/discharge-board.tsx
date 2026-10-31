@@ -12,7 +12,18 @@ import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { LEAVING_DESTINATIONS, type LeavingDestination } from "@/components/ward-management/ward-admissions";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
-import { Button, Card, Hero, LiveChip, PhoneSheet, Select, SrOnly, StatusGlyph, buttonClass } from "@/components/wf";
+import {
+  Button,
+  Card,
+  Hero,
+  LiveChip,
+  PhoneSheet,
+  Select,
+  ShowMoreRow,
+  SrOnly,
+  StatusGlyph,
+  buttonClass,
+} from "@/components/wf";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { CriteriaLedTag } from "@/components/ward-management/ward/ward-criteria-led-tag";
@@ -31,7 +42,6 @@ import {
   releaseActionPart,
   type ReleasePanelPart,
 } from "./discharge-release-actions";
-import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import pageStyles from "./discharges-third-edition.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import {

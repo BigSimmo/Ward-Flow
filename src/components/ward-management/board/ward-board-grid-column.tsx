@@ -27,8 +27,7 @@ import {
 } from "./ward-board-model";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
-import { Segmented, Select } from "@/components/wf";
+import { Segmented, Select, ShowMoreRow } from "@/components/wf";
 import redesign from "./ward-board-panels.module.css";
 
 /** Redesign (Josh, 30 Oct): a phone opens on this many beds, then Show more (owner rule: long lists fold). */
