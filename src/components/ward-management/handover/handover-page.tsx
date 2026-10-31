@@ -103,10 +103,9 @@ import {
   type HandoverShiftId,
   type HandoverSort,
   type HeldHandover,
-  handoverSignedBefore,
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel } from "./handover-panels";
-import { handoverSignOffChecks } from "./handover-sign-off-checks";
+import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
 import {
   HandoverKeysHelp,
   HandoverMeetingTimer,
@@ -130,6 +129,7 @@ import {
   allRecordsScopeLabel,
   handoverScopeLabel,
   movementInHandoverScope,
+  handoverSignOffUnitId,
   recordHandoverSignOff,
   resolveAdmissionPatient,
 } from "./handover-scope-rules";
@@ -514,9 +514,15 @@ export function HandoverPage() {
   const routeRole = useRouteRole();
   const gate = useRoleGate();
   const signOffGate = gate("RECORD_HANDOVER_SIGN_OFF");
-  const signedAt = handoverSignedBefore(handoverSignOffs, shiftAt);
-  const signedBy =
-    signedAt === null ? null : ([...handoverSignOffs].reverse().find((record) => record.at === signedAt)?.by ?? null);
+  // Decision 41 (Josh, 31 Oct 2026): a sign-off names its sheet's ward: the ward chosen in the
+  // scope, or a one-ward desk's own ward. A wider sheet's sign-off names none.
+  const signOffUnitId = handoverSignOffUnitId(scope) ?? ownWard?.id;
+  const { signedAt, signedBy } = useMemo(
+    () => sheetSignOff(handoverSignOffs, shiftAt, signOffUnitId),
+    [handoverSignOffs, shiftAt, signOffUnitId],
+  );
+  // A ward desk holding more than one ward signs off one ward's sheet at a time.
+  const chooseWardFirst = access.role === "ward" && signOffUnitId === undefined;
   // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
   const { run: runStep } = useUndoableStep({
     dispatch,
@@ -527,23 +533,29 @@ export function HandoverPage() {
   });
   const handleSignOff = useCallback(() => {
     // Records contain role and time only, so only the current sign-off window can be signed.
-    if (!signOffGate.allowed || shiftAt <= now || shiftAt !== handoverAt(defaultHandoverShift(now), now)) return;
+    if (!signOffGate.allowed || chooseWardFirst) return;
+    if (shiftAt <= now || shiftAt !== handoverAt(defaultHandoverShift(now), now)) return;
     const recorded = recordHandoverSignOff(
       (event) =>
         runStep(event, {
           // Audit S-31: one short toast; the panel's own line carries the time and the record.
           success: "Handover signed off.",
-          undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now: at }),
+          undo: (at) => ({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now: at, unitId: signOffUnitId }),
           undone: "Sign-off undone.",
         }),
       now,
       routeRole,
+      signOffUnitId,
+      accessIsWholeNetwork(access),
     );
     if (recorded === null) announceToWardShell("Sign-off is not recorded.");
-  }, [runStep, now, routeRole, shiftAt, signOffGate.allowed]);
+  }, [runStep, now, routeRole, shiftAt, signOffGate.allowed, chooseWardFirst, signOffUnitId, access]);
   const handleUndoSignOff = useCallback(() => {
-    runStep({ type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now }, { success: "Sign-off undone." });
-  }, [runStep, now, routeRole]);
+    runStep(
+      { type: "UNDO_HANDOVER_SIGN_OFF", role: routeRole, now, unitId: signOffUnitId },
+      { success: "Sign-off undone." },
+    );
+  }, [runStep, now, routeRole, signOffUnitId]);
   const showSignOff = () => {
     setSheetOpen(false);
     setTab("pts");
@@ -657,8 +669,11 @@ export function HandoverPage() {
         },
   });
   const nextShift = shiftAt === handoverAt(defaultHandoverShift(now), now);
-  const canSignOff = signOffGate.allowed && !passed && nextShift;
-  const cannotSignReason = signOffGate.reason ?? signOffWaitReason(passed, nextShift);
+  const canSignOff = signOffGate.allowed && !passed && nextShift && !chooseWardFirst;
+  const cannotSignReason =
+    signOffGate.reason ??
+    signOffWaitReason(passed, nextShift) ??
+    (chooseWardFirst ? "Choose your ward to sign off its handover." : undefined);
 
   // ROLE BRANCH (ed): an ED desk never signs a handover off (RECORD_HANDOVER_SIGN_OFF is coordinator
   // or ward only), so the checklist, rail, bar, hero button and S shortcut are left out (Josh, 30 Oct
