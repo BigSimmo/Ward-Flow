@@ -30,10 +30,10 @@ import {
   cx,
   durMinutes,
   type WfTone,
+  phoneRows,
 } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
 import wardPin from "./ward-pinned-switch.module.css";
-import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import eventList from "./governance-event-list.module.css";
 import { EventFacts } from "./governance-event-facts";
 import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
@@ -252,7 +252,7 @@ export function GovernancePhone({
               variant="onHero"
               icon={ShieldCheck}
               // Phone (Josh, 31 Oct 2026): Home's hero pill, not a full-width button.
-              className={rows.heroPill}
+              className={phoneRows.heroPill}
               disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
               reasonDisplay="tooltip"
               onClick={() => {
