@@ -578,7 +578,14 @@ export function renderEdRowNextGroup(
   ctx: EdScreenContext,
   menuItems: ReactNode,
   facts: EdRowFacts,
+  /**
+   * Lays the actions out as the desktop menu does (groups, "Not available yet"). Passed in, not
+   * imported, because `ed-board-controls.tsx` imports this file. Without it the list stays flat.
+   */
+  actionList?: (parts: { onEditPresentation: () => void; onEditPlan: () => void; children: ReactNode }) => ReactNode,
 ): ReactNode {
+  const editPresentation = () => document.getElementById(`ward-ed-outstanding-${row.movement.id}`)?.click();
+  const editPlan = () => document.getElementById(`ward-ed-plan-${row.movement.id}`)?.click();
   const { movement, patientInfo } = row;
   const { raise, boardTable, phoneSheetReason, setPhoneSheetReason } = ctx;
   const { unavailableFacts, transportNoticeFact, extensionHistoryFacts, withdrawUnavailableFact, cmhtNoticeFact } =
@@ -632,16 +639,19 @@ export function renderEdRowNextGroup(
               );
             }}
           >
-            <button
-              type="button"
-              onClick={() => document.getElementById(`ward-ed-outstanding-${movement.id}`)?.click()}
-            >
-              Edit presentation
-            </button>
-            <button type="button" onClick={() => document.getElementById(`ward-ed-plan-${movement.id}`)?.click()}>
-              Edit plan
-            </button>
-            {menuItems}
+            {actionList ? (
+              actionList({ onEditPresentation: editPresentation, onEditPlan: editPlan, children: menuItems })
+            ) : (
+              <>
+                <button type="button" onClick={editPresentation}>
+                  Edit presentation
+                </button>
+                <button type="button" onClick={editPlan}>
+                  Edit plan
+                </button>
+                {menuItems}
+              </>
+            )}
           </div>
           {phoneSheetReason ? (
             <p className={styles.phoneSheetReason} role="status">

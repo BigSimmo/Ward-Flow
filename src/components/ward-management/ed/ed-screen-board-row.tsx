@@ -24,6 +24,7 @@ import {
   withdrawReferralBlockedReason,
 } from "./ed-blocked-reasons";
 import type { EdScreenContext } from "./ed-screen-context";
+import { EdActionList } from "./ed-board-controls";
 import { renderEdBoardTableRow } from "./ed-screen-desktop";
 import {
   formExpiryLine,
@@ -337,7 +338,10 @@ export function renderEdBoardRow(
   const menuItems = renderEdRowMenuItems(row, ctx);
   const facts = renderEdRowFacts(row, ctx);
   const controls = renderEdRowControls(row, ctx, facts);
-  const nextGroupBody = renderEdRowNextGroup(row, ctx, menuItems, facts);
+  // Josh (31 Oct 2026): the phone person sheet's actions take the desktop menu's groups and fold.
+  const nextGroupBody = renderEdRowNextGroup(row, ctx, menuItems, facts, (parts) => (
+    <EdActionList menu={false} testId={`ward-ed-phone-actions-${movement.id}`} {...parts} />
+  ));
   const expandedCards = renderEdRowExpandedCards(row, ctx);
   const subFormContent = renderEdRowForms(row, ctx);
   const subFormOpen =

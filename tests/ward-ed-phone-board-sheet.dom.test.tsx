@@ -73,9 +73,19 @@ describe("ED board on phone", () => {
     const sheet = screen.getByTestId(`ward-ed-phone-sheet-${id}`);
     expect(within(sheet).getByRole("button", { name: "Open patient" })).toBeTruthy();
     const actions = screen.getByTestId(`ward-ed-phone-actions-${id}`);
+    // Josh (31 Oct 2026): the sheet's actions take the desktop menu's groups, with the greyed ones
+    // folded under "Not available yet", closed until opened.
+    expect(within(actions).getByRole("group", { name: "Patient record" })).toBeTruthy();
+    const fold = within(actions).queryByRole("button", { name: /^Not available yet \(\d+\)$/ });
+    if (fold) {
+      expect(fold.getAttribute("aria-expanded")).toBe("false");
+      fireEvent.click(fold);
+    }
     for (const name of ["Edit presentation", "Edit plan", "Record outcome", "Withdraw referral"]) {
       expect(within(actions).getByRole("button", { name })).toBeTruthy();
     }
+    // The sheet is the record, so the group leaves out View patient record (Open patient is below).
+    expect(within(actions).queryByRole("button", { name: "View patient record" })).toBeNull();
     // Change 2 (D-77): the pinned next step is Record exam, so the list does not offer it again.
     expect(within(actions).queryByRole("button", { name: "Record examination" })).toBeNull();
 
