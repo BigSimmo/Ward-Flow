@@ -185,6 +185,7 @@
     "tests/ward-segmented-overlaps.test.ts",
     "tests/ward-settings-stepper-targets.test.ts",
     "tests/ward-shared-clock.test.ts",
+    "tests/ward-shell-eager-imports.test.ts",
     "tests/ward-shell-tablet.dom.test.tsx",
     "tests/ward-shell-third-edition.dom.test.tsx",
     "tests/ward-shell.dom.test.tsx",

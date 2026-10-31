@@ -66,7 +66,7 @@ import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-acce
 import { useNavigationPendingRef, useWardBarActivity, useWardBarTasks } from "./ward-bar-state";
 import { useEffectiveWardAccess } from "./ward-access-store";
 import { deskHomeRouteTitle, deskPlaceLabel } from "./ward-bar-desk-place";
-import { CLOSE_MENUS_EVENT } from "./ward-rail-parts";
+import { CLOSE_MENUS_EVENT } from "./ward-menu-events";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,

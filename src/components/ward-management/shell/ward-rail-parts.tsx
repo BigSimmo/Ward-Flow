@@ -21,8 +21,7 @@ import {
 } from "./ward-service-bed-alerts";
 import styles from "./ward-rail.module.css";
 
-/** Sent when a header action opens a sheet of its own (New referral), so the rail's More and Menu sheets close. */
-export const CLOSE_MENUS_EVENT = "ward-flow-close-menus";
+export { CLOSE_MENUS_EVENT } from "./ward-menu-events";
 
 /* ── Capacity-led bed alerts ────────────────────────────────────────────────────────────────── */
 
