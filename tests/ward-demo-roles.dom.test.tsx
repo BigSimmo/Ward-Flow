@@ -30,6 +30,7 @@ import {
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { NOW_ANCHOR, STANDARD_WARD_SITES } from "@/components/ward-management/ward-sites";
+import { scenarioUnits } from "@/components/ward-management/ward-scenarios";
 
 const navigation = vi.hoisted(() => ({ path: "/ward-flow", push: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -119,7 +120,7 @@ afterEach(() => {
 describe("Roles within the existing Demo selector", () => {
   it("lists all canonical roles beside the existing scenarios and survives repeated switches", () => {
     renderPanel();
-    expect(screen.getByRole("radio", { name: /Winter surge/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Winter surge/ })).toBeVisible();
     expect(within(roles()).getAllByRole("button")).toHaveLength(8);
     const scenario = proof().getAttribute("data-scenario");
     const generation = proof().getAttribute("data-generation");
@@ -146,7 +147,7 @@ describe("Roles within the existing Demo selector", () => {
 
   it("keeps Winter surge on role changes, reset and exit", () => {
     renderPanel();
-    fireEvent.click(screen.getByRole("radio", { name: /Winter surge/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Winter surge/ }));
     fireEvent.click(
       within(screen.getByRole("dialog", { name: "Load Winter surge?" })).getByRole("button", {
         name: "Load Winter surge",
@@ -254,4 +255,27 @@ describe("Roles within the existing Demo selector", () => {
     expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
     expect(screen.queryByRole("button", { name: "Back to Bed coordinator" })).toBeNull();
   });
+});
+
+it("returns to a valid coordinator desk when a scenario change removes the starting ward", () => {
+  const ward = STANDARD_WARD_SITES.flatMap((site) => site.units)[0]!;
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } });
+  });
+  renderPanel();
+  choose("Bed coordinator");
+  fireEvent.click(screen.getByRole("button", { name: /Winter surge/ }));
+  fireEvent.click(
+    within(screen.getByRole("dialog", { name: "Load Winter surge?" })).getByRole("button", {
+      name: "Load Winter surge",
+    }),
+  );
+  expect(proof()).toHaveAttribute("data-scenario", "winter-surge");
+  expect(scenarioUnits("winter-surge").some((unit) => unit.id === ward.id)).toBe(false);
+  fireEvent.click(screen.getByRole("button", { name: "Exit role demo" }));
+  expect(readWardAccessSnapshot().access).toEqual({ role: "coordinator", scope: { kind: "statewide" } });
+  expect(navigation.push).toHaveBeenLastCalledWith("/ward-flow");
+  expect(proof()).toHaveAttribute("data-scenario", "winter-surge");
+  expect(Number(proof().getAttribute("data-records"))).toBeGreaterThan(0);
 });

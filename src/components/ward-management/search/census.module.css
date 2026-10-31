@@ -1161,7 +1161,7 @@ table.censusTable {
   color: var(--wf-ink-3);
 }
 
-.phoneGroup[aria-checked="true"] {
+.phoneGroup[aria-current="true"] {
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
   color: var(--wf-ink-1);

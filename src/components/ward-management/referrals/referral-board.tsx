@@ -535,6 +535,8 @@ export function ReferralBoard({
       if (typeof detailRef.current.scrollIntoView === "function") {
         detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "nearest" });
       }
+      // On a phone the detail opens over the queue, so focus moves into it with the reader.
+      detailRef.current.focus({ preventScroll: true });
     }
   }, [selectedReferralId]);
 
@@ -645,20 +647,13 @@ export function ReferralBoard({
         {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
         {/* Hidden above the phone by CSS, so screen readers meet it only where it shows. */}
         <div className={a.stripPhone}>
-          <dt>Needs</dt>
+          <dt>Bed and transport</dt>
           <dd>
             {(() => {
               const summary = sender.referralFor(r);
               if (summary === null) return "Destination details unavailable";
               if (summary !== undefined) return "Destination details are restricted";
-              const ward = wardArm(r)?.destination;
-              const words = [
-                ward?.secureBedNeeded ? "Secure bed" : undefined,
-                ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
-                ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
-                r.transportNeeded ? "Transport" : undefined,
-              ].filter(Boolean);
-              return words.length > 0 ? words.join(", ") : "None";
+              return needWords(r).join(", ") || "No bed or transport needs recorded";
             })()}
           </dd>
         </div>
@@ -837,7 +832,14 @@ export function ReferralBoard({
               data-testid="ward-referral-detail-backdrop"
             />
           ) : null}
-          <div className={styles.registerQueue} role="region" aria-label="Referral queues" tabIndex={0}>
+          <div
+            className={styles.registerQueue}
+            role="region"
+            aria-label="Referral queues"
+            tabIndex={0}
+            // Phone: the open detail covers the queue, so the queue behind it leaves the Tab order.
+            inert={phoneLayout && selectedReferral ? true : undefined}
+          >
             <Card className={cx(styles.v6QueueCard, a.queueCard)}>
               {/* Phone (Josh, 12 Oct 2026): Queue and History pin under the phone header, as Home's
                   queue switch does. The row sits in the queue card beside the list it pins over. */}

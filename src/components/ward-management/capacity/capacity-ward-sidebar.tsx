@@ -10,7 +10,8 @@ import { LEAVING_DESTINATIONS } from "../ward-admissions";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeOpenHandle, DischargeRecord } from "../ward-discharge-records";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
+import { patientListName } from "@/components/ward-management/ward-patients";
 import { Button } from "@/components/wf";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
@@ -68,8 +69,13 @@ export function CapacityTabs({
 }
 
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
+const DISCHARGES_HREF = "/ward-flow/discharges";
+
 /** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
+
 export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack: () => void; now: Instant }) {
+  const canOpenHref = useCanOpenHref();
+  const wardHref = `/ward-flow/ward/${row.unit.id}`;
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
     useWardFlowSelect(
       "bedReleases",
@@ -345,17 +351,18 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
           </>
         )}
       </div>
+      {/* Bug list row 21: only links this desk may open (the same check the ward page uses). */}
       <div className={styles.sidebarFooter}>
-        <Link href={`/ward-flow/ward/${row.unit.id}`}>Open ward</Link>
-        <Link href="/ward-flow/discharges">Discharge board</Link>
+        {canOpenHref(wardHref) ? <Link href={wardHref}>Open ward</Link> : null}
+        {canOpenHref(DISCHARGES_HREF) ? <Link href={DISCHARGES_HREF}>Discharge board</Link> : null}
       </div>
     </>
   );
 }
 
 function dischargeRecordName(record: DischargeRecord): string {
-  if (record.identity.kind === "linked")
-    return `${record.identity.patient.givenName} ${record.identity.patient.familyName}`;
+  // Surname first (D-83).
+  if (record.identity.kind === "linked") return patientListName(record.identity.patient);
   return record.identity.kind === "legacy-anonymous" ? "Identity not linked" : "Patient link unavailable";
 }
 

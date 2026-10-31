@@ -60,7 +60,7 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
   const [pending, setPending] = useState<Pending | null>(null);
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ kind: "sign-in" | "action"; message: string } | null>(null);
 
   // Bumped whenever the dialog closes or is replaced, so a sign-in still running then never goes
   // on to make the change.
@@ -99,6 +99,7 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
   const carryOn = async () => {
     if (!pending || busy) return;
     const mine = attempt.current;
+    let signedIn = pending.mode !== "password";
     setBusy(true);
     setError(null);
     try {
@@ -106,17 +107,24 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
         const entered = password;
         setPassword("");
         await reauthenticate?.(entered);
+        signedIn = true;
       } else confirmed = { desk, at: now };
       if (attempt.current !== mine) return;
       const result = await pending.run();
+      if (attempt.current !== mine) return;
       if (result === STEP_UP_NEEDED) {
-        setError("The sign-in was not accepted. Try again.");
+        setError({ kind: "sign-in", message: "The sign-in was not accepted. Try again." });
         setBusy(false);
         return;
       }
       close(result);
     } catch {
-      setError("That password was not accepted. Try again.");
+      if (attempt.current !== mine) return;
+      setError(
+        signedIn
+          ? { kind: "action", message: "The action could not be confirmed. Check its status before trying again." }
+          : { kind: "sign-in", message: "That password was not accepted. Try again." },
+      );
       setBusy(false);
     }
   };
@@ -140,7 +148,7 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
     >
       {pending?.mode === "password" ? (
         <>
-          <Field label="Password" error={error ?? undefined}>
+          <Field label="Password" error={error?.kind === "sign-in" ? error.message : undefined}>
             <TextInput
               type="password"
               autoComplete="current-password"
@@ -157,13 +165,14 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
             />
           </Field>
           {/* Field errors are not announced on their own, so a refused sign-in is said here. */}
-          <SrOnly role="status">{error ?? ""}</SrOnly>
+          <SrOnly role="status">{error?.kind === "sign-in" ? error.message : ""}</SrOnly>
+          {error?.kind === "action" ? <p role="alert">{error.message}</p> : null}
         </>
       ) : (
         <p>
           The shared workspace asks for your password again here. In this demonstration there is no password, so confirm
           to carry on.
-          {error ? <span role="alert"> {error}</span> : null}
+          {error ? <span role="alert"> {error.message}</span> : null}
         </p>
       )}
     </Dialog>

@@ -39,8 +39,8 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     keywords: "rollup morning count ward count deadline",
   },
   { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge" },
-  { id: "second-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
-  { id: "first-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },
+  { id: "early-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
+  { id: "final-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },
   {
     id: "decision-targets",
     label: "Decision targets",

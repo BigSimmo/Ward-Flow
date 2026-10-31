@@ -216,7 +216,7 @@ export function useReferralMatchState({
   const wholeWithdrawControl =
     presentation.kind !== "unavailable" && presentation.canWithdraw && (!scopedRecorder || senderCanWithdraw) ? (
       <details className={styles.moreActions} data-testid="ward-referral-match-more-actions">
-        <summary className={styles.moreActionsSummary}>Referrer cancelled?</summary>
+        <summary className={styles.moreActionsSummary}>Record referrer cancellation</summary>
         <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
           {!scopedRecorder ? (
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">

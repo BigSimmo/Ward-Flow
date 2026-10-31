@@ -35,21 +35,24 @@ import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meetin
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { bedMeetingSheet } from "@/components/ward-management/capacity/bed-meeting-derivations";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
-import { CapacityWardSidebar } from "./capacity-ward-sidebar";
+import { CapacityWardSidebar } from "@/components/ward-redesign/capacity/capacity-ward-sidebar";
 // Redesign (Josh, 30 Oct): the coordinator's forks, whose titles use the card title style.
 import { PlannedAdmissionsPanel } from "@/components/ward-redesign/capacity/planned-admissions-panel";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
-import { StepDownBoard } from "@/components/ward-redesign/capacity/step-down-board";
+import { siteLabel } from "@/components/ward-management/ward-absence-labels";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import { RedesignPage } from "@/components/ward-redesign/parts/redesign-page";
 import { gapWords } from "@/components/ward-redesign/parts/range-line";
-import { BedForecast } from "./bed-forecast";
+import { BedForecast } from "@/components/ward-redesign/capacity/bed-forecast";
 import { BedMapCards, type Highlight } from "@/components/ward-redesign/capacity/bed-map-cards";
 import { BedMeetingSheetDialog } from "@/components/ward-redesign/capacity/bed-meeting-sheet-dialog";
-import { CapacitySide } from "./capacity-side";
+import { ShiftChecks } from "@/components/ward-redesign/capacity/capacity-side";
+import { ComingIn } from "@/components/ward-redesign/capacity/coming-in";
+import { RoadTimeCard } from "@/components/ward-redesign/capacity/road-time-card";
 import { PlannedCounts } from "./planned-counts";
-import { MismatchBand } from "@/components/ward-redesign/capacity/mismatch-band";
+import { MismatchBand, shortNeed } from "@/components/ward-redesign/capacity/mismatch-band";
 import { ScenarioDialog } from "@/components/ward-redesign/capacity/scenario-dialog";
 import { useCapacityModel, type CapacityModel } from "@/components/ward-redesign/capacity/use-capacity-model";
 import styles from "@/components/ward-redesign/capacity/capacity-redesign.module.css";
@@ -140,7 +143,7 @@ export function AsExecutiveCapacityRedesign({ openOnLoad }: { openOnLoad?: strin
           onWard={openWard}
         />
       }
-      footNote="Modelled network bed capacity · CAHS inpatient wards are not modelled · private live feeds are unavailable · Not approved for clinical use"
+      footNote="Modelled network · CAHS wards not modelled · Not approved for clinical use"
     >
       {isPhone ? (
         <>
@@ -169,27 +172,28 @@ export function AsExecutiveCapacityRedesign({ openOnLoad }: { openOnLoad?: strin
         <>
           <MismatchBand model={model} />
           <BedForecast model={model} onTryScenario={() => setPopup({ kind: "scenario" })} />
-          <div className={styles.mapRow}>
-            <BedMapCards
-              model={model}
-              onSelectWard={openWard}
-              selectedUnitId={selectedRow?.unit.id}
-              highlight={highlight}
-              onHighlight={setHighlight}
-            />
-            <CapacitySide
-              model={model}
-              selectedUnitId={selectedRow?.unit.id}
-              onSelectWard={openWard}
-              onAskWard={executive ? undefined : askWard}
-              executive={executive}
-            />
-          </div>
-          <div className={styles.footRow}>
+          {/* Polish (Josh, 31 Oct 2026, carried from the coordinator's page): the bed map takes the
+              full width, then one row of three: what is coming in, the nearest ready beds, and this
+              shift's checks. */}
+          <BedMapCards
+            model={model}
+            onSelectWard={openWard}
+            selectedUnitId={selectedRow?.unit.id}
+            highlight={highlight}
+            onHighlight={setHighlight}
+          />
+          <div className={styles.lowerRow}>
             {/* Role view (executive): Planned admissions and Step down list people one by one (with
-                legal status and reason); this desk sees counts only, so it gets the booked count. */}
-            {executive ? <PlannedCounts now={now} /> : <PlannedAdmissionsPanel now={now} />}
-            {executive ? null : <StepDownBoard now={now} />}
+                legal status and reason); this desk sees counts only, so it gets the booked count.
+                Asking a ward to confirm is the coordinator's step, so This shift has no Ask. */}
+            {executive ? <PlannedCounts now={now} /> : <ComingIn now={now} plannedBooked={model.plannedBooked} />}
+            <RoadTimeCard
+              rows={model.networkRows}
+              defaultEdId={model.roadTimeFromEdId}
+              selectedUnitId={selectedRow?.unit.id}
+              onSelectUnit={openWard}
+            />
+            <ShiftChecks model={model} onAskWard={executive ? undefined : askWard} />
           </div>
         </>
       )}
@@ -203,10 +207,19 @@ export function AsExecutiveCapacityRedesign({ openOnLoad }: { openOnLoad?: strin
         onClose={() => setPopup(null)}
         title={selectedRow?.unit.name ?? "Ward capacity"}
         ariaLabel={selectedRow ? `${selectedRow.unit.name}, ward capacity` : "Ward capacity"}
+        description={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
+        titleAccessory={
+          selectedRow ? (
+            <span className={styles.wdHeadTag}>
+              <StatusGlyph tone={selectedRow.ready > 0 ? "success" : "warning"} size={8} />
+              {selectedRow.ready > 0 ? `${selectedRow.ready} ready` : "None ready"}
+            </span>
+          ) : undefined
+        }
         testId="redesign-capacity-ward-drawer"
       >
         {selectedRow ? (
-          <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} executive={executive} />
+          <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} showPlace={false} />
         ) : null}
       </Drawer>
       <Drawer
@@ -220,6 +233,12 @@ export function AsExecutiveCapacityRedesign({ openOnLoad }: { openOnLoad?: strin
       </Drawer>
     </RedesignPage>
   );
+}
+
+/** "Royal Perth Hospital · East Metro": the ward drawer's line under its title. */
+function wardPlace(siteCode: string): string {
+  const site = siteByCode(siteCode);
+  return `${siteLabel(siteCode, site?.name)} · ${site?.service ?? "Service not recorded"}`;
 }
 
 function initialPopup(openOnLoad: string | undefined, model: CapacityModel): Popup {
@@ -379,14 +398,14 @@ function PhoneOverview({
   return (
     <>
       <Card aria-labelledby="phone-mismatch">
-        <CardHead id="phone-mismatch" title="Where the mismatch is" />
+        <CardHead id="phone-mismatch" title="Mismatch" />
         <ul className={styles.phoneRows}>
           {gapRows.map((row) => {
             const likely = byId.get(row.id)?.likely;
             return (
               <li key={row.id} className={styles.phoneRow}>
                 <div>
-                  <b className={styles.small}>{row.need}</b>
+                  <b className={styles.small}>{shortNeed(row.need)}</b>
                   <span className={styles.mutedXs}>
                     {row.waiting} waiting · {row.bedsThatFit} fit
                     {likely !== undefined ? ` · tomorrow ${gapWords(likely)}` : ""}

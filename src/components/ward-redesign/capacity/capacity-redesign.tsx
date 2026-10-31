@@ -37,15 +37,19 @@ import { isConfirmationFresh } from "@/components/ward-management/capacity/capac
 import { CapacityWardSidebar } from "./capacity-ward-sidebar";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
-import { StepDownBoard } from "./step-down-board";
+
+import { siteLabel } from "@/components/ward-management/ward-absence-labels";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { RedesignPage } from "../parts/redesign-page";
 import { gapWords } from "../parts/range-line";
 import { BedForecast } from "./bed-forecast";
 import { BedMapCards, type Highlight } from "./bed-map-cards";
 import { BedMeetingSheetDialog } from "./bed-meeting-sheet-dialog";
-import { CapacitySide } from "./capacity-side";
-import { MismatchBand } from "./mismatch-band";
+import { ShiftChecks } from "./capacity-side";
+import { ComingIn } from "./coming-in";
+import { RoadTimeCard } from "./road-time-card";
+import { MismatchBand, shortNeed } from "./mismatch-band";
 import { ScenarioDialog } from "./scenario-dialog";
 import { useCapacityModel, type CapacityModel } from "./use-capacity-model";
 import styles from "./capacity-redesign.module.css";
@@ -131,7 +135,7 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
           onWard={openWard}
         />
       }
-      footNote="Modelled network bed capacity · CAHS inpatient wards are not modelled · private live feeds are unavailable · Not approved for clinical use"
+      footNote="Modelled network · CAHS wards not modelled · Not approved for clinical use"
     >
       {isPhone ? (
         <>
@@ -158,24 +162,25 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
         <>
           <MismatchBand model={model} />
           <BedForecast model={model} onTryScenario={() => setPopup({ kind: "scenario" })} />
-          <div className={styles.mapRow}>
-            <BedMapCards
-              model={model}
-              onSelectWard={openWard}
+          {/* Polish (Josh, 31 Oct 2026): the bed map takes the full width; the old side column and the
+              two lists under the map become one row of three: what is coming in, the nearest ready
+              beds, and this shift's checks. */}
+          <BedMapCards
+            model={model}
+            onSelectWard={openWard}
+            selectedUnitId={selectedRow?.unit.id}
+            highlight={highlight}
+            onHighlight={setHighlight}
+          />
+          <div className={styles.lowerRow}>
+            <ComingIn now={now} plannedBooked={model.plannedBooked} />
+            <RoadTimeCard
+              rows={model.networkRows}
+              defaultEdId={model.roadTimeFromEdId}
               selectedUnitId={selectedRow?.unit.id}
-              highlight={highlight}
-              onHighlight={setHighlight}
+              onSelectUnit={openWard}
             />
-            <CapacitySide
-              model={model}
-              selectedUnitId={selectedRow?.unit.id}
-              onSelectWard={openWard}
-              onAskWard={askWard}
-            />
-          </div>
-          <div className={styles.footRow}>
-            <PlannedAdmissionsPanel now={now} />
-            <StepDownBoard now={now} />
+            <ShiftChecks model={model} onAskWard={askWard} />
           </div>
         </>
       )}
@@ -189,9 +194,20 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
         onClose={() => setPopup(null)}
         title={selectedRow?.unit.name ?? "Ward capacity"}
         ariaLabel={selectedRow ? `${selectedRow.unit.name}, ward capacity` : "Ward capacity"}
+        description={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
+        titleAccessory={
+          selectedRow ? (
+            <span className={styles.wdHeadTag}>
+              <StatusGlyph tone={selectedRow.ready > 0 ? "success" : "warning"} size={8} />
+              {selectedRow.ready > 0 ? `${selectedRow.ready} ready` : "None ready"}
+            </span>
+          ) : undefined
+        }
         testId="redesign-capacity-ward-drawer"
       >
-        {selectedRow ? <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} /> : null}
+        {selectedRow ? (
+          <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} showPlace={false} />
+        ) : null}
       </Drawer>
       <Drawer
         open={popup?.kind === "forecast"}
@@ -204,6 +220,12 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
       </Drawer>
     </RedesignPage>
   );
+}
+
+/** "Royal Perth Hospital · East Metro": the ward drawer's line under its title. */
+function wardPlace(siteCode: string): string {
+  const site = siteByCode(siteCode);
+  return `${siteLabel(siteCode, site?.name)} · ${site?.service ?? "Service not recorded"}`;
 }
 
 function initialPopup(openOnLoad: string | undefined, model: CapacityModel): Popup {
@@ -352,14 +374,14 @@ function PhoneOverview({ model, onForecast }: { model: CapacityModel; onForecast
   return (
     <>
       <Card aria-labelledby="phone-mismatch">
-        <CardHead id="phone-mismatch" title="Where the mismatch is" />
+        <CardHead id="phone-mismatch" title="Mismatch" />
         <ul className={styles.phoneRows}>
           {gapRows.map((row) => {
             const likely = byId.get(row.id)?.likely;
             return (
               <li key={row.id} className={styles.phoneRow}>
                 <div>
-                  <b className={styles.small}>{row.need}</b>
+                  <b className={styles.small}>{shortNeed(row.need)}</b>
                   <span className={styles.mutedXs}>
                     {row.waiting} waiting · {row.bedsThatFit} fit
                     {likely !== undefined ? ` · tomorrow ${gapWords(likely)}` : ""}

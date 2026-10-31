@@ -77,6 +77,15 @@ describe("the Rules page for a coordinator who is not the statewide one", () => 
     expect(screen.getByRole("radio", { name: "Surge" })).toHaveAttribute("aria-disabled", "true");
   });
 
+  it("is never told Save to apply, and the statewide coordinator still is (bug list row 4)", () => {
+    renderRules(SERVICE_COORDINATOR);
+    expect(screen.queryByText(/Save to apply/)).toBeNull();
+    expect(screen.getAllByText("Read only").length).toBeGreaterThan(0);
+    cleanup();
+    renderRules(STATEWIDE_COORDINATOR);
+    expect(screen.getByText("Save to apply")).toBeInTheDocument();
+  });
+
   it("does not let a press, a key or a click change a rule", () => {
     renderRules(SERVICE_COORDINATOR);
     const before = edStepper().getAttribute("aria-valuenow");

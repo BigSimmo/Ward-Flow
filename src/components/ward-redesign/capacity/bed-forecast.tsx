@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 
-import { Button, buttonClass, Card, CardHead, Segmented } from "@/components/wf";
+import { Button, Card, CardHead, Segmented } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { BEDS_FORECAST_LIMITS } from "@/components/ward-management/capacity/beds-forecast";
 import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
 import { DayBars, type DayBar } from "../parts/day-bars";
-import { HowWorkedOut, Kicker, Legend } from "../parts/how-worked-out";
+import { HowWorkedOut, Legend } from "../parts/how-worked-out";
 import { gapWords } from "../parts/range-line";
 import { ShowMoreRow } from "../parts/show-more-row";
-import { HELD_UP_HREF, HELD_UP_LINK_LABEL, tallyBarriers } from "./held-up";
+import { HELD_UP_HREF, tallyBarriers } from "./held-up";
 import type { CapacityModel } from "./use-capacity-model";
 import styles from "./capacity-redesign.module.css";
 
@@ -34,10 +36,13 @@ export function BedForecast({
   model,
   onTryScenario,
   stacked = false,
+  siteName,
 }: {
   model: CapacityModel;
   onTryScenario: () => void;
   stacked?: boolean;
+  /** Role view (site bed manager): the forecast covers this site's wards, so it is named for it. */
+  siteName?: string;
 }) {
   const [view, setView] = useState<"network" | "ward">("network");
   const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now } = model;
@@ -60,7 +65,7 @@ export function BedForecast({
       <Segmented
         label="Forecast view"
         items={[
-          { id: "network" as const, label: "Network" },
+          { id: "network" as const, label: siteName ? "Site" : "Network" },
           { id: "ward" as const, label: "By ward" },
         ]}
         value={view}
@@ -79,33 +84,29 @@ export function BedForecast({
       id={stacked ? undefined : "forecast"}
       className={stacked ? styles.fcStacked : undefined}
     >
+      {/* Polish (Josh, 31 Oct 2026): the title alone, no grey line; the sources sentence moved into
+          "How this is worked out". */}
       {stacked ? (
-        <div className={styles.fcToolbar}>
-          <span className={styles.mutedXs}>From recorded discharge dates and planned admissions</span>
-          {actions}
-        </div>
+        <div className={styles.fcToolbar}>{actions}</div>
       ) : (
-        <CardHead
-          id="capacity-forecast-title"
-          title="Bed forecast"
-          meta="From recorded discharge dates and planned admissions"
-          action={actions}
-        />
+        <CardHead id="capacity-forecast-title" title="Bed forecast" action={actions} />
       )}
       <div className={styles.fcBody}>
-        <dl className={styles.fcKpis}>
+        {/* Polish (Josh, 31 Oct 2026): the left column is three figures, each with one short line. */}
+        <dl className={`${styles.fcKpis} ${styles.fcFigs}`}>
           <Kpi
             label="Now"
             value={gapWords(gapTotals.gap)}
             tone={gapTotals.gap}
-            sub={`${gapTotals.waiting} waiting for ${gapTotals.bedsThatFit} ready beds that fit`}
+            sub={`${gapTotals.waiting} waiting · ${gapTotals.bedsThatFit} fit`}
           />
           {tomorrow ? (
             <Kpi
-              label={`By ${formatInstantWithDay(tomorrow.until, now)}`}
+              label="Tomorrow"
+              srLabel={`, likely by ${formatInstantWithDay(tomorrow.until, now)}`}
               value={gapWords(tomorrow.likely)}
               tone={tomorrow.likely}
-              sub={`Likely. Range ${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
+              sub={`${gapWords(tomorrow.low)} to ${gapWords(tomorrow.high)}`}
             />
           ) : null}
           {twoDays ? (
@@ -116,56 +117,57 @@ export function BedForecast({
               value={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
               tone={twoDays.likely}
               soft
-              sub={`Likely ${gapWords(twoDays.likely)} · may move`}
+              sub={`Likely ${gapWords(twoDays.likely)}`}
             />
           ) : null}
         </dl>
         <div className={styles.fcChart}>
           <div className={styles.fcChartHead}>
-            <span className={styles.strong}>
-              {view === "network" ? `Beds going out, next ${bars.length} days` : "Beds going out by ward"}
-            </span>
+            <span className={styles.strong}>{view === "network" ? "Beds going out" : "Beds going out by ward"}</span>
             <Legend
               label="Chart key"
               items={[
-                { label: "Firm: today and tomorrow" },
-                { label: "Later, may move", swatchClassName: styles.swHatch },
-                { label: "Planned admission", swatchClassName: styles.swSecond },
+                { label: "Firm" },
+                { label: "May move", swatchClassName: styles.swHatch },
+                { label: "Planned in", swatchClassName: styles.swSecond },
               ]}
             />
           </div>
           {view === "network" ? <DayBars days={bars} summary={summary} /> : <WardDays days={days} rows={week.rows} />}
         </div>
+        {/* Polish (Josh, 31 Oct 2026): the right column is a short list, one line and one link each.
+            The numbered circles, the explanations and the sources block are gone; the sources and
+            what is not yet counted are in "How this is worked out". */}
         <div className={styles.fcSide}>
-          <Kicker>What would change tomorrow most</Kicker>
+          <span className={styles.fcFigLabel}>What would help tomorrow</span>
           {forecastModel.levers.length === 0 ? (
-            <p className={styles.muted}>Nothing on record would move tomorrow&apos;s figure.</p>
+            <p className={styles.mutedXs}>Nothing on record would move tomorrow&apos;s figure.</p>
           ) : (
-            <ol className={styles.levers}>
-              {forecastModel.levers.slice(0, 2).map((lever, index) => (
-                <LeverItem key={lever.kind} lever={lever} n={index + 1} />
+            <ul className={styles.helpList}>
+              {forecastModel.levers.slice(0, 3).map((lever) => (
+                <LeverItem key={lever.kind} lever={lever} />
               ))}
-            </ol>
+            </ul>
           )}
-          <div className={styles.fcSources}>
-            <p className={styles.small}>
-              <b>{sourceSummary.discharges}</b> discharges from {sourceSummary.wards} wards ·{" "}
-              <b>{sourceSummary.overdueNotHeldUp}</b> overdue, not held up · <b>{weekOut}</b> in the next {bars.length}{" "}
-              days
-            </p>
-            <p className={styles.mutedXs}>
-              Not yet counted: {forecastModel.notCounted.leaveBeds} beds held for people on leave,{" "}
-              {forecastModel.notCounted.repatriations} repatriations booked.
-            </p>
-          </div>
         </div>
       </div>
       <div className={styles.cardFoot}>
-        <span>
-          Estimate for the whole network. New ED arrivals are not predicted, and a free bed may not suit the person
-          waiting.
-        </span>
+        {/* Polish (Josh, 31 Oct 2026): the foot is two words and the method; the caveat sentence
+            leads "How this is worked out". */}
+        <span>Estimate only</span>
         <HowWorkedOut>
+          <p>
+            {siteName ? `Estimate for the wards at ${siteName}. ` : ""}New ED arrivals are not predicted, and a free bed
+            may not suit the person waiting.
+          </p>
+          <p>
+            From {plural(sourceSummary.discharges, "recorded discharge", "recorded discharges")} on{" "}
+            {plural(sourceSummary.wards, "ward", "wards")} and planned admissions.{" "}
+            {plural(sourceSummary.overdueNotHeldUp, "release is", "releases are")} overdue and not held up;{" "}
+            {plural(weekOut, "bed is", "beds are")} due out in the next {bars.length} days. Not yet counted:{" "}
+            {plural(forecastModel.notCounted.leaveBeds, "bed", "beds")} held for people on leave,{" "}
+            {plural(forecastModel.notCounted.repatriations, "repatriation", "repatriations")} booked.
+          </p>
           <p>
             Tomorrow&apos;s figure takes the ready beds that fit, adds the discharges recorded for today and tomorrow,
             and subtracts the people already waiting and the admissions already booked. Held-up and overdue releases
@@ -186,29 +188,35 @@ export function BedForecast({
 
 function Kpi({
   label,
+  srLabel,
   value,
   sub,
   tone,
   soft = false,
 }: {
   label: string;
+  /** Read after the label by a screen reader only, such as the exact time "Tomorrow" means. */
+  srLabel?: string;
   value: string;
   sub: string;
   tone: number;
   /** Rests on dates that may move: muted, with the chart's hatched swatch beside the label. */
   soft?: boolean;
 }) {
+  // Polish (Josh, 31 Oct 2026): a quiet sentence-case label, a 16 px figure and one muted line,
+  // in place of capitals over a 20 px figure.
   return (
-    <div className={styles.fcKpi}>
-      <dt className={soft ? styles.fcKpiSoftLabel : undefined}>
+    <div className={styles.fcFig}>
+      <dt className={styles.fcFigLabel}>
         {soft ? <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" /> : null}
-        <Kicker>{label}</Kicker>
+        {label}
+        {srLabel ? <span className={styles.srOnly}>{srLabel}</span> : null}
       </dt>
-      <dd>
-        <span className={`${styles.fcKpiValue} ${soft ? styles.fcKpiSoft : tone < 0 ? styles.warnInk : styles.okInk}`}>
+      <dd className={styles.fcFigBody}>
+        <span className={`${styles.fcFigValue} ${soft ? styles.fcFigSoft : tone < 0 ? styles.warnInk : styles.okInk}`}>
           {value}
         </span>
-        <span className={styles.mutedXs}>{sub}</span>
+        <span className={styles.fcFigSub}>{sub}</span>
       </dd>
     </div>
   );
@@ -221,53 +229,59 @@ function daySub(day: HorizonDay): string {
   return day.weekend ? "Weekend" : "May move";
 }
 
-function LeverItem({ lever, n }: { lever: ForecastLever; n: number }) {
-  const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+function plural(count: number, one: string, many: string): string {
+  return `${count} ${count === 1 ? one : many}`;
+}
+
+function LeverItem({ lever }: { lever: ForecastLever }) {
+  const canOpen = useCanOpenHref();
   const content =
     lever.kind === "clear_held_up"
       ? {
-          // Redesign (Josh, 30 Oct): names its subset (due by this time tomorrow) and Discharges'
-          // barrier names, and opens Discharges' held-up list rather than the waiting list.
-          title: `Chase ${plural(lever.beds, "held-up release", "held-up releases")} due by tomorrow`,
-          body: tallyBarriers(lever.reasons)
+          // Redesign (Josh, 30 Oct): names its subset (due by this time tomorrow) and opens
+          // Discharges' held-up list. The barrier tally is on that list.
+          title: `Chase ${plural(lever.beds, "held-up release", "held-up releases")}`,
+          action: { href: HELD_UP_HREF, label: "Open" },
+          detail: tallyBarriers(lever.reasons)
             .map((entry) => `${entry.label} ${entry.count}`)
-            .join(" · "),
-          action: { href: HELD_UP_HREF, label: HELD_UP_LINK_LABEL },
+            .join(", "),
           uplift: lever.likelyUplift,
         }
       : lever.kind === "confirm_dates"
         ? {
-            title: `Ask ${plural(lever.wards.length, "ward", "wards")} to confirm tomorrow's discharges`,
-            body: `${lever.wards.join(", ")}: a planned date but no release flagged.`,
-            action: { href: "/ward-flow/discharges", label: "Open discharges" },
+            title: `Confirm discharges on ${plural(lever.wards.length, "ward", "wards")}`,
+            action: { href: "/ward-flow/discharges", label: "Open" },
+            detail: lever.wards.join(", "),
             uplift: lever.likelyUplift,
           }
         : {
             title: `Review ${plural(lever.beds, "overdue release", "overdue releases")}`,
-            body: "Their dates have passed, so they widen the range but never lift the likely figure.",
-            action: { href: "/ward-flow/discharges", label: "Review" },
+            action: { href: "/ward-flow/discharges", label: "Open" },
+            detail: "Dates passed: they widen the range only",
             uplift: 0,
           };
-  return (
-    <li className={styles.lever}>
-      <span className={styles.leverN} aria-hidden="true">
-        {n}
+  const inner = (
+    <>
+      <span className={styles.helpTitle}>{content.title}</span>
+      <span className={styles.srOnly}>. {content.detail}. </span>
+      <span className={`${styles.tag} ${content.uplift > 0 ? styles.tagGood : ""}`}>
+        {content.uplift > 0 ? `up to +${content.uplift}` : "range only"}
       </span>
-      <div className={styles.leverMain}>
-        <div className={styles.leverHead}>
-          <b>{content.title}</b>
-          <span className={`${styles.tag} ${content.uplift > 0 ? styles.tagGood : ""}`}>
-            {content.uplift > 0 ? `up to +${content.uplift}` : "range only"}
-          </span>
-        </div>
-        <span className={styles.mutedXs}>{content.body}</span>
-        <Link
-          href={content.action.href}
-          className={buttonClass({ variant: "sec", size: "sm", className: styles.leverAction })}
-        >
-          {content.action.label}
+    </>
+  );
+  // Role view: a desk that cannot open Discharges (executive) reads the step without a link.
+  return (
+    <li>
+      {canOpen(content.action.href) ? (
+        <Link href={content.action.href} className={styles.helpLink} title={content.detail}>
+          {inner}
+          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
         </Link>
-      </div>
+      ) : (
+        <span className={`${styles.helpLink} ${styles.helpStatic}`} title={content.detail}>
+          {inner}
+        </span>
+      )}
     </li>
   );
 }
@@ -281,43 +295,82 @@ function WardDays({
 }) {
   const [all, setAll] = useState(false);
   const shown = all ? rows : rows.slice(0, WARD_ROWS);
+  // Polish (Josh, 31 Oct 2026): each cell is the figure alone on a tint that deepens with the
+  // count, so the eye reads the grid as a heat map. Later days carry the chart's hatch, a planned
+  // admission is a small "+1" mark in the corner, and each row ends in its seven-day total.
   return (
     <div className={styles.heat}>
-      <table className={styles.heatTable}>
+      <table className={styles.hm}>
         <caption className={styles.srOnly}>
           Recorded discharges (out) and planned admissions (in) by ward and day
         </caption>
         <thead>
           <tr>
-            <th scope="col">Ward</th>
-            {days.map((day) => (
-              <th key={day.offset} scope="col" className={day.offset > 1 ? styles.heatLater : undefined}>
-                {day.label}
-              </th>
-            ))}
+            <th scope="col" className={styles.hmWardHead}>
+              Ward
+            </th>
+            {days.map((day) => {
+              const [weekday, date] = day.label.split(" ");
+              return (
+                <th
+                  key={day.offset}
+                  scope="col"
+                  className={`${styles.hmDay}${day.offset === 0 ? ` ${styles.hmToday}` : ""}`}
+                >
+                  <span className={styles.hmWeekday}>{weekday}</span>
+                  <span className={styles.hmDate}>{date}</span>
+                </th>
+              );
+            })}
+            <th scope="col" className={styles.hmDay}>
+              <span className={styles.hmWeekday}>Total</span>
+              <span className={styles.hmDate}>7 days</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {shown.map((row) => (
-            <tr key={row.unitId}>
-              <th scope="row">
-                <SpelledCodes text={row.name} />
-              </th>
-              {days.map((day, index) => {
-                const out = row.out[index] ?? 0;
-                const arriving = row.arriving[index] ?? 0;
-                return (
-                  <td
-                    key={day.offset}
-                    className={`${styles.heatCell} ${styles[`heat${Math.min(out, 2)}`] ?? ""} ${day.offset > 1 ? styles.heatLater : ""}`}
-                  >
-                    {out ? <span>{out} out</span> : <span className={styles.srOnly}>none</span>}
-                    {arriving ? <em>+{arriving} in</em> : null}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {shown.map((row) => {
+            const total = row.out.reduce((sum, value) => sum + value, 0);
+            return (
+              <tr key={row.unitId}>
+                <th scope="row" className={styles.hmWard}>
+                  <SpelledCodes text={row.name} />
+                </th>
+                {days.map((day, index) => {
+                  const out = row.out[index] ?? 0;
+                  const arriving = row.arriving[index] ?? 0;
+                  return (
+                    <td key={day.offset} className={styles.hmCellWrap}>
+                      <span
+                        className={`${styles.hmCell} ${styles[`hm${Math.min(out, 3)}`] ?? ""}${
+                          day.offset > 1 && out > 0 ? ` ${styles.hmLater}` : ""
+                        }`}
+                      >
+                        {out ? (
+                          <>
+                            {out}
+                            <span className={styles.srOnly}> out</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className={styles.hmNone} aria-hidden="true" />
+                            <span className={styles.srOnly}>none</span>
+                          </>
+                        )}
+                        {arriving ? (
+                          <span className={styles.hmIn} title={`${arriving} planned admission`}>
+                            +{arriving}
+                            <span className={styles.srOnly}> in</span>
+                          </span>
+                        ) : null}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className={styles.hmTotal}>{total}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {rows.length > WARD_ROWS ? (

@@ -113,7 +113,7 @@ export function useCommunityScreenTransport({ raise, teamId }: { raise: WardRais
   const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
   const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
   useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
-  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, closeTransportCancel);
+  // Cancellation owns its focus lifecycle beside its save state, so Escape cannot hide a pending answer.
 
   // Audit 24-3 SV-2: each dialog closes only once its save is accepted. The dialog's own
   // `useWardFormSave` keeps the answers and says why when it is refused or not confirmed.

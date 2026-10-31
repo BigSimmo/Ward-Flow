@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+
+import { useIsPhone } from "@/components/wf";
 
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
@@ -23,7 +25,7 @@ import {
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { SEVERE_CAUSES, delayGroups } from "@/components/ward-management/delays/delays-derivations";
-import { DailyCheckLine } from "./daily-check-line";
+import { DailyCheckHeroTile, DailyCheckLine, DailyCheckList } from "./daily-check-line";
 import { DelaysBoardRedesign } from "./delays-board-redesign";
 import { retitledGroups } from "./wait-bands";
 import styles from "@/components/ward-management/delays/delays.module.css";
@@ -47,6 +49,11 @@ export function WaitingRedesign({ movements: movementsOverride }: DelaysScreenPr
   const thresholds = useDueSoonThresholds();
   const accessRole = useEffectiveWardAccess().role;
   const showMissedRequests = accessRole === "coordinator";
+  // Round 4 (Josh, 31 Oct 2026): on a laptop the daily check is a tile in the dark header and its
+  // list opens under the header; the phone keeps the one-line check.
+  const isPhone = useIsPhone();
+  const [checkOpen, setCheckOpen] = useState(false);
+  const checkListId = useId();
 
   const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
@@ -186,7 +193,13 @@ export function WaitingRedesign({ movements: movementsOverride }: DelaysScreenPr
           {notice}
         </div>
       ) : null}
-      {showMissedRequests ? <DailyCheckLine /> : null}
+      {showMissedRequests ? (
+        isPhone ? (
+          <DailyCheckLine />
+        ) : (
+          <DailyCheckList open={checkOpen} listId={checkListId} onClose={() => setCheckOpen(false)} />
+        )
+      ) : null}
     </>
   );
 
@@ -204,6 +217,15 @@ export function WaitingRedesign({ movements: movementsOverride }: DelaysScreenPr
           isOutsideService={isOutsideService}
           onEscalate={escalate}
           banner={banner}
+          heroCheck={
+            showMissedRequests && !isPhone ? (
+              <DailyCheckHeroTile
+                open={checkOpen}
+                onToggle={() => setCheckOpen((current) => !current)}
+                listId={checkListId}
+              />
+            ) : null
+          }
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">

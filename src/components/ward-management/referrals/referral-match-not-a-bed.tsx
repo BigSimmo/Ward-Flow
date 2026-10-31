@@ -2,6 +2,7 @@
 
 import { type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { RadioGroup } from "@/components/wf";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
@@ -85,7 +86,7 @@ export function renderNotABedPhoneReview({
       {phoneDeclining ? (
         <>
           <p className={ph.ch}>Why decline?</p>
-          <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+          <RadioGroup className={ph.cands} aria-label="Why decline?">
             {ED_DECLINE_REASONS.map((reason) => (
               <button
                 key={reason}
@@ -100,7 +101,7 @@ export function renderNotABedPhoneReview({
                 <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
               </button>
             ))}
-          </div>
+          </RadioGroup>
           <p className={ph.matchHint} id="ward-referral-match-decline-blocked-emergency_department">
             {edDeclineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
           </p>
