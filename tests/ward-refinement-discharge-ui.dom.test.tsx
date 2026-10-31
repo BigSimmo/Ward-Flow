@@ -4,44 +4,11 @@ import { describe, expect, it } from "vitest";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { DischargeBoard, groupDischarges } from "@/components/ward-management/discharges/discharge-board";
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
-import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { bedReleases } from "@/components/ward-management/ward-movements";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { ensureWardTable } from "./helpers/capacity-ward-table";
-
-/**
- * Flags one bed as freeing later today, for a real occupant with no live release. Since 25 September
- * 2026 the seed's releases come from each stay's own recorded discharge date, and none is due later
- * today, so the "Freeing today" list starts empty; the focus journey below needs one opener to press.
- */
-function FlagOneBedFreeingToday() {
-  const { dispatch, now, admissions, bedReleases: live } = useWardFlow();
-  const occupant = admissions.find(
-    (a) => a.state === "occupied" && !live.some((r) => r.admissionId === a.id && r.state !== "discharged"),
-  );
-  return (
-    <button
-      type="button"
-      data-testid="test-flag-freeing-today"
-      onClick={() =>
-        occupant &&
-        dispatch({
-          type: "FLAG_BED_RELEASE",
-          role: "ward",
-          now,
-          unitId: occupant.unitId,
-          actingUnitId: occupant.unitId,
-          admissionId: occupant.id,
-          waitingOn: "Awaiting ward round",
-          expectedAt: now + 60,
-        })
-      }
-    >
-      flag a bed freeing today
-    </button>
-  );
-}
+import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 
 /**
  * How many seeded stays carry a discharge record AND name a patient who exists, counted from the seed
@@ -65,7 +32,6 @@ function renderCapacity() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
-      <FlagOneBedFreeingToday />
     </WardFlowProvider>,
   );
 }
@@ -102,35 +68,38 @@ function populationCount(button: HTMLElement): number {
 }
 
 describe("Q004 Capacity and Discharges refinement journeys", () => {
-  it("returns focus to the Beds freeing ward opener after the ward sidebar remounts the network", () => {
-    const { container } = renderCapacity();
-    fireEvent.click(screen.getByTestId("test-flag-freeing-today"));
-    const opener = container.querySelector<HTMLButtonElement>('button[id^="capacity-freeing-ward-"]');
-    expect(opener, "the fixed fixture must expose a ward freeing a bed today").not.toBeNull();
-    const openerId = opener!.id;
-    const wardName = opener!.textContent!.trim();
+  it("returns focus to the bed map's ward card after the ward drawer closes", () => {
+    renderCapacity();
+    // Capacity redesign (31 Oct 2026): each ward card on the bed map opens the ward drawer; the old
+    // "Beds freeing" list and its openers went with the ready-now section.
+    const opener = bedMapCards()[0];
+    expect(opener, "the bed map must draw at least one ward card").toBeDefined();
+    const wardName = wardCardName(opener!);
 
+    opener!.focus();
     fireEvent.click(opener!);
-    expect(screen.getByRole("heading", { level: 2, name: wardName })).toHaveFocus();
-    fireEvent.click(screen.getByRole("button", { name: "Back to network" }));
+    const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+    expect(within(drawer).getByRole("heading", { name: wardName })).toBeInTheDocument();
+    fireEvent.click(within(drawer).getByRole("button", { name: "Close" }));
 
-    const restored = document.getElementById(openerId);
-    expect(restored, "the network remount did not recreate the original useful opener").not.toBeNull();
-    expect(restored).toHaveFocus();
+    expect(screen.queryByTestId("ward-capacity-ward-drawer")).toBeNull();
+    expect(opener).toHaveFocus();
   });
 
   it("opens a ward's explicit linked discharge record through the guarded Capacity journey", () => {
     renderCapacity();
-    ensureWardTable();
-    const rphRow = screen.getByTestId("ward-capacity-network-row-rph-adult-secure");
-    fireEvent.click(within(rphRow).getByRole("button", { name: "Dabakarn" }));
-    fireEvent.click(screen.getByRole("tab", { name: "Discharges" }));
+    const ward = allUnits().find((unit) => unit.id === "rph-adult-secure")!;
+    const card = bedMapCards().find((candidate) => wardCardName(candidate) === ward.name);
+    expect(card, `the bed map must draw ${ward.name}`).toBeDefined();
+    fireEvent.click(card!);
+    const drawer = within(screen.getByTestId("ward-capacity-ward-drawer"));
+    fireEvent.click(drawer.getByRole("radio", { name: /^Discharges/u }));
 
-    const opener = screen.getByRole("button", { name: /Ines Marrowby/u });
+    const opener = drawer.getByRole("button", { name: /Marrowby, Ines/u });
     fireEvent.click(opener);
 
     const detail = screen.getByRole("region", { name: "Discharge record detail" });
-    expect(within(detail).getByRole("heading", { name: "Ines Marrowby" })).toHaveFocus();
+    expect(within(detail).getByRole("heading", { name: "Marrowby, Ines" })).toHaveFocus();
     expect(detail).toHaveTextContent("UM100003");
   });
 
