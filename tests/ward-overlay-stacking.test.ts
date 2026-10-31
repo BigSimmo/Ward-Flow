@@ -48,25 +48,41 @@ describe("in-page slide-overs stay under the modal layer", () => {
 // drawer backdrops on the overlay rung.
 describe("overlays use the shared layers, not hard-coded ones", () => {
   it.each([
-    ["community/community.module.css", ".actionToast", "--z-toast"],
-    ["community/community.module.css", ".clinicalToast", "--z-toast"],
     ["community/community.module.css", ".modalOverlay", "--z-modal"],
-    ["ward/ward.module.css", ".actionToast", "--z-toast"],
     ["ward/ward.module.css", ".modalOverlay", "--z-modal"],
     ["ward/ward-answer-view.module.css", ".modalOverlay", "--z-modal"],
     ["ward/ward-answer-view.module.css", ".toast", "--z-toast"],
-    ["delays/delays.module.css", ".toastNotice", "--z-toast"],
     ["settings/settings-modals.module.css", ".modalOverlay", "--z-modal"],
     ["referrals/ward-referral-drawer.module.css", ".drawerBackdrop", "--z-overlay"],
     ["referrals/arrival-time-modal.module.css", ".overlay", "--z-modal"],
     ["ward-tasks-drawer.module.css", ".drawerBackdrop", "--z-overlay"],
     ["ward-standing-strip.module.css", ".hudAnchor", "--z-toast"],
-    ["board/board.module.css", ".toast", "--z-toast"],
     ["board/board.module.css", ".modalBackdrop", "--z-modal"],
     ["ed/ed.module.css", ".modalBackdrop", "--z-modal"],
+    // Notifications pass (30 Oct 2026): the record document dialog sat at 9999, above the toasts it
+    // raised, and two full-screen views fell back to 1000 when the token was missing.
+    ["referrals/upload-forms-modal.module.css", ".scrim", "--z-modal"],
+    ["movements/movement-horizon.module.css", ".fullscreen", "--z-modal"],
+    ["capacity/bed-meeting-sheet.module.css", ".portal", "--z-modal"],
   ])("%s %s uses %s", (file, selector, token) => {
     const values = zIndexOf(css(file), selector);
     expect(values.length).toBeGreaterThan(0);
     for (const value of values) expect(value).toBe(`var(${token})`);
+  });
+});
+
+// Notifications pass (30 Oct 2026): the Board, Ward, Community, Delays and On-call screens drew
+// their own toasts, each with its own timer, corner and look; Board and Community also timed out
+// refusals. They now use the shared toast region (`useActionToast`), so none keeps a toast style.
+describe("screens use the shared toast region, not their own", () => {
+  it.each([
+    ["board/board.module.css", ".toast"],
+    ["ward/ward.module.css", ".actionToast"],
+    ["community/community.module.css", ".actionToast"],
+    ["delays/delays.module.css", ".toastNotice"],
+    ["on-call/on-call.module.css", ".toast"],
+  ])("%s has no %s rule", (file, selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    expect(css(file)).not.toMatch(new RegExp(`${escaped}(?![\\w-])`));
   });
 });

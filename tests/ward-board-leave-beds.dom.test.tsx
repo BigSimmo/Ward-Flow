@@ -1,5 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import { useLayoutEffect } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -269,7 +270,7 @@ function StaleArrivalBoard() {
     </WardFlowOverride>
   );
 }
-it("labels and announces a real local arrival refusal explicitly", () => {
+it("labels a real local arrival refusal explicitly and announces it once", () => {
   resetWardLiveRegionForTests();
   probeRef.current = null;
   render(
@@ -284,5 +285,7 @@ it("labels and announces a real local arrival refusal explicitly", () => {
   expect(refusal?.reason).toContain("cannot confirm arrival");
   const expected = `Action refused: ${refusal?.reason}`;
   expect(screen.getByTestId("ward-board-toast").textContent).toBe(expected);
-  expect(screen.getByTestId("ward-live-region").textContent?.replace(/\u200B/g, "")).toBe(expected);
+  // Read once, by the shared toast region; the shell region no longer repeats it (notifications pass).
+  expect(screen.getByTestId("toast-region")).toContainElement(screen.getByTestId("ward-board-toast"));
+  expect(screen.getByTestId("ward-live-region").textContent?.replace(/\u200B/g, "")).not.toBe(expected);
 });

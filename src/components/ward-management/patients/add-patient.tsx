@@ -68,7 +68,11 @@ import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import styles from "./add-patient.module.css";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
-import { SHARED_REFRESH_MS, SLOW_SAVE_NOTE_MS } from "@/components/ward-management/ward-operational-defaults";
+import {
+  SHARED_REFRESH_MS,
+  SLOW_SAVE_NOTE_MS,
+  UNDO_TOAST_MS,
+} from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
@@ -307,7 +311,7 @@ export function AddPatientForm() {
         title: "Form cleared",
         body: "Nothing was saved to the record.",
         undo: {
-          durationMs: 8000,
+          durationMs: UNDO_TOAST_MS,
           onUndo: () => {
             if (resetToastRef.current?.id === id) resetToastRef.current = null;
             restoreSnapshot(snap);

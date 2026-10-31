@@ -11,7 +11,7 @@
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface, var(--wf-canvas));
-  box-shadow: var(--shadow-overlay);
+  box-shadow: var(--wf-e3);
   color: var(--wf-ink-2);
 }
 
@@ -81,4 +81,17 @@
   .card {
     display: none !important;
   }
+}
+
+/* A notice that has just come in sits in this corner too: on a phone the card steps back while one
+   is showing, unless it holds focus, and comes back when the notice goes (notifications pass). */
+@media (max-width: 48rem) {
+  :global(html:has([data-wf-toast]:not([data-leaving="true"]))) .card:not(:focus-within) {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+.card {
+  transition: opacity var(--wf-t-exit, 160ms) var(--wf-ease-out, ease-out);
 }

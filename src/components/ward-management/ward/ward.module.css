@@ -2593,50 +2593,6 @@
   flex-shrink: 0;
 }
 
-/* ─── Action Toast (Owner Rule D4) ────────────────────────────── */
-.actionToast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r2, 6px);
-  padding: 12px 16px;
-  font-size: var(--t-1, 13px);
-  font-weight: 500;
-  box-shadow: var(--lift);
-  z-index: var(--z-toast);
-  transform: translateY(120%);
-  opacity: 0;
-  transition:
-    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.actionToast.show {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-/* Audit A-1: a warning stays until it is closed, so its Close button takes taps. */
-.actionToastClose {
-  pointer-events: auto;
-  margin-left: 4px;
-  border: 0;
-  background: none;
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-  text-decoration: underline;
-  cursor: pointer;
-  min-height: 24px;
-}
-
 /* ─── Perfected Third Edition Console Layout ─────────────────── */
 .cardPanel {
   background: var(--glass-fill, var(--surface));
@@ -4234,58 +4190,6 @@
   /* A hairline under the pinned tabs, so headings scrolling under them read as passing beneath
      rather than cut off. */
   box-shadow: 0 1px 0 var(--wf-line);
-}
-
-/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
-@media (max-width: 48rem) {
-  .actionToast {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
-    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
-    --toast-ring: light-dark(transparent, var(--wf-line-2));
-    position: fixed;
-    top: auto;
-    right: 12px;
-    bottom: 92px;
-    left: 12px;
-    width: fit-content;
-    max-width: calc(100% - 24px);
-    margin: 0 auto;
-    transform: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    box-sizing: border-box;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--wf-r-lg);
-    background: var(--toast-bg);
-    box-shadow:
-      0 0 0 1px var(--toast-ring),
-      var(--wf-e2);
-    color: var(--toast-ink);
-    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-    text-align: left;
-    white-space: normal;
-    z-index: var(--z-toast);
-  }
-
-  .actionToast.show {
-    transform: none;
-  }
-
-  .actionToast > svg {
-    display: none;
-  }
-  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
-  :global(html:has([role="dialog"][aria-modal="true"])) .actionToast {
-    bottom: 136px;
-  }
 }
 
 @media (max-width: 48rem), (pointer: coarse) {

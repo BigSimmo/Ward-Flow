@@ -69,6 +69,8 @@ type WardScreenTopBarProps = {
   handleConfirmMorningRollup: () => void;
   handleAcknowledgeNotice: (noticeId: string) => void;
   handleDismissBuzz: (buzzKey: string) => void;
+  /** Buzzes acknowledged on this screen, so the panel lists what the button counts. */
+  dismissedBuzzKeys?: readonly string[];
   setNotificationCenterOpen: Dispatch<SetStateAction<boolean>>;
   notificationTriggerRef: RefObject<HTMLButtonElement | null>;
   tabHome: ReactElement;
@@ -114,6 +116,7 @@ export function WardScreenTopBar({
   handleConfirmMorningRollup,
   handleAcknowledgeNotice,
   handleDismissBuzz,
+  dismissedBuzzKeys,
   setNotificationCenterOpen,
   notificationTriggerRef,
   tabHome,
@@ -256,6 +259,7 @@ export function WardScreenTopBar({
                 onConfirmMorningRollup={handleConfirmMorningRollup}
                 onAcknowledgeNotice={handleAcknowledgeNotice}
                 onDismissBuzz={handleDismissBuzz}
+                dismissedBuzzKeys={dismissedBuzzKeys}
                 onClose={closePhoneNotices}
               />
             </div>
@@ -340,6 +344,7 @@ export function WardScreenTopBar({
                         onConfirmMorningRollup={handleConfirmMorningRollup}
                         onAcknowledgeNotice={handleAcknowledgeNotice}
                         onDismissBuzz={handleDismissBuzz}
+                        dismissedBuzzKeys={dismissedBuzzKeys}
                         onClose={() => setNotificationCenterOpen(false)}
                       />
                     </div>

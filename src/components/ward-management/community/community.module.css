@@ -1533,50 +1533,6 @@
   outline-offset: 1px;
 }
 
-/* ── Action Toasts ───────────────────────────────────────────────────────── */
-
-.actionToast {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%) translateY(120%);
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--wf-r-lg);
-  padding: 8px 18px;
-  font-size: var(--t-1, 13px);
-  font-weight: 600;
-  box-shadow: 0 10px 30px rgb(var(--ward-shadow-rgb) / 0.22);
-  z-index: var(--z-toast);
-  opacity: 0;
-  transition:
-    background-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  white-space: nowrap;
-}
-
-.actionToast.show,
-.actionToastVisible {
-  transform: translateX(-50%) translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.toastIcon {
-  color: var(--accent);
-  font-size: 1.125rem;
-}
-
 /* ── Tabular Numerals ────────────────────────────────────────────────────── */
 
 .screen :global([data-ward-primitive="figure"]),
@@ -2604,33 +2560,6 @@ button.searchBox:hover {
   gap: 1rem;
 }
 
-.clinicalToast {
-  position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  background: var(--surface);
-  color: var(--ink);
-  border: 1px solid var(--line-strong);
-  box-shadow: var(--lift);
-  padding: 0.625rem 1rem;
-  border-radius: var(--r2);
-  font-size: var(--t-1);
-  font-weight: 600;
-  z-index: var(--z-toast);
-  animation: toastFadeIn 0.2s ease;
-}
-
-@keyframes toastFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(0.5rem);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* ── Modal Overlay & Dialog ────────────────────────────────────────────── */
 .modalOverlay {
   position: fixed;
@@ -3245,54 +3174,6 @@ button.searchBox:hover {
     border: 1px solid var(--wf-line-2);
     border-radius: var(--wf-r-md);
     background: var(--wf-surface);
-  }
-}
-
-/* Phone toast, as the v10 all-pages mockup draws it (.toast, .frame.phone > .toasts): a dark pill
-   with the tooltip's tip colours, 12px from each side and 92px up, text may wrap. Desktop and
-   tablet keep the toast above. */
-@media (max-width: 48rem) {
-  .actionToast {
-    --toast-bg: light-dark(
-      color-mix(in srgb, var(--wf-ink-1) 92%, transparent),
-      color-mix(in srgb, var(--wf-track) 97%, transparent)
-    );
-    --toast-ink: light-dark(var(--wf-surface), var(--wf-ink-1));
-    --toast-ring: light-dark(transparent, var(--wf-line-2));
-    position: fixed;
-    top: auto;
-    right: 12px;
-    bottom: 92px;
-    left: 12px;
-    width: fit-content;
-    max-width: calc(100% - 24px);
-    margin: 0 auto;
-    transform: none;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-height: 44px;
-    box-sizing: border-box;
-    padding: 0 14px;
-    border: 0;
-    border-radius: var(--wf-r-lg);
-    background: var(--toast-bg);
-    box-shadow:
-      0 0 0 1px var(--toast-ring),
-      var(--wf-e2);
-    color: var(--toast-ink);
-    font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-    text-align: left;
-    white-space: normal;
-  }
-
-  .actionToast.show,
-  .actionToastVisible {
-    transform: none;
-  }
-  /* A sheet or dialog is open: sit higher so its footer buttons stay clear. */
-  :global(html:has([role="dialog"][aria-modal="true"])) .actionToast {
-    bottom: 136px;
   }
 }
 

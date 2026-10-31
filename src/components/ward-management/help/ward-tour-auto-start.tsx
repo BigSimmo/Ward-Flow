@@ -7,6 +7,7 @@ import { Button, OverlayPortal } from "@/components/wf";
 
 import { parseTourSeen, useTourRole, useTourSeen, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
+import { useCornerCardEscape } from "./use-corner-card-escape";
 import styles from "./ward-tour-offer.module.css";
 
 export const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
@@ -90,10 +91,13 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);
   }, [deskHome, home, pathname, role, seen]);
-  if (!offered || offered.role !== role || offered.pathname !== pathname) return null;
+  const showing = Boolean(offered && offered.role === role && offered.pathname === pathname);
+  // Escape is "Not now".
+  useCornerCardEscape(showing, () => setOffered(null));
+  if (!showing) return null;
   return (
     <OverlayPortal layer="overlay" name="ward-tour-offer">
-      <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer">
+      <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer" data-wf-corner-card="">
         <p className={styles.text}>Want a quick tour? It takes about 2 minutes.</p>
         <div className={styles.actions}>
           <Button

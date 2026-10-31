@@ -6,7 +6,6 @@
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import styles from "./board.module.css";
 import { type ShiftTileItem } from "./ward-board-model";
 import type { ActionToast } from "@/components/ward-management/ward-action-toast";
@@ -246,9 +245,6 @@ export function WardBoardWorkBand({
                     if (!ownRelease) {
                       const msg = `No discharge is recorded for ${who}, so there is nothing to hold up. Nothing was changed.`;
                       setToastMessage({ warning: msg });
-                      announceToWardShell(
-                        "No discharge is recorded for this patient, so there is nothing to hold up. Nothing was changed.",
-                      );
                     } else {
                       dispatchAndReport(
                         () =>

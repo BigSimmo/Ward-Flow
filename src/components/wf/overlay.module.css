@@ -168,6 +168,203 @@
   border-radius: var(--wf-r-md);
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   pointer-events: auto;
+  /* v9 section 6: quick in, rising 4px; no fill-mode, which would stop the glass blur. */
+  animation: wfToastIn var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out);
+}
+
+/* Quicker out. `forwards` is allowed here: the card is removed when the exit ends. */
+.toast[data-leaving="true"] {
+  animation: wfToastOut var(--wf-t-exit, 160ms) var(--wf-ease-in, ease-in) forwards;
+  pointer-events: none;
+}
+
+@keyframes wfToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@keyframes wfToastOut {
+  to {
+    opacity: 0;
+    transform: translateY(4px) scale(0.98);
+  }
+}
+
+@keyframes wfToastFadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes wfToastFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+/* The cards. One column; older self-closing notices fold behind the newest when there are three
+   or more (toast-stack.ts places them in one grid row). A warning keeps its own row. */
+.toastList {
+  display: grid;
+  grid-template-columns: minmax(0, auto);
+  justify-items: end;
+  align-items: end;
+  gap: var(--wf-s-2);
+  pointer-events: none;
+}
+
+/* Hovered open: the whole column holds the pointer, so moving between cards does not refold it. */
+.toastList[data-hover-open="true"] {
+  pointer-events: auto;
+}
+
+.toastList > .toast {
+  transition:
+    translate var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out),
+    scale var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out),
+    opacity var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out);
+}
+
+.toastList[data-stack="folded"] > .toast {
+  grid-column: 1;
+  translate: 0 calc(var(--wf-toast-depth, 0) * -8px);
+  scale: calc(1 - var(--wf-toast-depth, 0) * 0.04);
+  transform-origin: bottom center;
+}
+
+/* "+N more" and Recent: small, quiet controls above the cards, outside the live region. */
+.toastTools {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-1);
+  pointer-events: none;
+}
+
+.toastTools:empty {
+  display: none;
+}
+
+.toastToolButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: var(--wf-target, 28px);
+  padding: 0 var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill, 999px);
+  background: var(--wf-overlay);
+  box-shadow: var(--wf-e2);
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  cursor: pointer;
+  pointer-events: auto;
+  animation: wfToastFadeIn var(--wf-t-enter, 220ms) var(--wf-ease-out, ease-out);
+  transition:
+    color var(--wf-t-micro, 100ms) var(--wf-ease-out, ease-out),
+    border-color var(--wf-t-micro, 100ms) var(--wf-ease-out, ease-out);
+}
+
+.toastToolButton:hover {
+  border-color: var(--wf-line-3, var(--wf-line-2));
+  color: var(--wf-ink-1);
+}
+
+.toastToolButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.toastToolCount {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  color: var(--wf-ink-3);
+}
+
+.recentAnchor {
+  pointer-events: auto;
+}
+
+/* A help corner card shares this corner: Recent waits until it has gone. */
+:global(html:has([data-wf-corner-card])) .recentAnchor {
+  display: none;
+}
+
+/* The Recent list: the newest first, a glyph, the words and how long ago. */
+.recentPanel {
+  width: min(22rem, calc(100vw - 32px));
+  pointer-events: auto;
+}
+
+.recentHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) var(--wf-s-2);
+}
+
+.recentList {
+  display: grid;
+  max-height: min(60vh, 22rem);
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.recentItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.recentItem > :first-child {
+  margin-top: 4px;
+}
+
+.recentWords {
+  display: grid;
+  min-width: 0;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.recentBody {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.recentWhen {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.recentEmpty {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation-name: wfToastFadeIn;
+  }
+  .toast[data-leaving="true"] {
+    animation-name: wfToastFadeOut;
+  }
+  .toastList > .toast {
+    transition-property: opacity;
+  }
 }
 
 .toastText {
@@ -282,6 +479,16 @@
     bottom: var(--wf-toast-rest);
     padding: 0;
     align-items: center;
+  }
+
+  .toastList {
+    width: 100%;
+    justify-items: center;
+  }
+
+  .toastTools {
+    align-self: stretch;
+    justify-content: center;
   }
 
   /* A page's sticky phone action bar (Patient's "Record search done") sits just above the dock:
@@ -410,6 +617,20 @@
    so it never blocks the page; each card the provider renders opts back in. */
 .toast.toastPointer {
   pointer-events: auto;
+}
+
+/* A help corner card (the tour offer, What's new, a screen hint) holds the bottom right on desktop:
+   notices stand beside it, to its left, rather than covering its buttons. */
+@media (min-width: 48.0625rem) {
+  :global(html:has([data-wf-corner-card])) .toastRegion {
+    --wf-corner-card-room: calc(min(23rem, 100vw - 2rem) + 1rem);
+    right: var(--wf-corner-card-room);
+    max-width: calc(100vw - var(--wf-corner-card-room));
+  }
+
+  :global(html:has([data-wf-corner-card])) .toastRegion .toast {
+    max-width: 100%;
+  }
 }
 
 /* P006: notices are screen-only; keep them off printed outputs. */
