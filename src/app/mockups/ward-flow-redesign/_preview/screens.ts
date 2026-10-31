@@ -34,17 +34,6 @@ export type MockupPopup = {
 
 export const MOCKUP_BASE = "/mockups/ward-flow-redesign";
 
-/** The desk each role's views are drawn as: the same ward, ED and team the coordinator's mock-ups show. */
-const ROLE_DESKS = {
-  ward: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
-  ed: { role: "ed", scope: { kind: "ed", edId: "peel-ed" } },
-  community: { role: "community", scope: { kind: "team", teamName: "Midland" } },
-  officer: { role: "officer", scope: { kind: "jobs" } },
-  "bed-manager": { role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } },
-  executive: { role: "executive", scope: { kind: "statewide" } },
-  admin: { role: "admin", scope: { kind: "statewide" } },
-} satisfies Record<string, WardAccess>;
-
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
