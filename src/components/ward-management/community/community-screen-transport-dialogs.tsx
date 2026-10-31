@@ -62,8 +62,8 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
   }
   if (transportBookFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportBookFor);
-  // The patient's name, as every other screen shows it. The movement id is never a person's name.
-  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
+  // The patient's name, surname first as every record shows it. The movement id is never a person's name.
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : "the patient";
   return (
     // A stray tap on the backdrop does not close the booking, because closing clears every answer
     // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape still do.
@@ -127,7 +127,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
   });
   if (transportCancelFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportCancelFor);
-  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : "the patient";
   return (
     <div className={styles.modalBackdrop} role="presentation">
       <div

@@ -5,11 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-form-code-titles",
-    "date": "2026-10-27",
-    "line": "Statutory form codes now show their title, such as Form 4A (Transport order), in more places."
-  },
-  {
     "id": "2026-10-27-demo-chip-ward-clock",
     "date": "2026-10-27",
     "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
@@ -98,5 +93,10 @@
     "id": "2026-10-28-help-expansion",
     "date": "2026-10-28",
     "line": "Help adds spelling fixes, grouped words, accessibility, first-visit hints and printable desk guides."
+  },
+  {
+    "id": "2026-10-31-transport-cancel-names",
+    "date": "2026-10-31",
+    "line": "Cancelling community transport now names the patient, and the desk guides match what each desk can open."
   }
 ]

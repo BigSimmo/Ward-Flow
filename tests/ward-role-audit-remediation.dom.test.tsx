@@ -8,6 +8,7 @@ import type { CommunityScreenView } from "@/components/ward-management/community
 import { CANCEL_TRANSPORT_REASONS } from "@/components/ward-management/ward-change-reasons";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -51,6 +52,8 @@ describe("community cancellation keeps context until its command is answered", (
   it("keeps the chosen reason after a backdrop tap and identifies the person instead of the journey ID", () => {
     const { dialog, select } = openCancellation(vi.fn());
     expect(within(dialog).getByRole("heading")).not.toHaveTextContent(movement.id);
+    // Surname first, as every record shows the person.
+    expect(within(dialog).getByRole("heading")).toHaveTextContent(resolveSubjectPatient(movement, state).formalName);
     fireEvent.click(dialog.parentElement!);
     expect(dialog).toBeInTheDocument();
     expect(select).toHaveValue(reason);
