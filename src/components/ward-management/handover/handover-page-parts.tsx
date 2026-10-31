@@ -28,18 +28,24 @@ export function HandoverHistory({
   meetings,
   preparedAt,
   now,
+  unitId,
 }: {
   signOffs: readonly { at: Instant; by: WardFlowRole; unitId?: string; network?: true }[];
   meetings: { at: Instant; minutes: number }[];
   preparedAt: Instant | null;
   now: Instant;
+  /** The sheet's ward, or undefined for a wider sheet (as `sheetSignOff` reads it). */
+  unitId: string | undefined;
 }) {
   // Decision 41 (Josh, 31 Oct 2026): each sign-off says whose ward's sheet it signed; Q67: a
   // whole-network desk's reads "Whole network". One saved before sign-offs named a ward reads "Ward
   // not recorded"; a ward is never guessed for it (`handoverSignOffPlace`).
   const units = useOptionalWardFlowSelect("units")?.units;
+  // A missed sign-off counts only this sheet's own sign-offs: its ward's, or for a wider sheet those
+  // naming no ward, so another ward's sign-off never hides this sheet's missed one.
+  const sheetSignOffs = signOffs.filter((record) => record.unitId === unitId);
   const unsigned = HANDOVER_SHIFTS.filter((shift) => {
-    return handoverAt(shift.id, now) <= now && handoverSignedAt(signOffs, shift.id, now) === null;
+    return handoverAt(shift.id, now) <= now && handoverSignedAt(sheetSignOffs, shift.id, now) === null;
   });
   return (
     <Card as="section" aria-label="Handover history" data-testid="ward-handover-history">
