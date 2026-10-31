@@ -175,7 +175,14 @@ export function renderNotABedPhoneReview({
           </>
         ) : (
           <>
-            <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(true)}>
+            {/* Referrals redesign (31 Oct 2026): the ward sheet's own Decline id, so the board's D key
+                opens these reasons here too, now that desktop uses this ED review. */}
+            <button
+              type="button"
+              className={ph.sec}
+              data-testid="ward-referral-match-decline-open"
+              onClick={() => setPhoneDeclining(true)}
+            >
               Decline
             </button>
             <button

@@ -10,7 +10,9 @@ import { openInformationNeeds } from "./referral-information-needs";
 import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { ShowMoreRow } from "@/components/wf/show-more-row";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -532,20 +534,34 @@ export function DecidedSection({
   );
   const nameFor = usePatientNameDisplay();
   const sender = useSenderPresentation();
+  // Community desk (Josh, 31 Oct 2026): the History tab above carries the count, and the note on
+  // what an acceptance does is the coordinator's reminder, so both are left out. A long list opens
+  // on its first rows, then Show more (owner rule).
+  const communityDesk = useEffectiveWardAccess().role === "community";
+  const [showAll, setShowAll] = useState(false);
+  const hiddenRows = communityDesk && !showAll ? Math.max(0, displayDecided.length - FIRST_DECIDED) : 0;
+  const listed = hiddenRows > 0 ? displayDecided.slice(0, FIRST_DECIDED) : displayDecided;
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
         eyebrow
         title={
           <>
-            Recently decided{" "}
-            <Count n={decided.length < decidedTotal ? `${decided.length} of ${decidedTotal}` : decidedTotal} />
+            Recently decided
+            {communityDesk ? null : (
+              <>
+                {" "}
+                <Count n={decided.length < decidedTotal ? `${decided.length} of ${decidedTotal}` : decidedTotal} />
+              </>
+            )}
           </>
         }
       />
-      <p className={styles.v6Note} data-testid="ward-referral-board-decided-note">
-        Acceptance records the decision only. No bed is pulled, no patient is moved and no transport is arranged.
-      </p>
+      {communityDesk ? null : (
+        <p className={styles.v6Note} data-testid="ward-referral-board-decided-note">
+          Acceptance records the decision only. No bed is pulled, no patient is moved and no transport is arranged.
+        </p>
+      )}
       {decided.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-decided-empty">
           None. No referral has been decided yet.
@@ -625,12 +641,16 @@ export function DecidedSection({
           </WardTable>
 
           <ul className={cx(styles.cardList, styles.v6List)} data-testid="ward-referral-board-decided-cards">
-            {displayDecided.map((referral) => {
+            {listed.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, decidedResolverState);
               const presentation = referralPresentation(referral, sender.referralFor(referral));
               const accepted = presentation.kind !== "unavailable" && presentation.state === "accepted";
               const decidedAt = presentationDecidedAt(referral, sender.referralFor(referral));
               const selected = referral.id === selectedId;
+              // Community desk: a referral asked of the team names only the team, so an accepted
+              // row drops the repeated "to <team>" and the name gets the line.
+              const ownTeamRow =
+                communityDesk && referral.destinations.every((line) => line.destination.kind === "community_team");
               return (
                 <li
                   key={referral.id}
@@ -651,25 +671,40 @@ export function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral, sender.referralFor(referral))}, </span>
-                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
-                        <span
-                          className={styles.v6RowOutcome}
-                          data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
-                        >
-                          <OutcomeDetail
-                            referral={referral}
-                            units={units}
-                            refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
-                            cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
-                          />
-                        </span>
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
+                        {ownTeamRow && accepted ? null : (
+                          <>
+                            {" "}
+                            {accepted ? "to " : ""}
+                            <span
+                              className={styles.v6RowOutcome}
+                              data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
+                            >
+                              <OutcomeDetail
+                                referral={referral}
+                                units={units}
+                                refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
+                                cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
+                              />
+                            </span>
+                          </>
+                        )}
                       </span>
                     </span>
                     <span className={styles.v6RowTime}>
                       {decidedAt !== undefined ? (
                         <>
                           <span className="sr-only">Decided </span>
-                          {formatInstantWithDay(decidedAt, now)}
+                          {/* Community desk: the day alone ("30 days ago"), so the name is not cut;
+                              the clock time stays in the spoken label and the tooltip. */}
+                          {communityDesk ? (
+                            <span title={formatInstantWithDay(decidedAt, now)}>
+                              <span className="sr-only">{formatInstantWithDay(decidedAt, now)}</span>
+                              <span aria-hidden="true">{dayOnly(formatInstantWithDay(decidedAt, now))}</span>
+                            </span>
+                          ) : (
+                            formatInstantWithDay(decidedAt, now)
+                          )}
                         </>
                       ) : (
                         "Not recorded"
@@ -680,8 +715,21 @@ export function DecidedSection({
               );
             })}
           </ul>
+          {communityDesk && displayDecided.length > FIRST_DECIDED ? (
+            <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
+              {showAll ? "Show fewer" : `Show ${hiddenRows} more`}
+            </ShowMoreRow>
+          ) : null}
         </>
       )}
     </section>
   );
+}
+
+/** Community desk: decided rows shown before Show more (owner rule). */
+const FIRST_DECIDED = 8;
+
+/** "10:42, 30 days ago" read as "30 days ago": the clock time of a decision weeks ago is noise on a row. */
+function dayOnly(when: string): string {
+  return when.replace(/^\d{1,2}:\d{2}, /, "");
 }

@@ -91,10 +91,12 @@ describe("sender referral presentation from a partial record", () => {
   it("does not classify hidden recipients or announce category zeroes on the desktop", () => {
     sender.summary = queuedSummary;
     sender.role = "ward";
-    render(board(partialQueued));
-    for (const key of ["ward", "ed", "community", "refused"])
+    // Referrals redesign (31 Oct 2026): the recipient pills stay withheld. This desk is a ward's, and a
+    // ward desk shows no highlight pills at all (its short queue marks tier on each row).
+    render(board({ ...partialQueued, urgency: 1 }));
+    for (const key of ["ward", "ed", "both", "community", "refused"])
       expect(screen.queryByTestId(`ward-referral-highlight-${key}`)).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-referral-highlight-tier1")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-referral-highlight-tier1")).not.toBeInTheDocument();
     expect(screen.getByTestId(`ward-referral-board-row-${source.id}`)).toBeInTheDocument();
   });
   it("keeps sender rows when a previously selected phone recipient filter becomes unavailable", () => {

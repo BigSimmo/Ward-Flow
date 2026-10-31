@@ -10,6 +10,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { wardOffersOutsideQueue } from "./home-ward-offers";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 
 import styles from "./referral-page.module.css";
@@ -49,13 +50,15 @@ export function WardOffersTable({
   const resolverState = useMemo(() => ({ patients, referrals, movements }), [patients, referrals, movements]);
   const nameFor = usePatientNameDisplay();
   const titleId = useId();
+  // ROLE BRANCH (ward): an offer on this desk is to this ward, so it is the ward's own to answer.
+  const wardDesk = useEffectiveWardAccess().role === "ward";
   if (offers.length === 0) return null;
   const wardName = (unitId: string) => (units.find((unit) => unit.id === unitId)?.name ?? unitId).split(" — ")[0];
   return (
     <section className={styles.offers} data-testid="ward-referral-board-ward-offers" aria-labelledby={titleId}>
       <h2 id={titleId} className={styles.offersTitle}>
-        Offered to wards <Count n={offers.length} />
-        <span className={styles.offersNote}>Waiting on a ward</span>
+        {wardDesk ? "Offered to your ward" : "Offered to wards"} <Count n={offers.length} />
+        <span className={styles.offersNote}>{wardDesk ? "Waiting on your answer" : "Waiting on a ward"}</span>
       </h2>
       <table className={styles.offersTable}>
         <thead>

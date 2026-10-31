@@ -159,7 +159,9 @@ export function FindAWard({
           <p className={ph.ch} id={`${baseId}-fits`}>
             Fits, bed ready <span className={ph.k}>{fits.length}</span>
           </p>
-          <div className={styles.rows} role="group" aria-labelledby={`${baseId}-fits`}>
+          {/* Referrals redesign (31 Oct 2026): the group keeps today's name, without the count,
+              as both hosts' lists had it, so a screen reader and the tests find it the same way. */}
+          <div className={styles.rows} role="group" aria-label="Fits, bed ready">
             {fits.map(row)}
           </div>
         </section>
@@ -169,7 +171,7 @@ export function FindAWard({
           <p className={ph.ch} id={`${baseId}-review`}>
             Needs review <span className={ph.k}>{review.length}</span>
           </p>
-          <div className={styles.rows} role="group" aria-labelledby={`${baseId}-review`} id={`${baseId}-review-rows`}>
+          <div className={styles.rows} role="group" aria-label="Needs review" id={`${baseId}-review-rows`}>
             {reviewShown.map(row)}
           </div>
           {!searching && review.length > REVIEW_FIRST_ROWS ? (

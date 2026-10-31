@@ -215,6 +215,20 @@ export function PatientTab({
           {legalMissing ? "Not recorded" : legal}
         </p>
         <p className={s.muted}>Referral details do not establish consent, detention authority or a register check.</p>
+        {/* Referrals redesign (31 Oct 2026): the two checks the receiving unit still has to make,
+            kept word for word from today's Patient tab so a bed request never reads as authority. */}
+        <ul className={s.checks}>
+          <li>
+            <StatusGlyph tone="neutral" size={9} />
+            <span>Consent or detention authority</span>
+            <span className={s.checkState}>Not recorded in this referral</span>
+          </li>
+          <li>
+            <StatusGlyph tone="neutral" size={9} />
+            <span>Chief Psychiatrist register check</span>
+            <span className={s.checkState}>Register check not recorded on this referral.</span>
+          </li>
+        </ul>
       </Block>
 
       <Block title="Written history">
@@ -311,11 +325,9 @@ export function TimelineTab({
         ))}
       </ol>
       <ReferralInformationNeedsPanel referral={referral} now={now} />
-      {children ? (
-        <div className={s.folds}>
-          <Fold label="Written history and corrections">{children}</Fold>
-        </div>
-      ) : null}
+      {/* Referrals redesign (31 Oct 2026): the build notes keep Written history and Corrections in
+          full on the Timeline tab; only the decision pane folds them. */}
+      {children}
     </div>
   );
 }
