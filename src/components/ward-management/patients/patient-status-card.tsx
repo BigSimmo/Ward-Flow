@@ -265,7 +265,7 @@ function legalValue(record: Movement | undefined, patient: Patient | undefined):
   // A movement that did not proceed is history; an arrival's form stays in force for the stay.
   const movement = record?.closure && record.closure.outcome !== "arrived" ? undefined : record;
   if (movement?.legalForm)
-    return `${movement.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
+    return `${movement.legalStatus ?? patient?.legalStatus ?? "Legal status not recorded"}, Form ${movement.legalForm.code}`;
   return movement?.legalStatus ?? patient?.legalStatus ?? "Not recorded";
 }
 

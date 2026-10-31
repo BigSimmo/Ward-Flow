@@ -33,6 +33,24 @@ describe("dispatch before the reducer slices load", () => {
     expect(result.current(event(3))).toEqual({ commandId: "local-3", status: "accepted" });
   });
 
+  it("cancels a queued local command when its world is replaced before slices arrive", async () => {
+    vi.resetModules();
+    const { useSliceGatedDispatch } = await import("@/components/ward-management/ward-flow-slice-dispatch");
+    const local = vi.fn((): WardCommandOutcome => ({ commandId: "x", status: "accepted" }));
+    let generation = 0;
+    const capture = () => {
+      const original = generation;
+      return () => generation === original;
+    };
+    const { result } = renderHook(() => useSliceGatedDispatch(local, null, { current: { sequence: 0 } }, capture));
+    const pending = result.current(event(1));
+    generation++;
+    await act(async () => {
+      expect(await pending).toMatchObject({ status: "cancelled" });
+    });
+    expect(local).not.toHaveBeenCalled();
+  });
+
   it("sends a shared workspace's commands straight to the server", async () => {
     vi.resetModules();
     const { useSliceGatedDispatch } = await import("@/components/ward-management/ward-flow-slice-dispatch");
