@@ -1510,7 +1510,8 @@ fieldset.formRow {
   cursor: pointer;
 }
 
-.phoneMore > .sub {
+/* My list's foot link: the chevron sits at the end, as on every other list link. */
+.moreChevron {
   margin-left: auto;
 }
 
@@ -1712,41 +1713,6 @@ fieldset.formRow {
   white-space: normal;
 }
 
-/* ---------- Since the bed meeting: delta twins (v10) ---------- */
-
-.since {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-  padding-right: var(--wf-s-4);
-  border-right: 1px solid var(--wf-on-hero-div);
-  color: var(--wf-hero-ink-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.sinceLabel {
-  overflow: hidden;
-  color: var(--wf-hero-ink-3);
-  font-weight: 600;
-  letter-spacing: var(--wf-tr-caps);
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-}
-
-.sinceTwin {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-@media (max-width: 75rem) {
-  .sinceLabel {
-    display: none;
-  }
-}
-
 .phoneSince {
   grid-column: 1 / -1;
   margin: 0;
@@ -1756,10 +1722,6 @@ fieldset.formRow {
   font-size: var(--wf-fs-12);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.phoneSince [data-wf-twin] {
-  font-size: var(--wf-fs-12);
 }
 
 /* v10 phone card (11 Oct 2026): the UMRN reads as plain mono (still a link to the profile), and the

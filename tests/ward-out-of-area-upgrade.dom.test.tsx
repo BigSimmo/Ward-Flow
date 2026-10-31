@@ -384,9 +384,117 @@ describe("Out of area v10 pass", () => {
     expect(screen.getByText(/highlighted, all rows/)).toBeInTheDocument();
   });
 
+  // Redesign (Josh, 31 Oct 2026): the Checking line keeps the two figures about this list. "Other
+  // records without home area or travel time" left it because it counted records that are not on
+  // this list; the screen-reader counts line still states that figure once.
   it("the hero foot says what is being checked", () => {
     renderBoard();
-    expect(screen.getAllByText("Other records without home area or travel time").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Discharge date passed").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("No return plan").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Other records without home area or travel time")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-out-of-area-count-not-banded")).toHaveTextContent(
+      /more could not be placed in a band/,
+    );
+  });
+});
+
+// Redesign build (Josh, 31 Oct 2026, "Yes to all").
+describe("Out of area redesign", () => {
+  // The "since the 08:30 bed meeting" strip was hard to read and left the hero, on the wide screen
+  // and the phone; This shift carries the shift's changes. The phone hero keeps its bed days.
+  it("drops the bed meeting comparison from the hero on the wide screen and the phone", () => {
+    const { unmount } = renderBoard();
+    expect(screen.queryByTestId("ward-out-of-area-since")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-out-of-area-twin")).not.toBeInTheDocument();
+    expect(screen.queryByText(/since the .* bed meeting/i)).not.toBeInTheDocument();
+    unmount();
+
+    renderPhoneBoard();
+    expect(screen.queryByTestId("ward-out-of-area-twin")).not.toBeInTheDocument();
+    expect(screen.queryByText(/bed meeting$/i)).not.toBeInTheDocument();
+    expect(screen.getAllByText(/^bed days?$/).length).toBeGreaterThan(0);
+  });
+
+  // D-83: names read surname first from the record's formal name, and the Name order sorts by surname.
+  it("names people surname first and sorts the Name order by surname", () => {
+    renderBoard();
+    const register = screen.getByTestId("ward-out-of-area-table");
+    const names = () =>
+      within(register)
+        .getAllByTestId(/^ward-out-of-area-row-/)
+        .map((row) => row.querySelector("td b")?.textContent ?? "");
+    const before = names();
+    expect(before.length).toBeGreaterThan(1);
+    for (const name of before) expect(name).toMatch(/^[^,]+, \S/u);
+
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Sort placements" })).getByRole("radio", { name: "Name" }),
+    );
+    const sortedNames = names();
+    expect(sortedNames).toEqual([...before].sort((a, b) => a.localeCompare(b, "en-AU")));
+    // The premise that makes this a surname sort: ordering by the given name first would differ.
+    const givenFirst = (name: string) => name.split(", ").reverse().join(" ");
+    const byGiven = [...before].sort((a, b) => givenFirst(a).localeCompare(givenFirst(b), "en-AU"));
+    expect(byGiven).not.toEqual(sortedNames);
+  });
+
+  // Home regions are a column of bars that highlight their rows; only the chosen region opens its
+  // nearby confirmed beds on the wide screen. The phone keeps every region open.
+  it("opens a region's nearby beds only when it is chosen, and highlights its rows", () => {
+    renderBoard();
+    const card = screen
+      .getByRole("heading", { name: "Home regions and beds" })
+      .closest("section, article, div[aria-labelledby]");
+    expect(card).not.toBeNull();
+    const regionCard = card as HTMLElement;
+    const regionButtons = within(regionCard).getAllByRole("button", { name: /^Highlight people from / });
+    expect(regionButtons.length).toBeGreaterThan(1);
+    expect(within(regionCard).queryAllByRole("list")).toHaveLength(0);
+    expect(within(regionCard).queryByText("No travel band recorded")).not.toBeInTheDocument();
+
+    const button = screen.getByRole("button", { name: /^Highlight people from South West/ });
+    fireEvent.click(button);
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    const group = button.parentElement as HTMLElement;
+    const opened = within(group).queryByRole("list") ?? within(group).queryByText("No travel band recorded");
+    expect(opened).not.toBeNull();
+    // Only the chosen region is open.
+    expect(within(regionCard).queryAllByRole("list").length).toBeLessThanOrEqual(1);
+    const southWest = entries.filter((entry) => entry.admission.homeRegion === "South West");
+    for (const entry of southWest) expect(isHighlighted(entry.admission.id)).toBe(true);
+
+    fireEvent.click(button);
+    expect(within(regionCard).queryAllByRole("list")).toHaveLength(0);
+  });
+
+  it("keeps every region's nearby beds open on the phone", () => {
+    renderPhoneBoard();
+    fireEvent.click(screen.getByRole("radio", { name: /^Beds/ }));
+    const card = screen
+      .getByRole("heading", { name: "Home regions and beds" })
+      .closest("section, article, div[aria-labelledby]");
+    const regionCard = card as HTMLElement;
+    const regionButtons = within(regionCard).getAllByRole("button", { name: /^Highlight people from / });
+    const openGroups = regionButtons.filter((button) => {
+      const group = button.parentElement as HTMLElement;
+      return (
+        within(group).queryByRole("list") !== null || within(group).queryByText("No travel band recorded") !== null
+      );
+    });
+    expect(openGroups).toHaveLength(regionButtons.length);
+  });
+
+  // Phone cards name the date's noun ("Date passed 3 days ago · 6 days away") and the foot of
+  // Needs you is a plain link without the grey cross that means "No plan" in the hero.
+  it("phone cards say Date passed for a passed discharge date, and the list foot is a plain link", () => {
+    renderPhoneBoard();
+    expect(screen.getAllByText(/^Date passed \d+ days? ago · .+ days? away$/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^Due \d+ days? ago/)).not.toBeInTheDocument();
+    const more = screen.getByRole("button", { name: /^\d+ more away from home, show Everyone$/ });
+    expect(more).toHaveTextContent(/^\d+ more in Everyone$/);
+    fireEvent.click(more);
+    expect(screen.getByRole("radio", { name: /Everyone/ })).toBeChecked();
+    expect(screen.getByRole("button", { name: /with no return plan, highlight them$/ })).toBeInTheDocument();
   });
 });
 
