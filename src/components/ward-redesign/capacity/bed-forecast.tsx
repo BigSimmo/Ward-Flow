@@ -12,7 +12,7 @@ import type { ForecastLever } from "@/components/ward-management/forecast/foreca
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
 
 import { DayBars, type DayBar } from "../parts/day-bars";
-import { HowWorkedOut, Kicker, Legend } from "../parts/how-worked-out";
+import { HowWorkedOut, Legend } from "../parts/how-worked-out";
 import { gapWords } from "../parts/range-line";
 import { ShowMoreRow } from "../parts/show-more-row";
 import { HELD_UP_HREF, tallyBarriers } from "./held-up";
@@ -89,7 +89,7 @@ export function BedForecast({
       )}
       <div className={styles.fcBody}>
         {/* Polish (Josh, 31 Oct 2026): the left column is three figures, each with one short line. */}
-        <dl className={styles.fcKpis}>
+        <dl className={`${styles.fcKpis} ${styles.fcFigs}`}>
           <Kpi
             label="Now"
             value={gapWords(gapTotals.gap)}
@@ -109,7 +109,7 @@ export function BedForecast({
             // Redesign (Josh, 30 Oct): 48 hours rests on later, softer dates, so it leads with the
             // range and reads muted, as the chart's "may move" bars do.
             <Kpi
-              label="48 hours"
+              label="In 48 hours"
               value={`${gapWords(twoDays.low)} to ${gapWords(twoDays.high)}`}
               tone={twoDays.likely}
               soft
@@ -135,7 +135,7 @@ export function BedForecast({
             The numbered circles, the explanations and the sources block are gone; the sources and
             what is not yet counted are in "How this is worked out". */}
         <div className={styles.fcSide}>
-          <Kicker>What would help tomorrow</Kicker>
+          <span className={styles.fcFigLabel}>What would help tomorrow</span>
           {forecastModel.levers.length === 0 ? (
             <p className={styles.mutedXs}>Nothing on record would move tomorrow&apos;s figure.</p>
           ) : (
@@ -148,8 +148,11 @@ export function BedForecast({
         </div>
       </div>
       <div className={styles.cardFoot}>
-        <span>Estimate. New ED arrivals are not predicted, and a free bed may not suit the person waiting.</span>
+        {/* Polish (Josh, 31 Oct 2026): the foot is two words and the method; the caveat sentence
+            leads "How this is worked out". */}
+        <span>Estimate only</span>
         <HowWorkedOut>
+          <p>New ED arrivals are not predicted, and a free bed may not suit the person waiting.</p>
           <p>
             From {sourceSummary.discharges} recorded discharges on {sourceSummary.wards} wards and planned admissions.{" "}
             {sourceSummary.overdueNotHeldUp} releases are overdue and not held up; {weekOut} beds are due out in the
@@ -191,20 +194,20 @@ function Kpi({
   /** Rests on dates that may move: muted, with the chart's hatched swatch beside the label. */
   soft?: boolean;
 }) {
+  // Polish (Josh, 31 Oct 2026): a quiet sentence-case label, a 16 px figure and one muted line,
+  // in place of capitals over a 20 px figure.
   return (
-    <div className={styles.fcKpi}>
-      <dt className={soft ? styles.fcKpiSoftLabel : undefined}>
+    <div className={styles.fcFig}>
+      <dt className={styles.fcFigLabel}>
         {soft ? <span className={`${styles.fcSoftSwatch} ${styles.swHatch}`} aria-hidden="true" /> : null}
-        <Kicker>
-          {label}
-          {srLabel ? <span className={styles.srOnly}>{srLabel}</span> : null}
-        </Kicker>
+        {label}
+        {srLabel ? <span className={styles.srOnly}>{srLabel}</span> : null}
       </dt>
-      <dd>
-        <span className={`${styles.fcKpiValue} ${soft ? styles.fcKpiSoft : tone < 0 ? styles.warnInk : styles.okInk}`}>
+      <dd className={styles.fcFigBody}>
+        <span className={`${styles.fcFigValue} ${soft ? styles.fcFigSoft : tone < 0 ? styles.warnInk : styles.okInk}`}>
           {value}
         </span>
-        <span className={styles.mutedXs}>{sub}</span>
+        <span className={styles.fcFigSub}>{sub}</span>
       </dd>
     </div>
   );
@@ -267,43 +270,82 @@ function WardDays({
 }) {
   const [all, setAll] = useState(false);
   const shown = all ? rows : rows.slice(0, WARD_ROWS);
+  // Polish (Josh, 31 Oct 2026): each cell is the figure alone on a tint that deepens with the
+  // count, so the eye reads the grid as a heat map. Later days carry the chart's hatch, a planned
+  // admission is a small "+1" mark in the corner, and each row ends in its seven-day total.
   return (
     <div className={styles.heat}>
-      <table className={styles.heatTable}>
+      <table className={styles.hm}>
         <caption className={styles.srOnly}>
           Recorded discharges (out) and planned admissions (in) by ward and day
         </caption>
         <thead>
           <tr>
-            <th scope="col">Ward</th>
-            {days.map((day) => (
-              <th key={day.offset} scope="col" className={day.offset > 1 ? styles.heatLater : undefined}>
-                {day.label}
-              </th>
-            ))}
+            <th scope="col" className={styles.hmWardHead}>
+              Ward
+            </th>
+            {days.map((day) => {
+              const [weekday, date] = day.label.split(" ");
+              return (
+                <th
+                  key={day.offset}
+                  scope="col"
+                  className={`${styles.hmDay}${day.offset === 0 ? ` ${styles.hmToday}` : ""}`}
+                >
+                  <span className={styles.hmWeekday}>{weekday}</span>
+                  <span className={styles.hmDate}>{date}</span>
+                </th>
+              );
+            })}
+            <th scope="col" className={styles.hmDay}>
+              <span className={styles.hmWeekday}>Total</span>
+              <span className={styles.hmDate}>7 days</span>
+            </th>
           </tr>
         </thead>
         <tbody>
-          {shown.map((row) => (
-            <tr key={row.unitId}>
-              <th scope="row">
-                <SpelledCodes text={row.name} />
-              </th>
-              {days.map((day, index) => {
-                const out = row.out[index] ?? 0;
-                const arriving = row.arriving[index] ?? 0;
-                return (
-                  <td
-                    key={day.offset}
-                    className={`${styles.heatCell} ${styles[`heat${Math.min(out, 2)}`] ?? ""} ${day.offset > 1 ? styles.heatLater : ""}`}
-                  >
-                    {out ? <span>{out} out</span> : <span className={styles.srOnly}>none</span>}
-                    {arriving ? <em>+{arriving} in</em> : null}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+          {shown.map((row) => {
+            const total = row.out.reduce((sum, value) => sum + value, 0);
+            return (
+              <tr key={row.unitId}>
+                <th scope="row" className={styles.hmWard}>
+                  <SpelledCodes text={row.name} />
+                </th>
+                {days.map((day, index) => {
+                  const out = row.out[index] ?? 0;
+                  const arriving = row.arriving[index] ?? 0;
+                  return (
+                    <td key={day.offset} className={styles.hmCellWrap}>
+                      <span
+                        className={`${styles.hmCell} ${styles[`hm${Math.min(out, 3)}`] ?? ""}${
+                          day.offset > 1 && out > 0 ? ` ${styles.hmLater}` : ""
+                        }`}
+                      >
+                        {out ? (
+                          <>
+                            {out}
+                            <span className={styles.srOnly}> out</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className={styles.hmNone} aria-hidden="true" />
+                            <span className={styles.srOnly}>none</span>
+                          </>
+                        )}
+                        {arriving ? (
+                          <span className={styles.hmIn} title={`${arriving} planned admission`}>
+                            +{arriving}
+                            <span className={styles.srOnly}> in</span>
+                          </span>
+                        ) : null}
+                      </span>
+                    </td>
+                  );
+                })}
+                <td className={styles.hmTotal}>{total}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {rows.length > WARD_ROWS ? (

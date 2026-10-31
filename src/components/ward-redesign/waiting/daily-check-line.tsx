@@ -31,6 +31,8 @@ import polish from "./waiting-polish.module.css";
  * stays written down (design review, 22 Oct 2026) without a card and a disabled button.
  */
 const CHECK_LIMIT = 8;
+/** Round 8: the laptop grid shows three rows of three before Show more. */
+const GRID_LIMIT = 9;
 
 /** The daily check's items and record, shared by the header tile and the list under it. */
 function useDailyCheck() {
@@ -67,50 +69,49 @@ export function DailyCheckHeroTile({
   if (access.role !== "coordinator") return null;
   const state = items.length === 0 ? "clear" : checked ? "done" : "todo";
   return (
-    <div
-      className={polish.heroTile}
-      data-tone={state === "todo" ? "warning" : "success"}
-      data-testid="ward-missed-check"
-    >
-      <span className={polish.heroIcon} aria-hidden="true">
-        {state === "todo" ? <ListChecks size={18} aria-hidden="true" /> : <CheckCheck size={18} aria-hidden="true" />}
+    <div className={polish.strip} data-testid="ward-missed-check">
+      {state === "todo" ? (
+        <ListChecks size={14} aria-hidden="true" className={polish.stripIcon} data-tone="warning" />
+      ) : (
+        <CheckCheck size={14} aria-hidden="true" className={polish.stripIcon} data-tone="success" />
+      )}
+      <span className={polish.stripLabel} title="Bed requests missed or sent twice">
+        Daily check
       </span>
-      <span className={polish.heroTileText}>
-        <span className={polish.heroTileLabel}>Daily check</span>
-        <span className={polish.heroTileValue}>
-          {state === "clear" ? (
-            "Nobody missed today"
-          ) : state === "done" ? (
-            `All checked by ${checked?.by} at ${checked ? formatInstantWithDay(checked.at, now) : ""}`
-          ) : (
-            <>
-              <b className={polish.heroNum}>{items.length}</b>
-              {` ${items.length === 1 ? "bed request" : "bed requests"} to check`}
-            </>
-          )}
-        </span>
-        <span className={polish.heroTileSub}>
-          {state === "todo" ? "Missed or sent twice" : "Every open bed request has a ward asked."}
-        </span>
+      <span className={polish.stripValue}>
+        {state === "clear" ? (
+          "nobody missed"
+        ) : state === "done" ? (
+          `all checked by ${checked?.by} at ${checked ? formatInstantWithDay(checked.at, now) : ""}`
+        ) : (
+          <>
+            <b className={polish.heroNum}>{items.length}</b>
+            {` to check`}
+          </>
+        )}
       </span>
       {items.length > 0 ? (
-        <Button
-          variant="onHero"
-          size="sm"
-          className={polish.heroBtn}
+        <button
+          type="button"
+          className={polish.stripAct}
           aria-expanded={open}
           aria-controls={listId}
-          iconEnd={open ? ChevronUp : ChevronDown}
           onClick={onToggle}
         >
           {open ? "Hide list" : "Show list"}
-        </Button>
+          {open ? <ChevronUp size={13} aria-hidden="true" /> : <ChevronDown size={13} aria-hidden="true" />}
+        </button>
       ) : null}
     </div>
   );
 }
 
-/** The daily check's opened list, under the header on a laptop (see `DailyCheckHeroTile`). */
+/**
+ * The daily check's opened list, under the header on a laptop (see `DailyCheckHeroTile`).
+ * Round 8 (Josh, 31 Oct 2026): no wasted width. A head line with a count by kind and the one
+ * action, then the people as a grid of compact cards across the page, first nine then Show more.
+ * Each card opens that person. The rule stays: the list is open before it can be marked checked.
+ */
 export function DailyCheckList({ open, listId, onClose }: { open: boolean; listId: string; onClose: () => void }) {
   const access = useEffectiveWardAccess();
   const { items, checked, now, referrals } = useDailyCheck();
@@ -118,65 +119,84 @@ export function DailyCheckList({ open, listId, onClose }: { open: boolean; listI
   const patientOf = usePatientOf();
   const [all, setAll] = useState(false);
   if (access.role !== "coordinator" || !open || items.length === 0) return null;
-  const who = (subject: Parameters<typeof patientOf>[0]) => {
-    const person = patientOf(subject);
-    return `${person.formalName} · ${person.umrn}`;
-  };
-  const shownItems = all ? items : items.slice(0, CHECK_LIMIT);
+  const kinds = Object.entries(
+    items.reduce<Record<string, number>>((counts, item) => {
+      counts[item.kind] = (counts[item.kind] ?? 0) + 1;
+      return counts;
+    }, {}),
+  ) as [keyof typeof MISSED_REQUEST_LABELS, number][];
+  const shownItems = all ? items : items.slice(0, GRID_LIMIT);
   return (
-    <section className={`${styles.checkLine} ${polish.checkPanel}`} aria-labelledby={`${listId}-title`}>
-      <div className={styles.checkRow}>
-        <ListChecks size={16} aria-hidden="true" className={styles.checkIcon} />
-        <p id={`${listId}-title`} className={styles.checkText}>
-          <b>Daily check:</b>{" "}
-          {`${items.length} ${items.length === 1 ? "bed request" : "bed requests"} to check, missed or sent twice.`}
-        </p>
-        <Button variant="ghost" size="sm" iconEnd={ChevronUp} onClick={onClose}>
-          Hide list
-        </Button>
-      </div>
-      <div className={styles.checkList}>
-        <ul id={listId} className={panel.list}>
-          {shownItems.map((item) => (
-            <li key={item.key} className={panel.item} data-kind={item.kind}>
-              <span className={panel.kind}>
-                <StatusGlyph tone="warning" size={9} />
-                {MISSED_REQUEST_LABELS[item.kind]}
-                <span className={panel.since}> · for {splitDuration(Math.max(0, now - item.since))}</span>
-              </span>
-              <span className={panel.links}>
-                {item.referralIds.map((referralId) => {
-                  const referral = referrals.find((candidate) => candidate.id === referralId);
-                  return (
-                    <Link key={referralId} href={referralBoardHref(referralId)}>
-                      {referral ? who(referral) : "Referral"}
-                    </Link>
-                  );
-                })}
-                {item.movementIds.map((movementId) => (
-                  <Link key={movementId} href={movementHref(movementId)}>
-                    {who({ movementId })}
-                  </Link>
-                ))}
-              </span>
-            </li>
+    <section className={polish.dc} aria-labelledby={`${listId}-title`}>
+      <div className={polish.dcHead}>
+        <ListChecks size={16} aria-hidden="true" className={polish.dcIcon} />
+        <h2 id={`${listId}-title`} className={polish.dcTitle}>
+          Daily check
+        </h2>
+        <span className={polish.dcKinds}>
+          {kinds.map(([kind, count]) => (
+            <span key={kind} className={polish.dcKind}>
+              <StatusGlyph tone="warning" size={8} />
+              <b>{count}</b> {MISSED_REQUEST_LABELS[kind].toLowerCase()}
+            </span>
           ))}
-        </ul>
-        {items.length > CHECK_LIMIT ? (
-          <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
-            {all ? "Show fewer" : `Show ${items.length - CHECK_LIMIT} more`}
-          </ShowMoreRow>
-        ) : null}
-        {checked ? null : (
+        </span>
+        <span className={polish.dcSpacer} />
+        {checked ? (
+          <span className={polish.dcDone}>
+            <StatusGlyph tone="success" size={9} />{" "}
+            {`Checked by ${checked.by} at ${formatInstantWithDay(checked.at, now)}`}
+          </span>
+        ) : (
           <Button
             variant="sec"
             size="sm"
+            icon={CheckCheck}
             onClick={() => raise("COMPLETE_INBOX_ITEM", { inboxItemId: dailyCheckId(now) })}
           >
             {markAllLabel(items.length)}
           </Button>
         )}
+        <Button variant="ghost" size="sm" iconEnd={ChevronUp} onClick={onClose}>
+          Hide
+        </Button>
       </div>
+      <ul id={listId} className={polish.dcGrid}>
+        {shownItems.map((item) => {
+          const referralId = item.referralIds[0];
+          const movementId = item.movementIds[0];
+          const referral = referralId ? referrals.find((candidate) => candidate.id === referralId) : undefined;
+          const person = movementId ? patientOf({ movementId }) : referral ? patientOf(referral) : undefined;
+          const href = movementId ? movementHref(movementId) : referralId ? referralBoardHref(referralId) : undefined;
+          const extra = item.referralIds.length + item.movementIds.length - 1;
+          return (
+            <li key={item.key} data-kind={item.kind}>
+              {href ? (
+                <Link href={href} className={polish.dcCard}>
+                  <span className={polish.dcWho}>
+                    <b>{person?.formalName ?? "Referral"}</b>
+                    <small>{person?.umrn}</small>
+                  </span>
+                  {/* One kind only: the head line already names it, so each card is one line. */}
+                  {kinds.length > 1 || extra > 0 ? (
+                    <span className={polish.dcWhat}>
+                      <StatusGlyph tone="warning" size={8} />
+                      {MISSED_REQUEST_LABELS[item.kind]}
+                      {extra > 0 ? ` · +${extra} more` : ""}
+                    </span>
+                  ) : null}
+                  <span className={polish.dcFor}>{splitDuration(Math.max(0, now - item.since))}</span>
+                </Link>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+      {items.length > GRID_LIMIT ? (
+        <ShowMoreRow onClick={() => setAll((current) => !current)} expanded={all} controls={listId}>
+          {all ? "Show fewer" : `Show ${items.length - GRID_LIMIT} more`}
+        </ShowMoreRow>
+      ) : null}
     </section>
   );
 }
