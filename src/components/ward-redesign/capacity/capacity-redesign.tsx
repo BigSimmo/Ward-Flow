@@ -38,6 +38,9 @@ import { CapacityWardSidebar } from "./capacity-ward-sidebar";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
 
+import { siteLabel } from "@/components/ward-management/ward-absence-labels";
+import { siteByCode } from "@/components/ward-management/ward-sites";
+
 import { RedesignPage } from "../parts/redesign-page";
 import { gapWords } from "../parts/range-line";
 import { BedForecast } from "./bed-forecast";
@@ -191,9 +194,20 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
         onClose={() => setPopup(null)}
         title={selectedRow?.unit.name ?? "Ward capacity"}
         ariaLabel={selectedRow ? `${selectedRow.unit.name}, ward capacity` : "Ward capacity"}
+        description={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
+        titleAccessory={
+          selectedRow ? (
+            <span className={styles.wdHeadTag}>
+              <StatusGlyph tone={selectedRow.ready > 0 ? "success" : "warning"} size={8} />
+              {selectedRow.ready > 0 ? `${selectedRow.ready} ready` : "None ready"}
+            </span>
+          ) : undefined
+        }
         testId="redesign-capacity-ward-drawer"
       >
-        {selectedRow ? <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} /> : null}
+        {selectedRow ? (
+          <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} showPlace={false} />
+        ) : null}
       </Drawer>
       <Drawer
         open={popup?.kind === "forecast"}
@@ -206,6 +220,12 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
       </Drawer>
     </RedesignPage>
   );
+}
+
+/** "Royal Perth Hospital · East Metro": the ward drawer's line under its title. */
+function wardPlace(siteCode: string): string {
+  const site = siteByCode(siteCode);
+  return `${siteLabel(siteCode, site?.name)} · ${site?.service ?? "Service not recorded"}`;
 }
 
 function initialPopup(openOnLoad: string | undefined, model: CapacityModel): Popup {
