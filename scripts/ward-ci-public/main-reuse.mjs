@@ -11,9 +11,13 @@
  * It verifies, all of which must hold (anything else, including any API or git error, prints the
  * reason and reports verified=false, so the full suite runs exactly as before):
  *   1. exactly one merged same-repository PR into main has this push's commit as its merge commit;
- *   2. the PR head's tree is identical to this commit's tree;
- *   3. the previous main commit is an ancestor of the PR head (the head was up to date), so the PR
- *      run's merge ref was that same tree;
+ *   2-3. the tree that PR run tested is identical to this commit's tree. Either the run recorded
+ *      the tree of the merge ref it checked out (the "Ward tested tree" notice from its scope plan
+ *      job) and it equals this tree, or the PR head's tree equals this tree and the previous main
+ *      commit is an ancestor of the head (the head was up to date, so its merge ref was this tree).
+ *      The recorded tree lets a head that was behind main reuse its run when main did not move
+ *      between that run and the merge (31 Oct 2026: most heads are behind, so every merge re-ran
+ *      the whole suite on main);
  *   4. a successful pull_request run of this workflow on the PR head ran (not skipped) every unit
  *      shard with the legal-figure sweep in it, every browser group, the coverage thresholds and the production build, and its
  *      "Ward Flow required" job succeeded.
@@ -28,6 +32,8 @@ import { appendFileSync, readFileSync } from "node:fs";
 
 const SHA = /^[0-9a-f]{40}$/u;
 const WORKFLOW = "ward-flow.yml";
+/** The notice title the scope plan job uses to record the tree a pull request run tested. */
+export const TESTED_TREE_TITLE = "Ward tested tree";
 
 /** Jobs whose real work must have run and passed on the PR head, keyed by the step that does it. */
 export const EVIDENCE = [
@@ -103,9 +109,11 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
   );
   if (merged.length !== 1) return refuse(`${merged.length} merged pull requests own this commit`);
   const [pull] = merged;
-  if (headTree !== mainTree) return refuse(`PR #${pull.number} head tree differs from the main tree`);
-  if (!compare || compare.behind_by !== 0 || !["ahead", "identical"].includes(compare.status))
-    return refuse(`PR #${pull.number} head did not contain the previous main commit`);
+  const upToDate =
+    headTree === mainTree &&
+    Boolean(compare) &&
+    compare.behind_by === 0 &&
+    ["ahead", "identical"].includes(compare.status);
   const relevant = (runs ?? []).filter(
     (run) =>
       run.head_sha === pull.head.sha &&
@@ -123,7 +131,13 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
   const reasons = [];
   for (const run of relevant) {
     if (run.conclusion !== "success") return refuse(`newer completed run ${run.id} concluded ${run.conclusion}`);
-    const gap = runEvidenceGap(run.jobs ?? [], counts);
+    const gap =
+      runEvidenceGap(run.jobs ?? [], counts) ??
+      (upToDate || run.testedTree === mainTree
+        ? null
+        : SHA.test(run.testedTree ?? "")
+          ? "it tested a different tree (main moved after it ran)"
+          : "it recorded no tested tree and the head was not up to date with main");
     if (!gap)
       return {
         verified: true,
@@ -136,6 +150,25 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
   return refuse(
     `no qualifying green run on PR #${pull.number} head${reasons.length ? ` (${reasons.join("; ")})` : ""}`,
   );
+}
+
+/**
+ * The tree a pull request run tested, from the notice its scope plan job writes, or null. A job's
+ * id is its check run id, so the notice is that check run's annotation.
+ * @param {Array<{ name?: string, id?: number }>} jobs @param {(path: string) => Promise<any>} api
+ */
+async function testedTreeOf(jobs, api) {
+  const plan = jobs.filter((job) => job.name === "Ward Flow scope plan");
+  if (plan.length !== 1 || !Number.isInteger(plan[0].id)) return null;
+  return testedTreeFromAnnotations(await api(`/check-runs/${plan[0].id}/annotations?per_page=50`));
+}
+
+/** The one recorded tested tree among a check run's annotations, or null when absent or ambiguous. */
+export function testedTreeFromAnnotations(annotations) {
+  const trees = (Array.isArray(annotations) ? annotations : [])
+    .filter((annotation) => annotation?.title === TESTED_TREE_TITLE && annotation?.annotation_level === "notice")
+    .map((annotation) => String(annotation.message ?? "").trim());
+  return trees.length === 1 && SHA.test(trees[0]) ? trees[0] : null;
 }
 
 async function gatherAndDecide() {
@@ -179,8 +212,8 @@ async function gatherAndDecide() {
   let inspectedGreen = 0;
   for (const run of completed) {
     if (run.conclusion === "success" && inspectedGreen < 3) {
-      const jobs = await api(`/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
-      runs.push({ ...run, jobs: jobs?.jobs ?? [] });
+      const jobs = (await api(`/actions/runs/${run.id}/jobs?filter=latest&per_page=100`))?.jobs ?? [];
+      runs.push({ ...run, jobs, testedTree: await testedTreeOf(jobs, api) });
       inspectedGreen++;
     } else runs.push(run);
   }

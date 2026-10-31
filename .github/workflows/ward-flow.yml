@@ -68,6 +68,11 @@ jobs:
           WARD_PLAN_FRONTEND_STATIC: ${{ steps.plan.outputs.frontend_static }}
           WARD_PLAN_LEGAL_SWEEP: ${{ steps.plan.outputs.legal_sweep }}
         run: node scripts/ward-ci-public/verify-plan.mjs
+      # Evidence for the main reuse check: the tree this pull request run tests (its merge ref), so
+      # a merge that lands exactly this tree need not run the reusable jobs again on main.
+      - name: Record the tested tree
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "::notice title=Ward tested tree::$(git rev-parse 'HEAD^{tree}')"
   reuse:
     name: Ward Flow main reuse check
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -77,6 +82,7 @@ jobs:
       contents: read
       pull-requests: read
       actions: read
+      checks: read
     outputs:
       verified: ${{ steps.check.outputs.verified }}
     steps:

@@ -146,10 +146,13 @@ journey failure. Local pruning keeps the newest five managed report directories 
 ## Main pushes and nightly runs
 
 The main reuse proof in `main-reuse.mjs` verifies through git and the GitHub API that
-the pushed tree equals the head of the one merged PR that produced it, that this head contained the
-previous main, and that a successful run on that head actually ran every required unit shard
+the pushed tree equals the tree a successful pull request run on the head of the one merged PR that
+produced it actually tested, and that the run ran every required unit shard
 (with the legal-figure sweep in it), browser group, coverage thresholds and production build. Any missing proof or API/git error runs
-fresh checks. On verified reuse the unit, coverage, browser-build, journey-group and production-build
+fresh checks. The tested tree comes from the "Ward tested tree" notice the scope plan job writes on
+every pull request run (the tree of the merge ref it checked out). A head that contained the previous
+main is also accepted, because its merge ref was its own tree. So a pull request that was behind main
+reuses its run when main did not move between that run and the merge. On verified reuse the unit, coverage, browser-build, journey-group and production-build
 jobs must be skipped, rather than failed or cancelled. Static checks, backend/shared proof and secret
 scanning still execute. The release gate executes afresh, building locally because no prepared
 browser artifact is produced on that path. A failed release gate fails `Ward Flow required`.

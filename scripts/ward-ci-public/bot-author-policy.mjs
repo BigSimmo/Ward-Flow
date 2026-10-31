@@ -105,9 +105,12 @@ async function githubJson(url, token) {
   return response.json();
 }
 
-// GitHub caps PR commit listings at 250 and commit file listings at 3000 (300 per page). Either cap
-// being reached, or a count mismatch with the PR, fails closed rather than skipping data.
+// GitHub caps the PR commit listing at 250 and commit file listings at 3000 (300 per page). A PR
+// with 250 or more commits is read instead from the paginated compare listing of its base and head
+// (31 Oct 2026: the redesign PR #1118 passed 400). A count mismatch with the PR, or either cap being
+// reached, still fails closed rather than skipping data.
 export const MAX_PR_COMMITS = 250;
+export const MAX_COMPARE_COMMITS = 10000;
 export const MAX_COMMIT_FILES = 3000;
 
 export async function collectCommitFiles({ repository, sha, token, api = "https://api.github.com" }) {
@@ -125,16 +128,39 @@ export async function collectCommitFiles({ repository, sha, token, api = "https:
 export async function collectPullRequestCommits({ repository, prNumber, token, api = "https://api.github.com" }) {
   const pr = await githubJson(`${api}/repos/${repository}/pulls/${prNumber}`, token);
   const listed = [];
-  for (let page = 1; ; page += 1) {
-    const batch = await githubJson(
-      `${api}/repos/${repository}/pulls/${prNumber}/commits?per_page=100&page=${page}`,
-      token,
-    );
-    listed.push(...batch);
-    if (batch.length < 100) break;
-  }
-  if (listed.length >= MAX_PR_COMMITS || listed.length !== pr.commits) {
-    throw new Error(`PR commit list is incomplete (${listed.length} of ${pr.commits})`);
+  if (pr.commits < MAX_PR_COMMITS) {
+    for (let page = 1; ; page += 1) {
+      const batch = await githubJson(
+        `${api}/repos/${repository}/pulls/${prNumber}/commits?per_page=100&page=${page}`,
+        token,
+      );
+      listed.push(...batch);
+      if (batch.length < 100) break;
+    }
+    if (listed.length >= MAX_PR_COMMITS || listed.length !== pr.commits) {
+      throw new Error(`PR commit list is incomplete (${listed.length} of ${pr.commits})`);
+    }
+  } else {
+    // The PR listing stops at 250, so read the same commits (head's, not reachable from the base)
+    // from the compare listing, which pages past 250.
+    const base = pr.base?.sha;
+    const head = pr.head?.sha;
+    if (!base || !head) throw new Error("PR base or head is missing; cannot list its commits");
+    let total;
+    for (let page = 1; ; page += 1) {
+      const comparison = await githubJson(
+        `${api}/repos/${repository}/compare/${base}...${head}?per_page=100&page=${page}`,
+        token,
+      );
+      total = comparison.total_commits;
+      const batch = comparison.commits ?? [];
+      listed.push(...batch);
+      if (batch.length < 100) break;
+      if (listed.length >= MAX_COMPARE_COMMITS) break;
+    }
+    if (listed.length >= MAX_COMPARE_COMMITS || listed.length !== total || listed.length !== pr.commits) {
+      throw new Error(`PR commit list is incomplete (${listed.length} of ${pr.commits}; compare says ${total})`);
+    }
   }
   const commits = [];
   for (const item of listed) {
