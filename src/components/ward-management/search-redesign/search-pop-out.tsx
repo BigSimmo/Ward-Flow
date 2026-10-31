@@ -30,13 +30,7 @@ import { SearchResultIcon } from "@/components/ward-management/ward-global-searc
 import styles from "./search-redesign.module.css";
 
 /** What the empty pop-out offers: one tap fills the box with a question the search answers. */
-const SUGGESTIONS = [
-  "free beds",
-  "over 24 hours",
-  "how do I book transport",
-  "bed flow coordinator",
-  "Morley",
-] as const;
+const SUGGESTIONS = ["free beds", "accepted", "how do I book transport", "bed flow coordinator", "Morley"] as const;
 
 const KINDS: readonly { id: string; label: string; groups: readonly string[] }[] = [
   { id: "all", label: "All", groups: [] },
@@ -50,7 +44,9 @@ const KINDS: readonly { id: string; label: string; groups: readonly string[] }[]
 function MarkedText({ text, query }: { text: string; query: string }): ReactNode {
   const words = queryWords(query).filter((word) => word.length > 1);
   if (words.length === 0) return text;
-  const pattern = new RegExp(`(${words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
+  // Built by joining, not a template literal, so the escapes stay as written (design-language contract).
+  const escaped = words.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = new RegExp("(" + escaped.join("|") + ")", "gi");
   return text.split(pattern).map((part, index) =>
     index % 2 === 1 ? (
       <mark key={index} className={styles.mark}>

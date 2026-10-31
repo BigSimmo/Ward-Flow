@@ -120,7 +120,7 @@ function Mockup() {
               "The ED board's patient field is a browser list that behaves poorly on an iPhone.",
             ]}
             proposed={[
-              "One row of time buttons (Now, +15m, +30m, +1h) beside a typed time, reading the board's clock. Only for a time someone writes down, never a legal expiry.",
+              "One row of time buttons (Now and a few minutes on) beside a typed time, reading the board's clock. Only for a time someone writes down, never a legal expiry.",
               "Typed times take 14:30 or 1430 everywhere.",
               "Lists of five or fewer answers become one-tap choices with nothing chosen first. The answers themselves are unchanged.",
               "The ED board's patient field uses the same people search as the rest of the app.",
