@@ -232,7 +232,8 @@ describe("ward board departure correction uses the real admission", () => {
     );
     const tileButton = document.getElementById(`ward-board-tile-${admission.id}`)!;
     expect(tileButton).not.toBeNull();
-    fireEvent.click(tileButton);
+    // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
+    if (tileButton.getAttribute("aria-pressed") !== "true") fireEvent.click(tileButton);
     const probe = screen.getByTestId("admission-date-probe");
     const original = probe.getAttribute("data-date");
     const leaveCount = probe.getAttribute("data-leave-count");

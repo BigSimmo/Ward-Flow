@@ -57,6 +57,13 @@ const UNIT_ID = "rph-adult-secure";
 const QUALIFYING_SENTENCE =
   "Any diagnosis shown is tentative: a broad category, not a diagnosis this ward has confirmed.";
 
+/**
+ * The ward's own diagnosis control's caption (ward-board-ward-diagnosis.tsx). It names no diagnosis;
+ * it says where a recorded one sits. The bed record now opens on load (redesign point 16, Josh 31 Oct
+ * 2026), so the caption is on the page from the first render. Typed out, as above.
+ */
+const WARD_DIAGNOSIS_CAPTION = "Kept beside the diagnosis the stay arrived with, never in place of it.";
+
 const ALL_UNITS: Unit[] = wardSites.flatMap((site) => site.units);
 
 function unitFor(unitId: string): Unit {
@@ -344,7 +351,7 @@ describe("ward board people panel — a TENTATIVE diagnosis, said to be tentativ
     expect(mentions.length).toBeGreaterThan(panelRows(container).length);
 
     for (const text of mentions) {
-      if (text === QUALIFYING_SENTENCE) continue;
+      if (text === QUALIFYING_SENTENCE || text === WARD_DIAGNOSIS_CAPTION) continue;
       expect(text, `"${text}" prints a diagnosis without saying it is tentative`).toMatch(/^Tentative diagnosis: /);
     }
   });
