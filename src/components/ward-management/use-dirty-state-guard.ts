@@ -147,6 +147,10 @@ function firstDirtyGuard(approved?: ReadonlySet<NavigationGuardEntry>): Navigati
  * Set only while a navigation the person has just confirmed in the styled dialog runs again, so its
  * own guard check passes once instead of asking twice.
  */
+/** Set just before a full-page load the person already approved in the styled confirm. */
+let unloadApproved = false;
+/** Set after Leave without saving, for the one repeated Back or Forward step that follows. */
+let traversalApprovedOnce = false;
 let navigationApprovedOnce = false;
 /** The link a confirmed click is replaying, so every guard lets that one click through. */
 let replayingLinkClick: HTMLAnchorElement | null = null;
@@ -185,9 +189,14 @@ function askThenRepeatTraversal(message: string, delta: number | null, targetHre
   void requestConfirm(leaveRequest(message)).then((confirmed) => {
     if (!confirmed) return;
     const repeat = () => {
-      for (const entry of navigationGuards) if (entry.isDirty) entry.approvedForHistory = true;
+      // A module flag, not each form's own approval: closing the dialog can re-render a form, and
+      // an edit or re-render clears that form's approval before this step's popstate arrives.
+      traversalApprovedOnce = true;
       if (delta !== null && delta !== 0) window.history.go(delta);
-      else window.location.assign(targetHref);
+      else {
+        unloadApproved = true;
+        window.location.assign(targetHref);
+      }
     };
     // Wait for the compensating traversal to settle before stepping again.
     if (suppressNextPopState) window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, repeat, { once: true });
@@ -211,6 +220,11 @@ function handleGuardedPopState(event: PopStateEvent): void {
     event.stopImmediatePropagation();
     window.dispatchEvent(new Event(WARD_HISTORY_TRAVERSAL_CANCELLED));
     return;
+  }
+  if (traversalApprovedOnce) {
+    // Leave without saving was pressed for this step: every form lets it go once.
+    traversalApprovedOnce = false;
+    for (const entry of navigationGuards) approved.add(entry);
   }
   const targetIndex = readHistoryIndex(event.state);
   const targetNavigationIndex = navigationIndex();
@@ -387,7 +401,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   useEffect(() => {
     if (!isDirty) return;
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      if (unloadSafeRef.current?.()) return;
+      if (unloadApproved || unloadSafeRef.current?.()) return;
       event.preventDefault();
       event.returnValue = "";
     };
@@ -449,6 +463,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
         void requestConfirm(leaveRequest(message)).then((confirmed) => {
           if (!confirmed) return;
           if (!anchor.isConnected) {
+            unloadApproved = true;
             window.location.assign(anchor.href);
             return;
           }

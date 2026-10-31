@@ -53,6 +53,20 @@ export function requestConfirm(request: ConfirmRequest): Promise<boolean> {
   });
 }
 
+/** Answers the open question. Module state is changed only here, outside the component, so the
+ *  React Compiler's memoised handlers never read a stale copy of it (seen in the browser, 31 Oct). */
+function settle(current: Pending | null, confirmed: boolean) {
+  if (openRequest === current) openRequest = null;
+  current?.resolve(confirmed);
+}
+
+/** An unmounted host cannot be answered: keep the change rather than lose it. */
+function abandonOpenRequest() {
+  const current = openRequest;
+  openRequest = null;
+  current?.resolve(false);
+}
+
 export function ConfirmHost() {
   const [request, setRequest] = useState<Pending | null>(null);
 
@@ -60,17 +74,14 @@ export function ConfirmHost() {
     showRequest = setRequest;
     return () => {
       if (showRequest === setRequest) showRequest = null;
-      // An unmounted host cannot be answered: keep the change rather than lose it.
-      openRequest?.resolve(false);
-      openRequest = null;
+      abandonOpenRequest();
     };
   }, []);
 
+  // The question shown is the one answered: it comes from this host's state.
   const answer = (confirmed: boolean) => {
-    const current = openRequest;
-    openRequest = null;
     setRequest(null);
-    current?.resolve(confirmed);
+    settle(request, confirmed);
   };
 
   return (
