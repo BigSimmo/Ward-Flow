@@ -4944,6 +4944,11 @@
   cursor: pointer;
 }
 
+.moreActionsSummary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
 /* B4 (review 12 Oct 2026): in the desktop register panel the decide buttons sit in a bar pinned to
    the foot of the scrolling panel body, so Decline and Accept (or Confirm and Cancel) always show.
    The register match panel must not be its own clip box, or the bar would pin to it instead. */

@@ -5,31 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-movements-wait-labels",
-    "date": "2026-10-27",
-    "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
-  },
-  {
-    "id": "2026-10-27-seclusion-room-confirm",
-    "date": "2026-10-27",
-    "line": "Marking a seclusion room available or out of service now asks you to confirm first."
-  },
-  {
-    "id": "2026-10-27-plan-next-return-longest-past",
-    "date": "2026-10-27",
-    "line": "Plan next return now opens the patient longest past discharge with no plan."
-  },
-  {
-    "id": "2026-10-27-acknowledge-visible-confirm-undo",
-    "date": "2026-10-27",
-    "line": "Acknowledge visible now asks you to confirm, then lets you undo for a few seconds."
-  },
-  {
-    "id": "2026-10-27-bed-map-opens-bed-board",
-    "date": "2026-10-27",
-    "line": "Bed map squares on Capacity now open that ward's bed board."
-  },
-  {
     "id": "2026-10-27-update-bed-choose-ward",
     "date": "2026-10-27",
     "line": "Update a bed now lets you choose a ward, then opens that ward's page."
@@ -90,9 +65,34 @@
     "line": "Help adds spelling fixes, grouped words, accessibility, first-visit hints and printable desk guides."
   },
   {
+    "id": "2026-10-31-release-waits-activity-clock",
+    "date": "2026-10-31",
+    "line": "Release now waits until the shared save is confirmed, and Activity times follow the ward clock."
+  },
+  {
+    "id": "2026-10-31-popup-clarity",
+    "date": "2026-10-31",
+    "line": "Acknowledge visible now explains what it covers, and booking a planned admission shows the patient you chose."
+  },
+  {
+    "id": "2026-10-31-phone-bed-meeting-agenda",
+    "date": "2026-10-31",
+    "line": "On a phone, the bed meeting agenda now opens, and opening a referral moves you straight into it."
+  },
+  {
+    "id": "2026-10-31-referral-legal-status",
+    "date": "2026-10-31",
+    "line": "The patient list shows a referral's recorded legal status instead of 'Not recorded'."
+  },
+  {
     "id": "2026-10-30-help-how-do-i",
     "date": "2026-10-31",
     "line": "Help now opens on How do I…: your desk's common tasks, each with its steps and a Go there link."
+  },
+  {
+    "id": "2026-10-31-calmer-notices",
+    "date": "2026-10-31",
+    "line": "Notices pause while you read them, warnings stay until you close them, and Alt+N jumps to the newest one."
   },
   {
     "id": "2026-10-31-smarter-search",

@@ -466,7 +466,11 @@ export function ReferralAlerts({ referral, readmission }: { referral: Referral; 
         </span>
       ))}
       {readmission}
-      {showLegal ? <span className={cx(styles.alert, styles.alertQuiet)}>{legal}</span> : null}
+      {showLegal ? (
+        <span className={cx(styles.alert, styles.alertQuiet)}>
+          {legal.toLowerCase() === "not recorded" ? "Legal status not recorded" : legal}
+        </span>
+      ) : null}
     </div>
   );
 }
