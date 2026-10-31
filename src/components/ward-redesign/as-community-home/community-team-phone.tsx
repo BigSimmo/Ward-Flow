@@ -20,6 +20,7 @@ import {
 } from "@/components/wf";
 
 import css from "@/components/ward-management/community/community-team-phone.module.css";
+import local from "./community-team-phone-local.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
@@ -215,7 +216,7 @@ export function CommunityTeamPhone({
           <Segmented<CommunityPhoneListId>
             label="Team lists"
             size="md"
-            className={`${css.segmented} ${wardPin.pinnedSwitch}`}
+            className={`${css.segmented} ${wardPin.pinnedSwitch} ${local.oneRow}`}
             value={list}
             onChange={onList}
             items={lists.map((entry) => ({ id: entry.id, label: entry.label, count: countOf(entry.id) }))}
