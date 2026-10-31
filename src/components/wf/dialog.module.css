@@ -75,6 +75,19 @@
   color: var(--wf-ink-2);
 }
 
+/* Kit standard (#1118 mock-ups, final round): every popup puts focus on its close button when it
+   opens, so a heavy ring there is the first thing a person sees. The ring shows only for keyboard
+   focus, as a calm 2px accent ring, and never for a pointer press. */
+.close.close:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+.close.close:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
 .body {
   display: flex;
   flex-direction: column;
