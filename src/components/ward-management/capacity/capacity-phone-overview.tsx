@@ -4,6 +4,7 @@ import { ChevronRight } from "lucide-react";
 
 import { Button, Card, CardHead, StatusGlyph, durMinutes } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import { isConfirmationFresh } from "./capacity-gap-words";
 import type { CapacityModel } from "./capacity-model";
@@ -30,6 +31,7 @@ export function PhoneOverview({
   onWard: (unitId: string) => void;
 }) {
   const { gapRows, tomorrowByKind, forecast, week, wardsToCheck, networkRows, roadTimeFromEdId, now } = model;
+  const canOpen = useCanOpenHref();
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
   const [tomorrow, twoDays] = forecast.horizons;
   const weekOut = week.total.out.reduce((sum, value) => sum + value, 0);
@@ -144,7 +146,12 @@ export function PhoneOverview({
           defaultEdId={roadTimeFromEdId}
           selectedUnitId={undefined}
           onSelectUnit={() => {}}
-          wardHref={executive ? undefined : (unitId) => `/ward-flow/ward/${unitId}`}
+          // Only a ward this desk may open (access audit, 31 Oct 2026); the executive opens none.
+          wardHref={
+            executive
+              ? undefined
+              : (unitId) => (canOpen(`/ward-flow/ward/${unitId}`) ? `/ward-flow/ward/${unitId}` : undefined)
+          }
         />
       )}
     </>

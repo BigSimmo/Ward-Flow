@@ -1,6 +1,19 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
+
+/** Set per case to stand in for a desk's access table; undefined keeps the real check. */
+const access = vi.hoisted(() => ({ canOpen: undefined as ((href: string) => boolean) | undefined }));
+vi.mock("@/components/ward-management/shell/ward-access", async (load) => {
+  const real = await load<typeof import("@/components/ward-management/shell/ward-access")>();
+  return {
+    ...real,
+    useCanOpenHref: () => {
+      const check = real.useCanOpenHref();
+      return (href: string) => (access.canOpen ? access.canOpen(href) : check(href));
+    },
+  };
+});
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { networkTotals, networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
@@ -19,6 +32,7 @@ import type { WardAccess } from "@/components/ward-management/ward-role-access";
  */
 
 afterEach(() => {
+  access.canOpen = undefined;
   act(() => {
     setWardFeatureFlagOnDevice("role-access", null);
     resetWardAccessStoreForTests();
@@ -110,5 +124,16 @@ describe("Capacity for a site bed manager", () => {
     const own = seed.units.filter((unit) => unit.siteCode === siteCode && !unit.isClosed).map((unit) => unit.id);
     expect(offered.length).toBeGreaterThan(0);
     expect([...offered].sort()).toEqual([...own].sort());
+  });
+});
+
+describe("Capacity offers only pages the desk may open", () => {
+  it("leaves out the meeting agenda and the TV view when the desk may not open them", () => {
+    access.canOpen = (href) => !href.startsWith("/ward-flow/bed-meeting");
+    renderCapacity();
+    fireEvent.click(screen.getByRole("button", { name: /Bed meeting/ }));
+    expect(screen.getByRole("menuitem", { name: "Print the meeting sheet" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Open the meeting agenda" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
   });
 });

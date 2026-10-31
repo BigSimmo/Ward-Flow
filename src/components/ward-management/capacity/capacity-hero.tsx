@@ -10,6 +10,7 @@ import { PageLiveChip } from "@/components/ward-management/ward-page-live";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import type { Highlight } from "./capacity-bed-map-cards";
 import { isConfirmationFresh } from "./capacity-gap-words";
@@ -51,6 +52,7 @@ export function CapacityHero({
 }) {
   // Optional, so the screen also renders outside the app router (its tests, the design preview).
   const router = useOptionalRouter();
+  const canOpen = useCanOpenHref();
   const { totals, gapTotals, occupancy, live, now, oldestCount, site, otherSiteRows } = model;
   // Site bed manager (D-80): the hero is the site's; the rest of the network is one plain count.
   const place = site ? site.name : "Modelled network";
@@ -152,12 +154,19 @@ export function CapacityHero({
                 align="end"
                 items={[
                   { id: "sheet", label: "Print the meeting sheet", icon: Printer, onSelect: onSheet },
-                  {
-                    id: "agenda",
-                    label: "Open the meeting agenda",
-                    onSelect: () =>
-                      router ? router.push(BED_MEETING_AGENDA_HREF) : window.location.assign(BED_MEETING_AGENDA_HREF),
-                  },
+                  // Only when this desk may open the agenda (access audit, 31 Oct 2026).
+                  ...(canOpen(BED_MEETING_AGENDA_HREF)
+                    ? [
+                        {
+                          id: "agenda",
+                          label: "Open the meeting agenda",
+                          onSelect: () =>
+                            router
+                              ? router.push(BED_MEETING_AGENDA_HREF)
+                              : window.location.assign(BED_MEETING_AGENDA_HREF),
+                        },
+                      ]
+                    : []),
                 ]}
                 trigger={(props) => (
                   <button type="button" {...props} className={buttonClass({ variant: "onHero" })}>
@@ -165,7 +174,7 @@ export function CapacityHero({
                   </button>
                 )}
               />
-              {tvHref ? (
+              {tvHref && canOpen(tvHref) ? (
                 <Link href={tvHref} className={buttonClass({ variant: "onHero" })}>
                   <Monitor size={15} aria-hidden="true" /> Open on TV
                 </Link>
