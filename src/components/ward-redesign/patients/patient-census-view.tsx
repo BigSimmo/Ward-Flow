@@ -1176,9 +1176,10 @@ export function PhoneCensus(props: PhoneCensusProps) {
               props.onHighlight(highlight === chip.id ? null : chip.id);
             }}
           >
+            {/* D-91 (Josh, 31 Oct 2026): the count comes first, as Home's and Referrals' chips. */}
             {chip.glyph ? <CensusGlyphMark glyph={chip.glyph} size={8} /> : null}
-            {chip.label}
             <b className={styles.phoneChipCount}>{props.highlightCounts[chip.id]}</b>
+            {chip.label}
           </FilterChip>
         ))}
       </div>

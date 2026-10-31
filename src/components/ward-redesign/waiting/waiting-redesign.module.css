@@ -121,3 +121,47 @@
     padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
   }
 }
+
+/* Owner rule (31 Oct 2026): the open row's journey labels ("Arrived, Fiona Stanley Hospital
+   Emergency Department", "Form 4A ends as typed · within 1h") wrap in full rather than ending in
+   "…". The labels share one grid cell, so the row grows to the tallest label instead of a fixed
+   34px; each keeps its place along the bar. Desktop only: the phone already stacks them. */
+@media (min-width: 48.0625rem) {
+  .sxWrap.sxWrap {
+    display: grid;
+    height: auto;
+  }
+  .sxWrap.sxWrap > li {
+    position: relative;
+    grid-area: 1 / 1;
+    justify-self: start;
+    text-align: center;
+    white-space: normal;
+  }
+  .sxWrap.sxWrap > li > span {
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: break-word;
+  }
+}
+
+/* D-91 (Josh, 31 Oct 2026): the phone owner chips put the count first ("41 Waiting on you"), as
+   Home's and Referrals' chips do. The shared board CSS reverses the pair on a phone; this puts it
+   back in reading order. Phone only. */
+@media (max-width: 48rem) {
+  .countFirst.countFirst {
+    flex-direction: row;
+  }
+}
+
+/* Owner rule (31 Oct 2026): on a phone the row's name and its place line ("FSH ED · In transit
+   since 10:38 · UM100045") wrap in full rather than ending in "…", as a phone has no hover. Tripled
+   class: beats the board's phone row rule. */
+@media (max-width: 48rem) {
+  .phWrapLine.phWrapLine.phWrapLine {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: break-word;
+  }
+}

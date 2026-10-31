@@ -140,8 +140,9 @@ export function PersonPanel({
           <button type="button" className={styles.lnk} onClick={onClose}>
             Back
           </button>
-          <h3 className={styles.ell}>{patient.formalName}</h3>
-          <p className={`${styles.sub} ${styles.ell}`} data-testid="delays-panel-sub">
+          {/* Names and places wrap in full rather than ending in "…" (owner rule, no hover on a phone). */}
+          <h3>{patient.formalName}</h3>
+          <p className={styles.sub} data-testid="delays-panel-sub">
             {[patient.umrn, originLabel(movement), catchmentName(row.origin)].filter(Boolean).join(" · ")}
           </p>
         </div>

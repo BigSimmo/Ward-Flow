@@ -151,6 +151,11 @@
   padding: 0 0 var(--wf-s-3);
 }
 
+/* Shown on paper only (see the print block below). */
+.printMark {
+  display: none;
+}
+
 /* Layout sweep MEET-06: a printed agenda keeps its title and time, and a card never splits. */
 @media print {
   .header {
@@ -160,6 +165,15 @@
   .main > section {
     break-inside: avoid;
     box-shadow: none;
+  }
+
+  /* D-91: the synthetic-data mark, one quiet line under the title on paper only. */
+  .printMark {
+    display: block;
+    margin: 0;
+    color: CanvasText;
+    font-size: var(--wf-fs-12);
+    line-height: var(--wf-lh-12);
   }
 }
 

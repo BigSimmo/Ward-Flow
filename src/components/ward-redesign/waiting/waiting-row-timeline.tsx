@@ -12,6 +12,7 @@ import { type WfTone } from "@/components/wf";
 import { Glyph } from "@/components/ward-management/delays/delays-board-parts";
 import { rowEvents, type BoardRow } from "@/components/ward-management/delays/delays-board-model";
 import styles from "@/components/ward-management/delays/delays-board.module.css";
+import redesign from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 
 /** The open row's own journey: arrival to now, then the recorded legal time if there is one. */
@@ -99,7 +100,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
           <span className={`${styles.sxDue} ${styles.sxDueHot}`} style={{ left: `${passedP}%` }} />
         ) : null}
       </div>
-      <ol className={styles.sxLabs} aria-label="This person's recorded journey">
+      <ol className={`${styles.sxLabs} ${redesign.sxWrap}`} aria-label="This person's recorded journey">
         {labels.map((label, index) => (
           <li key={`${label.time}-${label.text}`} className={styles.sxL} style={{ left: `${pos[index]}%` }}>
             <b className={styles.num}>

@@ -85,8 +85,9 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
   const [device, setDevice] = useState<Device>(savedDevice);
   const [theme, setTheme] = useState<Theme>("system");
   const [view, setView] = useState<View>("redesign");
-  // shell-next (30 Oct 2026): the sidebar and header redesign, off until Josh has compared the two.
-  const [frame, setFrame] = useState<"today" | "next">("today");
+  // shell-next: the sidebar and header redesign. D-91 (Josh, 31 Oct 2026): it is the default frame, so
+  // each page opens with `?shell=next`; "Today's frame" switches back and drops it.
+  const [frame, setFrame] = useState<"today" | "next">("next");
   const [fit, setFit] = useState(true);
   const [stageWidth, setStageWidth] = useState(1000);
   const stage = useRef<HTMLDivElement>(null);
@@ -155,8 +156,8 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
           <Segmented
             label="Sidebar and header"
             items={[
-              { id: "today" as const, label: "Today's frame" },
               { id: "next" as const, label: "New frame" },
+              { id: "today" as const, label: "Today's frame" },
             ]}
             value={frame}
             onChange={setFrame}

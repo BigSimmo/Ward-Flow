@@ -623,8 +623,8 @@ export function DelaysBoardRedesign({
             }}
             data-testid={`delays-select-${movement.id}`}
           >
-            <b className={styles.ellBlock}>{patient.formalName}</b>
-            <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
+            <b className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`}>{patient.formalName}</b>
+            <span className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`} data-ward-type-floor="delays-profile">
               {isPhone ? phonePrefixAsTyped(row, now, thresholds) : null}
               {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off. */}
               {(isPhone
@@ -1151,7 +1151,7 @@ export function DelaysBoardRedesign({
                 }
                 data-testid={`delays-owner-${tile.owner}`}
               >
-                <span className={styles.ownTop}>
+                <span className={`${styles.ownTop} ${waitingKeys.countFirst}`}>
                   <b className={styles.num}>{tile.rows.length}</b>
                   <span className={styles.ownName}>{tile.name}</span>
                 </span>

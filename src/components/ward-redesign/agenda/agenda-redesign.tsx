@@ -209,6 +209,10 @@ function BedMeetingAgenda() {
           </div>
         }
       />
+      {/* D-91 (Josh, 31 Oct 2026): a printed agenda keeps a small synthetic-data mark, in the TV's words. */}
+      <p className={styles.printMark} data-testid="agenda-print-mark">
+        Synthetic prototype, not for clinical use
+      </p>
       {sheet ? <BedMeetingSheetDialog open onClose={() => setSheetOpen(false)} sheet={sheet} now={now} /> : null}
 
       {/* Redesign: with nothing waiting, the actions are one quiet line under the hero, not an

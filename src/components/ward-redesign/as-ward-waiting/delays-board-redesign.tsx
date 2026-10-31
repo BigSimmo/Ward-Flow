@@ -11,7 +11,7 @@
  * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
  */
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
@@ -75,7 +75,6 @@ import {
   isOver8hInEd,
 } from "@/components/ward-management/delays/delays-board-model";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { createBrowserStore } from "@/lib/client-store-factory";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 import {
   filtersFromSearch,
@@ -108,6 +107,14 @@ import { currentLegalDueAt } from "@/components/ward-management/legal-forms/lega
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
 import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
+import {
+  transitNote,
+  useDelaysFlatStore,
+  useSheetLayout,
+  useSideScroll,
+  readDelaysFlat,
+  writeDelaysFlat,
+} from "@/components/ward-redesign/waiting/delays-board-stores";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -117,48 +124,6 @@ const OPEN_BY_DEFAULT: readonly DelayCause[] = [
   "awaiting_coordinator",
 ];
 const GROUP_LIMIT = 5;
-
-/*
- * Audit A3-14: the board opens on Longest wait (forms due first, then longest wait) and remembers
- * the viewer's own choice in this browser. Same safe localStorage pattern as the wallboard store:
- * a blocked or private store never throws, and the server snapshot is the default.
- */
-const DELAYS_ORDER_STORAGE_KEY = "ward_flow_delays_order";
-const DELAYS_ORDER_CHANGE_EVENT = "ward_flow_delays_order_change";
-let delaysOrderFallback: boolean | undefined;
-
-function readDelaysFlat(): boolean {
-  try {
-    return window.localStorage.getItem(DELAYS_ORDER_STORAGE_KEY) !== "blocker";
-  } catch {
-    return delaysOrderFallback ?? true;
-  }
-}
-
-function writeDelaysFlat(flat: boolean): void {
-  try {
-    window.localStorage.setItem(DELAYS_ORDER_STORAGE_KEY, flat ? "longest" : "blocker");
-  } catch {
-    // Private browsing or a blocked store: the choice lasts for this page only.
-    delaysOrderFallback = flat;
-  }
-  try {
-    window.dispatchEvent(new Event(DELAYS_ORDER_CHANGE_EVENT));
-  } catch {
-    // Nothing else depends on the notification.
-  }
-}
-
-function subscribeDelaysOrder(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
-  };
-}
-
-const useDelaysFlatStore = createBrowserStore(subscribeDelaysOrder, readDelaysFlat, true);
 
 export type DelaysBoardProps = {
   groups: DelayGroup[];
@@ -178,63 +143,8 @@ export type DelaysBoardProps = {
   empty?: ReactNode;
 };
 
-/**
- * Audit A3-16: a collected patient is on the road, not in the ED. Their row says so; the waiting
- * count is unchanged until the rule for collected patients is agreed.
- */
-function transitNote(movement: Movement, now: Instant): string | undefined {
-  const collectedAt = movement.transport?.collectedAt;
-  if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
-    return undefined;
-  return `In transit since ${formatInstantWithDay(collectedAt, now)}`;
-}
-
-/** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
-const SHEET_QUERY = "(max-width: 64rem)";
-
-function isSheetLayout(): boolean {
-  return typeof window.matchMedia === "function" && window.matchMedia(SHEET_QUERY).matches;
-}
-
-function subscribeSheetLayout(onChange: () => void): () => void {
-  if (typeof window.matchMedia !== "function") return () => undefined;
-  const query = window.matchMedia(SHEET_QUERY);
-  query.addEventListener("change", onChange);
-  return () => {
-    query.removeEventListener("change", onChange);
-  };
-}
-
-/** True at or below 64rem, where the person's panel is a sheet over the table. */
-function useSheetLayout(): boolean {
-  return useSyncExternalStore(subscribeSheetLayout, isSheetLayout, () => false);
-}
-
 const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
 
-/** DA-26 (design audit): which edges of a sideways-scrolling area still hide content. */
-function useSideScroll(): [(node: HTMLDivElement | null) => void, { before: boolean; after: boolean }] {
-  const [node, setNode] = useState<HTMLDivElement | null>(null);
-  const [edges, setEdges] = useState({ before: false, after: false });
-  useEffect(() => {
-    if (node === null || typeof ResizeObserver === "undefined") return;
-    const measure = () => {
-      const before = node.scrollLeft > 1;
-      const after = node.scrollLeft < node.scrollWidth - node.clientWidth - 1;
-      setEdges((current) => (current.before === before && current.after === after ? current : { before, after }));
-    };
-    // The observer reports once on observe, so the first measure needs no direct call.
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    for (const child of Array.from(node.children)) observer.observe(child);
-    node.addEventListener("scroll", measure, { passive: true });
-    return () => {
-      observer.disconnect();
-      node.removeEventListener("scroll", measure);
-    };
-  }, [node]);
-  return [setNode, edges];
-}
 const WAITING_ROUTE = "/ward-flow/waiting";
 
 /** What Back brings back with the address's filters (`use-return-to-place.ts`): the opened groups. */
@@ -636,8 +546,8 @@ export function DelaysBoardRedesign({
             }}
             data-testid={`delays-select-${movement.id}`}
           >
-            <b className={styles.ellBlock}>{patient.formalName}</b>
-            <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
+            <b className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`}>{patient.formalName}</b>
+            <span className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`} data-ward-type-floor="delays-profile">
               {isPhone ? phonePrefixAsTyped(row, now, thresholds) : null}
               {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off. */}
               {(isPhone
@@ -1168,7 +1078,7 @@ export function DelaysBoardRedesign({
                   }
                   data-testid={`delays-owner-${tile.owner}`}
                 >
-                  <span className={styles.ownTop}>
+                  <span className={`${styles.ownTop} ${waitingKeys.countFirst}`}>
                     <b className={styles.num}>{tile.rows.length}</b>
                     <span className={styles.ownName}>{words(tile.name)}</span>
                   </span>
@@ -1290,7 +1200,7 @@ export function DelaysBoardRedesign({
                   hidden columns can be reached by keyboard, and its cut edge fades. */}
               <div
                 ref={sideScrollRef}
-                className={styles.tableWrap}
+                className={`${styles.tableWrap} ${waitingKeys.phoneTimes}`}
                 hidden={portrait}
                 data-more-before={sideScroll.before || undefined}
                 data-more-after={sideScroll.after || undefined}
