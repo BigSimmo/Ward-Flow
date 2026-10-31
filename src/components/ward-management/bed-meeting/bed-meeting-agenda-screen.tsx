@@ -16,9 +16,9 @@ import {
   HeroStat,
   Select,
   StatusGlyph,
+  phoneRows,
 } from "@/components/wf";
 
-import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 
 import { bedMeetingSheet } from "../capacity/bed-meeting-derivations";
 import { BedMeetingSheetLauncher } from "../capacity/bed-meeting-sheet";
@@ -161,17 +161,17 @@ function BedMeetingAgenda() {
         }
         aside={
           // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
-          <div className={`${styles.heroPillGroup} ${rows.heroPills}`}>
+          <div className={`${styles.heroPillGroup} ${phoneRows.heroPills}`}>
             <BedMeetingSheetLauncher
               now={now}
-              buttonClassName={`${buttonClass({ variant: "onHero", size: "sm" })} ${rows.heroPill}`}
+              buttonClassName={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
               buildSheet={buildSheet}
             />
             {/* The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity. */}
             {bedMeetingTvOn ? (
               <Link
                 href={bedMeetingTvHref()}
-                className={`${buttonClass({ variant: "light", size: "sm" })} ${rows.heroPill}`}
+                className={`${buttonClass({ variant: "light", size: "sm" })} ${phoneRows.heroPill}`}
                 data-testid="agenda-start-meeting"
               >
                 Start meeting
