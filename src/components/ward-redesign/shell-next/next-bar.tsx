@@ -95,13 +95,6 @@ import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import polish from "@/components/ward-redesign/shell-next/next-bar.module.css";
-import {
-  NextAlertsTabs,
-  openPageActivity,
-  pageDrawsOwnActivity,
-  type AlertsTab,
-} from "@/components/ward-redesign/shell-next/next-bar-parts";
-
 /**
  * ROLE BRANCH (every desk but the coordinator), Josh, 30 Oct 2026: the bar's place chip names the
  * desk's own place, not the service or "Statewide". The words are the app's own (`accessPlaceLabel`),
@@ -991,24 +984,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       deskPlace={deskPlace}
     />
   );
-  // Josh, 31 Oct 2026: the panel is "Alerts" on every desk.
-  const alertsLabel = "Alerts";
   const placeIsTitle = deskPlace !== undefined && routeTitle.trim() === deskPlace.trim();
-  // One Alerts panel with two tabs. Activity on a page that draws its own Activity panel (Home)
-  // opens that panel, as the old Activity button did there.
-  const chooseAlertsTab = (tab: AlertsTab) => {
-    if (tab === "alerts") {
-      openPopover("tasks");
-      return;
-    }
-    if (pageDrawsOwnActivity()) {
-      closePopover("tasks", false);
-      openPageActivity(tasksTriggerRef.current);
-      return;
-    }
-    openPopover("activity");
-  };
-
   return (
     <WardBarFrame
       ref={barRef}
@@ -1180,13 +1156,6 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
         {...activitySheet.sheetProps}
         descriptionContent={
           <>
-            <NextAlertsTabs
-              current="activity"
-              alertsLabel={alertsLabel}
-              alertsCount={tasksActiveCount}
-              unreadNotices={unreadNoticeCount}
-              onChoose={chooseAlertsTab}
-            />
             {isPhone ? (
               // v10 Activity sheet (phone): one quiet line, then the list.
               <p className={styles.activityFreshness} data-tone={activityTone}>
@@ -1273,13 +1242,6 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       >
         {openPanel === "tasks" ? (
           <>
-            <NextAlertsTabs
-              current="alerts"
-              alertsLabel={alertsLabel}
-              alertsCount={tasksActiveCount}
-              unreadNotices={unreadNoticeCount}
-              onChoose={chooseAlertsTab}
-            />
             <div ref={setTasksBodyRef} className={styles.tasksBody}>
               <WardTasksDrawer
                 items={tasksItems}

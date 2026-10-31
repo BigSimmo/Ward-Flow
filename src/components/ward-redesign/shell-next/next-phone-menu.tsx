@@ -41,7 +41,6 @@ import {
 } from "@/components/ward-management/shell/ward-rail-entries";
 import { nextRoleMenu } from "@/components/ward-redesign/shell-next/next-role-menu";
 import { NextPhoneMenuTop } from "@/components/ward-redesign/shell-next/next-phone-menu-top";
-import { openPageActivity, pageDrawsOwnActivity } from "@/components/ward-redesign/shell-next/next-bar-parts";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { useAccessNavFilter } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -90,13 +89,13 @@ type ResolvedDockSlot =
  * C2 (Josh, 19 Oct 2026): a bottom bar per role. Two places left of the +, two slots right of it.
  * A ward gets My ward, Referrals, +, Alerts, Handover; the other roles in the B1 table get the same
  * idea from their own menu. A slot the desk cannot open is left out.
- * shell-next (Josh, 31 Oct 2026): Activity has no tab of its own on any desk. It is the second tab
- * of the Alerts panel and the second row of the Menu, so its slot goes to a page the desk uses.
+ * shell-next (Josh, 31 Oct 2026): Activity keeps its own tab, as today (the Home and Activity
+ * redesign gave it Changes, Recent activity and Notices).
  */
 const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
   coordinator: {
     left: [page("command", "Home"), page("referrals", "Referrals")],
-    right: [{ kind: "queue" }, page("capacity", "Capacity")],
+    right: [{ kind: "queue" }, { kind: "activity" }],
   },
   ward: {
     left: [page("wards", "My ward"), page("referrals", "Referrals")],
@@ -108,11 +107,11 @@ const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonl
   },
   officer: {
     left: [page("officer", "My jobs"), page("alerts", "Alerts")],
-    right: [page("on-call", "On-call")],
+    right: [page("on-call", "On-call"), { kind: "activity" }],
   },
   community: {
     left: [page("community", "My team"), page("referrals", "Referrals")],
-    right: [{ kind: "alerts" }, page("movements", "Coming and going")],
+    right: [{ kind: "alerts" }, { kind: "activity" }],
   },
   bed_manager: {
     left: [page("capacity", "Capacity"), page("wards", "Wards")],
@@ -120,7 +119,7 @@ const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonl
   },
   executive: {
     left: [page("command", "Home"), page("statistics", "Statistics")],
-    right: [{ kind: "queue" }, page("capacity", "Capacity")],
+    right: [{ kind: "queue" }, { kind: "activity" }],
   },
 };
 
@@ -747,19 +746,7 @@ export function NextPhoneMenu({
           createOpen={createOpen}
           onCloseCreate={closeCreate}
           onNewReferral={onNewReferral}
-          top={
-            <NextPhoneMenuTop
-              activityUnread={activityUnread}
-              // On a page that draws its own Activity panel (Home), the row opens that panel.
-              onActivity={() => {
-                if (pageDrawsOwnActivity()) {
-                  close();
-                  openPageActivity(returnFocusRef.current);
-                } else drawer("activity");
-              }}
-              onGo={close}
-            />
-          }
+          top={<NextPhoneMenuTop onGo={close} />}
         />
       ) : null}
 

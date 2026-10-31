@@ -108,7 +108,7 @@
   line-height: 1.3;
 }
 
-/* The top of the phone Menu: the capacity card, then Activity (it has no dock tab of its own). */
+/* The top of the phone Menu: the desk's capacity card. */
 .phoneTop {
   display: grid;
   gap: 0.5rem;
@@ -128,43 +128,7 @@
   text-decoration: none;
 }
 
-.phoneCard:focus-visible,
-.phoneActivity:focus-visible {
+.phoneCard:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
-}
-
-.phoneActivity {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  min-height: 3rem;
-  padding: 0 0.75rem;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-14) / 1.2 var(--wf-font);
-  text-align: left;
-  cursor: pointer;
-}
-
-.phoneActivity svg {
-  width: 1.125rem;
-  height: 1.125rem;
-  flex: none;
-  color: var(--wf-ink-2);
-}
-
-.phoneActivityMeta,
-.phoneActivityCount {
-  margin-left: auto;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-}
-
-.phoneActivityCount {
-  color: var(--wf-ink-1);
-  font-weight: 600;
 }

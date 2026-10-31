@@ -1,10 +1,9 @@
 "use client";
 
-// shell-next (Josh, 31 Oct 2026): the top of the phone Menu. The rail's capacity card, for the
-// desk's own place, and Activity, which no longer has its own dock tab.
+// shell-next (Josh, 31 Oct 2026): the top of the phone Menu, the rail's capacity card for the desk's
+// own place.
 
 import Link from "next/link";
-import { RotateCcwClock } from "lucide-react";
 
 import { Dot } from "@/components/wf";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
@@ -25,12 +24,8 @@ import { countScopeNote, deskCapacityRows, overLineLabel } from "@/components/wa
 import parts from "@/components/ward-redesign/shell-next/next-rail.module.css";
 
 export function NextPhoneMenuTop({
-  activityUnread,
-  onActivity,
   onGo,
 }: {
-  activityUnread: number;
-  onActivity: () => void;
   /** Closes the Menu when the card's link is followed. */
   onGo: () => void;
 }) {
@@ -104,21 +99,6 @@ export function NextPhoneMenuTop({
       ) : (
         <div className={parts.phoneCard}>{body}</div>
       )}
-      <button
-        type="button"
-        className={parts.phoneActivity}
-        aria-haspopup="dialog"
-        data-testid="next-phone-menu-activity"
-        onClick={onActivity}
-      >
-        <RotateCcwClock aria-hidden="true" strokeWidth={1.75} />
-        <span>Activity</span>
-        {activityUnread > 0 ? (
-          <span className={parts.phoneActivityCount}>{activityUnread} unread</span>
-        ) : (
-          <span className={parts.phoneActivityMeta}>Recorded events and notices</span>
-        )}
-      </button>
     </div>
   );
 }

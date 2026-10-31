@@ -5,7 +5,7 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, Wrench } from "lucide-react";
+import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
 import type { RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
@@ -349,37 +349,42 @@ export function WardBarDrawerTriggers({
 }) {
   // Opted out of the React Compiler, like the component above.
   "use no memo";
-  // shell-next (Josh, 30 Oct 2026): one place for "what needs me". Activity is no longer its own
-  // button: it is the second tab inside this panel (`NextAlertsTabs`). The button carries the
-  // alerts count and, as a dot, any unread notices, so nothing that Activity used to flag is lost.
-  // Focus returns here whichever tab was open, so both refs point at this one button.
-  const setAlertsButton = (node: HTMLButtonElement | null) => {
-    tasksTriggerRef.current = node;
-    activityTriggerRef.current = node;
-  };
-  const panelOpen = openPanel === "tasks" || openPanel === "activity";
   const directToScreen = oneAlertsQueue && (isPhone || onAlertsScreen);
   return (
     <div className={styles.drawerTriggers}>
+      {/* Josh, 31 Oct 2026: Activity keeps its own button (the Home and Activity redesign gave it
+          Changes, Recent activity and Notices), so it is not folded into Alerts. */}
       <button
         type="button"
-        ref={setAlertsButton}
+        ref={activityTriggerRef}
+        className={styles.drawerTrigger}
+        data-bar-mode="activity"
+        data-testid="ward-bar-activity-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={openPanel === "activity"}
+        aria-controls="ward-bar-activity-drawer"
+        onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
+      >
+        <RotateCcwClock className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+        <span className={styles.triggerLabel}>Activity</span>
+        {activityHasUnread ? <span className={styles.unread} aria-hidden="true" /> : null}
+        <span className="sr-only">
+          {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
+          {activityHasUnread ? `, ${unreadNoticeCount} unread` : ""}
+        </span>
+      </button>
+
+      <button
+        type="button"
+        ref={tasksTriggerRef}
         className={styles.drawerTrigger}
         data-bar-mode="tasks"
         data-testid="ward-bar-tasks-trigger"
         aria-haspopup={directToScreen ? undefined : "dialog"}
-        aria-expanded={directToScreen ? undefined : panelOpen}
-        aria-controls={
-          directToScreen ? undefined : openPanel === "activity" ? "ward-bar-activity-drawer" : "ward-bar-tasks-drawer"
-        }
+        aria-expanded={directToScreen ? undefined : openPanel === "tasks"}
+        aria-controls={directToScreen ? undefined : "ward-bar-tasks-drawer"}
         aria-current={onAlertsScreen ? "page" : undefined}
-        onClick={() =>
-          openPanel === "tasks"
-            ? closePopover("tasks", false)
-            : openPanel === "activity"
-              ? closePopover("activity", false)
-              : openPopover("tasks")
-        }
+        onClick={() => (openPanel === "tasks" ? closePopover("tasks", false) : openPopover("tasks"))}
       >
         {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". A desk whose
             list is the bed coordinator's opens the same panel, under the same name. */}
@@ -387,11 +392,6 @@ export function WardBarDrawerTriggers({
         <span className={styles.triggerLabel}>Alerts</span>
         <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
           {tasksActiveCount}
-        </span>
-        {activityHasUnread ? <span className={styles.unread} aria-hidden="true" /> : null}
-        <span className="sr-only">
-          {activityHasUnread ? `, ${unreadNoticeCount} unread ${unreadNoticeCount === 1 ? "notice" : "notices"}` : ""}
-          {shownActivity ? ", with recent activity" : ""}
         </span>
       </button>
 
