@@ -3,7 +3,6 @@
 import { ChevronDown, Eye, ListChecks, Lock, Send } from "lucide-react";
 import Link from "next/link";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
 import styles from "./ward-referral-drawer.module.css";
 import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
 import { DisabledReason, StatusGlyph } from "@/components/wf";
@@ -58,7 +57,6 @@ export function ReferralSummaryRail({
     draftNowMs,
     stopDraftAutosave,
     itemsTotal,
-    tier,
     itemsLeft,
     itemsReady,
     readyRows,
@@ -122,7 +120,8 @@ export function ReferralSummaryRail({
             <span className={styles.railProgress} aria-hidden="true">
               <i style={{ width: `${Math.round((itemsReady / itemsTotal) * 100)}%` }} />
             </span>
-            <dl className={styles.railRows}>
+            {/* A long value (a full ED name) wraps rather than ending in "…". */}
+            <dl className={`${styles.railRows} ${styles.railWrap}`}>
               {readyRows.map((row) => (
                 <div key={row.label} data-state={row.state}>
                   <dt>
@@ -137,30 +136,33 @@ export function ReferralSummaryRail({
               ))}
             </dl>
           </section>
-          <section className={styles.railCard} data-layout="pair">
-            {/* Audit 11 Oct 2026: the decision time appears once the referral is sent. */}
-            {destType === "community" ? (
-              // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
-              <div>
-                <p className={styles.eyebrow}>First contact</p>
-                <strong className={styles.mono}>{communityNeeds.firstContact ?? "Choose within"}</strong>
-                <small>Team sees it as the due time</small>
-              </div>
-            ) : (
-              <div title={OPERATIONAL_DEFAULT_LABEL}>
-                <p className={styles.eyebrow}>Urgency</p>
-                <strong className={styles.mono}>{tier === undefined ? "Choose urgency" : `T${tier}`}</strong>
-                <small>Decision due shows after Send</small>
-              </div>
-            )}
-            <div>
-              <p className={styles.eyebrow}>Already open</p>
-              <strong>{alreadyOpen ? "Yes" : "None"}</strong>
-              <small title={alreadyOpen ? "Check before sending" : "No open referral"}>
-                {alreadyOpen ? "Check before sending" : "No open referral"}
-              </small>
-            </div>
-          </section>
+          {/* Urgency is already a Before you send row, and "Already open: None" was an empty cell, so
+              this card shows only what the list does not: a community referral's first contact time,
+              and an open referral to check. */}
+          {destType === "community" || alreadyOpen ? (
+            <section
+              className={
+                destType === "community" && alreadyOpen ? styles.railCard : `${styles.railCard} ${styles.railSingle}`
+              }
+              data-layout="pair"
+            >
+              {destType === "community" ? (
+                // D-77: a community referral's urgency is its first contact time (Josh, 23 Oct 2026).
+                <div>
+                  <p className={styles.eyebrow}>First contact</p>
+                  <strong className={styles.mono}>{communityNeeds.firstContact ?? "Choose within"}</strong>
+                  <small>Team sees it as the due time</small>
+                </div>
+              ) : null}
+              {alreadyOpen ? (
+                <div>
+                  <p className={styles.eyebrow}>Already open</p>
+                  <strong>Yes</strong>
+                  <small title="Check before sending">Check before sending</small>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
           <button
             type="button"
             className={styles.btn}
@@ -389,7 +391,7 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
               <>
                 <button
                   type="button"
-                  className={styles.btnCancelReferral}
+                  className={`${styles.btnCancelReferral} ${styles.sendLocked}`}
                   data-testid="ward-referral-send-locked"
                   title={phNeedsLine}
                   aria-disabled="true"
