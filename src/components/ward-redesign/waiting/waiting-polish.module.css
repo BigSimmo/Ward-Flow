@@ -1,0 +1,517 @@
+/* Waiting redesign, round 4 (Josh, 31 Oct 2026): a fuller header, a calmer "By blocker" table, a
+   lined-up search, clearer register tabs and the rebuilt graphs. Tokens only, so dark mode follows. */
+
+/* ---------- Header: one row of high-yield tiles on the dark band ---------- */
+.heroBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: var(--wf-s-2);
+  width: 100%;
+  padding-top: var(--wf-s-1);
+}
+.heroTile {
+  --tone: var(--wf-hero-info);
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--wf-on-hero-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-on-hero-fill);
+  color: var(--wf-hero-ink);
+  font: inherit;
+  text-align: left;
+}
+button.heroTile {
+  cursor: pointer;
+}
+button.heroTile:hover:not(:disabled) {
+  background: var(--wf-on-hero-hl);
+}
+button.heroTile:disabled {
+  cursor: default;
+}
+.heroTile[data-tone="warning"] {
+  --tone: var(--wf-hero-warning);
+}
+.heroTile[data-tone="danger"] {
+  --tone: var(--wf-hero-danger);
+}
+.heroTile[data-tone="success"] {
+  --tone: var(--wf-hero-success);
+}
+.heroIcon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--tone) 22%, transparent);
+  color: var(--tone);
+}
+.heroTileText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.heroTileLabel {
+  color: var(--wf-hero-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.heroTileValue {
+  color: var(--wf-hero-ink);
+  font-size: var(--wf-fs-14);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.heroTileSub {
+  color: var(--wf-hero-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.heroNum {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.heroName {
+  font-weight: 600;
+}
+.heroChevron {
+  flex: none;
+  color: var(--wf-hero-ink-3);
+}
+
+.heroBtn {
+  flex: none;
+}
+
+/* The daily check's opened list, under the header. */
+.checkPanel {
+  margin-top: 0;
+}
+
+/* ---------- The table head: title and order switch, then search and views on one line ---------- */
+.tableHead {
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.filterRow {
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: 10px var(--wf-s-4);
+  background: var(--wf-surface);
+}
+.filterRow > button {
+  height: 36px;
+  padding: 0 12px;
+}
+.search.search {
+  flex: 0 1 15rem;
+  width: 15rem;
+}
+.orderNote {
+  flex-basis: 100%;
+  order: 10;
+  margin-top: -4px;
+  white-space: normal;
+}
+.keyRow {
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  padding: 6px var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+.keyRow > p {
+  padding: 0;
+}
+.wlegend {
+  margin-left: 0;
+}
+
+/* ---------- "By blocker": quieter group headers with a coloured edge ---------- */
+.groupRow {
+  --tone: transparent;
+}
+.groupRow[data-tone="danger"] {
+  --tone: var(--wf-danger);
+}
+.groupRow[data-tone="warning"] {
+  --tone: var(--wf-warning);
+}
+.groupRow[data-tone="accent"] {
+  --tone: var(--wf-accent);
+}
+.groupRow > td {
+  height: 44px;
+  border-top: 1px solid var(--wf-line);
+  box-shadow: inset 3px 0 0 var(--tone);
+}
+.groupRow > td > button {
+  height: 44px;
+  padding: 0 var(--wf-s-4) 0 14px;
+}
+.groupRow:not([data-open]) > td {
+  background: var(--wf-surface);
+}
+.ownerTag {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.ownerTag[data-owner="yours"] {
+  border-color: color-mix(in srgb, var(--wf-accent) 45%, var(--wf-line));
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+.longest {
+  display: inline-flex;
+  flex: none;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.longestLabel {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+.groupBar.groupBar {
+  flex: none;
+  width: 96px;
+}
+
+/* ---------- Registers: four tabs, each icon, count and name ---------- */
+.regBody {
+  padding: var(--wf-s-3);
+}
+.regTitle {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.regTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: var(--wf-s-2);
+}
+.regTab {
+  --tone: var(--wf-ink-3);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.regTab[data-tone="info"] {
+  --tone: var(--wf-info);
+}
+.regTab[data-tone="danger"] {
+  --tone: var(--wf-danger);
+}
+.regTab[data-tone="success"] {
+  --tone: var(--wf-success);
+}
+.regTab:hover {
+  background: var(--wf-surface-2);
+}
+.regTab[aria-selected="true"] {
+  border-color: color-mix(in srgb, var(--tone) 50%, var(--wf-line));
+  background: color-mix(in srgb, var(--tone) 9%, var(--wf-surface));
+  box-shadow: inset 0 -2px 0 var(--tone);
+  color: var(--wf-ink-1);
+}
+.regTabTop {
+  display: contents;
+}
+.regTabIcon {
+  order: 0;
+  color: var(--tone);
+}
+.regTabCount {
+  order: 2;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-16, 16px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+.regTab[data-empty] .regTabCount,
+.regTab[data-empty] .regTabIcon {
+  color: var(--wf-ink-3);
+}
+.regTabLabel {
+  order: 1;
+  min-width: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+/* Owner rule: names wrap in full in the register lists, never "…". */
+.regBody [role="tabpanel"] span,
+.regBody [role="tabpanel"] small,
+.regBody button > span > span,
+.regBody button > span > small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+.quietTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Graph: the next four hours, named ---------- */
+.nx {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+.nxSum {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+.nxSum > div {
+  --tone: var(--wf-info);
+  min-width: 8.5rem;
+  padding: 8px 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  box-shadow: inset 3px 0 0 var(--tone);
+}
+.nxSum > div[data-tone="warning"] {
+  --tone: var(--wf-warning);
+}
+.nxSum > div[data-tone="danger"] {
+  --tone: var(--wf-danger);
+}
+.nxSum dt {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.nxSum dd {
+  margin: 0;
+}
+.nxSumN {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.nxSumNote {
+  flex: 1 1 14rem;
+  align-self: center;
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.nxList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.nxAxis,
+.nxRow {
+  display: grid;
+  grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(13rem, 17rem);
+  align-items: center;
+  column-gap: var(--wf-s-3);
+}
+.nxAxis {
+  height: 22px;
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-size: 11px;
+}
+.nxTrack {
+  position: relative;
+  height: 100%;
+  margin: 0 10px;
+}
+.nxTick {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.nxRow {
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: none;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.nxRow:hover {
+  background: var(--wf-surface-2);
+}
+.nxRow[aria-pressed="true"] {
+  background: var(--wf-accent-tint);
+}
+.nxWho {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.nxWho b {
+  font-size: var(--wf-fs-13);
+  overflow-wrap: anywhere;
+}
+.nxWho small {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.nxRow .nxTrack {
+  height: 22px;
+}
+.nxGrid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--wf-line);
+}
+.nxRun,
+.nxWhat {
+  --tone: var(--wf-info);
+}
+.nxRun[data-tone="warning"],
+.nxWhat[data-tone="warning"] {
+  --tone: var(--wf-warning);
+}
+.nxRun[data-tone="danger"],
+.nxWhat[data-tone="danger"] {
+  --tone: var(--wf-danger);
+}
+.nxRun {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--tone) 35%, transparent);
+  transform: translateY(-50%);
+}
+.nxMark {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 50%;
+  background: var(--wf-surface);
+  transform: translate(-50%, -50%);
+}
+.nxWhat {
+  padding-left: 8px;
+  border-left: 2px solid var(--tone);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+.nxEmpty {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* ---------- Graph: where and whose move, as a plain heat map ---------- */
+.mx button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  border-color: transparent;
+}
+.mx button:disabled {
+  background: var(--wf-surface-2);
+}
+.mxN.mxN {
+  font-size: 18px;
+  font-weight: 700;
+}
+.mxO {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--wf-ink-2);
+  font-size: 11px;
+}
+.mxKey {
+  display: inline-block;
+  width: 28px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface)),
+    color-mix(in srgb, var(--wf-accent) 48%, var(--wf-surface))
+  );
+}
+
+/* ---------- Graph: wait spread, a pile over "+n" ---------- */
+.spreadMore {
+  position: absolute;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: 11px;
+  font-weight: 700;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 64rem) {
+  .nxAxis,
+  .nxRow {
+    grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  }
+  .nxAxis > span:last-child {
+    display: none;
+  }
+  .nxWhat {
+    grid-column: 1 / -1;
+    margin-top: 4px;
+  }
+}

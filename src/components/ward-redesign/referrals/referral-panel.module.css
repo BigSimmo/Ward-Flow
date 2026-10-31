@@ -1,0 +1,346 @@
+/* Referrals redesign, round 4 (Josh, 31 October 2026): the right-hand patient panel. Nothing cut
+   off (chips, name and meta wrap), one spacing step throughout, small touches of colour and a live
+   clock. Doubled selectors win over today's referral-board.module.css rules they replace. */
+
+.panel.panel {
+  --panel-pad: var(--wf-s-4);
+}
+
+.top.top {
+  gap: var(--wf-s-2);
+  padding: var(--panel-pad);
+}
+
+/* The name wraps in full rather than ending in "…"; the meta line wraps too. */
+.name.name {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.meta.meta,
+.meta.meta * {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+.head.head {
+  align-items: flex-start;
+}
+
+/* Alert chips wrap onto a second line instead of running off the edge. */
+.alerts.alerts [role="group"] {
+  flex-wrap: wrap;
+  overflow: visible;
+  row-gap: var(--wf-s-1);
+}
+.alerts.alerts [role="group"] > span {
+  max-width: 100%;
+  white-space: normal;
+  height: auto;
+  min-height: var(--wf-h-chip);
+  border-color: color-mix(in srgb, var(--wf-warning) 45%, var(--wf-line));
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+}
+
+/* Facts: From and Asking for side by side, Legal status the full width below, one padding. */
+.facts.facts > div {
+  flex: 1 1 8.5rem;
+  padding: var(--wf-s-2) var(--panel-pad);
+}
+.facts.facts > [data-testid="ward-referral-detail-legal-status"] {
+  flex-basis: 100%;
+}
+.facts.facts dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.legalMissing.legalMissing dd {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-warning-ink);
+  font-weight: 600;
+}
+.legalMissing.legalMissing {
+  background: color-mix(in srgb, var(--wf-warning) 7%, var(--wf-surface));
+}
+
+/* ─── Live decision clock ─────────────────────────────────────────────────────────────────── */
+
+.clock {
+  display: grid;
+  gap: 6px;
+  padding: var(--wf-s-2) var(--panel-pad, var(--wf-s-3));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.clock[data-tone="success"] {
+  border-color: color-mix(in srgb, var(--wf-success) 30%, var(--wf-line));
+}
+.clock[data-tone="warning"] {
+  border-color: color-mix(in srgb, var(--wf-warning) 45%, var(--wf-line));
+  background: color-mix(in srgb, var(--wf-warning) 7%, var(--wf-surface));
+}
+.clock[data-tone="danger"] {
+  border-color: color-mix(in srgb, var(--wf-danger) 45%, var(--wf-line));
+  background: color-mix(in srgb, var(--wf-danger) 7%, var(--wf-surface));
+}
+.clockTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+.clockTop b {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+}
+.clockWait,
+.clockLeft {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.clock[data-tone="danger"] .clockLeft,
+.clock[data-tone="danger"] .clockLeft b {
+  color: var(--wf-danger-ink);
+  font-weight: 600;
+}
+.clock[data-tone="warning"] .clockLeft b {
+  color: var(--wf-warning-ink);
+}
+.clockTrack {
+  position: relative;
+  height: 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+}
+.clockTrack > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--wf-success);
+  transition: width 0.6s ease;
+}
+.clock[data-tone="warning"] .clockTrack > i {
+  background: var(--wf-warning);
+}
+.clock[data-tone="danger"] .clockTrack > i {
+  background: var(--wf-danger);
+}
+.clock[data-tone="neutral"] .clockTrack > i {
+  background: var(--wf-ink-3);
+}
+/* The end of the tier's window. */
+.clockDue {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--wf-ink-2);
+}
+.clockFoot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "sent live"
+    "due live";
+  align-items: center;
+  gap: 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.clockFoot > :nth-child(1) {
+  grid-area: sent;
+}
+.clockFoot > :nth-child(3) {
+  grid-area: due;
+}
+.clockFoot > :nth-child(2) {
+  grid-area: live;
+  color: var(--wf-success-ink);
+  font-weight: 500;
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+.liveDot {
+  position: relative;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-success);
+}
+.liveDot[data-tone="warning"] {
+  background: var(--wf-warning);
+}
+.liveDot[data-tone="danger"] {
+  background: var(--wf-danger);
+}
+.liveDot[data-tone="neutral"] {
+  background: var(--wf-ink-3);
+}
+.liveDot::after {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  content: "";
+  animation: livePulse 2s ease-out infinite;
+}
+@keyframes livePulse {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .liveDot::after {
+    animation: none;
+  }
+  .clockTrack > i {
+    transition: none;
+  }
+}
+
+/* ─── Queue navigation row ────────────────────────────────────────────────────────────────── */
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+}
+.navStep {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+}
+.navIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  border: 0;
+  background: none;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+}
+.navIcon:first-child {
+  border-radius: var(--wf-r-ctl) 0 0 var(--wf-r-ctl);
+}
+.navIcon:last-child {
+  border-radius: 0 var(--wf-r-ctl) var(--wf-r-ctl) 0;
+}
+.navIcon:hover:not(:disabled) {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+.navIcon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.navIcon:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.navCount {
+  padding: 0 var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.navSpacer {
+  flex: 1 1 auto;
+}
+.nav a,
+.nav > button {
+  gap: 6px;
+}
+
+/* Facts wrap in full ("Fiona Stanley Hospital"), never "…". */
+.facts.facts dd {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+/* Place tab: hidden screen-reader lines no longer leave an empty gap above the first ward group,
+   and the first fold sits straight under the tabs' own rule rather than drawing a second line. */
+.panel.panel [data-testid="ward-referral-match-panel"] > div:has(> :global(.sr-only):only-child) {
+  display: contents;
+}
+.panel.panel [data-testid="ward-referral-match-panel"] > :first-child > details > summary,
+.panel.panel [data-testid="ward-referral-match-panel"] > :first-child > button {
+  border-top: 0;
+}
+
+/* ─── Dark header ─────────────────────────────────────────────────────────────────────────── */
+
+.heroTools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+}
+/* The highlight chips wrap rather than run off under the tools ("Commun…"). */
+.pills.pills {
+  flex-wrap: wrap;
+  overflow: visible;
+  row-gap: var(--wf-s-2);
+}
+/* A touch of colour: overdue red and tier 1 amber when they hold anyone; empty chips go quiet. */
+.pill.pill[data-tone="danger"]:not([aria-pressed="true"]) {
+  border-color: color-mix(in srgb, var(--wf-hero-danger) 55%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-danger) 16%, transparent);
+  color: var(--wf-hero-ink);
+}
+.pill.pill[data-tone="warning"]:not([aria-pressed="true"]) {
+  border-color: color-mix(in srgb, var(--wf-hero-warning) 55%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-warning) 14%, transparent);
+  color: var(--wf-hero-ink);
+}
+.pill.pill[data-empty="true"]:not([aria-pressed="true"]) {
+  opacity: 0.55;
+}
+.pillX {
+  display: inline-grid;
+  place-items: center;
+  margin-inline-start: 2px;
+}
+.heroMeta.heroMeta {
+  white-space: normal;
+}
+.scopeTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-end: var(--wf-s-1);
+  padding: 2px var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 22%, transparent);
+  border-radius: var(--wf-r-pill);
+  color: var(--wf-hero-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+.heroTools {
+  align-self: flex-start;
+}

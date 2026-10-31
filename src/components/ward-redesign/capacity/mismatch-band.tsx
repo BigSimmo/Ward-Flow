@@ -20,16 +20,22 @@ export function MismatchBand({ model }: { model: CapacityModel }) {
   const { gapRows, tomorrowByKind, now } = model;
   const span = rangeSpan(tomorrowByKind);
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
+  const until = formatInstantWithDay(tomorrowByKind.until, now);
   return (
     <Card aria-labelledby="capacity-mismatch-title">
-      <CardHead
-        id="capacity-mismatch-title"
-        title="Where the mismatch is"
-        meta={`Ready beds that fit, against people waiting, now and likely by ${formatInstantWithDay(tomorrowByKind.until, now)}`}
-      />
+      {/* Polish (Josh, 31 Oct 2026): a short title and no grey line beside it. Each card's own
+          "waiting · ready that fit" line already says what is counted. */}
+      <CardHead id="capacity-mismatch-title" title="Mismatch" />
       <ul className={styles.mismatch}>
         {gapRows.map((row) => (
-          <MismatchCard key={row.id} title={row.need} row={row} tomorrow={byId.get(row.id)} span={span} />
+          <MismatchCard
+            key={row.id}
+            title={shortNeed(row.need)}
+            row={row}
+            tomorrow={byId.get(row.id)}
+            span={span}
+            until={until}
+          />
         ))}
       </ul>
     </Card>
@@ -41,11 +47,13 @@ function MismatchCard({
   row,
   tomorrow,
   span,
+  until,
 }: {
   title: string;
   row: Pick<BedKindGap, "waiting" | "bedsThatFit" | "gap">;
   tomorrow: Range | undefined;
   span: number;
+  until: string;
 }) {
   const short = row.gap < 0;
   return (
@@ -62,7 +70,9 @@ function MismatchCard({
       {tomorrow ? (
         <div className={styles.mmTomorrow}>
           <div className={styles.mmTomorrowHead}>
-            <Kicker>Tomorrow</Kicker>
+            <Kicker>
+              Tomorrow<span className={styles.srOnly}>, by {until}</span>
+            </Kicker>
             <b className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</b>
           </div>
           <RangeLine low={tomorrow.low} likely={tomorrow.likely} high={tomorrow.high} span={span} />
@@ -73,6 +83,12 @@ function MismatchCard({
       ) : null}
     </li>
   );
+}
+
+/** "A locked adult bed" to "Locked adult": the card title names the bed type only. */
+export function shortNeed(need: string): string {
+  const core = need.replace(/^an? /i, "").replace(/ bed$/, "").replace("-", " ");
+  return core.charAt(0).toUpperCase() + core.slice(1);
 }
 
 /** One scale for every card, so a longer band always means a wider range. */
