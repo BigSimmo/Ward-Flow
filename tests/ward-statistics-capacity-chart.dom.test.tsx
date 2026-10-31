@@ -154,7 +154,7 @@ describe("current-capacity explorer", () => {
     chart();
     fireEvent.click(screen.getByRole("radio", { name: "Beds" }));
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "missing hospital" } });
-    expect(screen.getByText("No matching wards")).toBeInTheDocument();
+    expect(screen.getByText("No matching hospitals")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Chart CSV/ })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(screen.getByRole("searchbox")).toHaveValue("");
