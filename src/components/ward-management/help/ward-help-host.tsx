@@ -8,8 +8,6 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import { subscribeWardHelp, type HelpRequest, type HelpView } from "./ward-help-events";
 import { subscribeShortcutsKey } from "./ward-shortcuts-key";
 
-export { WardHelpScreenButton } from "./ward-help-screen-button";
-
 // The sheet, the tour and their content load only when first needed, so every page's first load
 // stays the same size.
 const WardHelpSheet = dynamic(() => import("./ward-help-sheet").then((m) => m.WardHelpSheet));
