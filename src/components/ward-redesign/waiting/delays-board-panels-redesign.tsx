@@ -8,7 +8,7 @@
 // countdown. Everything else is today's file.
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { CircleCheck, Flag, MoonStar, ServerCog, TriangleAlert, X } from "lucide-react";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -43,6 +43,7 @@ import styles from "@/components/ward-management/delays/delays-board.module.css"
 import { ago, originLabel } from "@/components/ward-management/delays/delays-board-rows";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import redesign from "./waiting-redesign.module.css";
+import polish from "./waiting-polish.module.css";
 
 export function PersonPanel({
   row,
@@ -474,11 +475,13 @@ export function Registers({
   const patientOf = usePatientOf();
   const [tab, setTab] = useState<"escalated" | "attention" | "resolved" | "system">("escalated");
   const onBoard = (id: string) => rows.some((row) => row.movement.id === id);
+  // Round 4 (Josh, 31 Oct 2026): four register tabs, each an icon, its count and its name in one
+  // column, so the choice reads at a glance; the open one is lifted with its colour underneath.
   const tabs = [
-    { id: "escalated", label: "Escalated", count: escalated.length },
-    { id: "attention", label: "Attention", count: attention.length },
-    { id: "resolved", label: "Resolved", count: closedToday.length },
-    { id: "system", label: "System", count: 0 },
+    { id: "escalated", label: "Escalated", count: escalated.length, tone: "info", Icon: Flag },
+    { id: "attention", label: "Attention", count: attention.length, tone: "danger", Icon: TriangleAlert },
+    { id: "resolved", label: "Resolved", count: closedToday.length, tone: "success", Icon: CircleCheck },
+    { id: "system", label: "System", count: 0, tone: "neutral", Icon: ServerCog },
   ] as const;
   // Device audit (11 Oct 2026): the "Waiting on you" group already lists its own people beside this
   // rail, so Longest quiet names the quiet people under every other blocker instead of repeating them.
@@ -515,9 +518,10 @@ export function Registers({
       data-wf-rail
       data-part={part === "all" ? undefined : part}
     >
-      <div className={styles.sideB} hidden={part === "quiet"}>
+      <div className={`${styles.sideB} ${polish.regBody}`} hidden={part === "quiet"}>
+        <h3 className={polish.regTitle}>Today&apos;s registers</h3>
         {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
-        <div className={styles.seg} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
+        <div className={polish.regTabs} role="tablist" aria-label="Registers" onKeyDown={onTabKey}>
           {tabs.map((entry) => (
             <button
               key={entry.id}
@@ -527,11 +531,18 @@ export function Registers({
               aria-controls={`delays-pane-${entry.id}`}
               aria-selected={tab === entry.id}
               tabIndex={tab === entry.id ? 0 : -1}
+              className={polish.regTab}
+              data-tone={entry.tone}
+              data-empty={entry.count === 0 || undefined}
               onClick={() => {
                 setTab(entry.id);
               }}
             >
-              {entry.label} <span className={styles.k}>{entry.count}</span>
+              <span className={polish.regTabTop}>
+                <entry.Icon size={15} aria-hidden="true" className={polish.regTabIcon} />
+                <span className={`${polish.regTabCount} ${styles.num}`}>{entry.count}</span>
+              </span>
+              <span className={polish.regTabLabel}>{entry.label}</span>
             </button>
           ))}
         </div>
@@ -671,9 +682,10 @@ export function Registers({
           </section>
         </div>
       </div>
-      <div className={`${styles.sideB} ${styles.sideSplit}`} hidden={part === "registers"}>
+      <div className={`${styles.sideB} ${styles.sideSplit} ${polish.regBody}`} hidden={part === "registers"}>
         <div className={styles.sec}>
-          <h3 className={styles.h4r}>
+          <h3 className={`${styles.h4r} ${polish.quietTitle}`}>
+            <MoonStar size={15} aria-hidden="true" />
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
           </h3>
           <p className={styles.mute}>Not waiting on you</p>

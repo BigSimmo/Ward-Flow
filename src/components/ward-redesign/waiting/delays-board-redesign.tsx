@@ -1,12 +1,9 @@
 "use client";
 
 /**
- * The Delays board, built from the approved Delays page mockup (October 2026): hero counts that
- * filter, four "whose move" tiles, the waiting table grouped by blocker with a timeline under the
- * open row, a registers rail that becomes the person's panel, and three graphs under the table.
- *
- * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
- * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
+ * The Delays board (approved mockup, October 2026): hero counts that filter, "whose move" tiles,
+ * the table by blocker, a registers rail that becomes the person's panel, and graphs under it.
+ * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
@@ -104,11 +101,11 @@ import {
 } from "@/components/ward-management/use-return-to-place";
 import { WaitBar, phoneUpdate, updateCell } from "@/components/ward-management/delays/delays-board-rows";
 import { RowTimeline } from "@/components/ward-redesign/waiting/waiting-row-timeline";
-import { TierKey } from "@/components/ward-management/tier-key";
 import { legalCellAsTyped, phonePrefixAsTyped } from "./waiting-legal-cells";
-import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
+import polish from "@/components/ward-redesign/waiting/waiting-polish.module.css";
+import { WaitingHeroBar, WaitingKeyRow, moveWord } from "@/components/ward-redesign/waiting/waiting-hero-bar";
 import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { SearchField } from "@/components/ward-redesign/parts/search-field";
 
@@ -177,6 +174,8 @@ export type DelaysBoardProps = {
   onEscalate: (movement: Movement) => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
+  /** Round 4: the daily check's tile in the header (laptop, coordinator). */
+  heroCheck?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
 };
@@ -264,6 +263,7 @@ export function DelaysBoardRedesign({
   isOutsideService,
   onEscalate,
   banner,
+  heroCheck,
   empty,
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
@@ -708,7 +708,13 @@ export function DelaysBoardRedesign({
       const limit = moreGroups[group.cause] ? list.length : GROUP_LIMIT;
       const owner = list[0].owner;
       body.push(
-        <tr role="row" key={`group-${group.cause}`} className={styles.grpH}>
+        <tr
+          role="row"
+          key={`group-${group.cause}`}
+          className={`${styles.grpH} ${polish.groupRow}`}
+          data-tone={list[0].severe ? "danger" : owner === "yours" ? "accent" : undefined}
+          data-open={open || undefined}
+        >
           <td role="cell" colSpan={6}>
             <button
               type="button"
@@ -736,12 +742,15 @@ export function DelaysBoardRedesign({
               <span className={styles.k} data-delays-group-count>
                 {list.length}
               </span>
-              <span className={styles.mut}>{`${ownerName(owner)} to clear`}</span>
-              <span className={styles.sp} />
-              <span className={styles.mut}>
-                Longest <span className={styles.num}>{splitDuration(list[0].waited)}</span>
+              <span className={polish.ownerTag} data-owner={owner}>
+                {moveWord(owner)}
               </span>
-              <BandBar bands={bandCounts(list)} className={styles.minibar} />
+              <span className={styles.sp} />
+              <span className={polish.longest}>
+                <span className={polish.longestLabel}>Longest</span>
+                <span className={styles.num}>{splitDuration(list[0].waited)}</span>
+              </span>
+              <BandBar bands={bandCounts(list)} className={`${styles.minibar} ${polish.groupBar}`} />
               {isPhone ? <GroupTrend rows={list} /> : null}
             </button>
           </td>
@@ -775,7 +784,13 @@ export function DelaysBoardRedesign({
       const limit = bandMore[band.id] ? list.length : band.limit;
       const includes = bandIncludes(list); // "includes 3 in transit" (Josh, 30 Oct 2026)
       body.push(
-        <tr role="row" key={`band-${band.id}`} className={styles.grpH}>
+        <tr
+          role="row"
+          key={`band-${band.id}`}
+          className={`${styles.grpH} ${polish.groupRow}`}
+          data-tone={band.tone}
+          data-open={open || undefined}
+        >
           <td role="cell" colSpan={6}>
             <button
               type="button"
@@ -965,11 +980,7 @@ export function DelaysBoardRedesign({
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}
-      {/* Overall review, 20 Oct 2026 ("Waiting is busy"): only the views and the one filter nothing
-          else on the page offers stay here. The 12h step sat between the hero's Over 8h and Over 24h
-          figures, which set the same wait filter, and No update 2h+ repeated the checking line and
-          the Longest quiet register's own "Show all quiet" button. A link can still ask for either
-          (`delays-url-state.ts`), and the applied-filter chip below then shows it with a remove. */}
+      {/* Overall review, 20 Oct 2026: only the views and Locked bed stay here (see delays-url-state.ts). */}
       <button
         type="button"
         className={styles.chip}
@@ -984,8 +995,20 @@ export function DelaysBoardRedesign({
       </button>
     </>
   );
+  /* D-91: the one page search field; the placeholder names only what is searched. */
+  const searchField = (
+    <SearchField
+      className={`${waitingKeys.searchField} ${polish.search}`}
+      value={filters.search}
+      onValueChange={(search) => set({ search })}
+      placeholder="Name, UMRN or ED"
+      label="Find a person or ED"
+    />
+  );
+  // Round 4 header tiles (`waiting-hero-bar.tsx`): the daily check, the longest wait and who passes 8h next.
+  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} />;
   const filterRow = (inSheet: boolean) => (
-    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ""}`}>
+    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ` ${polish.filterRow}`}`}>
       {/* Design review (22 Oct 2026, Josh approved): in the phone Filter sheet the views sit under
           a Views label in a two by two grid lined up with the sheet title, not a ragged wrap. */}
       {inSheet ? (
@@ -1102,6 +1125,9 @@ export function DelaysBoardRedesign({
           </div>
         }
         aside={<LiveChip state="live" onHero />}
+        // Round 4 (Josh, 31 Oct 2026): a fuller header. Under the counts, one row of high-yield
+        // tiles: the daily check, the longest wait and who passes 8h next. Laptop only.
+        bar={isPhone ? undefined : heroBar}
         foot={
           // This page watches conditions, so it says what it checked. Counts only, never "All clear".
           // Redesign: on desktop the count is a header figure; the phone keeps the line.
@@ -1191,39 +1217,18 @@ export function DelaysBoardRedesign({
               data-ward-primitive="panel"
               tabIndex={-1}
             >
-              <div className={`${styles.chead} ${wardPin.pinnedSwitch}`}>
+              <div className={`${styles.chead} ${wardPin.pinnedSwitch} ${polish.tableHead}`}>
                 <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
                 <span
                   className={styles.meta}
                   data-testid="delays-shown-count"
                 >{`${shown.length} of ${rows.length}`}</span>
-                <span className={styles.meta} data-testid="delays-order-note">
+                <span className={`${styles.meta} ${polish.orderNote}`} data-testid="delays-order-note">
                   {waitingOrderLine(flat)}
                 </span>
-                <span className={styles.wlegend} aria-hidden="true">
-                  <span>
-                    <i className={styles.lgAct} />
-                    Active
-                  </span>
-                  <span>
-                    <i className={styles.lgQuiet} />
-                    Quiet
-                  </span>
-                  <span>
-                    <i className={styles.lgQuietLong} />
-                    {`Quiet ${SILENT_MINUTES / 60}h+`}
-                  </span>
-                </span>
                 <span className={styles.sp} />
-                {/* D-91: the one page search field; the count stays in the head above, and the placeholder
-                    names only what is searched. */}
-                <SearchField
-                  className={waitingKeys.searchField}
-                  value={filters.search}
-                  onValueChange={(search) => set({ search })}
-                  placeholder="Name, UMRN or ED"
-                  label="Find a person or ED"
-                />
+                {/* Round 4: search and the order switch share one line, at one height. */}
+                {searchField}
                 <div className={styles.seg} role="group" aria-label="Order the table">
                   <button
                     type="button"
@@ -1279,10 +1284,7 @@ export function DelaysBoardRedesign({
               >
                 {/* Decision 1 (Josh, 30 Oct 2026): the one colour key for typed legal times sits beside
                     the tier key, on the list it explains. */}
-                <div className={waitingKeys.keyRow}>
-                  <TierKey />
-                  {anyTypedTime ? <p className={waitingKeys.typedKey}>{TYPED_TIME_KEY}</p> : null}
-                </div>
+                <WaitingKeyRow anyTypedTime={anyTypedTime} />
                 <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
