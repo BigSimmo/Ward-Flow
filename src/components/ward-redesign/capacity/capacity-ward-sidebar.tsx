@@ -12,72 +12,40 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { DischargeOpenHandle, DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useCanOpenHref, useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { Button } from "@/components/wf";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button, buttonClass, Segmented, StatusGlyph } from "@/components/wf";
+import { siteLabel } from "@/components/ward-management/ward-absence-labels";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { siteLabel } from "@/components/ward-management/ward-absence-labels";
-import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   countCellText,
   freeingCellText,
   type NetworkWardRow,
 } from "@/components/ward-management/capacity/capacity-derivations";
-import styles from "@/components/ward-management/capacity/capacity.module.css";
 import local from "./capacity-redesign.module.css";
+import { BedCells } from "./bed-map-cards";
 import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
 import { bedKindsServed, isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
 
-function CapacityTabs({
-  id,
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { id: string; label: string }[];
-}) {
-  return (
-    <div className={styles.sidebarTabs} role="tablist" aria-label={label}>
-      {options.map((option, index) => (
-        <button
-          key={option.id}
-          id={`${id}-${option.id}-tab`}
-          type="button"
-          role="tab"
-          aria-selected={value === option.id}
-          aria-controls={`${id}-panel`}
-          tabIndex={value === option.id ? 0 : -1}
-          onClick={() => onChange(option.id)}
-          onKeyDown={(event) => {
-            let next: number;
-            if (event.key === "ArrowRight") next = (index + 1) % options.length;
-            else if (event.key === "ArrowLeft") next = (index + options.length - 1) % options.length;
-            else if (event.key === "Home") next = 0;
-            else if (event.key === "End") next = options.length - 1;
-            else return;
-            event.preventDefault();
-            onChange(options[next].id);
-            document.getElementById(`${id}-${options[next].id}-tab`)?.focus();
-          }}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /** Keyed by generation, declared actor and ward: stale selection receipts never cross a scope change. */
 /** `now` is the page's clock from `usePageLive()`, so pausing the hero freezes this panel too. */
-export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow; onBack: () => void; now: Instant }) {
+export function CapacityWardSidebar({
+  row,
+  onBack,
+  now,
+  showPlace = true,
+}: {
+  row: NetworkWardRow;
+  onBack: () => void;
+  now: Instant;
+  /** False when the drawer's own header already names the hospital and service. */
+  showPlace?: boolean;
+}) {
   const canOpen = useCanOpenHref();
   const wardHref = `/ward-flow/ward/${row.unit.id}`;
   const { bedReleases, refreshRequests, dispatch, readDischargeRecords, openDischargeRecord, readDischargeRecord } =
@@ -92,7 +60,7 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
   const recordActors = useWardRecordActors();
   const recordActor =
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
-  const [tab, setTab] = useState("ward");
+  const [tab, setTab] = useState<"ward" | "discharges">("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const recordHeading = useRef<HTMLHeadingElement>(null);
   const recordOrigin = useRef<string | null>(null);
@@ -117,35 +85,55 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
     const handle = openDischargeRecord(recordActor, record.admissionId);
     setOpened({ admissionId: record.admissionId, handle });
   }
+  const sortedRecords =
+    records.status === "allowed" ? [...records.value].sort((x, y) => recordOrder(x, now) - recordOrder(y, now)) : [];
+  const fresh = isConfirmationFresh(row.unit, now);
+  const occupied = row.occupied + row.pulled;
+  const freeingWords =
+    row.freeing === undefined
+      ? "Freeing today is not tracked here"
+      : row.freeing === 0
+        ? "No beds freeing today"
+        : `${row.freeing} ${row.freeing === 1 ? "bed" : "beds"} freeing today`;
+  const bedNotes = [
+    `${countCellText(row.occupied)} ${BED_STATE_LABELS.occupied.toLowerCase()}`,
+    row.onLeave > 0 ? `${row.onLeave} ${BED_STATE_LABELS.onLeave.toLowerCase()}` : "",
+    row.pulled > 0 ? `${row.pulled} ${BED_STATE_LABELS.pulled.toLowerCase()}` : "",
+    row.closed > 0 ? `${row.closed} ${BED_STATE_LABELS.closed.toLowerCase()}` : "",
+    (row.pendingPreparation ?? 0) > 0 ? `${row.pendingPreparation} being made ready` : "",
+  ].filter(Boolean);
+  // Polish (Josh, 31 Oct 2026): the panel leads with the ward's beds as one picture, then whether
+  // the count is fresh with its one action, then the facts in two short groups. Closing the ward
+  // is folded behind its own button. The Discharges tab lists records soonest first, surname
+  // first, with a status tag on each.
   return (
     <>
-      <CapacityTabs
-        id="capacity-ward"
-        label="Selected ward"
+      {showPlace ? (
+        <p className={local.wdIdentity}>
+          {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
+        </p>
+      ) : null}
+      <Segmented
+        label="Ward panel view"
+        className={local.wdTabs}
+        items={[
+          { id: "ward" as const, label: "Ward" },
+          {
+            id: "discharges" as const,
+            label: "Discharges",
+            count: records.status === "allowed" ? records.value.length + anonymousReleases.length : undefined,
+          },
+        ]}
         value={tab}
         onChange={(next) => {
           setTab(next);
           setOpened(null);
         }}
-        options={[
-          { id: "ward", label: "Ward" },
-          { id: "discharges", label: "Discharges" },
-        ]}
       />
-      {/* Redesign (Josh, 30 Oct): the drawer's title names the ward and its close returns to the
-          network, so the panel no longer repeats them. */}
-      <div className={styles.wardIdentity}>
-        <p>
-          {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
-        </p>
-      </div>
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
+      {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape bubbling up from the focused control inside */}
       <div
         id="capacity-ward-panel"
-        role="tabpanel"
-        aria-labelledby={`capacity-ward-${tab}-tab`}
-        tabIndex={0}
-        className={styles.sidebarBody}
+        className={local.wdBody}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
@@ -156,97 +144,41 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
       >
         {tab === "ward" ? (
           <>
-            <dl className={styles.wardFacts}>
-              <div>
-                <dt>Total beds</dt>
-                <dd>{row.unit.beds}</dd>
-              </div>
-              <div>
-                <dt>Bed kinds</dt>
-                <dd>{bedKindsServed(row.unit)}</dd>
-              </div>
-              <div>
-                <dt>Ready</dt>
-                <dd>{countCellText(row.ready)}</dd>
-              </div>
-              <div>
-                <dt>{BED_STATE_LABELS.pulled}</dt>
-                <dd>{countCellText(row.pulled)}</dd>
-              </div>
-              <div>
-                <dt>{BED_STATE_LABELS.closed}</dt>
-                <dd>{countCellText(row.closed)}</dd>
-              </div>
-              <div>
-                <dt>{BED_STATE_LABELS.occupied}</dt>
-                <dd>
-                  {countCellText(row.occupied)}
-                  {row.onLeave > 0 ? ` · ${row.onLeave} ${BED_STATE_LABELS.onLeave.toLowerCase()}` : null}
-                </dd>
-              </div>
-              <div>
-                <dt>Freeing today</dt>
-                <dd>{freeingCellText(row.freeing)}</dd>
-              </div>
-              <div>
-                <dt>Gender mix</dt>
-                <dd>
-                  Female {row.unit.sexMix.Female} · Male {row.unit.sexMix.Male}
-                </dd>
-              </div>
-              <div>
-                <dt>Sex designation</dt>
-                <dd>{row.unit.sexDesignation}</dd>
-              </div>
-              <div>
-                <dt>Specialling free</dt>
-                <dd>
-                  {row.speciallingFree === undefined
-                    ? "Not tracked here"
-                    : `${row.speciallingFree} of ${row.speciallingStaffable}`}
-                </dd>
-              </div>
-              <div>
-                <dt>Authorised hospital</dt>
-                <dd>{row.unit.authorised ? "Yes" : "No"}</dd>
-              </div>
-            </dl>
-            {(row.pendingPreparation ?? 0) > 0 ? (
-              <p className={styles.sidebarWarning}>{row.pendingPreparation} discharged beds still being made ready.</p>
-            ) : null}
-            {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ? (
-              <p className={styles.sidebarWarning}>
-                {row.reservationReleaseCapacityConflicts} reservation release(s) need capacity re-confirmation — an
-                offered count already reported its ceiling. No extra physical vacancy is implied.
+            <section className={local.wdBeds} aria-label="Beds now">
+              <p className={local.wdBedsHead}>
+                <span className={local.wdBedsFigure}>{countCellText(row.ready)}</span>
+                <span>ready of {row.unit.beds} beds</span>
+                <span className={`${local.tag} ${local.wdKind}`}>{bedKindsServed(row.unit)}</span>
               </p>
-            ) : null}
-            {(row.arrivalCapacityConflicts ?? 0) > 0 ? (
-              <p className={styles.sidebarWarning}>
-                {row.arrivalCapacityConflicts} arrival(s) awaiting capacity reconciliation.
-              </p>
-            ) : null}
-            {row.bedRecordsMidUpdate ? (
-              <p className={styles.sidebarWarning}>Bed records are mid-update. Gender mix may not be settled.</p>
-            ) : null}
-            <section className={styles.confirmationSection}>
-              <h3>Confirmed beds</h3>
-              <WardFreshness
-                confirmedAt={row.confirmedAt}
-                confirmedByRole={capacityConfirmer(row.unit)}
-                derived={row.unit.allocatable.source !== "ward"}
-                now={now}
-              />
-              <p className={!isConfirmationFresh(row.unit, now) ? styles.preparationWarning : undefined}>
-                {isConfirmationFresh(row.unit, now) ? "Within" : "Past"} this ward’s{" "}
-                {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold.
-              </p>
-              {/* Redesign (Josh, 30 Oct): one name for this request, "Ask the ward", as on the side
-                  card, on the kit's small secondary button. */}
+              <BedCells beds={row.unit.beds} ready={row.ready} used={occupied} />
+              <p className={local.mutedXs}>{bedNotes.join(" · ")}</p>
+            </section>
+
+            <section className={local.wdConfirm} aria-label="Confirmed beds">
+              <div className={local.wdConfirmMain}>
+                <WardFreshness
+                  confirmedAt={row.confirmedAt}
+                  confirmedByRole={capacityConfirmer(row.unit)}
+                  derived={row.unit.allocatable.source !== "ward"}
+                  now={now}
+                />
+                {/* Polish (Josh, 31 Oct 2026): said only when the count is past its limit. */}
+                {fresh ? null : (
+                  <span className={`${local.mutedXs} ${local.warnInk}`}>
+                    Past this ward’s {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold
+                  </span>
+                )}
+                {request ? (
+                  <span role="status" className={local.mutedXs}>
+                    Update requested {formatInstantWithDay(request.at, now)}
+                  </span>
+                ) : null}
+              </div>
+              {/* Redesign (Josh, 30 Oct): one name for this request, "Ask the ward". */}
               {recordActor.role === "coordinator" ? (
                 <Button
                   size="sm"
                   variant="sec"
-                  className={local.askWard}
                   onClick={() =>
                     dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
                   }
@@ -254,119 +186,215 @@ export function CapacityWardSidebar({ row, onBack, now }: { row: NetworkWardRow;
                   Ask the ward
                 </Button>
               ) : (
-                <Button
-                  size="sm"
-                  variant="sec"
-                  className={local.askWard}
-                  disabledReason="Only the coordinator can ask the ward."
-                >
+                <Button size="sm" variant="sec" disabledReason="Only the coordinator can ask the ward.">
                   Ask the ward
                 </Button>
               )}
-              {request ? <p role="status">Update requested {formatInstantWithDay(request.at, now)}.</p> : null}
             </section>
-            <WardClosurePanel unit={row.unit} now={now} actor={recordActor} />
+
+            {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ||
+            (row.arrivalCapacityConflicts ?? 0) > 0 ||
+            row.bedRecordsMidUpdate ? (
+              <ul className={local.wdNotices}>
+                {(row.reservationReleaseCapacityConflicts ?? 0) > 0 ? (
+                  <li>
+                    <StatusGlyph tone="warning" size={9} />
+                    {row.reservationReleaseCapacityConflicts} reservation release(s) need capacity re-confirmation — an
+                    offered count already reported its ceiling. No extra physical vacancy is implied.
+                  </li>
+                ) : null}
+                {(row.arrivalCapacityConflicts ?? 0) > 0 ? (
+                  <li>
+                    <StatusGlyph tone="warning" size={9} />
+                    {row.arrivalCapacityConflicts} arrival(s) awaiting capacity reconciliation.
+                  </li>
+                ) : null}
+                {row.bedRecordsMidUpdate ? (
+                  <li>
+                    <StatusGlyph tone="warning" size={9} />
+                    Bed records are mid-update. Gender mix may not be settled.
+                  </li>
+                ) : null}
+              </ul>
+            ) : null}
+
+            <div className={local.wdGroups}>
+              <FactGroup
+                title="Today"
+                rows={[
+                  ["Freeing today", freeingCellText(row.freeing)],
+                  [
+                    "Specialling free",
+                    row.speciallingFree === undefined
+                      ? "Not tracked here"
+                      : `${row.speciallingFree} of ${row.speciallingStaffable}`,
+                  ],
+                ]}
+              />
+              <FactGroup
+                title="Ward"
+                rows={[
+                  ["Sex designation", row.unit.sexDesignation],
+                  ["Gender mix", `Female ${row.unit.sexMix.Female} · Male ${row.unit.sexMix.Male}`],
+                  ["Authorised hospital", row.unit.authorised ? "Yes" : "No"],
+                ]}
+              />
+            </div>
+
+            <details className={local.wdClosure} open={row.unit.isClosed || undefined}>
+              <summary>
+                <ChevronRight size={14} aria-hidden="true" />
+                {row.unit.isClosed ? "Closed to admissions" : "Close to admissions"}
+              </summary>
+              <div className={local.wdClosureBody}>
+                <WardClosurePanel unit={row.unit} now={now} actor={recordActor} />
+              </div>
+            </details>
           </>
+        ) : opened ? (
+          <section className={local.wdRecord} aria-label="Discharge record detail">
+            <button type="button" className={local.wdBack} onClick={closeRecord}>
+              <ChevronLeft size={14} aria-hidden="true" /> All discharges
+            </button>
+            {detail?.status === "allowed" ? (
+              <>
+                <h3 ref={recordHeading} tabIndex={-1} className={local.wdRecordName}>
+                  {dischargeRecordName(detail.value)}
+                </h3>
+                <DischargeRecordFacts record={detail.value} now={now} />
+              </>
+            ) : (
+              <p role="status">This discharge record is unavailable. Return to the list and open it again.</p>
+            )}
+          </section>
         ) : (
           <>
-            <p className={styles.dischargeSummary}>
-              {freeingCellText(row.freeing)} {row.freeing === 1 ? "bed" : "beds"} freeing today.
-            </p>
-            {opened ? (
-              <section className={styles.recordDetail} aria-label="Discharge record detail">
-                <button type="button" className={styles.textButton} onClick={closeRecord}>
-                  Back to discharge list
-                </button>
-                {detail?.status === "allowed" ? (
-                  <>
-                    <h3 ref={recordHeading} tabIndex={-1}>
-                      {dischargeRecordName(detail.value)}
-                    </h3>
-                    <DischargeRecordFacts record={detail.value} now={now} />
-                  </>
-                ) : (
-                  <p role="status">This discharge record is unavailable. Return to the list and open it again.</p>
-                )}
-              </section>
+            <p className={local.wdSummary}>{freeingWords}</p>
+            {records.status === "denied" ? (
+              <p className={local.mutedXs}>Discharge records are unavailable for this role.</p>
+            ) : sortedRecords.length === 0 ? (
+              <p className={local.mutedXs}>No discharge records for this ward.</p>
             ) : (
-              <>
-                <h3 className={styles.sidebarSectionTitle}>Discharge records</h3>
-                {records.status === "denied" ? (
-                  <p className={styles.absent}>Discharge records are unavailable for this role.</p>
-                ) : records.value.length === 0 ? (
-                  <p className={styles.absent}>No discharge records for this ward.</p>
-                ) : (
-                  <ul className={styles.dischargeRecords}>
-                    {records.value.map((record) => (
-                      <li key={record.id}>
-                        <button
-                          type="button"
-                          id={`capacity-discharge-${record.id}`}
-                          className={styles.recordButton}
-                          onClick={(event) => {
-                            recordOrigin.current = event.currentTarget.id;
-                            openRecord(record);
-                          }}
+              <ul className={local.wdList} aria-label="Discharge records, soonest first">
+                {sortedRecords.map((record) => {
+                  const stage = dischargeRecordStage(record);
+                  const passed =
+                    record.leftAt === null && record.expectedDischargeAt !== null && record.expectedDischargeAt < now;
+                  return (
+                    <li key={record.id}>
+                      <button
+                        type="button"
+                        id={`capacity-discharge-${record.id}`}
+                        className={local.wdListRow}
+                        onClick={(event) => {
+                          recordOrigin.current = event.currentTarget.id;
+                          openRecord(record);
+                        }}
+                      >
+                        <span className={local.wdListMain}>
+                          <span className={local.wdListName}>{dischargeRecordName(record)}</span>
+                          <span className={local.mutedXs}>
+                            {record.expectedDischargeAt === null
+                              ? "Expected date not recorded"
+                              : `Expected ${formatInstantWithDay(record.expectedDischargeAt, now)}`}
+                          </span>
+                          {record.blockReason !== null ? (
+                            <span className={`${local.mutedXs} ${local.warnInk}`}>{record.blockReason}</span>
+                          ) : null}
+                        </span>
+                        <span
+                          className={`${local.tag} ${
+                            stage === "Discharge blocked"
+                              ? local.wdTagWarn
+                              : stage === "Confirmed" || stage === "Departed"
+                                ? local.tagGood
+                                : ""
+                          }`}
                         >
-                          <strong>{dischargeRecordName(record)}</strong>
-                          <span>{dischargeRecordStage(record)}</span>
-                        </button>
-                        <p>
-                          {record.expectedDischargeAt === null
-                            ? "Expected date not recorded"
-                            : `Expected ${formatInstantWithDay(record.expectedDischargeAt, now)}`}
-                        </p>
-                        {record.blockReason !== null ? (
-                          <p className={styles.preparationWarning}>{record.blockReason}</p>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <h3 className={styles.sidebarSectionTitle}>Bed frees (no name)</h3>
-                {anonymousReleases.length === 0 ? (
-                  <p className={styles.absent}>No anonymous bed releases recorded.</p>
-                ) : (
-                  <ul className={styles.dischargeRecords}>
-                    {anonymousReleases.map((release) => (
-                      <li key={release.id}>
-                        <strong>{bedReleaseStateLabels[release.state]}</strong>
-                        <p>{formatInstantWithDay(release.expectedAt, now)}</p>
+                          {stage === "Discharge blocked" ? "Blocked" : passed ? "Date passed" : stage}
+                        </span>
+                        <ChevronRight size={14} aria-hidden="true" className={local.helpChevron} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {anonymousReleases.length > 0 ? (
+              <>
+                <h3 className={local.wdGroupTitle}>Bed releases without a name</h3>
+                <ul className={local.wdList}>
+                  {anonymousReleases.map((release) => (
+                    <li key={release.id} className={local.wdListStatic}>
+                      <span className={local.wdListMain}>
+                        <span className={local.wdListName}>{bedReleaseStateLabels[release.state]}</span>
+                        <span className={local.mutedXs}>{formatInstantWithDay(release.expectedAt, now)}</span>
                         {release.blocker ? (
-                          <p className={styles.preparationWarning}>{release.blocker}</p>
+                          <span className={`${local.mutedXs} ${local.warnInk}`}>{release.blocker}</span>
                         ) : release.waitingOn ? (
-                          <p>{release.waitingOn}</p>
+                          <span className={local.mutedXs}>{release.waitingOn}</span>
                         ) : null}
                         {release.preparing ? (
-                          <p>
+                          <span className={local.mutedXs}>
                             Being made ready
                             {release.preparationNote ? ` · ${release.preparationNote}` : " · reason not recorded"}
-                          </p>
+                          </span>
                         ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </>
-            )}
+            ) : null}
           </>
         )}
       </div>
-      {/* Redesign (Josh, 30 Oct): each link shows only when this desk can open its page, by the same
-          table the menu reads, so none leads to "Not part of your role". */}
+      {/* Redesign (Josh, 30 Oct): each link shows only when this desk can open its page. */}
       {canOpen(wardHref) || canOpen(DISCHARGES_HREF) ? (
-        <div className={styles.sidebarFooter}>
-          {canOpen(wardHref) ? <Link href={wardHref}>Open ward</Link> : null}
-          {canOpen(DISCHARGES_HREF) ? <Link href={DISCHARGES_HREF}>Discharge board</Link> : null}
+        <div className={local.wdFoot}>
+          {canOpen(wardHref) ? (
+            <Link href={wardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+              Open ward
+            </Link>
+          ) : null}
+          {canOpen(DISCHARGES_HREF) ? (
+            <Link href={DISCHARGES_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+              Discharge board
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </>
   );
 }
 
+function FactGroup({ title, rows }: { title: string; rows: [string, string][] }) {
+  return (
+    <section className={local.wdGroup} aria-label={title}>
+      <h3 className={local.wdGroupTitle}>{title}</h3>
+      <dl className={local.wdFacts}>
+        {rows.map(([label, value]) => (
+          <div key={label}>
+            <dt>{label}</dt>
+            <dd>{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+/** Blocked first, then soonest expected; a record with no date and departed records last. */
+function recordOrder(record: DischargeRecord, now: Instant): number {
+  if (record.leftAt !== null) return Number.MAX_SAFE_INTEGER;
+  if (record.blockReason !== null) return Number.MIN_SAFE_INTEGER + (record.expectedDischargeAt ?? now);
+  return record.expectedDischargeAt ?? Number.MAX_SAFE_INTEGER - 1;
+}
+
 function dischargeRecordName(record: DischargeRecord): string {
   if (record.identity.kind === "linked")
-    return `${record.identity.patient.givenName} ${record.identity.patient.familyName}`;
+    // Polish (Josh, 31 Oct 2026): surname first, as every list in the redesign (D-83).
+    return `${record.identity.patient.familyName}, ${record.identity.patient.givenName}`;
   return record.identity.kind === "legacy-anonymous" ? "Identity not linked" : "Patient link unavailable";
 }
 
@@ -378,7 +406,7 @@ function dischargeRecordStage(record: DischargeRecord): string {
 
 function DischargeRecordFacts({ record, now }: { record: DischargeRecord; now: Instant }) {
   return (
-    <dl className={styles.wardFacts}>
+    <dl className={local.wdFacts}>
       {record.identity.kind === "linked" ? (
         <div>
           <dt>UMRN</dt>

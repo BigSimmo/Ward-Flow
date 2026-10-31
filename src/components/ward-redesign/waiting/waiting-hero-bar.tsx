@@ -23,12 +23,11 @@ import { TierKey } from "@/components/ward-management/tier-key";
 import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import board from "@/components/ward-management/delays/delays-board.module.css";
 import waitingKeys from "./waiting-redesign.module.css";
-import { originCode, waitingCauseTitle as causeTitle } from "./wait-bands";
+import { originCode } from "./wait-bands";
 import styles from "./waiting-polish.module.css";
 
-function Tile({
+function Item({
   icon,
-  tone,
   label,
   value,
   sub,
@@ -37,7 +36,6 @@ function Tile({
   testId,
 }: {
   icon: ReactNode;
-  tone: "danger" | "warning";
   label: string;
   value: ReactNode;
   sub: string;
@@ -48,23 +46,18 @@ function Tile({
   return (
     <button
       type="button"
-      className={styles.heroTile}
-      data-tone={tone}
+      className={styles.strip}
       disabled={row === null}
       onClick={() => {
         if (row) onOpen(row.movement.id);
       }}
       data-testid={testId}
     >
-      <span className={styles.heroIcon} aria-hidden="true">
-        {icon}
-      </span>
-      <span className={styles.heroTileText}>
-        <span className={styles.heroTileLabel}>{label}</span>
-        <span className={styles.heroTileValue}>{value}</span>
-        {sub ? <span className={styles.heroTileSub}>{sub}</span> : null}
-      </span>
-      {row ? <ChevronRight size={16} aria-hidden="true" className={styles.heroChevron} /> : null}
+      {icon}
+      <span className={styles.stripLabel}>{label}</span>
+      <span className={styles.stripValue}>{value}</span>
+      {sub ? <span className={styles.stripSub}>{sub}</span> : null}
+      {row ? <ChevronRight size={14} aria-hidden="true" className={styles.heroChevron} /> : null}
     </button>
   );
 }
@@ -89,11 +82,10 @@ export function WaitingHeroBar({
   const next = under8[0] ?? null;
   const withinHour = under8.filter((row) => OVER_8H - row.waited <= 60).length;
   return (
-    <div className={styles.heroBar}>
+    <div className={styles.heroBar} role="group" aria-label="At a glance">
       {check}
-      <Tile
-        icon={<Hourglass size={18} aria-hidden="true" />}
-        tone="danger"
+      <Item
+        icon={<Hourglass size={14} aria-hidden="true" className={styles.stripIcon} data-tone="danger" />}
         label="Longest wait"
         value={
           longest ? (
@@ -105,15 +97,14 @@ export function WaitingHeroBar({
             "Nobody waiting"
           )
         }
-        sub={longest ? [originCode(longest.movement), causeTitle(longest.cause)].filter(Boolean).join(" · ") : ""}
+        sub={longest ? originCode(longest.movement) : ""}
         row={longest}
         onOpen={onOpen}
         testId="delays-hero-longest"
       />
-      <Tile
-        icon={<TimerReset size={18} aria-hidden="true" />}
-        tone="warning"
-        label={`Next to pass ${H8}`}
+      <Item
+        icon={<TimerReset size={14} aria-hidden="true" className={styles.stripIcon} data-tone="warning" />}
+        label={`Next past ${H8}`}
         value={
           next ? (
             <>
@@ -124,11 +115,7 @@ export function WaitingHeroBar({
             `Nobody under ${H8}`
           )
         }
-        sub={
-          next
-            ? `${withinHour} ${withinHour === 1 ? "person passes" : "people pass"} ${H8} within the hour if nobody moves`
-            : ""
-        }
+        sub={next && withinHour > 1 ? `+${withinHour - 1} more within the hour` : ""}
         row={next}
         onOpen={onOpen}
         testId="delays-hero-next8"
