@@ -1,4 +1,4 @@
-/* The kit's one "Show more" row (Josh, 30 October 2026; from the #1118 mock-ups' parts/show-more-row): centred, 600, a line above; 40px, 48px on a phone. */
+/* The kit's one "Show more" row (Josh, 30 October 2026; from the #1118 mock-ups' parts/show-more-row): centred, 600, a line above; drawn 40px everywhere. On a phone an invisible cover below makes the 48px tap area (Josh, 31 Oct 2026: no 48px controls). */
 .row {
   display: flex;
   align-items: center;
@@ -23,6 +23,12 @@
 }
 @media (max-width: 48rem) {
   .row {
-    height: 48px;
+    position: relative;
+  }
+  /* The cover grows downward only, so it never takes a tap meant for the list row above. */
+  .row::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 -8px;
   }
 }

@@ -387,9 +387,16 @@ test.describe("@mockup Transport officer screen", () => {
     await expect(stageButtons).toHaveCount(1);
     await expect(stageButtons).toHaveAttribute("data-testid", "ward-officer-enroute-WF-005");
     await expect(stageButtons).toHaveText("Mark en route");
-    // Pinned and reachable without scrolling, at a full tap height.
+    // Pinned and reachable without scrolling, at a full tap height. Kit (Josh, 31 Oct 2026): the
+    // phone button is drawn 40px and an invisible ::after cover makes up the 48px tap area.
     const box = await stageButtons.boundingBox();
-    expect(box!.height).toBeGreaterThanOrEqual(48);
+    const tapHeight = await stageButtons.evaluate((button) => {
+      const cover = getComputedStyle(button, "::after");
+      const drawn = button.getBoundingClientRect().height;
+      if (cover.content === "none" || cover.position !== "absolute") return drawn;
+      return drawn - parseFloat(cover.top) - parseFloat(cover.bottom);
+    });
+    expect(tapHeight).toBeGreaterThanOrEqual(48);
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.y + box!.height).toBeLessThanOrEqual(844);
 

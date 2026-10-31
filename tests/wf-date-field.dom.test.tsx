@@ -5,7 +5,7 @@ import { useState } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { DateField, isoDateAsTyped, parseTypedDate } from "@/components/wf";
+import { DateField, isoDateAsTyped, parseTypedDate, type DateFieldProps } from "@/components/wf";
 
 describe("kit typed date box (DD/MM/YYYY)", () => {
   it("reads the day as written in Australia and refuses days that do not exist", () => {
@@ -26,18 +26,20 @@ describe("kit typed date box (DD/MM/YYYY)", () => {
 
   it("starts empty, hands YYYY-MM-DD to the caller, and marks a finished wrong date", () => {
     const seen: string[] = [];
+    // A page passes the kit's own prop type through, as a form wrapper would.
+    const fieldProps = (value: string, setValue: (iso: string) => void): DateFieldProps => ({
+      "aria-label": "Date written",
+      value,
+      onValueChange: (iso) => {
+        seen.push(iso);
+        setValue(iso);
+      },
+    });
     function Harness() {
       const [value, setValue] = useState("");
       return (
         <>
-          <DateField
-            aria-label="Date written"
-            value={value}
-            onValueChange={(iso) => {
-              seen.push(iso);
-              setValue(iso);
-            }}
-          />
+          <DateField {...fieldProps(value, setValue)} />
           <button type="button" onClick={() => setValue("2026-01-05")}>
             Load record
           </button>
