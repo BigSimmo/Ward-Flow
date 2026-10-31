@@ -1,6 +1,9 @@
 "use client";
 
-import type { ReactNode } from "react";
+// The bed board's hero, its route tabs and tools, and the one figures line (Stays and discharges
+// redesign, approved by Josh 31 Oct 2026). Split out of ward-board.tsx; WardBoard owns every value.
+
+import { Fragment, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeftRight, ChevronDown, ClipboardList } from "lucide-react";
 
@@ -8,22 +11,23 @@ import { designationSummary } from "@/components/ward-management/ward-bed-design
 import type { HealthService, Site, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { Button, Hero, HeroStat, Segmented, buttonClass, cx } from "@/components/wf";
 
-import styles from "./stays-redesign.module.css";
+import styles from "./ward-board-hero.module.css";
 
 /**
- * Stays and discharges, redesigned: the same full-width hero as Ward home, in place of the
- * rounded dark card. Everything the old header said is still here, in the hero's slots: the
- * ward's name (as the h2 the board's heading rules keep, with its test id), the site and service,
- * the locked and open split, Ready now and the four band figures, the being-made-ready and
+ * Stays and discharges: the same full-width hero as Ward home, in place of the rounded dark card
+ * (the old `WardBoardHeader`). Everything the old header said is still here, in the hero's slots:
+ * the ward's name (as the h2 the board's heading rules keep, with its test id), the site and
+ * service, the locked and open split, Ready now and the four band figures, the being-made-ready and
  * constraint sentences, and the As at stamp in the heading area (DB-10).
  *
- * Final polish (31 Oct 2026): the new header already names the ward, so the hero's big line names
- * the page instead ("Dabakarn" over "Dabakarn" said the place twice). The ward's name stays in the
- * heading for a screen reader, and keeps its test id.
+ * The new header already names the ward, so the hero's big line names the page instead ("Dabakarn"
+ * over "Dabakarn" said the place twice). The ward's name stays in the heading for a screen reader,
+ * and keeps its test id.
  */
-export function StaysHero({
+export function WardBoardHero({
   available,
   constraint,
   incoming,
@@ -54,17 +58,22 @@ export function StaysHero({
   /** Show shift brief and Change ward, wired as today. */
   tools: ReactNode;
 }) {
-  const sentences = [
-    pendingPreparation > 0
-      ? `${pendingPreparation} of them ${pendingPreparation === 1 ? "is" : "are"} still being made ready. It stays counted but is not offered until the ward taps Ready.`
-      : null,
-    service !== null
-      ? service === site.service
-        ? `The Service selector is set to ${service}, which is this ward's own service.`
-        : `The Service selector is set to ${service}. This ward is in ${site.service}. The board always shows this one ward.`
-      : null,
-    constraint,
-  ].filter((line): line is string => line !== null);
+  // Each sentence keeps its own test id, as the old header's paragraphs did, inside one quiet line.
+  const sentences: { testId: string; text: string }[] = [];
+  if (pendingPreparation > 0)
+    sentences.push({
+      testId: "ward-board-pending-preparation",
+      text: `${pendingPreparation} of them ${pendingPreparation === 1 ? "is" : "are"} still being made ready. It stays counted but is not offered until the ward taps Ready.`,
+    });
+  if (service !== null)
+    sentences.push({
+      testId: "ward-board-service-sentence",
+      text:
+        service === site.service
+          ? `The Service selector is set to ${service}, which is this ward's own service.`
+          : `The Service selector is set to ${service}. This ward is in ${site.service}. The board always shows this one ward.`,
+    });
+  if (constraint !== null) sentences.push({ testId: "ward-board-constraint", text: constraint });
   return (
     <Hero
       testId="ward-board-header"
@@ -93,7 +102,9 @@ export function StaysHero({
       }
       bar={
         <div className={styles.stats} data-testid="ward-board-band-stats">
-          <HeroStat value={available} label="Ready now" />
+          <span className={styles.statSlot} data-testid="ward-board-headline">
+            <HeroStat value={available} label="Ready now" />
+          </span>
           <HeroStat value={states.occupied} label="Occupied" />
           {/* Third, because a phone hero shows three: a pulled bed not arrived is the one to chase. */}
           <HeroStat value={pulledIn} label="Pulled, not arrived" tone={pulledIn > 0 ? "danger" : undefined} />
@@ -104,8 +115,21 @@ export function StaysHero({
       foot={
         <span className={styles.heroFoot}>
           {nav}
-          {sentences.length > 0 ? <span className={styles.heroNote}>{sentences.join(" ")}</span> : null}
-          {stamp.time !== null ? <span className={styles.heroNote}>{stamp.dayNote}</span> : null}
+          {sentences.length > 0 ? (
+            <span className={styles.heroNote}>
+              {sentences.map((sentence, index) => (
+                <Fragment key={sentence.testId}>
+                  {index > 0 ? " " : null}
+                  <span data-testid={sentence.testId}>{sentence.text}</span>
+                </Fragment>
+              ))}
+            </span>
+          ) : null}
+          {stamp.time !== null ? (
+            <span className={styles.heroNote} data-testid="ward-board-as-at-note">
+              {stamp.dayNote}
+            </span>
+          ) : null}
         </span>
       }
       footAside={tools}
@@ -115,10 +139,10 @@ export function StaysHero({
 }
 
 /**
- * Final polish (31 Oct 2026): Ward home and Stays and discharges as the kit's hero track (route
- * tabs, as the other redesigned heroes), in place of the board's own two-link strip.
+ * Ward home and Stays and discharges as the kit's hero track (route tabs, as the other redesigned
+ * heroes), in place of the board's own two-link strip.
  */
-export function StaysScreenNav({ unit }: { unit: Unit }) {
+export function WardBoardScreenNav({ unit }: { unit: Unit }) {
   return (
     <Segmented
       variant="hero"
@@ -134,24 +158,27 @@ export function StaysScreenNav({ unit }: { unit: Unit }) {
 }
 
 /**
- * Final polish (31 Oct 2026): Show shift brief and Change ward as the kit's hero buttons, in the
- * app's font, the same height as the hero track beside them. Wired as before: the brief toggles
- * the printed sheet, and Change ward is a disclosure listing the wards it may open.
+ * Show shift brief and Change ward as the kit's hero buttons, in the app's font, the same height
+ * as the hero track beside them. Wired as before: the brief toggles the printed sheet, and Change
+ * ward is a disclosure listing the wards it may open.
  */
-export function StaysTools({
+export function WardBoardTools({
   sheetOpen,
   onToggleSheet,
-  units,
+  units: allUnits,
   currentUnitId,
-  showSwitch = true,
 }: {
   sheetOpen: boolean;
   onToggleSheet: () => void;
   units: Unit[];
   currentUnitId: string;
-  /** ROLE BRANCH (ward): left out when a ward desk opens only the one ward. */
-  showSwitch?: boolean;
 }) {
+  // Role branch (ward desk, nurse in charge): a ward desk opens only its own ward(s), so Change ward
+  // lists only those, and is left out when there is just the one. Every other desk lists every ward.
+  const access = useEffectiveWardAccess();
+  const deskWardIds = access.role === "ward" && access.scope.kind === "ward" ? access.scope.unitIds : null;
+  const units = deskWardIds ? allUnits.filter((candidate) => deskWardIds.includes(candidate.id)) : allUnits;
+  const showSwitch = !(deskWardIds && units.length <= 1);
   return (
     <div className={styles.tools}>
       <Button
@@ -198,7 +225,7 @@ export function StaysTools({
 
 type Figure = { key: string; label: string; value: number; led?: boolean; note?: string };
 
-/** Redesign: the label in running text, singular for one ("1 release held up", not "1 releases"). */
+/** The label in running text, singular for one ("1 release held up", not "1 releases"). */
 function lineLabel(figure: Figure): string {
   const label = figure.value === 1 ? figure.label.replace(/^Releases /u, "Release ") : figure.label;
   return label.charAt(0).toLowerCase() + label.slice(1);
@@ -208,11 +235,12 @@ function lineLabel(figure: Figure): string {
 const IN_HERO = new Set(["availableNow", "pulled"]);
 
 /**
- * The ten day figures as one line, not ten boxes, under the heading "Also on this ward". Ready now
+ * The ten day figures as one line, not ten boxes, under the heading "Also on this ward" (it replaces
+ * the "Today on this ward" boxes). Ready now
  * and Pulled are in the hero already; every other figure stays, and the one Going out is built
  * from still says so, in words.
  */
-export function AlsoOnWard({ figures }: { figures: Figure[] }) {
+export function WardBoardAlsoOnWard({ figures }: { figures: Figure[] }) {
   return (
     <section className={styles.also} aria-labelledby="ward-board-triage-heading" data-testid="ward-board-triage">
       <h2 id="ward-board-triage-heading" className={styles.alsoTitle}>
