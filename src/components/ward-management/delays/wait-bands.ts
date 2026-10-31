@@ -1,7 +1,7 @@
-import { causeTitle } from "@/components/ward-management/delays/delays-board-parts";
-import { originLabel } from "@/components/ward-management/delays/delays-board-rows";
-import type { DelayCause, DelayGroup } from "@/components/ward-management/delays/delays-derivations";
-import type { BoardRow } from "@/components/ward-management/delays/delays-board-model";
+import { causeTitle } from "./delays-board-parts";
+import { originLabel } from "./delays-board-rows";
+import type { DelayCause, DelayGroup } from "./delays-derivations";
+import type { BoardRow } from "./delays-board-model";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, edShortName } from "@/components/ward-management/ward-sites";
 import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";

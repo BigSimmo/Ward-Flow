@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CheckCheck, ChevronDown, ChevronUp, ListChecks } from "lucide-react";
 
 import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
-import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
+import { ShowMoreRow } from "@/components/wf";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -18,18 +18,29 @@ import {
   MISSED_REQUEST_LABELS,
   missedRequestCheck,
 } from "@/components/ward-management/coordinator/missed-requests-check";
-import { markAllLabel } from "@/components/ward-management/coordinator/missed-requests-panel";
-import panel from "@/components/ward-management/coordinator/missed-requests-panel.module.css";
+import panel from "./daily-check-list.module.css";
 
-import styles from "./waiting-redesign.module.css";
+import styles from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
 
 /**
- * The daily check, redesigned as one notice line (October 2026 design review). The same check as
- * `coordinator/missed-requests-panel.tsx`, with the same rule that the list is opened before it can
- * be marked checked (UX audit, 21 Oct 2026); while folded, the line itself says so, so the reason
- * stays written down (design review, 22 Oct 2026) without a card and a disabled button.
+ * THE DAILY "NOBODY MISSED" CHECK on Waiting, coordinator only (F-19 ruling: duplicate warnings
+ * never appear on ward screens). Lists what `missedRequestCheck` finds across the whole network,
+ * whatever service filter the page has, with each person named and their UMRN beside the name so
+ * the coordinator confirms who it is before acting. It links to the records; it changes nothing.
+ *
+ * Once worked through, the coordinator taps "Mark all checked" (P027 wording), which records the
+ * role and the time for today (`dailyCheckRecord`). The tap closes nothing and hides nothing.
+ * The list is opened before it can be marked checked (UX audit, 21 Oct 2026): the button only
+ * shows inside the opened list. Waiting redesign (Josh, 30 and 31 Oct 2026): on a phone the check
+ * is one line; on a laptop it is a tile in the header strip whose list opens under the header.
  */
+
+/** P027 (Josh, 27 Oct 2026, 10:32 PM): "Mark all {n} checked" from 2; "Mark all checked" for 0 or 1. */
+export function markAllLabel(count: number): string {
+  return count >= 2 ? `Mark all ${count} checked` : "Mark all checked";
+}
+
 const CHECK_LIMIT = 8;
 /** Round 8: the laptop grid shows three rows of three before Show more. */
 const GRID_LIMIT = 9;

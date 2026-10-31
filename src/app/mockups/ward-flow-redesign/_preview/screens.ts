@@ -141,13 +141,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     role: ROLE_DESKS["ward"],
   },
   {
-    slug: "as-ward-waiting",
-    label: "Waiting",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/waiting",
-    role: ROLE_DESKS["ward"],
-  },
-  {
     slug: "as-ward-legal-forms",
     label: "Legal forms",
     group: "As nurse in charge",
@@ -194,13 +187,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     label: "Referrals",
     group: "As ED clinician",
     appPath: "/ward-flow/referrals",
-    role: ROLE_DESKS["ed"],
-  },
-  {
-    slug: "as-ed-waiting",
-    label: "Waiting",
-    group: "As ED clinician",
-    appPath: "/ward-flow/waiting",
     role: ROLE_DESKS["ed"],
   },
   {

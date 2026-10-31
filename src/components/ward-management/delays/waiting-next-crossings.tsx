@@ -16,16 +16,10 @@ import { Clock8, FileClock, Hourglass } from "lucide-react";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { StatusGlyph } from "@/components/wf";
-import {
-  H24,
-  H8,
-  OVER_24H,
-  OVER_8H,
-  RUNWAY_WINDOW,
-  type BoardRow,
-} from "@/components/ward-management/delays/delays-board-model";
-import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
-import { waitingCauseTitle as causeTitle } from "./wait-bands";
+import { H24, H8, OVER_24H, OVER_8H, RUNWAY_WINDOW, type BoardRow } from "./delays-board-model";
+import { ShowMoreRow } from "@/components/wf";
+import { useWaitingDeskWords } from "./waiting-desk-words";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import styles from "./waiting-polish.module.css";
 
 type Crossing = {
@@ -65,6 +59,8 @@ export function NextCrossings({
   onPick: (id: string) => void;
 }) {
   const patientOf = usePatientOf();
+  // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
+  const desk = useWaitingDeskWords();
   const [all, setAll] = useState(false);
   const list = nextCrossings(rows);
   const pass8 = list.filter((item) => item.kind === "8h").length;
@@ -75,7 +71,7 @@ export function NextCrossings({
   const x = (minutes: number) => `${(minutes / RUNWAY_WINDOW) * 100}%`;
   const what = (item: Crossing) =>
     item.kind === "form"
-      ? `Form ${item.row.movement.legalForm?.code ?? ""} ends ${formatInstantWithDay(now + item.at, now)} as typed`
+      ? `Form ${item.row.movement.legalForm?.code ?? ""} ${typedTimePhrase(now + item.at, now)}`
       : `Passes ${item.kind === "8h" ? H8 : H24} at ${formatInstantWithDay(now + item.at, now)}`;
 
   return (
@@ -129,12 +125,12 @@ export function NextCrossings({
                   type="button"
                   className={styles.nxRow}
                   aria-pressed={selectedId === item.row.movement.id}
-                  aria-label={`${patient.formalName}. ${what(item)}. Waited ${splitDuration(item.row.waited)}, ${causeTitle(item.row.cause)}. Open their row`}
+                  aria-label={`${patient.formalName}. ${what(item)}. Waited ${splitDuration(item.row.waited)}, ${desk.causeTitle(item.row.cause)}. Open their row`}
                   onClick={() => onPick(item.row.movement.id)}
                 >
                   <span className={styles.nxWho}>
                     <b>{patient.formalName}</b>
-                    <small>{`${splitDuration(item.row.waited)} now · ${causeTitle(item.row.cause)}`}</small>
+                    <small>{`${splitDuration(item.row.waited)} now · ${desk.causeTitle(item.row.cause)}`}</small>
                   </span>
                   <span className={styles.nxTrack} aria-hidden="true">
                     {hours.map((minutes) => (

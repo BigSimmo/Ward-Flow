@@ -7,12 +7,12 @@
  * list. No coloured edges: tone is the status glyph by the fact. The phone keeps its sliding chips.
  */
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { H8, OVER_8H, WAIT_BANDS, type OwnerTile } from "@/components/ward-management/delays/delays-board-model";
-import { BandBar, Glyph } from "@/components/ward-management/delays/delays-board-parts";
-import type { DelayOwnerId } from "@/components/ward-management/delays/delays-derivations";
-import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
-import board from "@/components/ward-management/delays/delays-board.module.css";
-import waitingKeys from "./waiting-redesign.module.css";
+import { H8, OVER_8H, WAIT_BANDS, type OwnerTile } from "./delays-board-model";
+import { BandBar, Glyph } from "./delays-board-parts";
+import type { DelayOwnerId } from "./delays-derivations";
+import { phoneRows } from "@/components/wf";
+import board from "./delays-board.module.css";
+import waitingKeys from "./waiting.module.css";
 import styles from "./waiting-polish.module.css";
 
 export function WaitingOwnerTiles({

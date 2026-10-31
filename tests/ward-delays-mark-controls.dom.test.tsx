@@ -80,13 +80,33 @@ function WithdrawReferralProbe({ movementId }: { movementId: string }) {
   );
 }
 
+/**
+ * The redesign opens on Longest wait, grouped in wait bands, with Under 8 hours folded. A user opens
+ * each folded band, then every blocker group and "Show N more", so every live row is listed.
+ */
+function showEveryRow(): void {
+  const waiting = screen.queryByRole("region", { name: "Waiting" });
+  if (waiting === null) return;
+  for (const band of within(waiting).queryAllByTestId(/^delays-band-/u)) {
+    if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+  }
+  showEveryDelayRow();
+}
+
+function inspect(id: string): HTMLElement {
+  showEveryRow();
+  return inspectDelayPerson(id);
+}
+
 function renderBoard(extra?: React.ReactNode) {
-  return renderAllDelays(
+  const result = renderAllDelays(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <DelaysScreen />
       {extra}
     </WardFlowProvider>,
   );
+  showEveryRow();
+  return result;
 }
 
 beforeEach(() => {
@@ -127,7 +147,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
     fireEvent.click(screen.getByTestId("delays-owner-wards"));
-    showEveryDelayRow();
+    showEveryRow();
 
     expect(screen.getByRole("button", { name: /^Locked bed \d+$/u })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId("delays-owner-wards")).toHaveAttribute("aria-pressed", "true");
@@ -179,7 +199,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
 
   it("closes the selected patient's panel when their movement closes", () => {
     renderBoard(<WithdrawReferralProbe movementId="WF-002" />);
-    inspectDelayPerson("WF-002");
+    inspect("WF-002");
     expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByTestId("test-withdraw-referral"));
@@ -206,7 +226,11 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     expect(shownCount()).toBe(`1 of ${OPEN.length}`);
 
     fireEvent.click(screen.getByTestId("test-clear-urgent-flag"));
-    showEveryDelayRow();
+    // The blocker groups are drawn in the By blocker order; the board opens on Longest wait.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Order the table" })).getByRole("button", { name: "By blocker" }),
+    );
+    showEveryRow();
 
     expect(
       screen.queryByRole("button", { name: `Remove filter ${title}` }),

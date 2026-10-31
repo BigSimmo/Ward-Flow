@@ -412,35 +412,34 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     },
   },
   /**
-   * The Delays screen marks each blocker group header `data-severe`, and prints the group size inside it.
-   * Summing the severe rows is what the screen SHOWS as needing attention now — and it is read off
-   * the rows rather than from any single printed total, because the screen prints no single total.
+   * The Waiting screen's "Attention" register tab, whose count is the severe causes across the
+   * network (`delays-screen.tsx`: `delayGroups(...)` filtered to `SEVERE_CAUSES`).
+   *
+   * ⚠️ **RE-POINTED 31 Oct 2026 (round-8 redesign).** This used to sum the severe rows in the table.
+   * The table now folds "Under 8 hours" and shows only the first four of "8 to 24 hours", so a
+   * severe person in a folded band is not in the markup at all and a row count reads short. The
+   * Attention tab is the one place the page prints the whole figure. The visible severe rows are
+   * still read, and may never exceed it.
    */
   delaysNeedingAttention: {
     screen: "Delays",
     component: DelaysScreen,
     read: (markup) => {
       const document = new JSDOM(markup).window.document;
-      // Audit A3-14: the board opens on Longest wait, one flat list with every person's row and no
-      // cause headers. Each row carries `data-severe`, so the severe rows are counted directly.
-      const flatRows = [...document.querySelectorAll<HTMLElement>("tr[data-severe]")].filter((row) =>
+      const tab = document.querySelector<HTMLElement>("#delays-tab-attention");
+      expect(tab, "the Waiting screen rendered no Attention register tab").not.toBeNull();
+      const label = (tab!.textContent ?? "").replace(/\s+/gu, " ").trim();
+      const match = /^(\d+) ?Attention$/u.exec(label);
+      expect(match, `the Attention tab must read its count then its name, and reads "${label}"`).not.toBeNull();
+      const count = Number(match![1]);
+      const visibleSevere = [...document.querySelectorAll<HTMLElement>("tr[data-severe='true']")].filter((row) =>
         row.querySelector("[data-testid^='delays-select-']"),
-      );
-      if (document.querySelector("button[data-testid^='delays-cause-']") === null) {
-        expect(flatRows.length, "the Delays screen rendered no rows to count").toBeGreaterThan(0);
-        return flatRows.filter((row) => row.dataset.severe === "true").length;
-      }
-      const buttons = [...document.querySelectorAll<HTMLButtonElement>("button[data-testid^='delays-cause-']")];
-      expect(buttons.length, "the Delays screen rendered no cause rows to count").toBeGreaterThan(0);
-      return buttons.reduce((total, button) => {
-        // The October 2026 board prints each blocker group's size in its own header button.
-        const count = button.querySelector("[data-delays-group-count]")?.textContent?.trim() ?? "";
-        expect(count, "every cause row must display an integer count").toMatch(/^\d+$/u);
-        expect(button.dataset.severe, "every cause must identify whether it needs attention").toMatch(
-          /^(true|false)$/u,
-        );
-        return total + (button.dataset.severe === "true" ? Number(count) : 0);
-      }, 0);
+      ).length;
+      expect(
+        visibleSevere,
+        "the table shows more severe rows than the Attention tab counts, so the two disagree on the page itself",
+      ).toBeLessThanOrEqual(count);
+      return count;
     },
   },
   /**

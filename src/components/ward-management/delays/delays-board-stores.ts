@@ -1,9 +1,8 @@
 "use client";
 
 /**
- * The Waiting board's browser stores and small hooks, moved out of the role copies of
- * `delays-board-redesign.tsx` (nurse in charge, ED) to keep each file under 1,500 lines. The code is
- * unchanged from those copies and from `waiting/delays-board-redesign.tsx`, which keeps its own.
+ * The Waiting board's browser stores and small hooks, split out of `delays-board.tsx` to keep that
+ * file under 1,500 lines.
  */
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";

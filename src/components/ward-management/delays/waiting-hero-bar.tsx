@@ -12,17 +12,11 @@ import { ChevronRight, Hourglass, TimerReset } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import {
-  H8,
-  OVER_8H,
-  SILENT_MINUTES,
-  ownerName,
-  type BoardRow,
-} from "@/components/ward-management/delays/delays-board-model";
+import { H8, OVER_8H, SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
 import { TierKey } from "@/components/ward-management/tier-key";
-import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
-import board from "@/components/ward-management/delays/delays-board.module.css";
-import waitingKeys from "./waiting-redesign.module.css";
+import { TYPED_TIME_KEY } from "./waiting-typed-time";
+import board from "./delays-board.module.css";
+import waitingKeys from "./waiting.module.css";
 import { originCode } from "./wait-bands";
 import styles from "./waiting-polish.module.css";
 
@@ -67,11 +61,14 @@ export function WaitingHeroBar({
   now,
   check,
   onOpen,
+  showOrigin = true,
 }: {
   rows: readonly BoardRow[];
   now: Instant;
   check?: ReactNode;
   onOpen: (id: string) => void;
+  /** Role view (as ED clinician): every person is the desk's own ED's, so no ED code. */
+  showOrigin?: boolean;
 }) {
   const patientOf = usePatientOf();
   const longest = rows.reduce<BoardRow | null>(
@@ -97,7 +94,7 @@ export function WaitingHeroBar({
             "Nobody waiting"
           )
         }
-        sub={longest ? originCode(longest.movement) : ""}
+        sub={longest && showOrigin ? originCode(longest.movement) : ""}
         row={longest}
         onOpen={onOpen}
         testId="delays-hero-longest"
