@@ -29,6 +29,7 @@ import {
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
 import { retitledGroups } from "./wait-bands";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import styles from "./delays.module.css";
 
 // Coordinators only: the daily check is loaded on demand so other screens that include Waiting stay small.
@@ -65,6 +66,8 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
 
   const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
+  // Role views (nurse in charge, ED clinician): the coordinator's own group named from the desk's side.
+  const desk = useWaitingDeskWords(units);
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
@@ -103,8 +106,8 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   );
   // Josh, 30 Oct 2026: this page's blocker titles (`wait-bands.ts`), so no "(as written)" group title.
   const groups = useMemo(
-    () => retitledGroups(delayGroups(movements, units, now, thresholds)),
-    [movements, units, now, thresholds],
+    () => desk.groups(retitledGroups(delayGroups(movements, units, now, thresholds))),
+    [movements, units, now, thresholds, desk],
   );
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
@@ -237,9 +240,15 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
-                {service === null
-                  ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
-                  : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
+                {desk.wardDesk
+                  ? // Role view (nurse in charge): the list holds only people coming to this ward.
+                    "Nobody is waiting in an emergency department for your ward right now. That is a measured count over every open movement to your ward."
+                  : desk.edDesk
+                    ? // Role view (as ED clinician): an ED desk's copy holds only its own department.
+                      "Nobody is waiting in this emergency department right now. That is a measured count over its open movements."
+                    : service === null
+                      ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
+                      : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
               </p>
             ) : undefined
           }

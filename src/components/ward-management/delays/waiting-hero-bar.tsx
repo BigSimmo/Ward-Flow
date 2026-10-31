@@ -61,11 +61,14 @@ export function WaitingHeroBar({
   now,
   check,
   onOpen,
+  showOrigin = true,
 }: {
   rows: readonly BoardRow[];
   now: Instant;
   check?: ReactNode;
   onOpen: (id: string) => void;
+  /** Role view (as ED clinician): every person is the desk's own ED's, so no ED code. */
+  showOrigin?: boolean;
 }) {
   const patientOf = usePatientOf();
   const longest = rows.reduce<BoardRow | null>(
@@ -91,7 +94,7 @@ export function WaitingHeroBar({
             "Nobody waiting"
           )
         }
-        sub={longest ? originCode(longest.movement) : ""}
+        sub={longest && showOrigin ? originCode(longest.movement) : ""}
         row={longest}
         onOpen={onOpen}
         testId="delays-hero-longest"

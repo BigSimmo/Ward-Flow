@@ -17,15 +17,7 @@ import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-manag
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
-import {
-  bandIncludes,
-  originCode,
-  tightHours,
-  WAIT_BANDS,
-  waitingCauseTitle as causeTitle,
-  windowText,
-  type WaitBandId,
-} from "./wait-bands";
+import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
 import { ShowMoreRow } from "@/components/wf";
 import {
   readDelaysFlat,
@@ -68,7 +60,6 @@ import {
   isBreached,
   isDueSoon,
   isPinned,
-  ownerName,
   ownerTiles,
   runwayBins,
   wardSummary,
@@ -85,7 +76,7 @@ import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrder
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
 import { WAITING_VIEWS } from "./waiting-href";
-import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel } from "./waiting-views";
+import { inWaitingView, queuedReferralCount } from "./waiting-views";
 import styles from "./delays-board.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./delays-board-panels";
@@ -101,7 +92,8 @@ import { legalCell, phonePrefix } from "./delays-board-rows";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "./waiting.module.css";
 import polish from "./waiting-polish.module.css";
-import { WaitingHeroBar, WaitingKeyRow, moveWord } from "./waiting-hero-bar";
+import { WaitingHeroBar, WaitingKeyRow } from "./waiting-hero-bar";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import { WaitingOwnerTiles } from "./waiting-owner-tiles";
 import { SearchField } from "@/components/wf";
 
@@ -166,6 +158,9 @@ export function DelaysBoard({
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
+  // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
+  const desk = useWaitingDeskWords(units);
+  const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
   const {
     referrals: allReferrals,
@@ -185,6 +180,9 @@ export function DelaysBoard({
   const rows = useMemo(() => boardRows(groups, now, actNowIds), [groups, now, actNowIds]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const catchments = useMemo(() => boardCatchments(rows), [rows]);
+  // Role view (nurse in charge): a ward's own list is short; tiles, saved views and graphs only
+  // repeat its few rows.
+  const wardShort = wardDesk && rows.length <= 8;
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
   // DA-15: the filters live in the web address, so a reload or a shared link opens the same list
   // (`delays-url-state.ts`). The address is read after hydration and followed whenever it asks for
@@ -270,6 +268,13 @@ export function DelaysBoard({
   const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
   // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
   if (selectedId !== null && selected === null) setSelectedId(null);
+  // Role view (nurse in charge): the side column opens on the first person, not on the registers.
+  const [autoOpened, setAutoOpened] = useState(false);
+  // Only where the panel is a side column: as a sheet (phone, tablet, narrow laptop) it would cover the list.
+  if (wardDesk && !autoOpened && !sheet && !isPhone && !portrait && shown[0]) {
+    setAutoOpened(true);
+    setSelectedId(shown[0].movement.id);
+  }
   const filtered = hasFilters(filters);
 
   const set = (patch: Partial<BoardFilters>) => {
@@ -366,11 +371,12 @@ export function DelaysBoard({
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
   const referralsLine = (
     <p className={`${styles.footNote} ${waitingKeys.referralsLine}`} data-testid="delays-referrals-line">
+      {/* Role view (nurse in charge): the referrals counted are this ward's own to answer. */}
       {queuedReferrals === 0
-        ? "No referrals awaiting a decision."
-        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral" : "referrals"} awaiting a decision, not yet on this list.`}{" "}
+        ? `No referrals awaiting ${wardDesk ? "your ward's" : "a"} decision.`
+        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral" : "referrals"} awaiting ${wardDesk ? "your ward's" : "a"} decision, not yet on this list.`}{" "}
       <Link href="/ward-flow/referrals" className={styles.lnk}>
-        Open Referrals
+        {wardDesk ? "Open Referrals to answer" : "Open Referrals"}
       </Link>
     </p>
   );
@@ -410,7 +416,7 @@ export function DelaysBoard({
   if (filters.owner !== null)
     chips.push({
       key: "owner",
-      label: ownerName(filters.owner),
+      label: desk.ownerName(filters.owner),
       clear: () => {
         set({ owner: null });
       },
@@ -426,7 +432,7 @@ export function DelaysBoard({
   if (filters.cause !== null)
     chips.push({
       key: "cause",
-      label: causeTitle(filters.cause),
+      label: desk.causeTitle(filters.cause),
       clear: () => {
         set({ cause: null });
       },
@@ -525,10 +531,11 @@ export function DelaysBoard({
             <b className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`}>{patient.formalName}</b>
             <span className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`} data-ward-type-floor="delays-profile">
               {isPhone ? phonePrefix(row, now, thresholds) : null}
-              {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off. */}
+              {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off.
+                  Role view (as ED clinician): every row is this ED's, so its code is left off. */}
               {(isPhone
-                ? [originCode(movement), transitNote(movement, now), patient.umrn]
-                : [patient.umrn, transitNote(movement, now), originCode(movement)]
+                ? [edDesk ? undefined : originCode(movement), transitNote(movement, now), patient.umrn]
+                : [patient.umrn, transitNote(movement, now), edDesk ? undefined : originCode(movement)]
               )
                 .filter(Boolean)
                 .join(" · ")}
@@ -550,7 +557,7 @@ export function DelaysBoard({
         <td role="cell" className={styles.cWard} data-ward-type-floor="delays-cause">
           <span className={styles.lg}>
             {flat ? (
-              <span className={styles.ell}>{causeTitle(row.cause)}</span>
+              <span className={styles.ell}>{desk.causeTitle(row.cause)}</span>
             ) : (
               <>
                 <Glyph tone={ward.tone} />
@@ -610,7 +617,7 @@ export function DelaysBoard({
           role="row"
           key={`group-${group.cause}`}
           className={`${styles.grpH} ${polish.groupRow}`}
-          data-tone={list[0].severe ? "danger" : owner === "yours" ? "accent" : undefined}
+          data-tone={list[0].severe ? "danger" : desk.tagOwner(owner) === "yours" ? "accent" : undefined}
           data-open={open || undefined}
         >
           <td role="cell" colSpan={6}>
@@ -640,8 +647,8 @@ export function DelaysBoard({
               <span className={styles.k} data-delays-group-count>
                 {list.length}
               </span>
-              <span className={polish.ownerTag} data-owner={owner}>
-                {moveWord(owner)}
+              <span className={polish.ownerTag} data-owner={desk.tagOwner(owner)}>
+                {desk.moveWord(owner)}
               </span>
               <span className={styles.sp} />
               <span className={polish.longest}>
@@ -678,8 +685,9 @@ export function DelaysBoard({
     for (const band of WAIT_BANDS) {
       const list = shown.filter(band.test).sort(byWait);
       if (list.length === 0) continue;
-      const open = bandOpen[band.id] ?? band.limit > 0;
-      const limit = bandMore[band.id] ? list.length : band.limit;
+      // Role view (nurse in charge): a short ward list opens every band in full rather than folding it.
+      const open = bandOpen[band.id] ?? (wardShort || band.limit > 0);
+      const limit = bandMore[band.id] || wardShort ? list.length : band.limit;
       const includes = bandIncludes(list); // "includes 3 in transit" (Josh, 30 Oct 2026)
       body.push(
         <tr
@@ -786,11 +794,13 @@ export function DelaysBoard({
       return {
         id: row.movement.id,
         name: patient.formalName,
-        sub: [patient.umrn, transitNote(row.movement, now), originCode(row.movement)].filter(Boolean).join(" · "),
+        sub: [patient.umrn, transitNote(row.movement, now), edDesk ? undefined : originCode(row.movement)]
+          .filter(Boolean)
+          .join(" · "),
         figure: splitDuration(row.waited),
         figureNote: phoneUpdate(row),
         tone: waitTone(row.waited),
-        next: flat ? causeTitle(row.cause) : ward.text,
+        next: flat ? desk.causeTitle(row.cause) : ward.text,
         actNow:
           row.owner === "yours" &&
           (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
@@ -815,41 +825,46 @@ export function DelaysBoard({
             id: group.cause,
             title: group.title,
             tone: list[0]?.severe ? ("danger" as const) : undefined,
-            note: list[0] ? `${ownerName(list[0].owner)} to clear` : undefined,
+            note: list[0] ? `${desk.ownerName(list[0].owner)} to clear` : undefined,
             rows: list.map(portraitRow),
           };
         });
-  }, [portrait, flat, shown, groups, units, now, selectedId, patientOf]);
-  const portraitRail = portrait ? (
-    <PortraitRail
-      title="Registers"
-      summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
-      description="Escalations, attention, resolved today and the longest quiet"
-      open={railOpen}
-      onOpenChange={setRailOpen}
-    >
-      <Registers
-        escalated={escalated}
-        attention={attention}
-        closedToday={closedToday}
-        rows={rows}
-        now={now}
-        units={units}
-        service={service}
-        isOutsideService={isOutsideService}
-        silentPressed={filters.silent}
-        onSilent={() => {
-          set({ silent: !filters.silent });
-          setRailOpen(false);
-        }}
-        onPick={(id) => {
-          setRailOpen(false);
-          reveal(id);
-        }}
-      />
-    </PortraitRail>
-  ) : null;
-  const tiles = ownerTiles(rows);
+  }, [portrait, flat, shown, groups, units, now, selectedId, patientOf, desk, edDesk]);
+  // Role view (nurse in charge): the registers are the coordinator's, so a ward desk has no rail.
+  const portraitRail =
+    portrait && !wardDesk ? (
+      <PortraitRail
+        title="Registers"
+        summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
+        description="Escalations, attention, resolved today and the longest quiet"
+        open={railOpen}
+        onOpenChange={setRailOpen}
+      >
+        <Registers
+          escalated={escalated}
+          attention={attention}
+          closedToday={closedToday}
+          rows={rows}
+          now={now}
+          units={units}
+          service={service}
+          isOutsideService={isOutsideService}
+          silentPressed={filters.silent}
+          onSilent={() => {
+            set({ silent: !filters.silent });
+            setRailOpen(false);
+          }}
+          onPick={(id) => {
+            setRailOpen(false);
+            reveal(id);
+          }}
+        />
+      </PortraitRail>
+    ) : null;
+  // Role views: the whose-move tiles named from the desk's side.
+  const tiles = ownerTiles(rows).map((tile) =>
+    wardDesk || edDesk ? { ...tile, name: desk.ownerName(tile.owner) } : tile,
+  );
   // C1: the filters that are on, for the phone Filter button. The 12h step and No update 2h+ are
   // already in `chips`; the hero's 8h and 24h figures count once here. The search box is separate.
   const filterCount =
@@ -859,7 +874,8 @@ export function DelaysBoard({
     (filters.view !== null ? 1 : 0);
   /** The quick filter chips: inline above the list, or in the phone Filter sheet (C1). */
   /* B4 saved views: each narrows the list and keeps its order. One view at a time. */
-  const viewChips = (
+  // Role view (nurse in charge): saved views narrow a long list; a ward's few rows need none.
+  const viewChips = wardShort ? null : (
     <>
       {WAITING_VIEWS.map((view) => (
         <button
@@ -867,14 +883,14 @@ export function DelaysBoard({
           type="button"
           className={styles.chip}
           aria-pressed={filters.view === view}
-          title={tightHours(waitingViewHint(view, thresholds))}
+          title={tightHours(desk.viewHint(view, thresholds))}
           onClick={() => {
             set({ view: filters.view === view ? null : view });
           }}
           data-testid={`delays-view-${view}`}
         >
           {/* Josh, 30 Oct 2026: no "(as written)" on form labels. */}
-          {tightHours(waitingViewLabel(view, thresholds).replace(" (as written)", ""))}{" "}
+          {tightHours(desk.viewLabel(view, thresholds).replace(" (as written)", ""))}{" "}
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}
@@ -899,17 +915,19 @@ export function DelaysBoard({
       className={`${waitingKeys.searchField} ${polish.search}`}
       value={filters.search}
       onValueChange={(search) => set({ search })}
-      placeholder="Name, UMRN or ED"
-      label="Find a person or ED"
+      // Role view (as ED clinician): one ED, so the search finds a person only.
+      placeholder={edDesk ? "Name or UMRN" : "Name, UMRN or ED"}
+      label={edDesk ? "Find a person" : "Find a person or ED"}
     />
   );
   // Round 4 header tiles (`waiting-hero-bar.tsx`): the daily check, the longest wait and who passes 8h next.
-  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} />;
+  // Role view (as ED clinician): every person is this ED's, so the longest wait names no ED code.
+  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} showOrigin={!edDesk} />;
   const filterRow = (inSheet: boolean) => (
     <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ` ${polish.filterRow}`}`}>
       {/* Design review (22 Oct 2026, Josh approved): in the phone Filter sheet the views sit under
           a Views label in a two by two grid lined up with the sheet title, not a ragged wrap. */}
-      {inSheet ? (
+      {inSheet && viewChips !== null ? (
         <div className={styles.sheetViews}>
           <p className={styles.sheetViewsLabel} id={sheetViewsLabelId}>
             Views
@@ -953,7 +971,17 @@ export function DelaysBoard({
     <>
       <Hero
         level={1}
-        eyebrow={isPhone ? `Waiting · ${service ?? "Statewide"}` : "Waiting"}
+        // Role views: a ward desk's list is only the people coming to its ward, and an ED desk's phone
+        // eyebrow names its department, not "Statewide".
+        eyebrow={
+          wardDesk
+            ? desk.ownWardName
+              ? `Waiting · coming to ${desk.ownWardName}`
+              : "Waiting"
+            : isPhone
+              ? `Waiting · ${desk.place ?? service ?? "Statewide"}`
+              : "Waiting"
+        }
         title={heroTitle}
         titleMeta={
           isPhone ? (
@@ -1051,18 +1079,22 @@ export function DelaysBoard({
             {empty}
             {referralsLine}
           </section>
-          {registers}
+          {/* Role view (nurse in charge): the registers are the coordinator's. */}
+          {wardDesk ? null : registers}
         </div>
       ) : (
         <>
-          <WaitingOwnerTiles
-            tiles={tiles}
-            pressed={filters.owner}
-            isPhone={isPhone}
-            onPress={(owner) =>
-              setFilters((current) => ({ ...current, owner: current.owner === owner ? null : owner, cause: null }))
-            }
-          />
+          {/* Role view (nurse in charge): on a short list the whose-move tiles repeat the Blocker column. */}
+          {wardShort ? null : (
+            <WaitingOwnerTiles
+              tiles={tiles}
+              pressed={filters.owner}
+              isPhone={isPhone}
+              onPress={(owner) =>
+                setFilters((current) => ({ ...current, owner: current.owner === owner ? null : owner, cause: null }))
+              }
+            />
+          )}
 
           <div
             className={`${styles.split} ${polish.split}`}
@@ -1202,12 +1234,14 @@ export function DelaysBoard({
                   panelRef={panelRef}
                 />
               </>
-            ) : isPhone || portrait ? null : (
+            ) : isPhone || portrait || wardDesk ? null : (
+              // Role view (nurse in charge): escalation and the quiet list are the coordinator's chase.
               registers
             )}
           </div>
 
-          {isPhone ? (
+          {/* Role view (nurse in charge): registers, quiet list, graphs and network delays are the coordinator's. */}
+          {isPhone && !wardDesk ? (
             <div className={styles.phCards} data-testid="delays-phone-cards">
               <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("registers")}>
                 <Flag size={16} aria-hidden="true" className={styles.phCardIcon} />
@@ -1240,7 +1274,7 @@ export function DelaysBoard({
                 <Glyph tone="success" />
                 <span className={styles.phCardText}>
                   <span className={styles.phCardTitle}>Delays with no named person</span>
-                  <span className={styles.phCardMeta}>None recorded statewide</span>
+                  <span className={styles.phCardMeta}>{edDesk ? "None recorded" : "None recorded statewide"}</span>
                 </span>
               </div>
               <PhoneSheet
@@ -1310,7 +1344,7 @@ export function DelaysBoard({
             </div>
           ) : null}
 
-          {isPhone ? null : (
+          {isPhone || wardShort ? null : (
             <DelaysBoardGraphs
               rows={rows}
               shown={shown}

@@ -18,7 +18,7 @@ import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { StatusGlyph } from "@/components/wf";
 import { H24, H8, OVER_24H, OVER_8H, RUNWAY_WINDOW, type BoardRow } from "./delays-board-model";
 import { ShowMoreRow } from "@/components/wf";
-import { waitingCauseTitle as causeTitle } from "./wait-bands";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import { typedTimePhrase } from "./waiting-typed-time";
 import styles from "./waiting-polish.module.css";
 
@@ -59,6 +59,8 @@ export function NextCrossings({
   onPick: (id: string) => void;
 }) {
   const patientOf = usePatientOf();
+  // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
+  const desk = useWaitingDeskWords();
   const [all, setAll] = useState(false);
   const list = nextCrossings(rows);
   const pass8 = list.filter((item) => item.kind === "8h").length;
@@ -123,12 +125,12 @@ export function NextCrossings({
                   type="button"
                   className={styles.nxRow}
                   aria-pressed={selectedId === item.row.movement.id}
-                  aria-label={`${patient.formalName}. ${what(item)}. Waited ${splitDuration(item.row.waited)}, ${causeTitle(item.row.cause)}. Open their row`}
+                  aria-label={`${patient.formalName}. ${what(item)}. Waited ${splitDuration(item.row.waited)}, ${desk.causeTitle(item.row.cause)}. Open their row`}
                   onClick={() => onPick(item.row.movement.id)}
                 >
                   <span className={styles.nxWho}>
                     <b>{patient.formalName}</b>
-                    <small>{`${splitDuration(item.row.waited)} now · ${causeTitle(item.row.cause)}`}</small>
+                    <small>{`${splitDuration(item.row.waited)} now · ${desk.causeTitle(item.row.cause)}`}</small>
                   </span>
                   <span className={styles.nxTrack} aria-hidden="true">
                     {hours.map((minutes) => (

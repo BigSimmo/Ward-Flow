@@ -36,7 +36,7 @@ import {
   type RunwayBin,
 } from "./delays-board-model";
 import { BandBar } from "./delays-board-parts";
-import { waitingCauseTitle as causeTitle } from "./wait-bands";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import styles from "./delays-board.module.css";
 import polish from "./waiting-polish.module.css";
 import { NextCrossings } from "./waiting-next-crossings";
@@ -117,6 +117,8 @@ function Spread({
 }) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
+  // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
+  const desk = useWaitingDeskWords();
   // Dots are kept apart in real pixels, so measure the plot rather than assume its width.
   const measureRef = useRef<HTMLDivElement>(null);
   const [plotWidth, setPlotWidth] = useState(ASSUMED_PLOT_WIDTH);
@@ -138,7 +140,7 @@ function Spread({
     lanes === "owner"
       ? BOARD_OWNERS.map((owner) => ({
           id: owner.id as string,
-          label: owner.name,
+          label: desk.ownerName(owner.id),
           pressed: filters.owner === owner.id,
           rows: rows.filter((row) => row.owner === owner.id),
           press: () => {
@@ -220,7 +222,7 @@ function Spread({
               ) : null}
               {placed.map(({ x, y, row }) => {
                 const name = patientOf(row.movement).formalName;
-                const label = `${name}, waited ${splitDuration(row.waited)}, ${causeTitle(row.cause)}`;
+                const label = `${name}, waited ${splitDuration(row.waited)}, ${desk.causeTitle(row.cause)}`;
                 return (
                   <button
                     key={row.movement.id}
@@ -241,7 +243,7 @@ function Spread({
                           <b>{name}</b>
                           <br />
                           <span className={styles.num}>{splitDuration(row.waited)}</span>
-                          {` · ${causeTitle(row.cause)}`}
+                          {` · ${desk.causeTitle(row.cause)}`}
                           {row.dueIn !== undefined && row.movement.legalForm ? (
                             <>
                               <br />
@@ -299,17 +301,19 @@ function Matrix({
   onTip: (event: React.MouseEvent | null, body?: ReactNode) => void;
 }) {
   const patientOf = usePatientOf();
+  // Role views (`waiting-desk-words.ts`): the coordinator's move is named, not "On you".
+  const desk = useWaitingDeskWords();
   const byOwner = cols === "owner";
   const columns = byOwner
     ? BOARD_OWNERS.map((owner) => ({
         id: owner.id as string,
-        label: owner.name,
+        label: desk.ownerName(owner.id),
         severe: false,
         match: (row: BoardRow) => row.owner === owner.id,
       }))
     : DELAY_CAUSE_ORDER.filter((cause) => rows.some((row) => row.cause === cause)).map((cause) => ({
         id: cause as string,
-        label: SHORT_CAUSE[cause],
+        label: desk.shortCause(cause, SHORT_CAUSE[cause]),
         severe: SEVERE_CAUSES.includes(cause),
         match: (row: BoardRow) => row.cause === cause,
       }));
@@ -436,6 +440,9 @@ export function DelaysBoardGraphs(props: Props) {
   // to ring. Where and whose move second, the whole spread last.
   const [graph, setGraph] = useState<Graph>("runway");
   const [lanes, setLanes] = useState<"owner" | "origin">("owner");
+  // Role view (as ED clinician): an ED desk's people all come from its own catchment, so the
+  // Catchment rows and the "Where and whose move" grid (catchment by owner) say nothing new there.
+  const { edDesk } = useWaitingDeskWords();
   const [cols, setCols] = useState<"owner" | "cause">("owner");
   const [tip, setTip] = useState<Tip>(null);
   const graphId = useId();
@@ -449,7 +456,7 @@ export function DelaysBoardGraphs(props: Props) {
   // Round 6: each tab carries its own icon.
   const tabs: { id: Graph; label: string; Icon: LucideIcon }[] = [
     { id: "runway", label: `Next ${hoursWord(RUNWAY_WINDOW)}`, Icon: Clock4 },
-    { id: "matrix", label: "Where and whose move", Icon: Grid2x2 },
+    ...(edDesk ? [] : [{ id: "matrix" as const, label: "Where and whose move", Icon: Grid2x2 }]),
     { id: "spread", label: "Wait spread", Icon: ChartScatter },
   ];
   const onTabKey = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -528,7 +535,7 @@ export function DelaysBoardGraphs(props: Props) {
     );
 
   const sub =
-    graph === "spread" ? (
+    graph === "spread" && edDesk ? null : graph === "spread" ? (
       <>
         <span className={`${styles.eyebrow} ${polish.subLabel}`}>
           <Rows3 size={13} aria-hidden="true" />

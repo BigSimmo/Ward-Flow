@@ -22,7 +22,6 @@ import {
   X,
 } from "lucide-react";
 import { ShowMoreRow } from "@/components/wf";
-import { moveWord } from "./waiting-hero-bar";
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
@@ -39,7 +38,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { TierTile, useIsPhone } from "@/components/wf";
 import { answerSilenceReminder, isCleared } from "./delays-derivations";
 import { Glyph } from "./delays-board-parts";
-import { waitingCauseTitle as causeTitle } from "./wait-bands";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import {
   SILENT_MINUTES,
   hoursWord,
@@ -50,6 +49,7 @@ import {
   type BoardRow,
 } from "./delays-board-model";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { edHref, movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./delays-board.module.css";
@@ -79,6 +79,14 @@ export function PersonPanel({
   const { referrals, setFocusMovementId } = useWardFlowSelect("referrals", "setFocusMovementId");
   const patientOf = usePatientOf();
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
+  // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side. A ward desk does not
+  // get the coordinator's tools (other wards that could take the person, override, escalate,
+  // statewide delays; FD-23).
+  const desk = useWaitingDeskWords(units);
+  const { wardDesk } = desk;
+  // DA-09: a link this desk cannot open is not offered (the ED desk has no coordinator screen, the
+  // ward desk no ED board), so none leads to "Not part of your role".
+  const canOpen = useCanOpenHref();
   const { movement, cause } = row;
   const typedEnd = movement.legalForm === undefined ? undefined : currentLegalDueAt(movement);
   const thresholds = useDueSoonThresholds();
@@ -115,7 +123,15 @@ export function PersonPanel({
   // Josh, 30 Oct 2026: on a desktop or tablet Escalate and Journey sit at the top of the panel, not
   // below every candidate ward; the phone sheet keeps them pinned at its foot.
   const actions = (
-    <div className={isPhonePanel ? styles.acts : `${styles.acts} ${redesign.actsTop}`}>
+    <div
+      className={
+        isPhonePanel
+          ? styles.acts
+          : // Role view (as ED clinician): Escalate is the coordinator's, so its "Coordinator only" note
+            // sits beside it; the actions wrap so Journey stays inside the panel.
+            `${styles.acts} ${redesign.actsTop}${desk.edDesk ? ` ${polish.actsWrap}` : ""}`
+      }
+    >
       {escalation !== undefined ? (
         <button
           type="button"
@@ -125,7 +141,7 @@ export function PersonPanel({
         >
           {`Escalated ${ago(now - escalation.at)}`}
         </button>
-      ) : (
+      ) : wardDesk ? null : (
         <button
           type="button"
           className={`${styles.btn} ${escalationGate.allowed ? styles.btnPri : styles.btnOff}`}
@@ -142,7 +158,7 @@ export function PersonPanel({
           <span className="sr-only"> to State bed coordination desk</span>
         </button>
       )}
-      {escalation === undefined ? escalationGate.note : null}
+      {escalation === undefined && !wardDesk ? escalationGate.note : null}
       <Link className={styles.btn} href={movementHref(movement.id)}>
         Journey
       </Link>
@@ -214,9 +230,9 @@ export function PersonPanel({
         <div className={`${styles.inset} ${styles.causeInset} ${polish.pCause}`}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
           <div className={styles.grow}>
-            <b className={redesign.wrapTitle}>{causeTitle(cause)}</b>
-            <span className={polish.ownerTag} data-owner={row.owner}>
-              {moveWord(row.owner)}
+            <b className={redesign.wrapTitle}>{desk.causeTitle(cause)}</b>
+            <span className={polish.ownerTag} data-owner={desk.tagOwner(row.owner)}>
+              {desk.moveWord(row.owner)}
             </span>
           </div>
           <span
@@ -281,11 +297,16 @@ export function PersonPanel({
           </button>
           <button type="button" role="tab" aria-selected={panelTab === "wards"} onClick={() => setPanelTab("wards")}>
             Wards
-            <span className={polish.pTabCount}>
-              {movement.declines.length > 0
-                ? `${movement.declines.length} declined · ${candidates.offerable.length} to ask`
-                : `${candidates.offerable.length} to ask`}
-            </span>
+            {/* Role view (nurse in charge): the wards to ask are the coordinator's, so only declines count. */}
+            {wardDesk && movement.declines.length === 0 ? null : (
+              <span className={polish.pTabCount}>
+                {wardDesk
+                  ? `${movement.declines.length} declined`
+                  : movement.declines.length > 0
+                    ? `${movement.declines.length} declined · ${candidates.offerable.length} to ask`
+                    : `${candidates.offerable.length} to ask`}
+              </span>
+            )}
           </button>
         </div>
 
@@ -358,64 +379,66 @@ export function PersonPanel({
             Eligible and overridable wards are both actionable, so neither is collapsed or cut to a
             count (see shortlistCandidates); the list scrolls instead. Wards no reason can buy sit
             behind a disclosure that states how many, each with the gate that blocks it. */}
-          <div className={`${styles.sec} ${polish.pSec}`} data-testid={`delays-candidates-${movement.id}`}>
-            <h4 className={styles.h4r}>
-              Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
-            </h4>
-            {candidates.offerable.length === 0 ? (
-              <p className={styles.mute}>No other ward could take this person now.</p>
-            ) : (
-              <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
-                {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map(
-                  (candidate) => (
-                    <li key={candidate.unitId}>
-                      <span className={styles.lg}>
-                        <Glyph tone={candidate.tone} />
-                        <span className={styles.ell}>{candidate.name}</span>
-                      </span>
-                      <small>
-                        {candidate.text}
-                        {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
-                      </small>
-                    </li>
-                  ),
-                )}
-              </ul>
-            )}
-            {candidates.offerable.length > CANDIDATE_LIMIT ? (
-              <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
-                {allCandidates ? "Show fewer" : `Show ${candidates.offerable.length - CANDIDATE_LIMIT} more`}
-              </ShowMoreRow>
-            ) : null}
-            {candidates.unavailable.length > 0 ? (
-              <>
-                <button
-                  type="button"
-                  className={styles.lnk}
-                  aria-expanded={unavailableOpen}
-                  onClick={() => {
-                    setUnavailableOpen((open) => !open);
-                  }}
-                  data-testid={`delays-candidates-unavailable-${movement.id}`}
-                >
-                  {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
-                </button>
-                {unavailableOpen ? (
-                  <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that cannot take this person">
-                    {candidates.unavailable.map((ward) => (
-                      <li key={ward.unitId}>
+          {wardDesk ? null : (
+            <div className={`${styles.sec} ${polish.pSec}`} data-testid={`delays-candidates-${movement.id}`}>
+              <h4 className={styles.h4r}>
+                Candidate wards <span className={styles.k}>{candidates.offerable.length}</span>
+              </h4>
+              {candidates.offerable.length === 0 ? (
+                <p className={styles.mute}>No other ward could take this person now.</p>
+              ) : (
+                <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that could take this person">
+                  {(allCandidates ? candidates.offerable : candidates.offerable.slice(0, CANDIDATE_LIMIT)).map(
+                    (candidate) => (
+                      <li key={candidate.unitId}>
                         <span className={styles.lg}>
-                          <Glyph tone="closed" />
-                          <span className={styles.ell}>{ward.name}</span>
+                          <Glyph tone={candidate.tone} />
+                          <span className={styles.ell}>{candidate.name}</span>
                         </span>
-                        <small>{`Unavailable: ${ward.reason}`}</small>
+                        <small>
+                          {candidate.text}
+                          {candidate.waitlist ? ". In catchment, waiting list for a locked bed" : ""}
+                        </small>
                       </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </>
-            ) : null}
-          </div>
+                    ),
+                  )}
+                </ul>
+              )}
+              {candidates.offerable.length > CANDIDATE_LIMIT ? (
+                <ShowMoreRow onClick={() => setAllCandidates((current) => !current)} expanded={allCandidates}>
+                  {allCandidates ? "Show fewer" : `Show ${candidates.offerable.length - CANDIDATE_LIMIT} more`}
+                </ShowMoreRow>
+              ) : null}
+              {candidates.unavailable.length > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    className={styles.lnk}
+                    aria-expanded={unavailableOpen}
+                    onClick={() => {
+                      setUnavailableOpen((open) => !open);
+                    }}
+                    data-testid={`delays-candidates-unavailable-${movement.id}`}
+                  >
+                    {`${candidates.unavailable.length} ${candidates.unavailable.length === 1 ? "ward cannot" : "wards cannot"} take this person`}
+                  </button>
+                  {unavailableOpen ? (
+                    <ul className={`${styles.wards} ${polish.pWards}`} aria-label="Wards that cannot take this person">
+                      {candidates.unavailable.map((ward) => (
+                        <li key={ward.unitId}>
+                          <span className={styles.lg}>
+                            <Glyph tone="closed" />
+                            <span className={styles.ell}>{ward.name}</span>
+                          </span>
+                          <small>{`Unavailable: ${ward.reason}`}</small>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </>
+              ) : null}
+            </div>
+          )}
 
           {cause === "bed_pull_expired" && pullHolder ? (
             <Link
@@ -426,7 +449,7 @@ export function PersonPanel({
               Open {pullHolder.name} to release the bed or set a new pull time limit
             </Link>
           ) : null}
-          {movement.declines.length > 0 ? (
+          {movement.declines.length > 0 && !wardDesk && canOpen("/ward-flow") ? (
             <Link
               className={styles.inlineAction}
               href="/ward-flow"
@@ -442,28 +465,33 @@ export function PersonPanel({
       </div>
       {isPhonePanel ? actions : null}
       {/* Q-12: delays with no named person are never dropped, so the note stays while a person is open. */}
-      <section aria-label="Delays with no named person" className={`${styles.personSystem} ${polish.pFoot}`}>
-        <NoStatewideDelays />
-      </section>
+      {wardDesk ? null : (
+        <section aria-label="Delays with no named person" className={`${styles.personSystem} ${polish.pFoot}`}>
+          <NoStatewideDelays />
+        </section>
+      )}
       {/* Round 8: the places to go next, pinned at the panel's foot on a laptop. */}
       {isPhonePanel ? null : (
         <nav className={polish.pLinks} aria-label="Open elsewhere">
-          <Link
-            href="/ward-flow"
-            onClick={() => {
-              setFocusMovementId(movement.id);
-            }}
-          >
-            <LayoutDashboard size={14} aria-hidden="true" />
-            Coordinator
-          </Link>
-          {movement.originEdId ? (
+          {/* Role views: the coordinator screen is the coordinator's tool. */}
+          {wardDesk || !canOpen("/ward-flow") ? null : (
+            <Link
+              href="/ward-flow"
+              onClick={() => {
+                setFocusMovementId(movement.id);
+              }}
+            >
+              <LayoutDashboard size={14} aria-hidden="true" />
+              Coordinator
+            </Link>
+          )}
+          {movement.originEdId && canOpen(edHref(movement.originEdId)) ? (
             <Link href={edHref(movement.originEdId)}>
               <Hospital size={14} aria-hidden="true" />
               ED board
             </Link>
           ) : null}
-          {movement.patientId ? (
+          {movement.patientId && canOpen(patientHref(movement.patientId)) ? (
             <Link href={patientHref(movement.patientId)}>
               <UserRound size={14} aria-hidden="true" />
               Record
@@ -476,12 +504,14 @@ export function PersonPanel({
 }
 
 function NoStatewideDelays() {
+  // Role view (as ED clinician): an ED desk reads its own department, so "statewide" is dropped.
+  const { edDesk } = useWaitingDeskWords();
   return (
     <p className={styles.empty}>
       <Glyph tone="success" />
       <span>
-        <b>No statewide delays recorded.</b> This model records delays only against a movement. Ward-wide closures and
-        transport outages are not represented as patient movements yet.
+        <b>{edDesk ? "No delays recorded." : "No statewide delays recorded."}</b> This model records delays only against
+        a movement. Ward-wide closures and transport outages are not represented as patient movements yet.
       </span>
     </p>
   );
@@ -550,6 +580,8 @@ export function Registers({
   onPick: (id: string) => void;
 }) {
   const patientOf = usePatientOf();
+  // Role views (`waiting-desk-words.ts`): "on you" is said from the desk's side.
+  const desk = useWaitingDeskWords();
   const [tab, setTab] = useState<"escalated" | "attention" | "resolved" | "system">("escalated");
   const onBoard = (id: string) => rows.some((row) => row.movement.id === id);
   // Round 4 (Josh, 31 Oct 2026): four register tabs, each an icon, its count and its name in one
@@ -765,13 +797,13 @@ export function Registers({
             <MoonStar size={15} aria-hidden="true" />
             Longest quiet <span className={styles.k}>{quietRows.length}</span>
           </h3>
-          <p className={styles.mute}>Not waiting on you</p>
+          <p className={styles.mute}>{desk.notOnYou}</p>
           {quietRows.length === 0 ? (
             <p className={styles.mute}>
               {rows.length === 0
                 ? "Nobody is waiting."
                 : allQuietRows.length > 0
-                  ? "Everyone quiet is waiting on you, in the table."
+                  ? `Everyone quiet is ${desk.quietOnYou}, in the table.`
                   : `Everyone has had something recorded in the last ${hoursWord(SILENT_MINUTES)}.`}
             </p>
           ) : (
@@ -786,7 +818,7 @@ export function Registers({
               >
                 <span className={styles.browText}>
                   <span className={styles.ell}>{patientOf(row.movement).formalName}</span>
-                  <small className={styles.ell}>{causeTitle(row.cause)}</small>
+                  <small className={styles.ell}>{desk.causeTitle(row.cause)}</small>
                 </span>
                 <span className={`${styles.lg} ${styles.num} ${styles.qv}`}>
                   <Glyph tone="warning" />
