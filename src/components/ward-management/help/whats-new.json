@@ -5,16 +5,6 @@
     "line": "Bed drawer: the Stay tile now shows the day of the stay, for example \"Day 37\"."
   },
   {
-    "id": "2026-10-27-demo-chip-ward-clock",
-    "date": "2026-10-27",
-    "line": "The Demo chip now shows the ward clock time, such as Demo 14:20, instead of a seconds counter."
-  },
-  {
-    "id": "2026-10-27-movements-wait-labels",
-    "date": "2026-10-27",
-    "line": "The ED wait labels on Movements rows now say Long wait and Over target instead of Due soon and Overdue."
-  },
-  {
     "id": "2026-10-27-seclusion-room-confirm",
     "date": "2026-10-27",
     "line": "Marking a seclusion room available or out of service now asks you to confirm first."
@@ -98,5 +88,15 @@
     "id": "2026-10-31-release-waits-activity-clock",
     "date": "2026-10-31",
     "line": "Release now waits until the shared save is confirmed, and Activity times follow the ward clock."
+  },
+  {
+    "id": "2026-10-31-popup-clarity",
+    "date": "2026-10-31",
+    "line": "Acknowledge visible now explains what it covers, and booking a planned admission shows the patient you chose."
+  },
+  {
+    "id": "2026-10-31-transport-cancel-names",
+    "date": "2026-10-31",
+    "line": "Cancelling community transport now names the patient, and the desk guides match what each desk can open."
   }
 ]

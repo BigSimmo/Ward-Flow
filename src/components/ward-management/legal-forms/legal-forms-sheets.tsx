@@ -236,6 +236,7 @@ export function RecordFormSheet({
       clearDraft();
       setTimeOnForm("");
       setDateOnForm("");
+      setRegion("");
       setSaving(false);
     }
     priorMovement.current = draft.movement;
@@ -316,6 +317,7 @@ export function RecordFormSheet({
               onDraft({ form: "", movement: "" });
               setTimeOnForm("");
               setDateOnForm("");
+              setRegion("");
               setRefusedSaves(0);
               setSaveRefusal(null);
               setTimeClearedNote(false);

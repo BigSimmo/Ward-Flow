@@ -1,9 +1,9 @@
 "use client";
 
 import { UserCheck } from "lucide-react";
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useId, useRef, useState, useSyncExternalStore } from "react";
 
-import { Dialog, useOptionalToast } from "@/components/wf";
+import { Dialog, SrOnly, useOptionalToast } from "@/components/wf";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
 import { useOptionalWardFlowSelect } from "./ward-flow-provider";
 
@@ -53,6 +53,7 @@ export function AcknowledgeVisibleButton({
   const held = useSyncExternalStore(subscribeHeld, readHeld, readHeld);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const scopeId = useId();
   const offered = ids.filter((id) => !held.has(id));
 
   function release(batchId: symbol) {
@@ -91,6 +92,8 @@ export function AcknowledgeVisibleButton({
           ref={triggerRef}
           type="button"
           className={classes.btn}
+          title="Unacknowledged alerts in the current filtered list. Act now alerts are excluded, as are alerts still in their Undo window."
+          aria-describedby={scopeId}
           onClick={() => setAsking({ ids: offered, isCurrent: capture?.() ?? (() => true) })}
         >
           <UserCheck aria-hidden="true" />
@@ -98,10 +101,15 @@ export function AcknowledgeVisibleButton({
           <span className={classes.count}>{offered.length}</span>
         </button>
       ) : null}
+      <SrOnly id={scopeId}>
+        Includes alerts below the screen in the current filtered list. Act now alerts, previously acknowledged alerts
+        and alerts still in their Undo window are excluded.
+      </SrOnly>
       <Dialog
         open={asking !== null}
         onClose={() => setAsking(null)}
         title={`Acknowledge ${count} alerts?`}
+        description="Applies to unacknowledged alerts in the current filtered list, including those below the screen. Act now alerts are excluded, as are alerts still in their Undo window. Acknowledging records that you have seen an alert; it does not resolve the underlying condition."
         size="sm"
         returnFocusRef={triggerRef}
         primary={{ label: `Acknowledge ${count}`, onAction: confirm }}

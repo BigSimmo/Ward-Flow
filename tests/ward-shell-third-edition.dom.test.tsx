@@ -769,7 +769,8 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const panel = await within(menu).findByTestId("ward-tools-demo-panel");
     // One list of every scenario (the seven standard stories and the opt-in fictional network), so the
     // separate Demo reset block is not repeated here.
-    expect(within(panel).getAllByRole("radio")).toHaveLength(WARD_SCENARIOS.length);
+    const scenarios = within(panel).getByRole("group", { name: "Demo scenario" });
+    expect(within(scenarios).getAllByRole("button")).toHaveLength(WARD_SCENARIOS.length);
     expect(within(panel).queryByTestId("ward-demo-reset")).toBeNull();
   });
 

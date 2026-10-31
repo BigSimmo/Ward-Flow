@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -421,3 +421,35 @@ function openFoldedGroup() {
   const showAll = screen.queryByRole("button", { name: /^Show all \d+$/ });
   if (showAll) fireEvent.click(showAll);
 }
+
+it("clears an unsaved paper-form region on Clear and when the movement changes", () => {
+  expect(openMovements.length).toBeGreaterThan(1);
+  function RegionForm() {
+    const [draft, setDraft] = useState<{ form: string; movement: string }>({
+      form: "1A",
+      movement: openMovements[0]!.id,
+    });
+    return (
+      <RecordFormSheet
+        open
+        onClose={() => undefined}
+        draft={draft}
+        onDraft={setDraft}
+        openMovements={openMovements}
+        labelOf={(movement) => movement.id}
+        now={NOW_ANCHOR}
+      />
+    );
+  }
+  render(<RegionForm />);
+  fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "country" } });
+  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: openMovements[1]!.id } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
+  // Empty the movement first, so Clear (not the movement-change reset) must clear the region.
+  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: "" } });
+  fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "metro" } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("metro");
+  fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+  fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
+});

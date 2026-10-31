@@ -120,7 +120,7 @@ afterEach(() => {
 describe("Roles within the existing Demo selector", () => {
   it("lists all canonical roles beside the existing scenarios and survives repeated switches", () => {
     renderPanel();
-    expect(screen.getByRole("radio", { name: /Winter surge/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Winter surge/ })).toBeVisible();
     expect(within(roles()).getAllByRole("button")).toHaveLength(8);
     const scenario = proof().getAttribute("data-scenario");
     const generation = proof().getAttribute("data-generation");
@@ -147,7 +147,7 @@ describe("Roles within the existing Demo selector", () => {
 
   it("keeps Winter surge on role changes, reset and exit", () => {
     renderPanel();
-    fireEvent.click(screen.getByRole("radio", { name: /Winter surge/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Winter surge/ }));
     fireEvent.click(
       within(screen.getByRole("dialog", { name: "Load Winter surge?" })).getByRole("button", {
         name: "Load Winter surge",
@@ -265,7 +265,7 @@ it("returns to a valid coordinator desk when a scenario change removes the start
   });
   renderPanel();
   choose("Bed coordinator");
-  fireEvent.click(screen.getByRole("radio", { name: /Winter surge/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Winter surge/ }));
   fireEvent.click(
     within(screen.getByRole("dialog", { name: "Load Winter surge?" })).getByRole("button", {
       name: "Load Winter surge",
