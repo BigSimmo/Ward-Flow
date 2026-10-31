@@ -5,6 +5,8 @@ _Updated 2026-10-31 - full handover of Settings round 3 and Josh's answers; draf
 This is the one place to start for the Settings mock-up work. It explains what was asked, what was
 built and why, what Josh decided, how it was checked, and what is still open.
 [SETTINGS-ROUND-3.md](SETTINGS-ROUND-3.md) keeps the shorter change list.
+For an independent review in another chat, use
+[SETTINGS-REVIEW-HANDOVER.md](SETTINGS-REVIEW-HANDOVER.md), which ends with a copy-paste prompt.
 
 ## Where it stands
 
@@ -88,9 +90,12 @@ stated).
 12. **Find a setting** finds rows it could not before (each reply target and forecast alert, clinical
     values, Copy diagnostics, the alerts card, Access, Who can change what), and only on the tabs this
     desk has. _Where:_ `settings-tabs.ts`.
-13. **Who can change what.** A read-only table under Access, read from the app's own permission table
-    (`EVENT_ROLE`), so it cannot drift. The third-edition HTML drawings' statutory switches are not taken
-    (D5, D-70, D-71). _Where:_ `settings-who-can.tsx`.
+13. **Who can change what.** A read-only table under Access. Its rules row is read from the app's own
+    permission table (`EVENT_ROLE`); the cover, roles, access log and browser rows are written text that
+    matches today's Access screen and D-66, D-80 and D-86, so they would need updating by hand if those
+    rules change. (An earlier note said the whole table "cannot drift"; that overstated it and was
+    corrected on 31 Oct.) The third-edition HTML drawings' statutory switches are not taken (D5, D-70,
+    D-71). _Where:_ `settings-who-can.tsx`.
 14. **One component for every desk.** The nurse in charge and access admin views were separate
     1,500-line copies. They are now the one Settings component with `ROLE BRANCH (ward)` and
     `ROLE BRANCH (admin)` comments, as the other role views do, and an executive view was added

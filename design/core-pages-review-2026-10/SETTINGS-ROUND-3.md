@@ -47,7 +47,8 @@ structure, design, usability and logic, including new smart and general settings
    this browser with the seven browser settings named.
 8. **Alerts readiness card** with one next step and a real test notification, beside the switches.
 9. **Find a setting** covers rows it could not find, and only this desk's tabs.
-10. **Who can change what** (read only) under Access, read from `EVENT_ROLE`.
+10. **Who can change what** (read only) under Access. Its rules row reads `EVENT_ROLE`; the other rows
+    are written text matching today's Access screen and D-66, D-80 and D-86.
 11. **One component for every role,** with `ROLE BRANCH (ward)` and `ROLE BRANCH (admin)` marks; the
     nurse in charge and access admin copies were retired, and an executive view was added.
 12. **Styling** uses this folder's own classes; the `[class*="_x__"]` overrides that the shareable copy
