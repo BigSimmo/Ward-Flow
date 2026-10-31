@@ -1,4 +1,6 @@
 // src/components/ward-flow-sign-in/ward-flow-sign-in-data.ts
+// Redesign (approved by Josh, 31 Oct 2026): destinations use the menu's names, the ward role is the
+// app's "Ward manager", and the shifts are the app's one shift pattern.
 /**
  * The role/action data this screen shows, ported verbatim (in content, not markup) from the
  * approved drawing (`design/third-edition-mockups/sign-in-third-edition.html`, lines 4757-4907) —
@@ -26,8 +28,8 @@ export interface SignInRole {
   sub: string;
   /** One line for the v6 role list (7 Oct 2026); `sub` stays the full sentence. */
   brief: string;
-  /** The screen this role's "Sign in" would open, named in prose only — see the screen's own
-   *  comment on why this control stays inert rather than becoming a real destination. */
+  /** The screen this role's "Open as" button opens, by the menu's name for it. The screen's own
+   *  `ROLE_OPENS_HREF` holds the address; the button only navigates (see the screen's comment). */
   opens: string;
   scopeBadge: string;
   targetChip: string;
@@ -41,7 +43,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "bed coordinator",
     sub: "Runs the priority queue and places people across the network.",
     brief: "Runs the queue and places people",
-    opens: "Command, the priority queue",
+    opens: "Home",
     scopeBadge: "Statewide",
     targetChip: "command-third-edition.html",
   },
@@ -52,7 +54,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "coordinator on call",
     sub: "Holds the queue out of hours, and owns movements alongside the bed coordinator.",
     brief: "Holds the queue out of hours",
-    opens: "Command, the priority queue",
+    opens: "Home",
     scopeBadge: "On call",
     targetChip: "on-call-third-edition.html",
   },
@@ -63,7 +65,7 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
     as: "ED liaison",
     sub: "Raises referrals from an emergency department and records what is decided on them.",
     brief: "Raises referrals from an ED",
-    opens: "Emergency departments",
+    opens: "All EDs",
     scopeBadge: "ED",
     targetChip: "patient-now-third-edition.html",
   },
@@ -102,12 +104,12 @@ export const SIGN_IN_ROLES: readonly SignInRole[] = [
   },
   {
     id: "ward",
-    name: "Ward",
-    the: "the ward",
-    as: "the ward",
+    name: "Ward manager",
+    the: "the ward manager",
+    as: "ward manager",
     sub: "Answers what the ward can take, pulls a bed on it, and records a decision on a move into it.",
     brief: "Answers asks and pulls beds",
-    opens: "Wards",
+    opens: "My ward",
     scopeBadge: "Ward",
     targetChip: "ward-answer-third-edition.html",
   },
@@ -126,8 +128,8 @@ export interface SignInAction {
 export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
   {
     words: "Open the priority queue",
-    where: "Command shows every open movement across the network, worst first, with what is wrong beside it.",
-    place: "Command",
+    where: "Home shows every open movement across the network, worst first, with what is wrong beside it.",
+    place: "Home",
     roles: ["bed", "oncall"],
   },
   {
@@ -138,8 +140,8 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
   },
   {
     words: "Record a decision on a movement",
-    where: "The Movement screen carries every event, decline and decision on one person's move.",
-    place: "Movement",
+    where: "The Movements screen carries every event, decline and decision on one person's move.",
+    place: "Movements",
     roles: ["bed", "ed", "ward"],
   },
   {
@@ -150,14 +152,14 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
   },
   {
     words: "Ask a ward",
-    where: "The Wards screen shows every ward in the network, what it takes, and how it has answered.",
-    place: "Wards",
+    where: "All wards shows every ward in the network, what it takes, and how it has answered.",
+    place: "All wards",
     roles: ["bed", "ward"],
   },
   {
     words: "Open an emergency department",
-    where: "The Emergency departments screen shows each department's waiting, longest and breached.",
-    place: "Emergency",
+    where: "All EDs shows each department's waiting, longest and breached.",
+    place: "All EDs",
     roles: ["bed", "ed"],
   },
   {
@@ -168,8 +170,8 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
   },
   {
     words: "Find a person and open their movement",
-    where: "Patient search is open to everyone signed in, and it states in words what it refuses to return.",
-    place: "Search",
+    where: "Patients is open to everyone signed in, and it states in words what it refuses to return.",
+    place: "Patients",
     roles: ["bed", "oncall", "ed", "duty", "gov", "lead", "ward"],
   },
   {
@@ -200,7 +202,7 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
     words: "Override a judgement about the patient, with a recorded reason",
     short: "Override a judgement, with a recorded reason",
     where: "A judgement about the patient is overridable by a named coordinator who records the reason.",
-    place: "Movement",
+    place: "Movements",
     roles: ["bed", "oncall"],
   },
 ] as const;
@@ -214,9 +216,9 @@ export const SIGN_IN_ACTIONS: readonly SignInAction[] = [
 export const SIGN_IN_ACTION_NAMED: Readonly<Record<string, string>> = {
   "Open the priority queue": "the bed coordinator and the coordinator on call",
   "New referral": "the bed coordinator, the coordinator on call, the ED liaison and a community team",
-  "Record a decision on a movement": "the bed coordinator, the ED liaison and the ward",
-  "Pull the bed": "the bed coordinator and the ward",
-  "Ask a ward": "the bed coordinator and the ward",
+  "Record a decision on a movement": "the bed coordinator, the ED liaison and the ward manager",
+  "Pull the bed": "the bed coordinator and the ward manager",
+  "Ask a ward": "the bed coordinator and the ward manager",
   "Open an emergency department": "the bed coordinator and the ED liaison",
   "Contact a community team": "the bed coordinator and triage",
   "Find a person and open their movement": "everyone signed in",
@@ -234,9 +236,9 @@ export const SIGN_IN_ACTION_NAMED: Readonly<Record<string, string>> = {
 export const SIGN_IN_ACTION_NAMED_SHORT: Readonly<Record<string, string>> = {
   "Open the priority queue": "the bed coordinator and on call",
   "New referral": "coordinators, ED liaison, community",
-  "Record a decision on a movement": "the bed coordinator, ED liaison, ward",
-  "Pull the bed": "the bed coordinator and the ward",
-  "Ask a ward": "the bed coordinator and the ward",
+  "Record a decision on a movement": "the bed coordinator, ED liaison, ward manager",
+  "Pull the bed": "the bed coordinator and ward manager",
+  "Ask a ward": "the bed coordinator and ward manager",
   "Open an emergency department": "the bed coordinator and ED liaison",
   "Contact a community team": "the bed coordinator and triage",
   "Find a person and open their movement": "everyone signed in",
@@ -351,24 +353,28 @@ export type ShiftRosterId = "Morning" | "Afternoon" | "Night";
 
 export interface ShiftRosterOption {
   id: ShiftRosterId;
+  /** The app's shift word ("Day"), as the rail's shift card says it. */
+  word: string;
   label: string;
   name: string;
   /** Rostered hours as words, for the v6 shift row. */
   hours: string;
 }
 
+/**
+ * The app's one shift pattern (`SHIFT_PATTERN`, ward-operational-defaults.ts), not a second roster.
+ * Written out rather than imported, because this screen imports no ward-management code
+ * (`tests/ward-flow-seam.test.ts`); `tests/ward-flow-sign-in-screen.dom.test.tsx` checks the words
+ * and hours against `SHIFT_PATTERN` so the two cannot drift apart.
+ */
 export const SHIFT_ROSTER_OPTIONS: readonly ShiftRosterOption[] = [
-  {
-    id: "Morning",
-    label: "Morning Shift (07:00 - 15:30)",
-    name: "Morning Shift (07:00 - 15:30)",
-    hours: "07:00 to 15:30",
-  },
+  { id: "Morning", word: "Day", label: "Day shift", name: "Day shift (07:00 to 15:00)", hours: "07:00 to 15:00" },
   {
     id: "Afternoon",
-    label: "Afternoon Shift (14:30 - 22:30)",
-    name: "Afternoon Shift (14:30 - 22:30)",
-    hours: "14:30 to 22:30",
+    word: "Evening",
+    label: "Evening shift",
+    name: "Evening shift (15:00 to 23:00)",
+    hours: "15:00 to 23:00",
   },
-  { id: "Night", label: "Night Shift (22:00 - 07:30)", name: "Night Shift (22:00 - 07:30)", hours: "22:00 to 07:30" },
+  { id: "Night", word: "Night", label: "Night shift", name: "Night shift (23:00 to 07:00)", hours: "23:00 to 07:00" },
 ] as const;

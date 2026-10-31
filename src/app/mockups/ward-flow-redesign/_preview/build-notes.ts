@@ -468,15 +468,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
 
     "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
   ],
-  "sign-in": [
-    "**Built from a copy of today's Sign in screen**, so catchment, shift, role, the appearance switch and the Actions and Limits tabs work as now.",
-    '**New:** an "Open as <role>" button (the one filled button) ends the choices and opens the screen the role names. It signs nobody in, stores nothing and grants nothing.',
-    "**New:** the boxed role numbers 1 to 7 are gone; the action counts stay, and number keys still pick a role.",
-    "**Kept:** no input fields, the action list with ticks and crosses, every synthetic and no-password notice, and the footer.",
-    "**Question for you:** four of the seven roles have no home of their own, so they open Home. Should the button navigate at all?",
-    "**Round 2:** places use the menu's names, the ward role is 'Ward manager', and shifts are Day / Evening / Night from the app's own pattern, so they match the rail.",
-    "**Proposals for you:** list the app's eight desks instead of seven roles, and open the matching role mock-up from Open as.",
-  ],
   community: [
     "**Built from a copy of today's Community directory**, so search, service filters, Reads alike, the letter jump, Catchment guide, Raise referral and the phone tabs work as now.",
     '**New:** the heading reads "64 community teams" (a live count), with one line under it: "Names from referral catchment documents, not verified services".',
