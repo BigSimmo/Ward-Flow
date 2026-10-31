@@ -27,7 +27,9 @@
 @media (min-width: 62.5625rem) {
   .bar {
     display: grid;
-    grid-template-columns: minmax(18rem, 1fr) minmax(0, 1.4fr);
+    /* QA 31 Oct 2026: the question column grows to fit the quick picks on one line when there is
+       room, and wraps them only when the answer column would drop below 20rem. */
+    grid-template-columns: minmax(18rem, max-content) minmax(20rem, 1fr);
     align-items: start;
     gap: var(--wf-s-4);
   }

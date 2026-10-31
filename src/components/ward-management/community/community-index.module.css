@@ -58,6 +58,15 @@
   font-weight: 600;
 }
 
+/* QA 31 Oct 2026: on a wide screen the hero's stats holder keeps the two chips' width, so the title
+   block wraps its line instead and the chips stay side by side. Below 900px the hero moves the
+   stats to their own row. */
+@media (min-width: 901px) {
+  div:has(> .heroChips) {
+    flex-shrink: 0;
+  }
+}
+
 .heroChips {
   display: flex;
   /* Core pages review (31 Oct 2026): the longer title leaves less room, so the two chips wrap rather than clip. */
@@ -195,7 +204,8 @@
 }
 
 .listWrap {
-  --cti-row-cols: minmax(0, 1fr) 4.5rem 3.5rem 10rem 1rem;
+  /* QA 31 Oct 2026: the Suburbs column fits its uppercase heading, so it never runs into Name check. */
+  --cti-row-cols: minmax(0, 1fr) 4.5rem 4.5rem 10rem 1rem;
 
   min-width: 0;
 }
