@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { canRestoreFocusTo } from "./sheet-focus";
+import { ConfirmHost } from "./confirm-dialog";
 import { OverlayPortal } from "./overlay-root";
 import overlayStyles from "./overlay.module.css";
 import { type ToastNextStep, type ToastUndo, ToastView } from "./toast";
@@ -251,6 +252,8 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
     <ToastContext.Provider value={value}>
       {children}
       <ToastRegion />
+      {/* The styled confirm (kit) mounts beside the toasts: every Ward Flow page has this provider. */}
+      <ConfirmHost />
     </ToastContext.Provider>
   );
 }

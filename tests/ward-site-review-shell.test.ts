@@ -43,12 +43,11 @@ describe("site review shell fixes", () => {
     expect(title).toMatch(/padding-block:\s*12px/u);
   });
 
-  it("draws act now on the portrait list as the faint tint and rounded marker, never a red box", () => {
+  it("draws act now on the portrait list as the faint tint, with no side marker and never a red box", () => {
     const css = read("src/components/wf/portrait.module.css");
     expect(css).toMatch(/\.actNow\s*\{[^}]*position:\s*relative;[^}]*background:\s*var\(--wf-act-tint\)/u);
-    const marker = /\.actNow::before\s*\{([^}]*)\}/u.exec(css)?.[1] ?? "";
-    expect(marker).toMatch(/background:\s*var\(--wf-act-edge\)/u);
-    expect(marker).toMatch(/width:\s*3px/u);
+    // Josh, 31 Oct 2026: no coloured side edges, so the 3px coral marker is gone.
+    expect(css).not.toMatch(/\.actNow::before/u);
     expect(css).not.toMatch(/inset 0 0 0 1px var\(--wf-danger\)/u);
   });
 });
