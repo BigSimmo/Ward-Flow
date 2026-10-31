@@ -30,7 +30,7 @@ import {
   type BannerTone,
 } from "@/components/ward-management/alerts/global-alert-view";
 import { resolveAlertSubject } from "@/components/ward-management/alerts/alerts-model";
-import { useDeskInScope } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useDeskInScope } from "@/components/ward-management/shell/ward-access";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import {
   REFERRAL_DECLINE_REASONS,
@@ -97,6 +97,8 @@ export function BannerBody({
   const [changing, setChanging] = useState(false);
   const isPhone = useIsPhone();
   const deskInScope = useDeskInScope();
+  // Access audit (31 Oct 2026): the executive and admin desks cannot open Alerts, so no link leads there.
+  const canOpenAlerts = useCanOpenHref()(WARD_ALERTS_HREF);
   const isRed = tone === "act_now";
   // D-80: on one of its wards' pages a site bed manager answers for that ward in its own name.
   const bedManager = useRouteRole() === "bed_manager";
@@ -163,15 +165,25 @@ export function BannerBody({
         aria-label={`${kindLabel(alert)}: ${headline}`}
       >
         <span className="sr-only">These counts are invented figures.</span>
-        <Link href={WARD_ALERTS_HREF} className={styles.phoneLine}>
-          <StatusGlyph tone={TONE_GLYPH[tone]} size={12} />
-          <span className={styles.kind}>{kindLabel(alert)}</span>
-          <strong className={styles.headline}>{headline}</strong>
-          {countText ? <span className={styles.count}>{countText}</span> : null}
-          {more > 0 ? <span className={styles.count}>{more} more</span> : null}
-          <span className="sr-only">, open Alerts</span>
-          <ChevronRight size={14} aria-hidden="true" />
-        </Link>
+        {canOpenAlerts ? (
+          <Link href={WARD_ALERTS_HREF} className={styles.phoneLine}>
+            <StatusGlyph tone={TONE_GLYPH[tone]} size={12} />
+            <span className={styles.kind}>{kindLabel(alert)}</span>
+            <strong className={styles.headline}>{headline}</strong>
+            {countText ? <span className={styles.count}>{countText}</span> : null}
+            {more > 0 ? <span className={styles.count}>{more} more</span> : null}
+            <span className="sr-only">, open Alerts</span>
+            <ChevronRight size={14} aria-hidden="true" />
+          </Link>
+        ) : (
+          <span className={styles.phoneLine}>
+            <StatusGlyph tone={TONE_GLYPH[tone]} size={12} />
+            <span className={styles.kind}>{kindLabel(alert)}</span>
+            <strong className={styles.headline}>{headline}</strong>
+            {countText ? <span className={styles.count}>{countText}</span> : null}
+            {more > 0 ? <span className={styles.count}>{more} more</span> : null}
+          </span>
+        )}
         {kind === "directive" && desk.id && needsAnswer ? (
           <div className={styles.answers}>
             <Button size="sm" icon={Check} onClick={acknowledge} title="Acknowledge this directive for your desk">
@@ -287,10 +299,12 @@ export function BannerBody({
             </Button>
           ) : null}
 
-          <Link href={WARD_ALERTS_HREF} className={buttonClass({ size: "sm", variant: "ghost" })}>
-            {more > 0 ? `Alerts, ${more} more` : "Alerts"}
-            <ChevronRight size={14} aria-hidden="true" />
-          </Link>
+          {canOpenAlerts ? (
+            <Link href={WARD_ALERTS_HREF} className={buttonClass({ size: "sm", variant: "ghost" })}>
+              {more > 0 ? `Alerts, ${more} more` : "Alerts"}
+              <ChevronRight size={14} aria-hidden="true" />
+            </Link>
+          ) : null}
         </div>
       </div>
 
