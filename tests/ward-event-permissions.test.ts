@@ -533,7 +533,7 @@ describe("who may raise which event", () => {
     UNDO_DEPARTURE: ["ward", "coordinator"],
     UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
     UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
-    UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
+    UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

@@ -607,7 +607,9 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   UNDO_REPATRIATION: ["coordinator"],
   UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
-  UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
+  // Q75 (Josh, 31 Oct 2026): the statewide coordinator may sign a site sign-off as cover but
+  // never undo one, so only the site bed manager takes a site sign-off back.
+  UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager"],
   UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
   UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
   UNDO_DEPARTURE: ["ward", "coordinator"],

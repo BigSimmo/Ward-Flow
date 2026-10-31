@@ -142,6 +142,24 @@ describe("Q61: the site bed manager signs off its own site, never a ward", () =>
     expect(again.siteHandoverSignOffs).toEqual(undone.siteHandoverSignOffs);
   });
 
+  it("lets the statewide coordinator sign as cover but never undo a site sign-off (Q75)", () => {
+    expect(EVENT_ROLE.UNDO_SITE_HANDOVER_SIGN_OFF).toEqual(["bed_manager"]);
+    const covered = signSite(seed, "RPH", "coordinator");
+    expect(covered.rejections.at(-1)?.reason).toBeUndefined();
+    expect(covered.siteHandoverSignOffs?.at(-1)).toMatchObject({ siteCode: "RPH", by: "coordinator" });
+    const signed = signSite(seed, "RPH");
+    for (const state of [covered, signed]) {
+      const refused = wardFlowReducer(state, {
+        type: "UNDO_SITE_HANDOVER_SIGN_OFF",
+        role: "coordinator",
+        now: NOW + 1,
+        siteCode: "RPH",
+      });
+      expect(refused.rejections.at(-1)?.reason).toBeDefined();
+      expect(refused.siteHandoverSignOffs).toEqual(state.siteHandoverSignOffs);
+    }
+  });
+
   it("uses the ward sign-off window exactly as the handover sheet does", () => {
     for (const at of [SHIFT_AT - 8 * 60 - 1, SHIFT_AT - 8 * 60, NOW, SHIFT_AT - 1, SHIFT_AT]) {
       const signOffs = [{ at, by: "ward" as const, unitId: rphA!.id }];

@@ -145,7 +145,8 @@ describe("step undos restore exactly, by the role that acted or the coordinator"
   it.each(
     UNDO_STEP_TYPES.flatMap((undoType) =>
       UNDO_STEP_ACTIONS[undoType]
-        .filter((type) => type !== "RECORD_SUPPORT_NOTIFICATION")
+        // Q75: a site sign-off is the one step the coordinator may not take back (tested below).
+        .filter((type) => type !== "RECORD_SUPPORT_NOTIFICATION" && type !== "RECORD_SITE_HANDOVER_SIGN_OFF")
         .map((type) => [undoType, type] as const),
     ),
   )("%s takes back %s exactly, by the role that acted and by the coordinator", (undoType, type) => {
@@ -158,6 +159,14 @@ describe("step undos restore exactly, by the role that acted or the coordinator"
           ? event.actingUnitId
           : undefined;
     expectExactUndo(type, event.role, actingUnitId);
+  });
+
+  it("UNDO_SITE_HANDOVER_SIGN_OFF: the site bed manager takes it back exactly; the coordinator never (Q75)", () => {
+    const { applied, event } = step(seedWardFlowState(), "RECORD_SITE_HANDOVER_SIGN_OFF");
+    const { undone } = expectExactUndo("RECORD_SITE_HANDOVER_SIGN_OFF", event.role);
+    expect(undone.auditEvents.at(-1)!.action).toBe("UNDO_SITE_HANDOVER_SIGN_OFF");
+    const coordinator = wardFlowReducer(applied, undoEventFor(event, "coordinator"));
+    expect(lastRefusal(applied, coordinator)).toMatch(/requires role bed_manager/);
   });
 
   it("UNDO_SUPPORT_NOTIFICATION takes back a Tell record exactly", () => {
