@@ -76,8 +76,7 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
 }
 
-.highlight:focus-visible,
-.stageButton:focus-visible {
+.highlight:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
 }
@@ -106,62 +105,6 @@
 
 .highlight[aria-pressed="true"] .highlightLabel {
   color: var(--wf-hero-ink);
-}
-
-.heroBarLabel {
-  flex: none;
-  color: var(--wf-hero-ink-3);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.stageTrack {
-  display: flex;
-  gap: 2px;
-  min-width: 0;
-  padding: 3px;
-  border-radius: var(--wf-r-track);
-  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.stageButton {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  height: calc(var(--wf-h-sm) - 2px);
-  padding: 0 var(--wf-s-3);
-  border: 0;
-  border-radius: var(--wf-r-ctl);
-  background: transparent;
-  color: var(--wf-hero-ink-2);
-  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.stageButton:hover {
-  color: var(--wf-hero-ink);
-}
-
-.stageButton[aria-pressed="true"] {
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-}
-
-.stageCount {
-  min-width: 1.25rem;
-  padding: 1px 6px;
-  border-radius: var(--wf-r-tag);
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  text-align: center;
-}
-
-.stageButton[aria-pressed="true"] .stageCount {
-  background: color-mix(in srgb, var(--wf-hero-2) 12%, transparent);
 }
 
 .heroTools {
@@ -392,9 +335,9 @@
   background: var(--wf-hover);
 }
 
+/* A highlighted row is the accent tint alone, no side edge (Josh, 31 Oct 2026: "No side edges"). */
 .row[data-highlight="true"] {
   background: var(--wf-accent-tint);
-  box-shadow: inset 2px 0 0 var(--wf-accent);
 }
 
 .row[data-selected="true"] {
@@ -655,15 +598,15 @@
   text-align: right;
 }
 
+/* A journey's place names wrap to a second line rather than ending in "…" (redesign, 31 Oct 2026:
+   names, places and roles wrap in full; a phone has no hover). */
 .trRoute {
   grid-area: route;
   min-width: 0;
-  overflow: hidden;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- phone: a card per row (never alters the desktop grid above) ---------- */
@@ -671,7 +614,6 @@
 @media (max-width: 48rem) {
   /* 48px tap floor on phone for the hero's own controls (shared buttons carry their own). */
   .highlight,
-  .stageButton,
   .highlightNote {
     min-height: var(--ward-tap, 3rem);
   }
@@ -687,7 +629,6 @@
 
   /* position: relative keeps an sr-only child inside the scroller, so it cannot widen the page. */
   .heroAside,
-  .stageTrack,
   .highlights {
     position: relative;
     flex-wrap: nowrap;
@@ -715,13 +656,10 @@
     max-width: 15rem;
   }
 
+  /* The queue button is Home's 40px hero pill (kit phoneRows.heroPill, Josh 31 Oct 2026), not a
+     tall full-width button. */
   .heroTools {
     width: 100%;
-  }
-
-  .heroTools > :last-child {
-    flex: 1;
-    justify-content: center;
   }
 
   .columns {
@@ -788,7 +726,6 @@
 
 @media (forced-colors: active) {
   .highlight[aria-pressed="true"],
-  .stageButton[aria-pressed="true"],
   .row[data-highlight="true"] {
     outline: 2px solid Highlight;
   }
@@ -922,11 +859,6 @@
   .highlights .highlightLabel {
     font-size: var(--wf-fs-13);
     white-space: nowrap;
-  }
-
-  .heroTools > :last-child {
-    min-height: var(--ward-tap, 3rem);
-    border-radius: var(--wf-r-ctl);
   }
 
   /* Stage chips on the canvas: white pills, number first, scrolling sideways. */
@@ -1303,25 +1235,9 @@
   }
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.needsItem[data-act-now="true"] {
-  position: relative;
-}
-
-.needsItem[data-act-now="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .needsItem[data-act-now="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
+/* An act-now row (a legal authority passed or approaching) carries the act tint and a status glyph
+   before its reason, never a coloured side edge (Josh, 31 Oct 2026: "No side edges"). */
+.needsGlyph {
+  margin-inline-end: var(--wf-s-1);
+  vertical-align: 1px;
 }

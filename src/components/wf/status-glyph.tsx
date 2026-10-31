@@ -31,7 +31,15 @@ const SHAPES: Readonly<Record<WfTone, ReactNode>> = {
 export function StatusGlyph({ tone, size = 10, className }: { tone: WfTone; size?: number; className?: string }) {
   const cls = cx(styles.glyph, styles[tone], className);
   return (
-    <svg className={cls} width={size} height={size} viewBox="0 0 10 10" aria-hidden="true" focusable="false">
+    <svg
+      className={cls}
+      data-wf-glyph={tone}
+      width={size}
+      height={size}
+      viewBox="0 0 10 10"
+      aria-hidden="true"
+      focusable="false"
+    >
       {Object.hasOwn(SHAPES, tone) ? SHAPES[tone] : null}
     </svg>
   );

@@ -137,10 +137,12 @@
   outline-offset: 2px;
 }
 
+/* Cancel, then Save at the end (the app's dialog footer order, Josh 31 Oct 2026). */
 .actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--wf-s-2);
 }
 
@@ -165,4 +167,18 @@
   z-index: 1;
   padding-block: var(--wf-s-2);
   background: var(--wf-surface);
+}
+
+/* Redesign (Josh, 31 Oct 2026): once nothing is left to answer, the top line says so. */
+.allAnswered {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }

@@ -40,7 +40,7 @@ function renderForm() {
   fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999999" } });
   fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
   fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Newcomer" } });
-  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1990-01-01" } });
+  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "01/01/1990" } });
 }
 
 afterEach(() => {

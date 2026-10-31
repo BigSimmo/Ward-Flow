@@ -1321,7 +1321,8 @@ describe("ReferralBoard — an acceptance does not erase a refusal", () => {
     const declineReason = declinedAddressings(referrals.find((candidate) => candidate.id === "RF-004")!)[0]!
       .declineReason!;
     expect(screen.getByTestId("ward-referral-board-decided-detail-RF-004").textContent).toBe(
-      `Ward · fsh-older-adult: ${declineReasonLabelForTest(declineReason)}`,
+      // Referrals redesign (31 Oct 2026): History names the ward that declined, not its internal code.
+      `FSH Older Adult: ${declineReasonLabelForTest(declineReason)}`,
     );
   });
 });

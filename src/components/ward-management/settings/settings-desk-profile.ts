@@ -4,7 +4,7 @@ import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-managemen
 import { ACCESS_ROLE_LABELS, accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 
-import { SETTINGS_DEMO_PROFILE, type WorkspaceProfile } from "./settings-profile";
+import { SETTINGS_DEMO_PROFILE, surnameFirst, type WorkspaceProfile } from "./settings-profile";
 
 export type DeskProfile = Pick<WorkspaceProfile, "name" | "initials" | "role" | "location">;
 
@@ -21,7 +21,8 @@ export function useSettingsDeskProfile(): DeskProfile {
   const role = ACCESS_ROLE_LABELS[access.role];
   const named = persona.name !== role && persona.role !== "Demo desk";
   return {
-    name: named ? persona.name : role,
+    // Surname first, like the demo profile (Settings audit, 31 Oct 2026).
+    name: named ? surnameFirst(persona.name) : role,
     initials: persona.initials,
     role,
     location: publicModel?.placeLabel ?? accessPlaceLabel(access, SEED_UNITS),

@@ -22,7 +22,7 @@ import { expect, test, type Page } from "playwright/test";
  * file's predecessor (approved 2026-09-06, before: 2, after: 1) already recorded as the plan: "the
  * render-and-rail test now proves the redirect lands on the real Capacity page and that the rail
  * can leave and return to it, in place of a headline and a link label that no longer exist."
- * `CapacityScreen` renders `data-testid="ward-capacity-page"` but no equivalent of
+ * `CapacityScreen` renders `data-testid="ward-capacity-screen"` but no equivalent of
  * `ward-morning-headline` — Capacity's own `<h1>` carries no testid and is a different page, not a
  * repaint of Morning's — so the headline assertion is not moved, it is retired outright, along with
  * the `ClinicalRail`/"Morning bed state" link this case used to click: neither the component nor the
@@ -56,7 +56,7 @@ import { expect, test, type Page } from "playwright/test";
 async function gotoCapacity(page: Page) {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
-  await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
 }
 
@@ -94,7 +94,7 @@ test.describe("@mockup Ward capacity — rail navigates away from the absorbed m
     await page.waitForLoadState("networkidle");
 
     await page.getByRole("link", { name: /^Capacity\b/u }).click();
-    await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
     // The third click is not a repeat of the first: the rail was unmounted by the navigation away

@@ -1,0 +1,42 @@
+/* Daily "nobody missed" check on Waiting (smart features idea 2): the phone line's opened list. */
+.list {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: var(--wf-row-default);
+  padding: var(--wf-s-2) 0;
+}
+
+.item + .item {
+  border-top: 1px solid var(--wf-line);
+}
+
+.kind {
+  display: inline-flex;
+  gap: var(--wf-s-2);
+  align-items: center;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.since {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}

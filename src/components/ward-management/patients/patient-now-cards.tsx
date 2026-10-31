@@ -14,6 +14,7 @@ import { formProgression } from "@/components/ward-management/legal-forms/legal-
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
@@ -114,6 +115,9 @@ export function PatientLegalNowCard({
 }) {
   const legalId = useId();
   const thresholds = useDueSoonThresholds();
+  // Access audit (31 Oct 2026): a desk that cannot open Legal forms (the site bed manager) gets no link.
+  const canOpenHref = useCanOpenHref();
+  const canRecordForm = movement !== undefined && canOpenHref(recordFormHref(movement.id));
   const rows: Array<{
     tone: WfTone;
     code: string;
@@ -234,7 +238,7 @@ export function PatientLegalNowCard({
               <span className={styles.phItemText}>
                 <strong>No form recorded</strong>
               </span>
-              {isOpen(movement) ? (
+              {isOpen(movement) && canRecordForm ? (
                 <Link className={styles.phLink} href={recordFormHref(movement.id)}>
                   Record a form
                 </Link>
@@ -280,7 +284,7 @@ export function PatientLegalNowCard({
             <span className={styles.itemText}>
               <strong>No form recorded</strong>
             </span>
-            {isOpen(movement) ? (
+            {isOpen(movement) && canRecordForm ? (
               <Link className={buttonClass({ size: "sm", variant: "ghost" })} href={recordFormHref(movement.id)}>
                 Record a form
               </Link>

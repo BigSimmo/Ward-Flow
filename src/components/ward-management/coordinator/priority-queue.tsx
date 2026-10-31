@@ -263,8 +263,9 @@ export function PriorityQueue({
             count={soonCount}
             className={styles.noShrink}
           >
-            {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). */}
-            Form due (as written)
+            {/* Names its noun: recorded legal forms due soon or past (device audit, 11 Oct 2026). Short
+                so "Referrals" is never cut off beside it (Home and Activity design, 31 Oct 2026). */}
+            Form due
           </FilterChip>
         ) : null}
       </div>
@@ -286,7 +287,7 @@ export function PriorityQueue({
         />
       ) : null}
 
-      {activeTab === "patients" ? <TierKey /> : null}
+      {activeTab === "patients" ? <TierKey compact /> : null}
       <div
         id="ward-queue-panel-patients"
         role="group"
@@ -462,9 +463,11 @@ export function PriorityQueue({
                     at={movement.openedAt * MS_PER_MINUTE}
                     now={now * MS_PER_MINUTE}
                     direction="waiting"
+                    hideDirection
                     className={styles.queueTimer}
                   />
-                  {/* U3: the timer already says "waiting", so the word shows only for a status. */}
+                  {/* One line (Home and Activity design, 31 Oct 2026): the wait, then the status glyph;
+                      the status word is spoken. */}
                   {level ? (
                     <span
                       className={cx(
@@ -473,7 +476,7 @@ export function PriorityQueue({
                       )}
                     >
                       <StatusGlyph tone={level === "over" ? "danger" : "warning"} size={9} />
-                      {word}
+                      <SrOnly>{word}</SrOnly>
                     </span>
                   ) : null}
                 </span>
@@ -509,7 +512,6 @@ export function PriorityQueue({
         ) : (
           referralQueue.map((referral) => {
             const selected = referral.id === selectedReferralId;
-            const waited = Math.max(now - referral.raisedAt, 0);
             const turnaround =
               referralState(referral) === "queued" &&
               referral.destinations.some((arm) => arm.state === "queued" && arm.withdrawnAt === undefined) &&
@@ -558,9 +560,6 @@ export function PriorityQueue({
                     hideDirection
                     className={styles.queueTimer}
                   />
-                  <span className={styles.queueWord} aria-hidden="true">
-                    {waited < 60 ? "requested" : "waiting"}
-                  </span>
                 </span>
               </button>
             );

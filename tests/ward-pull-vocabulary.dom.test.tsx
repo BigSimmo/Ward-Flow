@@ -367,7 +367,8 @@ describe("the community hub says a bed is PULLED for somebody who has not arrive
     );
 
     const page = document.body.textContent ?? "";
-    expect(page).toContain("in a bed or have one pulled for them.");
+    // Josh (31 Oct 2026, 12:09 UTC) dropped the in-bed count sentence; the table's caption carries the word.
+    expect(page).toContain("People referred to this team in a bed or with one pulled");
     expect(page).toContain("A bed is pulled — not yet arrived");
     expect(page).not.toContain("have one held for them");
     expect(page).not.toContain("A bed is held");

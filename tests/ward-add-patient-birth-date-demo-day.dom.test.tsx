@@ -39,22 +39,24 @@ function renderForm() {
 describe("Add patient checks a birth date against the demo day (TC2-10)", () => {
   const demoToday = perthIsoDay(calendarDateOf(NOW_ANCHOR, DAY_ZERO));
 
-  it("offers no date after the demo day", () => {
+  it("asks for the birth date as DD/MM/YYYY in the kit's typed date box, not the browser's picker", () => {
     renderForm();
-    expect(screen.getByTestId("ward-add-patient-date-of-birth")).toHaveAttribute("max", demoToday);
+    const box = screen.getByTestId("ward-add-patient-date-of-birth");
+    expect(box).toHaveAttribute("type", "text");
+    expect(box).toHaveAttribute("placeholder", "DD/MM/YYYY");
   });
 
   it("says a birth date after the demo day is after today, though it is before the real date", () => {
     renderForm();
     const later = "2021-03-01";
     expect(later > demoToday).toBe(true);
-    fireEvent.change(screen.getByTestId("ward-add-patient-date-of-birth"), { target: { value: later } });
+    fireEvent.change(screen.getByTestId("ward-add-patient-date-of-birth"), { target: { value: "01/03/2021" } });
     expect(screen.getByText("The date of birth is after today.")).toBeInTheDocument();
   });
 
   it("accepts a birth date on or before the demo day", () => {
     renderForm();
-    fireEvent.change(screen.getByTestId("ward-add-patient-date-of-birth"), { target: { value: "1990-05-04" } });
+    fireEvent.change(screen.getByTestId("ward-add-patient-date-of-birth"), { target: { value: "04/05/1990" } });
     expect(screen.queryByText("The date of birth is after today.")).not.toBeInTheDocument();
   });
 });

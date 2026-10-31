@@ -30,7 +30,7 @@ import type { BoardRow } from "./delays-board-model";
 import type { WaitingViewId } from "./waiting-href";
 
 /** "1 h", "3 h", or minutes when the window is not whole hours, from the configured warnings. */
-export function windowText(minutes: number): string {
+function windowText(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60} h` : `${minutes} min`;
 }
 

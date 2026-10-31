@@ -159,7 +159,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
       {
         job: "Transport",
-        how: "Once a bed is pulled for your patient, press Transport booked or No transport needed.",
+        how: "Once a bed is pulled for your patient, open the row's actions and choose Log transport booking or Record no transport needed.",
         go: "home",
       },
       {

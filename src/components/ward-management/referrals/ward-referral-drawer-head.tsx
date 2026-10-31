@@ -100,11 +100,14 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
             <>
               {/* UX audit 21 Oct 2026: no count here. "Items left" also held the five contact
                   fields asked at Send, so it read 18 over steps adding to 13. The stepper counts
-                  each step and the footer names what is left. No decision time before a send. */}
-              <span className={styles.phFigure}>
-                <b className={styles.mono}>{tier === undefined ? "–" : `T${tier}`}</b>
-                <span>Urgency</span>
-              </span>
+                  each step and the footer names what is left. No decision time before a send.
+                  No "–" figure before an urgency is chosen; the Referral step asks for it. */}
+              {tier === undefined ? null : (
+                <span className={styles.phFigure}>
+                  <b className={styles.mono}>T{tier}</b>
+                  <span>Urgency</span>
+                </span>
+              )}
               <button
                 type="button"
                 className={styles.phFigure}
@@ -257,7 +260,11 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
                     <span className={styles.stepLabel}>{label}</span>
                     {/* The hint describes the step; the button's name stays its label alone. */}
                     {isPhone ? (
-                      <span className={styles.phStepHint} id={`${sectionId}-${id}-hint`} aria-hidden="true">
+                      <span
+                        className={`${styles.phStepHint} ${styles.phStepHintWrap}`}
+                        id={`${sectionId}-${id}-hint`}
+                        aria-hidden="true"
+                      >
                         {phStepHint(id)}
                       </span>
                     ) : null}
@@ -292,9 +299,11 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
           </div>
           {/* WT-28: nothing is pre-filled for a patient just added in this form, so no banner says so. */}
           {offersJump(s) && !patientAddedInForm ? (
-            <div className={styles.fastTrackBar} data-testid="ward-referral-fast-track">
+            <div className={`${styles.fastTrackBar} ${styles.fastTrackInset}`} data-testid="ward-referral-fast-track">
+              {/* The two Jump buttons beside it already name where they go, so the line says only
+                  what happened, with the app's own glyph instead of a typed tick. */}
               <span className={styles.fastTrackText}>
-                ✓ Patient &amp; referral details pre-filled from record — Jump to Clearance / Wards →
+                <StatusGlyph tone="success" size={9} /> Patient and referral details pre-filled from the record
               </span>
               <ReferralJumpButtons s={s} />
             </div>

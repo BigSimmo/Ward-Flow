@@ -1,13 +1,16 @@
-import { act, render, screen, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { HealthService } from "@/components/ward-management/ward-model";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
 
 const scope = vi.hoisted(() => ({ service: null as HealthService | null }));
 vi.mock("@/components/ward-management/shell/ward-service-store", async (importOriginal) => ({
@@ -15,103 +18,106 @@ vi.mock("@/components/ward-management/shell/ward-service-store", async (importOr
   useServiceScope: () => scope.service,
 }));
 
+/**
+ * Capacity review corrections, carried onto the redesigned screen (Josh, 31 Oct 2026). The network
+ * ward table, its filter chips and its compact-table scroll cue are gone; the bed map's highlight
+ * chips and the hero's ready figures are the shortcuts now, and a chosen service narrows the bed map
+ * behind `WardServiceScopeBar`. Every expected count is computed here from `networkWardRows` with
+ * the screen model's own arguments, narrowed by `unitHealthService` exactly as the screen narrows it.
+ */
+const seed = seedWardFlowState();
+const networkRows = networkWardRows(seed.units, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
+
+function rowsIn(service: HealthService | null) {
+  return service === null ? networkRows : networkRows.filter((row) => unitHealthService(row.unit) === service);
+}
+
+function wards(count: number): string {
+  return `${count} ${count === 1 ? "ward" : "wards"}`;
+}
+
 function renderCapacity() {
-  const view = render(
+  return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
-  showWardTable();
-  return view;
+}
+
+function wardCards(): HTMLElement[] {
+  const map = document.getElementById("capacity-bed-map");
+  expect(map, "no bed map on the Capacity screen").not.toBeNull();
+  return Array.from((map as HTMLElement).querySelectorAll<HTMLElement>('button[aria-haspopup="dialog"]'));
+}
+
+function highlightChip(label: string): HTMLElement {
+  const group = within(screen.getByRole("group", { name: "Highlight wards" }));
+  return group.getByRole("button", { name: new RegExp(`^${label} · \\d+ wards?$`, "u") });
 }
 
 describe("capacity review corrections", () => {
   beforeEach(() => {
     scope.service = null;
   });
-  afterEach(() => vi.unstubAllGlobals());
 
-  it("Space and Enter activate summary shortcuts, retain all wards and move focus to the table", async () => {
+  it("Space and Enter activate the hero's ready shortcuts and keep every ward on the bed map", async () => {
     const user = userEvent.setup();
     renderCapacity();
-    const table = screen.getByTestId("ward-capacity-network-table");
-    const before = table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]').length;
-    expect(before).toBeGreaterThan(0);
-    // v6: the summary shortcuts are the "Highlight" chips under the bed map. Device audit option A
-    // (11 Oct 2026): each chip names what it counts, "Wards with any bed ready".
-    const available = screen.getByRole("button", { name: /^Wards with any bed ready/u });
-    expect(available.tagName).toBe("BUTTON");
-    available.focus();
+    const before = wardCards().length;
+    expect(before).toBe(networkRows.length);
+    const hero = within(screen.getByRole("group", { name: "Network beds" }));
+
+    const open = hero.getByRole("button", { name: /Open ready/u });
+    expect(open.tagName).toBe("BUTTON");
+    open.focus();
     await user.keyboard(" ");
-    expect(available).toHaveAttribute("aria-pressed", "true");
-    expect(document.getElementById("capacity-wards")).toHaveFocus();
-    expect(within(table).getAllByText("Matches this filter").length).toBeGreaterThan(0);
-    expect(table.querySelectorAll('[data-testid^="ward-capacity-network-row-"]')).toHaveLength(before);
-    // v10: the Wards count moved into the hero eyebrow, so a hero highlight chip pressed a second
-    // time is what clears the highlight.
-    const locked = screen.getByRole("button", { name: /^\d+\s*Locked beds ready$/u });
-    locked.focus();
+    expect(open).toHaveAttribute("aria-pressed", "true");
+    expect(highlightChip("Open ready")).toHaveAttribute("aria-pressed", "true");
+    expect(wardCards().filter((card) => /dimmed/u.test(card.className)).length).toBeGreaterThan(0);
+    expect(wardCards()).toHaveLength(before);
+
+    // Pressing the same hero figure a second time clears the highlight.
+    open.focus();
     await user.keyboard("{Enter}");
-    expect(locked).toHaveAttribute("aria-pressed", "true");
-    expect(within(table).getAllByText("Matches this filter").length).toBeGreaterThan(0);
-    // Pressing moved focus to the table, so come back to the chip first.
-    locked.focus();
-    await user.keyboard("{Enter}");
-    expect(locked).toHaveAttribute("aria-pressed", "false");
-    expect(within(table).queryByText("Matches this filter")).toBeNull();
+    expect(open).toHaveAttribute("aria-pressed", "false");
+    expect(wardCards().filter((card) => /dimmed/u.test(card.className))).toHaveLength(0);
+    expect(wardCards()).toHaveLength(before);
   });
 
-  it("counts only North Metro wards in the scoped table header and highlight controls", () => {
+  it("counts only North Metro wards in the scope bar, the bed map and its highlight chips", () => {
     scope.service = "North Metro";
+    const scoped = rowsIn("North Metro");
+    expect(scoped.length, "no North Metro ward in the fixture — this guard proved nothing").toBeGreaterThan(0);
+    expect(scoped.length).toBeLessThan(networkRows.length);
     renderCapacity();
-    const wards = screen.getByRole("region", { name: "Wards" });
-    expect(wards).toHaveTextContent("4 wards in North Metro, 4 matching");
-    expect(within(wards).getByRole("button", { name: /^All/u })).toHaveTextContent("4");
-    expect(within(wards).getByRole("button", { name: /^Has a bed ready/u })).toHaveTextContent("3");
-    expect(within(wards).getByRole("button", { name: /^Has a locked bed ready/u })).toHaveTextContent("1");
-    expect(within(wards).getByRole("button", { name: /^Needs confirming/u })).toHaveTextContent("1");
-    expect(screen.getByRole("button", { name: /^Wards with any bed ready/u })).toHaveTextContent("3");
-    expect(screen.getByRole("button", { name: /^Wards with a locked bed ready/u })).toHaveTextContent("1");
-  });
-
-  it("reports an empty service with zero matching wards and zero highlight counts", () => {
-    scope.service = "CAHS";
-    renderCapacity();
-    const wards = screen.getByRole("region", { name: "Wards" });
-    expect(wards).toHaveTextContent("0 wards in CAHS, 0 matching");
-    expect(screen.getByRole("button", { name: /^Wards with any bed ready/u })).toHaveTextContent("0");
-    for (const button of within(wards).getAllByRole("button", {
-      name: /^(All|Has a bed ready|Has a locked bed ready|Needs confirming)/u,
-    })) {
-      expect(button).toHaveTextContent("0");
-    }
-  });
-
-  it("shows a compact-table scroll cue only while the table actually overflows", () => {
-    let resize: () => void = () => {};
-    vi.stubGlobal(
-      "ResizeObserver",
-      class {
-        constructor(callback: () => void) {
-          resize = callback;
-        }
-        observe() {}
-        disconnect() {}
-      },
+    expect(screen.getByTestId("ward-service-scope-bar-summary")).toHaveTextContent(
+      `Showing ${scoped.length} of ${networkRows.length} wards, in North Metro.`,
     );
-    renderCapacity();
-    const table = screen.getByTestId("ward-capacity-network-table");
-    expect(screen.queryByText("Scroll sideways to see more ward details.")).toBeNull();
-    Object.defineProperties(table, {
-      clientWidth: { value: 600, configurable: true },
-      scrollWidth: { value: 1200, configurable: true },
-    });
-    act(resize);
-    expect(screen.getByText("Scroll sideways to see more ward details.")).toBeInTheDocument();
-    expect(table).toHaveAttribute("data-overflowing", "true");
-    Object.defineProperty(table, "clientWidth", { value: 1400, configurable: true });
-    act(resize);
-    expect(screen.queryByText("Scroll sideways to see more ward details.")).toBeNull();
-    expect(table).not.toHaveAttribute("data-overflowing");
+    expect(wardCards()).toHaveLength(scoped.length);
+    expect(highlightChip("Any ready")).toHaveTextContent(wards(scoped.filter((row) => row.ready > 0).length));
+    expect(highlightChip("Locked ready")).toHaveTextContent(wards(scoped.filter((row) => row.lockedReady > 0).length));
+    expect(highlightChip("Count not confirmed")).toHaveTextContent(
+      wards(scoped.filter((row) => !isConfirmationFresh(row.unit, NOW_ANCHOR)).length),
+    );
   });
+
+  it("reports an empty service with zero wards shown and zero highlight counts", () => {
+    scope.service = "CAHS";
+    expect(rowsIn("CAHS"), "CAHS wards are not modelled, so this service is empty").toHaveLength(0);
+    renderCapacity();
+    expect(screen.getByTestId("ward-service-scope-bar-summary")).toHaveTextContent(
+      `Showing 0 of ${networkRows.length} wards, in CAHS.`,
+    );
+    expect(wardCards()).toHaveLength(0);
+    const chips = within(screen.getByRole("group", { name: "Highlight wards" })).getAllByRole("button");
+    expect(chips.length).toBeGreaterThan(0);
+    for (const chip of chips) expect(chip).toHaveTextContent(/ · 0 wards$/u);
+  });
+
+  /*
+   * RETIRED 31 Oct 2026 with the network ward table (Capacity redesign): "shows a compact-table
+   * scroll cue only while the table actually overflows". It pinned the table's "Scroll sideways to
+   * see more ward details." cue and `data-overflowing`; the bed map that replaced the table has no
+   * sideways-scrolling table.
+   */
 });

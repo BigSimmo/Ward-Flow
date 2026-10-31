@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
-import { BedMap } from "@/components/ward-management/capacity/bed-map";
+import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-drawer";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
 const now = 642;
@@ -167,6 +168,8 @@ describe("reservation release against a newer saturated offered observation", ()
     expect(valid(f.state)).toBe(true);
   });
 
+  // Capacity's October 2026 redesign states this disagreement in the ward drawer
+  // (`capacity-ward-drawer.tsx`), beside the ward's one-square-per-bed picture.
   it("renders the release disagreement without adding squares or labelling it an arrival", () => {
     const f = journey();
     f.confirm(f.unit().beds);
@@ -175,19 +178,19 @@ describe("reservation release against a newer saturated offered observation", ()
       (entry) => entry.unit.id === f.unitId,
     )!;
     expect(row.reservationReleaseCapacityConflicts).toBe(1);
-    const html = renderToStaticMarkup(
-      createElement(BedMap, {
-        units: [f.unit()],
-        bedReleases: f.state.bedReleases,
-        admissions: f.state.admissions,
-        leaveBeds: f.state.leaveBeds,
-      }),
-    );
-    expect(html).toContain(`ward-bed-map-reservation-release-conflict-${f.unitId}`);
-    expect(html).toContain("reservation release(s) need capacity");
+    expect(row.arrivalCapacityConflicts ?? 0).toBe(0);
+    // The provider's props require children, so they go in its props object (this is a .ts file).
+    const providerProps = {
+      initialNow: now,
+      children: createElement(CapacityWardSidebar, { row, onBack: () => {}, now }),
+    };
+    const html = renderToStaticMarkup(createElement(WardFlowProvider, providerProps));
+    expect(html).toContain("1 reservation release(s) need capacity re-confirmation");
     expect(html).toContain("No extra physical vacancy is implied");
-    expect(html).not.toContain(`ward-bed-map-arrival-conflict-${f.unitId}`);
-    expect(html.split(`data-testid="ward-bed-map-square-${f.unitId}"`).length - 1).toBe(f.unit().beds);
+    expect(html).not.toContain("awaiting capacity reconciliation");
+    const beds = /aria-label="Beds now"[\s\S]*?<\/section>/u.exec(html)?.[0] ?? "";
+    expect(beds, "the drawer drew no Beds now picture").not.toBe("");
+    expect(beds.split("<i ").length - 1).toBe(f.unit().beds);
   });
 
   it("accepts legacy absence and rejects malformed/forged release observations without relaxing bounds", () => {

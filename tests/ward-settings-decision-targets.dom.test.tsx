@@ -45,7 +45,10 @@ afterEach(() => {
 describe("settings: decision targets", () => {
   it("shows three labelled default targets as durations", () => {
     renderSettings();
-    const card = screen.getByText("Decision targets").closest("[data-setting='decision-targets']") as HTMLElement;
+    // Settings by login (31 Oct 2026): the card is "Deadlines and reply targets".
+    const card = screen
+      .getByText("Deadlines and reply targets")
+      .closest("[data-setting='decision-targets']") as HTMLElement;
     expect(within(card).getByText("Your defaults, not clinical standards")).toBeVisible();
     expect(within(card).getByText("Referral decision")).toBeVisible();
     expect(within(card).getByText("Transfer acceptance")).toBeVisible();
@@ -58,13 +61,14 @@ describe("settings: decision targets", () => {
     fireEvent.click(screen.getByRole("button", { name: "Increase referral decision target" }));
     expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(String(WARD_ANSWER_TARGET_MINUTES));
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+    // Save opens a review first (Settings round 3); its Save change button saves.
+    fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(String(WARD_ANSWER_TARGET_MINUTES + 15));
   });
 });
 
 describe("settings: browser notifications", () => {
   function openAlerts() {
-    fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
     return screen.getByTestId("setting-browser-notifications-row");
   }
 

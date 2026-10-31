@@ -1,6 +1,7 @@
 "use client";
 
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { resolveSubjectPatient } from "../ward-patient-resolver";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
@@ -102,7 +103,7 @@ import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
-import { useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { Dialog, type JourneyStage, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
@@ -210,6 +211,9 @@ export function PatientNowScreen({
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
+  // Access audit (31 Oct 2026): a link this desk cannot open is left off, never a dead end.
+  const canOpenHref = useCanOpenHref();
+  const openable = (href: string | undefined) => (href !== undefined && canOpenHref(href) ? href : undefined);
   const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
   // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
@@ -379,8 +383,11 @@ export function PatientNowScreen({
 
   const targetMovement = liveMovement;
 
-  // Display names
-  const displayName = resolved.displayName;
+  // Display names. Redesign (owner rule D-83): surname first, "Surname, First", read from the
+  // resolver's formal name rather than the given-name-first display name.
+  const displayName = livePatient
+    ? resolveSubjectPatient({ patientId: livePatient.id }, { patients: [livePatient] }).formalName
+    : resolved.displayName;
   const preferredName = resolved.preferredName;
 
   // Copy handover summary
@@ -596,31 +603,10 @@ export function PatientNowScreen({
   })();
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
-  // Audit A3-3: one time left for a typed expiry, the same the Forms and Delays pages show.
-  const formMovementLeft = formProgression(formMovement) ? undefined : formTimeLeft(formMovement, now, thresholds);
   const movementTimeLeft =
     isLiveBedflow && !formProgression(liveMovement) ? formTimeLeft(liveMovement, now, thresholds) : undefined;
-  // Audit S-6: an ended form with Form 6A still to record says so, never "In force".
-  const formMovementNext = formProgression(formMovement);
-  const phoneLegal = ctoInForce
-    ? { value: ctoInForce.form, label: "In force" }
-    : formMovementNext
-      ? { value: formMovementNext.nextCode, label: "To record", tone: "warning" as const }
-      : formMovement?.legalForm
-        ? {
-            value: formMovement.legalForm.code,
-            label: formMovementLeft ? formMovementLeft.text : "In force",
-            ...(formMovementLeft && formMovementLeft.standing !== "later"
-              ? { tone: formMovementLeft.actNow ? ("danger" as const) : ("warning" as const) }
-              : {}),
-          }
-        : {
-            // A figure, so the status's first word ("Voluntary"); the full words are on Legal now.
-            value: legalStatusFigure(
-              mode === "idle" ? livePatient?.legalStatus : (liveMovement?.legalStatus ?? livePatient?.legalStatus),
-            ),
-            label: "Legal status",
-          };
+  // Redesign (Josh, 30 Oct 2026): one place per fact. The phone hero no longer repeats the legal
+  // figure; Legal now carries the form, its typed end and Form 6A still to record.
   // Audit S-32: the leave sheet names the form in force and says when the person is on an order.
   const stayLegalStatusNow = liveMovement?.legalStatus ?? livePatient?.legalStatus;
   const leaveLegal = {
@@ -770,18 +756,20 @@ export function PatientNowScreen({
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
     // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the
     // movement's own page with its transport job (not linked when that is this page already).
-    bedHref:
+    bedHref: openable(
       (acceptingUnit ?? stayUnit) !== undefined
         ? `/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
+    ),
     acceptedReferral: acceptedWardFor
       ? {
           unitName: acceptedWardFor.unitName,
-          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`,
+          boardHref: openable(`/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`),
         }
       : undefined,
-    transportHref:
+    transportHref: openable(
       liveMovement && !pathname.includes(movementHref(liveMovement.id)) ? movementHref(liveMovement.id) : undefined,
+    ),
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1075,7 +1063,6 @@ export function PatientNowScreen({
           movementTimeLeft={movementTimeLeft}
           now={now}
           openOperations={openOperations}
-          phoneLegal={phoneLegal}
           phoneMovement={phoneMovement}
           phoneStayStages={phoneStayStages}
           preferredName={preferredName}
@@ -1143,7 +1130,7 @@ export function PatientNowScreen({
                 stays={resolved.stays}
                 absence={stayLeaveBed?.absentWithoutLeave}
                 absenceVoluntary={voluntaryNow}
-                chronologyHref={livePatient ? patientChronologyHref(livePatient.id) : undefined}
+                chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");

@@ -1,11 +1,16 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { SIGN_IN_ACTIONS, SIGN_IN_ROLES } from "@/components/ward-flow-sign-in/ward-flow-sign-in-data";
+import {
+  SHIFT_ROSTER_OPTIONS,
+  SIGN_IN_ACTIONS,
+  SIGN_IN_ROLES,
+} from "@/components/ward-flow-sign-in/ward-flow-sign-in-data";
 import { WardFlowSignInScreen } from "@/components/ward-flow-sign-in/ward-flow-sign-in-screen";
+import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 
 /**
  * The catcher for the new "Sign in and role" screen
@@ -57,6 +62,21 @@ describe("Ward Flow sign-in screen — static credential-field guard", () => {
     for (const file of SCREEN_FILES) {
       const code = stripComments(readFileSync(file, "utf8"));
       expect(code, `${file} wires a credential-shaped attribute`).not.toMatch(credentialAttribute);
+    }
+  });
+});
+
+describe("Ward Flow sign-in screen — static no-storage guard", () => {
+  // Redesign (Josh, 31 Oct 2026): "Open as <role>" signs nobody in and stores nothing. A source scan
+  // refuses every browser store and network call in the screen's own files, so the button cannot
+  // quietly grow a role save. The appearance switch writes the app's theme through `useTheme()`,
+  // which lives outside these files and is not the button.
+  it("names no browser storage, cookie, session or network call in its source files", () => {
+    const storeOrNetwork =
+      /\b(localStorage|sessionStorage|indexedDB|document\.cookie|cookieStore|fetch\s*\(|sendBeacon)/;
+    for (const file of SCREEN_FILES) {
+      const code = stripComments(readFileSync(file, "utf8"));
+      expect(code, `${file} names a store or network call`).not.toMatch(storeOrNetwork);
     }
   });
 });
@@ -119,10 +139,24 @@ describe("Ward Flow sign-in screen renders", () => {
     expect(checkLine).toHaveAttribute("data-ok", "true");
     expect(checkLine?.textContent).toMatch(/access is not enforced/);
 
-    // No "Go in" control: the screen names what the role opens and leaves no credential-shaped
-    // control behind.
+    // Redesign (Josh, 31 Oct 2026): the one control that ends the choices is the "Open as" link. The
+    // old Preview button stays gone, and nothing credential-shaped is left behind.
     expect(screen.queryByRole("button", { name: /^Preview as/ })).toBeNull();
+    expect(screen.getByRole("link", { name: "Open as Duty consultant" })).toHaveAttribute(
+      "href",
+      "/ward-flow/referrals",
+    );
     expect(document.querySelectorAll("input")).toHaveLength(0);
+  });
+
+  it("keeps today's first role, catchment and shift chosen on load", () => {
+    // Today's screen already opens with the bed coordinator, Statewide and the day shift chosen; the
+    // redesign keeps that behaviour rather than adding or removing a pre-selection.
+    render(<WardFlowSignInScreen />);
+    const roles = within(screen.getByRole("group", { name: /^Your role/ })).getAllByRole("button");
+    expect(roles[0]).toHaveAttribute("aria-pressed", "true");
+    expect(roles.slice(1).every((button) => button.getAttribute("aria-pressed") === "false")).toBe(true);
+    expect(screen.getByText("Statewide · Day shift")).toBeInTheDocument();
   });
 
   it("has no not-wired Preview button even in a development build, so nothing says Not wired", () => {
@@ -152,5 +186,84 @@ describe("Ward Flow sign-in screen — skip link target", () => {
   it("is the page's main landmark, which the root layout's 'Skip to main content' link points at", () => {
     const { container } = render(<WardFlowSignInScreen />);
     expect(container.querySelector("main#main-content")).not.toBeNull();
+  });
+});
+
+describe("Ward Flow sign-in screen — Open as only opens a screen", () => {
+  it("opens a real Ward Flow route for every role, and number keys still pick the role", () => {
+    render(<WardFlowSignInScreen />);
+    const roles = within(screen.getByRole("group", { name: /^Your role/ })).getAllByRole("button");
+    // The boxed role numbers are gone, but the keys still work while the list has focus.
+    expect(document.querySelectorAll("kbd")).toHaveLength(0);
+    roles[0]!.focus();
+    fireEvent.keyDown(roles[0]!, { key: "3" });
+    expect(roles[2]).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("link", { name: "Open as ED liaison" })).toHaveAttribute("href", "/ward-flow/ed");
+
+    for (const [index, role] of SIGN_IN_ROLES.entries()) {
+      fireEvent.click(roles[index]!);
+      const link = screen.getByTestId("ward-sign-in-open-as");
+      expect(link).toHaveAccessibleName(`Open as ${role.name}`);
+      const href = link.getAttribute("href") ?? "";
+      // A plain address: no query or fragment carries the chosen role, catchment or shift on.
+      expect(href, role.name).toMatch(/^\/ward-flow(\/[a-z-]+)*$/);
+      const pageFile = path.join(REPO_ROOT, "src", "app", ...href.split("/").filter(Boolean), "page.tsx");
+      expect(existsSync(pageFile), `${role.name} opens ${href}, which has no page`).toBe(true);
+    }
+  });
+
+  it("writes no storage, cookie or session when pressed", () => {
+    render(<WardFlowSignInScreen />);
+    fireEvent.click(screen.getByRole("button", { name: /Governance lead/ }));
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    const removeItem = vi.spyOn(Storage.prototype, "removeItem");
+    const clear = vi.spyOn(Storage.prototype, "clear");
+    const cookieBefore = document.cookie;
+    const cookieSetter = vi.fn();
+    const cookieDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "cookie");
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      get: () => cookieBefore,
+      set: cookieSetter,
+    });
+    try {
+      const link = screen.getByRole("link", { name: "Open as Governance lead" });
+      expect(link).toHaveAttribute("href", "/ward-flow/governance");
+      fireEvent.click(link);
+      expect(setItem).not.toHaveBeenCalled();
+      expect(removeItem).not.toHaveBeenCalled();
+      expect(clear).not.toHaveBeenCalled();
+      expect(cookieSetter).not.toHaveBeenCalled();
+      // Nothing on the page changes either: the same role is still the only one chosen.
+      expect(screen.getByRole("button", { name: /Governance lead/ })).toHaveAttribute("aria-pressed", "true");
+    } finally {
+      delete (document as unknown as Record<string, unknown>).cookie;
+      if (cookieDescriptor) Object.defineProperty(Document.prototype, "cookie", cookieDescriptor);
+      vi.restoreAllMocks();
+    }
+  });
+});
+
+describe("Ward Flow sign-in screen — shifts are the app's one shift pattern", () => {
+  const clock = (minute: number) =>
+    `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
+
+  it("names Day, Evening and Night with the hours SHIFT_PATTERN holds", () => {
+    expect(SHIFT_ROSTER_OPTIONS.map((option) => option.word)).toEqual(
+      SHIFT_PATTERN.map((shift) => shift.name.replace(/ Shift$/, "")),
+    );
+    for (const [index, shift] of SHIFT_PATTERN.entries()) {
+      expect(SHIFT_ROSTER_OPTIONS[index]!.hours).toBe(`${clock(shift.startMinute)} to ${clock(shift.endMinute)}`);
+    }
+  });
+
+  it("shows the shift words on the shift switch", () => {
+    render(<WardFlowSignInScreen />);
+    const shiftSwitch = screen.getByRole("radiogroup", { name: "Shift" });
+    expect(
+      within(shiftSwitch)
+        .getAllByRole("radio")
+        .map((option) => option.textContent),
+    ).toEqual(["Day", "Evening", "Night"]);
   });
 });

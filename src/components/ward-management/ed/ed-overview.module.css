@@ -249,6 +249,13 @@
     flex: none;
   }
 
+  /* Final round (31 Oct 2026): the pills use the kit's sliding chip row (`phoneRows.chipRow`). The row
+     bleeds 12px past each side of the page (above), so the kit's max-width: 100% would stop it, and
+     its fade, 12px short of the screen's edge. */
+  .deptRow.deptRow.deptRow {
+    max-width: none;
+  }
+
   .tile {
     flex-direction: row;
     align-items: center;

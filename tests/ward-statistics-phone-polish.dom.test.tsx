@@ -112,7 +112,9 @@ describe("Compare chart ward labels (UX audit 21 Oct 2026)", () => {
     asPhone();
     renderInProvider(<StatisticsCompareScreen />);
     const chart = screen.getByTestId("ward-statistics-compare-phone");
-    for (const unit of allUnits().slice(0, 5)) expect(chart).toHaveTextContent(unit.name);
+    // The chart opens on its first eight wards; Show all lists every one.
+    fireEvent.click(within(chart).getByRole("button", { name: /^Show all/ }));
+    for (const unit of allUnits()) expect(chart).toHaveTextContent(unit.name);
   });
 });
 
@@ -184,7 +186,14 @@ describe("Compare two wards on a phone (stats-7)", () => {
     fireEvent.change(screen.getByTestId("ward-statistics-compare-pair-a"), { target: { value: first!.id } });
     fireEvent.change(screen.getByTestId("ward-statistics-compare-pair-b"), { target: { value: second!.id } });
     const pair = screen.getByTestId("ward-statistics-compare-pair");
-    for (const label of ["Average stay", "Blockers", "Over 3 months", "Occupancy", "Ready now", "Awaiting answer"]) {
+    for (const label of [
+      "Average stay",
+      "Discharges held up",
+      "Over 3 months",
+      "Occupancy",
+      "Ready now",
+      "Awaiting answer",
+    ]) {
       expect(pair).toHaveTextContent(label);
     }
     expect(within(pair).queryByRole("heading", { name: "Pinned wards" })).toBeNull();

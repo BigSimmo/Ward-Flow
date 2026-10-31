@@ -27,7 +27,6 @@ import {
   type WfTone,
   useIsPhone,
   useIsTabletPortrait,
-  DeltaTwin,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -72,7 +71,6 @@ import {
   type DaysAwayGroupId,
   type RepatDraft,
   type ReturnStatus,
-  bedMeetingComparison,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { ReturnPlan, TravelIcon, canSendReturnPlan, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
@@ -164,9 +162,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
-  const meeting = bedMeetingComparison(admissions ?? liveAdmissions, units, now);
-  // The bed meeting can be yesterday's on an early shift, so the clock names its day when it is not today.
-  const meetingAt = formatInstantWithDay(meeting.at, now);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<Record<string, RepatDraft>>({});
@@ -238,7 +233,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const sorted = [...entries];
   if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
   if (sortOrder === "patient") {
-    sorted.sort((a, b) => patientOf(a).displayName.localeCompare(patientOf(b).displayName, "en-AU"));
+    // D-83: the Name order sorts by surname, so it reads the record's formal (surname-first) name.
+    sorted.sort((a, b) => patientOf(a).formalName.localeCompare(patientOf(b).formalName, "en-AU"));
   }
 
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
@@ -395,7 +391,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     const movementFeedback = draft.receivingWardAgreed
       ? " Return transfer movement queued for bed placement at home health service."
       : " Return movement pending receiving ward agreement.";
-    const recorded = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}.`;
+    const recorded = `Return recorded for ${patientOf(entry).formalName} to ${targetHospitalName}.`;
     repatCheckRef.current = { prior: rejections.length, admissionId, record: recordOf(admissionId), draft };
     runStep(
       {
@@ -415,7 +411,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       {
         success: `${recorded}${movementFeedback}`,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
-        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+        undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
       },
     );
     setDrafts((current) => {
@@ -442,7 +438,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
     // An explicit "Agreed" answer is kept: sending the plan never records it as still pending.
     const wardAgreed = draft.receivingWardAgreed === true;
-    const sentNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. ${
+    const sentNotice = `Return recorded for ${patientOf(entry).formalName} to ${targetHospitalName}. ${
       wardAgreed
         ? "Return transfer movement queued for bed placement at home health service."
         : "Return movement pending receiving ward agreement."
@@ -466,7 +462,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       {
         success: sentNotice,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
-        undone: `Return undone for ${patientOf(entry).displayName}. Nothing is recorded.`,
+        undone: `Return undone for ${patientOf(entry).formalName}. Nothing is recorded.`,
       },
     );
     setDrafts((current) => {
@@ -482,7 +478,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     const existing = recordOf(admissionId);
     if (!existing || existing.receivingWardAgreed) return;
     const targetHospitalName = siteByCode(existing.homeHospital)?.name ?? existing.homeHospital;
-    const agreedNotice = `Return recorded for ${patientOf(entry).displayName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
+    const agreedNotice = `Return recorded for ${patientOf(entry).formalName} to ${targetHospitalName}. Return transfer movement queued for bed placement at home health service.`;
     repatCheckRef.current = { prior: rejections.length, admissionId, record: existing };
     runStep(
       {
@@ -506,7 +502,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         success: agreedNotice,
         undo: (at) => ({ type: "UNDO_REPATRIATION", role: "coordinator", now: at, admissionId }),
         // Undo takes back only the agreement: the sent plan stays, awaiting the receiving ward.
-        undone: `Ward agreement undone for ${patientOf(entry).displayName}. The return plan is back to awaiting the receiving ward.`,
+        undone: `Ward agreement undone for ${patientOf(entry).formalName}. The return plan is back to awaiting the receiving ward.`,
       },
     );
     setRepatNotice(agreedNotice);
@@ -519,7 +515,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const planPatient = (entry: OutOfAreaEntry): PlanPatient => {
     const info = patientOf(entry);
     return {
-      displayName: info.displayName,
+      // D-83: the return plan prints this field as the person's name, so it carries the surname-first form.
+      displayName: info.formalName,
       umrn: info.umrn,
       profileHref: getPatientProfileHref(info),
       legal: legalOf(entry),
@@ -556,7 +553,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       `${countOf("due")} past their discharge date, ${countOf("noplan")} with no return plan.`,
       ...sorted.map((entry) => {
         const info = patientOf(entry);
-        return `${info.displayName}, ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
+        return `${info.formalName}, ${entry.admission.homeRegion}, ${sinceArrivalLabel(entry, now)}, ${dischargeText(offsetOf(entry))}, ${RETURN_STATUS_SHORT[statusOf(entry)]}`;
       }),
       "Synthetic demonstration figures. Not approved for clinical use.",
     ];
@@ -611,7 +608,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     .sort((a, b) => a.record.estimatedAt - b.record.estimatedAt)
     .map(({ record, entry }) => ({
       id: entry.admission.id,
-      name: patientOf(entry).displayName,
+      name: patientOf(entry).formalName,
       to: shortSiteName(record.homeHospital),
       mode: record.mode === "road" ? "Road" : "Flight",
       time: formatInstant(record.estimatedAt),
@@ -625,7 +622,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const regionRows = homeRegionBeds(entries, units, now);
   const readyRows: ReadyRow[] = readyEntries.map((entry) => ({
     id: entry.admission.id,
-    name: patientOf(entry).displayName,
+    name: patientOf(entry).formalName,
     detail: entry.admission.blockReason ?? `${entry.admission.homeRegion} · ${TRAVEL_SHORT[entry.band]}`,
     detailIsReason: entry.admission.blockReason !== null,
     overdue: dischargeShort(offsetOf(entry)),
@@ -635,7 +632,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     .filter((entry) => statusOf(entry) === "started")
     .map((entry) => ({
       id: entry.admission.id,
-      name: patientOf(entry).displayName,
+      name: patientOf(entry).formalName,
       left: missingAnswers(draftFor(entry.admission.id), now).length,
     }));
 
@@ -693,10 +690,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             onSelect={(id) => setSelectedId(id)}
             onClose={() => setSelectedId(null)}
             nextUpId={nextUp?.admission.id}
+            // The phone hero matches the wide one: no bed-meeting comparison, only the bed days.
             since={
               <>
-                <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} /> since the {meetingAt} bed
-                meeting · <b className={styles.mono}>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"}
+                <b className={styles.mono}>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"}
               </>
             }
             onCopy={copySummary}
@@ -815,17 +812,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
           }
           aside={
             <span className={styles.heroActs}>
-              <span className={styles.since} data-testid="ward-out-of-area-since">
-                <span className={styles.sinceLabel}>Since the {meetingAt} bed meeting</span>
-                <span className={styles.sinceTwin}>
-                  <MeetingTwin was={meeting.away} now={entries.length} atLabel={meetingAt} />
-                  <span>away</span>
-                </span>
-                <span className={styles.sinceTwin}>
-                  <MeetingTwin was={meeting.passed} now={countOf("due")} atLabel={meetingAt} />
-                  <span>date passed</span>
-                </span>
-              </span>
+              {/* Redesign (31 Oct 2026): the "since the bed meeting" comparison left the hero, as it was hard
+                  to read; This shift carries the shift's changes. */}
               <LiveChip state="live" onHero />
             </span>
           }
@@ -844,11 +832,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 disabledReason={nextUp ? undefined : "Everyone has a return plan."}
                 reasonDisplay="tooltip"
                 title={
-                  nextUp ? `Opens ${patientOf(nextUp).displayName}, the longest past discharge with no plan` : undefined
+                  nextUp ? `Opens ${patientOf(nextUp).formalName}, the longest past discharge with no plan` : undefined
                 }
                 onClick={() => nextUp && selectPlacement(nextUp.admission.id)}
               >
-                {nextUp ? `Plan next return ${patientOf(nextUp).displayName}` : "Plan next return"}
+                {nextUp ? `Plan next return ${patientOf(nextUp).formalName}` : "Plan next return"}
               </Button>
               <Button
                 variant="onHero"
@@ -875,12 +863,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
               items={[
                 { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
                 { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
-                {
-                  id: "noband",
-                  label: "Other records without home area or travel time",
-                  value: notBanded,
-                  tone: "neutral",
-                },
               ]}
             />
           }
@@ -1021,7 +1003,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                             className={cx(styles.row, isSelected && tableClasses.selected)}
                             aria-selected={isSelected}
                             tabIndex={0}
-                            aria-label={`View placement detail for ${info.displayName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
+                            aria-label={`View placement detail for ${info.formalName} (${info.umrn}), ${entry.admission.homeRegion} in ${entry.unit.name}`}
                             onClick={(event) => selectPlacement(entry.admission.id, event.currentTarget)}
                             onKeyDown={(event) => {
                               if (
@@ -1035,7 +1017,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                           >
                             <td>
                               <span className={styles.two}>
-                                <b title={info.displayName}>{info.displayName}</b>
+                                <b title={info.formalName}>{info.formalName}</b>
                                 <span className={styles.legalUmrn}>
                                   {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
                                       so the gap shows before a return trip is planned. The no-break space
@@ -1049,7 +1031,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                       href={href}
                                       className={styles.umrnLink}
                                       onClick={(event) => event.stopPropagation()}
-                                      title={`Open profile for ${info.displayName} (${info.umrn})`}
+                                      title={`Open profile for ${info.formalName} (${info.umrn})`}
                                     >
                                       {info.umrn}
                                     </Link>
@@ -1145,7 +1127,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   dueSoon={dueSoon}
                   onPick={(id) => selectPlacement(id)}
                 />
-                <HomeBedsCard idPrefix="ward-out-of-area" rows={regionRows} region={region} onRegion={toggleRegion} />
+                <HomeBedsCard
+                  idPrefix="ward-out-of-area"
+                  rows={regionRows}
+                  region={region}
+                  onRegion={toggleRegion}
+                  foldUnchosen
+                />
                 {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
                 {highlight === "due" ? null : (
                   <ReadyCard
@@ -1283,7 +1271,7 @@ function HistoryList({
         .sort((a, b) => b.at - a.at)
         .map((record) => {
           const entry = entries.find((candidate) => candidate.admission.id === record.admissionId);
-          const name = entry ? patientOf(entry).displayName : "Left the ledger";
+          const name = entry ? patientOf(entry).formalName : "Left the ledger";
           return (
             <li key={record.admissionId} className={styles.historyRow}>
               <span className={styles.mono}>{formatInstantWithDay(record.at, now)}</span>
@@ -1311,17 +1299,4 @@ export function sinceArrivalLabel(entry: OutOfAreaEntry, now: Instant): string {
   if (days === null) return "Arrival not recorded";
   if (days === 0) return "Under a day";
   return `${days} ${days === 1 ? "day" : "days"}`;
-}
-
-/** The shared DeltaTwin on the hero band, read against the morning bed meeting. */
-function MeetingTwin({ was, now, atLabel }: { was: number; now: number; atLabel: string }) {
-  return (
-    <DeltaTwin
-      was={was}
-      now={now}
-      label={`${was} at the ${atLabel} bed meeting, ${now} now`}
-      surface="hero"
-      testId="ward-out-of-area-twin"
-    />
-  );
 }

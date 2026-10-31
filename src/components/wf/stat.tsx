@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { cx } from "./cx";
-import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./stat.module.css";
 
 /** Fill colour roles for meters, stacked bars, legends and charts. Status tones or data roles. */
@@ -10,32 +9,6 @@ export type WfFill =
 /** Class for a fill colour role. `hatch` marks pulled, crossing or estimated parts. */
 function fillClass(fill: WfFill = "data-1", hatch = false): string {
   return hatch ? styles.hatch : (styles[`c-${fill}`] ?? styles["c-data-1"]);
-}
-
-export type StatProps = {
-  value: ReactNode;
-  label: ReactNode;
-  /** Glyph before the label. */
-  tone?: WfTone;
-  size?: "sm" | "md" | "lg";
-  className?: string;
-};
-
-/** Mono value over a short label. Put several in a `StatGroup` for hairline separators. */
-export function Stat({ value, label, tone, size = "md", className }: StatProps) {
-  return (
-    <div className={cx(styles.stat, size === "sm" && styles.sm, size === "lg" && styles.lg, className)}>
-      <span className={styles.value}>{value}</span>
-      <span className={styles.label}>
-        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-        {label}
-      </span>
-    </div>
-  );
-}
-
-export function StatGroup({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cx(styles.group, className)}>{children}</div>;
 }
 
 export type MeterProps = {

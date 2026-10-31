@@ -87,11 +87,18 @@ export function HomeBedsCard({
   region,
   onRegion,
   notBanded,
+  foldUnchosen = false,
 }: {
   idPrefix: string;
   rows: HomeRegionBeds[];
   region: string | null;
   onRegion: (region: string) => void;
+  /**
+   * Wider screens (redesign, 31 Oct 2026): the regions read as a column of bars that highlight their
+   * rows, and only the chosen region opens its nearby confirmed beds, instead of every region listing
+   * its wards at once. The phone keeps every region open.
+   */
+  foldUnchosen?: boolean;
   /** Phone only: the desktop states the unbanded records once, in the hero's Checking line. */
   notBanded?: number;
 }) {
@@ -139,7 +146,7 @@ export function HomeBedsCard({
                 </span>
               ) : null}
             </button>
-            {row.options.length ? (
+            {foldUnchosen && region !== row.region ? null : row.options.length ? (
               <ul className={styles.rowList}>
                 {row.options.map((option) => (
                   <li key={option.unit.id} className={styles.bedRow}>

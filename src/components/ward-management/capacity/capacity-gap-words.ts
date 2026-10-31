@@ -45,7 +45,7 @@ export function bedKindsServed(unit: Unit): string {
 }
 
 /** "6 short", "1 spare" or "Enough": a gap in words, never a bare minus sign. */
-export function formatGap(gap: number): string {
+function formatGap(gap: number): string {
   return gap === 0 ? "Enough" : `${Math.abs(gap)} ${gapWord(gap).text}`;
 }
 

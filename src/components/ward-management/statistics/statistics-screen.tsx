@@ -4,29 +4,9 @@ import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, ChevronDown, ChevronUp, Clock, Lock, TrendingUp, Truck, X } from "lucide-react";
+import { Lock, Truck, X } from "lucide-react";
 
-import {
-  Badge,
-  BarList,
-  Button,
-  Card,
-  CardBody,
-  CardFoot,
-  ColumnChart,
-  FilterChip,
-  HeroChip,
-  HeroChips,
-  Icon,
-  StackBar,
-  Spinner,
-  StatusGlyph,
-  buttonClass,
-  durMinutes,
-  tableClasses,
-  useIsPhone,
-  rowDim,
-} from "@/components/wf";
+import { BarList, Card, CardBody, ColumnChart, HeroChip, HeroChips, Spinner, useIsPhone } from "@/components/wf";
 import {
   blockedDischargesByReason,
   bedsBeingPrepared,
@@ -37,7 +17,6 @@ import { serviceStatisticsHref } from "@/components/ward-management/shell/ward-f
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { axisMax } from "@/components/ward-management/statistics/statistics-axis";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
-import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -60,13 +39,17 @@ import {
   type DeclineReason,
 } from "@/components/ward-management/ward-model";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
-import {
-  ED_ELEVATED_PRESSURE_WAIT_MINUTES,
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
+import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 
 import { FlushRow, Follow } from "./statistics-layout";
-import { StatisticsViewBar, useStatisticsView } from "./statistics-view-bar";
+import { useStatisticsView } from "./statistics-view-bar";
+import { FindUnitTool, PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
+import { StatisticsEdJourneysCard } from "./statistics-ed-journeys-card";
+import { StatisticsReferralsTodayCard } from "./statistics-referrals-today-card";
+import { StatisticsWardsCard, useWardTable } from "./statistics-wards-card";
+import { arrivalBandsFor } from "./statistics-bands";
+import { median, shortSiteName, wardFinderEntry, type EdSortKey } from "./statistics-screen-parts";
+import { ReasonCounts, SmallNumberNote, noCountReleased } from "./statistics-count-list";
 
 function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
   return (
@@ -98,6 +81,7 @@ import { StatisticsSummaryPhone } from "./statistics-summary-phone";
 import {
   NetworkOverviewCards,
   ExecutiveNetworkOverviewCards,
+  SiteOverviewCards,
   type SummaryModel,
   type SummarySlots,
   type SummaryEd,
@@ -105,8 +89,8 @@ import {
 import { StatisticsUnitFinder } from "./statistics-unit-finder";
 import { DECLINE_REASON_LABELS, isAwaitingAnswer } from "../ward-referrals";
 import { wardReferralTally } from "./statistics-ward-referrals";
-import { hoursText, occupiedBeds } from "./statistics-occupancy";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { occupiedBeds } from "./statistics-occupancy";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { ForecastTrackRecordCard } from "@/components/ward-management/forecast/forecast-track-record";
 import { FixedQuestionsCard, WaitingStagesCard } from "@/components/ward-management/reports/closing-loop-cards-lazy";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
@@ -143,91 +127,6 @@ function formatReportDay(instant: Instant, dayZero: Date): string {
   return `${weekday} ${day} ${month}`;
 }
 
-/** Minutes as a duration, or "none" when nothing is waiting. */
-const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
-
-/** A median wait to the nearest hour ("6h", "1d 4h"), or "none" when nothing is waiting. */
-const medianText = (minutes: number | null) => (minutes === null ? "none" : hoursText(Math.round(minutes / 60)));
-
-/** "Royal Perth Hospital" reads "Royal Perth" in the narrow ED table; the site code leads the row. */
-const shortSiteName = (name: string) =>
-  name
-    .replace(/ Emergency Department$/, "")
-    .replace(/ (Memorial |General )?(Hospital|Health Campus|Health Service)$/, "");
-
-const median = (values: number[]): number | null => {
-  if (values.length === 0) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-};
-
-const PRESSURE_ROWS = 10;
-
-/** Whole hours, as a short label ("4h"). */
-const hoursLabel = (minutes: number) => `${Math.round(minutes / 60)}h`;
-
-/**
- * Pull to arrival, banded against the configured pull hold rather than typed hours: under half the
- * hold, the rest of the hold, up to twice the hold, and longer.
- */
-function arrivalBandsFor(holdMinutes: number): Array<{ id: string; label: string; from: number; to: number }> {
-  const half = holdMinutes / 2;
-  const twice = holdMinutes * 2;
-  return [
-    { id: "half-hold", label: `Under ${hoursLabel(half)}`, from: 0, to: half },
-    { id: "hold", label: `${hoursLabel(half)} to ${hoursLabel(holdMinutes)}`, from: half, to: holdMinutes },
-    { id: "twice-hold", label: `${hoursLabel(holdMinutes)} to ${hoursLabel(twice)}`, from: holdMinutes, to: twice },
-    { id: "longer", label: `Over ${hoursLabel(twice)}`, from: twice, to: Number.POSITIVE_INFINITY },
-  ];
-}
-
-type WardSortKey = "name" | "beds" | "ready" | "occ" | "ref";
-type EdSortKey = "name" | "waiting" | "longest" | "median" | "over8" | "over24";
-
-function SortTh<K extends string>({
-  id,
-  label,
-  sort,
-  asc,
-  onSort,
-  numeric = false,
-}: {
-  id: K;
-  label: string;
-  sort: K;
-  asc: boolean;
-  onSort: (id: K) => void;
-  numeric?: boolean;
-}) {
-  const active = sort === id;
-  return (
-    <th
-      scope="col"
-      className={`${styles.sortTh} ${numeric ? styles.num : ""}`}
-      aria-sort={active ? (asc ? "ascending" : "descending") : "none"}
-    >
-      <button type="button" onClick={() => onSort(id)}>
-        {label}
-        {active ? <Icon icon={asc ? ChevronUp : ChevronDown} size={14} /> : null}
-      </button>
-    </th>
-  );
-}
-
-/** H-0187: every site code in the ward table, spelt out once under it. */
-function SiteCodeKey({ sites }: { sites: readonly { code: string; name: string }[] }) {
-  const named = [...new Map(sites.map((site) => [site.code, site.name])).entries()].toSorted(([a], [b]) =>
-    a.localeCompare(b),
-  );
-  if (named.length === 0) return null;
-  return (
-    <p className={`${styles.sub} ${styles.muted}`} data-testid="ward-statistics-site-key">
-      Site codes: {named.map(([code, name]) => `${code} ${name}`).join(" · ")}
-    </p>
-  );
-}
-
 type StatisticsInputs = {
   admissions?: Admission[];
   referrals?: Referral[];
@@ -260,6 +159,7 @@ function ExecutiveStatisticsScreen() {
     hospital: data.catalogue.sites.find((site) => site.code === ward.siteCode)?.name ?? ward.siteCode,
     beds: ward.beds.total,
     ready: ward.beds.ready,
+    pendingPreparation: ward.pendingPreparation,
     occupancyRate: ward.beds.total ? ward.beds.inUse / ward.beds.total : 0,
     referred: ward.awaitingAnswer,
   }));
@@ -371,8 +271,16 @@ function OperationalStatisticsScreen({
     configuration,
   } = live.state;
   const now = live.now;
-  const { countsOnly } = useStatisticsCounts();
+  const { countsOnly: countsOnlyGrant } = useStatisticsCounts();
   const isPhone = useIsPhone();
+  // Role view (site bed manager, D-80): hero, wards and ED tables read its own site; the service card keeps
+  // every site as counts. A `counts` grant, so cards that list journeys or people are left out.
+  const access = useEffectiveWardAccess();
+  const siteCode = access.role === "bed_manager" && access.scope.kind === "site" ? access.scope.siteCode : undefined;
+  const siteName = siteCode === undefined ? undefined : (siteByCode(siteCode)?.name ?? siteCode);
+  const siteUnits = siteCode === undefined ? units : units.filter((unit) => unit.siteCode === siteCode);
+  const countsOnly = countsOnlyGrant || siteCode !== undefined;
+  const OverviewCards = siteCode === undefined ? NetworkOverviewCards : SiteOverviewCards;
 
   const sourceAdmissions = admissions ?? liveAdmissions;
   const sourceReferrals = referrals ?? liveReferrals;
@@ -385,17 +293,17 @@ function OperationalStatisticsScreen({
   const declinesReadout = readDeclinesByReason(sourceMovements);
   const blocked = blockedDischargesByReason(sourceAdmissions);
 
-  const totalBeds = units.reduce((sum, u) => sum + u.beds, 0);
-  const occupancy = occupiedBeds(units, sourceAdmissions, sourceBedReleases, leaveBeds);
+  const totalBeds = siteUnits.reduce((sum, u) => sum + u.beds, 0);
+  const occupancy = occupiedBeds(siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds);
   const occupiedCount = occupancy.occupied;
   // L1: the percentage and the count beside it are the one occupancy figure, Occupied + Pulled.
   const inUseCount = occupancy.inUse;
   // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
   const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 1000) / 10 : 0;
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-  const availableNow = totalReadyBedsNow(units, sourceAdmissions, sourceBedReleases);
+  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
-  const pendingPreparation = units.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
+  const pendingPreparation = siteUnits.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
   // Open ED-origin journeys retain accountability through transit; Still open also includes other origins.
   const waitingCount = openEdJourneys(sourceMovements, now).total;
   const stillOpenCount = refused.openMovementCount;
@@ -407,24 +315,28 @@ function OperationalStatisticsScreen({
 
   // Emergency departments
   const emergencyDepts = useMemo(() => {
-    return allEmergencyDepartments()
-      .map((ed) => {
-        const figures = edWaitFigures(sourceMovements, ed.id, now);
-        const waits = figures.waitingMovements.map((w) => w.waitMinutes);
-        return {
-          id: ed.id,
-          name: shortSiteName(ed.name),
-          site: ed.siteCode,
-          waiting: figures.onTheList,
-          longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
-          median: median(waits),
-          over8: waits.filter((minutes) => minutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
-          over24: figures.over24h,
-          waits,
-        };
-      })
-      .sort((a, b) => b.waiting - a.waiting || (b.longest ?? 0) - (a.longest ?? 0));
-  }, [sourceMovements, now]);
+    return (
+      allEmergencyDepartments()
+        // Bed manager: its own site's ED only. Another ED's row would count only journeys to this site.
+        .filter((ed) => siteCode === undefined || ed.siteCode === siteCode)
+        .map((ed) => {
+          const figures = edWaitFigures(sourceMovements, ed.id, now);
+          const waits = figures.waitingMovements.map((w) => w.waitMinutes);
+          return {
+            id: ed.id,
+            name: shortSiteName(ed.name),
+            site: ed.siteCode,
+            waiting: figures.onTheList,
+            longest: figures.longestWait ? figures.longestWait.waitMinutes : null,
+            median: median(waits),
+            over8: waits.filter((minutes) => minutes >= ED_SEVERE_PRESSURE_WAIT_MINUTES).length,
+            over24: figures.over24h,
+            waits,
+          };
+        })
+        .sort((a, b) => b.waiting - a.waiting || (b.longest ?? 0) - (a.longest ?? 0))
+    );
+  }, [sourceMovements, now, siteCode]);
 
   const totalEdWaiting = emergencyDepts.reduce((s, d) => s + d.waiting, 0);
   const networkMedianWait = median(emergencyDepts.flatMap((d) => d.waits));
@@ -432,7 +344,7 @@ function OperationalStatisticsScreen({
   const totalEdOver24 = emergencyDepts.reduce((s, d) => s + d.over24, 0);
 
   const allPressureWards = useMemo(() => {
-    return units.map((u) => {
+    return siteUnits.map((u) => {
       const occupancyRate =
         u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).inUse / u.beds : 0;
       return {
@@ -442,11 +354,12 @@ function OperationalStatisticsScreen({
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
         ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+        pendingPreparation: bedsPendingPreparation(u.id, sourceBedReleases),
         occupancyRate,
         referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };
     });
-  }, [units, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
+  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -494,7 +407,7 @@ function OperationalStatisticsScreen({
         dayZero,
         paused: live.paused,
         togglePause: live.togglePause,
-        scopeLabel: "whole network",
+        scopeLabel: siteName ?? "whole network",
         refused,
         preparingCount,
         arrivals,
@@ -506,7 +419,8 @@ function OperationalStatisticsScreen({
         occupiedPct,
         availableNow,
         pendingPreparation,
-        waitingCount,
+        // Bed manager: its own ED's open journeys, the figure the ED table below totals.
+        waitingCount: siteCode === undefined ? waitingCount : totalEdWaiting,
         stillOpenCount,
         admissionsCount,
         dischargesCount,
@@ -532,6 +446,7 @@ function OperationalStatisticsScreen({
         arrivalBands,
         parallelReferralCap: configuration.parallelReferralCap,
       }}
+      siteName={siteName}
       slots={{
         capacity: (
           <StatisticsCapacityChart
@@ -543,7 +458,7 @@ function OperationalStatisticsScreen({
           />
         ),
         overview: (
-          <NetworkOverviewCards
+          <OverviewCards
             units={units}
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
@@ -586,7 +501,16 @@ function OperationalStatisticsScreen({
   );
 }
 
-function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: SummarySlots }) {
+function StatisticsSummaryView({
+  model,
+  slots,
+  siteName,
+}: {
+  model: SummaryModel;
+  slots: SummarySlots;
+  /** Set for a site bed manager: its wards and ED lead the board, and no closed section is linked. */
+  siteName?: string;
+}) {
   const {
     executive,
     directory,
@@ -595,7 +519,6 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     paused,
     togglePause,
     scopeLabel,
-    refused,
     preparingCount,
     arrivals,
     declinesReadout,
@@ -608,7 +531,6 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     pendingPreparation,
     waitingCount,
     stillOpenCount,
-    admissionsCount,
     dischargesCount,
     emergencyDepts,
     totalEdWaiting,
@@ -621,9 +543,9 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     refDeclined,
     refOpen,
     arrivalBands,
-    parallelReferralCap,
   } = model;
   const service = useServiceScope();
+  const canOpen = useCanOpenHref();
   const { small: operationalSmall } = useStatisticsCounts();
   const small = (count: StatisticsCount) => statisticsCountText(count, operationalSmall);
   const barValue = (count: StatisticsCount) => withheldBar(exactStatisticsCount(count) ?? 0, small(count));
@@ -636,23 +558,14 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     (best, ed) => (ed.longest !== null && (best === null || (best.longest ?? 0) < ed.longest) ? ed : best),
     null,
   );
-  // Table state. The two tables' typed filters went in the search and forms review (Josh, 30 Oct
-  // 2026): about 23 wards and 15 EDs sort and show more without one, and the header search finds
-  // either by name.
-  const [wardOverLine, setWardOverLine] = useState(false);
-  const [wardShowAll, setWardShowAll] = useState(false);
-  const [wardSortCol, setWardSortCol] = useState<WardSortKey>("occ");
-  const [wardSortAsc, setWardSortAsc] = useState(false);
+  // Table state. The two tables' typed filters went in the search and forms review (D-91, Josh,
+  // 30 Oct 2026): about 23 wards and 15 EDs sort and show more without one, and the header search
+  // finds either by name.
+  // D-91: the one unit finder, opened from "Open a unit" on the tab row.
+  const unitFinder = useUnitFinder();
+  const wardTable = useWardTable(allPressureWards, isPhone);
   const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
   const [edSortAsc, setEdSortAsc] = useState(false);
-
-  const handleWardSort = (col: WardSortKey) => {
-    if (wardSortCol === col) setWardSortAsc((prev) => !prev);
-    else {
-      setWardSortCol(col);
-      setWardSortAsc(col === "name");
-    }
-  };
 
   const handleEdSort = (col: EdSortKey) => {
     if (edSortCol === col) setEdSortAsc((prev) => !prev);
@@ -661,36 +574,6 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
       setEdSortAsc(col === "name");
     }
   };
-
-  const overLineCount = allPressureWards.filter(
-    (w) => Math.round(w.occupancyRate * 100) >= BED_ALERT_THRESHOLD_PERCENT,
-  ).length;
-
-  const filteredAndSortedWards = useMemo(() => {
-    if (isPhone) return [];
-    const list = allPressureWards.slice();
-    const value = (w: (typeof list)[number]): number | string | null =>
-      wardSortCol === "name"
-        ? w.name
-        : wardSortCol === "beds"
-          ? w.beds
-          : wardSortCol === "ready"
-            ? w.ready
-            : wardSortCol === "ref"
-              ? exactStatisticsCount(w.referred)
-              : w.occupancyRate;
-    list.sort((a, b) => {
-      const vA = value(a);
-      const vB = value(b);
-      if (vA === null || vB === null) return vA === vB ? a.name.localeCompare(b.name) : vA === null ? 1 : -1;
-      if (vA < vB) return wardSortAsc ? -1 : 1;
-      if (vA > vB) return wardSortAsc ? 1 : -1;
-      return a.name.localeCompare(b.name);
-    });
-    return list;
-  }, [isPhone, allPressureWards, wardSortCol, wardSortAsc]);
-
-  const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
     if (isPhone) return [];
@@ -718,20 +601,16 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     return list;
   }, [isPhone, emergencyDepts, edSortCol, edSortAsc]);
 
-  // The finder is desktop only, so the phone skips building and sorting its lists.
+  // A phone shows the finder only when a link arrives at its anchor, so it skips building and
+  // sorting the lists until then. A bed manager's desk never shows it.
+  const phoneSkipsFinder = isPhone && (siteName !== undefined || !unitFinder.open);
   const finderLists = useMemo<Record<FinderKind, FinderEntry[]>>(
     () =>
-      isPhone
+      phoneSkipsFinder
         ? { ward: [], ed: [], service: [], team: [] }
         : {
             ward: allPressureWards
-              .map((ward) => ({
-                id: ward.id,
-                name: ward.name,
-                code: ward.site,
-                meta: String(ward.ready) + " ready",
-                ready: ward.ready,
-              }))
+              .map(wardFinderEntry)
               .sort((left, right) => right.ready - left.ready || left.name.localeCompare(right.name)),
             ed: emergencyDepts
               .filter((ed) => directory === undefined || directory.edIds.includes(ed.id))
@@ -747,15 +626,46 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
             }),
             team: directory?.teams ?? COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
           },
-    [isPhone, allPressureWards, emergencyDepts, directory, operationalSmall],
+    [phoneSkipsFinder, allPressureWards, emergencyDepts, directory, operationalSmall],
   );
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
+  // Role view (executive): a count the small number rule withholds reads "not shown". At a glance it
+  // says nothing, so the hero and card headings leave it out; the card body still lists it.
+  const notShown = (count: StatisticsCount) => executive && typeof count !== "number" && count.kind === "withheld";
+  // Referrals today, beside Where beds are available, or on its own row for a bed manager.
+  const referralsToday = (
+    <StatisticsReferralsTodayCard model={model} small={small} reportDayCaption={reportDayCaption} />
+  );
+  // The wards and ED tables, drawn first for a bed manager and after the bed cards otherwise.
+  const siteDetail = (
+    <div className={styles.grid2}>
+      <StatisticsWardsCard wards={allPressureWards} table={wardTable} siteName={siteName} small={small} />
+
+      <StatisticsEdJourneysCard
+        siteName={siteName}
+        longestEd={longestEd}
+        edSortCol={edSortCol}
+        edSortAsc={edSortAsc}
+        handleEdSort={handleEdSort}
+        filteredAndSortedEds={filteredAndSortedEds}
+        departmentCount={emergencyDepts.length}
+        small={small}
+        totalEdWaiting={totalEdWaiting}
+        networkMedianWait={networkMedianWait}
+        totalEdOver8={totalEdOver8}
+        totalEdOver24={totalEdOver24}
+      />
+    </div>
+  );
 
   if (isPhone) {
     return (
       <>
         <StatisticsSummaryPhone
+          // Bed manager: the phone hero names its site, as the desktop eyebrow does.
+          eyebrow={siteName ? `Statistics · ${siteName}` : undefined}
+          totalBeds={totalBeds}
           ready={availableNow}
           beingMadeReady={pendingPreparation}
           occupied={inUseCount}
@@ -806,6 +716,14 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
           paused={paused}
           onTogglePause={togglePause ?? undefined}
         />
+        {/* Bed manager: no finder, as on the desktop. */}
+        {siteName ? null : (
+          <PhoneUnitFinder
+            open={unitFinder.open}
+            onClose={unitFinder.toggle}
+            finder={<StatisticsUnitFinder lists={finderLists} />}
+          />
+        )}
         {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
             hours and no total fit a phone's width without a sideways scroll. */}
         <aside className={trendStyles.phoneSlot} aria-label="This session">
@@ -821,6 +739,7 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
         <StatisticsHero
           section="hub"
           navTestId="ward-statistics-index"
+          tools={siteName ? undefined : <FindUnitTool open={unitFinder.open} onToggle={unitFinder.toggle} />}
           eyebrow={`Statistics · ${scopeLabel} · as at ${formatInstant(now)}`}
           // H-0887: the page heading names the page, not only the count.
           title={
@@ -851,43 +770,65 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
           chips={
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
-              <HeroChip value={inUseCount} label={`${occupiedPct.toFixed(1)}% in use`} />
+              {/* The count names its noun first, its share after. */}
+              <HeroChip value={inUseCount} label={`In use · ${occupiedPct.toFixed(1)}%`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
-              <HeroChip
-                value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}
-                label={
-                  <>
-                    Admissions ended today
-                    <span className={styles.srOnly} data-testid="ward-statistics-discharges-today-caption">
-                      {reportDayCaption}
-                    </span>
-                  </>
-                }
-              />
-              <HeroChip
-                value={small(waitingCount)}
-                // Five chips at most; the open-journey figure rides with the waiting one it contains.
-                label="Open ED journeys"
-                onPress={() =>
-                  document
-                    .querySelector('[data-testid="ward-statistics-emergency-departments"]')
-                    ?.scrollIntoView({ block: "start" })
-                }
-              />
+              {notShown(dischargesCount) ? null : (
+                <HeroChip
+                  value={<span data-testid="ward-statistics-discharges-today-count">{small(dischargesCount)}</span>}
+                  label={
+                    <>
+                      Admissions ended today
+                      <span className={styles.srOnly} data-testid="ward-statistics-discharges-today-caption">
+                        {reportDayCaption}
+                      </span>
+                    </>
+                  }
+                />
+              )}
+              {notShown(waitingCount) ? null : (
+                <HeroChip
+                  value={small(waitingCount)}
+                  // Five chips at most; the open-journey figure rides with the waiting one it contains.
+                  label="Open ED journeys"
+                  onPress={() =>
+                    document
+                      .querySelector('[data-testid="ward-statistics-emergency-departments"]')
+                      ?.scrollIntoView({ block: "start" })
+                  }
+                />
+              )}
             </HeroChips>
           }
         />
 
+        {/* Role view (executive): one sentence for the small number rule, so "not shown" and "fewer
+            than 5" further down are explained once instead of puzzling on every card. */}
+        {executive ? <SmallNumberNote className={styles.notice} /> : null}
+
         {service === null || scopeLabel !== "whole network" ? null : (
           <p className={styles.notice} data-testid="ward-statistics-service-scope-sentence">
-            {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}{" "}
-            <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
-              {`Open ${service} statistics`}
-            </Link>
+            {`Set to ${service}. This page is the whole network's own, so these figures already include ${service}.`}
+            {/* Linked only for a desk that may open the service's page (access audit, 31 Oct 2026). */}
+            {canOpen(serviceStatisticsHref(service)) ? (
+              <>
+                {" "}
+                <Link href={serviceStatisticsHref(service)} data-testid="ward-statistics-service-scope-link">
+                  {`Open ${service} statistics`}
+                </Link>
+              </>
+            ) : null}
           </p>
         )}
 
-        <StatisticsViewBar view={view} onChoose={chooseView} />
+        <StatisticsViewSwitch
+          view={view}
+          onChoose={chooseView}
+          // Bed manager: no Open a unit. The finder lists every ward, ED, service and team, and this desk
+          // opens only its own site's wards, which its wards table below already lists.
+          finder={siteName ? undefined : <StatisticsUnitFinder lists={finderLists} />}
+          finderOpen={unitFinder.open}
+        />
 
         {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
         {view === "board" ? null : <div id="board" hidden />}
@@ -895,376 +836,26 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
         {view === "map" ? slots.map : <div id="map" hidden />}
         {view !== "board" ? null : (
           <div id="board" className={styles.stack}>
-            <FlushRow layout="lead2" id="beds">
-              <div className={styles.stack} data-testid="ward-statistics-patients">
-                {slots.capacity}
-              </div>
-
-              <Follow stack>
-                <StatisticsUnitFinder lists={finderLists} />
-
-                <StatCard
-                  icon={ArrowRight}
-                  title="Referrals today"
-                  data-testid="ward-statistics-referrals-for-bed"
-                  action={
-                    executive ? undefined : (
-                      <Link href="/ward-flow/referrals" className={buttonClass({ variant: "sec", size: "sm" })}>
-                        Open referrals
-                      </Link>
-                    )
-                  }
-                >
-                  <CardBody className={styles.bodyStack}>
-                    <dl className={styles.figures} id="refBand" aria-label="Referrals for a bed today">
-                      <div className={styles.figure}>
-                        <dt className={styles.figureLabel}>Raised</dt>
-                        <dd className={styles.figureValue}>{small(refRaised)}</dd>
-                      </div>
-                      <div className={styles.figure}>
-                        <dt className={styles.figureLabel}>
-                          <StatusGlyph tone="success" size={9} />
-                          Accepted
-                        </dt>
-                        <dd className={styles.figureValue}>{small(refAccepted)}</dd>
-                      </div>
-                      <div className={styles.figure}>
-                        <dt className={styles.figureLabel}>
-                          <StatusGlyph tone="closed" size={9} />
-                          Declined
-                        </dt>
-                        <dd className={styles.figureValue}>{small(refDeclined)}</dd>
-                      </div>
-                      <div className={styles.figure}>
-                        <dt className={styles.figureLabel}>
-                          <StatusGlyph tone="neutral" size={9} />
-                          Still open
-                        </dt>
-                        <dd className={styles.figureValue}>{small(refOpen)}</dd>
-                      </div>
-                    </dl>
-                    {[refAccepted, refDeclined, refOpen].some((count) => exactStatisticsCount(count) === null) ? (
-                      <p className={styles.muted}>{statisticsCountText({ kind: "withheld" })}</p>
-                    ) : (
-                      <StackBar
-                        label="Referrals raised today"
-                        segments={[
-                          {
-                            id: "accepted",
-                            label: "Accepted",
-                            value: exactStatisticsCount(refAccepted)!,
-                            fill: "data-1",
-                          },
-                          {
-                            id: "declined",
-                            label: "Declined",
-                            value: exactStatisticsCount(refDeclined)!,
-                            fill: "data-2",
-                          },
-                          { id: "open", label: "Still open", value: exactStatisticsCount(refOpen)!, fill: "data-3" },
-                        ]}
-                      />
-                    )}
-                    {/* Two across so no label is cut (device audit 11 Oct 2026: "Refused so fa..."). */}
-                    <div className={`${styles.tiles} ${styles.tilesTwo}`} data-testid="ward-statistics-refused-so-far">
-                      <div className={styles.tile}>
-                        <h3 className={styles.srOnly}>Referrals where every ward asked so far has refused</h3>
-                        <p className={styles.tileLabel} aria-hidden="true">
-                          Refused so far
-                        </p>
-                        <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-count">
-                          <span data-testid="ward-statistics-refused-so-far-value">{small(refused.count)}</span>
-                          <small>
-                            of{" "}
-                            <span data-testid="ward-statistics-refused-so-far-open-count">
-                              {small(refused.openMovementCount)}
-                            </span>
-                          </small>
-                        </p>
-                      </div>
-                      <div className={styles.tile} data-testid="ward-statistics-refused-so-far-escalated">
-                        <p className={styles.tileLabel} aria-hidden="true">
-                          Escalated
-                        </p>
-                        <p className={styles.tileValue} aria-hidden="true">
-                          {small(refused.escalatedCount)}
-                        </p>
-                        <span className={styles.srOnly}>
-                          {` ${small(refused.escalatedCount)} open ${refused.escalatedCount === 1 ? "movement carries" : "movements carry"} a recorded escalation.`}
-                        </span>
-                      </div>
-                      <div className={styles.tile}>
-                        <p className={styles.tileLabel}>
-                          Admitted today
-                          <span className={styles.srOnly} data-testid="ward-statistics-admissions-today-caption">
-                            {reportDayCaption}
-                          </span>
-                        </p>
-                        <p className={styles.tileValue}>
-                          <span data-testid="ward-statistics-admissions-today-count">{small(admissionsCount)}</span>
-                        </p>
-                      </div>
-                      <div className={styles.tile}>
-                        <p className={styles.tileLabel}>Parallel cap</p>
-                        <p className={styles.tileValue} data-testid="ward-statistics-refused-so-far-cap">
-                          {parallelReferralCap}
-                        </p>
-                      </div>
-                    </div>
-                  </CardBody>
-                </StatCard>
-              </Follow>
-            </FlushRow>
-
-            {/* D-77 (change 9): Overview's figures that this page lacked, once each, above the pressure. */}
+            {/* Summary first: occupancy by service across the top (D-77's figures, once). */}
+            {/* Bed manager: its own site's wards and ED lead the board (D-80); the cards below keep
+                every site as bed counts. */}
+            {siteName ? siteDetail : null}
             {slots.overview}
+            {siteName ? (
+              // Bed manager: no Where beds are available (hospital-by-hospital beds are for placing).
+              <div id="beds">{referralsToday}</div>
+            ) : (
+              <FlushRow layout="lead2" id="beds">
+                <div className={styles.stack} data-testid="ward-statistics-patients">
+                  {slots.capacity}
+                </div>
 
-            <div className={styles.grid2}>
-              <StatCard
-                icon={TrendingUp}
-                title="Where the pressure is"
-                meta="Occupancy, awaiting answer"
-                data-testid="ward-statistics-pressure"
-              >
-                <div className={styles.toolbar}>
-                  <FilterChip
-                    pressed={wardOverLine}
-                    onPressedChange={setWardOverLine}
-                    tone="warning"
-                    count={overLineCount}
-                  >
-                    {`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
-                  </FilterChip>
-                  <span className={styles.toolbarEnd} id="wardFilterCount" role="status">
-                    {wardOverLine ? (
-                      <>
-                        <b>{overLineCount}</b> of {filteredAndSortedWards.length}{" "}
-                        <span className={styles.srOnly}>synthetic rows</span> highlighted, all rows stay
-                      </>
-                    ) : (
-                      <>
-                        <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}{" "}
-                        <span className={styles.srOnly}>synthetic rows</span>
-                      </>
-                    )}
-                  </span>
-                </div>
-                <div className={styles.tableWrap}>
-                  <table className={`${tableClasses.table} ${styles.table}`} id="wardPressureTable">
-                    <caption className={styles.srOnly}>Inpatient mental health ward capacity and demand</caption>
-                    <thead>
-                      <tr>
-                        <SortTh id="name" label="Ward" sort={wardSortCol} asc={wardSortAsc} onSort={handleWardSort} />
-                        <SortTh
-                          id="beds"
-                          label="Beds"
-                          sort={wardSortCol}
-                          asc={wardSortAsc}
-                          onSort={handleWardSort}
-                          numeric
-                        />
-                        <SortTh
-                          id="ready"
-                          label="Ready"
-                          sort={wardSortCol}
-                          asc={wardSortAsc}
-                          onSort={handleWardSort}
-                          numeric
-                        />
-                        <SortTh
-                          id="occ"
-                          label="Occupancy"
-                          sort={wardSortCol}
-                          asc={wardSortAsc}
-                          onSort={handleWardSort}
-                          numeric
-                        />
-                        <SortTh
-                          id="ref"
-                          label="Awaiting"
-                          sort={wardSortCol}
-                          asc={wardSortAsc}
-                          onSort={handleWardSort}
-                          numeric
-                        />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleWards.map((w) => {
-                        const percent = Math.round(w.occupancyRate * 100);
-                        const over = percent >= BED_ALERT_THRESHOLD_PERCENT;
-                        return (
-                          <tr key={w.id} {...rowDim(wardOverLine && !over)}>
-                            <th scope="row">
-                              {w.name}
-                              <span className={styles.code} title={w.hospital}>
-                                {w.site}
-                                <span className={styles.srOnly}>, {w.hospital}</span>
-                              </span>
-                              {w.ready === 0 && w.occupancyRate === 1 ? (
-                                <Badge variant="plain" tone="neutral" size="sm">
-                                  Full
-                                </Badge>
-                              ) : null}
-                            </th>
-                            <td className={styles.num}>{w.beds}</td>
-                            <td className={`${styles.num} ${w.ready === 0 ? styles.zero : ""}`}>{w.ready}</td>
-                            <td className={styles.num}>
-                              <span className={styles.occBar}>
-                                <span className={styles.occTrack} aria-hidden="true">
-                                  <span className={styles.occFill} style={{ width: `${Math.min(100, percent)}%` }} />
-                                  <span
-                                    className={styles.occTick}
-                                    style={{ left: `${BED_ALERT_THRESHOLD_PERCENT}%` }}
-                                  />
-                                </span>
-                                <span className={styles.occValue}>
-                                  {over ? <StatusGlyph tone="warning" size={9} /> : null}
-                                  {percent}%
-                                </span>
-                              </span>
-                            </td>
-                            <td
-                              className={`${styles.num} ${exactStatisticsCount(w.referred) === 0 ? styles.zero : ""}`}
-                            >
-                              {small(w.referred)}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                <SiteCodeKey sites={visibleWards.map((w) => ({ code: w.site, name: w.hospital }))} />
-                <CardFoot
-                  meta={
-                    filteredAndSortedWards.length > PRESSURE_ROWS ? (
-                      <Button size="sm" variant="ghost" onClick={() => setWardShowAll((value) => !value)}>
-                        {wardShowAll ? `Show top ${PRESSURE_ROWS}` : `Show all ${filteredAndSortedWards.length}`}
-                      </Button>
-                    ) : undefined
-                  }
-                >
-                  <Link href="/ward-flow/statistics/compare#choose-a-unit" className={styles.footLink}>
-                    Compare wards
-                  </Link>
-                </CardFoot>
-              </StatCard>
+                <Follow stack>{referralsToday}</Follow>
+              </FlushRow>
+            )}
 
-              <StatCard
-                icon={Clock}
-                title="Open ED journeys"
-                data-testid="ward-statistics-emergency-departments"
-                aside={
-                  longestEd && longestEd.longest !== null ? (
-                    <Badge
-                      tone={
-                        longestEd.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES
-                          ? "danger"
-                          : longestEd.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES
-                            ? "warning"
-                            : undefined
-                      }
-                    >
-                      {`${durMinutes(Math.round(longestEd.longest))} longest, ${longestEd.site}`}
-                    </Badge>
-                  ) : undefined
-                }
-              >
-                <div className={styles.toolbar}>
-                  <span className={styles.toolbarEnd} id="edFilterCount">
-                    {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
-                  </span>
-                </div>
-                <div className={styles.tableWrap}>
-                  <table className={`${tableClasses.table} ${styles.table}`} id="edPressureTable">
-                    <caption className={styles.srOnly}>Emergency department waits for a mental health bed</caption>
-                    <thead>
-                      <tr>
-                        <SortTh id="name" label="Site" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} />
-                        <SortTh
-                          id="waiting"
-                          label="Open ED journeys"
-                          sort={edSortCol}
-                          asc={edSortAsc}
-                          onSort={handleEdSort}
-                          numeric
-                        />
-                        <SortTh
-                          id="longest"
-                          label="Longest"
-                          sort={edSortCol}
-                          asc={edSortAsc}
-                          onSort={handleEdSort}
-                          numeric
-                        />
-                        <SortTh
-                          id="median"
-                          label="Median"
-                          sort={edSortCol}
-                          asc={edSortAsc}
-                          onSort={handleEdSort}
-                          numeric
-                        />
-                        <SortTh id="over8" label="8h+" sort={edSortCol} asc={edSortAsc} onSort={handleEdSort} numeric />
-                        <SortTh
-                          id="over24"
-                          label="24h+"
-                          sort={edSortCol}
-                          asc={edSortAsc}
-                          onSort={handleEdSort}
-                          numeric
-                        />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredAndSortedEds.map((d) => (
-                        <tr key={d.id}>
-                          <th scope="row" className={styles.siteCell}>
-                            <b className={styles.codeLead}>{d.site}</b>
-                            <span className={styles.siteName} title={d.name}>
-                              {d.name}
-                            </span>
-                          </th>
-                          <td className={`${styles.num} ${exactStatisticsCount(d.waiting) === 0 ? styles.zero : ""}`}>
-                            {small(d.waiting)}
-                          </td>
-                          <td className={`${styles.num} ${d.longest === null ? styles.zero : ""}`}>
-                            <span className={styles.flagged}>
-                              {d.longest !== null && d.longest >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? (
-                                <StatusGlyph tone="danger" size={9} />
-                              ) : d.longest !== null && d.longest >= ED_ELEVATED_PRESSURE_WAIT_MINUTES ? (
-                                <StatusGlyph tone="warning" size={9} />
-                              ) : null}
-                              {waitText(d.longest)}
-                            </span>
-                          </td>
-                          <td className={`${styles.num} ${d.median === null ? styles.zero : ""}`}>
-                            {medianText(d.median)}
-                          </td>
-                          <td className={`${styles.num} ${exactStatisticsCount(d.over8) === 0 ? styles.zero : ""}`}>
-                            {small(d.over8)}
-                          </td>
-                          <td className={`${styles.num} ${exactStatisticsCount(d.over24) === 0 ? styles.zero : ""}`}>
-                            {small(d.over24)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr>
-                        <th scope="row">All {emergencyDepts.length} departments</th>
-                        <td className={styles.num}>{small(totalEdWaiting)}</td>
-                        <td className={styles.num}>{waitText(longestEd?.longest ?? null)}</td>
-                        <td className={styles.num}>{medianText(networkMedianWait)}</td>
-                        <td className={styles.num}>{small(totalEdOver8)}</td>
-                        <td className={styles.num}>{small(totalEdOver24)}</td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              </StatCard>
-            </div>
+            {/* Coordinator: the wards and EDs after the bed cards. */}
+            {siteName ? null : siteDetail}
 
             <div className={styles.grid3}>
               <StatCard
@@ -1272,38 +863,58 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
                 title="Discharges held up"
                 data-testid="ward-statistics-blocked-discharges-by-reason"
                 aside={
-                  <span className={styles.muted} data-testid="ward-statistics-blocked-discharges-by-reason-population">
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-total">
-                      {small(blocked.totalCount)}
-                    </span>{" "}
-                    of{" "}
-                    <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
-                      {small(blocked.admissionCount)}
-                    </span>{" "}
-                    not departed
-                  </span>
+                  notShown(blocked.totalCount) || notShown(blocked.admissionCount) ? undefined : (
+                    <span
+                      className={styles.muted}
+                      data-testid="ward-statistics-blocked-discharges-by-reason-population"
+                    >
+                      <span data-testid="ward-statistics-blocked-discharges-by-reason-total">
+                        {small(blocked.totalCount)}
+                      </span>{" "}
+                      of{" "}
+                      <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
+                        {small(blocked.admissionCount)}
+                      </span>{" "}
+                      not departed
+                    </span>
+                  )
                 }
               >
                 <CardBody data-testid="ward-statistics-blocked-discharges-by-reason-list">
-                  <BarList
-                    label="Discharges held up, by reason"
-                    labelWidth="10.5rem"
-                    axis
-                    max={axisMax(blocked.tallies.map((tally) => barValue(tally.count).value))}
-                    rows={blocked.tallies.map((tally) => ({
-                      id: tally.reason,
-                      label: (
-                        <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>
-                      ),
-                      labelText: tally.reason,
-                      ...barValue(tally.count),
-                      display: (
-                        <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
-                          {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
-                        </span>
-                      ),
-                    }))}
-                  />
+                  {/* Role view (executive): every reason held back is an empty chart on a 0 to 1 axis, so
+                      the reasons are listed as words instead. */}
+                  {executive && noCountReleased(blocked.tallies.map((tally) => tally.count)) ? (
+                    <ReasonCounts
+                      label="Discharges held up, by reason"
+                      rows={blocked.tallies.map((tally) => ({
+                        id: tally.reason,
+                        label: tally.reason,
+                        count: tally.count,
+                        testId: `ward-statistics-blocked-discharge-${tally.reason}-count`,
+                      }))}
+                      small={small}
+                    />
+                  ) : (
+                    <BarList
+                      label="Discharges held up, by reason"
+                      labelWidth="10.5rem"
+                      axis
+                      max={axisMax(blocked.tallies.map((tally) => barValue(tally.count).value))}
+                      rows={blocked.tallies.map((tally) => ({
+                        id: tally.reason,
+                        label: (
+                          <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}`}>{tally.reason}</span>
+                        ),
+                        labelText: tally.reason,
+                        ...barValue(tally.count),
+                        display: (
+                          <span data-testid={`ward-statistics-blocked-discharge-${tally.reason}-count`}>
+                            {exactStatisticsCount(tally.count) === 0 ? "none" : small(tally.count)}
+                          </span>
+                        ),
+                      }))}
+                    />
+                  )}
                   <span className={styles.srOnly} data-testid="ward-statistics-blocked-discharges-by-reason-generated">
                     All{" "}
                     <span data-testid="ward-statistics-blocked-discharges-by-reason-vocabulary-size">
@@ -1319,7 +930,9 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
                 title="Declines by reason"
                 data-testid="ward-statistics-declines-by-reason"
                 aside={
-                  declinesReadout.ok ? (
+                  declinesReadout.ok &&
+                  !notShown(declinesReadout.value.totalCount) &&
+                  !notShown(declinesReadout.value.movementsWithDeclinesCount) ? (
                     <span className={styles.muted} data-testid="ward-statistics-declines-by-reason-population">
                       <span data-testid="ward-statistics-declines-by-reason-total">
                         {small(declinesReadout.value.totalCount)}
@@ -1345,6 +958,18 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
                     <p className={styles.notice} data-testid="ward-statistics-declines-by-reason-unavailable">
                       {declinesReadout.statement}
                     </p>
+                  ) : executive && noCountReleased(declinesReadout.value.tallies.map((tally) => tally.count)) ? (
+                    // Role view (executive): as Discharges held up, words instead of an empty chart.
+                    <ReasonCounts
+                      label="Declines by reason"
+                      rows={declinesReadout.value.tallies.map((tally) => ({
+                        id: tally.reason,
+                        label: DECLINE_REASON_LABELS[tally.reason],
+                        count: tally.count,
+                        testId: `ward-statistics-decline-${tally.reason}-count`,
+                      }))}
+                      small={small}
+                    />
                   ) : (
                     <div data-testid="ward-statistics-declines-by-reason-list">
                       <BarList
@@ -1384,10 +1009,12 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
                 title="Pull to arrival"
                 data-testid="ward-statistics-pull-to-arrival"
                 aside={
-                  <span className={styles.muted}>
-                    <span data-testid="ward-statistics-arrival-measured-count">{small(arrivals.measuredCount)}</span>{" "}
-                    admissions
-                  </span>
+                  notShown(arrivals.measuredCount) ? undefined : (
+                    <span className={styles.muted}>
+                      <span data-testid="ward-statistics-arrival-measured-count">{small(arrivals.measuredCount)}</span>{" "}
+                      admissions
+                    </span>
+                  )
                 }
               >
                 <CardBody className={styles.bodyStack}>
@@ -1465,5 +1092,3 @@ function StatisticsSummaryView({ model, slots }: { model: SummaryModel; slots: S
     </div>
   );
 }
-
-// Kept for the community chooser deep link and the per-team statistics route.

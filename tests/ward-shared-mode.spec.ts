@@ -27,8 +27,6 @@ const POLL = { timeout: 15_000 };
  * D-71) can put it past the queue's first rows, so `revealRow` opens "Show all" when needed.
  */
 const MOVEMENT = "WF-030";
-/** A seeded ward whose capacity detail the focus test asks for an update from. */
-const WARD = "Graylands Adult Secure";
 
 type Desk = { context: BrowserContext; page: Page };
 
@@ -263,15 +261,18 @@ test("a workflow refusal from the server's engine reaches the screen as the engi
 
 test("keyboard focus: after a shared save the activated control still has focus", async () => {
   const { page } = one;
-  // Capacity's ward detail: "Request ward update" saves to the shared workspace and stays on screen
-  // afterwards (it is never disabled), so focus has somewhere to return. The sign-in lives in this
-  // tab's session storage, so a full navigation keeps it.
+  // Capacity redesign (31 Oct 2026): the old ward detail and its "Request ward update" are gone.
+  // The "This shift" card's "Ask <ward> to confirm its beds" is the same shared save
+  // (REQUEST_CAPACITY_REFRESH) and stays on screen afterwards: it is never disabled, and asking does
+  // not confirm the ward, so the ward stays first in line. Focus therefore has somewhere to return.
+  // (The ward panel's "Ask the ward" is disabled once asked, so it cannot hold focus.) The sign-in
+  // lives in this tab's session storage, so a full navigation keeps it.
   await page.goto("/ward-flow/capacity", { waitUntil: "domcontentloaded" });
   await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
-  const capacity = page.getByTestId("ward-capacity-page");
-  await capacity.getByRole("button", { name: WARD, exact: true }).first().click();
-  const detail = page.getByRole("complementary", { name: "Network summary and ward detail" });
-  const request = detail.getByRole("button", { name: "Request ward update" });
+  const shift = page.getByTestId("ward-capacity-screen").getByRole("region", { name: "Bed counts confirmed" });
+  const request = shift.getByRole("button", { name: /^Ask .+ to confirm its beds$/u });
+  await expect(request, "fixture assumption: at least one ward has not confirmed its beds this shift").toBeVisible();
+  const asked = ((await request.getAttribute("aria-label")) ?? "").replace(/^Ask (.+) to confirm its beds$/u, "$1");
   await request.focus();
   // Note whether the part of the board holding the control goes inert while the save is out, as it
   // must (audit F-09); inert is what drops focus, so without it this test would prove nothing.
@@ -285,7 +286,7 @@ test("keyboard focus: after a shared save the activated control still has focus"
   });
   await page.keyboard.press("Enter");
 
-  await expect(detail.getByText(/^Update requested /u)).toBeVisible();
+  await expect(page.getByText(`Asked ${asked} to confirm its beds.`, { exact: true }).first()).toBeVisible();
   await expect(sharedStatus(page)).toHaveText(new RegExp(`^${READY}`, "u"));
   expect(
     await page.evaluate(() => (window as unknown as { wardControlWentInert?: boolean }).wardControlWentInert),

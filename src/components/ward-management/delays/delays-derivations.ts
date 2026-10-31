@@ -61,10 +61,17 @@ export type DelayCause =
 
 export type DelayGroup = { cause: DelayCause; title: string; note: string; movements: Movement[] };
 
+/**
+ * The group title for a legal form whose typed time has gone by. Never "overdue": that reads as a
+ * legal judgement, and legal times show only as typed (D-93; Josh, 31 Oct 2026, renamed from "Form
+ * overdue"). Every screen reads this one string. "Decision overdue" is not a legal time and stays.
+ */
+export const FORM_TIME_PASSED_TITLE = "Form time passed, as typed";
+
 const ORDER: { cause: DelayCause; title: string; note: string }[] = [
   {
     cause: "legal_breached",
-    title: "Form overdue",
+    title: FORM_TIME_PASSED_TITLE,
     note: "nothing else on this page outranks it",
   },
   {

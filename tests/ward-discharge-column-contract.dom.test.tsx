@@ -63,7 +63,10 @@ import type { BedRelease } from "@/components/ward-management/ward-model";
  * property rather than as a by-product, it needs its own assertion here; this note is so that
  * whoever needs it does not read this file's name and assume it is already covered.
  */
-const WORKLIST_COLUMNS = ["Ward / service", "Timing", "Stage / blocker"];
+// Discharges redesign (approved 31 Oct 2026): the person leads each row, and a fourth column holds the
+// row's one action (its header is read by screen readers only, and its cell carries no phone label).
+const WORKLIST_COLUMNS = ["Patient / ward", "Timing", "Stage / blocker", "Next"];
+const LABELLED_CELLS = ["Patient / ward", "Timing", "Stage / blocker", null];
 const GROUPS = ["blocked", "confirmed", "expected", "discharged-today"] as const;
 
 function headersFor(groupKey: string): string[] {
@@ -103,17 +106,20 @@ describe("the discharges board's column contract", () => {
     // The unconditional named detail region stays mounted throughout this all-row walk.
     const details = screen.getByRole("region", { name: "Selected discharge details" });
     expect(headersFor(key)).toEqual(WORKLIST_COLUMNS);
+    // Each group shows its first rows, then Show more (redesign): open the rest before walking them.
+    const more = screen.queryByTestId(`ward-discharge-more-${key}`)?.querySelector("button");
+    if (more) fireEvent.click(more);
     const rows = [...screen.getByTestId(`ward-discharge-group-${key}`).querySelectorAll("tr")].filter((row) =>
-      row.querySelector("button"),
+      row.hasAttribute("data-release-id"),
     );
     expect(rows.length, `${key} must exercise actual release rows`).toBeGreaterThan(0);
     for (const row of rows) {
-      expect([...row.querySelectorAll("td")].map((cell) => cell.getAttribute("data-label"))).toEqual(WORKLIST_COLUMNS);
+      expect([...row.querySelectorAll("td")].map((cell) => cell.getAttribute("data-label"))).toEqual(LABELLED_CELLS);
       const stageCell = row.querySelector('td[data-label="Stage / blocker"]');
       expect(stageCell?.querySelector("[data-status]")).not.toBeNull();
       if (key === "blocked") expect(stageCell?.querySelector('[class*="blocker"]')?.textContent).toBeTruthy();
       else expect(stageCell?.querySelector('[class*="blocker"]')).toBeNull();
-      fireEvent.click(within(row).getByRole("button"));
+      fireEvent.click(within(row).getAllByRole("button")[0]);
       expect(details).toBeInTheDocument();
       const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
       expect(reported?.textContent, "freshness remains available in the selected release detail").toMatch(

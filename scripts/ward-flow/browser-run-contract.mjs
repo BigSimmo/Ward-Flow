@@ -40,24 +40,23 @@ export function releaseGateProjectFor(value) {
 }
 
 /**
- * Each device leg of the release gate runs as two parallel CI jobs (Josh, 31 October 2026: the
- * phone leg ran 10.4 minutes in one job, about 6 of journeys and 4.5 of checks). The parts
- * partition the release-gate spec files: together they run every file once on each device.
- * `journeys` keeps all six required journeys, so their required-case check is unchanged; `checks`
- * runs the accessibility and layout-shift sweep, which has no named required cases.
+ * Each device leg of the release gate runs as parallel CI jobs, one per part (Josh, 31 October
+ * 2026: the phone leg ran 10.4 minutes in one job; split in two it still ran 10.2, so the journeys
+ * were split again). The parts partition the release-gate spec files: together they run every file
+ * once on each device. `journeys` (the four core bed-flow journeys) and `referrals` (inpatient
+ * transfer and community referral) each require their own named journeys, six in all, so the
+ * required-case check is unchanged; `checks` runs the accessibility and layout-shift sweep, which
+ * has no named required cases.
  */
 export const RELEASE_GATE_PARTS = Object.freeze({
-  journeys: Object.freeze([
-    "release-gate-journeys.spec.ts",
-    "release-gate-inpatient-transfer.spec.ts",
-    "release-gate-community-referral.spec.ts",
-  ]),
+  journeys: Object.freeze(["release-gate-journeys.spec.ts"]),
+  referrals: Object.freeze(["release-gate-inpatient-transfer.spec.ts", "release-gate-community-referral.spec.ts"]),
   checks: Object.freeze(["release-gate-axe-sweep.spec.ts"]),
 });
 
 /**
  * The release-gate part for one CI job (WARD_RELEASE_GATE_PART), or null for the whole gate.
- * @param {string | null | undefined} value @returns {"journeys" | "checks" | null}
+ * @param {string | null | undefined} value @returns {"journeys" | "referrals" | "checks" | null}
  */
 export function releaseGatePartFor(value) {
   const part = value?.trim();
@@ -66,7 +65,7 @@ export function releaseGatePartFor(value) {
     throw new Error(
       `WARD_RELEASE_GATE_PART must be one of ${Object.keys(RELEASE_GATE_PARTS).join(", ")}; got "${part}".`,
     );
-  return /** @type {"journeys" | "checks"} */ (part);
+  return /** @type {"journeys" | "referrals" | "checks"} */ (part);
 }
 
 /**

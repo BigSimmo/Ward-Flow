@@ -1,14 +1,19 @@
 "use client";
 
+// Referrals redesign: copied from src/components/ward-management/referrals/referral-board-sections.tsx
+// (30 October 2026). Changed: Needs reads as short words (Locked, Transport), Fit counts wards
+// ("11 wards"), and a refused or cancelled ward is named instead of shown by its internal id.
+//
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "./referral-information-needs";
+import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
-import { useMemo } from "react";
-import { useSenderPresentation } from "../ward-sender-presentation";
-import { referralPresentation } from "../ward-partial-view-presenters";
-import { Lock, Scale, Truck, Users } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
+import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
@@ -23,9 +28,9 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   referralPersonFactsStatingSex,
   acceptedAddressing,
-  referralDestinationLabel,
+  SEX_NOT_HELD,
 } from "@/components/ward-management/ward-referrals";
-import { Button, CardHead, Count, EmptyState, StatusGlyph, TierTile, Timer, cx } from "@/components/wf";
+import { Button, CardHead, Count, cx, EmptyState, ShowMoreRow, StatusGlyph, TierTile, Timer } from "@/components/wf";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
@@ -46,13 +51,12 @@ import {
   QUEUED_REFUSED_LEAD,
   decidedWaitLabel,
   presentationDecidedAt,
-  demographicLabel,
-  outcomeDetail,
   outcomeLabel,
   referralDueAt,
   referralNeedsGenderReview,
-  refusalLines,
 } from "./referral-board-model";
+import { destinationWords, outcomeDetail, refusalLines } from "./referral-ward-names";
+import redesign from "./referral-page.module.css";
 
 /**
  * The detail cell's parts, rendered so a coordinator cannot mistake one for another: the outcome
@@ -178,7 +182,7 @@ export function QueuedSection({
               <col className={a.colWait} />
               <col className={a.colFrom} />
               <col className={a.colAsk} />
-              <col className={a.colNeeds} />
+              <col className={cx(a.colNeeds, redesign.colNeeds)} />
               <col className={a.colFit} />
             </colgroup>
             <thead>
@@ -196,18 +200,21 @@ export function QueuedSection({
               {queued.map((referral) => {
                 const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
                 const summary = sender.referralFor(referral);
-                const refusals = summary === undefined ? refusalLines(referral) : [];
+                const refusals = summary === undefined ? refusalLines(referral, units) : [];
                 const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
                 const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
                 const ward = wardArm(referral)?.destination;
+                // Redesign (Josh, 30 Oct 2026): short words, not icons alone; "Locked" is the app's word (F-24).
                 const needs = [
-                  ward?.secureBedNeeded ? { icon: Lock, label: "Secure bed requested" } : undefined,
-                  ward?.involuntaryBedNeeded ? { icon: Scale, label: "Involuntary bed requested" } : undefined,
-                  ward?.highAcuityNursingNeeded ? { icon: Users, label: "High acuity nursing requested" } : undefined,
-                  referral.transportNeeded ? { icon: Truck, label: "Transport requested" } : undefined,
-                ].filter((need): need is { icon: typeof Lock; label: string } => need !== undefined);
+                  ward?.secureBedNeeded ? { word: "Locked", label: "Locked bed requested" } : undefined,
+                  ward?.involuntaryBedNeeded ? { word: "Involuntary", label: "Involuntary bed requested" } : undefined,
+                  ward?.highAcuityNursingNeeded
+                    ? { word: "High acuity", label: "High acuity nursing requested" }
+                    : undefined,
+                  referral.transportNeeded ? { word: "Transport", label: "Transport requested" } : undefined,
+                ].filter((need): need is { word: string; label: string } => need !== undefined);
 
                 return (
                   <tr
@@ -250,7 +257,7 @@ export function QueuedSection({
                           {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
-                          <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
+                          <span className={a.mono}>{patientInfo.umrn}</span> · {personLine(referral)}
                         </span>
                       </span>
                       <ReadmissionFlag
@@ -297,7 +304,7 @@ export function QueuedSection({
                     <td>
                       <span className={a.arms}>
                         {(summary === undefined
-                          ? armChips(referral)
+                          ? armChips(referral, units)
                           : [{ words: "Awaiting answer", refused: false, titles: [] }]
                         ).map(({ words, refused, titles }) => (
                           <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
@@ -314,10 +321,10 @@ export function QueuedSection({
                     </td>
                     <td>
                       {needs.length > 0 ? (
-                        <span className={a.needs}>
+                        <span className={cx(a.needs, redesign.needWords)}>
                           {needs.map((need) => (
                             <span key={need.label} title={need.label}>
-                              <need.icon size={14} aria-hidden="true" />
+                              <span aria-hidden="true">{need.word}</span>
                               <span className="sr-only">{need.label}</span>
                             </span>
                           ))}
@@ -340,7 +347,8 @@ export function QueuedSection({
                         </span>
                       ) : (
                         <span className={a.fit}>
-                          <b>{ready}</b> ready
+                          {/* Redesign (Josh, 30 Oct 2026): the figure counts wards, so it says so. */}
+                          <b>{ready}</b> {ready === 1 ? "ward" : "wards"}
                         </span>
                       )}
                     </td>
@@ -354,7 +362,7 @@ export function QueuedSection({
             {queued.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
               const summary = sender.referralFor(referral);
-              const refusals = summary === undefined ? refusalLines(referral) : [];
+              const refusals = summary === undefined ? refusalLines(referral, units) : [];
               const accepted =
                 summary === undefined || summary?.state === "accepted" ? acceptedAddressing(referral) : undefined;
               const linkedMovement = summary === undefined ? openMovementByReferral.get(referral.id) : undefined;
@@ -410,7 +418,9 @@ export function QueuedSection({
                       {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
                         {[
-                          ...referralPersonFactsStatingSex(referral).slice(0, 2),
+                          ...referralPersonFactsStatingSex(referral)
+                            .slice(0, 2)
+                            .filter((fact) => fact !== SEX_NOT_HELD),
                           ...(cardNeeds > 0 ? [`${cardNeeds} ${cardNeeds === 1 ? "need" : "needs"}`] : []),
                         ].join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
@@ -468,7 +478,7 @@ const SHORT_KIND: Record<Referral["destinations"][number]["destination"]["kind"]
 };
 
 /** One chip per distinct need, so three wards asked read "Ward bed" once, with each ward in the title. */
-function armChips(referral: Referral) {
+function armChips(referral: Referral, units: readonly Unit[]) {
   const chips = new Map<string, { words: string; refused: boolean; titles: string[] }>();
   for (const arm of referral.destinations) {
     const open = arm.state === "queued" && arm.withdrawnAt === undefined;
@@ -479,8 +489,8 @@ function armChips(referral: Referral) {
       open && arm.waitlistedAt !== undefined ? ", on the waiting list" : refused ? " refused" : ""
     }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
     const title = refused
-      ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
-      : referralDestinationLabel(arm.destination);
+      ? `${destinationWords(arm.destination, units)} refused: ${declineReasonWords(arm.declineReason)}`
+      : destinationWords(arm.destination, units);
     const chip = chips.get(words) ?? { words, refused, titles: [] };
     chip.titles.push(title);
     chips.set(words, chip);
@@ -523,20 +533,34 @@ export function DecidedSection({
   );
   const nameFor = usePatientNameDisplay();
   const sender = useSenderPresentation();
+  // Community desk (Josh, 31 Oct 2026): the History tab above carries the count, and the note on
+  // what an acceptance does is the coordinator's reminder, so both are left out. A long list opens
+  // on its first rows, then Show more (owner rule).
+  const communityDesk = useEffectiveWardAccess().role === "community";
+  const [showAll, setShowAll] = useState(false);
+  const hiddenRows = communityDesk && !showAll ? Math.max(0, displayDecided.length - FIRST_DECIDED) : 0;
+  const listed = hiddenRows > 0 ? displayDecided.slice(0, FIRST_DECIDED) : displayDecided;
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
         eyebrow
         title={
           <>
-            Recently decided{" "}
-            <Count n={decided.length < decidedTotal ? `${decided.length} of ${decidedTotal}` : decidedTotal} />
+            Recently decided
+            {communityDesk ? null : (
+              <>
+                {" "}
+                <Count n={decided.length < decidedTotal ? `${decided.length} of ${decidedTotal}` : decidedTotal} />
+              </>
+            )}
           </>
         }
       />
-      <p className={styles.v6Note} data-testid="ward-referral-board-decided-note">
-        Acceptance records the decision only. No bed is pulled, no patient is moved and no transport is arranged.
-      </p>
+      {communityDesk ? null : (
+        <p className={styles.v6Note} data-testid="ward-referral-board-decided-note">
+          Acceptance records the decision only. No bed is pulled, no patient is moved and no transport is arranged.
+        </p>
+      )}
       {decided.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-decided-empty">
           None. No referral has been decided yet.
@@ -616,12 +640,16 @@ export function DecidedSection({
           </WardTable>
 
           <ul className={cx(styles.cardList, styles.v6List)} data-testid="ward-referral-board-decided-cards">
-            {displayDecided.map((referral) => {
+            {listed.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, decidedResolverState);
               const presentation = referralPresentation(referral, sender.referralFor(referral));
               const accepted = presentation.kind !== "unavailable" && presentation.state === "accepted";
               const decidedAt = presentationDecidedAt(referral, sender.referralFor(referral));
               const selected = referral.id === selectedId;
+              // Community desk: a referral asked of the team names only the team, so an accepted
+              // row drops the repeated "to <team>" and the name gets the line.
+              const ownTeamRow =
+                communityDesk && referral.destinations.every((line) => line.destination.kind === "community_team");
               return (
                 <li
                   key={referral.id}
@@ -642,25 +670,40 @@ export function DecidedSection({
                       <span className={styles.v6RowLine}>
                         <StatusGlyph tone={accepted ? "success" : "closed"} size={10} />
                         <span className="sr-only">{outcomeLabel(referral, sender.referralFor(referral))}, </span>
-                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong> {accepted ? "to " : ""}
-                        <span
-                          className={styles.v6RowOutcome}
-                          data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
-                        >
-                          <OutcomeDetail
-                            referral={referral}
-                            units={units}
-                            refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
-                            cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
-                          />
-                        </span>
+                        <strong>{nameFor(patientInfo.formalName, patientInfo.umrn)}</strong>
+                        {ownTeamRow && accepted ? null : (
+                          <>
+                            {" "}
+                            {accepted ? "to " : ""}
+                            <span
+                              className={styles.v6RowOutcome}
+                              data-testid={`ward-referral-board-decided-detail-card-${referral.id}`}
+                            >
+                              <OutcomeDetail
+                                referral={referral}
+                                units={units}
+                                refusalsTestId={`ward-referral-board-decided-refusals-card-${referral.id}`}
+                                cancelledTestId={`ward-referral-board-decided-cancelled-card-${referral.id}`}
+                              />
+                            </span>
+                          </>
+                        )}
                       </span>
                     </span>
                     <span className={styles.v6RowTime}>
                       {decidedAt !== undefined ? (
                         <>
                           <span className="sr-only">Decided </span>
-                          {formatInstantWithDay(decidedAt, now)}
+                          {/* Community desk: the day alone ("30 days ago"), so the name is not cut;
+                              the clock time stays in the spoken label and the tooltip. */}
+                          {communityDesk ? (
+                            <span title={formatInstantWithDay(decidedAt, now)}>
+                              <span className="sr-only">{formatInstantWithDay(decidedAt, now)}</span>
+                              <span aria-hidden="true">{dayOnly(formatInstantWithDay(decidedAt, now))}</span>
+                            </span>
+                          ) : (
+                            formatInstantWithDay(decidedAt, now)
+                          )}
                         </>
                       ) : (
                         "Not recorded"
@@ -671,8 +714,21 @@ export function DecidedSection({
               );
             })}
           </ul>
+          {communityDesk && displayDecided.length > FIRST_DECIDED ? (
+            <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
+              {showAll ? "Show fewer" : `Show ${hiddenRows} more`}
+            </ShowMoreRow>
+          ) : null}
         </>
       )}
     </section>
   );
+}
+
+/** Community desk: decided rows shown before Show more (owner rule). */
+const FIRST_DECIDED = 8;
+
+/** "10:42, 30 days ago" read as "30 days ago": the clock time of a decision weeks ago is noise on a row. */
+function dayOnly(when: string): string {
+  return when.replace(/^\d{1,2}:\d{2}, /, "");
 }

@@ -144,13 +144,12 @@ describe("Statistics phone computation work", () => {
     const initialFigures = phoneFigures();
     setPhone(false);
     for (const count of Object.values(counts)) expect(count).toBeGreaterThan(0);
-    // Desktop table state (here, Show all) survives a trip through the phone layout. The table's
-    // typed filter that used to carry this went in the search and forms review (30 Oct 2026).
-    const pressure = screen.getByTestId("ward-statistics-pressure");
-    const shortRows = result.container.querySelectorAll("#wardPressureTable tbody tr").length;
-    fireEvent.click(within(pressure).getByRole("button", { name: /^Show all/ }));
-    const allRows = result.container.querySelectorAll("#wardPressureTable tbody tr").length;
-    expect(allRows).toBeGreaterThan(shortRows);
+    // The ward table's typed filter went (D-91, Josh, 30 Oct 2026); its sort is the state it keeps.
+    const wardHead = () =>
+      within(screen.getByTestId("ward-statistics-pressure")).getByRole("columnheader", { name: "Ward" });
+    fireEvent.click(within(wardHead()).getByRole("button"));
+    expect(wardHead()).toHaveAttribute("aria-sort", "ascending");
+    const firstWard = result.container.querySelector("#wardPressureTable tbody tr th")?.textContent;
     setPhone(true);
     expect(phoneFigures()).toEqual(initialFigures);
 
@@ -174,7 +173,9 @@ describe("Statistics phone computation work", () => {
     expect(counts).toEqual({ wardSort: 0, edTableCopy: 0, arrivalBands: 0, finderSort: 0 });
 
     setPhone(false);
-    expect(result.container.querySelectorAll("#wardPressureTable tbody tr")).toHaveLength(allRows);
+    expect(wardHead()).toHaveAttribute("aria-sort", "ascending");
+    expect(result.container.querySelector("#wardPressureTable tbody tr th")?.textContent).toBe(firstWard);
+    expect(result.container.querySelectorAll("#wardPressureTable tbody tr").length).toBeGreaterThan(0);
     for (const count of Object.values(counts)) expect(count).toBeGreaterThan(0);
     const chart = screen.getByText("Pull to arrival, admissions by band").closest("figure");
     expect(chart).not.toBeNull();

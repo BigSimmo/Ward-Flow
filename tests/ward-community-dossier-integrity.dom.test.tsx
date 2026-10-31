@@ -115,7 +115,8 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     openReferral("missing-operational-record");
     const dossier = screen.getByRole("dialog", { name: "Referral unavailable" });
     expect(dossier).toHaveTextContent("No patient or clinical information has been inferred");
-    expect(within(dossier).getByRole("button", { name: "Accept referral" })).toBeDisabled();
+    // The kit button keeps its tab stop and says why it is unavailable (aria-disabled, not disabled).
+    expect(within(dossier).getByRole("button", { name: "Accept referral" })).toHaveAttribute("aria-disabled", "true");
     expect(dossier).not.toHaveTextContent(/PT-4409|RF-8824|clear pathology/);
   });
 
@@ -162,7 +163,10 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" }));
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent(`accepted for ${TEAM_NAME} follow-up`);
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent("No clinician assignment was recorded");
-    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" })).toBeDisabled();
+    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("opens the actual triage record for Review and accurately describes row contacts", () => {

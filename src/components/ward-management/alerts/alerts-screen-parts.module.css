@@ -1,0 +1,252 @@
+/* Alerts redesign (approved by Josh, 31 Oct 2026): the checks chip, the owner menu, same-kind groups,
+ * the detail pane's action rows and the nurse in charge's quiet side panel. */
+.checks {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+}
+.checksChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  border: 1px dashed var(--wf-hero-edge);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink);
+  cursor: pointer;
+}
+.checksChip:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 1px;
+}
+.checksLabel {
+  margin-inline-end: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+}
+.flip {
+  transform: rotate(180deg);
+}
+.checksList {
+  width: 100%;
+}
+
+.ownerMenu.ownerMenu {
+  width: auto;
+  min-width: 12rem;
+}
+
+.kindGroup {
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+/* The group row reads like the rows around it: glyph, title and names, the oldest wait on the right,
+   then Show each. */
+.kindHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: start;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+.kindHead:hover {
+  background: var(--wf-surface-2);
+}
+.kindHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.kindGlyph {
+  display: inline-flex;
+  flex: 0 0 1rem;
+}
+.kindText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.kindTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+}
+.kindCount {
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+.kindNames {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.kindAge {
+  flex: none;
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.kindOpen {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+}
+
+/* Phone: the owner highlight is the desktop's menu, full width under the tabs. */
+.phoneOwner {
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}
+.phoneOwner .ownerMenu {
+  width: 100%;
+}
+
+/* A missing UMRN reads as words, not as a number. */
+.umrnMissing {
+  color: var(--wf-ink-2);
+  font-weight: 400;
+}
+
+@media (max-width: 48rem) {
+  /* Phone: the group row lines up with the phone rows (alerts.module.css .phoneRow), and Show each
+     folds to its chevron so the names keep the width. */
+  .kindHead {
+    gap: 10px;
+    padding: var(--wf-s-2) var(--wf-s-3);
+  }
+  .kindGlyph {
+    flex-basis: 14px;
+  }
+  .kindOpenWord {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+/* Detail pane: the take or hand-back button, Acknowledge and More on one row. */
+.actionsRow.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+}
+.actionsRow > details {
+  flex: 1 1 12rem;
+}
+.actionsRow > :first-child {
+  flex: 0 0 auto;
+}
+/* Beside Hand back, More actions' summary is the button's height. */
+@media (min-width: 48.0625rem) {
+  .actionsRow > details > summary {
+    min-height: var(--wf-h-sm);
+  }
+}
+
+/* The release row stacks: reason, then the full-width Release with its "why" line under it. */
+.releaseRow {
+  align-items: stretch;
+}
+.releaseRow > * {
+  max-width: none;
+}
+.releaseAction {
+  display: flex;
+  flex-direction: column;
+}
+.releaseAction > span {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: var(--wf-s-1);
+}
+.releaseAction button {
+  width: 100%;
+  justify-content: center;
+}
+.actionsRow.actionsRow > button {
+  width: auto;
+}
+
+/* Place and owner names wrap in full rather than ending in "…" (no hover on a phone). */
+.cellWrap.cellWrap > * {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}
+
+/* Places, roles and legal wording wrap in full in the phone sheet's facts (a phone has no hover). */
+.phFactsWrap.phFactsWrap dd {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: break-word;
+}
+
+/* Nurse in charge: a quiet ward's side panel lists what was checked for it. */
+.deskClear {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+}
+.deskHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.deskHead svg {
+  color: var(--wf-success-ink);
+}
+/* The checks were built for the dark hero, so on this white panel they take the page's own inks:
+   words in secondary ink, counts in primary, zero counts quieter, as the phone Checking sheet does.
+   Doubled class to outrank the hero rules. */
+.deskClear.deskClear li > :is(a, button, span) {
+  color: var(--wf-ink-2);
+}
+.deskClear.deskClear li > :is(a, button, span) > span {
+  color: var(--wf-ink-1);
+}
+.deskClear.deskClear li[data-zero] > :is(a, button, span) > span {
+  color: var(--wf-ink-3);
+}
+.deskClear.deskClear li > :is(a, button):hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+.deskClear.deskClear li > button[aria-pressed="true"] {
+  border-color: var(--wf-line-ctl);
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+.deskClear.deskClear li > :is(a, button):focus-visible {
+  outline-color: var(--wf-focus-ring);
+}

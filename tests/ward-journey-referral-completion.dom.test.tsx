@@ -226,7 +226,7 @@ describe("referral command completion across shared snapshots", () => {
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999993" } });
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Synthetic" } });
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "New" } });
-    fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1990-01-01" } });
+    fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "01/01/1990" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "ADD_PATIENT", role }));
   });

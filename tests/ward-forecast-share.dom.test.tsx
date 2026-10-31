@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { bedsForecast, wardForecastShare } from "@/components/ward-management/capacity/beds-forecast";
-import { CAPACITY_FORECAST_HREF } from "@/components/ward-management/capacity/beds-forecast-panel";
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { HOME_FORECAST_HREF } from "@/components/ward-management/coordinator/beds-gap-card";
 import { WARD_ADMISSIONS_ANCHOR, wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
@@ -72,6 +72,16 @@ describe("each ward's part in tomorrow's forecast (forecast integration, 27 Oct 
   });
 
   it("links Home straight to the forecast panel on Capacity", () => {
-    expect(HOME_FORECAST_HREF).toBe(CAPACITY_FORECAST_HREF);
+    const [path, anchor] = HOME_FORECAST_HREF.split("#");
+    expect(path).toBe("/ward-flow/capacity");
+    render(
+      <WardFlowProvider initialNow={NOW}>
+        <CapacityScreen />
+      </WardFlowProvider>,
+    );
+    // The anchor Home links to is the Bed forecast card itself.
+    const target = document.getElementById(anchor ?? "");
+    expect(target).not.toBeNull();
+    expect(target?.getAttribute("aria-labelledby")).toBe("capacity-forecast-title");
   });
 });

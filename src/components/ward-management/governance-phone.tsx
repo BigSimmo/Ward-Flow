@@ -30,9 +30,11 @@ import {
   cx,
   durMinutes,
   type WfTone,
+  phoneRows,
 } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
 import wardPin from "./ward-pinned-switch.module.css";
+import eventList from "./governance-event-list.module.css";
 import { EventFacts } from "./governance-event-facts";
 import { PATTERN_HOURS, PATTERN_LIMIT, isPattern, reasonLabel, shortDeskLabel } from "./governance-access-review";
 import {
@@ -54,6 +56,8 @@ import { type SiteGap } from "./governance-site-gaps";
  * whole. It holds no state of its own, so the session reads exactly as before.
  */
 type GovernancePhoneInputs = {
+  /** The access admin desk: Review and Reviewed only, with no clinical content. */
+  adminDesk: boolean;
   accessCount: number;
   allowed: boolean;
   announcement: string;
@@ -84,7 +88,6 @@ type GovernancePhoneInputs = {
   reviewTitle: string;
   reviewable: AuditEvent[];
   reviewedCount: number;
-  reviewedOf: number;
   selected: AuditEvent | null;
   setAnnouncement: Dispatch<SetStateAction<string>>;
   setPhoneAdvance: Dispatch<SetStateAction<boolean>>;
@@ -102,6 +105,7 @@ type GovernancePhoneInputs = {
 
 export function GovernancePhone({
   accessCount,
+  adminDesk,
   allowed,
   announcement,
   canReview,
@@ -126,7 +130,6 @@ export function GovernancePhone({
   reviewTitle,
   reviewable,
   reviewedCount,
-  reviewedOf,
   selected,
   setAnnouncement,
   setPhoneAdvance,
@@ -144,7 +147,10 @@ export function GovernancePhone({
   // Phone (v10): its own tree at 390. A compact hero with three figures, Review, Gaps and Audit as a
   // 44px segmented control, events as list rows, and a bottom sheet that records the review with
   // the button pinned at its foot. Registers and Reports sit behind two cards.
-  const phoneTab: "review" | "gaps" | "audit" = tab === "gaps" || tab === "audit" ? tab : "review";
+  // Role (access admin): no Gaps (operational bed work), Registers (seclusion, restraint, incidents) or
+  // Reports (a patient's chronology): this desk sees no patients or clinical content.
+  const phoneTab: "review" | "gaps" | "audit" = tab === "audit" || (tab === "gaps" && !adminDesk) ? tab : "review";
+  const adminEmpty = adminDesk && toReview.length === 0;
   // Phone shows the three sites with the most gaps; the full site matrix is a desk job.
   const phoneSites = [...sites].sort((a, b) => b.gaps - a.gaps).slice(0, 3);
   const openPhoneEvent = (event: AuditEvent) => {
@@ -209,44 +215,54 @@ export function GovernancePhone({
         // the hero carries the Demo pill and says the records are invented.
         chip={<LiveChip state="live" onHero />}
         title={reviewTitle}
-        sub={`Invented records · ${reviewedCount} of ${reviewedOf} reviewed · ${followUp} for follow-up`}
-        figures={[
-          {
-            id: "override",
-            value: overrideCount,
-            label: "Overrides",
-            onPress: () => toggleChip("override"),
-            pressed: chip === "override",
-          },
-          {
-            id: "refused",
-            value: refusedCount,
-            label: "Refused",
-            onPress: () => toggleChip("refused"),
-            pressed: chip === "refused",
-          },
-          {
-            id: "access",
-            value: accessCount,
-            label: "Record access",
-            onPress: () => toggleChip("access"),
-            pressed: chip === "access",
-          },
-        ]}
+        // No sub line: the title carries the count and any follow-up, the Reviewed tab its own count, and
+        // the footer says the records are invented.
+        // Role (access admin): no row of zero figures while nothing waits, as on the desktop.
+        figures={
+          adminEmpty
+            ? undefined
+            : [
+                {
+                  id: "override",
+                  value: overrideCount,
+                  label: "Overrides",
+                  onPress: () => toggleChip("override"),
+                  pressed: chip === "override",
+                },
+                {
+                  id: "refused",
+                  value: refusedCount,
+                  label: "Refused",
+                  onPress: () => toggleChip("refused"),
+                  pressed: chip === "refused",
+                },
+                {
+                  id: "access",
+                  value: accessCount,
+                  label: "Record access",
+                  onPress: () => toggleChip("access"),
+                  pressed: chip === "access",
+                },
+              ]
+        }
         actions={
-          <Button
-            variant="onHero"
-            icon={ShieldCheck}
-            className={thirdEdition.phoneHeroAction}
-            disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
-            reasonDisplay="tooltip"
-            onClick={() => {
-              const first = toReview[0];
-              if (first) openPhoneEvent(first);
-            }}
-          >
-            Review next
-          </Button>
+          // Role (access admin): no Review next while nothing waits (the hero's only button would do nothing).
+          adminEmpty ? undefined : (
+            <Button
+              variant="onHero"
+              icon={ShieldCheck}
+              // Phone (Josh, 31 Oct 2026): Home's hero pill, not a full-width button.
+              className={phoneRows.heroPill}
+              disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
+              reasonDisplay="tooltip"
+              onClick={() => {
+                const first = toReview[0];
+                if (first) openPhoneEvent(first);
+              }}
+            >
+              Review next
+            </Button>
+          )
         }
       />
       <Segmented<"review" | "gaps" | "audit">
@@ -255,8 +271,8 @@ export function GovernancePhone({
         value={phoneTab}
         onChange={(next) => changeTab(next)}
         items={[
-          { id: "review", label: "Review" },
-          { id: "gaps", label: "Gaps", count: totalGaps },
+          { id: "review", label: "Review", count: toReview.length },
+          ...(adminDesk ? [] : [{ id: "gaps" as const, label: "Form gaps", count: totalGaps }]),
           { id: "audit", label: "Reviewed", count: reviewedCount },
         ]}
       />
@@ -292,7 +308,18 @@ export function GovernancePhone({
               <p>
                 {reviewable.length > 0
                   ? "Every recorded event has been reviewed."
-                  : "No override audit is recorded in this session."}
+                  : adminDesk
+                    ? "No override, refused action or record access this session."
+                    : "No override audit is recorded in this session."}
+                {/* Role (access admin): who opened which record lives in Settings, so point there. */}
+                {adminDesk ? (
+                  <>
+                    {" "}
+                    <Link href="/ward-flow/settings#access" className={eventList.accessLink}>
+                      Open the Access log
+                    </Link>
+                  </>
+                ) : null}
               </p>
             </div>
           )}
@@ -372,28 +399,30 @@ export function GovernancePhone({
           )}
         </Card>
       ) : null}
-      <div className={thirdEdition.phoneMore}>
-        <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("registers")}>
-          <FileText size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
-          <span className={thirdEdition.stack}>
-            <strong>Registers</strong>
-            <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
-              Overrides and access here · seclusion, restraint and incidents Preview
+      {adminDesk ? null : (
+        <div className={thirdEdition.phoneMore}>
+          <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("registers")}>
+            <FileText size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
+            <span className={thirdEdition.stack}>
+              <strong>Registers</strong>
+              <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+                Overrides, access, seclusion, restraint
+              </span>
             </span>
-          </span>
-          <ChevronRight size={16} aria-hidden="true" />
-        </button>
-        <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("reports")}>
-          <History size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
-          <span className={thirdEdition.stack}>
-            <strong>Reports</strong>
-            <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
-              Weekly report, PIR chronology, downtime pack
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+          <button type="button" className={thirdEdition.phoneMoreCard} onClick={() => setPhoneMore("reports")}>
+            <History size={18} aria-hidden="true" className={thirdEdition.phoneMoreIcon} />
+            <span className={thirdEdition.stack}>
+              <strong>Reports</strong>
+              <span className={cx(thirdEdition.quietText, thirdEdition.clip)}>
+                Weekly report, PIR chronology, downtime pack
+              </span>
             </span>
-          </span>
-          <ChevronRight size={16} aria-hidden="true" />
-        </button>
-      </div>
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+        </div>
+      )}
       <p className={thirdEdition.phoneNotice}>
         <Badge variant="plain" tone="neutral">
           Safety incidents not recorded here

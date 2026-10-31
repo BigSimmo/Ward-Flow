@@ -5,7 +5,8 @@
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { DisabledReason } from "@/components/wf";
+import { Button, Dialog, DisabledReason, Radio } from "@/components/wf";
+import { edShortName } from "@/components/ward-management/ward-sites";
 import {
   changeReasonLabels,
   LEGAL_FORM_RECEIPT_CORRECTION_REASONS,
@@ -29,6 +30,7 @@ import {
 } from "./ed-screen-model";
 import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
+import controls from "./ed-board-controls.module.css";
 import styles from "./ed.module.css";
 import { isPhoneWidth } from "@/components/ward-management/ward-phone-width";
 import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
@@ -85,6 +87,8 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     examinationSaveDisabled,
     examinationSaveMessage,
     setExaminationOutcome,
+    toggleExamination,
+    department,
     setEdOutcomeOpenFor,
     urgencyDraft,
     setUrgencyDraft,
@@ -276,71 +280,82 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       {renderEdTransportDialog(row, ctx)}
 
       {examOpen && !examBlocked ? (
-        <form
-          ref={focusFirstField}
-          className={styles.declineForm}
-          onSubmit={(event) => submitExamination(event, movement.id)}
-          data-testid={`ward-ed-examine-form-${movement.id}`}
+        // Redesign (pop-record-exam, Josh 31 Oct 2026 "Yes to all"): the examination outcome is its
+        // own popup, titled as the question, with the person (surname first, D-83), UMRN, form and
+        // ED under it. The four outcomes and their words are unchanged, and none starts chosen.
+        <Dialog
+          open
+          onClose={() => toggleExamination(movement.id)}
+          title="Examination outcome"
+          description={
+            <>
+              <strong>{patientInfo.formalName}</strong> · {patientInfo.umrn}
+              {movement.legalForm ? ` · Form ${movement.legalForm.code}` : null}
+              {` · ${edShortName(department)}`}
+            </>
+          }
+          size="md"
+          data-testid={`ward-ed-examine-dialog-${movement.id}`}
         >
-          <fieldset className={styles.declineFieldset} disabled={examinationFieldsDisabled}>
-            <legend className={styles.declineLegend}>Examination outcome for {patientInfo.displayName}</legend>
-            {(
-              [
-                { value: "inpatient_order", label: "Inpatient treatment order" },
-                { value: "community_order", label: "Community treatment order" },
-                { value: "revoked", label: "Revoked — does not proceed" },
-                // Owner item 7 (2026-09-17): settles nothing and exists
-                // only to say a repeat examination is coming — offered on
-                // every visit to this panel, including a repeat one, the
-                // same way the other three outcomes are.
-                { value: "further_examination_ordered", label: "Further examination ordered" },
-              ] as const
-            ).map((option) => (
-              <label key={option.value} className={styles.declineOption}>
-                <input
-                  type="radio"
+          <form
+            ref={focusFirstField}
+            onSubmit={(event) => submitExamination(event, movement.id)}
+            data-testid={`ward-ed-examine-form-${movement.id}`}
+          >
+            <fieldset className={controls.examOptions} disabled={examinationFieldsDisabled}>
+              {/* Spoken only: the popup's title already asks the question. */}
+              <legend className="sr-only">Examination outcome for {patientInfo.formalName}</legend>
+              {(
+                [
+                  { value: "inpatient_order", label: "Inpatient treatment order" },
+                  { value: "community_order", label: "Community treatment order" },
+                  { value: "revoked", label: "Revoked — does not proceed" },
+                  // Owner item 7 (2026-09-17): settles nothing and exists
+                  // only to say a repeat examination is coming — offered on
+                  // every visit to this panel, including a repeat one, the
+                  // same way the other three outcomes are.
+                  { value: "further_examination_ordered", label: "Further examination ordered" },
+                ] as const
+              ).map((option) => (
+                <Radio
+                  key={option.value}
                   name={`examination-outcome-${movement.id}`}
                   value={option.value}
                   checked={examinationOutcome === option.value}
                   onChange={() => setExaminationOutcome(option.value)}
+                  label={option.label}
                 />
-                {option.label}
-              </label>
-            ))}
-          </fieldset>
-          {/* Greyed only with its reason (site review B3); the submit handler still refuses
-                            an empty choice. */}
-          <button
-            type="submit"
-            aria-disabled={examinationOutcome && !examinationSaveDisabled ? undefined : "true"}
-            aria-describedby={
-              examinationSaveMessage
-                ? `ward-ed-examine-message-${movement.id}`
-                : examinationOutcome
-                  ? undefined
-                  : `ward-ed-examine-choose-${movement.id}`
-            }
-            title={
-              examinationSaveDisabled
-                ? "Wait for confirmation or use Retry before submitting again."
-                : examinationOutcome
-                  ? undefined
-                  : "Choose an outcome first"
-            }
-            className={styles.declineSubmit}
-            onClick={examinationOutcome && !examinationSaveDisabled ? undefined : ignoreUnavailableActivation}
-          >
-            Confirm examination outcome
-          </button>
-          {examinationSaveMessage ? (
-            <p role="status" id={`ward-ed-examine-message-${movement.id}`}>
-              {examinationSaveMessage}
-            </p>
-          ) : null}
-          {examinationOutcome ? null : (
-            <DisabledReason id={`ward-ed-examine-choose-${movement.id}`}>Choose an outcome first</DisabledReason>
-          )}
-        </form>
+              ))}
+            </fieldset>
+            {/* Greyed only with its reason (site review B3); the submit handler still refuses an
+                empty choice. Cancel, then the reason and Save, as the app's other popups. */}
+            <div className={controls.examActions}>
+              <Button variant="ghost" onClick={() => toggleExamination(movement.id)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="pri"
+                data-testid={`ward-ed-examine-save-${movement.id}`}
+                aria-describedby={examinationSaveMessage ? `ward-ed-examine-message-${movement.id}` : undefined}
+                disabledReason={
+                  examinationSaveDisabled
+                    ? "Wait for confirmation or use Retry before submitting again."
+                    : examinationOutcome
+                      ? undefined
+                      : "Choose an outcome first"
+                }
+              >
+                Save outcome
+              </Button>
+            </div>
+            {examinationSaveMessage ? (
+              <p role="status" className={controls.examMessage} id={`ward-ed-examine-message-${movement.id}`}>
+                {examinationSaveMessage}
+              </p>
+            ) : null}
+          </form>
+        </Dialog>
       ) : null}
 
       {edOutcomeOpen && !edOutcomeBlocked ? (

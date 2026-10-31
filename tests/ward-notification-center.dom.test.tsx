@@ -195,7 +195,8 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(row).toHaveTextContent("Morning numbers not confirmed");
     expect(row).toHaveTextContent("Due 09:30");
     expect(row).toHaveTextContent("2h 10m"); // 11:40 less 09:30
-    expect(row).toHaveTextContent("Overdue");
+    // Redesign (31 Oct 2026): a ward's own daily time is "Late"; "Overdue" is kept for legal form times.
+    expect(row).toHaveTextContent("Late");
 
     const confirmButton = screen.getByRole("button", { name: "Confirm numbers" });
     expect(confirmButton).toBeInTheDocument();
@@ -258,10 +259,10 @@ describe("WardNotificationCenter DOM Component", () => {
 
     render(<WardNotificationCenter {...defaultProps} now={now} movements={movements} />);
 
-    const overdue = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Arrival overdue"));
+    const overdue = screen.getAllByRole("listitem").filter((row) => row.textContent?.includes("Late arrival"));
     expect(overdue).toHaveLength(1);
     expect(overdue[0]).toHaveTextContent("Jane Doe");
-    expect(overdue[0]).toHaveTextContent("ETA 10:00");
+    expect(overdue[0]).toHaveTextContent("Expected 10:00.");
     expect(overdue[0]).toHaveTextContent("More than 60 minutes late.");
 
     // Does not display alert for non-overdue or other ward
@@ -322,7 +323,7 @@ describe("WardNotificationCenter DOM Component", () => {
     const row = screen.getByTestId("ward-clearance-not-recorded");
     expect(row).toHaveTextContent("Medical clearance not recorded");
     expect(row).toHaveTextContent("Synthetic Unrecorded");
-    expect(row).toHaveTextContent("Before arrival");
+    expect(row).toHaveTextContent("before arrival");
     expect(row).not.toHaveTextContent("Synthetic Cleared");
     expect(row).not.toHaveTextContent("Synthetic Closed");
     expect(screen.queryByText(/Nothing needs attention/)).not.toBeInTheDocument();
@@ -444,7 +445,7 @@ describe("WardNotificationCenter DOM Component", () => {
     // "All" is pressed by default and everything shows; its count is every row (2 + 1 + 1)
     expect(filter(/^All 4/)).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(screen.getByText("Arrival overdue")).toBeInTheDocument();
+    expect(screen.getByText("Late arrival")).toBeInTheDocument();
     expect(screen.getByText("Medical clearance not recorded")).toBeInTheDocument();
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
 
@@ -452,21 +453,21 @@ describe("WardNotificationCenter DOM Component", () => {
     expect(filter(/^Coordinator/)).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
     expect(screen.getByText("Direct ward notice message")).toBeInTheDocument();
-    expect(screen.queryByText("Arrival overdue")).not.toBeInTheDocument();
+    expect(screen.queryByText("Late arrival")).not.toBeInTheDocument();
 
     fireEvent.click(filter(/^Act now/));
-    expect(screen.getByText("Arrival overdue")).toBeInTheDocument();
+    expect(screen.getByText("Late arrival")).toBeInTheDocument();
     expect(screen.queryByText("Medical clearance not recorded")).not.toBeInTheDocument();
     expect(screen.queryByText("Coordinator buzz message")).not.toBeInTheDocument();
 
     fireEvent.click(filter(/^Check/));
     expect(screen.getByText("Medical clearance not recorded")).toBeInTheDocument();
-    expect(screen.queryByText("Arrival overdue")).not.toBeInTheDocument();
+    expect(screen.queryByText("Late arrival")).not.toBeInTheDocument();
     expect(screen.queryByText("Direct ward notice message")).not.toBeInTheDocument();
 
     fireEvent.click(filter(/^All/));
     expect(screen.getByText("Coordinator buzz message")).toBeInTheDocument();
-    expect(screen.getByText("Arrival overdue")).toBeInTheDocument();
+    expect(screen.getByText("Late arrival")).toBeInTheDocument();
   });
 
   it("says nothing needs attention in one line rather than empty boxes", () => {
@@ -613,7 +614,8 @@ describe("WardNotificationCenter DOM Component", () => {
 
     render(<WardNotificationCenter {...defaultProps} now={700} movements={movements} patients={patients} />);
 
-    expect(screen.getAllByText("John Doe").length).toBeGreaterThan(0);
+    // Surname first (redesign approved 31 Oct 2026).
+    expect(screen.getAllByText("Doe, John").length).toBeGreaterThan(0);
     expect(screen.getAllByText("UM100001").length).toBeGreaterThan(0);
     expect(screen.queryByText(/Name not recorded/)).not.toBeInTheDocument();
   });

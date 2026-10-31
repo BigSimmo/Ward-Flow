@@ -78,31 +78,40 @@ describe("P154: one type chip set on phone and desktop, each referral counted on
     const queued = renderBoard();
     const group = screen.getByRole("group", { name: "Highlight by what is asked" });
     const chips = within(group).getAllByRole("button").map(split);
-    expect(chips.map(([label]) => label)).toEqual(LABELS);
+    // Referrals redesign (31 Oct 2026): a chip with nobody in it hides, so the chips shown keep this
+    // order and each holds someone; the types shown still sum to the queue (each counted once).
+    expect(chips.map(([label]) => label)).toEqual(LABELS.filter((label) => chips.some(([shown]) => shown === label)));
+    expect(chips.every(([, n]) => n > 0)).toBe(true);
     expect(queued).toBeGreaterThan(0);
-    expect(chips.slice(0, 4).reduce((sum, [, n]) => sum + n, 0)).toBe(queued);
+    const types = chips.filter(([label]) => label !== "Refused once");
+    expect(types.length).toBeGreaterThanOrEqual(2);
+    expect(types.reduce((sum, [, n]) => sum + n, 0)).toBe(queued);
   });
 
   it("desktop pills read Ward bed · ED · More than one · Community (+ Refused once), same counts as phone", () => {
     setPhone(true);
     renderBoard();
-    const phone = TYPE_KEYS.map((key) => split(screen.getByTestId(`ward-referral-phone-chip-${key}`)));
+    // Referrals redesign (31 Oct 2026): empty type chips hide on both, so compare the ones shown.
+    const phone = TYPE_KEYS.flatMap((key) => {
+      const chip = screen.queryByTestId(`ward-referral-phone-chip-${key}`);
+      return chip ? [split(chip)] : [];
+    });
+    const phoneRefused = screen.queryByTestId("ward-referral-phone-chip-refused")?.textContent ?? null;
     document.body.innerHTML = "";
     setPhone(false);
     const queued = renderBoard();
     const group = screen.getByRole("group", { name: "Highlight referrals" });
     const pills = within(group).getAllByRole("button").map(split);
-    expect(pills.map(([label]) => label)).toEqual([
-      "Overdue",
-      "Tier 1",
-      "Ward bed",
-      "ED",
-      "More than one",
-      "Community",
-    ]);
-    const types = pills.slice(2);
+    // Referrals redesign (31 Oct 2026): "Decision overdue" is the one word for late decisions, and
+    // Refused once joins this group (hidden, like the rest, while nobody is in it).
+    const order = ["Decision overdue", "Tier 1", "Ward bed", "ED", "More than one", "Community", "Refused once"];
+    expect(pills.map(([label]) => label)).toEqual(order.filter((label) => pills.some(([shown]) => shown === label)));
+    expect(pills.every(([, n]) => n > 0)).toBe(true);
+    const types = pills.filter(([label]) => !["Decision overdue", "Tier 1", "Refused once"].includes(label));
     expect(types).toEqual(phone);
     expect(types.reduce((sum, [, n]) => sum + n, 0)).toBe(queued);
-    expect(screen.getByTestId("ward-referral-highlight-refused")).toHaveTextContent("Refused once");
+    const refused = screen.queryByTestId("ward-referral-highlight-refused");
+    expect(refused?.textContent ?? null).toBe(phoneRefused);
+    if (refused) expect(refused).toHaveTextContent("Refused once");
   });
 });

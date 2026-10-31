@@ -37,7 +37,6 @@ function settings() {
 }
 it("shows operational runtime defaults without editable display overrides", () => {
   settings();
-  fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
   fireEvent.click(screen.getByRole("tab", { name: /Fixed defaults/ }));
   expect(screen.queryByRole("button", { name: "Edit defaults" })).not.toBeInTheDocument();
   for (const item of OPERATIONAL_DEFAULTS) {
@@ -46,7 +45,6 @@ it("shows operational runtime defaults without editable display overrides", () =
 });
 it("lists every clinical value with its synthetic or signed status", () => {
   settings();
-  fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
   fireEvent.click(screen.getByRole("tab", { name: /Clinical values/ }));
   const panel = screen.getByTestId("ward-settings-clinical-values");
   expect(panel).toHaveTextContent(signedSummary());
@@ -58,7 +56,6 @@ it("lists every clinical value with its synthetic or signed status", () => {
 });
 it("offers no board refresh cadence, since nothing reads one (D-72)", () => {
   settings();
-  fireEvent.click(screen.getByRole("radio", { name: /^Alerts/ }));
   expect(screen.getByTestId("setting-buzz-alert-row")).toBeInTheDocument();
   expect(screen.queryByTestId("setting-wallboard-refresh-row")).toBeNull();
   expect(screen.queryByText("Not wired in this prototype.")).toBeNull();

@@ -86,7 +86,8 @@
   padding-top: var(--wf-s-3);
 }
 
-/* Tool chips: one sideways row of 48px chips that never wrap. */
+/* Tool chips: one sideways row of the kit's standard buttons that never wrap (no 48px controls,
+   Josh, 31 Oct 2026: 40px drawn on a phone, with the kit's 48px invisible tap cover). */
 .chipsFrame {
   margin: 0 calc(-1 * var(--wf-s-3));
 }
@@ -98,29 +99,14 @@
 }
 
 .chip {
-  display: inline-flex;
   flex: 0 0 auto;
-  align-items: center;
   gap: var(--wf-s-2);
-  min-height: 48px;
-  padding: 0 var(--wf-s-3);
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .chip svg {
   flex: none;
   color: var(--wf-ink-2);
-}
-
-.chip:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
 }
 
 .section,
@@ -235,25 +221,6 @@
   padding-top: 4px;
 }
 
-.more {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 48px;
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: transparent;
-  color: var(--wf-accent);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.more:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
 .empty {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-1);
@@ -363,7 +330,7 @@
 }
 
 .reason {
-  min-height: 48px;
+  min-height: var(--wf-touch);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
@@ -391,7 +358,7 @@
 }
 
 .filter select {
-  min-height: 48px;
+  min-height: var(--wf-touch);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
@@ -480,4 +447,15 @@
   flex-direction: column;
   gap: var(--wf-s-3);
   padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+/* The five list tabs share one row on a phone (Caseload is longer than the CTOs label it replaced). */
+.oneRow.oneRow.oneRow {
+  flex-wrap: nowrap;
+}
+
+.oneRow.oneRow.oneRow > * {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline: 4px;
 }

@@ -63,6 +63,12 @@ function answerBookingFacts(form: HTMLElement) {
     target: { value: "Patient transport service" },
   });
   fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
+  answerLegalStatus(form);
+}
+
+/** Josh, 31 Oct 2026: the legal answer starts unticked. WF-004's Legal now is involuntary. */
+function answerLegalStatus(form: HTMLElement) {
+  fireEvent.click(within(form).getByTestId("ward-patient-legal-involuntary"));
 }
 
 /** A34: the one booking form takes a clock time; the +30m quick time fills it. Returns the time it filled. */
@@ -245,12 +251,16 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(within(form).getByTestId("ward-patient-select-provider")).toHaveValue("");
     expect(within(form).getByTestId("ward-patient-escort-yes")).not.toBeChecked();
     expect(within(form).getByTestId("ward-patient-escort-no")).not.toBeChecked();
+    // Josh, 31 Oct 2026: neither legal answer starts ticked.
+    expect(within(form).getByTestId("ward-patient-legal-involuntary")).not.toBeChecked();
+    expect(within(form).getByTestId("ward-patient-legal-voluntary")).not.toBeChecked();
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYNTHETIC-7" } });
     pickEta(form);
     pressSave(form);
     expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
-      "2 answers left: provider, escort answer",
+      "3 answers left: provider, escort answer, legal status",
     );
+    answerLegalStatus(form);
     expect(control.calls).toHaveLength(0);
     fireEvent.change(within(form).getByTestId("ward-patient-select-provider"), {
       target: { value: "Patient transport service" },
@@ -292,9 +302,11 @@ describe("Patient Transport & Transfer Coordination section", () => {
       expect(control.calls).toHaveLength(1);
       expect(form).toHaveAttribute("aria-busy", "true");
       expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toHaveAttribute("aria-disabled", "true");
-      expect(within(screen.getByTestId("ward-patient-transport-section")).getByRole("status")).toHaveTextContent(
-        "Saving transport booking",
-      );
+      // The answers-left line at the top is a status too (redesign, Josh 31 Oct 2026), so the saving
+      // line is found by its words and checked for its role.
+      expect(
+        within(screen.getByTestId("ward-patient-transport-section")).getByText(/Saving transport booking/),
+      ).toHaveAttribute("role", "status");
       await act(async () => {
         control.finish!();
       });

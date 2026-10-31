@@ -42,12 +42,11 @@ async function gotoCoordinator(page: Page) {
   // before the first interaction. Mirrors `gotoWardFlow` in ui-ward-management.spec.ts (Task 4
   // review Important 6: a retry loop around the click was masking this instead of fixing it).
   await page.waitForLoadState("networkidle");
-  // Network idle does not prove the shell has settled. The server renders the "Data mode" bar above
-  // the app; once hydrated, the header's Prototype pill takes its place and the whole screen moves
-  // up by the bar's height. A queue click issued across that re-render takes the pointerdown on one
-  // row and the pointerup on the grid, so no row is selected (seen 11 Oct 2026, intermittently).
-  // Wait until the pill is in the header and the bar is gone before the first interaction.
-  await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty({ timeout: 15_000 });
+  // Network idle does not prove the shell has settled. A queue click issued across a re-render that
+  // moves the screen takes the pointerdown on one row and the pointerup on the grid, so no row is
+  // selected (seen 11 Oct 2026, intermittently). The header no longer has a Prototype pill to wait
+  // for (Josh, 30-31 Oct 2026), so wait for the bar itself and for no Data mode bar above the app.
+  await expect(page.getByTestId("ward-bar")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
   // Home v7 (Josh, 22 Oct 2026): Home opens on My list; these journeys read the priority queue.
   await showEveryoneWaitingOn(page);
@@ -73,6 +72,19 @@ async function openShortlistSections(shortlist: Locator) {
   if ((await checks.count()) > 0 && !(await checks.evaluate((element) => (element as HTMLDetailsElement).open))) {
     await checks.locator("summary").click();
   }
+}
+
+/**
+ * Wards that take this person only with an override reason (`fitKind` "review" in `home-fit.ts`:
+ * an overridable gate, a ward that declined them before, or, Audit S-21, a voluntary patient on a
+ * wholly locked ward) sit behind one "N need an override · Show" disclosure, so the wards that fit
+ * lead. A coordinator opens it to reach those wards; so does this. Idempotent.
+ */
+async function showOverrideWards(shortlist: Locator) {
+  const toggle = shortlist.getByTestId("ward-shortlist-review-toggle");
+  await expect(toggle).toBeVisible();
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
 }
 
 /**
@@ -140,7 +152,15 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Home v7 (Josh, 22 Oct 2026): State bedflow moved to the foot of Capacity; Beds that fit
     // takes its place on Home.
     await expect(page.getByRole("region", { name: "State Bedflow", exact: true })).toHaveCount(0);
-    await expect(page.getByTestId("home-beds-gap")).toBeVisible();
+    // Home and Activity design (Josh, 31 Oct 2026): the card is "Beds that fit", a small table by bed
+    // kind (`beds-gap-card.tsx`), so its test id is `home-beds-fit`. With nobody chosen it is unfolded:
+    // the table and its Forecast link show.
+    const bedsFit = page.getByTestId("home-beds-fit");
+    await expect(bedsFit).toBeVisible();
+    await expect(bedsFit.getByRole("heading", { name: "Beds that fit" })).toBeVisible();
+    await expect(bedsFit.getByRole("columnheader", { name: "Bed type" })).toBeVisible();
+    await expect(bedsFit.getByRole("columnheader", { name: "Tomorrow" })).toBeVisible();
+    await expect(bedsFit.getByTestId("home-beds-gap-forecast-link")).toBeVisible();
     // ⚠️ **THE SHORTLIST NO LONGER MOUNTS UNCONDITIONALLY.** `coordinator-screen.tsx` now wraps
     // the whole `<aside aria-label="Placement">` in `{hasPanelSubject ? ... : null}` —
     // with nothing selected, "Statewide flow"'s own header shows "Select a patient or referral to
@@ -304,8 +324,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     // Review Important 3: once a movement is selected from the phone's Exceptions sheet, Confirm
     // is reachable without a long scroll.
-    // Home v7 (Josh, 22 Oct 2026): the Registers link opens them, as a sheet on a phone.
-    await page.getByTestId("ward-home-registers").click();
+    // Home v7 (Josh, 22 Oct 2026): the Registers link opens them, as a sheet on a phone. Home and
+    // Activity design (Josh, 31 Oct 2026): on a phone the link is hidden and Registers sits under the
+    // "More for this list" menu beside the list tabs (`HomeListMoreMenu`), so open it from there.
+    await expect(page.getByTestId("ward-home-registers")).toBeHidden();
+    await page.getByRole("button", { name: "More for this list" }).click();
+    await page.getByRole("menu", { name: "More for this list" }).getByRole("menuitem", { name: "Registers" }).click();
     await expect(page.getByTestId("ward-home-exceptions-sheet")).toBeVisible();
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
@@ -552,9 +576,14 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     );
 
     await pickQueueRow(queue, "WF-301");
+    await openShortlistSections(shortlist);
+    // Audit S-21: a wholly locked ward reads "review" for a voluntary patient, never a plain fit, so
+    // it sits behind the override disclosure rather than among the wards that fit.
+    await showOverrideWards(shortlist);
 
     for (const candidate of locked) {
       const shortlistRow = shortlist.locator(`[data-testid="ward-shortlist-candidate-${candidate.unit.id}"]`);
+      await expect(shortlistRow).toHaveAttribute("data-fit", "review");
       await expect(shortlistRow).toContainText(
         "Voluntary patient on a locked ward — review legal status before admission",
       );
@@ -915,6 +944,8 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // pair). Choosing Dabakarn is what a coordinator would really do before overriding into
     // it, and it is the same unit the recorded override below must name.
     await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    // Dabakarn takes WF-009 only with a recorded reason, so it is behind the override disclosure.
+    await showOverrideWards(shortlist);
     await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
     await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
     await overrideToggle.click();

@@ -23,7 +23,7 @@
 }
 
 .unlock input {
-  height: clamp(44px, 3.5vw, 68px);
+  height: clamp(40px, 3.5vw, 68px);
   border-radius: clamp(10px, 0.85vw, 16px);
   font-size: clamp(16px, 1.25vw, 24px);
 }

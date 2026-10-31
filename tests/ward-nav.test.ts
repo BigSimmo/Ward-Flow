@@ -8,6 +8,7 @@ import { StatisticsCommunityScreen } from "@/components/ward-management/statisti
 import { StatisticsServiceScreen } from "../src/components/ward-management/statistics/statistics-service-screen";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { isRedesignMockup } from "./helpers/redesign-design-copies";
 import { createElement, Fragment, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -319,7 +320,9 @@ function collectSourceFiles(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-const sourceFiles = collectSourceFiles(SRC_ROOT);
+// The redesign mock-up copies and their viewer (D-89, D-91) are design-only, blocked in production and
+// deleted page by page; their links are not app navigation, so they stay out of the D8 scan.
+const sourceFiles = collectSourceFiles(SRC_ROOT).filter((file) => !isRedesignMockup(file));
 
 /** The three characters a JSX/TS href can sit between. Built by concatenation rather than written
  *  into a template literal, because `${` inside one is an interpolation and a regex escape that
@@ -776,7 +779,11 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // The ward answer's own "Ward overview" back link went on 20 Oct 2026: the header Back
     // (`shell/ward-back.ts`) returns there, taking `unitHref` from the facade.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
-      "src/components/ward-management/capacity/capacity-ward-sidebar.tsx",
+      // Capacity redesign (31 Oct 2026): the ward drawer's Open ward link, the phone Overview's ward
+      // rows and This shift's Confirm link each build the ward href (the old side panel is gone).
+      "src/components/ward-management/capacity/capacity-phone-overview.tsx",
+      "src/components/ward-management/capacity/capacity-shift-checks.tsx",
+      "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/patients/patient-now-screen.tsx",

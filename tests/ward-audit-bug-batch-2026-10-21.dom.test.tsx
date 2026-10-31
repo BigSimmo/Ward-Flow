@@ -1,5 +1,5 @@
 // tests/ward-audit-bug-batch-2026-10-21.dom.test.tsx
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -67,7 +67,8 @@ describe("A2-7: Clear session stays cleared after the next change", () => {
     });
     expect(referralState(storedReferral("RF-011")!)).toBe("accepted");
 
-    fireEvent.click(screen.getByText("Data and about"));
+    // Settings by login (31 Oct 2026): "Reset the demo in this tab" sits in the closed Demo tools.
+    fireEvent.click(within(screen.getByTestId("ward-settings-demo-tools")).getByText("Demo tools"));
     fireEvent.click(screen.getByTestId("btn-clear-cache"));
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });

@@ -3,10 +3,9 @@
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
-import { waitingHref } from "@/components/ward-management/delays/waiting-href";
 
 import { dayOf, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
-import { isOpen, stageCopy } from "@/components/ward-management/ward-derivations";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { SEVERE_CAUSES, delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import {
   useDueSoonThresholds,
@@ -21,7 +20,6 @@ import { edById } from "@/components/ward-management/ward-sites";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   byLongestWait,
   corridorCounts,
@@ -40,7 +38,7 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRightLeft, ChartColumn, ChevronRight, Search, ShieldCheck, Truck, X } from "lucide-react";
+import { ArrowRightLeft, ChartColumn, Search, ShieldCheck, Truck, X } from "lucide-react";
 import {
   Card,
   CardHead,
@@ -51,14 +49,16 @@ import {
   StackBar,
   StatusGlyph,
   TextInput,
-  Timer,
   buttonClass,
   cx,
   durMinutes,
+  phoneRows,
   useIsPhone,
 } from "@/components/wf";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
-import { MovementHorizonGantt, rankCorridorPairs } from "./movement-horizon-gantt";
+import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
+import { rankCorridorPairs } from "./movement-corridor-pairs";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
 import { movementPresentation } from "../ward-partial-view-presenters";
@@ -69,22 +69,21 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MovementsPhoneNav } from "./movements-phone-nav";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
-import { HighlightStat, PhoneGroupHeading, StageRow, TierPill } from "./movements-stage-row";
+import { HighlightStat, PhoneGroupHeading, StageRow } from "./movements-stage-row";
+import { MovementsTierOneNow } from "./movements-tier-one-now";
+import { CommunityNoJourneys, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
   GROUP_CAP,
   LEG_STATE_LABEL,
   LEG_STATE_TONE,
   LIST_CAP,
-  MS_PER_MINUTE,
   STAGE_SHORT,
   TRANSPORT_STATES,
   bedReadyNote,
   causeOf,
   heroHighlights,
   inServiceSuffix,
-  legalActNowReason,
-  meaningfulBlocker,
   moreNote,
   movementSearchText,
   transportRouteLabels,
@@ -141,6 +140,11 @@ export function MovementsScreen() {
   // Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md` §2 "Movements", task D2: the
   // chosen health service, read from the shared store S2 built. `null` means All services.
   const service = useServiceScope();
+  // Community clinician desk (D-76): the team's own journeys only (the desk's scope already narrows
+  // them). The officers' Transport board and the coordinator's queue are not this desk's.
+  const access = useEffectiveWardAccess();
+  const community = access.role === "community";
+  const teamName = access.scope.kind === "team" ? access.scope.teamName : undefined;
 
   /**
    * **M2, shape ③ (Ward Lead, 2026-09-11). The open/closed split is a MARKING and a SORT, never a
@@ -663,7 +667,6 @@ export function MovementsScreen() {
   // Hero tools (Josh, 9 Oct 2026: every page header carries page-specific tools). Each reads only
   // the open records: the longest wait, the next recorded legal expiry (a typed `dueAt`, never a
   // computed limit, D5), and the coordinator's own queue of next steps.
-  const movingCount = openMovements.filter((movement) => movement.stage === "moving").length;
   // The earliest opened open movement.
   const longestWaiting = [...openMovements].sort((a, b) => a.openedAt - b.openedAt || a.id.localeCompare(b.id))[0];
   const nextExpiry = openMovements
@@ -729,25 +732,42 @@ export function MovementsScreen() {
       })}
     </div>
   );
-  // The stage highlight buttons: in the hero foot on the larger screen, under the band on phone.
-  const stageTrack = (trackClass: string, buttonClassName: string, countClass: string) => (
-    <div className={trackClass} role="group" aria-label="Highlight a stage">
+  // Phone: the stage highlight chips under the band, one row that slides sideways with Home's soft
+  // fade (chips at 0 muted at the end). A tablet or laptop has the stage pipeline instead.
+  const phoneStageTrack = (
+    <div className={cx(flow.phStages, phoneRows.chipRow)} role="group" aria-label="Highlight a stage">
       {openStages
         .filter((stage) => stage.id !== "arrived")
         .map((stage) => (
           <button
             key={stage.id}
             type="button"
-            className={buttonClassName}
+            className={cx(flow.phStage, phoneRows.chip, stage.movements.length === 0 && phoneRows.zero)}
             aria-pressed={highlight === `stage:${stage.id}`}
             onClick={() => toggleHighlight(`stage:${stage.id}`)}
             title={stage.label}
           >
             {STAGE_SHORT[stage.id]}
-            <span className={countClass}>{stage.movements.length}</span>
+            <span className={flow.phStageCount}>{stage.movements.length}</span>
           </button>
         ))}
     </div>
+  );
+  const tierOneNow = (
+    <MovementsTierOneNow
+      side={!isPhone}
+      coreCount={attentionCore.length}
+      openCount={tierOneOpen.length}
+      attentionMovements={attentionMovements}
+      service={service}
+      isInServiceScope={isInServiceScope}
+      patients={patients}
+      referrals={referrals}
+      now={now}
+      thresholds={thresholds}
+      accessTarget={accessTarget}
+      onFind={jumpToMovement}
+    />
   );
   function openFromHero(id: string) {
     const target = movements.find((candidate) => candidate.id === id);
@@ -758,6 +778,9 @@ export function MovementsScreen() {
     revealMovement(id);
     openDetail(id);
   }
+
+  // Community clinician desk: with no journey at all, one honest panel instead of empty boards.
+  if (community && teamName && movements.length === 0) return <CommunityNoJourneys teamName={teamName} />;
 
   return (
     <div
@@ -800,7 +823,13 @@ export function MovementsScreen() {
         <section className={styles.daySection} aria-label="The day" data-ward-primitive="panel">
           <Hero
             className={styles.dayHero}
-            eyebrow={isPhone ? `Movements · ${service ?? "Statewide"}` : "Movements"}
+            eyebrow={
+              community && teamName
+                ? `Movements · ${teamName} team`
+                : isPhone
+                  ? `Movements · ${service ?? "Statewide"}`
+                  : "Movements"
+            }
             title={
               // The title doubles as the "Open" day figure. Its DOM reads label first ("Open
               // movements 70"), so the figure's own label anchors it like every stat beside it;
@@ -816,7 +845,7 @@ export function MovementsScreen() {
                 "Prototype data, invented records"
               ) : (
                 <span className={flow.heroTitleMeta}>
-                  {movingCount} moving · {closedToday.length} resolved today · {activeCorridorCount} active corridors
+                  {closedToday.length} resolved today · {activeCorridorCount} active corridors
                 </span>
               )
             }
@@ -839,7 +868,7 @@ export function MovementsScreen() {
                     type="button"
                     className={buttonClass({ variant: "onHero", size: "sm", className: flow.jump })}
                     onClick={() => openFromHero(nextExpiry.id)}
-                    title="The soonest recorded legal expiry still ahead"
+                    title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
                   >
                     <span className={flow.jumpLabel}>Next expiry</span>
                     <span className={flow.jumpName}>{surname(nextExpiry)}</span>
@@ -864,8 +893,8 @@ export function MovementsScreen() {
               </div>
             }
             barAside={
-              <div className={flow.heroTools}>
-                {isPhone ? null : (
+              <div className={cx(flow.heroTools, isPhone && phoneRows.heroPills)}>
+                {isPhone || community ? null : (
                   <>
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link
@@ -877,12 +906,17 @@ export function MovementsScreen() {
                     </Link>
                   </>
                 )}
-                {myQueue[0] ? (
+                {myQueue[0] && !community ? (
                   <button
                     type="button"
                     // One primary per screen (device audit): the shell's "Record a decision" is the
                     // primary beside this on tablet and desktop; phone has no shell primary.
-                    className={buttonClass({ variant: isPhone ? "light" : "onHero", size: "sm" })}
+                    // Phone: Home's 40px hero pill (Josh, 31 Oct 2026).
+                    className={buttonClass({
+                      variant: isPhone ? "light" : "onHero",
+                      size: "sm",
+                      className: isPhone ? phoneRows.heroPill : undefined,
+                    })}
                     onClick={() => openFromHero(myQueue[0].id)}
                     title={`Top of your queue: ${resolveSubjectPatient(myQueue[0], { patients, referrals }).formalName}. ${myQueue.length} open movements wait on a coordinator step.`}
                   >
@@ -895,92 +929,25 @@ export function MovementsScreen() {
                 ) : null}
               </div>
             }
-            foot={
-              isPhone ? undefined : (
-                <div className={flow.heroAside}>
-                  <span className={flow.heroBarLabel}>Stage</span>
-                  {stageTrack(flow.stageTrack, flow.stageButton, flow.stageCount)}
-                </div>
-              )
-            }
           />
 
-          {/* Phone (v10): the stage chips sit on the canvas under the band, number first. */}
-          {isPhone ? stageTrack(flow.phStages, flow.phStage, flow.phStageCount) : null}
+          {/* Redesign (31 Oct 2026): one stage pipeline under the hero on a tablet or laptop, each
+              stage with its count and longest wait. Phone (v10): the stage chips sit on the canvas
+              under the band, number first. */}
+          {isPhone ? (
+            phoneStageTrack
+          ) : (
+            <StagePipeline
+              stages={openStages.filter((stage) => stage.id !== "arrived")}
+              now={now}
+              accessTarget={accessTarget}
+              highlight={highlight}
+              onToggle={(stageId) => toggleHighlight(`stage:${stageId}`)}
+            />
+          )}
 
-          <div className={styles.needsYou} role="group" aria-label="Tier 1 now" data-testid="movements-needs-you">
-            <div className={styles.needsYouHead}>
-              <h2 className={styles.needsYouTitle}>Tier 1 now</h2>
-              {attentionCore.length > 0 ? (
-                <span className={styles.needsYouMeta}>
-                  {attentionCore.length} of {tierOneOpen.length} Tier 1 open journeys
-                </span>
-              ) : null}
-              {/* B4: the full list of what needs the coordinator, in Delays' Needs me now view. */}
-              <Link href={waitingHref("needs-me")} className={buttonClass({ variant: "ghost", size: "sm" })}>
-                All in Waiting
-              </Link>
-            </div>
-            {attentionMovements.length === 0 ? (
-              <p className={styles.attentionEmpty}>No open Tier 1 movement needs calling out.</p>
-            ) : (
-              // D-b (Ward Lead's decisions, 2026-09-17): built off `openMovements`, never the scoped
-              // worklist, and a movement outside the chosen service says so.
-              <ul className={flow.needsList}>
-                {attentionMovements.map((movement) => {
-                  const outsideService = service !== null && isInServiceScope !== null && !isInServiceScope(movement);
-                  const subject = resolveSubjectPatient(movement, { patients, referrals });
-                  // Surname first on every device, as the worklist and timeline list people.
-                  const who = subject.formalName;
-                  const legalReason = legalActNowReason(movement, now, thresholds);
-                  const reason = legalReason ?? meaningfulBlocker(movement) ?? stageCopy[movement.stage].label;
-                  return (
-                    <li key={movement.id} className={flow.needsCell}>
-                      <button
-                        type="button"
-                        className={flow.needsItem}
-                        data-record-key={movement.id}
-                        // The thin red edge marks act-now rows only: a legal authority passed or approaching.
-                        data-act-now={legalReason ? "true" : undefined}
-                        onClick={() => jumpToMovement(movement.id)}
-                        aria-label={`Find ${who} in worklist: ${reason}${outsideService ? ` — outside ${service}` : ""}`}
-                      >
-                        <TierPill tier={movement.urgency} />
-                        <span className={flow.needsMain}>
-                          <span className={flow.needsTop}>
-                            <strong className={flow.needsName}>{who}</strong>
-                            <span className={flow.needsWait}>
-                              <Timer
-                                at={movement.openedAt * MS_PER_MINUTE}
-                                now={now * MS_PER_MINUTE}
-                                direction="waiting"
-                                thresholds={{
-                                  dueSoon: ED_SEVERE_PRESSURE_WAIT_MINUTES * MS_PER_MINUTE,
-                                  overdue: accessTarget * MS_PER_MINUTE,
-                                }}
-                                hideFlagWord
-                                hideDirection
-                              />
-                              <span className="sr-only"> waiting</span>
-                            </span>
-                          </span>
-                          <span className={flow.needsReason} title={reason}>
-                            {reason}
-                            {outsideService ? (
-                              <span
-                                data-testid={`movements-attention-outside-${movement.id}`}
-                              >{` · Outside ${service}`}</span>
-                            ) : null}
-                          </span>
-                        </span>
-                        <ChevronRight size={16} className={flow.needsChevron} aria-hidden="true" />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          {/* Phone: Tier 1 now in the band; a tablet or laptop has it atop the side column. */}
+          {isPhone ? tierOneNow : null}
         </section>
 
         {isPhone ? (
@@ -1008,7 +975,11 @@ export function MovementsScreen() {
         ) : null}
 
         {isPhone ? null : (
-          <section className={styles.trafficPanel} aria-label="Today’s traffic" data-ward-primitive="panel">
+          <section
+            className={cx(styles.trafficPanel, styles.trafficFullNames)}
+            aria-label="Today’s traffic"
+            data-ward-primitive="panel"
+          >
             <span className="sr-only">{`${activeCorridorCount} active corridors`}</span>
             <MovementHorizonGantt
               lanes={horizonLanes}
@@ -1030,7 +1001,11 @@ export function MovementsScreen() {
             {/* D-f: the scope bar and its "not these figures" sentence moved to the top of the
                 page (see the comment beside the header above) — never here, on the panel they were
                 disclaiming. */}
-            <Card aria-label="Movement worklist" data-ward-primitive="panel" className={styles.wlCard}>
+            <Card
+              aria-label="Movement worklist"
+              data-ward-primitive="panel"
+              className={cx(styles.wlCard, styles.wlWrapRows)}
+            >
               <CardHead
                 className={wardPin.pinnedSwitch}
                 icon={ArrowRightLeft}
@@ -1298,7 +1273,9 @@ export function MovementsScreen() {
             </Card>
           </div>
 
-          <aside className={styles.secondary} aria-label="Movement details">
+          <aside className={cx(styles.secondary, styles.secondaryWithTier)} aria-label="Movement details">
+            {/* Redesign (31 Oct 2026): Tier 1 now heads the side column, above Transport now. */}
+            {isPhone ? null : tierOneNow}
             {/* Transport and Shape of the day share one panel. The corner toggle swaps the view;
                 the region name follows whichever view is showing. The transport count stays off
                 the header: the bar caption already says how many legs are booked or moving. */}
@@ -1427,7 +1404,6 @@ export function MovementsScreen() {
           referrals={referrals}
           patients={patients}
           edAccessTargetMinutes={configuration.edAccessTargetMinutes}
-          legalUrgentMinutes={configuration.dueSoonUrgentMinutes}
           dispatch={dispatch}
           onClose={closeDetail}
           onFocusMovement={setFocusMovementId}

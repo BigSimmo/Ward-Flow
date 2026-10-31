@@ -1,14 +1,19 @@
-import type { RefObject } from "react";
+"use client";
+
+import { useCallback, useState, type RefObject } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { Button, Dialog, Radio } from "@/components/wf";
 
-import styles from "./ward-answer-view.module.css";
+import styles from "./ward-answer-accept-dialog.module.css";
 
 /**
  * The ward's Accept in principle dialog, moved out of `ward-answer-view.tsx` (H-0283, 27 Oct 2026).
- * The markup and words are unchanged. The answer view keeps the state, the focus return and the
- * dispatch, and passes them in.
+ * The answer view keeps the state, the focus return and the dispatch, and passes them in.
+ * Redesign (Josh, 31 Oct 2026), on the kit Dialog: the facts as a short list, the no-bed sentence
+ * as a note, and the pull time limit as a choice with nothing chosen; Confirm acceptance waits for
+ * it and says why. The referral time is the referral's recorded time, not a legal time.
  */
 export function WardAcceptDialog({
   movement,
@@ -33,74 +38,87 @@ export function WardAcceptDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  // Nothing pre-selected: today the select starts on standard. The page's `extended` is only
+  // trusted once this dialog has had a tap.
+  const [chosen, setChosen] = useState(false);
+  // The page's own modal-focus hook holds `dialogRef` (capture-phase Escape and Tab, and the focus
+  // return to the bed that opened it); it points at the kit Dialog's panel.
+  const bodyRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      dialogRef.current = node?.closest<HTMLDivElement>('[aria-modal="true"]') ?? null;
+    },
+    [dialogRef],
+  );
+
   return (
-    <div
-      className={styles.modalOverlay}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="accept-modal-title"
-      ref={dialogRef}
+    <Dialog
+      open
+      onClose={onCancel}
+      title="Accept referral in principle"
+      closeLabel="Close accept in principle"
+      size="md"
+      data-testid="ward-accept-dialog"
     >
-      <div className={styles.modalDialog}>
-        <div className={styles.modalHead}>
-          <h3 id="accept-modal-title" className={styles.modalTitle}>
-            Accept referral in principle
-          </h3>
-          <button type="button" className={`${styles.btn} ${styles.btnSm}`} onClick={onCancel}>
-            Cancel
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel} htmlFor="ward-answer-allocating-movement">
-              Patient
-            </label>
-            <input
-              type="text"
-              className={styles.formInput}
-              id="ward-answer-allocating-movement"
-              // Josh, 22 Oct 2026: the ward sees the name before it accepts. The tier and referral
-              // time still tell two waiting requests apart (D-39).
-              value={`${patientName} (${movement.cohort}), Tier ${movement.urgency}${movement.referredAt === undefined ? "" : `, referred ${formatInstantWithDay(movement.referredAt, now)}`}`}
-              readOnly
+      <div ref={bodyRef} className={styles.body}>
+        <dl className={styles.facts}>
+          <div className={styles.fact}>
+            <dt className={styles.factLabel}>Patient</dt>
+            {/* Josh, 22 Oct 2026: the ward sees the name before it accepts. The tier and referral
+                time still tell two waiting requests apart (D-39). Surname first (D-83). */}
+            <dd className={styles.factValue} id="ward-answer-allocating-movement">
+              <strong className={styles.name}>{patientName}</strong>
+              <span className={styles.factSub}>
+                {movement.cohort} · Tier {movement.urgency}
+                {movement.referredAt === undefined
+                  ? null
+                  : ` · referred ${formatInstantWithDay(movement.referredAt, now)}`}
+              </span>
+            </dd>
+          </div>
+          <div className={styles.fact}>
+            <dt className={styles.factLabel}>Target unit</dt>
+            <dd className={styles.factValue} id="ward-answer-target-unit">
+              {unitName}
+            </dd>
+          </div>
+        </dl>
+
+        <p className={styles.note} data-testid="ward-answer-no-bed-named">
+          Accepting does not allocate a bed. No bed number is recorded.
+        </p>
+
+        <fieldset className={styles.options} id="hold-duration-select">
+          <legend className={styles.legend}>Pull time limit</legend>
+          {holdChoices.map((choice) => (
+            <Radio
+              key={choice.label}
+              className={styles.option}
+              name={`hold-duration-${movement.id}`}
+              value={choice.extended ? "extended" : "standard"}
+              checked={chosen && extended === choice.extended}
+              onChange={() => {
+                setChosen(true);
+                onChooseHold(choice.extended);
+              }}
+              label={choice.label}
             />
-          </div>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel} htmlFor="ward-answer-target-unit">
-              Target Unit
-            </label>
-            <input type="text" className={styles.formInput} id="ward-answer-target-unit" value={unitName} readOnly />
-          </div>
-          <p className={styles.formNote} data-testid="ward-answer-no-bed-named">
-            Accepting does not allocate a bed. No bed number is recorded.
-          </p>
-          <div className={styles.formGroup}>
-            <label className={styles.formLabel} htmlFor="hold-duration-select">
-              Pull time limit
-            </label>
-            <select
-              id="hold-duration-select"
-              className={styles.formSelect}
-              value={extended ? "extended" : "standard"}
-              onChange={(e) => onChooseHold(e.target.value === "extended")}
-            >
-              {holdChoices.map((choice) => (
-                <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <div className={styles.modalFoot}>
-          <button type="button" className={styles.btn} onClick={onCancel}>
+          ))}
+        </fieldset>
+
+        {/* One footer row, as the other popups: Cancel, then the reason and the one filled button. */}
+        <div className={styles.actions}>
+          <Button variant="ghost" onClick={onCancel}>
             Cancel
-          </button>
-          <button type="button" className={`${styles.btn} ${styles.btnGood}`} onClick={onConfirm}>
+          </Button>
+          <Button
+            variant="pri"
+            disabledReason={chosen ? undefined : "Choose a pull time limit first"}
+            onClick={onConfirm}
+          >
             Confirm acceptance
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

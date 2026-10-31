@@ -30,15 +30,6 @@ export const PHONE_GROUP_TONES: Record<GroupKey, WfTone> = {
   expected: "neutral",
   "discharged-today": "closed",
 };
-export const PHONE_GROUP_LABELS: Record<GroupKey, string> = {
-  blocked: "Blocked",
-  confirmed: "Confirmed",
-  expected: "Expected",
-  "discharged-today": "Discharged · 24h",
-};
-
-/** v10 phone: rows a group shows before its "Show N more" row. */
-export const PHONE_GROUP_CAP = 6;
 
 /**
  * Every group, in the fixed scan order spec D9 names — blocked first because those are the rows

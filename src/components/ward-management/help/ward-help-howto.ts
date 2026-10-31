@@ -596,9 +596,10 @@ export const HOW_TOS: readonly HowTo[] = [
   {
     id: "theme",
     topic: "Settings and display",
-    title: "Use dark mode or the glare theme",
+    title: "Use dark mode or the bright light theme",
     keywords: "dark light night glare bright theme colour appearance",
-    answer: "Settings, Display, Theme: Auto, Light, Dark or Glare (for a bright room). It changes this device only.",
+    answer:
+      "Settings, Display, Theme: Auto, Light, Dark or Bright light (for a bright room). It changes this device only.",
     desks: EVERY_DESK,
     go: "settings#display",
     showMe: [

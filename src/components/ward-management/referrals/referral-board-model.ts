@@ -89,7 +89,7 @@ export function outcomeLabel(referral: Referral, summary?: SenderReferralPresent
  * after the colon: the record says a destination refused and does not say why, and the cell says
  * exactly that rather than inventing a reason or implying none was ever asked for.
  */
-export function refusalLines(referral: Referral): string[] {
+function refusalLines(referral: Referral): string[] {
   return declinedAddressings(referral).map((addressing) => {
     const reason = addressing.declineReason;
     const label = reason

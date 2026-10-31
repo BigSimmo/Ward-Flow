@@ -1,0 +1,55 @@
+/* Governance event list and the access admin's empty Review (redesign build, 31 October 2026). */
+
+/* The What and Record cells wrap instead of ending in "…". */
+.wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.registerBody .eventRow {
+  flex-shrink: 0; /* the list scrolls; wrapped rows keep their height instead of spilling into the next */
+  align-items: start;
+  padding-block: var(--wf-s-2);
+}
+
+/* The list takes the height of the screen rather than stopping a third of the way down. */
+@media (min-width: 64rem) {
+  .list .registerBody {
+    max-height: max(23rem, calc(100dvh - 22rem));
+  }
+}
+
+/* Access admin with nothing waiting: the review panel is gone, so the list card takes the full width. */
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+/* "Open the Access log" is a link, so it takes the accent link style, with a larger tap area on a phone. */
+.accessLink {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.accessLink:hover {
+  text-decoration: underline;
+}
+
+.accessLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-ctl);
+}
+
+@media (max-width: 48rem) {
+  /* An invisible cover gives the tap area without opening up the sentence's line spacing. */
+  .accessLink {
+    position: relative;
+  }
+
+  .accessLink::after {
+    content: "";
+    position: absolute;
+    inset: -14px -4px;
+  }
+}

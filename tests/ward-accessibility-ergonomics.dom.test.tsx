@@ -228,19 +228,20 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
 
       fireEvent.click(triggerBtn);
 
-      const drawer = screen.getByRole("dialog", { name: "Tasks" });
+      const drawer = screen.getByRole("dialog", { name: "Alerts" });
       expect(drawer).toBeInTheDocument();
       expect(drawer.contains(document.activeElement)).toBe(true);
 
       fireEvent.keyDown(window, { key: "Escape" });
 
-      expect(screen.queryByRole("dialog", { name: "Tasks" })).toBeNull();
+      expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
       expect(document.activeElement).toBe(triggerBtn);
     });
   });
 
   // Forms (9 Oct 2026): "Record a form" opens a sheet from the hero, so focus moves into the
-  // dialog and returns when it closes; the form type picker is inside it.
+  // dialog and returns when it closes. Redesign (Josh, 31 Oct 2026): the movement comes first, so
+  // focus starts on its picker.
   describe("5. LegalFormsScreen Record a form focus", () => {
     it("moves focus from the hero's Record a form button into the Record a form dialog", async () => {
       render(
@@ -256,7 +257,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       fireEvent.click(recordBtn);
 
       const dialog = screen.getByRole("dialog", { name: "Record a form" });
-      await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByLabelText("Form type")));
+      await waitFor(() => expect(document.activeElement).toBe(within(dialog).getByLabelText("Movement")));
     });
   });
 

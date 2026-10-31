@@ -82,10 +82,9 @@ const UNIT_CARD: TourTarget = { sel: '[data-testid^="ward-unit-card-"]' };
 const CONFIRM: TourTarget = { sel: '[data-testid^="ward-unit-card-"] button', text: "Confirm numbers" };
 const ED_CARD: TourTarget = { sel: '[data-testid^="ward-ed-card-"]' };
 const ED_ROW: TourTarget = { sel: '[data-testid^="ward-ed-patient-"]' };
-const ED_RAISE: TourTarget = { sel: '[data-testid="ward-ed-raise-referral-toggle"]' };
 const STATS_NAV: TourTarget = { sel: '[data-testid="ward-statistics-nav"]' };
 const TRENDS: TourTarget = { sel: '[data-testid="ward-statistics-session-trends"]' };
-const MISMATCH: TourTarget = { sel: 'section[aria-label="Where the mismatch is"]' };
+const MISMATCH: TourTarget = { sel: '[data-testid="capacity-mismatch"]' };
 
 function count(value: number, one: string, many: string): string {
   return `${value} ${value === 1 ? one : many}`;
@@ -305,7 +304,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "answer",
-          { sel: "#ward-awaiting-answer" },
+          // Ward flow opens on its busiest list, so the referrals list may be the hidden pane; the
+          // Referrals choice above it is always on screen (document order puts it first).
+          { sel: '[aria-label="Ward flow list"] [role="radio"], #ward-awaiting-answer' },
           "Referrals to answer",
           `Referrals sent to ${place ?? "your ward"} wait here for your answer. Accept, or decline with a reason, and the sender sees your answer straight away.`,
         ),
@@ -326,9 +327,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Finding your way",
           "brief",
-          { sel: '[data-testid="ward-open-daily-sheet-btn"]' },
+          { sel: '[aria-label="More ward actions"]' },
           "Shift brief",
-          "Shift brief sums up the ward for the start of a shift. Handover beside it is the sheet you pass to the next nurse in charge.",
+          "Shift brief, under More, sums up the ward for the start of a shift. Handover beside More is the sheet you pass to the next nurse in charge.",
         ),
         step(
           "Finding your way",
@@ -392,9 +393,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "raise",
-          ED_RAISE,
-          "Raise a referral",
-          "Raise referral starts a referral for someone on your board, to a ward or a community team.",
+          PRIMARY,
+          "New referral",
+          "New referral, at the top, starts a referral for someone on your board, to a ward or a community team.",
         ),
         step(
           "Finding your way",
@@ -445,9 +446,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "transport",
-          { sel: '[data-testid^="ward-community-transport-cell-"]' },
+          { sel: '[data-testid^="ward-community-open-dossier-"]' },
           "Open a person's record",
-          "Open record shows the person's record. When a move needs transport, Log transport booking appears here too.",
+          "Select a person's row to open their record. When a move needs transport, Log transport booking appears beside it.",
         ),
         step(
           "Finding your way",
@@ -552,22 +553,22 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "mismatch",
           MISMATCH,
-          "Where the mismatch is",
+          "Mismatch",
           "For each kind of bed: how many are spare, how many people are waiting and how many beds fit them.",
         ),
         step(
           "Your daily work",
           "meeting",
-          { sel: '[data-testid="bed-meeting-sheet-open"]' },
+          { sel: '[data-testid="capacity-bed-meeting"]' },
           "The bed meeting",
-          "Bed meeting sheet and Meeting agenda prepare the meeting. Open on TV puts it on the meeting room screen.",
+          "Bed meeting prints the meeting sheet and opens the agenda. Open on TV puts it on the meeting room screen.",
         ),
         step(
           "Finding your way",
           "map",
-          { sel: 'section[aria-label="Bed map"]' },
+          { sel: "#capacity-bed-map" },
           "Bed map",
-          "Every ward with ready, occupied and closed beds. Switch between Grid, Rows and Table.",
+          "Every ward with ready, occupied and closed beds. Switch between Grid and Rows.",
         ),
         step(
           "Finding your way",
@@ -622,7 +623,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "welcome",
           undefined,
           `Welcome, ${tourGreeting(role)}`,
-          `${signedInAs(role, f, "for the whole state")} You review overrides, refused actions and who opened which record.`,
+          `${signedInAs(role, f, "for the whole state")} You give staff access to the right desk and place. Governance also shows overrides, refused actions and who opened which record.`,
         ),
         step(
           "Your daily work",
@@ -789,13 +790,6 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
               }`
             : "Who is waiting, who has no bed yet, who is under a form and the longest wait against the target.",
         ),
-        step(
-          "Your daily work",
-          "raise",
-          ED_RAISE,
-          "Raise a referral",
-          "Starts a referral for someone on your board, to a ward or a community team.",
-        ),
         step("Your daily work", "row", ED_ROW, "One row per person", "Tier, bay, time in ED and the next step."),
         phoneCreate("New referral, Log a delay and Add patient"),
         phoneDock("My ED, Referrals, Alerts and Find a bed."),
@@ -893,7 +887,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "mismatch",
           MISMATCH,
-          "Where the mismatch is",
+          "Mismatch",
           "For each kind of bed, how many people are waiting and how many beds fit them.",
         ),
         phoneDock(
@@ -931,7 +925,10 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
       ];
     case "admin":
       return [
-        welcome("You review overrides, refused actions and who opened which record.", "for the whole state"),
+        welcome(
+          "You give staff access to the right desk and place. Governance also shows overrides, refused actions and who opened which record.",
+          "for the whole state",
+        ),
         step(
           "Your daily work",
           "review",

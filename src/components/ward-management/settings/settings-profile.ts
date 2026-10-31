@@ -18,8 +18,23 @@ export type WorkspaceProfile = {
   email: string;
 };
 
+/**
+ * A person's name surname first, as hospital lists write it (Settings audit, 31 Oct 2026):
+ * "Dr S. Chen" is "Chen, Dr S." and "K. Vance RN" is "Vance, K. RN". A name with no initial (a
+ * desk named by its role, such as "Access admin") is left as it is.
+ */
+export function surnameFirst(name: string): string {
+  const words = name.trim().split(/\s+/);
+  if (words.length < 2 || !words.some((word) => /^[A-Z]\.$/.test(word))) return name;
+  if (words[0]?.endsWith(",")) return name;
+  const surnameAt = words.findLastIndex((word) => !/\.$/.test(word) && !/^(RN|EN|RMHN)$/.test(word));
+  if (surnameAt <= 0) return name;
+  const rest = words.filter((_, index) => index !== surnameAt);
+  return `${words[surnameAt]}, ${rest.join(" ")}`;
+}
+
 export const SETTINGS_DEMO_PROFILE: WorkspaceProfile = {
-  name: "Dr S. Chen",
+  name: "Chen, Dr S.",
   initials: "SC",
   role: CHROME_ROLE_LABELS.coordinator,
   location: "Perth Central Desk",
@@ -31,7 +46,7 @@ export const SETTINGS_DEMO_PROFILE: WorkspaceProfile = {
 
 /** Synthetic, like the coordinator's: the same fictional 08 5550 range and example domain. */
 const ED_DEMO_PROFILE: WorkspaceProfile = {
-  name: "Dr A. Nguyen",
+  name: "Nguyen, Dr A.",
   initials: "AN",
   role: CHROME_ROLE_LABELS.ed,
   location: "Emergency department",
@@ -40,7 +55,7 @@ const ED_DEMO_PROFILE: WorkspaceProfile = {
 };
 
 const COMMUNITY_DEMO_PROFILE: WorkspaceProfile = {
-  name: "J. Walker",
+  name: "Walker, J.",
   initials: "JW",
   role: CHROME_ROLE_LABELS.community,
   location: "Community mental health team",

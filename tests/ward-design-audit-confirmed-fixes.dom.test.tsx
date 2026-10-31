@@ -11,7 +11,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
-import { dateInputFor } from "./helpers/ward-date-input";
+import { typedDateFor } from "./helpers/ward-date-input";
 
 afterEach(() => {
   cleanup();
@@ -74,7 +74,7 @@ function fillModal(kind: ModalKind) {
     fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "hospital_transfer" } });
     fireEvent.change(screen.getByLabelText("CAD or tracking number"), { target: { value: "SYNTHETIC-TRACKING" } });
     // The ETA opens blank when nothing is recorded or booked, so a preset is chosen.
-    fireEvent.click(screen.getByRole("button", { name: "+2 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: /^\+1h/u }));
   } else {
     fireEvent.change(screen.getByLabelText("Document / Statutory Form Type"), {
       target: { value: "Form 4A Transport order" },
@@ -195,7 +195,7 @@ function extensionTree(
 const EXTENSION_DAY_ZERO = perthMidnight(2026, 9, 24);
 function fillExtension(value = "23:30") {
   fireEvent.change(screen.getByLabelText("New expiry date"), {
-    target: { value: dateInputFor(NOW_ANCHOR, EXTENSION_DAY_ZERO) },
+    target: { value: typedDateFor(NOW_ANCHOR, EXTENSION_DAY_ZERO) },
   });
   fireEvent.change(screen.getByLabelText("New expiry time"), { target: { value } });
   return screen.getByTestId("ward-legal-forms-renew-confirm");

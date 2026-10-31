@@ -56,7 +56,9 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
   phone: {
     coordinator: ["welcome", "chips", "eds", "queue", "create", "dock", "search", "menu", "help"],
     ward: ["hero", "confirm", "tabs", "answer", "create", "dock", "pin", "help"],
-    ed: ["card", "raise", "row", "create", "dock", "find-bed", "help"],
+    // ce1975388 (31 Oct 2026): the ED hero's Raise referral is gone, so the phone tour leaves a new
+    // referral to its Create step and has no raise step of its own.
+    ed: ["card", "row", "create", "dock", "find-bed", "help"],
     community: ["hero", "chips", "tabs", "create", "dock", "help"],
     officer: ["hero", "next", "jobs", "dock", "help"],
     bed_manager: ["hero", "tabs", "mismatch", "dock", "help"],

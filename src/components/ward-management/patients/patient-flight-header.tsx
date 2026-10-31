@@ -26,6 +26,7 @@ export function PatientFlightHeader({
   phoneFoot,
   phoneFootKind = "line",
   statusDetail,
+  statusShown = true,
   location,
   facts,
   steps,
@@ -49,6 +50,8 @@ export function PatientFlightHeader({
   /** `"actions"` when `phoneFoot` holds buttons, so the hero drops the hairline and lets them wrap. */
   phoneFootKind?: "line" | "actions";
   statusDetail: string;
+  /** Redesign: false when the status words only repeat the mode pill beside the name. */
+  statusShown?: boolean;
   /** Where the person is now, when a movement records it. */
   location?: string;
   /** Movement facts on the right of the first row. */
@@ -73,7 +76,7 @@ export function PatientFlightHeader({
       ) : (
         <span>Demographics not recorded</span>
       )}
-      {location ? <span>{location}</span> : null}
+      {/* Redesign: the place is the eyebrow over the name, so the line under it does not repeat it. */}
       {patient?.confidential ? (
         <span className={styles.v6Confidential} data-testid="ward-patient-confidential-pill">
           Confidential
@@ -118,7 +121,7 @@ export function PatientFlightHeader({
           <>
             <div className={styles.v6HeroActions}>{actions}</div>
             <div
-              className={isLiveBedflow ? "sr-only" : styles.v6LiveState}
+              className={isLiveBedflow || !statusShown ? "sr-only" : styles.v6LiveState}
               role="status"
               aria-atomic="true"
               data-live={isLiveBedflow}

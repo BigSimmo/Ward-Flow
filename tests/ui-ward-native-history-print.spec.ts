@@ -17,6 +17,19 @@ async function navigate(page: Page, route: string) {
   await settled(page);
 }
 
+/**
+ * Kit (lane C, 31 Oct 2026): the unsaved-changes question is the styled confirm, not the browser's
+ * own box. Back or Forward is undone first, then the dialog asks; `prompts` keeps counting browser
+ * boxes, which must stay at 0.
+ */
+async function answerLeave(page: Page, choice: "Keep editing" | "Leave without saving") {
+  const ask = page.getByTestId("wf-confirm-dialog");
+  await expect(ask).toBeVisible();
+  await expect(ask.getByRole("heading", { name: "Leave this page?" })).toBeVisible();
+  await ask.getByRole("button", { name: choice }).click();
+  await expect(ask).toBeHidden();
+}
+
 test.use({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block", screenshot: "off", trace: "off" });
 
 test.describe("native history and handover print @mockup", () => {
@@ -152,14 +165,15 @@ test.describe("native history and handover print @mockup", () => {
       };
       page.on("dialog", dismiss);
       await page.evaluate((move) => window.history[move](), direction);
-      await expect.poll(() => prompts).toBe(1);
+      await answerLeave(page, "Keep editing");
+      expect(prompts).toBe(0);
       await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
       await expect(page.getByTestId("ward-planned-stay")).toHaveValue("9");
       await expect(page.getByRole("dialog")).toBeVisible();
       await expect(page.getByTestId("ward-planned-stay")).toBeFocused();
       page.off("dialog", dismiss);
-      page.once("dialog", (dialog) => dialog.accept());
       await page.evaluate((move) => window.history[move](), direction);
+      await answerLeave(page, "Leave without saving");
       await expect(page).toHaveURL(new RegExp(`${HOME}${direction === "back" ? "" : "/settings"}$`));
       await expect(page.getByTestId("ward-planned-stay")).toHaveCount(0);
     });
@@ -197,7 +211,8 @@ test.describe("native history and handover print @mockup", () => {
       await dialog.dismiss();
     });
     await page.evaluate(() => window.history.go(2));
-    await expect.poll(() => prompts).toBe(1);
+    await answerLeave(page, "Keep editing");
+    expect(prompts).toBe(0);
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await expect(page.getByTestId("ward-planned-stay")).toHaveValue("8");
   });
@@ -222,7 +237,8 @@ test.describe("native history and handover print @mockup", () => {
       await dialog.dismiss();
     });
     await page.evaluate(() => window.history.go(2));
-    await expect.poll(() => prompts).toBe(1);
+    await answerLeave(page, "Keep editing");
+    expect(prompts).toBe(0);
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await expect(page.getByTestId("ward-planned-stay")).toHaveValue("7");
   });
@@ -256,7 +272,8 @@ test.describe("native history and handover print @mockup", () => {
       await dialog.dismiss();
     });
     await page.evaluate(() => window.history.go(2));
-    await expect.poll(() => prompts).toBe(1);
+    await answerLeave(page, "Keep editing");
+    expect(prompts).toBe(0);
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await expect(page.getByTestId("ward-planned-stay")).toHaveValue("6");
     await expect(page.getByTestId("ward-planned-stay")).toBeFocused();
@@ -264,7 +281,8 @@ test.describe("native history and handover print @mockup", () => {
     expect(await page.evaluate(() => window.history.state.__wfHistoryUncertain)).toBe(true);
     // Once the cursor is uncertain, a second cancellation must also restore the form safely.
     await page.evaluate(() => window.history.back());
-    await expect.poll(() => prompts).toBe(2);
+    await answerLeave(page, "Keep editing");
+    expect(prompts).toBe(0);
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await expect(page.getByTestId("ward-planned-stay")).toHaveValue("6");
   });
@@ -311,7 +329,8 @@ test.describe("native history and handover print @mockup", () => {
       await dialog.dismiss();
     });
     await page.evaluate(() => window.history.go(3));
-    await expect.poll(() => prompts).toBe(1);
+    await answerLeave(page, "Keep editing");
+    expect(prompts).toBe(0);
     await expect(page).toHaveURL(new RegExp(`${HOME}/capacity$`));
     await expect(page.getByTestId("ward-planned-stay")).toHaveValue("4");
   });

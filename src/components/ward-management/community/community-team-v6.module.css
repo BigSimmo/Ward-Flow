@@ -374,15 +374,16 @@ div.workspace > .side {
 }
 
 @media (max-width: 40rem) {
+  /* Q-B8 (Josh, 31 Oct 2026): controls on this page are 44px (--wf-touch), never 48px. */
   .sampleMore > summary {
-    min-height: var(--spacing-tap, 3rem);
+    min-height: var(--wf-touch);
     box-sizing: border-box;
   }
 
   .keyValues a {
     display: inline-flex;
     align-items: center;
-    min-height: var(--spacing-tap, 3rem);
+    min-height: var(--wf-touch);
   }
 }
 

@@ -82,7 +82,10 @@ describe("Referral legal information does not infer authority from a bed request
     expect(screen.getByText("Consent or detention authority")).toBeVisible();
     expect(screen.getByText("Not recorded in this referral")).toBeVisible();
     expect(screen.getByText("Register check not recorded on this referral.")).toBeVisible();
-    expect(screen.getByText(/Referral raised/)).toBeVisible();
+    // Referrals redesign (31 Oct 2026): the raised time is the aside of "Why referred", not a "Referral raised" row.
+    const whyReferred = screen.getByRole("heading", { name: "Why referred" }).closest("header")!;
+    expect(whyReferred).toBeVisible();
+    expect(whyReferred.textContent).toMatch(/\d{1,2}:\d{2}/);
     expect(
       screen.queryByText(/✓ Affirmed|✓ Clear|Statutory Form 1A recorded|No active community treatment order/),
     ).not.toBeInTheDocument();

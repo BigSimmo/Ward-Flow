@@ -61,8 +61,16 @@ function PullReleaser({ movementId }: { movementId: string }) {
 
 const SUBJECT = movementById("WF-004");
 
-/** Opens the patient's row so their panel shows in the rail. */
+/**
+ * Opens the patient's row so their panel shows in the rail. Round 8 (31 Oct 2026): "Under 8 hours"
+ * is folded, so a user unfolds the wait bands first, as here.
+ */
 function selectPatient(id: string) {
+  if (screen.queryByTestId(`delays-select-${id}`) === null) {
+    for (const band of screen.queryAllByTestId(/^delays-band-/u)) {
+      if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+    }
+  }
   inspectDelayPerson(id);
 }
 

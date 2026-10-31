@@ -53,21 +53,32 @@ describe("the emergency-department decline control on the 'no bed shortlist' pan
     // Non-vacuity: this really is the no-bed-shortlist branch, not the ward shortlist.
     expect(screen.getByTestId("ward-referral-match-not-a-bed-question")).toBeInTheDocument();
 
+    // Referrals redesign (31 Oct 2026, Round 4): desktop uses the ED review, so Decline opens the
+    // ED reasons as radio rows and the confirm waits, aria-disabled, until one is chosen.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
     const button = screen.getByTestId("ward-referral-match-decline-emergency_department");
     expect(button).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(button);
+    expect(screen.getByTestId("ward-referral-match-decline-emergency_department")).toBeInTheDocument();
 
-    const select = screen.getByTestId("ward-referral-match-decline-reason-emergency_department");
-    const chosen = REFERRAL_DECLINE_REASONS[REFERRAL_DECLINE_REASONS.length - 1];
-    fireEvent.change(select, { target: { value: chosen } });
-    expect(select).toHaveValue(chosen);
+    // The ED's own vocabulary only (the select offered `ED_DECLINE_REASONS` too).
+    const offered = within(screen.getByRole("radiogroup", { name: "Why decline?" }))
+      .getAllByRole("radio")
+      .map((radio) => radio.getAttribute("data-testid"));
+    expect(offered).toEqual(ED_DECLINE_REASONS.map((reason) => `ward-referral-match-phone-decline-${reason}`));
+    const chosen = ED_DECLINE_REASONS[ED_DECLINE_REASONS.length - 1];
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${chosen}`));
+    expect(screen.getByTestId(`ward-referral-match-phone-decline-${chosen}`)).toHaveAttribute("aria-checked", "true");
     expect(button).not.toHaveAttribute("aria-disabled");
 
     fireEvent.click(button);
 
     // The reducer genuinely accepted it — no refusal banner, and (because RF-009's ED addressing
-    // is no longer "queued") the decline control itself is gone from the re-rendered panel. A
-    // dispatch that only looked like it worked would leave the control still sitting there.
+    // is no longer "queued") the decline and accept controls are gone from the re-rendered panel. A
+    // dispatch that only looked like it worked would leave them still sitting there.
     expect(screen.queryByTestId("ward-referral-match-rejection")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-referral-match-decline-emergency_department")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-referral-match-accept-emergency_department")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-match-decline-controls-emergency_department")).not.toBeInTheDocument();
   });
 });
@@ -153,37 +164,20 @@ describe("ED decline drafts across the ward, desktop ED and phone ED branches", 
     fireEvent.click(screen.getByRole("button", { name: "Back" }));
 
     view.rerender(match(edReferral, mode === "phone" ? <span>Phone details</span> : undefined));
-    if (mode === "phone") {
-      fireEvent.click(screen.getByRole("button", { name: "Decline" }));
-      expect(screen.getByTestId(`ward-referral-match-phone-decline-${edReason}`)).toHaveAttribute(
-        "aria-checked",
-        "true",
-      );
-      const chosen = ED_DECLINE_REASONS[1];
-      fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${chosen}`));
-      fireEvent.click(screen.getByTestId("ward-referral-match-decline-emergency_department"));
-      expect(dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "DECLINE_REFERRAL",
-          destinationKind: "emergency_department",
-          reason: chosen,
-        }),
-      );
-    } else {
-      expect(screen.getByTestId("ward-referral-match-decline-reason-emergency_department")).toHaveValue(edReason);
-      const chosen = ED_DECLINE_REASONS[1];
-      fireEvent.change(screen.getByTestId("ward-referral-match-decline-reason-emergency_department"), {
-        target: { value: chosen },
-      });
-      fireEvent.click(screen.getByTestId("ward-referral-match-decline-emergency_department"));
-      expect(dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "DECLINE_REFERRAL",
-          destinationKind: "emergency_department",
-          reason: chosen,
-        }),
-      );
-    }
+    // Referrals redesign (31 Oct 2026, Round 4): desktop uses the phone's ED review, so both modes
+    // reopen the kept ED reason behind Decline.
+    fireEvent.click(screen.getByRole("button", { name: "Decline" }));
+    expect(screen.getByTestId(`ward-referral-match-phone-decline-${edReason}`)).toHaveAttribute("aria-checked", "true");
+    const chosen = ED_DECLINE_REASONS[1];
+    fireEvent.click(screen.getByTestId(`ward-referral-match-phone-decline-${chosen}`));
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-emergency_department"));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "DECLINE_REFERRAL",
+        destinationKind: "emergency_department",
+        reason: chosen,
+      }),
+    );
     expect(dispatch).toHaveBeenCalledOnce();
   });
 });
