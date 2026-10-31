@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { type Instant } from "@/components/ward-management/ward-clock";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
-import { startTransition, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { startTransition, Suspense, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { edById } from "@/components/ward-management/ward-sites";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -127,19 +127,22 @@ export function MovementsPhoneNav({
           {phoneArrivalsTimeline ? "Hide the timeline" : "Show the timeline"}
         </button>
         {phoneArrivalsTimeline ? (
-          <MovementHorizonGantt
-            lanes={horizonLanes}
-            corridors={corridors}
-            refusedCorridors={refusedCorridors}
-            units={units}
-            now={now}
-            selectedMovementId={detailId}
-            onSelectMovement={(id) => {
-              setPhoneSheet(null);
-              openDetail(id);
-              revealMovement(id);
-            }}
-          />
+          // Mounted after a tap, so only the timeline waits for its code, never the whole page.
+          <Suspense fallback={null}>
+            <MovementHorizonGantt
+              lanes={horizonLanes}
+              corridors={corridors}
+              refusedCorridors={refusedCorridors}
+              units={units}
+              now={now}
+              selectedMovementId={detailId}
+              onSelectMovement={(id) => {
+                setPhoneSheet(null);
+                openDetail(id);
+                revealMovement(id);
+              }}
+            />
+          </Suspense>
         ) : null}
       </PhoneSheet>
       <PhoneSheet
