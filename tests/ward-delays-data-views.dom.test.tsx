@@ -79,7 +79,8 @@ describe("the Delays board's data views", () => {
     const timeline = screen.getByTestId(`delays-row-timeline-${withDue.movement.id}`);
     expect(timeline).toHaveTextContent(/Arrived, /u);
     expect(timeline).toHaveTextContent(/Now/u);
-    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} due`, "u"));
+    // D-93 (31 Oct 2026): the recorded legal time as typed, never "due as written, 1h 30m left".
+    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} ends .+ as typed`, "u"));
     expect(screen.getByTestId(`delays-select-${withDue.movement.id}`)).toHaveAttribute("aria-expanded", "true");
 
     // Choosing the same row again closes it; only one row's timeline is ever open.

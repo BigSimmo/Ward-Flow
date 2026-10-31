@@ -1,6 +1,7 @@
 import { INBOX_CATEGORIES, inboxItemIsActNow } from "@/components/ward-management/ward-flow-reducer";
 import { eligibleCandidatesAmong, isOpen, type InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Instant } from "@/components/ward-management/ward-clock";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
@@ -61,6 +62,27 @@ const KIND_PREFIXES: [AlertKind, string][] = [
 
 export function alertKindOf(id: string): AlertKind | undefined {
   return KIND_PREFIXES.find(([, prefix]) => id.startsWith(prefix))?.[0];
+}
+
+/**
+ * A passed legal form's typed time, undefined for every other alert. Legal times only as typed
+ * (Josh, 31 Oct 2026): where another alert shows its age, a passed legal form shows "Ended 10:02
+ * as typed" instead, never how long ago that was.
+ */
+export function legalTypedEnd(item: InboxItem): Instant | undefined {
+  return alertKindOf(item.id) === "legal" ? item.dueAt : undefined;
+}
+
+/** The start of the age a row shows: none for a passed legal form, which shows its typed time. */
+export function shownAgeFrom(item: InboxItem, raised: Instant | undefined): Instant | undefined {
+  return legalTypedEnd(item) === undefined ? raised : undefined;
+}
+
+/** A copied line's time: " Ended 10:02 as typed." for a passed legal form, else " Open 1h 15m.". */
+export function copiedAge(item: InboxItem, raised: Instant | undefined, now: Instant): string {
+  const ended = legalTypedEnd(item);
+  if (ended !== undefined) return ` ${typedTimeLine(ended, now)}.`;
+  return raised !== undefined ? ` Open ${minutesText(Math.max(0, now - raised))}.` : "";
 }
 
 /**

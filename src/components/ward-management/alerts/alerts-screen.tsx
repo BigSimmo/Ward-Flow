@@ -60,7 +60,7 @@ import {
   escalationAppliesTo,
   effectiveOwner,
   isQueueItem,
-  minutesText,
+  copiedAge,
   admissionIdOfInboxId,
   raisedAt,
   resolveAlertSubject,
@@ -803,7 +803,7 @@ function AlertsWorkspace() {
     setBroadcastRequest(null);
     setActionRequest(null);
     const line = (entry: QueueEntry) =>
-      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${entry.raised !== undefined ? ` Open ${minutesText(Math.max(0, now - entry.raised))}.` : ""}`;
+      `- ${entry.item.title}. ${entry.subject.displayName}. ${entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from}. Owner ${entry.owner}.${copiedAge(entry.item, entry.raised, now)}`;
     const sections: [string, QueueEntry[]][] = [
       ["Act now", actEntries],
       ["Waiting", waitEntries],

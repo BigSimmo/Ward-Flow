@@ -3,6 +3,7 @@
 
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
   daysInBed as admissionStayDays,
@@ -458,7 +459,8 @@ export function wardLiveFormAlerts({
           key: `form-${movement.id}`,
           tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
           title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
-          countdown: remaining < 0 ? "Due time has passed" : formatRemaining(remaining),
+          // Legal times only as typed (31 Oct 2026): "Ends 15:42 as typed", never "1h 15m left".
+          countdown: typedTimeLine(dueAt, now),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
           text: `${patientName}: recorded due ${formatInstantWithDay(dueAt, now)}.`,
           actionLabel: "Open arrival",

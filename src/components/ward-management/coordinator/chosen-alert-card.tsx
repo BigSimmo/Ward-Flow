@@ -6,7 +6,13 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 
-import { alertDetail, alertKindLabel, minutesText } from "@/components/ward-management/alerts/alerts-model";
+import {
+  alertDetail,
+  alertKindLabel,
+  legalTypedEnd,
+  minutesText,
+} from "@/components/ward-management/alerts/alerts-model";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
@@ -17,7 +23,14 @@ import styles from "./home-list.module.css";
 export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; now: Instant; onClear?: () => void }) {
   const kindLabel = alertKindLabel(entry.item.id);
   const inPlacement = Boolean(entry.movement);
-  const age = entry.raised === undefined ? "time not recorded" : `${minutesText(Math.max(0, now - entry.raised))} ago`;
+  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+  const legalEnded = legalTypedEnd(entry.item);
+  const age =
+    legalEnded !== undefined
+      ? typedTimeLine(legalEnded, now)
+      : entry.raised === undefined
+        ? "time not recorded"
+        : `${minutesText(Math.max(0, now - entry.raised))} ago`;
   return (
     <Card className={styles.alertCard} data-testid="home-chosen-alert" aria-label="Chosen alert">
       <CardHead

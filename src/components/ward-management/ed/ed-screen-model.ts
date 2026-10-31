@@ -7,15 +7,14 @@ import {
   clockState,
   type DueSoonThresholds,
   formatElapsed,
-  formatInstantWithDay,
   type Instant,
-  minutesUntil,
   perthCalendarDay,
   perthMidnight,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
   COHORTS,
@@ -628,10 +627,9 @@ export function outstandingItem(movement: Movement): OutstandingItem {
  */
 export function formExpiryLine(legalForm: LegalForm, now: Instant): string {
   if (legalForm.dueAt === undefined) return "No expiry recorded from the form.";
-  const remaining = minutesUntil(legalForm.dueAt, now);
-  const when = formatInstantWithDay(legalForm.dueAt, now);
-  if (remaining >= 0) return `Expiry written on the form: ${when} (${splitDuration(remaining)} left)`;
-  return `Expiry written on the form: ${when} (passed ${splitDuration(Math.abs(remaining))} ago)`;
+  // Legal times only as typed (Josh, 31 Oct 2026): "Ends Mon 09:00 as typed" or "Ended … as typed",
+  // never "(3h 20m left)" or "(passed 1h 05m ago)".
+  return typedTimeLine(legalForm.dueAt, now);
 }
 
 /**

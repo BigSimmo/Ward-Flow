@@ -11,6 +11,8 @@ import {
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { movementOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
@@ -36,13 +38,24 @@ export function ago(minutes: number): string {
  * titles from the form register only) opens on keyboard focus and on a tap, not only on hover. A tap
  * on the chip shows the tip and does not open the row.
  */
+/**
+ * The row's typed legal time in words, "ends 15:42 as typed" or "ended 15:42 as typed"; undefined
+ * with no typed time. Never a count (legal times only as typed, Josh, 31 Oct 2026). `dueIn` is the
+ * typed time less the clock, so the clock is recovered from it for the day words.
+ */
+export function rowTypedTime(row: BoardRow): string | undefined {
+  const dueAt = currentLegalDueAt(row.movement);
+  if (dueAt === undefined || row.dueIn === undefined) return undefined;
+  return typedTimePhrase(dueAt, dueAt - row.dueIn);
+}
+
 export function legalCell(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
   const form = row.movement.legalForm;
   const short = legalStatusShort(row.movement);
   const full = legalStatusFull(row.movement);
   if (row.dueIn === undefined || form === undefined) return legalTip(full, <>{short}</>);
   const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds);
-  const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
+  const left = rowTypedTime(row) ?? "";
   return (
     <span className={styles.lg}>
       <Glyph tone={tone} />
@@ -93,11 +106,11 @@ export function updateCell(row: BoardRow, now: Instant): ReactNode {
   );
 }
 
-/** v10 phone: the second line leads with the recorded legal time left, or that it was escalated. */
+/** v10 phone: the second line leads with the recorded legal time as typed, or that it was escalated. */
 export function phonePrefix(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
   const form = row.movement.legalForm;
   if (form !== undefined && row.dueIn !== undefined) {
-    const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
+    const left = rowTypedTime(row) ?? "";
     return (
       <>
         <Glyph tone={row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds)} />
@@ -190,7 +203,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: dueP,
       time: formatInstantWithDay(now + due, now),
-      text: `Form ${row.movement.legalForm.code} due as written, ${splitDuration(due)} left`,
+      text: `Form ${row.movement.legalForm.code} ${typedTimePhrase(now + due, now)}`,
       tone: dueTone(due, thresholds) ?? "warning",
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
@@ -200,7 +213,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: passedP,
       time: formatInstantWithDay(now - passed, now),
-      text: `Form ${row.movement.legalForm.code} time passed, ${splitDuration(passed)} ago`,
+      text: `Form ${row.movement.legalForm.code} ${typedTimePhrase(now - passed, now)}`,
       tone: "danger",
     });
   labels.sort((a, b) => a.p - b.p);

@@ -36,7 +36,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./delays-board.module.css";
-import { ago, originLabel } from "./delays-board-rows";
+import { ago, originLabel, rowTypedTime } from "./delays-board-rows";
 
 export function PersonPanel({
   row,
@@ -170,18 +170,12 @@ export function PersonPanel({
           <div className={`${styles.inset} ${styles.clock}`} data-testid={`delays-legal-clock-${movement.id}`}>
             <Glyph tone={row.dueIn < 0 ? "danger" : (dueTone(row.dueIn, thresholds) ?? "warning")} />
             <div className={styles.grow}>
-              <b>
-                {row.dueIn < 0
-                  ? `${legalFormName(legalForm)} passed its deadline ${splitDuration(-row.dueIn)} ago`
-                  : `${legalFormName(legalForm)} due in ${splitDuration(row.dueIn)}`}
-              </b>
+              {/* Legal times only as typed (31 Oct 2026): the typed time in words, never a count. */}
+              <b>{`${legalFormName(legalForm)} · ${rowTypedTime(row) ?? ""}`}</b>
               <span className={styles.mute}>
                 Recorded time <LegalLimitsNotChecked variant="tag" />
               </span>
             </div>
-            <span className={styles.big}>
-              {row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`}
-            </span>
           </div>
         ) : null}
 
