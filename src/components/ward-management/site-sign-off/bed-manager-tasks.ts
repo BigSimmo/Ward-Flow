@@ -42,7 +42,7 @@ export const BED_MANAGER_TASK_ACTIONS = {
 } as const satisfies Record<BedManagerTaskKind, WardFlowEvent["type"]>;
 
 /** "Due now" (bed figures and the coordinator's bed calls) or "Today", as the mock-up groups them. */
-export type BedManagerTaskGroup = "due_now" | "today";
+type BedManagerTaskGroup = "due_now" | "today";
 
 export type BedManagerTask = {
   /** Stable for the row: kind plus the record it is about. */

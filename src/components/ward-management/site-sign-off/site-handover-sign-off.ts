@@ -78,7 +78,7 @@ export function inSignOffWindow(at: Instant, shiftAt: Instant): boolean {
 }
 
 /** Why `shiftAt` cannot be signed at `now`, or null: it must be a shift start still to come within one shift. */
-export function siteShiftRefusal(shiftAt: unknown, now: Instant): string | null {
+function siteShiftRefusal(shiftAt: unknown, now: Instant): string | null {
   if (typeof shiftAt !== "number" || !Number.isFinite(shiftAt) || !Number.isInteger(shiftAt))
     return "A site sign-off names the handover it is for";
   if (!SHIFT_START_MINUTES.includes(minuteOfDay(shiftAt))) return "A site sign-off is for a handover at a shift start";
@@ -223,7 +223,7 @@ export function siteMeetingActionsOpenToday(
 }
 
 /** Q63: the four checks before a site signs off. Information only: none of them blocks the sign-off. */
-export type SiteSignOffCheckId = "bed_numbers" | "discharge_blockers" | "bed_meeting_actions" | "bed_calls";
+type SiteSignOffCheckId = "bed_numbers" | "discharge_blockers" | "bed_meeting_actions" | "bed_calls";
 
 export type SiteSignOffCheck = {
   id: SiteSignOffCheckId;
