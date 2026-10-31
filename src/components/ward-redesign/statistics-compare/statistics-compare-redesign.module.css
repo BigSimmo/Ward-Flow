@@ -237,3 +237,12 @@ table.pinTable {
     inset: -6px;
   }
 }
+
+/* The phone "Compare two wards" row (statistics-compare-sheet-row.tsx): its second line names both
+   wards, so it wraps in full rather than ending in "…". Doubled to sit over the shared row's cut. */
+.navSubWrap.navSubWrap {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}

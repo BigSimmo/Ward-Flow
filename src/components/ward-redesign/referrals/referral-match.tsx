@@ -69,11 +69,9 @@ import {
   REJECTED_DECISION_LABELS,
 } from "@/components/ward-management/referrals/referral-match-model";
 import { ReferralHistoryAndCorrections } from "@/components/ward-management/referrals/referral-history-corrections";
-import {
-  AskMoreWardsCard,
-  AskMoreWardsFoot,
-  useAskMoreWards,
-} from "@/components/ward-management/referrals/referral-ask-more-wards";
+import { AskMoreWardsFoot, useAskMoreWards } from "@/components/ward-management/referrals/referral-ask-more-wards";
+// D-91: the card's open list is the one Find a ward list, shared with the patient record.
+import { AskMoreWardsCard } from "./ask-more-wards-card";
 import { MatchRow } from "@/components/ward-management/referrals/referral-match-rows";
 import { useReferralMatchState } from "@/components/ward-management/referrals/use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";

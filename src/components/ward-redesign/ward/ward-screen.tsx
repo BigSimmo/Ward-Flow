@@ -148,7 +148,8 @@ import {
 import { WardAcceptedReferralPlacement } from "@/components/ward-management/ward/ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "@/components/ward-redesign/ward/ward-screen-home-section";
 import { WardScreenBedDrawer, WardScreenCapacityModal } from "@/components/ward-management/ward/ward-screen-overlays";
-import { WardScreenTabSections } from "@/components/ward-management/ward/ward-screen-tab-sections";
+// D-91: forked so On the way out draws the one shared suburb lookup card.
+import { WardScreenTabSections } from "@/components/ward-redesign/ward/ward-screen-tab-sections";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 
 type WardScreenProps = {

@@ -1,0 +1,6 @@
+/* D-91: the safeguard line under the shared suburb lookup card on the ward's Discharges tab. */
+.suburbSafeguard {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}

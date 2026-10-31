@@ -46,8 +46,10 @@ import { WardFormTimes } from "@/components/ward-management/tools/ward-form-time
 import { NetworkFigures } from "@/components/ward-management/tools/ward-network-figures";
 import styles from "@/components/ward-management/tools/ward-tools-sheet.module.css";
 import local from "@/components/ward-redesign/pop-tools/tools.module.css";
+// D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
+import { SuburbLookupCard } from "@/components/ward-redesign/community/suburb-lookup-card";
+import { buttonClass } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import {
   useExecutiveStatistics,
@@ -55,14 +57,6 @@ import {
 } from "@/components/ward-management/statistics/executive-statistics-context";
 import { releasedCountText } from "@/components/ward-management/statistics/statistics-small-numbers";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
-
-const WardCatchmentResolver = dynamic(
-  withLoadRetry(
-    () => import("@/components/ward-management/tools/ward-catchment-resolver").then((m) => m.WardCatchmentResolver),
-    "Catchment lookup did not load",
-  ),
-  { ssr: false },
-);
 
 // The synthetic hospital feed inbox (fix plan item 5) loads only when its row is opened.
 const WardFeedInbox = dynamic(
@@ -423,28 +417,37 @@ export function ToolsSheet({
     tool(
       "catchment",
       MapIcon,
-      "Catchment lookup",
-      "Suburb or postcode to service and clinic",
-      <WardCatchmentResolver
-        compact
-        renderActions={(result) => {
-          const clinic = contactForTeam(result.communityClinic);
+      "Suburb lookup",
+      "Catchment team for a suburb, alias or postcode",
+      // D-91: the one suburb lookup card. The Tools row is its frame, so the card draws no second
+      // frame or heading here. A reviewed team carries its clinic line and, for a desk that refers,
+      // Start a community referral; a contested or unreviewed suburb names no team, so offers neither.
+      <SuburbLookupCard
+        className={local.suburbCard}
+        teamMeta={(team) => {
+          const clinic = contactForTeam(team);
           return (
-            <>
-              <span className={styles.clinicPhone}>
-                <Phone aria-hidden="true" strokeWidth={1.75} />
-                {clinic?.publishedPhone
-                  ? `${result.communityClinic} clinic ${clinic.publishedPhone}, invented demo number`
-                  : `${result.communityClinic} clinic number not recorded`}
-              </span>
-              {canRefer && (
-                <button type="button" className={styles.primaryButton} onClick={() => onNewReferral("community")}>
-                  Start a community referral
-                </button>
-              )}
-            </>
+            <span className={local.clinicLine}>
+              <Phone aria-hidden="true" strokeWidth={1.75} />
+              {clinic?.publishedPhone
+                ? `Clinic ${clinic.publishedPhone}, invented demo number`
+                : "Clinic number not recorded"}
+            </span>
           );
         }}
+        teamActions={
+          canRefer
+            ? () => (
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  onClick={() => onNewReferral("community")}
+                >
+                  Start a community referral
+                </button>
+              )
+            : undefined
+        }
       />,
     ),
     tool(

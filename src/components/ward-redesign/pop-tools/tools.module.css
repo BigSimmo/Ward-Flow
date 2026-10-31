@@ -29,3 +29,40 @@
   margin: 0;
   font-size: var(--wf-fs-13);
 }
+
+/* D-91: the shared suburb lookup card inside its Tools row. The row is the frame, so the card
+   draws no second border, padding or heading here (its heading stays for screen readers). */
+.suburbCard.suburbCard {
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.suburbCard > :first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.suburbCard > :last-child {
+  padding: 0;
+}
+
+/* A reviewed team's clinic line, under its name. */
+.clinicLine {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.clinicLine svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}

@@ -51,8 +51,9 @@ const ArrivalTimeModal = dynamic(() =>
   import("@/components/ward-management/referrals/arrival-time-modal").then((m) => m.ArrivalTimeModal),
 );
 // F-10: transit operations only draw inside the Destination sheet, so their code loads on its own,
-// fetched once the page is idle, rather than with the patient page.
-const loadTransitOperations = () => import("@/components/ward-management/patients/patient-transit-operations");
+// fetched once the page is idle, rather than with the patient page. D-91: the mock-up's fork, whose
+// Ask wards list is the one Find a ward list.
+const loadTransitOperations = () => import("./patient-transit-operations");
 const PatientTransitOperations = dynamic(() => loadTransitOperations().then((m) => m.PatientTransitOperations));
 // Document details have no closed-state work. Keep their code off the first load, with the same
 // idle preload as Transit operations and a cancellable, focus-managed dialog while loading.

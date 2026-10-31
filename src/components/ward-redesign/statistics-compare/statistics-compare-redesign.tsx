@@ -40,12 +40,9 @@ import { edWaitFigures } from "@/components/ward-management/statistics/statistic
 import { StatCard, StatisticsPage, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
 import { FlushRow, FlushStack } from "@/components/ward-management/statistics/statistics-layout";
 import { wardReferralTally } from "@/components/ward-management/statistics/statistics-ward-referrals";
-import {
-  PhoneBody,
-  PhoneSheetRow,
-  phoneBodyStyles as phone,
-} from "@/components/ward-management/statistics/statistics-phone-parts";
+import { PhoneBody, phoneBodyStyles as phone } from "@/components/ward-management/statistics/statistics-phone-parts";
 import compare from "./statistics-compare-redesign.module.css";
+import { CompareSheetRow } from "./statistics-compare-sheet-row";
 import { FindUnitLink } from "@/components/ward-redesign/statistics/statistics-view-switch";
 import { FIRST_ROWS, ShowAllRow } from "./statistics-compare-show-all";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
@@ -541,14 +538,15 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
           </>
         )}
       </div>
-      <PhoneSheetRow
+      {/* The line names both wards, so it wraps in full (a local copy of the shared row). */}
+      <CompareSheetRow
         icon={Pin}
         title="Compare two wards"
         sub={pairNames.length > 0 ? `${pairNames.join(" and ")} against the network` : "Choose two wards"}
         testId="ward-statistics-compare-phone-pinned"
       >
         <CompareTwoWards rows={wardRows} wardA={wardA} wardB={wardB} onChange={(a, b) => setPair([a, b])} />
-      </PhoneSheetRow>
+      </CompareSheetRow>
     </PhoneBody>
   );
 }

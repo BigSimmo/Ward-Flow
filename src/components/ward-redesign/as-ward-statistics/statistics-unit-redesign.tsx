@@ -1,6 +1,6 @@
 "use client"; // Forked from src/components/ward-redesign/statistics-unit/statistics-unit-redesign.tsx (role view: nurse in charge).
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import Link from "next/link";
 import {
   BedDouble,
@@ -46,9 +46,10 @@ import { wardReferralTally } from "@/components/ward-management/statistics/stati
 import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
-  STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+// D-91: the one unit finder, on the Summary page (Compare's chooser is gone).
+import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-redesign/statistics/statistics-view-switch";
 import { unitHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
@@ -91,13 +92,10 @@ import {
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "@/components/ward-redesign/statistics-unit/statistics-unit.module.css";
-import {
-  CompactBedMap,
-  StayKey,
-  bandIndexOf,
-} from "@/components/ward-redesign/statistics-unit/statistics-unit-bed-map";
+import { CompactBedMap } from "@/components/ward-redesign/statistics-unit/statistics-unit-bed-map";
 import { ChangeWard } from "@/components/ward-redesign/statistics-unit/statistics-unit-change-ward";
 import ward from "@/components/ward-management/statistics/statistics-ward.module.css";
+import beds from "./ward-phone-beds.module.css";
 
 import {
   useExecutiveStatistics,
@@ -359,8 +357,8 @@ function OperationalWardScreen({
               because a page showing the wrong ward under the right heading is worse than a page showing nothing.
             </p>
             <p>
-              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
-                Choose a ward from the comparisons page
+              <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ward-chooser-link">
+                Choose a ward with Open a unit
               </Link>{" "}
               to reach one that does exist.
             </p>
@@ -810,6 +808,16 @@ const PHONE_BED_LEGEND: { kinds: BedMap["cells"][number]["kind"][]; label: strin
 ];
 
 /**
+ * The phone bed grid's columns: ten at most, and where the beds divide evenly by 5 to 10, that
+ * divisor, so no bed sits alone on a row (20 beds read 10 by 2, 24 read 8 by 3).
+ */
+function bedColumns(count: number): number {
+  if (count <= 10) return Math.max(count, 1);
+  for (let cols = 10; cols >= 5; cols -= 1) if (count % cols === 0) return cols;
+  return 10;
+}
+
+/**
  * One ward on a phone (v10 phone): the beds as a strip of boxes grouped by state (the model has no
  * bed numbers), then the roster, the discharges due in seven days and the blocked discharges as
  * one list behind a segmented control, and "Open the ward" pinned at the foot.
@@ -850,36 +858,32 @@ function WardPhone({
   return (
     <PhoneBody testId="ward-statistics-ward-phone">
       <div className={phone.bedCard} data-testid="ward-statistics-ward-phone-beds">
-        <ul className={phone.bedStrip} aria-label={`${unit.name}, ${unit.beds} beds by state`}>
-          {/* Redesign: a bed someone is in is shaded by stay, the desktop map's four bands. A counts-only
-              desk sees bed states alone, as on desktop. */}
+        {/* Coordinator review (31 Oct 2026): an even grid, each state its own fill in the Capacity
+            map's colours, and a legend with the same swatches. The phone drops the stay shading: five
+            state fills are what a small grid can carry, and the roster below gives each stay in days. */}
+        <ul
+          className={beds.grid}
+          style={{ "--bed-cols": bedColumns(map.cells.length) } as CSSProperties}
+          aria-label={`${unit.name}, ${unit.beds} beds by state`}
+        >
           {map.cells.map((cell, index) => {
             const stay = countsOnly ? null : cell.stayDays;
             const label =
               stay === null
                 ? BED_MAP_LABELS[cell.kind]
                 : `${BED_MAP_LABELS[cell.kind]}, ${stay} ${stay === 1 ? "day" : "days"}`;
-            return (
-              <li
-                key={index}
-                className={cx(phone.bed, redesign.phoneBed)}
-                data-kind={cell.kind}
-                data-stay-band={stay === null ? undefined : bandIndexOf(stay)}
-                title={label}
-                aria-label={label}
-              />
-            );
+            return <li key={index} className={beds.bed} data-kind={cell.kind} title={label} aria-label={label} />;
           })}
         </ul>
-        <ul className={phone.bedLegend} aria-label="Beds by state">
+        <ul className={beds.legend} aria-label="Beds by state">
           {PHONE_BED_LEGEND.map((entry) => (
             <li key={entry.label}>
+              <i className={beds.swatch} data-kind={entry.kinds[0]} aria-hidden="true" />
               {entry.label}
               <b>{entry.kinds.reduce((sum, kind) => sum + map.counts[kind], 0)}</b>
             </li>
           ))}
         </ul>
-        {countsOnly ? null : <StayKey />}
       </div>
       {countsOnly ? (
         // The three lists are one row per admission, and their tab counts only count those rows.
