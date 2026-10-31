@@ -5,12 +5,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
+  Activity as ActivityIcon,
   ArrowLeftRight,
+  Bell,
   ChevronDown,
   ChevronLeft,
   CircleHelp,
   LayoutGrid,
-  ListChecks,
   LogOut,
   Menu,
   PanelLeftOpen,
@@ -18,22 +19,21 @@ import {
   Settings,
   SunMoon,
   Wrench,
-  ClipboardList,
-  BarChart3,
 } from "lucide-react";
-import { Sheet, useIsPhone, useMediaQuery, useWfBandActive } from "@/components/wf";
+import { Dot, Sheet, useIsPhone, useMediaQuery, useWfBandActive } from "@/components/wf";
 import { formatInstantWithDay } from "../ward-clock";
 import { useExecutiveStatistics } from "../statistics/executive-statistics-context";
 import { releasedCountText, ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
-import { WardDataModeSlot } from "../ward-shared-access";
-import { WardHelpHost, WardHelpScreenButton } from "../help/ward-help-host";
-import { openWardHelp } from "../help/ward-help-events";
+import { WardHelpHost } from "../help/ward-help-host";
+import { WARD_CAPACITY_HREF } from "../ward-nav";
+import { useWardHelpRow } from "../help/ward-help-link";
 import { applyAppearance, applyGlare } from "./ward-bar";
 import { WardBarBack } from "./ward-bar-controls";
 import { wardBarRouteTitle, SERVICE_SWATCH_KEY } from "./ward-bar-model";
 import { WardBarFrame, WardRailFrame } from "./ward-chrome-frame";
 import { WardAccountActions } from "./ward-account-actions";
 import { SharedSessionContext } from "./ward-shared-session-context";
+import { useEffectiveWardAccess } from "./ward-access-store";
 import {
   WardAccessBanner,
   WardAccessGate,
@@ -68,7 +68,7 @@ import { useMobileKeyboard } from "./use-mobile-keyboard";
 import { useRevealFocusedInRow } from "./use-reveal-focused-in-row";
 import { useOnlineStatus } from "../use-online-status";
 import { useServiceScope, setServiceScope } from "./ward-service-store";
-import { computeShiftProgress } from "./ward-rail";
+import { BedAlertMeter, capacityRowsSpoken, overLineLabel, type CapacityRow } from "./ward-rail-parts";
 import { useBarScrolled, useBandScrolled } from "./ward-bar-scroll";
 import {
   BED_ALERT_THRESHOLD_PERCENT,
@@ -130,8 +130,117 @@ function ExecutiveDemoMenu({ onClose }: { onClose: (refocus?: boolean) => void }
     </Sheet>
   );
 }
-const loadExecutiveDemoMenu = async () => ExecutiveDemoMenu;
 type Panel = "menu" | "activity" | "tasks" | "tools" | "scope" | "appearance" | "demo" | null;
+
+type ExecutiveService = ExecutiveReportingFoundation["services"][number];
+
+function servicePercent(service: ExecutiveService) {
+  return service.beds.total > 0 ? Math.round((service.beds.inUse / service.beds.total) * 1000) / 10 : 0;
+}
+
+/**
+ * The capacity card's figures for this desk, from the public report only (the new frame, Josh,
+ * 30-31 Oct 2026): occupancy rows first, as the other desks' rail card shows them (Metro and the
+ * fullest service statewide; a service desk reads its own service), then the beds ready now.
+ */
+function executiveCapacity(report: ExecutiveReportingFoundation) {
+  const scope = report.network.scope;
+  const services = report.services
+    .filter((service) => scope.kind === "statewide" || service.service === scope.service)
+    .toSorted((a, b) => servicePercent(b) - servicePercent(a) || a.service.localeCompare(b.service));
+  const hottest = services[0];
+  const metro =
+    scope.kind === "service"
+      ? services
+      : services.filter((service) => (METRO_HEALTH_SERVICES as readonly string[]).includes(service.service));
+  const metroBeds = metro.reduce((sum, service) => sum + service.beds.total, 0);
+  const metroInUse = metro.reduce((sum, service) => sum + service.beds.inUse, 0);
+  const metroPercent = metroBeds > 0 ? Math.round((metroInUse / metroBeds) * 1000) / 10 : null;
+  const rows: CapacityRow[] =
+    scope.kind === "service"
+      ? [{ key: "own", name: scope.service, counts: `${scope.service}'s beds`, percent: metroPercent }]
+      : [
+          { key: "metro", name: "Metro", counts: "the metropolitan health services' wards", percent: metroPercent },
+          ...(hottest
+            ? [
+                {
+                  key: hottest.service,
+                  name: hottest.service,
+                  counts: `${hottest.service}, the fullest health service`,
+                  percent: servicePercent(hottest),
+                },
+              ]
+            : []),
+        ];
+  const readyBeds = report.network.beds.ready;
+  return {
+    services,
+    hottest,
+    rows,
+    overLine: overLineLabel(rows),
+    readyBeds,
+    readyLabel: `${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now`,
+    note: scope.kind === "service" ? `for ${scope.service}` : "across the whole network",
+  };
+}
+
+function CapacityRowLine({ row, title }: { row: CapacityRow; title?: string }) {
+  return (
+    <span className={rail.alertRow} title={title}>
+      <span className={rail.alertRowName}>{row.name}</span>
+      {row.percent === null ? (
+        <span className={rail.meter} aria-hidden="true" />
+      ) : (
+        <BedAlertMeter percent={row.percent} />
+      )}
+      <span className={rail.alertRowPercent}>
+        {row.percent !== null && isBedAlert(row.percent) ? <Dot tone="warning" /> : null}
+        {row.percent === null ? "—" : formatOccupancyPercent(row.percent)}
+      </span>
+    </span>
+  );
+}
+
+/** The phone and tablet Menu opens on the same capacity card as the other desks' Menu. */
+function ExecutiveMenuCapacityCard({
+  report,
+  canOpen,
+  onGo,
+}: {
+  report: ExecutiveReportingFoundation;
+  canOpen: (href: string) => boolean;
+  onGo: () => void;
+}) {
+  const { rows, overLine, readyBeds, note } = executiveCapacity(report);
+  const body = (
+    <>
+      <span className={rail.alertsHead}>
+        <span className={rail.alertsEyebrow}>Bed alerts</span>{" "}
+        <span className={rail.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
+          {overLine.over > 0 ? <Dot tone="warning" /> : null}
+          {overLine.label}
+        </span>
+      </span>
+      {rows.map((row) => (
+        <CapacityRowLine key={row.key} row={row} />
+      ))}
+      <span className={rail.capacityReady}>
+        <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now, {note}
+      </span>
+    </>
+  );
+  return (
+    <div className={rail.phoneTop} data-testid="ward-phone-menu-top">
+      {canOpen(WARD_CAPACITY_HREF) ? (
+        <Link href={WARD_CAPACITY_HREF} className={rail.phoneCard} onClick={onGo}>
+          {body}
+        </Link>
+      ) : (
+        <div className={rail.phoneCard}>{body}</div>
+      )}
+    </div>
+  );
+}
 
 function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }) {
   const [open, setOpen] = useState(false);
@@ -151,59 +260,58 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
       document.removeEventListener("pointerdown", outside);
     };
   }, [open]);
-  const percent = (service: ExecutiveReportingFoundation["services"][number]) =>
-    service.beds.total > 0 ? Math.round((service.beds.inUse / service.beds.total) * 1000) / 10 : 0;
-  const services = report.services
-    .filter((service) => report.network.scope.kind === "statewide" || service.service === report.network.scope.service)
-    .toSorted((a, b) => percent(b) - percent(a) || a.service.localeCompare(b.service));
-  const hottest = services[0];
+  const { services, hottest, rows, overLine, readyLabel, readyBeds, note } = executiveCapacity(report);
   if (!hottest) return null;
-  const metro =
-    report.network.scope.kind === "service"
-      ? services
-      : services.filter((service) => (METRO_HEALTH_SERVICES as readonly string[]).includes(service.service));
-  const metroBeds = metro.reduce((sum, service) => sum + service.beds.total, 0);
-  const metroInUse = metro.reduce((sum, service) => sum + service.beds.inUse, 0);
-  const metroPercent = metroBeds > 0 ? Math.round((metroInUse / metroBeds) * 1000) / 10 : null;
-  const alertCount = services.filter((service) => isBedAlert(percent(service))).length;
-  const label = `${alertCount === 0 ? "None" : alertCount} over ${BED_ALERT_THRESHOLD_PERCENT}%`;
-  const jurisdiction = report.network.scope.kind === "service" ? report.network.scope.service : "Metro";
-  const metroLabel = `${jurisdiction} ${metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}`;
+  const firstRow = rows[0];
+  // Bed alerts stay about capacity (Josh, 30 Oct 2026), as on the other desks' rail: occupancy rows
+  // with their meters and the 85% tick, the count over the line in words, then the ready beds.
+  const spoken = `Bed alerts: ${overLine.label}. ${capacityRowsSpoken(rows)}. ${readyLabel}, ${note}.`;
   return (
     <div className={rail.alertsContainer} ref={container}>
       <button
         type="button"
         className={rail.compactAlertPip}
+        data-alert={overLine.over > 0 ? "true" : undefined}
         data-testid="ward-rail-compact-alert-pip"
-        aria-label={`${metroLabel} occupied. Bed alerts: ${label}.`}
+        aria-label={spoken}
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
-        <span className={rail.compactAlertVal}>{metroPercent === null ? "—" : `${Math.round(metroPercent)}%`}</span>
+        {overLine.over > 0 ? <Dot tone="warning" /> : null}
+        <span className={rail.compactAlertVal}>
+          {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
+        </span>
       </button>
       <button
         type="button"
-        className={rail.capacityPulseStrip}
+        className={`${rail.capacityPulseStrip} ${rail.capacityCard}`}
         data-open={open ? "true" : undefined}
-        data-alert={alertCount > 0 ? "true" : undefined}
+        data-alert={overLine.over > 0 ? "true" : undefined}
         data-testid="ward-rail-capacity-alerts-trigger"
-        aria-label={`${metroLabel}. Bed alerts: ${label}.`}
+        aria-label={spoken}
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
-        <span className={rail.alertFigure}>
-          <span className={rail.alertFigureName}>{jurisdiction}</span>{" "}
-          <span className={rail.alertFigureValue}>
-            {metroPercent === null ? "—" : formatOccupancyPercent(metroPercent)}
+        <span className={rail.capacityHead} aria-hidden="true">
+          <span className={rail.alertsEyebrow}>Bed alerts</span>
+          <span className={rail.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
+            {overLine.over > 0 ? <Dot tone="warning" /> : null}
+            {overLine.label}
+          </span>
+          <span className={rail.capacityChevron} data-open={open ? "true" : undefined}>
+            <ChevronDown aria-hidden="true" strokeWidth={1.75} />
           </span>
         </span>
-        <span className={rail.alertFigure} data-flex="true">
-          <span className={rail.alertFigureName}>{hottest.service}</span>{" "}
-          <span className={rail.alertFigureValue}>{formatOccupancyPercent(percent(hottest))}</span>
+        <span className={rail.capacityRows} aria-hidden="true">
+          {rows.map((row) => (
+            <CapacityRowLine key={row.key} row={row} title={`${row.counts}, beds in use`} />
+          ))}
         </span>
-        <ChevronDown aria-hidden="true" className={rail.capacityChevron} />
+        <span className={rail.capacityReady} aria-hidden="true">
+          <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+        </span>
       </button>
       {open && (
         <div className={rail.capacityAlertsDropdown} role="dialog" aria-label="Bed alerts">
@@ -221,7 +329,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
               <div key={service.service} className={rail.alertCard} data-testid="ward-rail-bed-alert-row">
                 <span className={rail.alertServiceName}>{service.service}</span>
                 <span className={rail.alertMetrics}>
-                  <span className={rail.alertPercent}>{formatOccupancyPercent(percent(service))}</span>
+                  <span className={rail.alertPercent}>{formatOccupancyPercent(servicePercent(service))}</span>
                 </span>
                 <span className={rail.alertFacts}>
                   <span className={rail.alertHospitalCodes}>
@@ -263,8 +371,12 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const preferences = useWardDocumentPreferences();
   const online = useOnlineStatus();
   const selectedService = useServiceScope();
+  // The access admin borrows this desk's menu, with Governance leading it (Josh, 30 Oct 2026).
+  const accessAdmin = useEffectiveWardAccess().role === "admin";
+  // Help opens as the shared rail's and phone Menu's does: the desk's tour until it has been seen,
+  // then help for this screen.
+  const help = useWardHelpRow();
   const [panel, setPanel] = useState<Panel>(null);
-  const [menuQuery, setMenuQuery] = useState("");
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const menuReturnFocus = useRef<HTMLElement | null>(null);
   const activityTrigger = useRef<HTMLButtonElement>(null);
@@ -294,7 +406,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     () =>
       subscribeWardMenu((opener) => {
         menuReturnFocus.current = opener ?? menuTrigger.current;
-        setMenuQuery("");
         setPanel("menu");
       }),
     [],
@@ -326,7 +437,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   }, [clock]);
   if (!report || !shell) return <ExecutiveStatisticsUnavailable />;
   const entries = accessNav(railEntries(flagOn));
-  const resolvedMenu = roleMenu(entries, "executive");
+  const resolvedMenu = roleMenu(entries, "executive", accessAdmin);
   const menu = { ...resolvedMenu, main: resolvedMenu.main.filter((entry): entry is RailEntry => "href" in entry) };
   const scope = report.network.scope;
   const services = report.services.filter((service) => scope.kind === "statewide" || service.service === scope.service);
@@ -336,7 +447,14 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const displayedWaiting = activeService
     ? report.services.find((service) => service.service === activeService)!.waiting
     : report.network.people.waitingInEd;
-  const shift = computeShiftProgress(shell.now);
+  // The phone dock (the new frame): Statistics, then Capacity and Activity. Each page shows only
+  // where this desk may open it.
+  const dockPages = ["statistics", "capacity"]
+    .map((id) => entries.find((entry): entry is RailEntry => "href" in entry && entry.id === id))
+    .filter((entry): entry is RailEntry => entry !== undefined);
+  // The phone and tablet Menu (no full rail on screen) opens on the capacity card; the desktop
+  // rail's own More does not repeat it.
+  const menuShowsCapacity = isPhone || tabletLandscape || !closedRailCards;
   const back = wardBackParent(pathname, home);
   const title = wardBarRouteTitle(pathname, undefined, isPhone);
   const close = () => setPanel(null);
@@ -375,10 +493,11 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         className={rail.utilityLink}
         ref={kind === "appearance" ? appearanceTrigger : undefined}
         data-testid={kind === "help" ? "ward-rail-help" : "ward-rail-appearance-toggle"}
+        aria-label={kind === "help" ? help.label : undefined}
         onClick={() => {
           if (kind === "help") {
             close();
-            openWardHelp("screen");
+            help.open();
           } else setPanel("appearance");
         }}
       >
@@ -444,30 +563,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 Menu
               </button>
             </div>
-            <div className={rail.shiftCockpit}>
-              <div
-                className={rail.shiftCockpitTop}
-                title={`Board time ${clock} AWST. Shift ${shift.percent}% through.`}
-              >
-                <span className={rail.shiftAvatar} aria-hidden="true">
-                  EX
-                </span>
-                <span className={rail.shiftMeta}>
-                  <span className={rail.shiftTitle}>
-                    {shift.shiftName}
-                    <span className={rail.shiftHours}>{shift.shiftHours}</span>
-                  </span>
-                  <span className={rail.shiftSub}>Executive · Demo desk</span>
-                </span>
-              </div>
-              <span className={rail.shiftTimerLink} data-static="true" data-testid="ward-rail-handover-countdown">
-                <ClipboardList aria-hidden="true" className={rail.shiftClockIcon} />
-                <span className={rail.shiftTimerLabel}>Handover</span>
-                <span className={rail.shiftTimeBadge}>
-                  {shift.handoverDue ? "due now" : `in ${shift.countdownStr}`}
-                </span>
-              </span>
-            </div>
+            {/* Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card. */}
             <ExecutiveBedAlerts report={report} />
             <div className={rail.railScroll}>
               <nav className={rail.railNav} aria-label="Ward Flow views">
@@ -560,7 +656,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 <span className={bar.place} data-testid="ward-bar-route-title" title={title}>
                   {title}
                 </span>
-                {!isPhone && <WardHelpScreenButton title={title} className={bar.screenHelp} />}
               </div>
               <div className={bar.scopeBadgeContainer}>
                 <button
@@ -585,7 +680,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 )}
               </div>
               <div id={WARD_BAR_PAGE_TOOLS_ID} className={bar.pageTools} data-testid="ward-bar-page-tools" />
-              <WardDataModeSlot className={bar.dataMode} menu={loadExecutiveDemoMenu} />
+              {/* Josh, 30-31 Oct 2026: no "Synthetic prototype" pill in the header. The footer's
+                  synthetic-data notice stays, and the board clock and Tools open the Demo menu. */}
               <WardDemoClockPopover
                 className={bar.demoClock}
                 testId="ward-bar-demo-clock"
@@ -596,7 +692,11 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 <span className={bar.demoClockTime}>{clock}</span>
                 <span className={bar.demoClockTz}>AWST</span>
               </WardDemoClockPopover>
-              <span className={bar.mark}>
+              {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
+              <span
+                className={bar.mark}
+                title="Patient and flow data are synthetic; service names depend on the selected demonstration scenario. Not approved for clinical use."
+              >
                 <span className={bar.markLong}>Synthetic </span>prototype
               </span>
             </div>
@@ -606,7 +706,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   catalogue={report}
                   accessLifetime={shell.accessLifetime ?? ""}
                   canOpenHref={canOpen}
-                  placeholder="Search"
+                  placeholder="Search Ward Flow"
                 />
               </div>
             </div>
@@ -634,10 +734,16 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 data-testid="ward-bar-tasks-trigger"
                 aria-haspopup="dialog"
                 aria-expanded={panel === "tasks"}
+                aria-controls="ward-bar-tasks-drawer"
                 onClick={() => setPanel("tasks")}
               >
-                <ListChecks className={bar.triggerIcon} aria-hidden="true" />
-                <span className={bar.triggerLabel}>Tasks</span>
+                {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". This
+                    desk's list is the bed coordinator's, so it opens empty under the same name. */}
+                <Bell className={bar.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+                <span className={bar.triggerLabel}>Alerts</span>
+                <span className={bar.badge} data-zero="true">
+                  0
+                </span>
               </button>
               <button
                 type="button"
@@ -669,27 +775,28 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
       </div>
       {isPhone && (
         <div className={`${pageDock.pageDock} ${pageDock.rise}`} data-wf-page-dock="rise" data-wf-create="none">
-          <nav className={phone.dock} aria-label="Quick open" data-testid="ward-phone-dock">
-            <span aria-hidden="true" />
-            <Link href={home} className={phone.dockItem} data-testid="ward-phone-dock-link">
-              <span className={phone.dockIcon} aria-hidden="true">
-                <BarChart3 aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span className={phone.dockLabel}>Statistics</span>
-            </Link>
-            <span className={phone.riseSlot} aria-hidden="true" />
-            <button
-              type="button"
-              className={phone.dockItem}
-              data-testid="ward-phone-menu-tasks"
-              aria-haspopup="dialog"
-              onClick={() => setPanel("tasks")}
-            >
-              <span className={phone.dockIcon} aria-hidden="true">
-                <ListChecks aria-hidden="true" strokeWidth={1.75} />
-              </span>
-              <span className={phone.dockLabel}>Tasks</span>
-            </button>
+          {/* The new frame's dock for a desk with nothing to start: no + and no hump, so the tabs
+              share the width evenly (Statistics, Capacity, Activity). */}
+          <nav
+            className={phone.dock}
+            aria-label="Quick open"
+            data-testid="ward-phone-dock"
+            style={{ gridTemplateColumns: `repeat(${dockPages.length + 1}, minmax(0, 1fr))` }}
+          >
+            {dockPages.map((entry) => (
+              <Link
+                key={entry.id}
+                href={entry.href}
+                className={phone.dockItem}
+                aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
+                data-testid="ward-phone-dock-link"
+              >
+                <span className={phone.dockIcon} aria-hidden="true">
+                  <entry.icon aria-hidden="true" strokeWidth={1.75} />
+                </span>
+                <span className={phone.dockLabel}>{entry.label}</span>
+              </Link>
+            ))}
             <button
               type="button"
               className={phone.dockItem}
@@ -698,7 +805,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               onClick={(event) => openActivity(event.currentTarget)}
             >
               <span className={phone.dockIcon} aria-hidden="true">
-                <RotateCcwClock aria-hidden="true" strokeWidth={1.75} />
+                <ActivityIcon aria-hidden="true" strokeWidth={1.75} />
               </span>
               <span className={phone.dockLabel}>Activity</span>
             </button>
@@ -734,10 +841,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             <span className={phone.whoMeta}>Go to a desk</span>
           </span>
         </button>
-        <label className={bar.drawerSearch}>
-          <span className="sr-only">Filter pages</span>
-          <input value={menuQuery} onChange={(event) => setMenuQuery(event.target.value)} placeholder="Filter pages" />
-        </label>
+        {/* One search: it already finds every page below, so the separate "Filter pages" box went in the
+            search and forms review (Josh, 30 Oct 2026). */}
         <WardPublicSearch
           catalogue={report}
           accessLifetime={shell.accessLifetime ?? ""}
@@ -747,15 +852,14 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             router.push(href);
           }}
         />
+        {menuShowsCapacity ? <ExecutiveMenuCapacityCard report={report} canOpen={canOpen} onGo={close} /> : null}
         {[{ label: "Executive", entries: menu.main }, ...menu.more].map((group) => (
           <section key={group.label}>
             <h2 className={phone.heading}>{group.label}</h2>
             <ul className={phone.list}>
-              {group.entries
-                .filter((entry) => entry.label.toLocaleLowerCase().includes(menuQuery.toLocaleLowerCase()))
-                .map((entry) => (
-                  <li key={entry.id}>{navLink(entry, true)}</li>
-                ))}
+              {group.entries.map((entry) => (
+                <li key={entry.id}>{navLink(entry, true)}</li>
+              ))}
             </ul>
           </section>
         ))}
@@ -803,12 +907,12 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         testId="ward-bar-tasks-sheet"
         open={panel === "tasks"}
         onClose={close}
-        title="Tasks"
+        title="Alerts"
         returnFocusRef={tasksTrigger}
         contentClassName={bar.drawerSheet}
         bodyClassName={bar.drawerBody}
       >
-        <p>This is the bed coordinator&apos;s list. Individual tasks are unavailable for this desk.</p>
+        <p>This is the bed coordinator&apos;s list. Individual alerts are unavailable for this desk.</p>
       </Sheet>
       <Sheet
         id="ward-bar-tools-drawer"

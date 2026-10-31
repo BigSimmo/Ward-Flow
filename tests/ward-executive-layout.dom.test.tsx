@@ -58,6 +58,7 @@ import type { ExecutiveReportingFoundation } from "../src/components/ward-manage
 import { setForceDynamicLoading } from "./setup/jsdom.setup";
 import { ExecutiveStatisticsLivePreviewProvider } from "../src/components/ward-management/statistics/executive-statistics-context";
 import { WardExecutiveChromeMount } from "../src/components/ward-management/shell/ward-workspace-host";
+import { TOUR_SEEN_STORAGE_KEY } from "../src/components/ward-management/help/ward-help-store";
 let report: ExecutiveReportingFoundation;
 beforeAll(() => {
   const source = seedWardFlowState();
@@ -246,6 +247,8 @@ describe("the real layout's authenticated executive branch", () => {
     expect(guard.seed).not.toHaveBeenCalled();
   });
   it("keeps service selection, exact bed alerts, appearance and the existing Help sheet usable", async () => {
+    // Help opens the desk's tour until it has been seen (as the shared rail's does), so mark it seen.
+    window.localStorage.setItem(TOUR_SEEN_STORAGE_KEY, "coordinator,executive");
     await openLayout();
     fireEvent.click(screen.getByTestId("ward-bar-service-trigger"));
     fireEvent.click(
