@@ -98,6 +98,8 @@ export type HandoverPhoneProps = {
   meetingOn: boolean;
   onToggleMeeting: () => void;
   history: ReactNode;
+  /** Q61 to Q63: the site bed manager's site sign-off, first in the body; null for any other desk. */
+  siteSignOff?: ReactNode;
 };
 
 type PhoneTab = "pts" | "beds" | "hist";
@@ -435,6 +437,7 @@ export function HandoverPhone({
   meetingOn,
   onToggleMeeting,
   history,
+  siteSignOff,
 }: HandoverPhoneProps) {
   // Role branches: the nurse in charge's one ward, and the ED desk (no Beds tab, no sign-off).
   const { ownWard, edDesk } = handoverDeskOf(
@@ -566,6 +569,7 @@ export function HandoverPhone({
       />
 
       <div className={styles.main}>
+        {siteSignOff}
         <button
           type="button"
           className={styles.sinceCard}

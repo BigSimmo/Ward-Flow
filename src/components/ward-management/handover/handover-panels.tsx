@@ -6,6 +6,7 @@
  * (Josh, 9 Oct 2026: "the placeholder on the right is a sign off sheet for the handover").
  */
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useId } from "react";
 import { Check, ClipboardCopy, Clock, Route, Truck, UserRound, X } from "lucide-react";
 import { Badge, Button, Card, Count, Icon, SrOnly, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
@@ -28,7 +29,28 @@ import {
   type HandoverRow,
   type HandoverWard,
 } from "./handover-model";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { handoverScopeValue } from "./handover-scope";
 import styles from "./handover-refined.module.css";
+
+/* Q40, Q61 to Q63 (Josh, 31 Oct 2026): the site bed manager's own site sign-off. Its code loads only
+   for that login, so no other desk's first load grows. */
+const SiteSignOff = dynamic(() => import("./handover-site-sign-off").then((m) => m.HandoverSiteSignOff), {
+  loading: () => null,
+});
+
+/** The site sign-off, shown only to a site bed manager at its own site; nothing for any other desk. */
+export function HandoverSiteSignOffSlot({ phone, onScope }: { phone: boolean; onScope: (scopeValue: string) => void }) {
+  const access = useEffectiveWardAccess();
+  if (access.role !== "bed_manager" || access.scope.kind !== "site") return null;
+  return (
+    <SiteSignOff
+      siteCode={access.scope.siteCode}
+      phone={phone}
+      onOpenWard={(id) => onScope(handoverScopeValue({ kind: "ward", id }))}
+    />
+  );
+}
 
 const STEPS: { stage: MovementStage; label: string }[] = [
   { stage: "placement_requested", label: "Referred" },
