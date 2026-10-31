@@ -18,7 +18,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 
 /** Whether a broadcast is about one person: a Pull now, or any alert naming a journey. */
-export function broadcastLinksPatient(alert: BroadcastAlert): boolean {
+function broadcastLinksPatient(alert: BroadcastAlert): boolean {
   return alert.kind === "pull_now" || alert.movementId !== undefined;
 }
 
