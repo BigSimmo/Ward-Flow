@@ -16,13 +16,29 @@ export type AlertsTab = "alerts" | "activity";
  */
 const OWN_ACTIVITY_PANEL = "[data-mockup-activity-panel]";
 const OPEN_ACTIVITY_EVENT = "wf-mockup:open-activity";
+const ALERTS_PANEL = '[data-testid="ward-bar-tasks-sheet"]';
 
 export function pageDrawsOwnActivity(): boolean {
   return typeof document !== "undefined" && document.querySelector(OWN_ACTIVITY_PANEL) !== null;
 }
 
-export function openPageActivity() {
-  window.dispatchEvent(new Event(OPEN_ACTIVITY_EVENT));
+/**
+ * Opens the page's own Activity panel once the Alerts panel has gone, with focus back on the Alerts
+ * button first, so the page's panel returns focus there on Escape (the tab it was opened from no
+ * longer exists). Gives up waiting after about a second and opens the panel anyway.
+ */
+export function openPageActivity(returnTo: HTMLElement | null) {
+  const started = performance.now();
+  const step = () => {
+    const alertsPanelOpen = document.querySelector(ALERTS_PANEL) !== null;
+    if (alertsPanelOpen && performance.now() - started < 1000) {
+      requestAnimationFrame(step);
+      return;
+    }
+    returnTo?.focus();
+    window.dispatchEvent(new Event(OPEN_ACTIVITY_EVENT));
+  };
+  requestAnimationFrame(step);
 }
 
 /**

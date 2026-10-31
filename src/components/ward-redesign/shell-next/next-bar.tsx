@@ -993,6 +993,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
     />
   );
   const alertsLabel = oneAlertsQueue ? "Alerts" : "Tasks";
+  const placeIsTitle = deskPlace !== undefined && routeTitle.trim() === deskPlace.trim();
   // One Alerts panel with two tabs. Activity on a page that draws its own Activity panel (Home)
   // opens that panel, as the old Activity button did there.
   const chooseAlertsTab = (tab: AlertsTab) => {
@@ -1002,7 +1003,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
     }
     if (pageDrawsOwnActivity()) {
       closePopover("tasks", false);
-      openPageActivity();
+      openPageActivity(tasksTriggerRef.current);
       return;
     }
     openPopover("activity");
@@ -1051,8 +1052,9 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
         {/* shell-next (Josh, 30 Oct 2026): on a laptop the place comes first and the page second,
             "Statewide › Capacity", so a long page name no longer pushes the place out of the row.
             The phone keeps its locked lean bar: the title over the service line. */}
-        {isPhone ? null : serviceSelector}
-        {isPhone ? null : <CrumbSeparator />}
+        {/* A desk's own home page is named for its place ("Dabakarn"), so the place is not repeated. */}
+        {isPhone || placeIsTitle ? null : serviceSelector}
+        {isPhone || placeIsTitle ? null : <CrumbSeparator />}
         <div className={styles.titleGroup}>
           <span
             className={styles.place}
@@ -1114,7 +1116,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
               plannedAdmissions={plannedAdmissions}
               now={now}
               // shell-next: the box says what it finds; its "/" key hint is unchanged.
-              placeholder="Search patients and wards"
+              placeholder="Search patients"
             />
           </div>
         )}

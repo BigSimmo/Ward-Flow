@@ -888,7 +888,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 (row) =>
                   `${row.counts} ${row.percent === null ? "not recorded" : formatOccupancyPercent(row.percent)} full`,
               )
-              .join(". ")}. ${readyBeds} beds ready now, ${countNote}.`}
+              .join(". ")}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${countNote}.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={(event) => {
@@ -919,7 +919,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ))}
             </span>
             <span className={railParts.capacityReady} aria-hidden="true">
-              <b>{readyBeds}</b> beds ready now
+              <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
             </span>
           </button>
 
