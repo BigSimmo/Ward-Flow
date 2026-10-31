@@ -422,7 +422,7 @@ export function EdScreen({ edId }: EdScreenProps) {
       >
         <EdOverview
           key={department.id}
-          sinceLastLook={<SinceLastLookPill scopeKey={`ed:${department.id}`} />}
+          sinceLastLook={<SinceLastLookPill scopeKey={`ed:${department.id}`} collapseWhenEmpty />}
           departmentId={department.id}
           departments={departments.map((candidate) => {
             const candidateSite = siteByCode(candidate.siteCode);
