@@ -18,9 +18,9 @@ export type Highlight = "any" | "locked" | "open" | "stale";
 
 const HIGHLIGHTS: readonly { id: Highlight; label: string; test: (row: NetworkWardRow, fresh: boolean) => boolean }[] =
   [
-    { id: "any", label: "Any bed ready", test: (row) => row.ready > 0 },
-    { id: "locked", label: "Locked bed ready", test: (row) => row.lockedReady > 0 },
-    { id: "open", label: "Open bed ready", test: (row) => row.ready - row.lockedReady > 0 },
+    { id: "any", label: "Any ready", test: (row) => row.ready > 0 },
+    { id: "locked", label: "Locked ready", test: (row) => row.lockedReady > 0 },
+    { id: "open", label: "Open ready", test: (row) => row.ready - row.lockedReady > 0 },
     { id: "stale", label: "Count not confirmed", test: (_row, fresh) => !fresh },
   ];
 
@@ -46,7 +46,7 @@ export function BedMapCards({
   highlight: Highlight | null;
   onHighlight: (highlight: Highlight | null) => void;
 }) {
-  const { mapGroups, networkRows, totals, now } = model;
+  const { mapGroups, networkRows, now } = model;
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
   const lit = (unitId: string, id: Highlight | null) => {
@@ -80,42 +80,42 @@ export function BedMapCards({
 
   return (
     <Card aria-labelledby="capacity-map-title" className={styles.mapCard} id="capacity-bed-map">
+      {/* Polish (Josh, 31 Oct 2026): the highlight chips sit in the title row beside Grid and Rows,
+          so the controls take one row, and the grey bed and ward count is gone (the hero has it). */}
       <CardHead
         id="capacity-map-title"
         title="Bed map"
-        meta={`${totals.beds} beds · ${totals.wards} wards`}
         action={
-          <Segmented
-            label="Bed map layout"
-            items={[
-              { id: "grid" as const, label: "Grid" },
-              { id: "rows" as const, label: "Rows" },
-            ]}
-            value={layout}
-            onChange={setLayout}
-          />
+          <div className={styles.mapControls}>
+            <div className={styles.highlights} role="group" aria-label="Highlight wards">
+              {HIGHLIGHTS.map((entry) => {
+                // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as
+                // the hero's bed counts.
+                const wards = networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
+                return (
+                  <FilterChip
+                    key={entry.id}
+                    pressed={highlight === entry.id}
+                    onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
+                  >
+                    {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
+                  </FilterChip>
+                );
+              })}
+            </div>
+            <Segmented
+              label="Bed map layout"
+              items={[
+                { id: "grid" as const, label: "Grid" },
+                { id: "rows" as const, label: "Rows" },
+              ]}
+              value={layout}
+              onChange={setLayout}
+            />
+          </div>
         }
       />
       <div className={styles.mapBody}>
-        <div className={styles.highlights} role="group" aria-label="Highlight wards">
-          <span className={styles.kickerInline} aria-hidden="true">
-            Highlight
-          </span>
-          {HIGHLIGHTS.map((entry) => {
-            // Redesign (Josh, 30 Oct): the count names its noun, so "15 wards" cannot be read as the
-            // hero's bed counts.
-            const wards = networkRows.filter((row) => entry.test(row, isConfirmationFresh(row.unit, now))).length;
-            return (
-              <FilterChip
-                key={entry.id}
-                pressed={highlight === entry.id}
-                onPressedChange={(pressed) => onHighlight(pressed ? entry.id : null)}
-              >
-                {`${entry.label} · ${wards} ${wards === 1 ? "ward" : "wards"}`}
-              </FilterChip>
-            );
-          })}
-        </div>
         {mapGroups.map((group) => {
           if (group.wards.length === 0) return null;
           const groupRows = group.wards.map((ward) => rowOf.get(ward.unit.id)).filter((row) => row !== undefined);

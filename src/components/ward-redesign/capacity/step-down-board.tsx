@@ -4,7 +4,7 @@
 // surname first, D-83; the Review button keeps the spoken order).
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
@@ -25,7 +25,7 @@ import styles from "@/components/ward-management/capacity/step-down-board.module
  * 10:13 PM AWST): no combined swap, each leg is referred on its own; a movement needing a gender
  * placement review is routed to Placement instead of being offered here.
  */
-export function StepDownBoard({ now }: { now: Instant }) {
+export function StepDownBoard({ now, titleSlot }: { now: Instant; titleSlot?: ReactNode }) {
   const { admissions, units, movements, patients, referrals, dispatch, configuration, setFocusMovementId } =
     useWardFlowSelect(
       "admissions",
@@ -64,7 +64,11 @@ export function StepDownBoard({ now }: { now: Instant }) {
   );
 
   return (
-    <CapacityPanel title="Step down board" count={`${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}>
+    <CapacityPanel
+      title="Step down board"
+      titleSlot={titleSlot}
+      count={titleSlot ? undefined : `${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}
+    >
       <div data-testid="capacity-step-down-board">
         {rows.length === 0 ? (
           <p className={styles.absent}>No patient is marked for step down.</p>
