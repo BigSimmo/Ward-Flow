@@ -1,8 +1,8 @@
 "use client";
 
-import { CircleDashed } from "lucide-react";
+import type { CSSProperties } from "react";
 
-import { SrOnly, StatusGlyph, cx } from "@/components/wf";
+import { SrOnly, StatusGlyph } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
 import {
@@ -12,17 +12,9 @@ import {
 } from "@/components/ward-management/statistics/statistics-bed-map";
 import base from "@/components/ward-management/statistics/statistics-bed-map.module.css";
 
-import styles from "./statistics-unit.module.css";
+import legend from "@/components/ward-redesign/as-ward-statistics/ward-phone-beds.module.css";
 
-/** The short word inside a tile with no stay to show (as in the app's bed map). */
-const CELL_WORDS: Record<BedMapKind, string> = {
-  occupied: "In bed",
-  leave: "Leave",
-  pulled: "Pulled",
-  ready: "Ready",
-  prep: "Preparing",
-  closed: "Closed",
-};
+import styles from "./statistics-unit.module.css";
 
 /** Which of the roster's own stay bands a whole-day stay falls in (the rule `stayBand` uses). */
 export function bandIndexOf(days: number): number {
@@ -30,19 +22,34 @@ export function bandIndexOf(days: number): number {
   return index === -1 ? STAY_BANDS.length - 1 : index;
 }
 
-function CellGlyph({ kind }: { kind: BedMapKind }) {
-  if (kind === "leave") return <StatusGlyph tone="neutral" size={9} />;
-  if (kind === "pulled") return <StatusGlyph tone="info" size={9} />;
-  if (kind === "ready") return <StatusGlyph tone="success" size={9} />;
-  if (kind === "closed") return <StatusGlyph tone="closed" size={9} />;
-  if (kind === "prep") return <CircleDashed size={9} aria-hidden="true" />;
-  return null;
+/**
+ * Final round (31 Oct 2026): the legend of the phone grid (`as-ward-statistics`), the same five
+ * entries in the same order. A bed held for someone on leave shares the occupied fill and count.
+ */
+const BED_LEGEND: { kinds: BedMapKind[]; label: string }[] = [
+  { kinds: ["occupied", "leave"], label: BED_MAP_LABELS.occupied },
+  { kinds: ["pulled"], label: "Pulled" },
+  { kinds: ["closed"], label: BED_MAP_LABELS.closed },
+  { kinds: ["prep"], label: "Making ready" },
+  { kinds: ["ready"], label: BED_MAP_LABELS.ready },
+];
+
+/**
+ * The grid's columns, as the phone grid: ten at most, and where the beds divide evenly by 5 to 10,
+ * that divisor, so no bed sits alone on a row (20 beds read 10 by 2, 24 read 8 by 3).
+ */
+function bedColumns(count: number): number {
+  if (count <= 10) return Math.max(count, 1);
+  for (let cols = 10; cols >= 5; cols -= 1) if (count % cols === 0) return cols;
+  return 10;
 }
 
 /**
- * Redesign: the ward's beds as small tiles, nine to a row, shaded darker the longer the stay (the
- * four stay bands of the Length of stay card). The cells come straight from the app's `bedMapCells`,
- * so the tiles still add up to the ward's beds; the state legend above stays the app's own.
+ * Redesign: the ward's beds as small tiles in an even grid (final round, 31 Oct 2026: 20 beds read
+ * 10 by 2, not 9, 9 and 2). Each state has its own fill, the phone grid's (`ward-phone-beds.module.css`),
+ * and the legend under the grid uses the same swatches, so the laptop and phone maps read alike. A bed
+ * someone is in shows the stay in days; on leave says Leave. The cells come straight from the app's
+ * `bedMapCells`, so the tiles still add up to the ward's beds.
  */
 export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string }) {
   const { countsOnly, small } = useStatisticsCounts();
@@ -69,29 +76,29 @@ export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string
         {`${wardName} has ${cells.length} ${cells.length === 1 ? "bed" : "beds"}: ${said || "none recorded"}.`}
         {blocked > 0 ? ` ${blocked} of the people in a bed ${blocked === 1 ? "has" : "have"} a discharge blocker.` : ""}
       </SrOnly>
-      <ol className={styles.bedGrid} aria-label={`${wardName} beds, one item per bed`}>
+      <ol
+        className={styles.bedGrid}
+        style={{ "--bed-cols": bedColumns(cells.length) } as CSSProperties}
+        aria-label={`${wardName} beds, one item per bed`}
+      >
         {cells.map((entry, index) => (
           <li
             key={index}
-            className={cx(styles.bedTile, base[entry.kind])}
+            className={styles.bedTile}
             title={titleOf(entry)}
             data-bed-kind={entry.kind}
-            data-stay-band={entry.stayDays === null ? undefined : bandIndexOf(entry.stayDays)}
             data-admission-id={entry.admissionId ?? undefined}
           >
             <SrOnly>{titleOf(entry)}</SrOnly>
-            <span className={styles.bedGlyph} aria-hidden="true">
-              <CellGlyph kind={entry.kind} />
-            </span>
             {entry.stayDays !== null ? (
               <span className={styles.bedDays} aria-hidden="true">
                 {entry.stayDays}d
               </span>
-            ) : (
+            ) : entry.kind === "leave" ? (
               <span className={styles.bedWord} aria-hidden="true">
-                {CELL_WORDS[entry.kind]}
+                Leave
               </span>
-            )}
+            ) : null}
             {entry.blocked ? (
               <span className={styles.bedBlocked} aria-hidden="true">
                 <StatusGlyph tone="warning" size={9} />
@@ -101,7 +108,15 @@ export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string
         ))}
       </ol>
       <div className={styles.bedFoot}>
-        {countsOnly ? null : <StayKey />}
+        <ul className={legend.legend} aria-hidden="true">
+          {BED_LEGEND.map((item) => (
+            <li key={item.label}>
+              <i className={legend.swatch} data-kind={item.kinds[0]} />
+              {item.label}
+              <b>{item.kinds.reduce((sum, kind) => sum + map.counts[kind], 0)}</b>
+            </li>
+          ))}
+        </ul>
         <p className={base.note}>
           {countsOnly
             ? "Grouped by state. Bed numbers are not recorded."
@@ -115,7 +130,7 @@ export function CompactBedMap({ map, wardName }: { map: BedMap; wardName: string
   );
 }
 
-/** The four stay shades, lightest to darkest, with the roster's own band words. Shared with the phone strip. */
+/** The four stay shades, lightest to darkest, with the roster's own band words, for the phone strip. */
 export function StayKey() {
   return (
     <ul className={styles.stayKey} aria-hidden="true">

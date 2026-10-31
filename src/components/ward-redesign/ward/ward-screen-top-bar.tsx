@@ -165,14 +165,20 @@ export function WardScreenTopBar({
             : `Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
         }
         title={
+          // Final round (31 Oct 2026): the big line says what the page shows, as Stays reads "Stays and
+          // discharges". The new frame's header already names the ward, so the name is said once on
+          // screen and kept here for screen readers. On a phone the Switch ward button sits beside it.
           isPhone ? (
-            // Option B (20 Oct 2026): the ward name is the Switch ward button when there is a ward to
-            // switch to, so the name shows once with no separate chevron box.
             <span className={styles.phoneHeroTitle}>
-              {wardSwitchMenu ?? <span className={styles.phoneHeroName}>{unit.name}</span>}
+              <span className={styles.phoneHeroName}>
+                Ward home<span className="sr-only">{`, ${unit.name}`}</span>
+              </span>
+              {wardSwitchMenu}
             </span>
           ) : (
-            unit.name
+            <>
+              Ward home<span className="sr-only">{`, ${unit.name}`}</span>
+            </>
           )
         }
         titleMeta={isPhone ? `${unit.beds} beds · ${states.occupied} occupied` : wardSwitchMenu}

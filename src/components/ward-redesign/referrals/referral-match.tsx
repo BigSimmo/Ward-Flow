@@ -1,5 +1,6 @@
 "use client";
 // Copied from src/components/ward-management/referrals/referral-match.tsx (Referrals redesign).
+// Final round (31 Oct 2026): reason and recipient choices use the kit Select, same options, nothing pre-chosen (D-71).
 
 import {
   acceptedReferralIdsAt,
@@ -58,7 +59,9 @@ import {
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
 import styles from "@/components/ward-management/referrals/referrals.module.css";
 import ph from "@/components/ward-management/referrals/referral-match-phone.module.css";
-import { Button, StatusGlyph } from "@/components/wf";
+// Final round: the kit Select box sizing for this panel (see the file).
+import rs from "./referral-match.module.css";
+import { Button, Select, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   GATE_LABELS,
@@ -547,8 +550,8 @@ export function ReferralMatchView({
         {wardArms.length > 1 && (
           <label className={styles.fieldLabel}>
             Review recipient ward
-            <select
-              className={styles.select}
+            <Select
+              boxClassName={rs.reasonSelect}
               value={ward?.destination.unitId ?? ""}
               onChange={(event) => setReviewUnitId(event.target.value)}
             >
@@ -561,7 +564,7 @@ export function ReferralMatchView({
                     </option>
                   ),
               )}
-            </select>
+            </Select>
           </label>
         )}
         {/*
@@ -609,10 +612,10 @@ export function ReferralMatchView({
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-reason-community_team">
               Withdraw reason (community team)
             </label>
-            <select
+            <Select
               id="ward-referral-match-withdraw-reason-community_team"
               data-testid="ward-referral-match-withdraw-reason-community_team"
-              className={styles.select}
+              boxClassName={rs.reasonSelect}
               value={communityWithdrawReason ?? ""}
               onChange={(event) => {
                 const chosen = event.target.value;
@@ -629,7 +632,7 @@ export function ReferralMatchView({
                   {wardRequestWithdrawalReasonLabels[reason]}
                 </option>
               ))}
-            </select>
+            </Select>
             <button
               type="button"
               className={styles.declineButton}
@@ -688,10 +691,10 @@ export function ReferralMatchView({
           <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
             Decline reason (community team)
           </label>
-          <select
+          <Select
             id="ward-referral-match-decline-reason-community_team"
             data-testid="ward-referral-match-decline-reason-community_team"
-            className={styles.select}
+            boxClassName={rs.reasonSelect}
             value={communityDeclineReason ?? ""}
             onChange={(event) => {
               const chosen = event.target.value;
@@ -708,7 +711,7 @@ export function ReferralMatchView({
                 {COMMUNITY_DECLINE_REASON_LABELS[reason]}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             variant="sec"
             size="md"
@@ -785,10 +788,10 @@ export function ReferralMatchView({
             Decline reason (emergency department)
           </label>
           <div className={styles.selectWithActionRow}>
-            <select
+            <Select
               id="ward-referral-match-decline-reason-emergency_department"
               data-testid="ward-referral-match-decline-reason-emergency_department"
-              className={styles.select}
+              boxClassName={rs.reasonSelect}
               value={edDeclineReason ?? ""}
               onChange={(event) => {
                 const chosen = event.target.value;
@@ -805,7 +808,7 @@ export function ReferralMatchView({
                   {DECLINE_REASON_LABELS[reason] ?? reason}
                 </option>
               ))}
-            </select>
+            </Select>
             <Button
               variant="sec"
               size="md"
@@ -953,8 +956,8 @@ export function ReferralMatchView({
     wardArms.length > 1 ? (
       <label className={styles.fieldLabel}>
         Review recipient ward
-        <select
-          className={styles.select}
+        <Select
+          boxClassName={rs.reasonSelect}
           value={ward?.destination.unitId ?? ""}
           onChange={(event) => setReviewUnitId(event.target.value)}
         >
@@ -967,7 +970,7 @@ export function ReferralMatchView({
                 </option>
               ),
           )}
-        </select>
+        </Select>
       </label>
     ) : null;
 

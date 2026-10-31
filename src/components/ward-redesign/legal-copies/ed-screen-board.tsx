@@ -1,12 +1,13 @@
 "use client";
-// Fork of src/components/ward-management/ed/ed-screen-board.tsx for the redesign mock-ups. The only
-// change: rows come from the forked ./ed-screen-board-row, whose legal form times read as typed.
+// Fork of src/components/ward-management/ed/ed-screen-board.tsx for the redesign mock-ups. The
+// changes: rows come from the forked ./ed-screen-board-row, whose legal form times read as typed, and
+// the board's Sort is the kit's Segmented control (final round, 31 Oct 2026).
 
 // "ED psychiatry": the department's board, with its filters, search and sort, as a table on wider
 // screens and a list on a phone. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6,
 // 15 Oct 2026).
 import type { ReactNode } from "react";
-import { PortraitRail } from "@/components/wf";
+import { PortraitRail, Segmented } from "@/components/wf";
 import { EdBoardChips } from "@/components/ward-management/ed/ed-board-chips";
 import { EdNeedsYou } from "@/components/ward-management/ed/ed-needs-you";
 import { renderEdBoardRow } from "./ed-screen-board-row";
@@ -121,14 +122,22 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           />
         </label>
         {boardTable ? (
-          <label className={styles.patientSort}>
-            Sort{" "}
-            <select value={patientSort} onChange={(event) => setPatientSort(event.target.value)}>
-              <option value="current">Current order</option>
-              <option value="longest">Longest in ED</option>
-              <option value="name">Patient name</option>
-            </select>
-          </label>
+          // Final round (31 Oct 2026): the kit's Segmented sort, as the other redesigned pages' sorts
+          // (Patients, Transport, the ED board fork), in place of a browser-default select. Same three orders.
+          <span className={styles.patientSort}>
+            <span aria-hidden="true">Sort</span>
+            <Segmented<string>
+              label="Sort patients"
+              size="sm"
+              value={patientSort}
+              onChange={setPatientSort}
+              items={[
+                { id: "current", label: "Current order" },
+                { id: "longest", label: "Longest in ED" },
+                { id: "name", label: "Patient name" },
+              ]}
+            />
+          </span>
         ) : null}
         <span className={styles.draftNote} role="status">
           {/* Overall review (20 Oct 2026): says something only when there is something unsaved;

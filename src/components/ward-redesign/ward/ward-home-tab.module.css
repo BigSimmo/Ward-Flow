@@ -11,9 +11,11 @@
   min-width: 0;
 }
 
+/* Final round (31 Oct 2026): the Ward flow panel keeps at least 21rem, so its three lists sit on one
+   line with room around each label; the bed board takes the rest. */
 .homeTop {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 5fr) minmax(21rem, 2fr);
   gap: var(--wf-s-3);
   align-items: stretch;
   min-width: 0;
@@ -144,7 +146,10 @@
   list-style: none;
 }
 
+/* Final round (31 Oct 2026): each tile fills its grid cell, so every tile in a row is one height and
+   the state line sits on one baseline across the row (rows are already equal, `grid-auto-rows`). */
 .bedTiles > li {
+  display: flex;
   min-width: 0;
 }
 
@@ -153,8 +158,9 @@
   flex-direction: column;
   gap: 2px;
   width: 100%;
-  /* Redesign: a tile grows to fit a whole name on two lines, so it no longer fills a fixed height. */
+  /* Redesign: a tile grows to fit a whole name on two lines; the row takes its tallest tile's height. */
   height: auto;
+  flex: 1 1 auto;
   min-height: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
   border: 1px solid var(--wf-line);
@@ -476,8 +482,10 @@
   flex-direction: column;
 }
 
+/* Final round (31 Oct 2026): 12px sides and tighter items (with the wider panel, `.homeTop`) keep the
+   three lists on one line at 1440. */
 .flowSwitch {
-  padding: var(--wf-s-2) var(--wf-s-4) 0;
+  padding: var(--wf-s-2) var(--wf-s-3) 0;
 }
 
 /* Design audit DA-24: a label never shrinks under its own text. When the panel is too narrow (a 1280
@@ -492,9 +500,9 @@
 .flowSwitch > div > button {
   flex: 1 1 auto;
   justify-content: center;
-  gap: 5px;
+  gap: 4px;
   min-width: max-content;
-  padding-inline: 2px;
+  padding-inline: 4px;
 }
 
 .flowBody {

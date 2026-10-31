@@ -90,6 +90,7 @@ import { buttonClass, CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToa
 import { useWardPageToast, WardPageActionToast } from "@/components/ward-management/ward/ward-page-action-toast";
 import { useWardUnitQueues } from "@/components/ward-management/ward/use-ward-unit-queues";
 import styles from "@/components/ward-management/ward/ward.module.css";
+import heroTitle from "@/components/ward-redesign/ward/ward-hero-title.module.css";
 import { wardClearanceAlerts } from "@/components/ward-management/ward/ward-clearance-alerts";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import type { WaitingReferral } from "@/components/ward-management/ward/ward-bed-board";
@@ -1921,12 +1922,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           <button
             type="button"
             {...props}
-            className={isPhone ? styles.wardSwitchName : styles.wardSwitch}
+            // Final round (31 Oct 2026): the hero's big line names the page, not the ward (the header
+            // already shows the ward), so the switch says what it does instead of repeating the name.
+            className={`${styles.wardSwitch} ${heroTitle.switchWard}`}
             aria-label={`Switch ward, now ${unit.name}`}
             data-testid="ward-switch-btn"
           >
-            {isPhone ? <span className={styles.phoneHeroName}>{unit.name}</span> : null}
-            <ChevronDown size={isPhone ? 18 : 16} aria-hidden="true" />
+            <span>Switch ward</span>
+            <ChevronDown size={14} aria-hidden="true" />
           </button>
         )}
       />
@@ -1978,7 +1981,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {" · "}
         {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
         <span>Roster not recorded</span> · {staffedSpecialling} staff on constant observation ·{" "}
-        {unit.authorised ? "authorised for involuntary" : "not set up for involuntary admissions (demo)"}
+        {/* Final round (31 Oct 2026): the phrase finished, as its other branch reads, so the line no
+            longer ends on "involuntary" as if cut off. */}
+        {unit.authorised ? "authorised for involuntary admissions" : "not set up for involuntary admissions (demo)"}
         {(unit.intakeConstraints ?? []).length > 0
           ? ` · ${(unit.intakeConstraints ?? [])
               .map((constraint) => wardIntakeConstraintLabels[constraint] ?? constraint)

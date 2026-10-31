@@ -1,5 +1,6 @@
 "use client";
 // Copied from src/components/ward-management/referrals/referral-match-not-a-bed.tsx (Referrals redesign).
+// Final round (31 Oct 2026): reason and recipient choices use the kit Select, same options, nothing pre-chosen (D-71).
 
 import { type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
@@ -23,6 +24,9 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import styles from "@/components/ward-management/referrals/referrals.module.css";
 import ph from "@/components/ward-management/referrals/referral-match-phone.module.css";
+import { Select } from "@/components/wf";
+// Final round: the kit Select box sizing for this panel (see the file).
+import rs from "./referral-match.module.css";
 import {
   DECLINE_REASON_UNCHOSEN_ED,
   DECLINE_REASON_UNCHOSEN_COMMUNITY,
@@ -260,10 +264,10 @@ export function renderNotABedPanel({
               Decline reason (emergency department)
             </label>
             <div className={styles.selectWithActionRow}>
-              <select
+              <Select
                 id="ward-referral-match-decline-reason-emergency_department"
                 data-testid="ward-referral-match-decline-reason-emergency_department"
-                className={styles.select}
+                boxClassName={rs.reasonSelect}
                 value={edDeclineReason ?? ""}
                 onChange={(event) => {
                   const chosen = event.target.value;
@@ -281,7 +285,7 @@ export function renderNotABedPanel({
                     {DECLINE_REASON_LABELS[reason] ?? reason}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 className={styles.declineButton}
@@ -369,10 +373,10 @@ export function renderNotABedPanel({
               Decline reason (community team)
             </label>
             <div className={styles.selectWithActionRow}>
-              <select
+              <Select
                 id="ward-referral-match-decline-reason-community_team"
                 data-testid="ward-referral-match-decline-reason-community_team"
-                className={styles.select}
+                boxClassName={rs.reasonSelect}
                 value={communityDeclineReason ?? ""}
                 onChange={(event) => {
                   const chosen = event.target.value;
@@ -390,7 +394,7 @@ export function renderNotABedPanel({
                     {COMMUNITY_DECLINE_REASON_LABELS[reason]}
                   </option>
                 ))}
-              </select>
+              </Select>
               <button
                 type="button"
                 className={styles.declineButton}

@@ -1,11 +1,12 @@
 /*
- * Ward statistics, redesigned: the compact bed map (nine small tiles to a row, shaded by stay).
- * Tile shapes and state colours come from the app's bed-map module; this
- * file only sets size, the stay shading and the stay key. Tokens only.
+ * Ward statistics, redesigned: the compact bed map. Final round (31 Oct 2026): an even grid (the
+ * columns come from the page, `--bed-cols`, 10 by 2 for 20 beds) and each state its own fill, the
+ * phone grid's (`as-ward-statistics/ward-phone-beds.module.css`), whose legend swatches the map's
+ * legend reuses. The phone strip below keeps its stay shades. Tokens only, so dark mode follows.
  */
 .bedGrid {
   display: grid;
-  grid-template-columns: repeat(9, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--bed-cols, 10), minmax(0, 1fr));
   gap: 6px;
   margin: 0;
   padding: 0;
@@ -21,17 +22,39 @@
   height: 2.75rem;
   padding: 4px 6px;
   box-sizing: border-box;
-  border: 1px solid var(--wf-line-2);
+  border: 1px solid transparent;
   border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-1);
+  /* On the occupied fill the words take the card colour: white on navy, dark on the dark theme's blue. */
+  color: var(--wf-surface);
 }
 
-.bedGlyph {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  color: var(--wf-ink-3);
+/* A bed someone is in, or on leave: the Capacity map's used fill. */
+.bedTile[data-bed-kind="occupied"],
+.bedTile[data-bed-kind="leave"] {
+  background: var(--wf-data-1);
+}
+
+/* Pulled for a person on the way: the used colour in stripes, held and not yet in. */
+.bedTile[data-bed-kind="pulled"] {
+  border-color: var(--wf-data-1);
+  background: repeating-linear-gradient(135deg, var(--wf-data-1) 0 3px, var(--wf-surface) 3px 6px);
+}
+
+/* Closed: the closed fill, with an edge so it still reads on a dark card. */
+.bedTile[data-bed-kind="closed"] {
+  border-color: var(--wf-line);
+  background: var(--wf-data-closed);
+}
+
+/* Being made ready: the ready colour as an outline over a soft tint, so it is not yet ready. */
+.bedTile[data-bed-kind="prep"] {
+  border: 1.5px dashed var(--wf-data-ready);
+  background: color-mix(in srgb, var(--wf-data-ready) 14%, var(--wf-surface));
+}
+
+/* Ready: the ready fill. */
+.bedTile[data-bed-kind="ready"] {
+  background: var(--wf-data-ready);
 }
 
 .bedDays {
@@ -40,37 +63,36 @@
 
 .bedWord {
   overflow: hidden;
-  color: var(--wf-ink-3);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* A discharge blocker: the warning dot in a small card-coloured disc, readable on every fill. */
 .bedBlocked {
   position: absolute;
-  bottom: 6px;
+  top: 4px;
   right: 4px;
   display: flex;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--wf-surface);
   color: var(--wf-warning);
 }
 
-/* Stay shading: the four stay bands, lightest to darkest. On leave keeps its dashed edge. */
-.bedTile[data-stay-band="0"],
+/* The phone strip's stay shades (statistics-unit-phone.tsx), lightest to darkest, and the stay key. */
 .staySwatch[data-stay-band="0"] {
   background: color-mix(in srgb, var(--wf-data-1) 8%, var(--wf-surface));
 }
 
-.bedTile[data-stay-band="1"],
 .staySwatch[data-stay-band="1"] {
   background: color-mix(in srgb, var(--wf-data-1) 18%, var(--wf-surface));
 }
 
-.bedTile[data-stay-band="2"],
 .staySwatch[data-stay-band="2"] {
   background: color-mix(in srgb, var(--wf-data-1) 28%, var(--wf-surface));
 }
 
-.bedTile[data-stay-band="3"],
 .staySwatch[data-stay-band="3"] {
   background: color-mix(in srgb, var(--wf-data-1) 42%, var(--wf-surface));
 }
@@ -90,10 +112,6 @@
 
 .phoneBed.phoneBed[data-stay-band="3"] {
   background: color-mix(in srgb, var(--wf-data-1) 42%, var(--wf-surface));
-}
-
-.bedTile[data-stay-band="3"] .bedDays {
-  font-weight: 700;
 }
 
 .bedFoot {
@@ -138,7 +156,33 @@
 
 @media (max-width: 40rem) {
   .bedGrid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (forced-colors: active) {
+  .bedTile {
+    border-color: CanvasText;
+    color: CanvasText;
+  }
+
+  .bedTile[data-bed-kind="occupied"],
+  .bedTile[data-bed-kind="leave"] {
+    background: CanvasText;
+    color: Canvas;
+  }
+
+  .bedTile[data-bed-kind="ready"] {
+    background: Highlight;
+  }
+
+  .bedTile[data-bed-kind="pulled"] {
+    border-style: dashed;
+    background: Canvas;
+  }
+
+  .bedTile[data-bed-kind="closed"] {
+    background: GrayText;
   }
 }
 

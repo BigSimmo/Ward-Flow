@@ -1,0 +1,32 @@
+/* Final round (31 Oct 2026): the hero's big line names the page ("Ward home"), so the Switch ward
+   button says its job in words beside it instead of repeating the ward name. One quiet hero chip at
+   the kit size: 28px on a laptop, 32px on a phone with a 48px invisible tap area (kit-standard.css).
+   The doubled class outranks the copied page's square 28px `.wardSwitch` box without an override. */
+.switchWard.switchWard {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+  height: 28px;
+  min-height: 0;
+  padding: 0 8px 0 10px;
+  border-radius: var(--wf-r-pill, 999px);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  flex: none;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .switchWard.switchWard {
+    height: 32px;
+    padding: 0 10px 0 12px;
+    font-size: var(--wf-fs-13);
+  }
+
+  .switchWard.switchWard::after {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
+  }
+}

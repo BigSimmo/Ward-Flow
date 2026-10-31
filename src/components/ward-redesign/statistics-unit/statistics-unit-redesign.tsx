@@ -391,12 +391,9 @@ function OperationalWardScreen({
         phone: (
           <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
         ),
-        bedMap: (
-          <>
-            <StatisticsBedMapLegend counts={bedMap.counts} />
-            <CompactBedMap map={bedMap} wardName={unit.name} />
-          </>
-        ),
+        // Final round (31 Oct 2026): the compact map carries its own legend, with the swatches of
+        // its state fills (statistics-unit-bed-map.tsx), so the app's legend is not drawn above it.
+        bedMap: <CompactBedMap map={bedMap} wardName={unit.name} />,
         stay: (
           <StayCard
             bands={STAY_BANDS.map((band) => ({
