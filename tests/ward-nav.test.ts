@@ -8,6 +8,7 @@ import { StatisticsCommunityScreen } from "@/components/ward-management/statisti
 import { StatisticsServiceScreen } from "../src/components/ward-management/statistics/statistics-service-screen";
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
+import { isRedesignMockup } from "./helpers/redesign-design-copies";
 import { createElement, Fragment, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -319,7 +320,9 @@ function collectSourceFiles(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-const sourceFiles = collectSourceFiles(SRC_ROOT);
+// The redesign mock-up copies and their viewer (D-89, D-91) are design-only, blocked in production and
+// deleted page by page; their links are not app navigation, so they stay out of the D8 scan.
+const sourceFiles = collectSourceFiles(SRC_ROOT).filter((file) => !isRedesignMockup(file));
 
 /** The three characters a JSX/TS href can sit between. Built by concatenation rather than written
  *  into a template literal, because `${` inside one is an interpolation and a regex escape that
