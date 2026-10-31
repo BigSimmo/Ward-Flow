@@ -21,7 +21,7 @@ A screen reader reads the word, not the shape.
 
 Open **Settings**, then **Display**.
 
-- **Theme**: Auto, Light, Dark or Glare. Glare is a bright, plain light screen for strong light. It stays light even if your device is dark.
+- **Theme**: Auto, Light, Dark or Bright light. Bright light is a plain light screen for strong light. It stays light even if your device is dark.
 - **High contrast**: stronger edges and ink. Faint lines and grey words become full ink.
 - **Reduce motion**: stops slides and pulses.
 

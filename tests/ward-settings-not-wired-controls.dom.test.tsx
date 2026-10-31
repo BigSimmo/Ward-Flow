@@ -161,6 +161,10 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(before);
 
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+
+    // Save opens a review first (Settings round 3); its Save change button saves.
+
+    fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
   });
 });

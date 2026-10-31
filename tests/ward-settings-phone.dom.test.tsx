@@ -77,7 +77,7 @@ describe("Settings: rule save answers with Undo in the wf toast", () => {
     });
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(before ?? "");
     expect(screen.queryByRole("region", { name: "Unsaved rule changes" })).not.toBeInTheDocument();
-    expect(region).toHaveTextContent("Rules back as they were. Recorded in the audit.");
+    expect(region).toHaveTextContent("Settings back as they were. Recorded in the audit.");
   });
 
   it("Discard offers Undo that brings the draft back", () => {

@@ -151,10 +151,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("the real layout's authenticated executive branch", () => {
-  it("shows unavailable while the public chrome chunk or preview projection is pending", async () => {
+  it("says the executive view is loading, not unavailable, while the public chrome chunk or preview projection is pending", async () => {
     setForceDynamicLoading(true);
     const view = await openLayout();
-    expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-loading")).toHaveTextContent("Loading the executive view…");
+    expect(screen.queryByTestId("ward-statistics-unavailable")).toBeNull();
     expect(screen.queryByTestId("public-report")).toBeNull();
     setForceDynamicLoading(false);
     await act(async () => {
@@ -173,7 +174,8 @@ describe("the real layout's authenticated executive branch", () => {
         </WardExecutiveChromeMount>
       </ExecutiveStatisticsLivePreviewProvider>,
     );
-    expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-loading")).toHaveTextContent("Loading the executive view…");
+    expect(screen.queryByTestId("ward-statistics-unavailable")).toBeNull();
     expect(screen.queryByTestId("public-report")).toBeNull();
     expect(guard.raw).not.toHaveBeenCalled();
   });

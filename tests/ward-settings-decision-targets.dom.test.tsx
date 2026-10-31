@@ -58,6 +58,8 @@ describe("settings: decision targets", () => {
     fireEvent.click(screen.getByRole("button", { name: "Increase referral decision target" }));
     expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(String(WARD_ANSWER_TARGET_MINUTES));
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+    // Save opens a review first (Settings round 3); its Save change button saves.
+    fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-referral-target")).toHaveTextContent(String(WARD_ANSWER_TARGET_MINUTES + 15));
   });
 });

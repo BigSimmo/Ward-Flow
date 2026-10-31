@@ -141,7 +141,7 @@ describe("settings audited journey recovery", () => {
     undo(/saved and recorded\./);
     expect(flow.configuration.edAccessTargetMinutes).toBe(960);
     expect(screen.getByTestId("ward-settings-configuration-refused")).toBeVisible();
-    expect(screen.queryByText("Rules back as they were. Recorded in the audit.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Settings back as they were. Recorded in the audit.")).not.toBeInTheDocument();
   });
 
   it("keeps an earlier Undo available while another rule change is pending", async () => {
@@ -214,17 +214,17 @@ describe("settings audited journey recovery", () => {
     ) as WardRaise;
     renderSettings();
     selectData();
-    fireEvent.click(screen.getByRole("button", { name: "Restore all defaults" }));
-    fireEvent.click(screen.getByTestId("confirm-restore-defaults-btn"));
-    expect(screen.getByTestId("confirm-restore-defaults-btn")).toBeDisabled();
-    expect(screen.queryByText("Defaults restored and recorded.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    fireEvent.click(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ }));
+    expect(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ })).toBeDisabled();
+    expect(screen.queryByText("Rules restored and recorded.")).not.toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     await act(async () =>
       finish({ commandId: "synthetic-settings-restore", status: "refused", message: "Synthetic refusal." }),
     );
     expect(screen.getByTestId("ward-reset-baseline-modal")).toBeVisible();
-    expect(screen.getByTestId("confirm-restore-defaults-btn")).toBeEnabled();
-    expect(screen.queryByText("Defaults restored and recorded.")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ })).toBeEnabled();
+    expect(screen.queryByText("Rules restored and recorded.")).not.toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   });
 

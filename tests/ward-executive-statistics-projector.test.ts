@@ -640,11 +640,26 @@ describe("the inactive full reporting bundle", () => {
       kind: "executive-reporting",
       executive: true,
       ready: true,
+      loading: false,
       paused: true,
       togglePause: true,
     });
-    expect(render(false)).toEqual({ kind: null, executive: false, ready: false, paused: true, togglePause: true });
-    expect(render(true, false)).toEqual({ kind: null, executive: true, ready: false, paused: true, togglePause: true });
+    expect(render(false)).toEqual({
+      kind: null,
+      executive: false,
+      ready: false,
+      loading: false,
+      paused: true,
+      togglePause: true,
+    });
+    expect(render(true, false)).toEqual({
+      kind: null,
+      executive: true,
+      ready: false,
+      loading: false,
+      paused: true,
+      togglePause: true,
+    });
   });
 
   it("distinguishes missing session history and releases the real overlapping three/four-hour windows", () => {
