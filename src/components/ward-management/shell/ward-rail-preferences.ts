@@ -113,8 +113,11 @@ export function useWardDocumentPreferences() {
   return { open, appearance, glare };
 }
 
-/** Shift+T, Shift+R and Shift+A open the Tasks, Referral and Activity drawers. True when handled. */
-export function openDrawerForShortcut(event: KeyboardEvent): boolean {
+/**
+ * Shift+T, Shift+R and Shift+A open the Tasks, Referral and Activity drawers. True when handled.
+ * A desk without referral intake (`canRefer` false) leaves Shift+R alone, so the key press is not taken.
+ */
+export function openDrawerForShortcut(event: KeyboardEvent, canRefer = true): boolean {
   if (!areCharacterShortcutsEnabled() || !event.shiftKey || event.metaKey || event.ctrlKey || event.altKey)
     return false;
   const drawer =
@@ -125,7 +128,7 @@ export function openDrawerForShortcut(event: KeyboardEvent): boolean {
         : event.key === "A" || event.key === "a"
           ? "activity"
           : null;
-  if (drawer === null) return false;
+  if (drawer === null || (drawer === "referral" && !canRefer)) return false;
   event.preventDefault();
   openWardDrawer(drawer);
   return true;
