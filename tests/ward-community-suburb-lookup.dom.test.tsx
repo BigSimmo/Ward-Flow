@@ -24,8 +24,9 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * Community page, core pages review (approved by Josh, 31 Oct 2026). The suburb lookup is a
  * full-width bar above the A to Z. For a suburb whose catchment row names more than one team, the
- * warning comes first, then every team with its own Open and Show in list. The heading counts the
- * teams live. Synthetic catchment data only; the typed words stay in the box.
+ * warning comes first, then every team with its own Open and Show in list. It opens empty, with
+ * nothing chosen (Josh, 31 Oct 2026). The heading counts the teams live. Synthetic catchment data
+ * only; the typed words stay in the box.
  */
 function renderIndex(teams?: Parameters<typeof CommunityIndex>[0]["teams"]) {
   return render(
@@ -41,6 +42,12 @@ function lookupCard(): HTMLElement {
 
 function suburbField(): HTMLInputElement {
   return within(lookupCard()).getByRole("searchbox", { name: "Suburb or postcode" }) as HTMLInputElement;
+}
+
+/** Chooses a suburb from the quick picks, the way a reader would. */
+function pickSuburb(name: string) {
+  const picks = within(lookupCard()).getByRole("group", { name: "Suburbs whose row names more than one team" });
+  fireEvent.click(within(picks).getByRole("button", { name }));
 }
 
 afterEach(() => {
@@ -66,8 +73,20 @@ describe("Community heading — a live count of community teams", () => {
 });
 
 describe("Community suburb lookup — a shared suburb warns first, then every team it names", () => {
-  it("opens on Barragup with the warning before the teams, each with Open and Show in list", () => {
+  it("opens empty: no suburb typed, no quick pick pressed, no warning and no team", () => {
     renderIndex();
+    expect(suburbField().value).toBe("");
+    const picks = within(lookupCard()).getByRole("group", { name: "Suburbs whose row names more than one team" });
+    const buttons = within(picks).getAllByRole("button");
+    expect(buttons.length, "no quick picks to check").toBeGreaterThan(0);
+    for (const button of buttons) expect(button).toHaveAttribute("aria-pressed", "false");
+    expect(within(lookupCard()).queryByTestId("suburb-lookup-shared-warning")).toBeNull();
+    expect(within(lookupCard()).queryByRole("link", { name: /^Open / })).toBeNull();
+  });
+
+  it("choosing Barragup shows the warning before the teams, each with Open and Show in list", () => {
+    renderIndex();
+    pickSuburb("Barragup");
     expect(suburbField().value).toBe("Barragup");
 
     const answer = within(lookupCard()).getByRole("region", { name: "Barragup" });
@@ -95,6 +114,7 @@ describe("Community suburb lookup — a shared suburb warns first, then every te
   it("Show in list focuses that team's row in the A to Z", () => {
     vi.useFakeTimers();
     renderIndex();
+    fireEvent.change(suburbField(), { target: { value: "Barragup" } });
     const answer = within(lookupCard()).getByRole("region", { name: "Barragup" });
     const first = within(answer).getAllByRole("listitem")[0]!;
     const href = within(first)

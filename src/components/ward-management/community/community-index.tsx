@@ -610,7 +610,6 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
               plainOnPhone
               picks={contestedPicks}
               picksLabel="Suburbs whose row names more than one team"
-              initialQuery={contestedPicks[0] ?? ""}
               teamMeta={(clinic) => {
                 const facts = factsFor(clinic);
                 return `${facts.service} · ${facts.suburbs} suburbs`;

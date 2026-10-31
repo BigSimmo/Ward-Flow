@@ -56,8 +56,6 @@ export type SuburbLookupCardProps = {
   title?: string;
   /** One quiet line beside the heading. */
   note?: ReactNode;
-  /** The words the field opens with, for example the first quick pick. */
-  initialQuery?: string;
   /** Suburbs offered as one tap (Community: the suburbs whose row names more than one team). */
   picks?: readonly string[];
   /** The quick picks' spoken name. */
@@ -76,7 +74,6 @@ export type SuburbLookupCardProps = {
 export function SuburbLookupCard({
   title = "Suburb lookup",
   note = "Which team covers it",
-  initialQuery = "",
   picks = [],
   picksLabel = "Suburbs to try",
   teamMeta,
@@ -86,7 +83,9 @@ export function SuburbLookupCard({
   className,
 }: SuburbLookupCardProps) {
   const id = useId();
-  const [query, setQuery] = useState(initialQuery);
+  // Opens empty, nothing chosen (Josh, 31 Oct 2026): a warning shows only once the reader picks or
+  // types a suburb.
+  const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
   const trimmed = query.trim();
   const lookups = useMemo(() => catchmentLookupsFor(trimmed), [trimmed]);
