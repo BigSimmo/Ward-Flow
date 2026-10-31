@@ -36,7 +36,7 @@ describe("confirming a bed release confirms the stay's discharge", () => {
     expect(next.rejections).toHaveLength(state.rejections.length);
     const stay = next.admissions.find((candidate) => candidate.id === release.admissionId);
     expect(stay?.dischargeConfirmedAt).toBe(NOW_ANCHOR);
-    expect(stay?.dischargeConfirmedBy).toBe("Ward manager");
+    expect(stay?.dischargeConfirmedBy).toBe("Nurse in charge");
     // Only that stay changes.
     const others = (list: typeof state.admissions) => list.filter((candidate) => candidate.id !== release.admissionId);
     expect(others(next.admissions)).toEqual(others(state.admissions));

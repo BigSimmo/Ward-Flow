@@ -1,5 +1,5 @@
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { roleOfRecordedLabel } from "@/components/ward-management/ward-flow-roles";
 import { INBOX_CATEGORIES, inboxOccurrenceSince } from "@/components/ward-management/ward-inbox-reducer";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -58,12 +58,13 @@ export function referralWorkedOnBy(
   return desks;
 }
 
-/** A recorded role label ("Bed coordinator") as the desk is named on screen ("Bed coordinator"). */
+/**
+ * A recorded role label ("Bed coordinator") as the desk is named on screen ("Bed coordinator"). Q66
+ * (31 Oct 2026): a label saved before the new role names ("Ward manager") reads as its role too.
+ */
 function deskNameOf(recordedRole: string): string {
-  const role = (Object.keys(WARD_FLOW_ROLE_LABELS) as (keyof typeof WARD_FLOW_ROLE_LABELS)[]).find(
-    (candidate) => WARD_FLOW_ROLE_LABELS[candidate] === recordedRole,
-  );
-  return role !== undefined && Object.hasOwn(CHROME_ROLE_LABELS, role)
+  const role = roleOfRecordedLabel(recordedRole);
+  return role !== null && Object.hasOwn(CHROME_ROLE_LABELS, role)
     ? CHROME_ROLE_LABELS[role as WardChromeRole]
     : recordedRole;
 }

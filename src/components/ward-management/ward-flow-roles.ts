@@ -45,13 +45,35 @@ export type WardFlowRole =
  * ("flow" | "ed" | "ward"). The two vocabularies are not the same and must not be conflated —
  * `WardRole` has no `coordinator`, and this has no `flow`.
  */
+// Q66 (Josh, 31 Oct 2026): new records save the new role names. Records saved before then hold the
+// earlier words (`EARLIER_ROLE_LABELS`); they are never rewritten, and every reader accepts both.
 export const WARD_FLOW_ROLE_LABELS: Record<WardFlowRole, string> = {
   coordinator: "Bed coordinator",
   ed: "ED clinician",
-  ward: "Ward manager",
+  ward: "Nurse in charge",
   officer: "Transport officer",
   demo: "Demonstration control",
-  community: "Community service",
-  bed_manager: "Bed manager",
+  community: "Community team",
+  bed_manager: "Site bed manager",
   executive: "Executive",
 };
+
+/**
+ * Q66 (Josh, 31 Oct 2026): the role words records saved before 31 Oct 2026 hold, and the role each
+ * names. Stored records keep them; anything that parses, matches, filters or compares stored role
+ * text reads them through `roleOfRecordedLabel`, so an older record stays valid.
+ */
+export const EARLIER_ROLE_LABELS: Readonly<Record<string, WardFlowRole>> = {
+  "Ward manager": "ward",
+  "Community service": "community",
+  "Community clinician": "community",
+  "Bed manager": "bed_manager",
+};
+
+/** The role a stored role label names, in the current words or the earlier ones, or `null`. */
+export function roleOfRecordedLabel(label: string): WardFlowRole | null {
+  const roles = Object.keys(WARD_FLOW_ROLE_LABELS) as WardFlowRole[];
+  const current = roles.find((role) => WARD_FLOW_ROLE_LABELS[role] === label);
+  if (current !== undefined) return current;
+  return Object.hasOwn(EARLIER_ROLE_LABELS, label) ? EARLIER_ROLE_LABELS[label]! : null;
+}

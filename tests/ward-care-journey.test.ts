@@ -187,7 +187,15 @@ describe("complete guarded local care journey", () => {
     saved.plan[CARE_PLAN_ITEMS[0]].recordedBy = "Flow coordinator";
     expect(validCareJourney(saved)).toBe(true);
     expect(careRecordedByLabel("Flow coordinator")).toBe("Bed coordinator");
-    expect(careRecordedByLabel("Ward manager")).toBe("Ward manager");
+    // Q66 (31 Oct 2026): a fact saved with the earlier ward and community words still restores, and
+    // reads under the new names. New facts save the new names.
+    saved.plan[CARE_PLAN_ITEMS[0]].recordedBy = "Ward manager";
+    expect(validCareJourney(saved)).toBe(true);
+    saved.plan[CARE_PLAN_ITEMS[0]].recordedBy = "Community service";
+    expect(validCareJourney(saved)).toBe(true);
+    expect(careRecordedByLabel("Ward manager")).toBe("Nurse in charge");
+    expect(careRecordedByLabel("Community service")).toBe("Community team");
+    expect(careRecordedByLabel("Nurse in charge")).toBe("Nurse in charge");
   });
   it.each(CARE_DOCUMENTS)("tracks adult %s documentation", (document) => {
     const { state, admission } = fixture();

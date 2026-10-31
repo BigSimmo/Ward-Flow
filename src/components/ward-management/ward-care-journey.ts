@@ -1,16 +1,28 @@
 import { communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
 import type { Instant } from "./ward-clock";
+import { EARLIER_ROLE_LABELS, WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 
 /**
  * Who a care fact was recorded by, as stored. A19 (26 Oct 2026) renamed the coordinator desk, so a fact
  * saved before then still reads "Flow coordinator". Restore keeps accepting it, and the screen shows it
- * under the current name through `careRecordedByLabel`.
+ * under the current name through `careRecordedByLabel`. Q66 (Josh, 31 Oct 2026): new facts save
+ * "Nurse in charge" and "Community team"; older ones keep "Ward manager" and "Community service",
+ * which restore still accepts and the screen shows under the new names.
  */
-const CARE_RECORDED_BY = ["Ward manager", "Bed coordinator", "Flow coordinator", "Community service"] as const;
+const CARE_RECORDED_BY = [
+  "Nurse in charge",
+  "Ward manager",
+  "Bed coordinator",
+  "Flow coordinator",
+  "Community team",
+  "Community service",
+] as const;
 
 export function careRecordedByLabel(recordedBy: string): string {
-  return recordedBy === "Flow coordinator" ? "Bed coordinator" : recordedBy;
+  if (recordedBy === "Flow coordinator") return "Bed coordinator";
+  const role = Object.hasOwn(EARLIER_ROLE_LABELS, recordedBy) ? EARLIER_ROLE_LABELS[recordedBy]! : null;
+  return role === null ? recordedBy : WARD_FLOW_ROLE_LABELS[role];
 }
 
 /** Closed, synthetic workflow facts. No narrative, patient identifiers or computed legal clocks. */

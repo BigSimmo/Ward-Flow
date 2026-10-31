@@ -114,7 +114,7 @@ describe("the site bed manager's bed flow actions (D-80)", () => {
     expect(done.rejections).toEqual(wardOwned.rejections);
     expect(done.admissions.find((candidate) => candidate.id === admission.id)!.meetingActions![0]).toMatchObject({
       doneAt: NOW + 10,
-      doneBy: "Bed manager",
+      doneBy: "Site bed manager",
     });
     expect(complete(wardOwned).rejections).toHaveLength(wardOwned.rejections.length + 1);
     expect(complete(wardOwned, "some-other-ward").rejections).toHaveLength(wardOwned.rejections.length + 1);

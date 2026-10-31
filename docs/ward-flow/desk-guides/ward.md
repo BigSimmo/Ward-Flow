@@ -4,8 +4,9 @@
 
 _Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
 
-You run your own ward's beds and answer the referrals sent to it. This desk is **Nurse in charge**;
-its recorded role label remains **Ward manager**.
+You run your own ward's beds and answer the referrals sent to it. This desk is **Nurse in charge**,
+and new records name it **Nurse in charge** (31 Oct 2026). Records saved before then say **Ward
+manager** and are kept as they are.
 
 ## What you see first
 
