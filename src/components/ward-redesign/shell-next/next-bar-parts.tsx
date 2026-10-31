@@ -80,12 +80,3 @@ export function NextAlertsTabs({
     </div>
   );
 }
-
-/** The quiet "›" between the place and the page name ("Statewide › Capacity"). */
-export function CrumbSeparator() {
-  return (
-    <span className={parts.crumbSep} aria-hidden="true">
-      ›
-    </span>
-  );
-}

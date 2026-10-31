@@ -47,18 +47,6 @@
 
 /* ── shell-next (Josh, 30 Oct 2026) ───────────────────────────────────────────────────────── */
 
-/* "Statewide › Capacity": the quiet separator between the place and the page name. */
-.crumbSep {
-  flex: none;
-  margin-inline: -2px;
-  color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-16) / 1 var(--wf-font);
-}
-
-[data-band="ink"] .crumbSep {
-  color: color-mix(in srgb, currentColor 55%, transparent);
-}
-
 /* Alerts and Activity, the two tabs of the one Alerts panel. */
 .alertsTabs {
   display: flex;

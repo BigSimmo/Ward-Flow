@@ -799,11 +799,17 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           className={styles.shiftCockpitTop}
           title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
         >
-          {/* shell-next: the person is named once, in the rail's foot with Switch; this card is the shift. */}
+          {/* Josh, 31 Oct 2026: the person's name stays on the shift card, as today. */}
+          <span className={styles.shiftAvatar} aria-hidden="true">
+            {currentPersona.initials}
+          </span>
           <span className={styles.shiftMeta}>
             <span className={styles.shiftTitle}>
               {shiftProgress.shiftName}
               <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
+            </span>
+            <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
+              {currentPersona.name} · {currentPersona.role}
             </span>
             {viewing ? (
               <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">

@@ -46,7 +46,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "@/components/ward-management/shell/ward-bar-page-tools";
-import { WardHelpHost, WardHelpScreenButton } from "@/components/ward-management/help/ward-help-host";
+import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "@/components/ward-management/shell/ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "@/components/ward-management/shell/ward-facade";
 import type { WardActivityContent, WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
@@ -96,7 +96,6 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import polish from "@/components/ward-redesign/shell-next/next-bar.module.css";
 import {
-  CrumbSeparator,
   NextAlertsTabs,
   openPageActivity,
   pageDrawsOwnActivity,
@@ -1049,12 +1048,10 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
             : undefined
         }
       >
-        {/* shell-next (Josh, 30 Oct 2026): on a laptop the place comes first and the page second,
-            "Statewide › Capacity", so a long page name no longer pushes the place out of the row.
-            The phone keeps its locked lean bar: the title over the service line. */}
-        {/* A desk's own home page is named for its place ("Dabakarn"), so the place is not repeated. */}
-        {isPhone || placeIsTitle ? null : serviceSelector}
-        {isPhone || placeIsTitle ? null : <CrumbSeparator />}
+        {/* Josh, 31 Oct 2026 (after seeing the new frame): today's order is back, the page name first
+            and then the place's dropdown, with no "›" and no "?" beside the title (Help stays in the
+            rail). A desk's own home page is named for its place ("Dabakarn"), so the place is not
+            repeated there. */}
         <div className={styles.titleGroup}>
           <span
             className={styles.place}
@@ -1063,10 +1060,9 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
           >
             {routeTitle}
           </span>
-          {isPhone ? null : <WardHelpScreenButton title={routeTitle} className={styles.screenHelp} />}
         </div>
 
-        {isPhone ? serviceSelector : null}
+        {placeIsTitle && !isPhone ? null : serviceSelector}
 
         {/* A page's own header tools land here (`ward-bar-page-tools.tsx`). Empty on most pages. */}
         <div id={WARD_BAR_PAGE_TOOLS_ID} className={styles.pageTools} data-testid="ward-bar-page-tools" />
