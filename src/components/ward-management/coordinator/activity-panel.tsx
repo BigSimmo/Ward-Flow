@@ -23,7 +23,8 @@ import { useUmrnText } from "@/components/ward-management/ward-patient-name";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 
-import { CHANGE_GROUPS, type ChangeLine, useExplicitReview } from "./activity-changes";
+import { CHANGE_GROUPS, type ChangeLine, changesHandoverText, useExplicitReview } from "./activity-changes";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import styles from "./home-activity.module.css";
 
 export type ActivityTab = "changes" | "recent" | "notices";
@@ -193,7 +194,7 @@ export function ActivityPanel({
       contentClassName={`${styles.glyphScope} ${styles.panelGlyphs}`}
       bodyClassName={styles.panelBody}
       footerClassName={styles.panelFooter}
-      footer={showFoot ? <ReviewFoot review={review} /> : undefined}
+      footer={showFoot ? <ReviewFoot review={review} now={now} /> : undefined}
     >
       <TabPanel idPrefix="home-activity" id="changes" hidden={tab !== "changes"}>
         <ChangesBody review={review} now={now} />
@@ -298,8 +299,20 @@ function ChangeRow({ line, now }: { line: ChangeLine; now: Instant }) {
   );
 }
 
-function ReviewFoot({ review }: { review: Review }) {
+function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
   const count = review.shown.length;
+  const [copyNote, setCopyNote] = useState<string | undefined>();
+  const copyHandover = () => {
+    const sinceLabel =
+      review.reviewedAt !== undefined
+        ? `Since your review at ${formatInstantWithDay(review.reviewedAt, now)}`
+        : `Since ${formatInstantWithDay(review.shiftStart, now)}, the start of your shift`;
+    const text = changesHandoverText(review.shown, sinceLabel, (at) => formatInstantWithDay(at, now));
+    copyTextToClipboard(text).then(
+      () => setCopyNote("Copied as handover text."),
+      () => setCopyNote("Copying is not available in this browser."),
+    );
+  };
   return (
     <div className={styles.reviewFoot}>
       {review.lastReviewed ? (
@@ -316,6 +329,12 @@ function ReviewFoot({ review }: { review: Review }) {
             Mark these {count} reviewed
           </Button>
           <p className={styles.reviewNote}>Alerts, tasks and notices stay as they are.</p>
+          <p className={styles.reviewNote}>
+            <button type="button" className={styles.textButton} onClick={copyHandover}>
+              Copy as handover text
+            </button>
+            {copyNote ? <span role="status"> {copyNote}</span> : null}
+          </p>
         </>
       ) : null}
     </div>

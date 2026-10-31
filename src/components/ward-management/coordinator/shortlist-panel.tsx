@@ -1678,7 +1678,8 @@ export function ShortlistPanel({
                     aria-expanded={reviewShown}
                     onClick={() => setReviewOpen((open) => !open)}
                   >
-                    {groups.review.length} {groups.review.length === 1 ? "ward needs" : "wards need"} an override reason
+                    {/* Josh (31 Oct 2026): the button states the count, "3 need an override · Show". */}
+                    {groups.review.length} need an override · {reviewShown ? "Hide" : "Show"}
                     <ChevronDown aria-hidden="true" className={shortlistStyles.chevron} />
                   </button>
                   {reviewShown ? (

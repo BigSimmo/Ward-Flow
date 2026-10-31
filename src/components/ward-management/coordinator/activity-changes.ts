@@ -55,6 +55,31 @@ export type ChangeLine = {
   alsoInAlerts?: boolean;
 };
 
+/**
+ * Copy as handover text (Josh, 31 Oct 2026): the changes shown, by group. Patient lines carry what
+ * changed and when, never the person's name; a bed line keeps its ward. The clipboard helper adds
+ * the synthetic line first and strips record numbers (D-71).
+ */
+export function changesHandoverText(
+  lines: readonly ChangeLine[],
+  sinceLabel: string,
+  clock: (at: Instant) => string,
+): string {
+  const head = `Changes ${sinceLabel.charAt(0).toLowerCase()}${sinceLabel.slice(1)}: ${lines.length}`;
+  const groups = CHANGE_GROUPS.flatMap((group) => {
+    const shown = lines.filter((line) => line.group === group.id);
+    if (shown.length === 0) return [];
+    return [
+      `${group.label} (${shown.length})`,
+      ...shown.map((line) => {
+        const when = line.at === undefined ? "" : `${clock(line.at)} `;
+        return group.id === "beds" ? `- ${when}${line.who}: ${line.text}` : `- ${when}${line.text}`;
+      }),
+    ];
+  });
+  return [head, ...groups].join("\n");
+}
+
 type LineContext = {
   referrals: readonly Referral[];
   movements: readonly Movement[];

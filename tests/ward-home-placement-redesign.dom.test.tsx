@@ -163,6 +163,16 @@ describe("Placement panel redesign", () => {
     expect(within(panel).getAllByText(TIER_TARGETS_NOTE)).toHaveLength(1);
   });
 
+  it("keeps override-only wards behind a button that states the count (Josh, 31 Oct 2026)", () => {
+    const panel = renderPanel({ movementId: "WF-009" });
+    const toggle = within(panel).getByTestId("ward-shortlist-review-toggle");
+    expect(toggle).toHaveTextContent(/^\d+ need an override · Show$/u);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveTextContent(/^\d+ need an override · Hide$/u);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("puts the accepted destination and its desk link on one row", () => {
     const movement = seeded(ACCEPTED_ID);
     const panel = renderPanel({ movementId: ACCEPTED_ID });

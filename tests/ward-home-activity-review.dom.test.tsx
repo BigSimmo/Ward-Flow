@@ -1,6 +1,6 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useEffect } from "react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import {
@@ -91,6 +91,27 @@ describe("Home's Activity panel: explicit review", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBe(stored);
     expect(changesChip()).toHaveTextContent(/^2\s*changes since your review at 09:42 · Review$/u);
+  });
+
+  it("copies the changes as handover text: synthetic line first, no names or record numbers", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    storeEarlierReview();
+    renderHome();
+    fireEvent.click(changesChip());
+    fireEvent.click(within(panel()).getByRole("button", { name: "Copy as handover text" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const text = writeText.mock.calls[0]![0];
+    const lines = text.split("\n");
+    expect(lines[0]).toBe("Synthetic prototype.");
+    expect(lines[1]).toBe("Changes since your review at 09:42: 2");
+    expect(lines.length, "the copy lists the changes, not just a heading").toBeGreaterThan(3);
+    expect(text).not.toMatch(/UM\d{6}/u);
+    // Josh (31 Oct 2026): no names in the copy. Every synthetic person's surname stays out of it.
+    for (const patient of probe.world!.patients) {
+      expect(text).not.toContain(patient.familyName);
+    }
+    expect(await within(panel()).findByText("Copied as handover text.")).toBeInTheDocument();
   });
 
   it("saves the picture on Mark reviewed, so the hero count drops to 0, and Undo restores it", () => {
