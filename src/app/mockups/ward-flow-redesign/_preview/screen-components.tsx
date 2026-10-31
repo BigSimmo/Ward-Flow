@@ -83,9 +83,6 @@ const ChronologyPage = dynamic<MockupPageProps>(() =>
 const PlacesPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/places/places-page").then((module) => module.PlacesPage),
 );
-const CommunityPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/community/community-page").then((module) => module.CommunityPage),
-);
 const CommunityTeamPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/community-team/community-team-page").then((module) => module.CommunityTeamPage),
 );
@@ -321,7 +318,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   downtime: DowntimePage,
   chronology: ChronologyPage,
   places: PlacesPage,
-  community: CommunityPage,
   "community-team": CommunityTeamPage,
   patient: PatientPage,
   "add-patient": AddPatientPage,

@@ -26,7 +26,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "downtime",
   "chronology",
   "places",
-  "community",
   "community-team",
   "patient",
   "add-patient",
