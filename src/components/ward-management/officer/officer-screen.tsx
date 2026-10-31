@@ -233,8 +233,11 @@ export function OfficerScreen() {
     if (!query) return false;
     const transport = movement.transport;
     const originEd = edById(movement.originEdId);
+    // Shown surname first, but found by either order: "Jane Smith" and "Smith, Jane" both match.
+    const subject = resolveSubjectPatient(movement, { patients, referrals, movements });
     const haystack = [
       officerPatientName(movement),
+      subject.patient ? subject.displayName : "",
       umrnFor(movement),
       originEd ? `${originEd.name} ${originEd.siteCode}` : "",
       unitFor(movement)?.name ?? "",

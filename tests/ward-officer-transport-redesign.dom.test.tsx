@@ -54,6 +54,19 @@ describe("Transport desk redesign", () => {
     expect(screen.getByTestId(`ward-officer-patient-${job.id}`).textContent).not.toContain("…");
   });
 
+  it("finds a job by the patient's name in either order (shown surname first)", () => {
+    installMatchMediaStub(false);
+    renderDesk();
+    const job = jobs.find((movement) => resolveSubjectPatient(movement, state).patient)!;
+    const info = resolveSubjectPatient(job, state);
+    const box = screen.getByLabelText("Highlight transport jobs");
+    const row = () => screen.getByTestId(`ward-officer-patient-${job.id}`).closest("tr")!;
+    for (const name of [info.displayName, info.formalName]) {
+      fireEvent.change(box, { target: { value: name } });
+      expect(row()).toHaveAttribute("data-highlight", "true");
+    }
+  });
+
   it("puts the open-job count beside the title, not in it", () => {
     renderDesk();
     expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Transport");
