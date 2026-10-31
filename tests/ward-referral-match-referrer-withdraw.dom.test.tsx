@@ -115,13 +115,13 @@ describe("sender referral presentation from a partial record", () => {
     sender.role = "ward";
     const view = render(board(partialQueued));
     fireEvent.click(screen.getByTestId(`ward-referral-board-select-${source.id}`));
-    expect(screen.getByText("Needs", { selector: "dt" }).parentElement).toHaveTextContent(
+    expect(screen.getByText("Bed and transport", { selector: "dt" }).parentElement).toHaveTextContent(
       "Destination details are restricted",
     );
-    expect(screen.getByText("Needs", { selector: "dt" }).parentElement).not.toHaveTextContent("None");
+    expect(screen.getByText("Bed and transport", { selector: "dt" }).parentElement).not.toHaveTextContent("None");
     sender.summary = null;
     view.rerender(board(partialQueued));
-    expect(screen.getByText("Needs", { selector: "dt" }).parentElement).toHaveTextContent(
+    expect(screen.getByText("Bed and transport", { selector: "dt" }).parentElement).toHaveTextContent(
       "Destination details unavailable",
     );
   });

@@ -647,20 +647,13 @@ export function ReferralBoard({
         {/* v10 phone: the facts read as a two by two grid, so the needs get their own cell. */}
         {/* Hidden above the phone by CSS, so screen readers meet it only where it shows. */}
         <div className={a.stripPhone}>
-          <dt>Needs</dt>
+          <dt>Bed and transport</dt>
           <dd>
             {(() => {
               const summary = sender.referralFor(r);
               if (summary === null) return "Destination details unavailable";
               if (summary !== undefined) return "Destination details are restricted";
-              const ward = wardArm(r)?.destination;
-              const words = [
-                ward?.secureBedNeeded ? "Secure bed" : undefined,
-                ward?.involuntaryBedNeeded ? "Involuntary" : undefined,
-                ward?.highAcuityNursingNeeded ? "High acuity" : undefined,
-                r.transportNeeded ? "Transport" : undefined,
-              ].filter(Boolean);
-              return words.length > 0 ? words.join(", ") : "None";
+              return needWords(r).join(", ") || "No bed or transport needs recorded";
             })()}
           </dd>
         </div>

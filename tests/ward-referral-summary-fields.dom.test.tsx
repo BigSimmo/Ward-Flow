@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { IsbarSheet } from "@/components/ward-management/referrals/referral-board-sheets";
+import { IsbarSheet, isbarText } from "@/components/ward-management/referrals/referral-board-sheets";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "@/components/ward-management/referrals/referral-inbox";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral } from "@/components/ward-management/ward-model";
@@ -88,7 +88,19 @@ describe("Referral summary (ISBAR) reads what the referral form wrote (#836)", (
       />,
     );
     expect(screen.getByText("Assessment").nextElementSibling).toHaveTextContent(
-      "risk flags on the referral letter none selected",
+      "Risk flags on the referral letter none selected",
     );
+  });
+
+  it("keeps recorded requirements separate from recommendations in the sheet and copied summary", () => {
+    background({ ...withIntake, history: "Synthetic narrative with a colon: retained in full." });
+    expect(screen.getByText("Background").nextElementSibling?.querySelectorAll("p")).toHaveLength(3);
+    expect(screen.getByText("Recommendation").nextElementSibling).toHaveTextContent(
+      "No separate recommendation recorded.",
+    );
+    expect(screen.getByText("Assessment").nextElementSibling).toHaveTextContent("Bed and transport requirements:");
+    const copy = isbarText(withIntake, "Test Person", "UM100001", "34 F", NOW_ANCHOR);
+    expect(copy).toContain("Recommendation: No separate recommendation recorded.");
+    expect(copy).toContain("Bed and transport requirements:");
   });
 });
