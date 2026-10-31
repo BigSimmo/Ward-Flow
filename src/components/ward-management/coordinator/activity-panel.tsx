@@ -20,6 +20,7 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { useUmrnText } from "@/components/ward-management/ward-patient-name";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 
 import { CHANGE_GROUPS, type ChangeLine, useExplicitReview } from "./activity-changes";
@@ -162,7 +163,7 @@ export function ActivityPanel({
   const unreadCount = noticeViews.filter((notice) => !notice.read).length;
   const markRead = (noticeId: string) => {
     // The bar's own notice action: only a person's click marks a notice read.
-    dispatch({ type: "MARK_NOTICE_READ", role, now, noticeId, actingPlaceId: placeId });
+    wardRaise(dispatch, role, now)("MARK_NOTICE_READ", { noticeId, actingPlaceId: placeId });
   };
   const events = activity.content.changes;
   const showFoot = tab === "changes" && (review.shown.length > 0 || review.lastReviewed !== undefined);

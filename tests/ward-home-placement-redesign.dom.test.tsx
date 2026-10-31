@@ -195,14 +195,15 @@ describe("Placement panel redesign", () => {
     expect(within(line).getByTestId("legal-limits-not-checked")).toBeInTheDocument();
   });
 
-  it("labels the checks in words and keeps the filter hooks", () => {
+  // Home redesign (30 Oct 2026): the checks summary is stated once, in words, on the eligibility
+  // checks for the ward shown; the header pill and its filter buttons repeated it and left.
+  it("states the checks summary once, in words, on the eligibility checks", () => {
     const panel = renderPanel({ movementId: ACCEPTED_ID });
-    const pill = within(panel).getByTestId("ward-shortlist-checks-clear-pill");
-    expect(pill.textContent).toMatch(/^Checks: (\d+) of (\d+) met(, \d+ to review)?$/u);
-    expect(within(panel).getByTestId("ward-shortlist-gate-filter-all").textContent).toMatch(/^All checks \(\d+\)$/u);
-    expect(within(panel).getByTestId("ward-shortlist-gate-filter-open").textContent).toMatch(
-      /^Still to review \(\d+\)$/u,
-    );
+    const summary = within(panel).getByRole("group", { name: "Eligibility checks" }).querySelector("summary")!;
+    expect(summary.getAttribute("data-badge")).toMatch(/^\d+ of \d+ met( · \d+ to review)?$/u);
+    expect(within(panel).queryByTestId("ward-shortlist-checks-clear-pill")).toBeNull();
+    expect(within(panel).queryByTestId("ward-shortlist-gate-filter-all")).toBeNull();
+    expect(within(panel).queryByTestId("ward-shortlist-gate-filter-open")).toBeNull();
   });
 
   it("hides the Declines disclosure when nothing was declined, and keeps it when something was", () => {
