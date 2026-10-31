@@ -10,6 +10,8 @@ import {
   readTurn,
   readBoundedTranscript,
   claimSessionEvent,
+  hasSessionEvent,
+  memoryToolsSeen,
   sessionStart,
   SPACE,
 } from "../scripts/supermemory-autosave-stop.mjs";
@@ -273,4 +275,62 @@ it("retains a complete prompt exactly at the bounded-tail boundary", () => {
   expect(Buffer.byteLength(tail)).toBe(262144);
   writeFileSync(path, JSON.stringify(assistantText("old")) + "\n" + tail);
   expect(decide({ transcript_path: path }, cloud, readBoundedTranscript)).not.toBeNull();
+});
+
+describe("quiet when Supermemory is not connected (Josh, 31 Oct 2026)", () => {
+  const decision = prompt("Decision: keep Activity as its own button.");
+  const toolsListed: Entry = {
+    type: "attachment",
+    attachment: { type: "deferred_tools_delta", addedNames: ["mcp__supermemory__add_memory", "Monitor"] },
+  };
+  const otherTools: Entry = {
+    type: "attachment",
+    attachment: { type: "deferred_tools_delta", addedNames: ["mcp__github__get_me", "Monitor"] },
+  };
+  function session() {
+    const latches = new Set<string>();
+    return {
+      toolsSeen: () => latches.has("tools"),
+      markToolsSeen: () => latches.add("tools"),
+      claimQuietNudge: () => (latches.has("stop") ? false : (latches.add("stop"), true)),
+    };
+  }
+  const runWith = (entries: Entry[], s: ReturnType<typeof session>) =>
+    decide({ transcript_path: "/t.jsonl" }, cloud, () => entries.map((e) => JSON.stringify(e)).join("\n"), s);
+
+  it("recognises Supermemory tools listed as available or called", () => {
+    expect(memoryToolsSeen([toolsListed])).toBe(true);
+    expect(memoryToolsSeen([toolUse("mcp__supermemory__search_memory")])).toBe(true);
+    expect(memoryToolsSeen([otherTools, toolUse("Bash")])).toBe(false);
+  });
+
+  it("nudges once per session when the session has no Supermemory tools", () => {
+    const s = session();
+    expect(runWith([otherTools, decision], s)).not.toBeNull();
+    expect(runWith([otherTools, decision], s)).toBeNull();
+    expect(runWith([decision], s)).toBeNull();
+  });
+
+  it("keeps nudging each meaningful turn while Supermemory is available, even once the listing leaves the tail", () => {
+    const s = session();
+    expect(runWith([toolsListed, decision], s)).not.toBeNull();
+    expect(runWith([toolsListed, decision], s)).not.toBeNull();
+    // A long transcript is read from its tail; the latched sighting keeps the nudge.
+    expect(runWith([decision], s)).not.toBeNull();
+  });
+
+  it("still passes an ordinary turn without spending the one quiet nudge", () => {
+    const s = session();
+    expect(runWith([otherTools, prompt("Thanks.")], s)).toBeNull();
+    expect(runWith([otherTools, decision], s)).not.toBeNull();
+  });
+
+  it("latches the Supermemory sighting per native session", () => {
+    const directory = mkdtempSync(join(tmpdir(), "memory-tools-fixture-"));
+    const input = { session_id: "synthetic-native-session", cwd: "synthetic-repository" };
+    expect(hasSessionEvent(input, "tools", directory)).toBe(false);
+    expect(claimSessionEvent(input, "tools", directory)).toBe(true);
+    expect(hasSessionEvent(input, "tools", directory)).toBe(true);
+    expect(hasSessionEvent({}, "tools", directory)).toBe(false);
+  });
 });

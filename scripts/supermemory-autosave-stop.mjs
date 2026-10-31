@@ -19,13 +19,18 @@
  * With `--session-start` it instead adds one bounded recall instruction
  * (josh_preferences and wardflow_design, once per session).
  *
+ * Without Supermemory (Josh, 31 Oct 2026): when the session has no Supermemory tools the nudge
+ * cannot be acted on, so it is given once per session and then stays quiet. A session whose
+ * transcript shows Supermemory tools (listed as available or called) keeps the per-turn nudge; that
+ * sighting is latched per session, so a long transcript read from its tail does not lose it.
+ *
  * Contract: never trap a session. It acts only in Claude Code cloud containers
  * (CLAUDE_CODE_REMOTE=true), blocks at most once per stop chain
  * (stop_hook_active), and allows the stop on any read or parse failure.
  * The owner's Supermemory credits are the policy limit (26 Oct 2026). This
  * reminder does not establish a billing hard stop, perform a save or enforce spend.
  */
-import { openSync, fstatSync, readSync, closeSync, mkdirSync, writeFileSync } from "node:fs";
+import { openSync, fstatSync, readSync, closeSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -145,6 +150,23 @@ export function readTurn(entries) {
   };
 }
 
+const MEMORY_TOOL = /supermemory/i;
+
+/** True when the transcript lists or uses a Supermemory tool (MCP tools arrive as deferred names). */
+export function memoryToolsSeen(entries) {
+  for (const entry of entries) {
+    const a = entry?.type === "attachment" ? entry.attachment : null;
+    if (a && ["deferred_tools_delta", "mcp_instructions_delta"].includes(a.type)) {
+      if ((a.addedNames ?? []).some((name) => MEMORY_TOOL.test(String(name)))) return true;
+    }
+    if (entry?.type === "assistant" && Array.isArray(entry.message?.content)) {
+      if (entry.message.content.some((b) => b?.type === "tool_use" && MEMORY_TOOL.test(String(b.name ?? ""))))
+        return true;
+    }
+  }
+  return false;
+}
+
 export function hasSignal(turn) {
   if (!turn || turn.saved || turn.saveAttempted) return false;
   return turn.worked || HUMAN_SIGNALS.some((r) => r.test(turn.human)) || AGENT_SIGNALS.some((r) => r.test(turn.agent));
@@ -183,9 +205,13 @@ export function sessionStart(env, input = { source: "startup" }) {
   };
 }
 
-/** Returns the hook's stdout object, or null to allow the stop. */
+/**
+ * Returns the hook's stdout object, or null to allow the stop. `session` (optional) remembers per
+ * session: `toolsSeen()` / `markToolsSeen()` for a Supermemory sighting, and `claimQuietNudge()`,
+ * true only the first time, for the one nudge a session without Supermemory gets.
+ */
 export const MAX_TRANSCRIPT_BYTES = 256 * 1024;
-export function decide(input, env, readTranscript) {
+export function decide(input, env, readTranscript, session) {
   if (env.CLAUDE_CODE_REMOTE !== "true") return null;
   if (!input || input.stop_hook_active) return null;
   if (typeof input.transcript_path !== "string" || input.transcript_path === "") return null;
@@ -209,7 +235,12 @@ export function decide(input, env, readTranscript) {
   }
   const turn = readTurn(entries);
   if (turn && typeof input.last_assistant_message === "string") turn.agent += `\n${input.last_assistant_message}`;
-  return hasSignal(turn) ? { decision: "block", reason: REASON } : null;
+  if (!hasSignal(turn)) return null;
+  if (session) {
+    if (memoryToolsSeen(entries)) session.markToolsSeen();
+    else if (!session.toolsSeen() && !session.claimQuietNudge()) return null;
+  }
+  return { decision: "block", reason: REASON };
 }
 
 function readBoundedFd(fd, limit) {
@@ -247,15 +278,29 @@ export function readBoundedTranscript(path) {
   }
 }
 
-/** Metadata-only atomic latch; native session IDs never appear in the filename. */
-export function claimSessionEvent(input, kind, directory = join(tmpdir(), "ward-flow-memory-reminders")) {
-  if (typeof input?.session_id !== "string" || !input.session_id || !["recall", "stop"].includes(kind)) return false;
+const LATCH_KINDS = ["recall", "stop", "tools"];
+
+function latchPath(input, kind, directory) {
+  if (typeof input?.session_id !== "string" || !input.session_id || !LATCH_KINDS.includes(kind)) return null;
   const digest = createHash("sha256")
     .update(`${input.cwd ?? ""}\0${input.session_id}`)
     .digest("hex");
+  return join(directory, `${digest}.${kind}`);
+}
+
+/** True when this session's latch of `kind` was already claimed. */
+export function hasSessionEvent(input, kind, directory = join(tmpdir(), "ward-flow-memory-reminders")) {
+  const path = latchPath(input, kind, directory);
+  return path ? existsSync(path) : false;
+}
+
+/** Metadata-only atomic latch; native session IDs never appear in the filename. */
+export function claimSessionEvent(input, kind, directory = join(tmpdir(), "ward-flow-memory-reminders")) {
+  const path = latchPath(input, kind, directory);
+  if (!path) return false;
   try {
     mkdirSync(directory, { recursive: true, mode: 0o700 });
-    writeFileSync(join(directory, `${digest}.${kind}`), "1", { flag: "wx", mode: 0o600 });
+    writeFileSync(path, "1", { flag: "wx", mode: 0o600 });
     return true;
   } catch {
     return false;
@@ -267,8 +312,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     const input = JSON.parse(readBoundedFd(0, 65536) || "{}");
     const out = process.argv.includes("--session-start")
       ? sessionStart(process.env, input)
-      : decide(input, process.env, readBoundedTranscript);
-    // Recall is latched once per session; save nudges may repeat on each meaningful turn (owner's choice).
+      : decide(input, process.env, readBoundedTranscript, {
+          toolsSeen: () => hasSessionEvent(input, "tools"),
+          markToolsSeen: () => claimSessionEvent(input, "tools"),
+          claimQuietNudge: () => claimSessionEvent(input, "stop"),
+        });
+    // Recall is latched once per session. Save nudges repeat on each meaningful turn while
+    // Supermemory is available (owner's choice), and come once per session without it.
     if (out && (!process.argv.includes("--session-start") || claimSessionEvent(input, "recall")))
       process.stdout.write(JSON.stringify(out));
   } catch {
