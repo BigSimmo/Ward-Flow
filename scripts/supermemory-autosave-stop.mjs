@@ -320,7 +320,8 @@ const LATCH_KINDS = ["recall", "stop", "tools"];
 function latchPath(input, kind, directory) {
   if (typeof input?.session_id !== "string" || !input.session_id || !LATCH_KINDS.includes(kind)) return null;
   const digest = createHash("sha256")
-    .update(`${input.cwd ?? ""}\0${input.session_id}`)
+    // Keyed by the session alone: the working directory can change within one session.
+    .update(input.session_id)
     .digest("hex");
   return join(directory, `${digest}.${kind}`);
 }
@@ -355,7 +356,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
             hasSessionEvent(input, "tools") ||
             (transcriptHeadShowsMemoryTools(input.transcript_path) && (claimSessionEvent(input, "tools"), true)),
           markToolsSeen: () => claimSessionEvent(input, "tools"),
-          claimQuietNudge: () => claimSessionEvent(input, "stop"),
+          // An unwritable latch directory must not silence every later reminder: only an existing
+          // marker means the one quiet nudge was already given.
+          claimQuietNudge: () => claimSessionEvent(input, "stop") || !hasSessionEvent(input, "stop"),
         });
     // Recall is latched once per session. Save nudges repeat on each meaningful turn while
     // Supermemory is available (owner's choice), and come once per session without it.

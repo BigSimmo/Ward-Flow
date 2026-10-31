@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
   decide,
   humanText,
@@ -356,6 +358,27 @@ describe("quiet when Supermemory is not connected (Josh, 31 Oct 2026)", () => {
     writeFileSync(short, JSON.stringify(toolsListed));
     // A short transcript fits the tail window, which already covers it.
     expect(transcriptHeadShowsMemoryTools(short)).toBe(false);
+  });
+
+  it("keeps reminding through the Stop CLI when the listing is only at the start of a long transcript", () => {
+    const directory = mkdtempSync(join(tmpdir(), "memory-cli-fixture-"));
+    const filler = JSON.stringify(assistantText("x".repeat(1000)));
+    const padding = Array.from({ length: Math.ceil(MAX_TRANSCRIPT_BYTES / filler.length) + 2 }, () => filler);
+    const transcript = join(directory, "t.jsonl");
+    writeFileSync(transcript, [JSON.stringify(toolsListed), ...padding, JSON.stringify(decision)].join("\n"));
+    const stdin = JSON.stringify({ transcript_path: transcript, session_id: "synthetic-cli-session", cwd: directory });
+    const runCli = () =>
+      spawnSync(
+        process.execPath,
+        [fileURLToPath(new URL("../scripts/supermemory-autosave-stop.mjs", import.meta.url))],
+        {
+          input: stdin,
+          encoding: "utf8",
+          env: { ...process.env, CLAUDE_CODE_REMOTE: "true", TMPDIR: directory, TEMP: directory, TMP: directory },
+        },
+      ).stdout;
+    expect(runCli()).toContain('"decision":"block"');
+    expect(runCli()).toContain('"decision":"block"');
   });
 
   it("latches the Supermemory sighting per native session", () => {
