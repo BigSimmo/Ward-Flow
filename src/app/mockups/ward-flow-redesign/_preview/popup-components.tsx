@@ -106,9 +106,6 @@ const PopCommunityTransportCancel = dynamic<{ page: ReactNode }>(() =>
 const PopBoardBlocker = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-board-blocker/pop-board-blocker").then((module) => module.PopBoardBlocker),
 );
-const PopWardAccept = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-ward-accept/pop-ward-accept").then((module) => module.PopWardAccept),
-);
 const PopClearance = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
 );
@@ -214,7 +211,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "community-transport-book": PopCommunityTransportBook,
   "community-transport-cancel": PopCommunityTransportCancel,
   "board-blocker": PopBoardBlocker,
-  "ward-accept": PopWardAccept,
   clearance: PopClearance,
   "idle-warning": PopIdleWarning,
   "idle-lock": PopIdleLock,

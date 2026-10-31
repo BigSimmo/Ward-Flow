@@ -430,14 +430,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Still open:** the save toasts and the "saved outside this desk\'s view" line still read given name first, as today.',
     "**Phone (Josh, 31 October):** the form's buttons stack: Add patient full width on top, Reset and Register & start referral side by side under it.",
   ],
-  "ward-answer": [
-    "**Built from a copy of today's Ward answer view**, so answering, declining, Confirm your beds and the phone layout work as now.",
-    '**New:** with nothing to answer, the full-width Bed request panel becomes one line: "All answered. No referral is currently awaiting an answer from Dabakarn."',
-    "**New:** census squares are coloured by state (ready green, pulled blue, closed hatched amber, occupied grey), with a key giving the same counts as the header. Bed numbers go from 11 to 12 px.",
-    '**Kept:** Confirm your beds with its stepper and Confirm, Recent answers, and "Writes to Dabakarn only, never any other ward".',
-    "**Not seen:** the screen with a request waiting, because this ward has none in the synthetic world. This copy is over the 1,500-line cap under D-89.",
-    "**Round 2:** with nothing to answer, the notice is 'Requests land here as they are sent.' Figures show once. Confirm your beds leads with Confirmed free, then Ready. 'Only a ready bed can take a request' shows only while a request is open.",
-  ],
   settings: [
     "**Built from a copy of today's Settings screen**, so rule drafts, Standard and Surge, Save with Undo, Discard, Find a setting, Go to a desk and the phone layout work as now.",
     '**New:** a sticky save bar on the Rules tab shows how many rules changed and what changed, with Discard and Save changes (the one filled button, "Save 3 changes"); with nothing changed it says "No unsaved changes".',
@@ -802,13 +794,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** no reason starts chosen; Confirm blocker says 'Choose a reason first' until one is tapped.",
     "**Kept:** every reason word for word, and the page's own focus handling.",
     "**Removed:** 'Bed / Subject:' and 'Timing indicator:' labels; the tile's label and tag show under the title instead.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-ward-accept": [
-    "**Built from a copy of today's Accept in principle dialog** (`ward/ward-answer-accept-dialog.tsx`), so the time limit, the focus return and accept with Undo work as now.",
-    "**New:** on the shared dialog: the person surname first with cohort, tier and referral time (not a legal time), the target unit, then 'Pull time limit' as two choices with neither chosen; Confirm acceptance waits for a choice.",
-    "**Kept:** 'Accepting does not allocate a bed. No bed number is recorded.', word for word.",
-    "**Still open:** no request waits on Dabakarn at 10:42, so this shows the first waiting request for any ward (Sallowfield, Edmund, for FSH Older Adult) over Dabakarn's page.",
     "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
   ],
   "pop-clearance": [
