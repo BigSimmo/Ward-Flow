@@ -120,13 +120,11 @@ describe("SV-1 seclusion, restraint and incident forms (shared mode)", () => {
         <SeclusionScreen />
       </WardFlowProvider>,
     );
-    // Open on a ward with a patient to choose.
-    const picker = screen.queryByTestId("seclusion-ward") as HTMLSelectElement | null;
-    if (picker)
-      for (const option of Array.from(picker.options)) {
-        fireEvent.change(picker, { target: { value: option.value } });
-        if (within(screen.getByTestId("seclusion-start-patient")).getAllByRole("option").length > 1) break;
-      }
+    // Open on a ward with a patient to choose, from the table of secure wards.
+    for (const row of screen.queryAllByTestId(/^seclusion-ward-row-/u)) {
+      fireEvent.click(row);
+      if (within(screen.getByTestId("seclusion-start-patient")).getAllByRole("option").length > 1) break;
+    }
     return dispatch;
   }
 
