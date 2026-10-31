@@ -10,27 +10,22 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
 }));
 describe("Help glossary and compact Reference", () => {
-  it("combines group and text filters and clears an empty result", () => {
+  it("lists every word with no filter of its own, Help's one search box finds them", () => {
     render(<WardHelpGlossary termsSource={GLOSSARY} />);
-    fireEvent.change(screen.getByRole("combobox", { name: "Group" }), { target: { value: "Beds" } });
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "nurse" } });
-    expect(screen.getByRole("status").textContent).toContain("No word or code matches");
-    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("");
+    expect(screen.queryByRole("searchbox")).toBeNull();
+    expect(screen.queryByRole("combobox", { name: "Group" })).toBeNull();
     expect(screen.getByText("NIC")).toBeTruthy();
   });
-  it("follows related terms without retaining the previous group or saving typed words", () => {
+  it("follows related terms to the word itself without saving anything or changing the address", () => {
     const set = vi.spyOn(Storage.prototype, "setItem");
     const before = location.href;
     render(<WardHelpGlossary termsSource={GLOSSARY} />);
-    fireEvent.change(screen.getByRole("combobox"), { target: { value: "Beds" } });
-    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Held bed" } });
-    fireEvent.click(screen.getByRole("button", { name: "Held up" }));
-    expect((screen.getByRole("combobox") as HTMLSelectElement).value).toBe("all");
-    expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("Held up");
-    expect(document.activeElement).toBe(screen.getByRole("searchbox"));
-    expect(screen.getByText("A discharge or move that is delayed. It is not a bed state.")).toBeTruthy();
-    expect(set.mock.calls.some((args) => args.some((value) => /Held bed|Held up/.test(String(value))))).toBe(false);
+    fireEvent.click(screen.getAllByRole("button", { name: "Held up" })[0]!);
+    expect(document.activeElement?.textContent).toBe("Held up");
+    expect(screen.getAllByText("A discharge or move that is delayed. It is not a bed state.").length).toBeGreaterThan(
+      0,
+    );
+    expect(set).not.toHaveBeenCalled();
     expect(location.href).toBe(before);
   });
   it("uses only a supplied public glossary, including active directory codes", () => {
@@ -49,9 +44,8 @@ describe("Help glossary and compact Reference", () => {
     }
     expect(screen.getByText("Interactions")).toBeTruthy();
     expect(screen.getByText("Show me highlights a control on the screen.")).toBeTruthy();
-    const shortcuts = screen.getByTestId("ward-help-reference-shortcuts");
-    expect(shortcuts.textContent).toContain("?");
-    expect(shortcuts.textContent).not.toContain("Shift+R");
+    // The keys live in the shortcuts sheet only, filtered by desk (Josh, 31 Oct 2026).
+    expect(screen.queryByTestId("ward-help-reference-shortcuts")).toBeNull();
     expect(within(roles).getAllByRole("link", { hidden: true, name: "Printable desk guide (A4)" })).toHaveLength(9);
   });
 });

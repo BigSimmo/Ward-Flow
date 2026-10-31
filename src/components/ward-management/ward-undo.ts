@@ -319,6 +319,21 @@ function diffRows(slice: string, oldRows: { id: string }[], newRows: { id: strin
   });
 }
 
+/**
+ * Where a step's appended rows stand now: at their recorded start, or, when an earlier row has
+ * since been taken back by another subject's Undo (one ward's sign-off before another's), at the
+ * nearest place before it holding the same rows. -1 when they are not there.
+ */
+function appendedRowsAt(list: readonly unknown[], change: { start: number; rows: unknown[] }): number {
+  const holdsRows = (at: number) => {
+    const rows = list.slice(at, at + change.rows.length);
+    return rows.length === change.rows.length && sameRecord(rows, change.rows);
+  };
+  for (let at = Math.min(change.start, list.length - change.rows.length); at >= 0; at -= 1)
+    if (holdsRows(at)) return at;
+  return -1;
+}
+
 /** Rule 2 for a step: whether any record it changed reads differently now. */
 export function stepChangedSince(state: object, record: StepUndo): boolean {
   const current = state as Record<string, unknown>;
@@ -326,10 +341,7 @@ export function stepChangedSince(state: object, record: StepUndo): boolean {
     const value = current[change.slice];
     if (change.mode === "whole") return !sameRecord(value ?? null, change.after);
     const list = Array.isArray(value) ? (value as unknown[]) : [];
-    if (change.mode === "append") {
-      const rows = list.slice(change.start, change.start + change.rows.length);
-      return rows.length !== change.rows.length || !sameRecord(rows, change.rows);
-    }
+    if (change.mode === "append") return appendedRowsAt(list, change) < 0;
     // A notice the step raised may since have been read; the undo withdraws it all the same.
     if (change.slice === "notices" && change.before === null) return false;
     const row = list.find((candidate) => isRow(candidate) && candidate.id === change.id);
@@ -354,7 +366,8 @@ export function applyStepUndo<S extends object>(state: S, record: StepUndo): S {
     }
     const list = Array.isArray(value) ? [...(value as unknown[])] : [];
     if (change.mode === "append") {
-      list.splice(change.start, change.rows.length);
+      const at = appendedRowsAt(list, change);
+      list.splice(at < 0 ? change.start : at, change.rows.length);
       next[change.slice] = list;
       continue;
     }

@@ -8,9 +8,10 @@
  */
 import { SETTINGS_SEARCH_ENTRIES, SETTINGS_TABS } from "@/components/ward-management/settings/settings-search-index";
 
-import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
+import { EVERY_LOGIN, howToLogins } from "./ward-help-access";
+import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, shortcutsForDesk, type GlossaryTerm } from "./ward-help-content";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
-import { correctedQuestionWords, HOW_TOS, questionWords } from "./ward-help-howto";
+import { correctedQuestionWords, HOW_TOS, ownTwinOf, questionWords } from "./ward-help-howto";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
 import { ACCESSIBILITY_HELP, COMMON_QUESTIONS, INTERACTIONS_HELP } from "../help-content/ward-help-reference";
 import { SAVE_HELP_TERMS } from "../help-content/ward-help-glossary";
@@ -74,7 +75,8 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
           detail: howTo.answer,
           howToId: howTo.showMe?.length ? howTo.id : undefined,
           go: howTo.go,
-          desks: howTo.desks === "all" ? undefined : howTo.desks,
+          // The logins that can actually do it (audit finding 11), not only the desks it names.
+          desks: howToLogins(howTo),
         },
         `${howTo.title} ${howTo.keywords}`,
         howTo.answer,
@@ -126,7 +128,13 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
   for (const shortcut of KEYBOARD_SHORTCUTS)
     entries.push(
       entry(
-        { key: `key:${shortcut.keys}`, group: "Shortcuts", title: shortcut.keys, detail: shortcut.action },
+        {
+          key: `key:${shortcut.keys}`,
+          group: "Shortcuts",
+          title: shortcut.keys,
+          detail: shortcut.action,
+          desks: EVERY_LOGIN.filter((role) => shortcutsForDesk(role).includes(shortcut)),
+        },
         `${shortcut.keys} shortcut key keyboard`,
         shortcut.action,
       ),
@@ -203,11 +211,25 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
   return entries;
 }
 
-let cached: readonly Entry[] | undefined;
-let knownWords: ReadonlySet<string> | undefined;
-function defaultIndex(): readonly Entry[] {
-  cached ??= buildIndex(GLOSSARY);
-  return cached;
+// One index per glossary: the default terms, or a sheet's own site directory (a fictional network or a
+// report's site catalogue), so the site codes shown in Words can be searched too.
+const indexes = new WeakMap<readonly GlossaryTerm[], readonly Entry[]>();
+const vocabularies = new WeakMap<readonly Entry[], ReadonlySet<string>>();
+function indexFor(glossary: readonly GlossaryTerm[]): readonly Entry[] {
+  let index = indexes.get(glossary);
+  if (!index) {
+    index = buildIndex(glossary);
+    indexes.set(glossary, index);
+  }
+  return index;
+}
+function vocabularyFor(index: readonly Entry[]): ReadonlySet<string> {
+  let words = vocabularies.get(index);
+  if (!words) {
+    words = new Set(index.flatMap((item) => [...item.strong, ...item.weak]));
+    vocabularies.set(index, words);
+  }
+  return words;
 }
 
 export type HelpSearchAnswer =
@@ -221,15 +243,40 @@ function strip(item: Entry): HelpSearchResult {
   return { key, group, title, detail, howToId, go, desks };
 }
 
+/** The index entry for this login's own twin of a how-to it cannot follow, if there is one. */
+function twinEntry(index: readonly Entry[], item: Entry, role: WardTourRole): Entry | undefined {
+  if (!item.key.startsWith("howto:") || !item.desks || item.desks.includes(role)) return undefined;
+  const howTo = HOW_TOS.find((candidate) => `howto:${candidate.id}` === item.key);
+  const own = howTo && ownTwinOf(howTo, role);
+  if (!own || own === howTo) return undefined;
+  return index.find((candidate) => candidate.key === `howto:${own.id}`);
+}
+
+/** Each group and title once, keeping its first (best-ranked) place. */
+function onceByTitle(results: readonly HelpSearchResult[]): HelpSearchResult[] {
+  const seen = new Set<string>();
+  return results.filter((result) => {
+    const id = `${result.group}:${result.title.toLowerCase()}`;
+    if (seen.has(id)) return false;
+    seen.add(id);
+    return true;
+  });
+}
+
 /**
  * Searches Help for `query`. An entry matches when at least half the query's words are in it; title
  * words score three, body words one. Ties keep the index order (guides first), so results are stable.
  * With no match, the closest topics are those sharing any one word.
  */
-export function searchHelp(query: string, role: WardTourRole, limit = 12): HelpSearchAnswer {
+export function searchHelp(
+  query: string,
+  role: WardTourRole,
+  limit = 12,
+  glossary: readonly GlossaryTerm[] = GLOSSARY,
+): HelpSearchAnswer {
   if (isClinicalQuestion(query)) return { kind: "clinical" };
-  const index = defaultIndex();
-  const vocabulary = (knownWords ??= new Set(index.flatMap((item) => [...item.strong, ...item.weak])));
+  const index = indexFor(glossary);
+  const vocabulary = vocabularyFor(index);
   // Keep exact words from every indexed reference. Only unknown words need correction against
   // the how-to vocabulary, and correcting before stemming preserves typos such as "thme".
   const words = [
@@ -253,29 +300,25 @@ export function searchHelp(query: string, role: WardTourRole, limit = 12): HelpS
       }
     }
     if (hits === 0) return [];
+    // A how-to this login cannot follow gives way to its own same-title twin (the downtime pair).
+    const twin = twinEntry(index, item, role);
+    if (twin) return [{ item: twin, hits, score: score + 1, order }];
     const mine = !item.desks || item.desks.includes(role);
+    // A key this login cannot use is not offered at all (audit finding 11).
+    if (item.group === "Shortcuts" && !mine) return [];
     return [{ item, hits, score: score + (mine ? 1 : 0), order }];
   });
   scored.sort((a, b) => b.hits - a.hits || b.score - a.score || a.order - b.order);
   const matched = scored.filter((candidate) => candidate.hits >= needed);
   if (matched.length === 0) {
-    const closest = scored.slice(0, 3).map(({ item }) => strip(item));
+    const closest = onceByTitle(scored.map(({ item }) => strip(item))).slice(0, 3);
     return {
       kind: "none",
       closest: closest.sort((a, b) => HELP_SEARCH_GROUPS.indexOf(a.group) - HELP_SEARCH_GROUPS.indexOf(b.group)),
     };
   }
   const best = matched[0].score;
-  const seen = new Set<string>();
-  const results = matched
-    .filter((candidate) => candidate.score * 3 >= best)
-    .map(({ item }) => strip(item))
-    .filter((result) => {
-      const id = `${result.group}:${result.title.toLowerCase()}`;
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    })
+  const results = onceByTitle(matched.filter((candidate) => candidate.score * 3 >= best).map(({ item }) => strip(item)))
     .slice(0, limit)
     // Shown grouped, so keep that order here and arrow keys move down the list as seen.
     .sort((a, b) => HELP_SEARCH_GROUPS.indexOf(a.group) - HELP_SEARCH_GROUPS.indexOf(b.group));

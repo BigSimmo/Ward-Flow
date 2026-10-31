@@ -10,7 +10,7 @@ My ward
 
 1. Confirm your beds. Each morning fill in Confirm your beds and press Confirm by the morning bed numbers due time in Settings.
 2. Read the referral. Tap the patient's name or View referral. You see the whole referral before you answer.
-3. Answer it. Press Accept in principle and choose the pull time limit, or press Decline and pick a reason.
+3. Answer it. Press Accept referral and choose the pull time limit, or press Decline referral and pick a reason.
 
 ## What you cannot do
 

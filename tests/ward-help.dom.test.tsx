@@ -140,40 +140,34 @@ describe("help sheet", () => {
     expect(onShortcuts).toHaveBeenCalledTimes(1);
   });
 
-  it("offers the desk guide on a screen with no help page, instead of Home's help", () => {
+  it("keeps the desk guide in How do I… on a screen with no help page, instead of Home's help", () => {
     route.pathname = "/ward-flow/constellation";
-    const onView = vi.fn();
-    render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
+    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
     expect(screen.queryByTestId("ward-help-screen")).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Open your desk guide" }));
-    expect(onView).toHaveBeenCalledWith("desk");
+    expect(screen.getByTestId("ward-help-desk").textContent).toContain(DESK_GUIDES.coordinator.summary);
   });
 
-  it("filters the glossary as you type, without saving the words", () => {
+  it("lists every glossary word with no filter box of its own: Help has one search box (Josh, 31 Oct 2026)", () => {
     render(<Harness initial="glossary" />);
-    fireEvent.change(screen.getByTestId("ward-help-glossary-filter"), { target: { value: "St John" } });
+    expect(screen.queryByTestId("ward-help-glossary-filter")).toBeNull();
+    expect(screen.queryAllByRole("searchbox")).toHaveLength(0);
     expect(screen.getByText("CAD number")).toBeTruthy();
-    expect(screen.queryByText("ECT")).toBeNull();
-    expect(JSON.stringify({ ...window.localStorage })).not.toContain("St John");
+    expect(screen.getByText("ECT")).toBeTruthy();
   });
 
-  it("shows the signed-in desk's guide: where it starts, its jobs and how to tell it saved", () => {
+  it("folds the signed-in desk's guide into How do I…: where it starts and how to tell it saved", () => {
     render(<Harness initial="desk" />);
     const desk = screen.getByTestId("ward-help-desk");
+    expect(desk).toHaveAttribute("open");
     expect(desk.textContent).toContain(DESK_GUIDES.coordinator.summary);
-    for (const item of DESK_GUIDES.coordinator.jobs) expect(desk.textContent).toContain(item.how);
+    expect(desk.textContent).toContain(DESK_GUIDES.coordinator.startsAt);
     expect(desk.textContent).toContain(SAVED_OR_NOT[0]);
   });
 
-  it("links each job to the screen where it is done, and closes Help on the way", () => {
-    const onClose = vi.fn();
-    render(<WardHelpSheet view="desk" onView={vi.fn()} onClose={onClose} />);
-    const links = screen.getAllByTestId("ward-help-go");
-    expect(links).toHaveLength(DESK_GUIDES.coordinator.jobs.length);
-    const decide = screen.getByRole("link", { name: "Decide a referral: go to Referrals" });
-    expect(decide.getAttribute("href")).toBe("/ward-flow/referrals");
-    fireEvent.click(decide);
-    expect(onClose).toHaveBeenCalledTimes(1);
+  it("carries one synthetic line, in the footer only", () => {
+    render(<Harness initial="tasks" />);
+    expect(screen.getAllByText(/synthetic/i)).toHaveLength(1);
+    expect(screen.getByTestId("ward-help-synthetic").textContent).toMatch(/not for clinical use/);
   });
 
   it("gives every desk a plain guide that never ranks, scores or calls an incoming bed held", () => {
@@ -190,7 +184,7 @@ describe("help sheet", () => {
     expect(screen.getByTestId("ward-help-downtime").textContent).toContain(WHEN_IT_IS_DOWN[0]);
   });
 
-  it("shows the colour code under Reference in the Glossary tab, one glyph and meaning per tone", () => {
+  it("shows the colour code in the Words tab, one glyph and meaning per tone", () => {
     render(<Harness initial="glossary" />);
     const legend = screen.getByTestId("ward-help-legend");
     expect(legend.querySelectorAll("dt")).toHaveLength(COLOUR_LEGEND.length);
@@ -221,10 +215,11 @@ describe("help sheet", () => {
     }
   });
 
-  it("starts the tour from its own button", () => {
+  it("starts the tour only from its own row, the first in How do I…", () => {
     const onView = vi.fn();
     render(<WardHelpSheet view="screen" onView={onView} onClose={vi.fn()} />);
-    fireEvent.click(screen.getByRole("button", { name: "Take the tour" }));
+    expect(onView).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("ward-help-view-tour"));
     expect(onView).toHaveBeenCalledWith("tour");
   });
 
@@ -237,16 +232,16 @@ describe("help sheet", () => {
 });
 
 describe("rail Help row", () => {
-  it("says New and opens the tour until the tour is seen, then opens How do I… (D-90)", async () => {
+  it("says New until the tour is seen, and always opens How do I…, never the tour (Josh, 31 Oct 2026)", async () => {
     const opened: string[] = [];
     const listener = (event: Event) => opened.push((event as CustomEvent<{ view: string }>).detail.view);
     window.addEventListener("ward-flow-open-help", listener);
     render(<WardHelpLink classes={classes} showTitle={false} />);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Help, new: take the tour" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Help, new" })).toBeTruthy());
     fireEvent.click(screen.getByTestId("ward-rail-help"));
     act(() => markTourSeen("coordinator"));
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
-    expect(opened).toEqual(["tour", "tasks"]);
+    expect(opened).toEqual(["tasks", "tasks"]);
     window.removeEventListener("ward-flow-open-help", listener);
   });
 });
