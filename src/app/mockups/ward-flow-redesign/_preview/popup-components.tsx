@@ -83,6 +83,52 @@ const PopRecordExam = dynamic<{ page: ReactNode }>(() =>
 const PopAddTime = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-add-time/pop-add-time").then((module) => module.PopAddTime),
 );
+const PopCommunityReferral = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-community-referral/pop-community-referral").then(
+    (module) => module.PopCommunityReferral,
+  ),
+);
+const PopCommunityNote = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-community-note/pop-community-note").then((module) => module.PopCommunityNote),
+);
+const PopCommunityRecord = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-community-record/pop-community-record").then(
+    (module) => module.PopCommunityRecord,
+  ),
+);
+const PopCommunityTransportBook = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-community-transport-book/pop-community-transport-book").then(
+    (module) => module.PopCommunityTransportBook,
+  ),
+);
+const PopCommunityTransportCancel = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-community-transport-cancel/pop-community-transport-cancel").then(
+    (module) => module.PopCommunityTransportCancel,
+  ),
+);
+const PopBoardBlocker = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-board-blocker/pop-board-blocker").then((module) => module.PopBoardBlocker),
+);
+const PopWardAccept = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-ward-accept/pop-ward-accept").then((module) => module.PopWardAccept),
+);
+const PopClearance = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
+);
+const PopIdleWarning = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-idle-warning/pop-idle-warning").then((module) => module.PopIdleWarning),
+);
+const PopIdleLock = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-idle-lock/pop-idle-lock").then((module) => module.PopIdleLock),
+);
+const PopConfirmLeave = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-confirm-leave/pop-confirm-leave").then((module) => module.PopConfirmLeave),
+);
+const PopConfirmDiscard = dynamic<{ page: ReactNode }>(() =>
+  import("@/components/ward-redesign/pop-confirm-discard/pop-confirm-discard").then(
+    (module) => module.PopConfirmDiscard,
+  ),
+);
 const PopStateLoading = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-state-loading/pop-state-loading").then((module) => module.PopStateLoading),
 );
@@ -166,6 +212,18 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "record-form": PopRecordForm,
   "record-exam": PopRecordExam,
   "add-time": PopAddTime,
+  "community-referral": PopCommunityReferral,
+  "community-note": PopCommunityNote,
+  "community-record": PopCommunityRecord,
+  "community-transport-book": PopCommunityTransportBook,
+  "community-transport-cancel": PopCommunityTransportCancel,
+  "board-blocker": PopBoardBlocker,
+  "ward-accept": PopWardAccept,
+  clearance: PopClearance,
+  "idle-warning": PopIdleWarning,
+  "idle-lock": PopIdleLock,
+  "confirm-leave": PopConfirmLeave,
+  "confirm-discard": PopConfirmDiscard,
   "state-loading": PopStateLoading,
   "state-empty": PopStateEmpty,
   "state-error": PopStateError,
