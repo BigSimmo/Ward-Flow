@@ -3174,8 +3174,9 @@ button.searchBox:hover {
 }
 
 @media (max-width: 40rem) {
+  /* Q-B8 (Josh, 31 Oct 2026): 44px (--wf-touch), never 48px. */
   .governanceSummary {
-    min-height: var(--spacing-tap, 3rem);
+    min-height: var(--wf-touch);
     box-sizing: border-box;
   }
 }
