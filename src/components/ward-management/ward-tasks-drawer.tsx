@@ -26,7 +26,15 @@ import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type Mo
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
+import {
+  StatusGlyph,
+  buttonClass,
+  durMinutes,
+  hasConfirmHost,
+  requestConfirm,
+  useIsPhone,
+  type WfTone,
+} from "@/components/wf";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
 import { resolveSubjectPatient } from "./ward-patient-resolver";
@@ -79,7 +87,7 @@ type WardTasksDrawerProps = {
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
   /** The shell consults this drawer's own draft decision before closing its outer Sheet. */
-  dismissalGuardRef?: RefObject<(() => boolean) | null>;
+  dismissalGuardRef?: RefObject<((retry?: () => void) => boolean) | null>;
   /** `href` is a row's own destination when it is not about a movement (a planned admission). */
   onSelectMovement: (movementId: string, action?: "refer" | "contact", href?: string) => void;
   /** Opens a discharged stay on the discharges board, for rows that carry `admissionId`. */
@@ -326,20 +334,45 @@ export function WardTasksDrawer({
     skipAnchor: isTasksDrawerLink,
   });
 
-  const discardEscalation = useCallback(() => {
+  /**
+   * True when there is no unsaved escalation (or the person lets it go). With `retry` and the kit's
+   * styled confirm mounted, an unsaved escalation returns false at once, the question is asked in the
+   * styled dialog, and on Discard the draft is cleared and `retry` runs the step again. Without
+   * `retry` the browser's confirm box asks, as before.
+   */
+  const discardEscalation = useCallback((retry?: () => void) => {
+    const clear = () => {
+      // The shell can recheck within this event, before React commits the cleared draft below.
+      dirtyEscalationRef.current = false;
+      setEscalating(null);
+      setContact("");
+    };
+    if (dirtyEscalationRef.current && retry && hasConfirmHost()) {
+      void requestConfirm({
+        title: "Discard the escalation contact?",
+        message: DISCARD_ESCALATION,
+        confirmLabel: "Discard",
+        cancelLabel: "Keep editing",
+      }).then((confirmed) => {
+        if (!confirmed) return;
+        clear();
+        retry();
+      });
+      return false;
+    }
     if (dirtyEscalationRef.current && !window.confirm(DISCARD_ESCALATION)) return false;
-    // The shell can recheck within this event, before React commits the cleared draft below.
-    dirtyEscalationRef.current = false;
-    setEscalating(null);
-    setContact("");
+    clear();
     return true;
   }, []);
 
-  const confirmDrawerDismissal = useCallback(() => {
-    if (!discardEscalation()) return false;
-    approveNextHistoryNavigation();
-    return true;
-  }, [discardEscalation, approveNextHistoryNavigation]);
+  const confirmDrawerDismissal = useCallback(
+    (retry?: () => void) => {
+      if (!discardEscalation(retry)) return false;
+      approveNextHistoryNavigation();
+      return true;
+    },
+    [discardEscalation, approveNextHistoryNavigation],
+  );
 
   useEffect(() => {
     if (!dismissalGuardRef) return;
@@ -349,15 +382,21 @@ export function WardTasksDrawer({
     };
   }, [dismissalGuardRef, confirmDrawerDismissal]);
 
-  function closeDrawer() {
-    if (!confirmDrawerDismissal()) return false;
+  function closeDrawer(): boolean {
+    if (!confirmDrawerDismissal(closeDrawer)) return false;
     // The shell may close through browser Back. The local decision owns this one traversal.
     onClose();
     return true;
   }
 
   function closeFromLink(event: MouseEvent<HTMLAnchorElement>) {
-    if (!closeDrawer()) event.preventDefault();
+    const link = event.currentTarget;
+    // On Discard the same link is pressed again, now with nothing unsaved.
+    if (!confirmDrawerDismissal(() => link.click())) {
+      event.preventDefault();
+      return;
+    }
+    onClose();
   }
 
   const openerRef = useRef<HTMLElement | null>(null);
@@ -381,7 +420,7 @@ export function WardTasksDrawer({
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
         'button[data-escalate][aria-expanded="true"]',
       );
-      if (discardEscalation()) trigger?.focus();
+      if (discardEscalation(() => trigger?.focus())) trigger?.focus();
       return;
     }
     const opener = !withBackdrop
@@ -546,7 +585,8 @@ export function WardTasksDrawer({
             data-escalate
             aria-expanded={escalating === item.id}
             onClick={(event) => {
-              if (!discardEscalation()) return;
+              const button = event.currentTarget;
+              if (!discardEscalation(() => button.click())) return;
               if (escalating === item.id) {
                 event.currentTarget.focus();
                 return;
@@ -652,8 +692,9 @@ export function WardTasksDrawer({
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}
             onClick={(event) => {
-              if (!discardEscalation()) return;
-              focusTrigger(event.currentTarget);
+              const button = event.currentTarget;
+              if (!discardEscalation(() => focusTrigger(button))) return;
+              focusTrigger(button);
             }}
           >
             Cancel
@@ -937,8 +978,10 @@ export function WardTasksDrawer({
                   actNow={inboxItemIsActNow(item.id)}
                   now={now}
                   onSnooze={(until, reason) => {
-                    if (escalating === item.id && !discardEscalation()) return;
-                    dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+                    const snooze = () =>
+                      dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+                    if (escalating === item.id && !discardEscalation(snooze)) return;
+                    snooze();
                   }}
                 />
               ) : null}
