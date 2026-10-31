@@ -1,4 +1,4 @@
-# Community clinician
+# Community team
 
 <!-- Generated from in-app Help; do not edit by hand. -->
 
