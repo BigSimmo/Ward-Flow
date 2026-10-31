@@ -526,8 +526,8 @@ const CONTACT_AUTOCOMPLETE: Record<(typeof CONTACT_FIELDS)[number][0], string> =
   name: "name",
   email: "email",
   phone: "tel",
-  role: "organization-title",
-  location: "organization",
+  role: "off",
+  location: "off",
 };
 
 export function ContactFields({

@@ -598,9 +598,10 @@ describe("the committed repository", () => {
   it("indexes every mockup route it ships", () => {
     const result = auditIndex(process.cwd());
     expect(result.violations).toEqual([]);
-    // No mockup page routes are left since Ward Flow moved out of /mockups (19 October 2026); the
-    // digest is a route handler, not a page. A new mockup page must be indexed to pass.
-    expect(result.routeCount).toBe(0);
+    // Ward Flow moved out of /mockups on 19 October 2026; the digest is a route handler, not a page.
+    // The one page is the search and forms mock-up for Josh's review (D-74, 31 Oct 2026), indexed in
+    // mockups/README.md. A new mockup page must be indexed to pass.
+    expect(result.routeCount).toBe(1);
   });
 
   it("declares no developer-gated prefixes now that Ward Flow has left /mockups", () => {

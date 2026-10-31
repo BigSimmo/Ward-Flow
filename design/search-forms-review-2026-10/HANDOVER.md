@@ -143,7 +143,7 @@ opens the dossier.
 
 ### 6. Mock-up (`dbdfd20c0`)
 
-`src/app/mockups/ward-flow-search/page.tsx` and `src/components/search-redesign/` are built from the
+`src/app/mockups/ward-flow-search/page.tsx` and `src/components/ward-management/search-redesign/` are built from the
 app's own components, engine and synthetic data. The page has four sections:
 
 1. **Main search as a pop-out.**

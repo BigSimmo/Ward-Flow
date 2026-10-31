@@ -7,7 +7,7 @@
  *
  * The proposal: the kit field with its magnifier and clear button, the "/" hint on a computer, a
  * placeholder that names only what is searched, and one count line under it ("4 of 23 wards"). It
- * sits at the top of the list it narrows, full width and pinned on a phone.
+ * sits just above the list it narrows, full width and pinned on a phone.
  */
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";

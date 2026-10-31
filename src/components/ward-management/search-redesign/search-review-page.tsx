@@ -9,15 +9,13 @@ import { useState } from "react";
 
 import { Button, Card, CardBody, CardHead, Segmented, ToastProvider } from "@/components/wf";
 import { REFERRAL_CONTACT_OUTCOMES } from "@/components/ward-management/referrals/referral-owner-and-calls";
-import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { allUnits, NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { WardFlowProvider, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 
 import { PageSearchField } from "./page-search-field";
 import { SearchPopOut, SearchPopOutBody } from "./search-pop-out";
 import styles from "./search-review-page.module.css";
 import { TimePresetsField } from "./time-presets";
-
-const UNITS = allUnits();
 
 function Notes({ today, proposed }: { today: readonly string[]; proposed: readonly string[] }) {
   return (
@@ -43,6 +41,7 @@ function Notes({ today, proposed }: { today: readonly string[]; proposed: readon
 }
 
 function Mockup() {
+  const { units } = useWardFlowSelect("units");
   const [popOpen, setPopOpen] = useState(false);
   const [outcome, setOutcome] = useState<string>("");
   return (
@@ -93,11 +92,11 @@ function Mockup() {
             proposed={[
               "Every page box uses the kit field: magnifier, clear button, the / hint on a computer.",
               "A count line under it: “4 of 23 wards”.",
-              "It sits at the top of the list it narrows; on a phone it spans the width and stays pinned while the list scrolls.",
+              "It sits just above the list it narrows; on a phone it spans the width and stays pinned while the list scrolls.",
             ]}
           />
           <PageSearchField
-            items={UNITS}
+            items={units}
             fieldsOf={(unit) => [unit.name, unit.siteCode, siteByCode(unit.siteCode)?.name, unit.cohort]}
             label="Find a ward"
             placeholder="Ward, hospital or cohort"
@@ -167,7 +166,7 @@ function Mockup() {
 export function SearchReviewPage() {
   return (
     <ToastProvider>
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <WardFlowProvider>
         <Mockup />
       </WardFlowProvider>
     </ToastProvider>
