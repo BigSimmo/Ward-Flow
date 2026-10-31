@@ -25,7 +25,7 @@ import { formatInstantWithDay } from "../ward-clock";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 import { releasedCountText, ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
 import { WardHelpHost } from "../help/ward-help-host";
-import { WARD_CAPACITY_HREF } from "../ward-nav";
+import { WARD_CAPACITY_HREF, WARD_REFERRAL_INTAKE_HREF } from "../ward-nav";
 import { useWardHelpRow } from "../help/ward-help-link";
 import { applyAppearance, applyGlare } from "./ward-bar";
 import { WardBarBack } from "./ward-bar-controls";
@@ -366,6 +366,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const tabletLandscape = useMediaQuery("(min-width: 1001px) and (max-width: 1200px)");
   const closedRailCards = useMediaQuery("(min-width: 1001px)");
   const canOpen = useCanOpenHref();
+  const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const accessNav = useAccessNavFilter();
   const flagOn = useWardFeatureFlagCheck();
   const home = useDeskHomeHref();
@@ -425,12 +426,12 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
       else if (!isTypingTarget(event.target)) {
         if (event.key === "[" && !event.ctrlKey && !event.metaKey && !event.altKey)
           setRailOpenPreference(!preferences.open);
-        else openDrawerForShortcut(event);
+        else openDrawerForShortcut(event, canRefer);
       }
     };
     document.addEventListener("keydown", handle);
     return () => document.removeEventListener("keydown", handle);
-  }, [preferences.open]);
+  }, [preferences.open, canRefer]);
   const clock = shell ? formatInstantWithDay(shell.now, shell.now) : "";
   useEffect(() => {
     publishLiveClock(clock || undefined);
