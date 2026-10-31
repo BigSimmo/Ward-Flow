@@ -72,6 +72,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the ED clinician**, the page opens on Peel ED's own board. The strip of other EDs is gone: with scoped data each tile only said 'Not shown at this desk'.",
     "**New:** on the phone the board comes first, then the access-target card.",
     "**Still open:** the hero's Raise referral and the app bar's New referral open the same sheet. Keep only one on this desk?",
+    "**Changed (Josh, 30 October):** no access forecast card on the ED desk. Worked out from the records this desk can see, it disagreed with the coordinator's board for the same ED; the coordinator's ED board keeps it.",
   ],
   "as-ed-referrals": [
     "**As the ED clinician**, Referrals opens on 'Raised from Peel ED' (9 open), because the coordinator's queue was empty for this desk. Rows show tier, surname first, time since referral and where it stands; after 8 rows, Show more.",
@@ -103,6 +104,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the community clinician**, the page opens on the team's own In a bed list: the people it follows into hospital.",
     "**Removed:** Change team (this desk opens its own team only), the Caseload figure the title already gives, and an all-zero Excluded box.",
     "**Still open:** the app bar's place chip says 'Statewide' (shared chrome); the phone In a bed list has 9 rows and no Show more.",
+    "**Changed (Josh, 30 October):** one caseload figure on phone and desktop. The phone's last list is Caseload (the same 9 as desktop's Caseload and CTOs), opening on the whole caseload; Show community treatment orders only narrows it. The five list tabs share one row.",
   ],
   "as-community-referrals": [
     "**As the community clinician**, the board is read only, and with nothing waiting it opens on History with the latest decided referral, not an empty queue.",
@@ -167,7 +169,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the site bed manager**, Discharges opens on Royal Perth's own releases ('Bed release · Royal Perth Hospital').",
     "**Removed:** the Service filter and the service name after each ward (one site, one service).",
     "**Round 2:** one barrier panel beside the list, as on Discharges.",
-    "**Review round (30 October):** as the coordinator's Discharges: '7 to work now · of 23 open', Held up as the one word, clicks stay on Now, first rows then Show more. Only the ward or the coordinator can change an expected date, so an expected release here offers Open (on Milestones), not Confirm date.",
+    "**Review round (30 October):** as the coordinator's Discharges: '7 to work now · of 23 open', Held up as the one word, clicks stay on Now, first rows then Show more. Only the ward or the coordinator can change an expected date, so an expected release here offers Open (on Milestones), not Confirm date (Josh agreed, 30 October).",
   ],
   "as-bed-manager-referrals": [
     "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
@@ -466,6 +468,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** How to reach folds its caveat and recorded lines into one small footnote, in the same words.",
     "**Kept:** Worth attention, On duty today, Record contact, CTO register, Refer from team, and the Excluded and acceptance footnotes word for word.",
     '**Please check:** rows not accepted before the bed would read "Referred during this stay" or "Not arrived", and "Not counted" for time since acceptance. Today\'s data has none, so the wording is unseen. The record drawer is today\'s and still names the person first name first.',
+    "**Changed (Josh, 30 October):** one caseload figure on phone and desktop: the phone's last list is Caseload (the same 9 as desktop), opening on the whole caseload, with Show community treatment orders only to narrow it.",
   ],
   patient: [
     "**Built from a copy of today's Patient screen**, so the stepper, tabs, Cannot move checks, Destination, Withdraw, Copy handover and the forms work as now.",

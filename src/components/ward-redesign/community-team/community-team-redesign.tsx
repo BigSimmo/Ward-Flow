@@ -410,7 +410,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [phoneDeclining, setPhoneDeclining] = useState(false);
   const declineSave = useWardFormSave(`community-decline:${declineOpenFor ?? phoneReferralId ?? ""}`);
   const [phoneDepartureId, setPhoneDepartureId] = useState<string | null>(null);
-  const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(false);
+  // The phone's Caseload list opens on the whole caseload, matching its count (Josh, 30 Oct 2026).
+  const [phoneShowWholeCaseload, setPhoneShowWholeCaseload] = useState(true);
   const [switchQuery, setSwitchQuery] = useState("");
   const switchTriggerRef = useRef<HTMLButtonElement>(null);
 

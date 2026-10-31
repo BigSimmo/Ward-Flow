@@ -28,10 +28,8 @@ import { AsEdOverview as EdOverview } from "./as-ed-overview";
 import { SinceLastLookPill } from "@/components/ward-management/since-last-look-pill";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { edScreenActions } from "@/components/ward-management/ed/ed-screen-actions";
 import { EdBoardSection } from "@/components/ward-management/ed/ed-screen-board";
-import { EdAccessRiskCard } from "@/components/ward-redesign/ed-board/ed-access-risk-redesign";
 import type { EdScreenContext } from "@/components/ward-management/ed/ed-screen-context";
 import { deriveEdScreen } from "@/components/ward-management/ed/ed-screen-derivations";
 import { EdListsSection } from "@/components/ward-management/ed/ed-screen-lists";
@@ -176,10 +174,6 @@ export function AsEdBoardRedesign({ edId }: EdScreenProps) {
   }
   /** Phone: Board, Needs you and Lists are one tap apart (v10 ED page, phone). */
   const isPhone = useIsPhone();
-  // Role view (as ED clinician): on an ED desk's phone the board comes first and the access-risk
-  // card follows it, so the clinician opens on their own people. Every other desk keeps the order.
-  const deskRole = useEffectiveWardAccess().role;
-  const edDeskPhone = isPhone && deskRole === "ed";
   // DA-09: an ED desk cannot open Capacity or Governance, so those links are offered only to a desk that can.
   const canOpen = useCanOpenHref();
   const elsewhereLinks = [
@@ -486,12 +480,11 @@ export function AsEdBoardRedesign({ edId }: EdScreenProps) {
 
         {isPhone ? <EdPhonePanes ctx={ctx} /> : null}
 
-        {/* Forecasting build (Josh, 23 Oct 2026, screen 4), loaded lazily for the phone budget. */}
-        {edDeskPhone ? null : <EdAccessRiskCard edId={thisEdId} now={now} />}
+        {/* ROLE BRANCH (ed): no access forecast card on the ED desk (Josh, 30 Oct 2026). Worked out
+            from the records this desk can see, it disagreed with the coordinator's board for the same
+            ED; the coordinator's ED board keeps it. */}
 
         <EdBoardSection ctx={ctx} />
-
-        {edDeskPhone ? <EdAccessRiskCard edId={thisEdId} now={now} /> : null}
 
         {isPhone ? (
           <EdNeedsYou items={needsYouItems} data-pane="needs" />
