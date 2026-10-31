@@ -206,7 +206,7 @@ describe("booking transport from the sending emergency department", () => {
     // one-line title, and the person, surname first, is named once under it.
     expect(screen.getByRole("dialog", { name: "Log transport booking" })).toBe(dialog);
     expect(document.getElementById(dialog.getAttribute("aria-describedby")!)?.textContent).toMatch(
-      /^[^,]+, .+ · booked by phone\. Read each answer off the call with the provider\.$/,
+      /^[^,]+, .+ · booked by phone\. Fill in each answer as the provider gives it\.$/,
     );
 
     fireEvent.change(screen.getByTestId(`ward-ed-transport-provider-${movement.id}`), {

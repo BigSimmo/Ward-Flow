@@ -3,7 +3,7 @@
 // The ED screen's wider-screen board row: one row of the full board table, read-only, with one Next
 // button and every edit in the person sheet. Split out of `ed-screen.tsx` unchanged (fix list 2.5
 // and 9.6, 15 Oct 2026).
-import type { ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { clockState, splitDuration } from "@/components/ward-management/ward-clock";
@@ -96,7 +96,8 @@ export function renderEdBoardTableRow(
   const formTitle = movement.legalForm
     ? [`${legalStatusFull(movement)}.`, formExpiryText, formExpiryWarningText].filter(Boolean).join(" ")
     : undefined;
-  // H-0842: the register title shows under the short chip, so the code never stands alone.
+  // H-0842: the code never stands alone. Josh (31 Oct 2026): the register title no longer sits under
+  // the chip; the chip names it on tap, on keyboard focus and to screen readers (`FormNameTip`).
   const legalFormTitle = movement.legalForm ? formTitleForCode(movement.legalForm.code) : null;
   const formCell = (
     <>
@@ -104,15 +105,16 @@ export function renderEdBoardTableRow(
         {formExpiryWarningText !== undefined ? (
           <StatusGlyph tone={formExpiryPassed ? "danger" : "warning"} size={8} />
         ) : null}
-        <span className={movement.legalForm ? styles.a2NoWrap : styles.a2Quiet}>
-          {movement.legalForm ? legalStatusShort(movement) : noFormWords}
-        </span>
+        {movement.legalForm && legalFormTitle ? (
+          <FormNameTip movementId={movement.id} name={legalFormTitle}>
+            {legalStatusShort(movement)}
+          </FormNameTip>
+        ) : (
+          <span className={movement.legalForm ? styles.a2NoWrap : styles.a2Quiet}>
+            {movement.legalForm ? legalStatusShort(movement) : noFormWords}
+          </span>
+        )}
       </span>
-      {legalFormTitle ? (
-        <span className={styles.a2Sub} data-testid={`ward-ed-form-title-${movement.id}`}>
-          {legalFormTitle}
-        </span>
-      ) : null}
       {/* Legal times (Josh, 31 Oct 2026): the typed time reads "ends Sat 15:42 as typed", or "ended …
           as typed" with the danger glyph once passed, with the not-legally-checked tag; never a count
           of time left or passed. The screen-reader facts beside the cell say the same. */}
@@ -342,5 +344,41 @@ export function renderEdBoardTableRow(
         </div>
       </td>
     </tr>
+  );
+}
+
+/**
+ * The form chip with its register title (H-0842). Josh (31 Oct 2026): the title is not a line under
+ * the chip any more, and not hover-only either: it is the chip's description for screen readers, and
+ * shows beside it on keyboard focus or a tap (a second tap, Escape or leaving the chip hides it).
+ */
+function FormNameTip({ movementId, name, children }: { movementId: string; name: string; children: ReactNode }) {
+  const tipId = useId();
+  const [open, setOpen] = useState(false);
+  return (
+    <span className={styles.formTipWrap}>
+      <button
+        type="button"
+        className={styles.formTipTrigger}
+        aria-describedby={tipId}
+        data-testid={`ward-ed-form-chip-${movementId}`}
+        onClick={() => setOpen((shown) => !shown)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") setOpen(false);
+        }}
+      >
+        {children}
+      </button>
+      <span
+        id={tipId}
+        role="tooltip"
+        className={styles.formTip}
+        data-open={open ? "true" : undefined}
+        data-testid={`ward-ed-form-title-${movementId}`}
+      >
+        {name}
+      </span>
+    </span>
   );
 }

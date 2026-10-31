@@ -5553,3 +5553,61 @@
 .formTyped > span {
   white-space: normal;
 }
+
+/* H-0842 (Josh, 31 Oct 2026): the form chip names its register title on tap, keyboard focus and to
+ * screen readers (its description), not on hover only and not as a line under the chip. The tap
+ * area is 40px tall without making the row taller. */
+.formTipWrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+.formTipTrigger {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.formTipTrigger::after {
+  content: "";
+  position: absolute;
+  inset-inline: -4px;
+  inset-block: 50% auto;
+  block-size: 40px;
+  transform: translateY(-50%);
+}
+
+.formTipTrigger:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-sm);
+}
+
+/* Shown in the cell's own flow, so the table's overflow never cuts it off; the row grows while open. */
+.formTip {
+  display: none;
+  max-inline-size: 16rem;
+  padding: var(--wf-s-1) var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-overlay);
+  box-shadow: var(--wf-e2);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: normal;
+}
+
+.formTipTrigger:focus-visible + .formTip,
+.formTip[data-open="true"] {
+  display: block;
+}
