@@ -521,6 +521,7 @@ export function HandoverPage() {
     () => sheetSignOff(handoverSignOffs, shiftAt, signOffUnitId),
     [handoverSignOffs, shiftAt, signOffUnitId],
   );
+  const historyProps = { signOffs: handoverSignOffs, meetings, preparedAt, now, unitId: signOffUnitId };
   // A ward desk holding more than one ward signs off one ward's sheet at a time.
   const chooseWardFirst = access.role === "ward" && signOffUnitId === undefined;
   // v10 pass 3: the sign-off is recorded at once and Undo takes it back (UNDO_HANDOVER_SIGN_OFF).
@@ -879,15 +880,7 @@ export function HandoverPage() {
           }))}
           meetingOn={meetingStartedAt !== null}
           onToggleMeeting={toggleMeeting}
-          history={
-            <HandoverHistory
-              signOffs={handoverSignOffs}
-              meetings={meetings}
-              preparedAt={preparedAt}
-              now={now}
-              unitId={signOffUnitId}
-            />
-          }
+          history={<HandoverHistory {...historyProps} />}
         />
         <WardPrototypeFooter
           testId="ward-handover-governance"
@@ -1389,13 +1382,7 @@ export function HandoverPage() {
   } else if (tab === "hist") {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="hist">
-        <HandoverHistory
-          signOffs={handoverSignOffs}
-          meetings={meetings}
-          preparedAt={preparedAt}
-          now={now}
-          unitId={signOffUnitId}
-        />
+        <HandoverHistory {...historyProps} />
       </TabPanel>
     );
   } else if (portrait) {
