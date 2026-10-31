@@ -123,7 +123,8 @@
   min-width: 0;
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-  white-space: nowrap;
+  /* "Due 2 days ago" wraps at narrow widths rather than ending in "…". */
+  white-space: normal;
 }
 
 /* ---- hero ---- */

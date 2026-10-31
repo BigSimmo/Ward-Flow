@@ -374,6 +374,19 @@
   white-space: normal;
 }
 
+/* Names wrap in full, never "Tremalow, Noo…" (Josh's rule). The shared table cell truncates by
+   default, so the name and stage cells opt out. With the job panel open the table keeps enough
+   width for whole words and scrolls inside its own frame rather than squeezing a word per line. */
+.jobsTable > tbody td {
+  overflow-wrap: break-word;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.layout[data-open="true"] .jobsTable {
+  min-width: 36rem;
+}
+
 .jobRoute.routeWraps {
   overflow: visible;
   text-overflow: clip;
@@ -1756,16 +1769,20 @@
     position: relative;
     display: flex;
     gap: var(--wf-s-2);
+    /* Room for the chips' 48px tap covers inside the sideways scroller. */
+    padding-block: 4px;
     overflow-x: auto;
     scrollbar-width: none;
   }
 
+  /* A 40px chip with a 48px tap cover: no 48px controls (Josh, 31 Oct 2026). */
   .phProvider {
+    position: relative;
     display: inline-flex;
     flex: none;
     align-items: center;
     gap: 6px;
-    min-height: var(--spacing-tap, 3rem);
+    min-height: 40px;
     padding: 0 var(--wf-s-4);
     border: 1px solid var(--wf-line);
     border-radius: var(--wf-r-ctl);
@@ -1775,6 +1792,12 @@
     white-space: nowrap;
     box-shadow: var(--wf-e1);
     cursor: pointer;
+  }
+
+  .phProvider::after {
+    position: absolute;
+    inset: -4px 0;
+    content: "";
   }
 
   .phProvider[aria-pressed="true"] {

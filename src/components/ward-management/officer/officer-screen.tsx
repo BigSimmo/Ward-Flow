@@ -1358,16 +1358,17 @@ export function OfficerScreen() {
                     title={officerPatientName(selectedJob)}
                     meta={
                       <>
-                        <span className={styles.mono}>{umrnFor(selectedJob)}</span>
+                        {/* The UMRN is withheld on some desks; no stray " · " is left in its place. */}
+                        {umrnFor(selectedJob) ? <span className={styles.mono}>{umrnFor(selectedJob)}</span> : null}
                         {isPhone ? (
                           <>
-                            {"\u00a0· "}
+                            {umrnFor(selectedJob) ? "\u00a0· " : null}
                             {originShortFor(selectedJob)} to {destinationLabelFor(selectedJob)}
                             {selectedJob.transport.escortRequired ? "\u00a0· Escort" : ""}
                           </>
                         ) : (
                           <>
-                            {" · "}
+                            {umrnFor(selectedJob) ? " · " : null}
                             {/* Redesign: a bare "Not recorded" names no noun. */}
                             {transportLegalStatusLabel(selectedJob.transport) === "Not recorded"
                               ? "Legal status not recorded"
