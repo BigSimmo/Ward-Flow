@@ -62,6 +62,15 @@ describe("Q77: old role words read in the new names, display only", () => {
     expect(withCurrentRoleWords({ rows: [untouched, { by: "Bed manager" }] }).rows[0]).toBe(untouched);
   });
 
+  it("keeps an untouched record's display copy when another part of the workspace changes", () => {
+    const first = withCurrentRoleWords(seed);
+    const changed = { ...seed, referrals: [...seed.referrals] };
+    const second = withCurrentRoleWords(changed);
+    expect(second).not.toBe(first);
+    expect(second.movements).toBe(first.movements);
+    expect(second.units).toBe(first.units);
+  });
+
   it("leaves text that only contains an earlier word, or sits under any other key, as saved", () => {
     const saved = { rows: [{ title: "Bed manager", note: "Bed manager review", confirmedBy: "NUM Ward A" }] };
     expect(withCurrentRoleWords(saved)).toBe(saved);
