@@ -701,7 +701,7 @@
   cursor: pointer;
 }
 
-.shiftOption[aria-checked="true"] {
+.shiftOption[aria-current="true"] {
   background: var(--wf-selected);
 }
 
@@ -768,25 +768,4 @@
   }
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.prow[data-act="true"] {
-  position: relative;
-}
-
-.prow[data-act="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .prow[data-act="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* No side edges (Josh, 31 Oct 2026): act-now rows sit under the Act now group's danger glyph, with no left stripe. */
