@@ -6,16 +6,21 @@ import { railEntries } from "../shell/ward-rail-entries";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "../help/ward-help-legend";
 import { ROLE_REFERENCE } from "../help/ward-help-roles";
 import { DESK_GUIDES } from "../help/ward-help-guide";
-import { KEYBOARD_SHORTCUTS } from "../help/ward-help-content";
 import type { WardTourRole } from "../help/ward-help-store";
 import { ACCESSIBILITY_HELP, COMMON_QUESTIONS, INTERACTIONS_HELP } from "./ward-help-reference";
 import styles from "../help/ward-help-sheet.module.css";
 
+/**
+ * The rest of Words (Josh, 31 Oct 2026): the colour code, the desks, and how the app behaves. The
+ * keyboard shortcuts live in one place only, the shortcuts sheet, filtered by desk.
+ */
 export function WardHelpReference({ role, onClose }: { role: WardTourRole; onClose: () => void }) {
   const roles = [...ROLE_REFERENCE].sort((a, b) => Number(b.id === role) - Number(a.id === role));
   return (
-    <details className={styles.reference} data-testid="ward-help-reference">
-      <summary>Reference</summary>
+    <section className={styles.group} aria-labelledby="ward-help-reference-title" data-testid="ward-help-reference">
+      <h3 id="ward-help-reference-title" className={styles.groupHeading}>
+        Colour code and more
+      </h3>
       <div className={styles.stack}>
         <details className={styles.referenceSection}>
           <summary>Colour code</summary>
@@ -78,21 +83,6 @@ export function WardHelpReference({ role, onClose }: { role: WardTourRole; onClo
           </div>
         </details>
         <details className={styles.referenceSection}>
-          <summary>Keyboard shortcuts</summary>
-          <dl className={styles.card} data-testid="ward-help-reference-shortcuts">
-            {KEYBOARD_SHORTCUTS.filter((item) => item.keys !== "Shift+R" || ROLE_SCREENS[role]["referral-new"]).map(
-              (item) => (
-                <div key={item.keys} className={styles.entry}>
-                  <dt>
-                    <kbd>{item.keys}</kbd>
-                  </dt>
-                  <dd>{item.action}</dd>
-                </div>
-              ),
-            )}
-          </dl>
-        </details>
-        <details className={styles.referenceSection}>
           <summary>Interactions</summary>
           <dl className={styles.card}>
             {INTERACTIONS_HELP.map((item) => (
@@ -126,6 +116,6 @@ export function WardHelpReference({ role, onClose }: { role: WardTourRole; onClo
           </div>
         </details>
       </div>
-    </details>
+    </section>
   );
 }

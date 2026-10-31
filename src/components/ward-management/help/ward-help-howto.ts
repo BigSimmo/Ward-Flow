@@ -13,6 +13,9 @@
  * on leave or away (D-81). Show me targets use test ids, ids, `data-setting` and accessible text,
  * never class names; `tests/ward-help-howto.test.ts` fails when a test id leaves the source.
  */
+import type { WardScreenId } from "@/components/ward-management/ward-role-access";
+
+import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
@@ -56,6 +59,13 @@ export type HowTo = {
   readonly desks: readonly WardTourRole[] | "all";
   /** Where it is done: "home" (the desk's own home), a rail entry id, or "settings#<tab>"; several in order. */
   readonly go?: string | readonly string[];
+  /**
+   * The actions the task records (`EVENT_ROLE`). A login that may record none of them is not shown
+   * the task as its own (audit finding 11, Josh 31 Oct 2026).
+   */
+  readonly acts?: readonly WardEventType[];
+  /** A screen the task needs that `go` does not name, such as Alerts or Search. */
+  readonly needs?: WardScreenId;
   readonly showMe?: readonly ShowMeStep[];
   /**
    * The controls are drawn on a computer only (the phone screen has no such button), so a phone is
@@ -92,6 +102,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Once a ward accepts, open the movement and press Pull the bed. The bed is kept for the patient within the pull time limit. A person always chooses the bed; nothing is placed automatically.",
     desks: ["coordinator"],
+    acts: ["PULL_PATIENT"],
     go: "movements",
     showMe: [
       {
@@ -118,6 +129,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Open the movement and use Release the pulled bed. Cancel transport first if it is booked. A pulled bed is never released by itself: when the pull time limit passes it shows in Act now as Pull expired, bed still pulled.",
     desks: ["coordinator"],
+    acts: ["RELEASE_PULL"],
     go: "home",
     showMe: [
       {
@@ -147,6 +159,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Press Decide on the referral, read it, then Accept referral or Decline referral. A decline needs a reason. Only the ward or team it was sent to can answer for itself.",
     desks: ["coordinator", "ward", "community"],
+    acts: ["ACCEPT_REFERRAL", "DECLINE_REFERRAL"],
     go: "home",
     showMe: [
       {
@@ -176,6 +189,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Open the referral and choose Ask more wards, then tick the wards. They are listed A to Z and never ranked, and only a ward that fits can be ticked. The number asked at once is limited by Wards asked at once in Settings.",
     desks: ["coordinator"],
+    acts: ["REFER_TO_UNITS"],
     go: "referrals",
     showMe: [
       {
@@ -201,6 +215,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "On the movement, press Book transport, or record that none is needed. The app records the booking for the transport officer; it does not order the vehicle itself.",
     desks: ["coordinator"],
+    acts: ["BOOK_TRANSPORT"],
     go: "movements",
     showMe: [
       {
@@ -227,6 +242,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Open the movement and cancel the booked transport there. Do this before you release a pulled bed, so the officer is not sent for a patient whose bed has gone.",
     desks: ["coordinator"],
+    acts: ["CANCEL_TRANSPORT"],
     go: "movements",
     showMe: [
       {
@@ -253,6 +269,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Open the referral and use Log a call, choosing who was rung and the outcome from the list. The next person sees who was called and when.",
     desks: ["coordinator"],
+    acts: ["LOG_REFERRAL_CONTACT"],
     go: "referrals",
     showMe: [
       {
@@ -278,6 +295,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Press New referral, choose the destinations (several can go at once), record the legal status if known, then send. Each destination answers on its own.",
     desks: ["coordinator", "ed", "community", "ward"],
+    acts: ["RAISE_REFERRAL"],
     showMe: [
       {
         target: PRIMARY_ACTION,
@@ -301,7 +319,8 @@ export const HOW_TOS: readonly HowTo[] = [
     keywords: "handover handoff sign off shift change",
     answer:
       "Open Handover. Read Act now first, then what is due before the next handover. Work through Before you sign, then choose Sign off.",
-    desks: ["coordinator", "ward", "bed_manager"],
+    desks: ["coordinator", "ward"],
+    acts: ["RECORD_HANDOVER_SIGN_OFF"],
     go: "handover",
     showMe: [
       {
@@ -356,6 +375,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "On your ward's home, press Confirm numbers after checking ready, pulled, closed and occupied beds. The time you confirm shows on every screen, so others know how fresh the figure is.",
     desks: ["ward"],
+    acts: ["CONFIRM_CAPACITY"],
     go: "home",
     showMe: [
       {
@@ -371,8 +391,9 @@ export const HOW_TOS: readonly HowTo[] = [
     title: "Answer the ward's referrals",
     keywords: "accept decline ward referral answer one by one",
     answer:
-      "Open Referrals to answer, or Answer one by one on your ward's home, and accept or decline each. A decline needs a reason. A bed manager can see them but cannot answer for the ward.",
+      "Open Referrals to answer, or Answer one by one on your ward's home, and accept or decline each. A decline needs a reason. A site bed manager can see them but cannot answer for the ward.",
     desks: ["ward"],
+    acts: ["ACCEPT_REFERRAL", "DECLINE_REFERRAL"],
     go: "home",
     showMe: [
       {
@@ -449,6 +470,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "On your ED board, open the patient and use Raise referral. The ED's waiting list stays in wait order; flags highlight a row but never move it.",
     desks: ["ed"],
+    acts: ["RAISE_REFERRAL"],
     go: "home",
     showMe: [
       {
@@ -466,6 +488,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Open the job on My jobs to see the pickup, the destination and the booking, then record when the patient is collected.",
     desks: ["officer"],
+    acts: ["TRANSPORT_ACCEPTED", "PATIENT_COLLECTED"],
     go: "home",
     showMe: [
       {
@@ -523,6 +546,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Press Alerts in the header (Tasks on some desks). Shift+T opens it on a keyboard. Each alert opens the record it is about.",
     desks: EVERY_DESK,
+    needs: "alerts",
     showMe: [
       {
         target: { sel: '[data-testid="ward-bar-tasks-trigger"], [data-testid="ward-phone-dock"]' },
@@ -539,6 +563,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Type a name or UMRN in the header search. / or Ctrl+K jumps there on a keyboard. Questions such as no bed yet also work.",
     desks: CLINICAL_DESKS,
+    needs: "search",
     showMe: [
       {
         target: { sel: '[data-testid="ward-global-search-input"]' },
@@ -609,6 +634,7 @@ export const HOW_TOS: readonly HowTo[] = [
     answer:
       "Settings, Alerts: turn on Browser notifications for this computer, or Phone alerts for your phone. Both are for act-now and red alerts only.",
     desks: EVERY_DESK,
+    needs: "alerts",
     go: "settings#alerts",
     showMe: [
       {
@@ -630,6 +656,7 @@ export const HOW_TOS: readonly HowTo[] = [
     keywords: "sound chime audio noise mute buzz",
     answer: "Settings, Alerts, Buzz sound. Use its test to hear it.",
     desks: EVERY_DESK,
+    needs: "alerts",
     go: "settings#alerts",
     showMe: [
       {
@@ -646,7 +673,8 @@ export const HOW_TOS: readonly HowTo[] = [
     keywords: "rules settings pull time limit ed target wards asked morning count warning surge",
     answer:
       "Settings, Rules. Change the value, then Save to apply. Each save is recorded in the audit and changes what every screen shows. Surge switches all timings to the busy-day set.",
-    desks: ["coordinator", "admin"],
+    desks: ["coordinator"],
+    acts: ["SET_CONFIGURATION"],
     go: "settings#rules",
     showMe: [
       {
@@ -698,6 +726,16 @@ export const HOW_TOS: readonly HowTo[] = [
     ],
   },
   {
+    // The same question for a login that cannot open Handover, so no answer sends it there.
+    id: "downtime-paper",
+    topic: "Handover and reports",
+    title: "What to do if Ward Flow is down",
+    keywords: "down offline outage paper downtime not working broken support help",
+    answer:
+      "Tell the bed coordinator on shift, who decides when everyone switches to paper and keeps the printed downtime pack. Work from paper until the coordinator says Ward Flow is back.",
+    desks: EVERY_LOGIN.filter((role) => !deskOpens(role, "handover")),
+  },
+  {
     id: "tour",
     topic: "Finding your way",
     title: "Take the tour again",
@@ -708,7 +746,7 @@ export const HOW_TOS: readonly HowTo[] = [
       {
         target: [{ sel: '[data-testid="ward-rail-help"]' }, { sel: '[data-testid="ward-bar-phone-menu"]' }],
         title: "Help",
-        body: "Help is in the side menu (in Menu on a phone). Take the tour is at the end of every Help page.",
+        body: "Help is in the side menu (in Menu on a phone). Take the tour is the first row of How do I….",
       },
     ],
   },
@@ -880,6 +918,21 @@ export function correctedQuestionWords(query: string): readonly string[] {
 export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean };
 
 /**
+ * This login's own how-to with the same title as `howTo` (the downtime pair), else `howTo` itself.
+ * A question that only matches the twin this login cannot follow still gets the answer it can.
+ */
+export function ownTwinOf(howTo: HowTo, role: WardTourRole): HowTo {
+  if (howToFor(howTo, role)) return howTo;
+  return HOW_TOS.find((other) => other.title === howTo.title && howToFor(other, role)) ?? howTo;
+}
+
+/** Each how-to once, keeping its first (best-ranked) place. */
+function onceEach<T extends HowToMatch>(sorted: readonly T[]): T[] {
+  const seen = new Set<string>();
+  return sorted.filter(({ howTo }) => !seen.has(howTo.id) && Boolean(seen.add(howTo.id)));
+}
+
+/**
  * The how-tos that answer `query`. A how-to answers when at least half the question's words are
  * in it. Those holding more of the words come first, then this desk's own, then those whose title
  * or keywords hold the words (three times a word in the answer). Ties keep the list's own order,
@@ -903,17 +956,18 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
       }
     }
     if (hits < needed) return [];
-    const forThisDesk = howTo.desks === EVERY_DESK || howTo.desks.includes(role);
-    return [{ howTo, forThisDesk, hits, score, order }];
+    const own = ownTwinOf(howTo, role);
+    return [{ howTo: own, forThisDesk: howToFor(own, role), hits, score, order }];
   });
   // An answer far weaker than the best (one shared word such as "bed") is noise, not a lead.
   const best = Math.max(0, ...scored.map((entry) => entry.score));
-  return scored
+  const ranked = scored
     .filter((entry) => entry.score * 2 >= best)
     .sort(
       (a, b) =>
         b.hits - a.hits || Number(b.forThisDesk) - Number(a.forThisDesk) || b.score - a.score || a.order - b.order,
-    )
+    );
+  return onceEach(ranked)
     .slice(0, limit)
     .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
 }
@@ -925,13 +979,16 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
 export function closestHowTos(query: string, role: WardTourRole, limit = 3): readonly HowToMatch[] {
   const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
-  return HOW_TOS.flatMap((howTo, order) => {
+  const scored = HOW_TOS.flatMap((howTo, order) => {
     const { strong, weak } = wordsOf(howTo);
     const score = words.reduce((sum, word) => sum + (strong.has(word) ? 3 : weak.has(word) ? 1 : 0), 0);
-    const forThisDesk = howTo.desks === EVERY_DESK || howTo.desks.includes(role);
-    return score ? [{ howTo, forThisDesk, score, order }] : [];
-  })
-    .sort((a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order)
+    const own = ownTwinOf(howTo, role);
+    return score ? [{ howTo: own, forThisDesk: howToFor(own, role), score, order }] : [];
+  });
+  const ranked = scored.sort(
+    (a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order,
+  );
+  return onceEach(ranked)
     .slice(0, limit)
     .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
 }

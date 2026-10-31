@@ -8,14 +8,15 @@ describe("Help roles reference", () => {
     const ids = ROLE_REFERENCE.map((r) => r.id);
     expect(ids).toEqual([...Object.keys(ROLE_SCREENS), "tv"]);
   });
-  it("uses the app labels, with Bed manager in Help only", () => {
+  it("uses the access labels, with Community team for the community desk (Josh, 31 Oct 2026)", () => {
     for (const r of ROLE_REFERENCE) {
       if (r.id === "tv") continue;
-      const want = r.id === "bed_manager" ? "Bed manager" : ACCESS_ROLE_LABELS[r.id];
+      const want = r.id === "community" ? "Community team" : ACCESS_ROLE_LABELS[r.id];
       expect(r.name).toBe(want);
       expect(r.summary).toBe(DESK_GUIDES[r.id].summary);
     }
-    expect(ACCESS_ROLE_LABELS.bed_manager).toBe("Site bed manager");
+    expect(ROLE_REFERENCE.find((r) => r.id === "bed_manager")?.name).toBe("Site bed manager");
+    expect(ROLE_REFERENCE.find((r) => r.id === "ward")?.name).toBe("Nurse in charge");
     expect(ROLE_REFERENCE.map((r) => r.name)).toEqual(
       expect.arrayContaining(["Executive", "Access admin", "TV board"]),
     );

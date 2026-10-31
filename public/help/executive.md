@@ -31,7 +31,6 @@ Statistics
 
 - /: Search, from the box in the header. On Settings it finds a setting.
 - Ctrl+K: Search, even with single-key shortcuts off. Cmd+K on a Mac.
-- Shift+A: Open Activity.
 - [: Fold the side menu to icons, or open it again.
 - Alt+N: Jump to the newest notice's button, and back. Option+N on a Mac.
 - Esc: Close what is open, or step back.

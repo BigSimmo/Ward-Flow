@@ -325,14 +325,14 @@
   cursor: pointer;
 }
 
-/* Josh (30 Oct): no 48px controls. On a phone the tour and Show me buttons keep the kit's 36px
-   height and gain an invisible touch area of 6px above and below. */
+/* Josh (30 Oct): no 48px controls. On a phone the tour and Show me buttons are 40px (31 Oct design rule)
+   and keep an invisible touch area of 6px above and below. */
 .layer[data-device="phone"] .primary,
 .layer[data-device="phone"] .secondary,
 .layer[data-device="phone"] .skip,
 .layer[data-device="phone"] .tasksLink {
   position: relative;
-  min-height: 36px;
+  min-height: 40px;
 }
 
 .layer[data-device="phone"] .primary::after,
