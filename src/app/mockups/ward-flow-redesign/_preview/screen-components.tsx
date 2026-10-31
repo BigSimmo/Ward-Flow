@@ -69,12 +69,6 @@ const OnCallRedesign = dynamic<MockupPageProps>(() =>
 const SeclusionRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/seclusion/seclusion-redesign").then((module) => module.SeclusionRedesign),
 );
-const DowntimePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/downtime/downtime-page").then((module) => module.DowntimePage),
-);
-const ChronologyPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/chronology/chronology-page").then((module) => module.ChronologyPage),
-);
 const PlacesPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/places/places-page").then((module) => module.PlacesPage),
 );
@@ -285,8 +279,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
   seclusion: SeclusionRedesign,
-  downtime: DowntimePage,
-  chronology: ChronologyPage,
   places: PlacesPage,
   community: CommunityPage,
   "community-team": CommunityTeamPage,

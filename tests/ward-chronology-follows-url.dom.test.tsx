@@ -23,9 +23,10 @@ describe("chronology follows the patient in the URL", () => {
       </WardFlowProvider>
     );
     const { rerender } = render(view(first.id));
-    const select = () => screen.getAllByRole("combobox").find((el) => el.tagName === "SELECT") as HTMLSelectElement;
-    expect(select().value).toBe(first.id);
+    // The header names the chosen person, surname first (the patient search replaced the dropdown).
+    const title = () => screen.getByRole("heading", { level: 1 }).textContent;
+    expect(title()).toContain(`${first.familyName}, ${first.givenName}`);
     rerender(view(second.id));
-    expect(select().value).toBe(second.id);
+    expect(title()).toContain(`${second.familyName}, ${second.givenName}`);
   });
 });

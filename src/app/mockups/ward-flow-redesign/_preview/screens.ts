@@ -68,18 +68,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
   {
-    slug: "downtime",
-    label: "Downtime pack",
-    group: "Bed meeting and reports",
-    appPath: "/ward-flow/reports/downtime",
-  },
-  {
-    slug: "chronology",
-    label: "Patient chronology",
-    group: "Bed meeting and reports",
-    appPath: "/ward-flow/reports/chronology",
-  },
-  {
     slug: "community-team",
     label: "Community team",
     group: "Places and records",

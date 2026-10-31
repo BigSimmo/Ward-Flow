@@ -15,8 +15,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "alerts",
   "legal-forms",
   "on-call",
-  "downtime",
-  "chronology",
   "community-team",
   "patient",
   "add-patient",
