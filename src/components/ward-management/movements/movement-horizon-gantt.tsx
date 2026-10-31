@@ -10,7 +10,7 @@ import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { edById } from "@/components/ward-management/ward-sites";
 import { HEALTH_SERVICES, type HealthService, type Unit } from "@/components/ward-management/ward-model";
-import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
+import { isPlaceholderName, NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 
 import type {
   CorridorCount,
@@ -694,7 +694,7 @@ function barPatientName(ev: MovementHorizonEvent): string {
 
 /** "Noor Tremalow" to "Tremalow, Noor". A name already in that order, or one word, is kept. */
 function formalName(name: string): string {
-  if (name === NAME_NOT_RECORDED || name.includes(",")) return name;
+  if (isPlaceholderName(name) || name.includes(",")) return name;
   const parts = name.trim().split(/\s+/u);
   if (parts.length < 2) return name;
   const surname = parts[parts.length - 1];
