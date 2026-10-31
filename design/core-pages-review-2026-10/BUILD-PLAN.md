@@ -1,6 +1,6 @@
 # Redesign build plan: from mock-ups to the real app
 
-_Updated 2026-10-31 - first build plan, written from D-74, D-83, D-89, D-91, this folder's handovers and the four other pull requests' handovers; Design owns._
+_Updated 2026-10-31 - round 3 added: shell-next is the default frame, Settings round 3 is in, Help, search and notices are mocked up, and the live app's legal-form countdowns are listed as bugs; Design owns._
 
 **In one line:** nothing here is approved for building yet. This is the order and the method for when Josh approves.
 It plans work; it authorises no merge, push, release or page build.
@@ -131,8 +131,10 @@ Good spotlight engine and Show me (points, never clicks). Fixes before merge:
   stays in A, it must clear on idle lock and desk switch and show nowhere yet.
 
 **Part B, visual (after the mock-up):** folded stack, corner-card moves, shadow, motion and the Recent list inside
-Activity. These are mocked up in #1118 first (`pop-state-toast`, Home's Activity panel), then built after Josh
-approves. The notice position (clear of the phone dock) is built with the shared frame in Phase 4.
+Activity. Round 3 (31 October) mocked these up in #1118: `src/components/ward-redesign/notices/` (the stack lifted
+24px clear of the dock, '+2 more' folded, a warning that stays) and a quiet Missed notices group in Activity's
+Recent activity, cleared on lock or desk switch. They are built after Josh approves. The notice position (clear of
+the phone dock) is built with the shared frame in Phase 4.
 
 **Not run yet on #1124:** full lint and typecheck, the build and phone script budget (the provider adds about 3 to
 5 KB per route), Playwright journeys, a real screen reader.
@@ -150,8 +152,9 @@ Rebase on main after #1119 and #1124 A. Fixes before merge:
 4. **Help content line ~140.** `help/ward-help-content.ts` still tells All EDs users to "Search by ED, hospital or
    service", but #1123 removes that box. Reword to the filters that remain.
 5. **Import `howToHref`** from wherever 3.2 item 1 leaves it.
-6. **Move the stand-alone mock-up out.** `/mockups/ward-flow-search` and `ward-management/search-redesign/` move into
-   the redesign viewer (a re-forked `pop-search` and a page search field in `parts/`). Remove them from #1123.
+6. **Move the stand-alone mock-up out.** Round 3 rebuilt `pop-search` on #1123 in the redesign viewer (phone sheet,
+   marked matches, Help, contacts and suburbs) with `parts/search-field.tsx` and `parts/time-presets.tsx`. So
+   `/mockups/ward-flow-search` and `ward-management/search-redesign/` can be removed from #1123.
 7. **Finish the full gate:** `npm run verify:pr-local -- --base origin/main` (it stopped once at `typecheck:backend`),
    Playwright including `tests/ui-ward-search.spec.ts`, `npm run build`, then the phone script budget.
 8. The removals are already ratified by D-91 (no new decision needed).
@@ -183,10 +186,8 @@ Each merge needs Josh's yes at the time. Merging changes `main`, not the live si
 ## 4. Phase 3: refresh the mock-ups
 
 1. After all of Phase 2 is merged, merge `main` into #1118 **once** (with Josh's yes for the push).
-2. Merge #1122 (Settings round 3) into #1118 if not already in: keep its `ScopeLine` in `settings-rows.tsx`, keep
-   both sides of `build-notes.ts`, accept the deletion of the two role `settings-screen.tsx` copies; then its small
-   fixes (phone Theme and Row density at kit size, the stale "cannot drift" comment, "Save 3 rule changes?" against
-   "Save 3 rules", "None over" with no noun).
+2. Done on 31 October: #1122 (Settings round 3) is merged into #1118 (534584d60) and polished (14dcaef34: kit-size
+   phone switches, "Save 3 rule changes?", nouns on zero counts, no duplicate "Go to a desk" in the new frame).
 3. Refresh each stale fork (table below), then run the checks in HANDOVER.md "How it was checked", rebuild the preview
    copy and republish the private preview (Josh's yes).
 
@@ -199,13 +200,13 @@ Each merge needs Josh's yes at the time. Merging changes `main`, not the live si
 3. Re-apply the saved difference by hand, line by line. `git merge-file` can help once imports match.
 4. Note the new base commit in the page's build notes ("Forked from main at <commit>"), so Phase 4 diffs against it.
 
-| PR that lands | Forks that go stale                                                                                                                                                                  |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| #1119 Help    | `pop-help` (also has its own `help-href.ts` copy), `pop-tour`, `pop-shortcuts`                                                                                                       |
-| #1123 Search  | `pop-search` (re-fork, add the moved mock-up), `eds`, `statistics`, `as-executive-home`, `community-team`, `as-community-home` (breaks: `communitySearchRenderer`, `v6.searchPanel`) |
-| #1124 Notices | `ward/ward-screen.tsx`, `stays`, `community-team`, `waiting`, `on-call`, `pop-ward-notices` (plus the eight toast importers in 3.3)                                                  |
-| Settings bugs | `settings` (restore wording, export and import)                                                                                                                                      |
-| #1120         | unknown until identified                                                                                                                                                             |
+| PR that lands | Forks that go stale                                                                                                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #1119 Help    | `pop-help` (also has its own `help-href.ts` copy), `pop-tour`, `pop-shortcuts`                                                                                                                                   |
+| #1123 Search  | `pop-search` (rebuilt on #1123 in round 3; check against the merged code), `eds`, `statistics`, `as-executive-home`, `community-team`, `as-community-home` (breaks: `communitySearchRenderer`, `v6.searchPanel`) |
+| #1124 Notices | `ward/ward-screen.tsx`, `stays`, `community-team`, `waiting`, `on-call`, `pop-ward-notices` (plus the eight toast importers in 3.3)                                                                              |
+| Settings bugs | `settings` (restore wording, export and import)                                                                                                                                                                  |
+| #1120         | unknown until identified                                                                                                                                                                                         |
 
 ## 5. Phase 4: building pages into the real app
 
@@ -215,13 +216,17 @@ blocked in production, D-91). From then on, each build works from `main`, where 
 ### 5.1 Order
 
 1. **Shared frame and kit** (one PR each, in this order):
-   - `shell-next` becomes the real sidebar and header (`shell/ward-bar.tsx`, `ward-bar-controls.tsx`, `ward-rail.tsx`,
-     `ward-rail-entries.ts`, `ward-phone-menu.tsx`, `ward-phone-menu-sheet.tsx`). Includes: no "Synthetic prototype"
-     pill (footer notice stays), "Search Ward Flow", the bell with icon and count, a phone dock per desk, Settings
-     without its own "Go to a desk".
-   - The kit standard into `src/components/wf`: `parts/kit-standard.css` (one size per control), `parts/phone-rows.module.css`
-     (chip rows, hero pills), `parts/show-more-row.tsx`, and the page search field from #1123's mock-up.
-   - Notice position: toasts clear of the phone dock and the foot of Home (and #1124 part B once mocked up).
+   - **The shared frame is `shell-next`** (the default frame in the viewer since round 3). It becomes the real
+     sidebar and header (`shell/ward-bar.tsx`, `ward-bar-controls.tsx`, `ward-rail.tsx`, `ward-rail-entries.ts`,
+     `ward-phone-menu.tsx`, `ward-phone-menu-sheet.tsx`). Includes: no "Synthetic prototype" pill (footer notice
+     stays), "Search Ward Flow", the bell with icon and count, Activity as its own button, a phone dock per desk,
+     "My ward / My ED / My team / My jobs" as each desk's own home title, Settings without its own "Go to a desk".
+   - **The kit standard goes into `src/components/wf`:** `parts/kit-standard.css` (one size per control),
+     `parts/phone-rows.module.css` (count-first chip rows, hero pills), `parts/show-more-row.tsx`,
+     `parts/search-field.tsx` (one look for every page search box) and `parts/time-presets.tsx` (Now only on any
+     legal-form time).
+   - **Notices sit clear of the dock:** toasts lifted above the phone dock and off the foot of Home, with #1124 part B
+     (`notices/`) once Josh approves it.
 2. **Home** (`home-activity/` into `coordinator/coordinator-screen.tsx` and `coordinator/shortlist-panel.tsx`).
 3. **Pages by use:** Capacity, Waiting, Referrals (with New referral), Discharges, My ward, Movements; then suggested:
    Handover, ED board, Stays and discharges, Transport, Patients, All EDs, All wards, Alerts, Legal forms, the
@@ -367,56 +372,77 @@ Real paths are under `src/components/ward-management/` unless shown. "unknown" m
 
 ## 6. Real-app bug list
 
-| #   | Bug                                                                                                                                             | Status and owner                                       |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
-| 1   | Restore says nine rules; it restores twelve                                                                                                     | needs a small PR (3.5)                                 |
-| 2   | Settings Export writes things Import does not read                                                                                              | needs a small PR (3.5)                                 |
-| 3   | Community save failures vanish (CT-09)                                                                                                          | small PR (D-91); #1124 A keeps it fixed                |
-| 4   | Non-statewide coordinator's phone Rules sheet says "Save to apply"                                                                              | needs a small PR                                       |
-| 5   | Two Settings search ids named the wrong way round (`settings-search-index.ts`)                                                                  | needs a small PR                                       |
-| 6   | Toast covers the foot of Home and touches the phone dock                                                                                        | Phase 4 frame PR (notice position)                     |
-| 7   | Board read each outcome twice to screen readers                                                                                                 | #1124 A                                                |
-| 8   | Ward Notices badge and panel count differently                                                                                                  | #1124 A                                                |
-| 9   | Record document dialog at z-index 9999, above its own toasts                                                                                    | #1124 A                                                |
-| 10  | Contact typo matching ignores the "no person matched" gate                                                                                      | #1123 fix (3.4)                                        |
-| 11  | Help still describes the removed All EDs keyword box                                                                                            | #1123 fix (3.4)                                        |
-| 12  | Quick commands block shows "+15m" twice, sits 8 px off, clipped by the footer                                                                   | #1123 (labels fixed; check the offset and clip)        |
-| 13  | Capacity's "See Waiting" link opens patients waiting, not held-up releases; Discharges has no Held up query                                     | needs a small PR, or the Capacity build                |
-| 14  | "Synthetic prototype" pill in the app bar (Josh wants it gone; footer stays)                                                                    | Phase 4 frame PR                                       |
-| 15  | New referral button: 14 px left padding, 5 px right (`ward-bar.module.css`)                                                                     | Phase 4 frame PR                                       |
-| 16  | Names first name first: My ward tiles and round list, Notices, ED Lists and access-risk card, Stays' Worth a look, Transport, Out of area       | each page's build (D-83)                               |
-| 17  | Surname first missing in shared code: `reports/use-take-downtime-pack.ts`, community record drawer, Add a patient's save toasts, chronology CSV | needs a small PR (shared code)                         |
-| 18  | Referral slide-out uses `displayName` not `formalName` (`ward-referral-drawer-model.ts`)                                                        | needs a small PR, or the New referral build            |
-| 19  | Bed meeting TV does not fit 1080p (Brief cut off)                                                                                               | Bed meeting TV build                                   |
-| 20  | Planned admissions Book button stacks its icon over the word                                                                                    | Capacity build (one line)                              |
-| 21  | Capacity ward panel links not checked against the desk's access                                                                                 | needs a small PR                                       |
-| 22  | Statistics tab chips cut off at the phone's right edge (`StatisticsNav`)                                                                        | Statistics build                                       |
-| 23  | Rail shows network figures on a site desk, "Handover in 4h 18m" on the executive desk, "Statewide" on Midland                                   | Phase 4 frame PR                                       |
-| 24  | Side-panel Add the time uses a 12-hour browser time picker                                                                                      | needs a small PR, or Legal forms build                 |
-| 25  | Date fields show mm/dd/yyyy in some browsers                                                                                                    | needs a small PR (DD/MM/YYYY text field)               |
-| 26  | Referral alerts show a literal "Not recorded" as a legal chip                                                                                   | needs a small PR                                       |
-| 27  | `wardLabel` writes "— open"                                                                                                                     | needs a small PR                                       |
-| 28  | Bed 12 on the nurse in charge's My ward reads "Name not recorded" (out-of-scope `referralId` treated as broken)                                 | needs a small PR                                       |
-| 29  | Kit segmented tabs 38 px tall on phones                                                                                                         | kit standard PR (larger invisible tap area, not 48 px) |
-| 30  | Discharges shows three totals (207, 63, 59) with no agreed meaning                                                                              | needs Josh's decision, then the Discharges build       |
-| 31  | Shared phone hero shows 3 of 5 figures                                                                                                          | the build of the page that uses it                     |
-| 32  | Officer, Answer-view and discharge "ready to leave" toasts still use their own code; Officer has its own Undo (D-57 item 17)                    | needs a small PR after #1124 A                         |
-| 33  | About 20 hand-built modals with their own scrim, radius and z-index                                                                             | later pass onto the shared `Dialog`                    |
-| 34  | `window.confirm` in `use-dirty-state-guard.ts` (twice) and `ward-tasks-drawer.tsx`                                                              | needs a small PR                                       |
-| 35  | Shareable preview bundle dropped scoped styles                                                                                                  | fixed in the mock-up bundle script (mock-up only)      |
+Real paths are under `src/components/ward-management/` unless shown. Rows 36 to 50 were found in round 3 (31 October).
+
+| #   | Bug                                                                                                                                                         | Status and owner                                       |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| 1   | Restore says nine rules; it restores twelve                                                                                                                 | needs a small PR (3.5)                                 |
+| 2   | Settings Export writes things Import does not read                                                                                                          | needs a small PR (3.5)                                 |
+| 3   | Community save failures vanish (CT-09)                                                                                                                      | small PR (D-91); #1124 A keeps it fixed                |
+| 4   | Non-statewide coordinator's phone Rules sheet says "Save to apply"                                                                                          | needs a small PR                                       |
+| 5   | Two Settings search ids named the wrong way round (`settings-search-index.ts`)                                                                              | needs a small PR                                       |
+| 6   | Toast covers the foot of Home and touches the phone dock                                                                                                    | Phase 4 frame PR (notice position)                     |
+| 7   | Board read each outcome twice to screen readers                                                                                                             | #1124 A                                                |
+| 8   | Ward Notices badge and panel count differently                                                                                                              | #1124 A                                                |
+| 9   | Record document dialog at z-index 9999, above its own toasts                                                                                                | #1124 A                                                |
+| 10  | Contact typo matching ignores the "no person matched" gate                                                                                                  | #1123 fix (3.4)                                        |
+| 11  | Help still describes the removed All EDs keyword box                                                                                                        | #1123 fix (3.4)                                        |
+| 12  | Quick commands block shows "+15m" twice, sits 8 px off, clipped by the footer                                                                               | #1123 (labels fixed; check the offset and clip)        |
+| 13  | Capacity's "See Waiting" link opens patients waiting, not held-up releases; Discharges has no Held up query                                                 | needs a small PR, or the Capacity build                |
+| 14  | "Synthetic prototype" pill in the app bar (Josh wants it gone; footer stays)                                                                                | Phase 4 frame PR                                       |
+| 15  | New referral button: 14 px left padding, 5 px right (`ward-bar.module.css`)                                                                                 | Phase 4 frame PR                                       |
+| 16  | Names first name first: My ward tiles and round list, Notices, ED Lists and access-risk card, Stays' Worth a look, Transport, Out of area                   | each page's build (D-83)                               |
+| 17  | Surname first missing in shared code: `reports/use-take-downtime-pack.ts`, community record drawer, Add a patient's save toasts, chronology CSV             | needs a small PR (shared code)                         |
+| 18  | Referral slide-out uses `displayName` not `formalName` (`ward-referral-drawer-model.ts`)                                                                    | needs a small PR, or the New referral build            |
+| 19  | Bed meeting TV does not fit 1080p (Brief cut off)                                                                                                           | Bed meeting TV build                                   |
+| 20  | Planned admissions Book button stacks its icon over the word                                                                                                | Capacity build (one line)                              |
+| 21  | Capacity ward panel links not checked against the desk's access                                                                                             | needs a small PR                                       |
+| 22  | Statistics tab chips cut off at the phone's right edge (`StatisticsNav`)                                                                                    | Statistics build                                       |
+| 23  | Rail shows network figures on a site desk, "Handover in 4h 18m" on the executive desk, "Statewide" on Midland                                               | Phase 4 frame PR                                       |
+| 24  | Side-panel Add the time uses a 12-hour browser time picker                                                                                                  | needs a small PR, or Legal forms build                 |
+| 25  | Date fields show mm/dd/yyyy in some browsers                                                                                                                | needs a small PR (DD/MM/YYYY text field)               |
+| 26  | Referral alerts show a literal "Not recorded" as a legal chip                                                                                               | needs a small PR                                       |
+| 27  | `wardLabel` writes "— open"                                                                                                                                 | needs a small PR                                       |
+| 28  | Bed 12 on the nurse in charge's My ward reads "Name not recorded" (out-of-scope `referralId` treated as broken)                                             | needs a small PR                                       |
+| 29  | Kit segmented tabs 38 px tall on phones                                                                                                                     | kit standard PR (larger invisible tap area, not 48 px) |
+| 30  | Discharges shows three totals (207, 63, 59) with no agreed meaning                                                                                          | needs Josh's decision, then the Discharges build       |
+| 31  | Shared phone hero shows 3 of 5 figures                                                                                                                      | the build of the page that uses it                     |
+| 32  | Officer, Answer-view and discharge "ready to leave" toasts still use their own code; Officer has its own Undo (D-57 item 17)                                | needs a small PR after #1124 A                         |
+| 33  | About 20 hand-built modals with their own scrim, radius and z-index                                                                                         | later pass onto the shared `Dialog`                    |
+| 34  | `window.confirm` in `use-dirty-state-guard.ts` (twice) and `ward-tasks-drawer.tsx`                                                                          | needs a small PR                                       |
+| 35  | Shareable preview bundle dropped scoped styles                                                                                                              | fixed in the mock-up bundle script (mock-up only)      |
+| 36  | Movements works out legal-form countdowns, breaking "as typed": `movements/movements-stage-row.tsx:219,222`                                                 | needs a fix in the build (Movements build)             |
+| 37  | Movement drawer works out a legal countdown: `movements/movement-drawer.tsx:269`                                                                            | needs a fix in the build (Movements build)             |
+| 38  | Placement panel works out legal countdowns: `coordinator/shortlist-panel.tsx:244–245`                                                                       | needs a fix in the build (Home build)                  |
+| 39  | Priority queue shows a countdown from `ward-priority.ts:155–156` in `coordinator/priority-queue.tsx:410`                                                    | needs a fix in the build (Home build)                  |
+| 40  | Waiting works out legal countdowns: `delays/delays-board-rows.tsx:45,100,193`; `delays/delays-board-panels.tsx:175–183`                                     | needs a fix in the build (Waiting build)               |
+| 41  | ED works out legal countdowns: `ed/ed-screen-model.ts:633–634`, `ed-screen-person-sheet.tsx:186`, `ed-screen-derivations.ts:400`, `ed-screen-lists.tsx:458` | needs a fix in the build (ED board build)              |
+| 42  | Patients works out a legal countdown it never shows: `search/patient-search.tsx:435`                                                                        | needs a fix in the build (Patients build)              |
+| 43  | `tests/ward-legal-figure-guard*.test.ts` pins "passed its deadline", so it guards the computed wording                                                      | needs a fix in the build (with rows 36 to 42)          |
+| 44  | Shared Hero (`src/components/wf/hero.module.css`) prints as a dark band with the title squeezed                                                             | needs a fix in the build (kit standard PR)             |
+| 45  | Movement row route reads "FSH EDto …" (missing space)                                                                                                       | needs a fix in the build (Movements build)             |
+| 46  | Arrived row's closure note runs over the Waited column                                                                                                      | needs a fix in the build (Movements build)             |
+| 47  | `tests/ward-tour-steps.test.ts` expects the tour sentence round 3 removed ("This takes about…")                                                             | needs a fix in the build (Help and tour build)         |
+| 48  | Alt+N (jump to newest notice) is missing from the real shortcut list                                                                                        | needs a fix in the build (#1124 A or Help build)       |
+| 49  | Admin phone "Give for 90 days" buttons are tall (`as-admin-home`)                                                                                           | needs a fix in the build (Settings Access build)       |
+| 50  | Search's "Did you mean?" similar-names group is a typo match on people                                                                                      | Josh to confirm dropping it; then the search build     |
 
 ## 7. Checks not yet run anywhere
 
-| Check                                                                          | Where it is missing                                                        |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
-| Full `npm run verify:pr-local -- --base origin/main`                           | #1118, #1119, #1124 (lint and typecheck per file only), #1123 (unfinished) |
-| Playwright suites (`npm run test:e2e:ward-journeys`, `ui-ward-search.spec.ts`) | #1118, #1123, #1124 (#1119 ran its two Help specs only)                    |
-| `npm run build` and the phone script budget                                    | all four PRs                                                               |
-| Hosted CI on the current head                                                  | all PRs; read only with Josh's yes                                         |
-| Full history checks (`check:dead-code-candidate`, `check:stale-docs`)          | blocked on a shallow clone; deepening needs Josh's yes                     |
-| A real screen reader (VoiceOver, NVDA)                                         | nowhere; #1124's read-once and inert cards need it most                    |
-| Colour contrast on every page, light and dark                                  | nowhere as a full pass                                                     |
-| Physical iPhone, Safari and installed app                                      | nowhere                                                                    |
-| #1124's folded stack in a real browser                                         | DOM tests only                                                             |
+| Check                                                                          | Where it is missing                                                         |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| Full `npm run verify:pr-local -- --base origin/main`                           | #1118, #1119, #1124 (lint and typecheck per file only), #1123 (unfinished)  |
+| Playwright suites (`npm run test:e2e:ward-journeys`, `ui-ward-search.spec.ts`) | #1118, #1123, #1124 (#1119 ran its two Help specs only)                     |
+| `npm run build` and the phone script budget                                    | all four PRs                                                                |
+| Hosted CI on the current head                                                  | all PRs; read only with Josh's yes                                          |
+| Full history checks (`check:dead-code-candidate`, `check:stale-docs`)          | blocked on a shallow clone; deepening needs Josh's yes                      |
+| A real screen-reader pass (VoiceOver or NVDA)                                  | nowhere; needs a person on a device; #1124's read-once and inert cards most |
+| Colour contrast on every page, light and dark                                  | nowhere as a full pass (the new frame passed, see below)                    |
+| Physical iPhone, Safari and installed app                                      | nowhere                                                                     |
+| #1124's folded stack in a real browser                                         | DOM tests only                                                              |
+
+**Run on 31 October (new frame only, by the sidebar and header chat):** laptop 1280 and 1440, tablet landscape and
+portrait, phone 390 and 360, keyboard, and colour contrast to WCAG AA in light and dark. These cover `shell-next`, not
+every page, and they are mock-up checks, not real-app checks.
 
 Local checks do not prove hosted CI, and Chromium does not prove Safari. A skipped or deferred check is never a pass.

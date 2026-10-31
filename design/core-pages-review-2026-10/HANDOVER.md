@@ -1,6 +1,6 @@
 # Redesign mock-ups: handover and plan
 
-_Updated 2026-10-31 - review round, phone round and the new sidebar and header merged; the Home and Activity chat has handed everything back to this branch's chat; waiting on Josh's review; Design owns._
+_Updated 2026-10-31 (evening) - round 3 done: the new frame is the default, Settings round 3 is in, Help, search and notices are mocked up; every other chat has handed back to this branch; waiting on Josh's review; Design owns._
 
 **Status: mock-ups for Josh's review. No real screen has changed (D-74).** Everything below lives on
 branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown in draft pull request #1118
@@ -18,10 +18,12 @@ branch `claude/core-pages-design-review-f5vf4g` of `BigSimmo/Ward-Flow`, shown i
 3. Recreate the sign-out claim file the commit hook needs (one line naming the paths under "Checks before
    each commit" below, with `repo=BigSimmo/Ward-Flow`), and pass it as `WARD_SIGNOUT_FILE` on each commit.
 4. Run `npm run ensure` and open `/mockups/ward-flow-redesign` at the printed address.
-5. Everything in "Remaining plan", "Round 2" and "Review round and phone round (30-31 October)" is done.
-   Next: Josh's two open decisions and his page-by-page review (see "Open now" in that section), then
-   refresh the private preview the way that section describes.
-6. One chat owns every folder again (see "Who owns what"); a new helper or chat should agree a split first.
+5. Everything in "Remaining plan", "Round 2", "Review round and phone round (30-31 October)" and
+   "Round 3 (31 October)" is done. Next: Josh's page-by-page review (see "Open now" in the round 3
+   section), then refresh the private preview the way "Review round and phone round" describes.
+6. This branch's chat owns every folder (see "Who owns what"); a new helper or chat should agree a split first.
+7. For the real-app build (Phases 2 to 4, the bug list and the checks still to run), read
+   [BUILD-PLAN.md](BUILD-PLAN.md). Its section 2 is the prompt for the project chat that coordinates the build.
 
 Josh's standing go-ahead: push to this branch only (draft PR #1118, not to be merged or marked ready), no change to the real `/ward-flow`
 screens (D-74), and apply every recommendation without waiting for answers.
@@ -289,6 +291,7 @@ Placement, `shell/`, the deep-review fixes and the whole-site sweeps, then the f
 On 31 October it handed **everything back to this branch's chat**: every folder, `_preview/*`,
 `parts/*`, `shell/`, `shell-next/`, the preview artifact and PR #1118. `claude/home-activity-mockup` and
 `claude/shell-next-mockup` are fully merged here (both at or behind this branch); do not push to them.
+The sidebar and header chat has also closed and handed back, so this branch owns everything.
 
 ### Lessons from round 2
 
@@ -343,7 +346,7 @@ All approved by Josh; each page's build notes carry "Review round" and "Phone (J
   expected releases; no access forecast card on the ED desk; one caseload figure on the community pages
   (the phone's last tab is Caseload, opening on the whole caseload).
 - **New sidebar and header** (`shell-next/`, from the sidebar and header chat): drawn with `?shell=next`
-  or the viewer's "Sidebar and header: Today's frame / New frame" switch (default Today's). Josh's eight
+  or the viewer's "Sidebar and header: Today's frame / New frame" switch (default New frame since round 3). Josh's eight
   31 October changes are in (page name first, no "?", the shift card names the person, Activity keeps
   its own button beside the Alerts bell, the bell and "Alerts" on every desk, the capacity card in the
   phone and tablet Menu, no shift card on the executive and admin desks, and a phone dock per desk), so
@@ -363,12 +366,8 @@ https://claude.ai/artifact/BL86wBgPv41hzMG2QWMwB3 with `files` for frame.html, g
 preview.js and the two fonts only. The 152 Today pictures (`today/<slug>-<width>.jpg`) are already there
 and are kept when left out of the files map. Version 7 is the latest (31 October).
 
-**Open now (for Josh):**
-
-1. Count first on the phone chips of Waiting and Patients ("41 Waiting on you"), as Referrals and Home do.
-   Recommended yes; not built.
-2. Which sidebar and header becomes the default once he has compared them. Recommended the new frame.
-3. His page-by-page review of the preview, then which pages to build into the real app (start with Home).
+**Open then, settled by D-91 and round 3:** count-first phone chips (built) and the new frame as default
+(done). Josh's page-by-page review moved to "Open now" in the round 3 section.
 
 **Small leftovers (known, recorded in build notes):** the Empty state's rail and bell keep live counts by
 design (only the page reads the quiet world); a white strip in the phone tour spotlight; Statistics'
@@ -376,6 +375,44 @@ design (only the page reads the quiet world); a white strip in the phone tour sp
 
 **Not run yet:** the full verify gates and Playwright suites, and hosted CI on PR #1118. Run both before
 the PR is ever marked ready (only with Josh's yes).
+
+## Round 3 (31 October)
+
+Built from D-91 (Josh's answers to the alignment review below: "Yes to all your recommendations"). Each
+page's build notes carry "Round 3" lines. Mock-ups only; no real screen changed.
+
+- **Frame:** the new sidebar and header (`shell-next/`) is the default frame, with the switch back to
+  today's. Josh's changes are in (see the `shell-next` build notes): "Search Ward Flow", the bell with
+  icon and count, Activity as its own button, a phone dock per desk. Each desk's home reads "My ward",
+  "My ED", "My team" or "My jobs". Role views no longer fall back to the coordinator's desk.
+- **Settings round 3** merged from #1122 and polished (kit-size phone switches, honest wording, no
+  duplicate "Go to a desk" in the new frame).
+- **Help:** opens on How do I…, this screen's tasks first, a quiet Show me on each row, one tab row that
+  slides on a phone. The tour and Shortcuts are restyled as #1119; Shortcuts adds Alt+N (jump to the
+  newest notice). Closing the tour shows the What's new corner card.
+- **Search:** rebuilt on #1123: a full-height phone sheet, matched words marked, Help, contacts and
+  suburbs, and no "Did you mean?" names. New shared parts: `parts/search-field.tsx`, `parts/time-presets.tsx`.
+- **Notices** (from #1124): `notices/` folder; the stack sits 24px above the dock; missed notices show in
+  Activity's Recent activity and clear on lock or desk switch.
+- **Smaller changes:** count-first phone chips on Waiting and Patients; a printed synthetic-data line on
+  the agenda; legal form times only as typed in Movements, the movement drawer and Placement (copies of
+  the real parts); polish fixes from three whole-site checks.
+- **Found for the real app:** the live app works out legal-form countdowns in about a dozen places, and
+  other small bugs. All are in BUILD-PLAN.md section 6 (rows 36 to 50).
+
+**Who owns what:** this branch owns everything. The Home and Activity chat and the sidebar and header
+chat have closed and handed back.
+
+**Open now (for Josh):**
+
+1. His page-by-page review of the preview, then which pages to build into the real app. Recommended:
+   the shared frame and kit first, then Home (BUILD-PLAN.md section 5).
+2. Drop the real app's "Did you mean?" similar-names group in search. Recommended yes (a typo match on
+   people).
+3. Refresh the private preview after round 3 (with his yes).
+
+**Not run yet:** the full verify gates, Playwright, hosted CI on #1118, and a real screen-reader pass
+(needs a person on a device). See BUILD-PLAN.md section 7.
 
 ## Alignment review of the other design pull requests (31 October)
 
@@ -409,7 +446,7 @@ at cb4d8c79c and `claude/shell-next-mockup` at 629fd7286:
   vanish (CT-09). Recent is not cleared on idle lock, and a second "Recent" clashes with Activity's
   "Recent activity". The toast is not lifted above the dock.
 
-**Recommended approach:** all visual design lives in this viewer. The real-app PRs carry only behaviour
+**Recommended approach (approved as D-91):** all visual design lives in this viewer. The real-app PRs carry only behaviour
 and accessibility until Josh approves a page. Merge order to main: #1119, then #1124's behaviour part
 (with re-exports kept for the forks), then #1123 (rebased on `ward-help-href.ts`). Then merge main into
 this branch once, refresh the stale forks, and republish.
@@ -442,6 +479,7 @@ Settings round 3 was built on branch `claude/settings-mockup-improvements-9j8gcz
 branch at 9da375a1): tabs by job, live rule impact, review before saving, an honest restore, an alerts
 check, two new browser settings (Open Ward Flow on, Text size) and one component for every role. See
 [SETTINGS-ROUND-3.md](SETTINGS-ROUND-3.md). It edits only Settings folders and their preview entries.
+Merged into this branch and polished on 31 October (534584d60, 14dcaef34).
 
 ## Things found while building (for the real app)
 
