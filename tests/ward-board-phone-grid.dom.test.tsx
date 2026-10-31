@@ -83,6 +83,9 @@ describe("phone bed grid", () => {
   it("opens a person's bed tall and an empty bed's two lines at their own height (WARD-16)", () => {
     stubPhone(true);
     renderBoard();
+    // Redesign (Josh, 30 Oct 2026): a phone opens on the first 8 beds; Show more draws the rest.
+    expect(within(screen.getByTestId("ward-board-beds")).getAllByRole("button")).toHaveLength(8);
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more beds?$/u }));
     const heights = new Set<string | null>();
     for (const tile of within(screen.getByTestId("ward-board-beds")).getAllByRole("button")) {
       fireEvent.click(tile);

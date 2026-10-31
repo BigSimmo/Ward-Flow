@@ -1,0 +1,806 @@
+{
+  "capacity": {
+    "role": "The bed coordinator's network view: how many beds are ready, whether they fit the people waiting, what tomorrow looks like, and where each ward stands.",
+    "issues": [
+      {
+        "devices": ["Desktop", "Laptop"],
+        "text": "**The bed forecast is squeezed into a 300 to 340 pixel side column** (Next 48 hours chart, four caveat paragraphs, levers, blockers, confirmations, Beds freeing, Ready now, road time, planned admissions). It runs about two screens long beside a main column that ends early, leaving a large blank gap."
+      },
+      {
+        "devices": ["Desktop", "Laptop"],
+        "text": "**The 7-day table is dense:** 8 wards by 7 days of italic \"2 out\" text, with long column headings such as \"Sat 31 (weekend, may move)\", and the total row reads \"All 21 wards\" when the page has 22."
+      },
+      {
+        "devices": ["All"],
+        "text": "**The same facts appear several times.** \"26 ready of 304\" is in the header, the Ready now card and the Statistics strip. Every ward is listed twice, in Bed map and State bedflow. \"Beds freeing\" repeats \"Due out today\"."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**Two measures sit side by side without saying so.** The 48-hour chart shows \"+26\" now (free beds) while the mismatch says \"23 short\" (beds against people waiting)."
+      },
+      {
+        "devices": ["Tablet"],
+        "text": "The tablet gets the phone layout stretched to 768 pixels: one long column of full-width rows."
+      },
+      {
+        "devices": ["Phone"],
+        "text": "The third header figure is cut off (\"Of beds in use, including 17…\"), and Bed forecast is only a link row."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Bed forecast becomes its own full-width panel** under the mismatch: Now, tomorrow and 48 hours on the left, a 7-day bar chart in the middle (firm days solid, later days hatched), and the two \"what would change tomorrow\" levers on the right."
+      },
+      {
+        "text": "**The ward-by-day table moves behind a \"By ward\" switch** as a shaded grid of numbers, so the default view answers \"how many beds free up each day\" at a glance."
+      },
+      {
+        "text": "**The four caveat paragraphs become one sentence** plus a \"How this is worked out\" link that opens the full text."
+      },
+      {
+        "text": "**One measure throughout**: beds short or spare, counting people already waiting."
+      },
+      {
+        "text": "**State bedflow, the Ready now card and Beds freeing are removed**, since Bed map, the header and Discharges already show them. Bed map gains State bedflow's folding service groups."
+      },
+      {
+        "text": "The side column keeps only three short panels: road time, shift confirmations and blockers. Planned admissions and Step down sit side by side below. The page is about half its old length."
+      },
+      {
+        "devices": ["Tablet", "Phone"],
+        "text": "Two columns of mismatch cards, and the forecast stacks. Phone keeps its own layout, with the forecast shown as three figures in place of a bare link."
+      }
+    ],
+    "keep": "The header gauge, the Bed meeting and TV actions (grouped into one Bed meeting menu), the bed kinds, the scenario button and the phone tabs."
+  },
+  "home": {
+    "role": "The bed coordinator's start page: who needs a person now, referrals to decide, and the state of every ED at a glance.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The right column is mostly empty.** The Placement panel says \"Choose a patient, alert or referral from the list\" until you click, and below it there is nothing for the length of the list."
+      },
+      {
+        "devices": ["Desktop", "Laptop"],
+        "text": "**Beds that fit truncates its labels** (\"Locked adult to…\", \"Youth tomorro…\"), across eight small boxes."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The \"Checking\" strip adds a full extra row to the header for two warnings."
+      },
+      {
+        "devices": ["Phone"],
+        "text": "The \"Registers\" link is clipped at the right edge beside the list tabs."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Placement opens on the first Act now item** (with its main action) so the right column is useful on arrival."
+      },
+      {
+        "text": "**Beds that fit becomes a small table**, bed kind by now and tomorrow, with nothing cut off."
+      },
+      {
+        "text": "The checking strip folds into one dashed header chip: \"2 checks: 1 stale bed count, 1 ward not reporting\"."
+      },
+      {
+        "devices": ["Phone"],
+        "text": "Long groups show the first few rows with \"Show more\". Registers and Alerts history move into a \"…\" menu."
+      }
+    ],
+    "keep": "Home v7's structure, the ED strip, the access-target notice, My list and Everyone waiting."
+  },
+  "waiting": {
+    "role": "Everyone waiting in or travelling from an ED, sorted by wait and by who is holding them up.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The header figures overlap**: \"8 more in transit\" sits on top of the 15 and Over 8h figure."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**All 70 rows show at once**, about 5,700 pixels long. Full ED names (\"Sir Charles Gairdner Hospital Emergency Department\") push each row to three lines."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The Daily check card takes a full panel for one sentence and a disabled button."
+      },
+      {
+        "devices": ["Phone"],
+        "text": "ED names are cut off (\"Armadale Hospita…\")."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Rows use ED codes** (ARM ED, SCGH ED), with the full name on hover, so each person fits on one or two lines."
+      },
+      {
+        "text": "**Grouped by wait**: Over 24 hours (all shown), Over 8 hours (first four), Under 8 hours (collapsed)."
+      },
+      {
+        "text": "The four blocker boxes (Waiting on you, Wards, Transport, Other) act as the filter, and the selected one is marked."
+      },
+      {
+        "text": "Daily check becomes a one-line notice with Show list. Legal forms show only the recorded due time (\"due 11:42 as recorded\")."
+      }
+    ],
+    "keep": "The By blocker and Longest wait views, the quick filters, and the Escalations and Longest quiet panels."
+  },
+  "referrals": {
+    "role": "Referrals waiting for the coordinator's decision, with the decision pane beside the queue.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Patient details are cut off** in the queue (\"Adult, not a wa…\")."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**Offered to wards is a list of loose lines** with large gaps and no times or status."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The waiting chart in the header is small and hard to read at a glance."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Queue rows wrap instead of cutting off."
+      },
+      {
+        "text": "**Offered to wards becomes a table**: patient, ward offered to, waiting time and status."
+      },
+      {
+        "text": "The waiting chart is a cleaner timeline, with 1h, 4h and 24h decision due times marked and overdue in red, beside the beds ready for your desk."
+      },
+      {
+        "text": "The decision pane stays in view while you scroll. Written history moves behind a link."
+      }
+    ],
+    "keep": "Queue and History, the keyboard shortcuts, the decline-reason rule and Accept presentation."
+  },
+  "ward": {
+    "role": "The nurse in charge's ward page: every bed, who is coming and going, and this shift's tasks.",
+    "issues": [
+      {
+        "devices": ["Desktop", "Laptop"],
+        "text": "**Patient names on bed tiles are cut off** (\"Gareth Ferro…\", \"Teodor Bank…\"), even though names are shown in full on every screen (D-83)."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**The ward name appears three times** (top bar, eyebrow and large heading), and a long run-on line of ward facts sits under it."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**Eight actions in one toolbar** (Notices, Shift brief, On TV, Handover, Raise referral, Referral form…)."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Ward flow opens on an empty Referrals tab (\"No referral is currently awaiting…\") and leaves a tall blank panel."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Bed tiles show full names** on two lines, five to a row, with the stay length aligned on every tile."
+      },
+      {
+        "text": "The heading states the ward's position (\"1 bed ready, 16 occupied\"), and the ward facts move into the eyebrow."
+      },
+      {
+        "text": "**Three visible actions plus More**. The page tabs (Ward home, Decisions, Stays and discharges) sit in the header."
+      },
+      {
+        "text": "Ward flow opens on the busiest tab (Admissions here), with the empty state as one line."
+      }
+    ],
+    "keep": "Every bed, the filters, Place or move, This shift's three columns, and Confirm numbers."
+  },
+  "ed-board": {
+    "role": "One emergency department's psychiatry board: who is in the department, their review, form and referral.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The same nine people are listed twice**: in the main table and again in the \"Lists, Awaiting review\" section below it, with names written the other way round (\"Noor Tremalow\")."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Form descriptions are cut off (\"Referral for examination…\")."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The links to Statewide capacity and the 24-hour audit sit as full-width rows in the middle of the page."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**One table**. The Lists tabs (Review, Med clear, Expects, Forms, Referred) become filter chips on it."
+      },
+      {
+        "text": "The Form column shows the form number. Its description and recorded due time are in the person's record."
+      },
+      {
+        "text": "The two links move to the table footer."
+      }
+    ],
+    "keep": "The ED peer strip, the access-target notice, the Record exam and Log transport actions, and On TV."
+  },
+  "wards": {
+    "role": "Every ward's beds at a glance, filterable by service, status and cohort.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Three rows of filter controls** (service, status, cohort, order, legend, count) before the first ward."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Hospital names on cards are cut off (\"Sir Charles Gairdner · Older…\")."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**One filter row**: service tabs, a single Status and Cohort menu, order and search. The legend moves above the cards."
+      },
+      {
+        "text": "Card text wraps. The stale-count warning is written on the card itself."
+      }
+    ],
+    "keep": "The cards, Occupancy by service and Counts to check."
+  },
+  "statistics": {
+    "role": "Network figures for reporting and planning: occupancy by service, where beds are, referrals and pressure.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**\"Open a unit\" repeats the menu**: a whole panel listing wards to open."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**Three large view cards** (Bed board, Journey, Map) take a full row before any figures."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The hospital chart lists all 14 hospitals in a tall column next to short side panels."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Open a unit becomes a search button beside the statistics tabs."
+      },
+      {
+        "text": "Bed board, Journey and Map become a switch on the first panel."
+      },
+      {
+        "text": "**Summary first**: occupancy by service across the top, then the hospital chart (first 7 with Show all) beside Referrals today and Empty to ready, then Admission stages and Where the pressure is side by side."
+      }
+    ],
+    "keep": "The Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line and Export."
+  },
+  "legal-forms": {
+    "role": "Every Mental Health Act form on an open move, with its typed due time, for the coordinator to keep track of.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Long form titles wrap onto two or three lines** (\"Order authorising reception and detention in an authorised hospital for further examination\")."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**All 27 \"No time written\" rows show at once**, each with Add the time, about 2,300 pixels in total."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "\"Copy for handover\" and \"Record and tell 67\" look like figures in the header row."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "The form number stays in its tag and the name is shortened (\"Referral for examination\"). The full title is in the record."
+      },
+      {
+        "text": "Groups show their first rows with \"Show more\"."
+      },
+      {
+        "text": "The header separates figures (chips) from actions (buttons)."
+      },
+      {
+        "text": "**Times show only as typed** (\"11:42 · 58m\", \"typed due time\"), and nothing is worked out from them (D5, D-70)."
+      }
+    ],
+    "keep": "The \"Not legally checked\" notice stays word for word, as D-77 requires until you decide on it. Clocks, Checklist and History are kept."
+  },
+  "seclusion": {
+    "role": "An operational view of seclusion rooms, restraint in use and recent incidents, by ward.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**A narrow 850-pixel column** in the middle of a wide screen."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**It shows one ward at a time**, picked from a dropdown, so you cannot see which secure ward has a room in use."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "\"In use now: 0\" sits above the ward picker and does not say which ward it means."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**A table of every secure ward's room status** (available, in use, out of service, not recorded)."
+      },
+      {
+        "text": "Choosing a ward opens its record-and-incident form beside the table."
+      },
+      {
+        "text": "The header counts rooms in use, available, out of service and not recorded."
+      }
+    ],
+    "keep": "The operational-only notice, word for word. Nothing works out an order length or a legal limit."
+  },
+  "governance": {
+    "role": "Overrides, refused actions and record access from this session, for a governance lead to review.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The review pane says \"Choose an event\" until you click**, so half the page is empty on arrival."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The Review column is cut off at the right edge (\"Unre…\"), and the What column cuts off (\"Open discharge re…\")."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The table ends a third of the way down, with blank space below."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**The pane opens on the newest event**, with its details, a note and Mark reviewed / Needs follow-up."
+      },
+      {
+        "text": "The columns fit, and the outcome shows with a tick, cross or circle."
+      },
+      {
+        "text": "Review, Gaps by site, Audit trail, Registers and Reports move into the header as tabs."
+      }
+    ],
+    "keep": "The review count, PIR chronology, and \"Safety incidents are not recorded here\"."
+  },
+  "bed-meeting-tv": {
+    "role": "The read-only wall screen for the bed meeting: the five figures that matter and the tables behind them.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The \"Beds ready now\" tile holds four lines of small text**, which the room cannot read."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Longest ED waits writes names first name first and as red links."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The Brief panel is a block of small text, with a large gap under the service table."
+      },
+      {
+        "devices": ["Phone"],
+        "text": "Phone shows \"needs a larger screen\" (correct and kept)."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Each tile is one big figure and one short line.** Act now and Watch tags stay."
+      },
+      {
+        "text": "Three equal tables (By health service, Beds that fit, Longest ED waits), with surname first."
+      },
+      {
+        "text": "The Brief is four short lines in larger type."
+      }
+    ],
+    "keep": "Change screen, Full screen, Lock as TV and Leave TV view; the read-only footer."
+  },
+  "agenda": {
+    "role": "The list of people the bed meeting should discuss, with actions carried to the next meeting.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**A narrow 850-pixel column**, five lists stacked one under another, about 2,000 pixels long."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**About 20 identical \"Add action\" buttons**, one on every row."
+      },
+      {
+        "devices": ["All"],
+        "text": "Names are first name first (\"Verity Oakendell\")."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Two columns of four lists** that fit on one screen."
+      },
+      {
+        "text": "Each row has a small \"+ Action\" link, with urgency marks beside it."
+      },
+      {
+        "text": "The header counts each list, with Bed meeting sheet and Start meeting."
+      }
+    ],
+    "keep": "The four lists and Actions from earlier meetings."
+  },
+  "downtime": {
+    "role": "A frozen snapshot of beds, ED queue, pending moves and legal forms, to print if the system goes down.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**All four tables show in one 8,800-pixel page** on screen."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The section buttons look like tags, not tabs."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "On screen, **one section shows at a time**, with tabs and counts. The print copy still holds all four."
+      },
+      {
+        "text": "Service rows act as group headers, and ready counts are marked in green."
+      }
+    ],
+    "keep": "New snapshot, Print or save PDF, the freeze time and the save-location advice."
+  },
+  "chronology": {
+    "role": "A post-incident review timeline for one patient, built from recorded times only.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Empty until a patient is picked**, with two \"Choose a patient\" controls (a dropdown and a button) and a blank page."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**A large search box in the header**, and a \"Recently opened\" list so the common case is one click."
+      },
+      {
+        "text": "A short panel says what a chronology holds."
+      }
+    ],
+    "keep": "Recorded and typed times only; nothing is calculated."
+  },
+  "places": {
+    "role": "A directory of every ward, ED and community team, with beds ready and when each was last confirmed.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**All 96 places are listed at once**, about 2,700 pixels."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Bed counts wrap onto two lines (\"2 ready · 2 pulled · 3 closed of 24 beds\")."
+      },
+      {
+        "devices": ["All"],
+        "text": "It overlaps with Capacity's bed map and All wards. Not checked: whether you want all three kept."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Search first**, in the header. Services after the first two collapse, and EDs and teams collapse into one row each."
+      },
+      {
+        "text": "Beds show as a row of squares (one per bed) with the bed total underneath."
+      },
+      {
+        "text": "A stale count says so on its row."
+      }
+    ],
+    "keep": "All, Wards, EDs and Teams; Service and Most ready orders; stars; At a glance and Needs a check."
+  },
+  "community": {
+    "role": "The directory of community team names, which team covers a suburb, and names that read alike.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The heading \"64 names\"** does not say what the names are."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "**The A to Z list scrolls inside a fixed box**, leaving blank page below it."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The suburb lookup, the most common task, sits in the side column."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Heading: \"64 community teams\", with a short line on where the names come from."
+      },
+      {
+        "text": "**Suburb lookup moves to a full-width bar at the top**, with the \"two teams cover Barragup\" warning and buttons for each team."
+      },
+      {
+        "text": "The A to Z list uses the page scroll, with letter headings."
+      }
+    ],
+    "keep": "Names that read alike, Teams by service, Catchment guide and Raise referral."
+  },
+  "patient": {
+    "role": "One person's journey: where they are, what blocks the move, why they came, their legal status and who to call. Movement records open the same screen.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**\"Journey so far\" is an almost empty bar** labelled \"7h 3m\", with \"stage times not recorded\"."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The left column ends after two links, leaving a large gap beside the right column's four panels."
+      },
+      {
+        "devices": ["All"],
+        "text": "The Movement address opens the same screen titled \"Patient\", which is correct but not obvious."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Journey so far becomes a timeline of what was recorded** (opened, asked 3 wards, examination, escalation, declines), newest first."
+      },
+      {
+        "text": "The \"Cannot move yet\" blocker shows the three checks side by side with one action each."
+      },
+      {
+        "text": "Why, Legal now and Who to call sit in the right column."
+      }
+    ],
+    "keep": "The 7-step stepper, the tabs, Copy handover, and \"Every figure on this screen is invented\"."
+  },
+  "add-patient": {
+    "role": "Create a new synthetic patient record from identity alone, after checking for a duplicate.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**The duplicate check has its own panel** that holds only instructions until you type."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Both finish buttons are dashed when unavailable, so they read as placeholders."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "The duplicate check sits under the identity fields and runs as you type."
+      },
+      {
+        "text": "Buttons are greyed, not dashed, with \"Needed: UMRN, date of birth, given and family name\" beside them."
+      }
+    ],
+    "keep": "Identity only (D-77), optional gender and Aboriginal status, Recently added."
+  },
+  "ward-answer": {
+    "role": "The ward's page for answering bed requests and confirming its free beds.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "With nothing to answer, a full-width panel says so in one sentence."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The census grid shows bed numbers without saying which are ready or pulled."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "\"All answered\" becomes a one-line notice."
+      },
+      {
+        "text": "Census squares are coloured by state (ready, pulled, closed), with a legend."
+      },
+      {
+        "text": "Confirm your beds keeps its number control and Confirm button."
+      }
+    ],
+    "keep": "Recent answers, and \"writes to this ward only\"."
+  },
+  "sign-in": {
+    "role": "Pick a role, catchment and shift to preview the prototype. No account is created and there is no password field.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "No clear \"go\" button: the choice applies as you click, so nothing confirms it."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Role numbers 1 to 7 sit in boxes that look like buttons."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**An \"Open as Bed coordinator\" button** at the end of the choices."
+      },
+      {
+        "text": "The number boxes go. The actions count stays."
+      }
+    ],
+    "keep": "No input fields, the right-hand action list with ticks and crosses, and the synthetic notice."
+  },
+  "statistics-unit": {
+    "role": "One ward's statistics: bed map by length of stay, discharges, referrals and the admission roster. The ED, team and service pages share the frame.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Bed map tiles are large** and show only a day count, taking two rows for 18 beds."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "The right column ends early, leaving a large blank beside Length of stay."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Smaller tiles, nine to a row; long stays are shaded darker."
+      },
+      {
+        "text": "The right column holds Beds now, Discharge planning and Referrals into this ward, so both columns end together."
+      }
+    ],
+    "keep": "Change ward and the next and previous arrows, Export the figures, the roster with CSV."
+  },
+  "pop-alerts": {
+    "role": "The Alerts drawer: the alerts on every page, without leaving it.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Every row has a filled primary button** (six \"Chase transport\" in a row)."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "Names are first name first (\"Rhys Cadwaller\")."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Only the most urgent row gets a filled button.** Same-kind alerts group (\"Transport awaiting departure · 5\")."
+      },
+      {
+        "text": "Surname first."
+      }
+    ],
+    "keep": "Open Alerts, Acknowledge visible, and the All, Act now and Waiting filters."
+  },
+  "pop-activity": {
+    "role": "Activity: what has happened recently on the network.",
+    "issues": [
+      {
+        "devices": ["All"],
+        "text": "**Rows lead with the UMRN** (\"UM100023 escalated…\"), so you cannot see who it is."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Rows lead with the person's name**, then what happened."
+      },
+      {
+        "text": "A footer link goes to Alerts history."
+      }
+    ],
+    "keep": "Search and the category filters."
+  },
+  "pop-tools": {
+    "role": "Tools: quick tasks and look-ups from any page.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "Every row has a chevron or a drop-down arrow, with no difference in meaning."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "No search for a long list."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Three groups (Do now, Look up, Print and share), with a search box."
+      }
+    ],
+    "keep": "Change view and every tool."
+  },
+  "pop-search": {
+    "role": "Search across people, movements and referrals from the header.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "The panel is good. With no text typed, the right half holds only a New referral button."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Results on the left and a preview of the chosen person on the right, with Open patient and Open referral."
+      },
+      {
+        "text": "Keyboard hints in the footer."
+      }
+    ],
+    "keep": "The All, People, Movements and Referrals tabs and Full patient search."
+  },
+  "pop-help": {
+    "role": "Help for the current desk and screen. Drawn from open pull request #1109's version.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Before #1109 there were two search boxes** (\"Search Help\" and \"Ask a question\"). #1109 already merges them."
+      },
+      {
+        "devices": ["Desktop"],
+        "text": "A long questions list, every answer open."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "One search box that also takes questions. Answers fold open one at a time."
+      },
+      {
+        "text": "Take the tour and Keyboard shortcuts as buttons at the end."
+      }
+    ],
+    "keep": "Your desk, This screen, Glossary and What's new."
+  },
+  "pop-shortcuts": {
+    "role": "The keyboard shortcuts list.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "**Keys and descriptions alternate down one column**, so it is hard to scan."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "**Three columns** (Find, Open, Move around), each key beside its description."
+      }
+    ],
+    "keep": "Every shortcut."
+  },
+  "pop-demo": {
+    "role": "Demo controls: scenario, role and clock.",
+    "issues": [
+      {
+        "devices": ["Desktop"],
+        "text": "A tall panel with a long explanatory paragraph."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Two grids (Scenario, See it as), the clock on one row, and Save and Load in the footer."
+      }
+    ],
+    "keep": "All 7 scenarios and every role (D-77)."
+  },
+  "pop-menu": {
+    "role": "The phone menu sheet.",
+    "issues": [
+      {
+        "devices": ["Phone"],
+        "text": "Good. It carries the full nav list as well as the act-now shortcuts."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "Act now and overdue first, then the desk's own pages, then a \"More pages\" link."
+      }
+    ],
+    "keep": "Search and every page."
+  },
+  "pop-create": {
+    "role": "The phone Create sheet behind the + button.",
+    "issues": [
+      {
+        "devices": ["Phone"],
+        "text": "Good. Only the order of the three secondary actions could be clearer."
+      }
+    ],
+    "fixes": [
+      {
+        "text": "New referral as the main button, then Log a delay, Update a bed and Add a patient."
+      }
+    ],
+    "keep": "Everything."
+  }
+}

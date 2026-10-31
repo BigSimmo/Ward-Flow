@@ -2,7 +2,6 @@ import { assertStatisticsPresentation } from "./helpers/statistics-presentation"
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as every sibling dom suite: `ClinicalRail` renders next/link anchors, and jsdom
 // cannot provide an App Router context.
@@ -19,9 +18,9 @@ import { StatisticsEdScreen } from "@/components/ward-management/statistics/stat
 import { StatisticsOverviewScreen } from "@/components/ward-management/statistics/statistics-overview-screen";
 import {
   statisticsSectionById,
+  STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_UNIT_CHOOSER_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
-import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsWardScreen } from "@/components/ward-management/statistics/statistics-ward-screen";
 import { MODEL_CLAIMS } from "@/components/ward-management/statistics/statistics-claims-register";
@@ -343,26 +342,21 @@ describe("what the pages say about the model is true of the model", () => {
   );
 });
 
-describe("ward and ED comparisons — the chooser", () => {
-  it("links to every ward and every emergency department in the network", () => {
+describe("ward and ED comparisons — the way into one unit", () => {
+  /**
+   * D-91 (Josh, 31 Oct 2026): Compare's own chooser is gone. Its "Open a unit" on the tab row links
+   * to the one unit finder on the statistics home page, already open, by the same constant every
+   * other "choose a ward" link uses. The finder's own tests (every ward and ED, an unknown site, an
+   * empty network) live with the finder.
+   */
+  it("links Open a unit to the one unit finder rather than drawing a second chooser", () => {
     renderInProvider(<StatisticsCompareScreen />);
 
-    // Compared as whole lists rather than one membership check per unit: an equality on the full
-    // sequence fails on a ward that is missing, a ward that appears twice, and a link pointing at
-    // the wrong unit, where a per-unit `toContain` would pass through the first two.
-    const wardList = screen.getByTestId("ward-statistics-compare-ward-list");
-    const wardHrefs = Array.from(wardList.querySelectorAll("a")).map((link) => link.getAttribute("href"));
-    expect(wardHrefs).toEqual(allUnits().map((unit) => wardStatisticsHref(unit.id)));
-    for (const unit of allUnits()) {
-      expect(wardList.textContent).toContain(unit.name);
-    }
-
-    const edList = screen.getByTestId("ward-statistics-compare-ed-list");
-    const edHrefs = Array.from(edList.querySelectorAll("a")).map((link) => link.getAttribute("href"));
-    expect(edHrefs).toEqual(allEmergencyDepartments().map((department) => edStatisticsHref(department.id)));
-    for (const department of allEmergencyDepartments()) {
-      expect(edList.textContent).toContain(department.name);
-    }
+    const open = screen.getByTestId("ward-statistics-compare-tool-open-unit");
+    expect(open.getAttribute("href")).toBe(STATISTICS_UNIT_CHOOSER_HREF);
+    expect(open.getAttribute("href")).toBe("/ward-flow/statistics#choose-a-unit");
+    expect(document.getElementById(STATISTICS_UNIT_CHOOSER_ID)).toBeNull();
+    expect(screen.queryByTestId("ward-statistics-compare-chooser")).toBeNull();
   });
 
   /**
@@ -381,33 +375,10 @@ describe("ward and ED comparisons — the chooser", () => {
     assertStatisticsPresentation("compare", "ward-statistics-compare-order-note");
   });
 
-  /**
-   * The conservative failure `ward-index.tsx` holds to, checked here because this chooser is the
-   * ONLY link to a ward's statistics page: a unit silently dropped from it is unreachable AND
-   * unreported, which is strictly worse than a ward whose hospital cannot be named.
-   */
-  it("still lists a ward whose site code resolves to nothing, and says so", () => {
-    renderInProvider(
-      <StatisticsCompareScreen
-        units={[aUnit({ id: "unplaceable-ward", name: "Unplaceable Ward", siteCode: "NO-SUCH-SITE" })]}
-        emergencyDepartments={[]}
-      />,
-    );
-
-    const link = screen.getByRole("link", { name: /Unplaceable Ward/ });
-    expect(link.getAttribute("href")).toBe(wardStatisticsHref("unplaceable-ward"));
-    expectSays(link.textContent, "the unknown-site notice", ["no site", "matches no site"]);
-  });
-
-  it("says so rather than rendering an empty list when there is nothing to choose", () => {
+  it("says so in both charts rather than drawing empty cards when there is nothing to compare", () => {
     renderInProvider(<StatisticsCompareScreen units={[]} emergencyDepartments={[]} />);
 
-    expect(screen.getByTestId("ward-statistics-compare-no-wards").textContent).toContain("No ward is recorded");
-    expect(screen.getByTestId("ward-statistics-compare-no-eds").textContent).toContain(
-      "No emergency department is recorded",
-    );
-    expect(screen.queryByTestId("ward-statistics-compare-ward-list")).toBeNull();
-    // Polish items 13 and 14 (Josh approved, 26 Sept 2026): the two chart cards say so too, rather
+    // Polish items 13 and 14 (Josh approved, 26 Sept 2026): the two chart cards say so, rather
     // than an empty card under a heading.
     expect(screen.getByTestId("ward-statistics-compare-ward-chart-empty").textContent).toBe("No wards recorded.");
     expect(screen.getByTestId("ward-statistics-compare-ed-chart-empty").textContent).toBe(
@@ -455,12 +426,8 @@ describe("every link that offers the chooser lands on the chooser", () => {
     },
   );
 
-  it("puts the anchor those links point at on the comparisons page with reachable unit links", () => {
-    renderInProvider(<StatisticsCompareScreen />);
-
-    expect(document.getElementById(STATISTICS_UNIT_CHOOSER_ID)).not.toBeNull();
-    const chooser = document.getElementById(STATISTICS_UNIT_CHOOSER_ID)!;
-    expect(within(chooser).getAllByRole("link").length).toBeGreaterThan(0);
+  it("points those links at the one unit finder on the statistics home page (D-91)", () => {
+    expect(STATISTICS_UNIT_CHOOSER_HREF).toBe(`/ward-flow/statistics#${STATISTICS_UNIT_CHOOSER_ID}`);
   });
 });
 

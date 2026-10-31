@@ -108,7 +108,7 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
     expect(confirmedBanner).toHaveTextContent("3 discharges planned today");
   });
 
-  it("toggles the WardNotificationCenter when the Tasks & Buzzes action button is clicked", () => {
+  it("opens the WardNotificationCenter from the More menu's Notices item, and Close shuts it", () => {
     render(
       <WardFlowProvider initialNow={OVERDUE_NOW}>
         <SendBuzzHelper />
@@ -116,18 +116,19 @@ describe("WardScreen 09:30 Morning Rollup & Notification Center", () => {
       </WardFlowProvider>,
     );
 
-    const toggleBtn = screen.getByTestId("ward-notifications-toggle-btn");
-    expect(toggleBtn).toBeInTheDocument();
+    // Redesign (31 Oct 2026): on a desktop, Notices is an item in the More menu, not its own button.
+    expect(screen.queryByTestId("ward-notifications-toggle-btn")).not.toBeInTheDocument();
 
     // Notification center initially closed
     expect(screen.queryByTestId("ward-notification-center")).not.toBeInTheDocument();
 
-    // Click to open
-    fireEvent.click(toggleBtn);
+    // Open from More
+    fireEvent.click(screen.getByTestId("ward-tools-more"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Notices/ }));
     expect(screen.getByTestId("ward-notification-center")).toBeInTheDocument();
 
-    // Click again to close
-    fireEvent.click(toggleBtn);
+    // Close
+    fireEvent.click(screen.getByRole("button", { name: "Close notices" }));
     expect(screen.queryByTestId("ward-notification-center")).not.toBeInTheDocument();
   });
 });

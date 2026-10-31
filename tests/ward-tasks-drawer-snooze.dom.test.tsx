@@ -35,7 +35,7 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
       {...overrides}
     />,
   );
-  return { dispatch, drawer: screen.getByRole("complementary", { name: "Tasks" }) };
+  return { dispatch, drawer: screen.getByRole("complementary", { name: "Alerts" }) };
 }
 
 function openSnooze(drawer: HTMLElement, item: InboxItem) {
@@ -226,7 +226,7 @@ describe("tasks drawer: ownership and snooze", () => {
       dueAt: at,
     });
     renderDrawer({ items: [due("none"), due("late", NOW_ANCHOR + 90), due("soon", NOW_ANCHOR + 10)] });
-    const sort = screen.getByRole("combobox", { name: "Sort tasks" });
+    const sort = screen.getByRole("combobox", { name: "Sort alerts" });
     fireEvent.change(sort, { target: { value: "due-first" } });
     const titles = screen.getAllByText(/^Row (none|late|soon)$/).map((node) => node.textContent);
     expect(titles).toEqual(["Row soon", "Row late", "Row none"]);

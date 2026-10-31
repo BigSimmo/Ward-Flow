@@ -1,8 +1,8 @@
 /* Closing-the-loop (package E): alerts naming one record, shown as one item. */
 .item {
   margin: var(--wf-s-2) 0;
+  /* No side edges (Josh, 31 Oct 2026): one neutral border all round. */
   border: 1px solid var(--wf-line);
-  border-left: 3px solid var(--wf-ink-3);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
   list-style: none;

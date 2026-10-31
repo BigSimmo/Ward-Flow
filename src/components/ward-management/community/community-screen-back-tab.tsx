@@ -9,7 +9,7 @@
  */
 
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
-import { Field, Select } from "@/components/wf";
+import { Field, Select, StatusGlyph } from "@/components/wf";
 import { CommunityFollowUp } from "./community-follow-up";
 import styles from "./community.module.css";
 import { DEMO_COMMUNITY_EGRESS } from "./community-demo-cohort";
@@ -287,6 +287,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
              * departures rather than a follow-up completion measure.
              */}
             <p className={styles.absenceNotice} data-testid="ward-community-follow-up-not-recorded">
+              <StatusGlyph tone="warning" className={styles.noticeGlyph} />
               Follow-up arrangements and contact outcomes can be recorded for this team. An arrangement does not
               establish that contact occurred. All community departures shows recorded discharges into the community; an
               empty list does not establish that everybody is being followed up.
@@ -385,6 +386,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
              * So it renders only where the list could be built. Found by Ward Builder Three.
              */}
             <p className={styles.absenceNotice} data-testid="ward-community-other-departures">
+              <StatusGlyph tone="warning" className={styles.noticeGlyph} />
               {cannotResolve
                 ? "Whether any other admission referred to this team has ended cannot be told from the record either, for the same reason."
                 : lists.otherDepartures.length === 0

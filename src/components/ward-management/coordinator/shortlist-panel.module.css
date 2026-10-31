@@ -592,25 +592,6 @@
   height: 1rem;
 }
 
-/* Counts read as a summary line, each with its tone's glyph: dot eligible, amber ring review,
-   hollow ring unavailable. Not a filter: no eligible or review row is ever hidden. */
-.candidateCounts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.875rem;
-  margin: 0 0 0.125rem;
-}
-
-.candidateCounts > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
 .candidateLead {
   margin: -0.125rem 0 0.5rem;
   color: var(--wf-ink-3);
@@ -764,47 +745,9 @@
   grid-column: 1;
 }
 
-.candidateMeta {
-  display: flex;
-  gap: 0.75rem;
-  overflow: hidden;
-  color: var(--wf-ink-3);
-  white-space: nowrap;
-}
-
-.candidateMeta > * {
-  flex: none;
-  color: inherit;
-  font-size: var(--wf-fs-12);
-}
-
-.candidateMeta > :last-child {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.candidatesSection .candidateRow[data-showing="true"] .candidateMeta {
-  display: grid;
-  gap: 0.125rem;
-  white-space: normal;
-}
-
 .candidateReason {
   font-size: var(--wf-fs-12);
   font-weight: 500;
-}
-
-/* "Eligible now" repeats the state beside the name, so it is kept for assistive technology and
-   shown only on the ward whose detail is open. A reason for review is always on screen. */
-.candidatesSection .candidateRow[data-eligible="true"]:not([data-showing="true"]) .candidateReason {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 .candidatesSection .candidateRow[data-eligible="false"] .candidateReason {
@@ -838,9 +781,9 @@
   border-radius: var(--wf-r-pill);
 }
 
-/* Closed rows show only the drive time; the distance sentence stays for assistive technology
-   and opens with the ward's detail. */
-.candidatesSection .candidateRow:not([data-showing="true"]) .routeLong {
+/* Every ward card shows only the road time (Home redesign, 30 Oct 2026: a card is two lines); the
+   distance sentence stays for assistive technology. */
+.candidatesSection .candidateRow .routeLong {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -1345,10 +1288,9 @@
     font-family: var(--wf-mono);
   }
 
-  /* The FitHighlight groups lead (v10): the Candidates toggle and its count line leave. The
-     groups below still state every count, and the list stays open. */
-  .candidateHeaderToggle,
-  .candidateCounts {
+  /* The FitHighlight groups lead (v10): the Candidates toggle leaves. The groups below still
+     state every count, and the list stays open. */
+  .candidateHeaderToggle {
     display: none;
   }
 }
@@ -1368,71 +1310,142 @@
   background: var(--wf-surface-2);
 }
 
-.governanceSummaryBar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 0.5rem;
-  margin-top: 0.375rem;
-  padding-top: 0.375rem;
-  border-top: 0.0625rem solid var(--wf-line);
-}
+/* Home redesign (30 Oct 2026): the Placement panel's ward list, disclosures, list note and actions. */
 
-.checksClearPill {
+/* A ward card's right edge: its state word (only Referred) and the road time. */
+.cardRight {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: 0.375rem;
-  min-height: 2.75rem;
-  padding: 0.25rem 0.625rem;
-  border: 0.0625rem solid var(--wf-line);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-12);
-  cursor: pointer;
-}
-
-.checksClearPill[data-tone="good"] {
-  border-color: var(--wf-success);
-  background: var(--wf-surface-2);
-  color: var(--wf-success-ink);
-}
-
-.checksClearPill[data-tone="warn"] {
-  border-color: var(--wf-warning);
-  background: var(--wf-surface-2);
-  color: var(--wf-warning-ink);
-}
-
-.checksClearWarn {
-  font-weight: 600;
-}
-
-.gateFilterGroup {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.25rem;
-}
-
-.gateFilterBtn {
-  display: inline-flex;
-  align-items: center;
-  min-height: 2.75rem;
-  padding: 0.25rem 0.625rem;
-  border: 0.0625rem solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
+  gap: var(--wf-s-2);
   color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-  cursor: pointer;
+  font-size: var(--wf-fs-13);
 }
 
-.gateFilterBtn[aria-pressed="true"] {
-  border-color: var(--wf-accent);
-  background: var(--wf-accent-tint);
-  color: var(--wf-accent);
+/* "No destination recorded yet." while wards fit: a status, not a heading. */
+.quietLine.quietLine {
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
+  color: var(--wf-ink-2);
+}
+
+/* A no-bed ward's reason ("0 allocatable") reads with the bed line, not as a warning. */
+.quietReason.quietReason {
+  color: var(--wf-ink-2);
+  font-weight: 400;
+}
+
+/* The tier pill sits beside the name, as in the Waiting rows. */
+.tier.tier {
+  margin-inline-start: var(--wf-s-2);
+  vertical-align: 2px;
+}
+
+/* Both list disclosures (override reason, cannot take) read the same: a quiet full-width row,
+   words left, chevron right, at the kit's 40px. */
+.disclosure.disclosure.disclosure {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 40px;
+  padding: 0 var(--wf-s-1);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
   font-weight: 600;
+  text-align: left;
+}
+.disclosure.disclosure.disclosure::before {
+  content: none;
+}
+.chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  transition: transform 120ms ease;
+}
+.disclosure[aria-expanded="true"] .chevron {
+  transform: rotate(180deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* The road-time caveat and what Pulled means: one small note at the list foot. */
+.listNote {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: 16px;
+}
+.inlineLink.inlineLink {
+  display: inline;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-weight: 600;
+  line-height: inherit;
+  cursor: pointer;
+}
+.inlineLink:hover {
+  text-decoration: underline;
+}
+.inlineLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Desktop: Refer, Quick send and Override at the kit's standard button height. */
+@media (min-width: 48.0625rem) {
+  .actions.actions > :is(button, a) {
+    min-height: var(--wf-h-md);
+    height: var(--wf-h-md);
+  }
+}
+
+/* Phone (kit standard, Josh 31 Oct 2026: no 48px controls): the disclosures show at 40px and keep
+   the 48px tap floor with an invisible cover above and below. */
+@media (max-width: 48rem) {
+  .disclosure.disclosure.disclosure::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+/* With a ward chosen there are three actions: Refer leads on its own row, Quick send and Override
+   share the row under it, on every size, so nothing runs off a phone's edge or wraps unevenly. */
+.actions.actions {
+  width: 100%;
+}
+.actions.actions > [data-testid="ward-shortlist-refer"] {
+  flex: 1 1 auto;
+}
+.actions.actions:has([data-testid="ward-shortlist-quick-send"]) {
+  flex-wrap: wrap;
+}
+.actions.actions:has([data-testid="ward-shortlist-quick-send"]) > * {
+  flex: 1 1 0;
+}
+.actions.actions:has([data-testid="ward-shortlist-quick-send"]) > [data-testid="ward-shortlist-refer"] {
+  order: -1;
+  flex-basis: 100%;
+}
+
+/* Referral placement's Decide: the kit's primary button, taking the row's width. */
+.decide {
+  flex: 1 1 auto;
 }

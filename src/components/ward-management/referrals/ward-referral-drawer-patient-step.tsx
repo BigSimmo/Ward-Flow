@@ -8,7 +8,6 @@ import {
   COHORTS,
   HEALTH_SERVICES,
   HOME_REGIONS,
-  suburbUnknownLabels,
   type HomeRegion,
   type Cohort,
   type HealthService,
@@ -20,6 +19,7 @@ import {
   type NotOnSendingWardReason,
 } from "@/components/ward-management/ward-change-reasons";
 import styles from "./ward-referral-drawer.module.css";
+import { cx } from "@/components/wf";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
 import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
@@ -264,7 +264,10 @@ export function ReferralPatientStep({
                     autoCapitalize="characters"
                     spellCheck={false}
                     enterKeyHint="done"
-                    onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, umrn: value }))}
+                    // One word in capitals, as Add a patient writes it (31 Oct 2026).
+                    onChange={({ target: { value } }) =>
+                      setNewPatient((p) => ({ ...p, umrn: value.replace(/\s+/g, "").toUpperCase() }))
+                    }
                   />
                 </Field>
                 {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
@@ -492,8 +495,10 @@ export function ReferralPatientStep({
           ) : unidentified === null ? (
             <div className={styles.confirmRow}>
               {noPatientChosen ? (
+                // The search, New patient and Not yet identified already say how, so the
+                // line says only what is true.
                 <p className={`${styles.patientSub} ${styles.patientSubWrap}`} data-testid="ward-referral-no-patient">
-                  No patient chosen. Find them by name or UMRN, add a new patient, or choose Not yet identified.
+                  No patient chosen
                 </p>
               ) : null}
               <button
@@ -754,36 +759,42 @@ export function ReferralPatientStep({
           </span>
         </CardHead>
         <div className={styles.cardBody}>
-          <p className={styles.bodyMeta}>
-            {patientRecord?.address
-              ? `Recorded address ${patientRecord.address}`
-              : !addressUnknown
-                ? "Address not recorded"
-                : addressReplied
-                  ? "Address not available"
-                  : "Checking the recorded address"}
+          {/* One line says what is known. The old card said "not known" three ways
+              (address, suggestion box, suburb note) before the first field. */}
+          <p className={styles.catchmentStatus} data-testid="ward-referral-suburb-note">
+            <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
+            <span>
+              {patientRecord?.address
+                ? `Recorded address ${patientRecord.address}`
+                : !addressUnknown
+                  ? "No recorded address"
+                  : addressReplied
+                    ? "Address not available"
+                    : "Checking the recorded address"}
+              {" · "}
+              {suburbKnown ? `suburb ${catchmentSuburb} on the referral` : "suburb not on the referral"}
+            </span>
           </p>
-          {catchmentTeam ? (
+          {catchmentTeam && !catchmentEditing ? (
             <div className={styles.suggestion}>
               <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
               <span className={styles.suggestionText}>
                 <strong>{catchmentTeam}</strong>
-                {!catchmentConfirmed ? (
-                  <small>
-                    {catchmentSuburb &&
-                    catchmentRoutingDestinations(lookupCatchment(catchmentSuburb))?.[0] === catchmentTeam
-                      ? `Suggested from suburb ${catchmentSuburb}. Confirm catchment below.`
-                      : "Confirm catchment below."}
-                  </small>
-                ) : null}
+                <small>
+                  {catchmentConfirmed
+                    ? "Catchment confirmed"
+                    : catchmentSuburb
+                      ? `Suggested from suburb ${catchmentSuburb}, confirm before continuing`
+                      : "Confirm before continuing"}
+                </small>
               </span>
               <button
                 type="button"
                 className={styles.btn}
                 onClick={() => {
+                  // Move focus into the catchment fields opened by Change.
                   setCatchmentEditing(true);
                   setCatchmentConfirmed(false);
-                  // Move focus into the catchment fields opened by Change.
                   window.requestAnimationFrame(() => document.getElementById(`${sectionId}-suburb`)?.focus());
                 }}
               >
@@ -791,9 +802,6 @@ export function ReferralPatientStep({
               </button>
             </div>
           ) : null}
-          <p className={styles.bodyMeta} data-testid="ward-referral-suburb-note">
-            Suburb on the referral: <strong>{suburbKnown ? catchmentSuburb : suburbUnknownLabels.not_known}</strong>
-          </p>
           {(!catchmentTeam || catchmentEditing) && (
             <div className={styles.fieldGrid}>
               <Field label="Patient suburb" htmlFor={`${sectionId}-suburb`}>
@@ -803,6 +811,7 @@ export function ReferralPatientStep({
                   list={`${sectionId}-suburbs`}
                   autoComplete="off"
                   autoCorrect="off"
+                  placeholder="Type a suburb"
                   value={catchmentSuburb}
                   onChange={(e) => {
                     setCatchmentSuburb(e.target.value);
@@ -813,7 +822,7 @@ export function ReferralPatientStep({
                 />
               </Field>
               <Field
-                label="Search catchment"
+                label="Catchment team"
                 htmlFor={`${sectionId}-team`}
                 error={patientShowErrors && !catchmentTeam.trim() ? "Choose the catchment" : null}
               >
@@ -823,6 +832,7 @@ export function ReferralPatientStep({
                   list={`${sectionId}-teams`}
                   autoComplete="off"
                   autoCorrect="off"
+                  placeholder="Filled from the suburb, or search"
                   value={catchmentTeam}
                   maxLength={200}
                   onChange={(e) => {
@@ -895,67 +905,69 @@ export function ReferralPatientStep({
               </SelectBox>
             </Field>
           </div>
-          {destType !== "community" ? (
-            <label
-              className={styles.checkChip}
-              data-checked={catchmentNotKnown}
-              data-testid="ward-referral-catchment-not-known"
-            >
-              <input
-                type="checkbox"
-                checked={catchmentNotKnown}
-                onChange={(e) => {
-                  setCatchmentNotKnown(e.target.checked);
-                  setFlowError(null);
-                }}
-              />
-              Catchment not known
-            </label>
-          ) : null}
-          <div className={styles.confirmRow}>
-            {catchmentNotKnown ? (
-              <span className={styles.confirmedNote} data-testid="ward-referral-catchment-not-known-note">
-                <StatusGlyph tone="warning" size={10} />
-                Catchment not known. The referral letter says so.
-              </span>
-            ) : catchmentConfirmed ? (
-              <span className={styles.confirmedNote}>
-                <StatusGlyph tone="success" size={10} />
-                Catchment confirmed
-              </span>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  id={`${sectionId}-confirm-catchment`}
-                  className={`${styles.btn} ${styles.btnTint}`}
-                  aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
-                  // A button cannot carry aria-invalid; this marks it as the step's fault for the focus move.
-                  data-referral-invalid={patientShowErrors && catchmentTeam.trim() && homeRegion ? "" : undefined}
-                  aria-describedby={
-                    !catchmentTeam.trim() || !homeRegion
-                      ? `${sectionId}-catchment-why`
-                      : patientShowErrors
-                        ? `${sectionId}-catchment-error`
-                        : undefined
-                  }
-                  onClick={() => {
-                    if (!catchmentTeam.trim() || !homeRegion) return;
-                    setCatchmentConfirmed(true);
-                    setCatchmentEditing(false);
+          <div className={styles.catchmentFoot}>
+            {destType !== "community" ? (
+              <label
+                className={styles.checkChip}
+                data-checked={catchmentNotKnown}
+                data-testid="ward-referral-catchment-not-known"
+              >
+                <input
+                  type="checkbox"
+                  checked={catchmentNotKnown}
+                  onChange={(e) => {
+                    setCatchmentNotKnown(e.target.checked);
                     setFlowError(null);
                   }}
-                >
-                  <CheckCircle2 aria-hidden="true" />
-                  Confirm catchment
-                </button>
-                {!catchmentTeam.trim() || !homeRegion ? (
-                  <span className={styles.bodyMeta} id={`${sectionId}-catchment-why`}>
-                    {!catchmentTeam.trim() ? "Choose the catchment first" : "Choose the home region first"}
-                  </span>
-                ) : null}
-              </>
-            )}
+                />
+                Catchment not known
+              </label>
+            ) : null}
+            <div className={cx(styles.confirmRow, styles.confirmEnd)}>
+              {catchmentNotKnown ? (
+                <span className={styles.confirmedNote} data-testid="ward-referral-catchment-not-known-note">
+                  <StatusGlyph tone="warning" size={10} />
+                  Catchment not known. The referral letter says so.
+                </span>
+              ) : catchmentConfirmed ? (
+                <span className={styles.confirmedNote}>
+                  <StatusGlyph tone="success" size={10} />
+                  Catchment confirmed
+                </span>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    id={`${sectionId}-confirm-catchment`}
+                    className={`${styles.btn} ${styles.btnTint}`}
+                    aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
+                    // A button cannot carry aria-invalid; this marks it as the step's fault for the focus move.
+                    data-referral-invalid={patientShowErrors && catchmentTeam.trim() && homeRegion ? "" : undefined}
+                    aria-describedby={
+                      !catchmentTeam.trim() || !homeRegion
+                        ? `${sectionId}-catchment-why`
+                        : patientShowErrors
+                          ? `${sectionId}-catchment-error`
+                          : undefined
+                    }
+                    onClick={() => {
+                      if (!catchmentTeam.trim() || !homeRegion) return;
+                      setCatchmentConfirmed(true);
+                      setCatchmentEditing(false);
+                      setFlowError(null);
+                    }}
+                  >
+                    <CheckCircle2 aria-hidden="true" />
+                    Confirm catchment
+                  </button>
+                  {!catchmentTeam.trim() || !homeRegion ? (
+                    <span className={styles.bodyMeta} id={`${sectionId}-catchment-why`}>
+                      {!catchmentTeam.trim() ? "Choose the catchment first" : "Choose the home region first"}
+                    </span>
+                  ) : null}
+                </>
+              )}
+            </div>
           </div>
           {patientShowErrors && !catchmentConfirmed && !catchmentNotKnown ? (
             <p className={styles.fieldError} id={`${sectionId}-catchment-error`}>

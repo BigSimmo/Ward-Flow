@@ -205,7 +205,10 @@ describe("rail bed alerts (live figures)", () => {
     const trigger = screen.getByTestId("ward-rail-capacity-alerts-trigger");
     expect(trigger.textContent).not.toContain("96.4%");
     expect(expected.metroOccupancyPercent).not.toBeNull();
-    expect(trigger).toHaveTextContent(`Metro ${expected.metroOccupancyPercent}%`);
+    // The new sidebar's capacity card (Josh, 30 Oct 2026): one row per place, its name, meter and
+    // occupancy, read aloud as "Metro 85.9% full".
+    expect(trigger).toHaveTextContent(`Metro${expected.metroOccupancyPercent}%`);
+    expect(trigger.getAttribute("aria-label")).toContain(`Metro ${expected.metroOccupancyPercent}% full`);
   });
 });
 

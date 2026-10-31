@@ -69,7 +69,9 @@ describe("measured-zero derivations and WardBar callers remain guarded", () => {
       "the WardBar caller population changed; review every caller's empty-state handling before updating this contract",
       // v6 Movements (7 Oct 2026): Transport right now draws the wf StackBar, so Movements is no
       // longer a WardBar caller; its empty case is the "No transport leg is booked" line above it.
-    ).toEqual(["capacity-gap-rows.tsx"]);
+      // Capacity redesign (31 Oct 2026): the mismatch cards draw their own bars, so capacity-gap-rows
+      // was retired and no ward screen calls WardBar now. A new caller turns this red for review.
+    ).toEqual([]);
 
     /*
      * 🔴 **THE FIRST VERSION OF THIS SCAN WENT FROM A TRUE RED TO A FALSE GREEN, AND BOTH MISTAKES

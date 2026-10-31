@@ -1,0 +1,13 @@
+/* The Alerts screen's Forecast group (Alerts redesign, Josh, 31 Oct 2026): a short Settings link for
+ * the caption, and on a phone the row's action stacks under its text. */
+.captionLink {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+@media (max-width: 48rem) {
+  li.forecastRow {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+}

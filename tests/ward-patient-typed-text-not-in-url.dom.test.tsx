@@ -50,6 +50,9 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
+
 /** A name and a record-number-shaped fragment together, so either kind of leak the search box
  *  accepts would be caught by one query. Matches nobody and nothing near-spelt in the seed data
  *  (`wardPatients`), so every "nobody found" empty state this suite exercises actually renders. */
@@ -103,7 +106,7 @@ describe("Typed patient text never reaches a URL", () => {
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: TYPED_TEXT } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: TYPED_TEXT } });
 
     const headerAdd = screen.getByTestId("ward-patient-search-add");
     const emptyStateAdd = screen.getByTestId("ward-patient-search-people-empty-add");
@@ -138,7 +141,7 @@ describe("Typed patient text never reaches a URL", () => {
         <PatientSearchPage />
       </WardFlowProvider>,
     );
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: TYPED_TEXT } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: TYPED_TEXT } });
     fireEvent.click(screen.getByTestId("ward-patient-search-add"));
     search.unmount();
 
@@ -179,7 +182,7 @@ describe("Typed patient text never reaches a URL", () => {
           <PatientSearchPage />
         </WardFlowProvider>,
       );
-      fireEvent.change(screen.getByLabelText("Search"), { target: { value: TYPED_TEXT } });
+      fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: TYPED_TEXT } });
       fireEvent.click(screen.getByTestId("ward-patient-search-add"), { metaKey: true });
       expect(takeHandedOffPatientQuery()).toBeUndefined();
     });
@@ -190,7 +193,7 @@ describe("Typed patient text never reaches a URL", () => {
           <PatientSearchPage />
         </WardFlowProvider>,
       );
-      fireEvent.change(screen.getByLabelText("Search"), { target: { value: TYPED_TEXT } });
+      fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: TYPED_TEXT } });
       fireEvent.click(screen.getByTestId("ward-patient-search-people-empty-add"), { shiftKey: true });
       expect(takeHandedOffPatientQuery()).toBeUndefined();
     });

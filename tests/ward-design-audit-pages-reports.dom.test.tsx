@@ -20,14 +20,22 @@ const report = (children: ReactNode) => (
 );
 
 describe("design audit report entry states", () => {
-  it("takes the empty chronology action to the real patient selector and opens the chosen record", () => {
+  it("finds a patient from the header search and opens the chosen record (Josh, 31 Oct 2026)", () => {
     render(report(<PatientChronologyScreen />));
-    const select = screen.getByRole("combobox", { name: "Patient" });
-    fireEvent.click(screen.getByRole("button", { name: "Choose a patient" }));
-    expect(select).toHaveFocus();
-    fireEvent.change(select, { target: { value: "PT-013" } });
+    const search = screen.getByRole("combobox", { name: "Find a patient" });
+    fireEvent.focus(search);
+    fireEvent.change(search, { target: { value: "zzzz" } });
+    expect(screen.getByText("No patient with records matches")).toBeInTheDocument();
+    const first = screen.getAllByTestId("ward-chronology-start-patient")[0]!;
+    const umrn = first.children[1]?.textContent ?? "";
+    fireEvent.change(search, { target: { value: umrn } });
+    const option = screen.getAllByRole("option").find((item) => item.textContent?.includes(umrn));
+    expect(option).toBeDefined();
+    fireEvent.mouseDown(option!);
     expect(screen.getByTestId("ward-chronology-table")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "No patient chosen" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Patients on this demo night")).not.toBeInTheDocument();
+    // The typed text never stays in the box once a person is chosen.
+    expect(screen.getByRole("combobox", { name: "Find another patient" })).toHaveValue("");
   });
 
   it("labels the initial downtime snapshot without presenting unready tables as a saved pack", () => {

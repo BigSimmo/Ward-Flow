@@ -8,8 +8,6 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import { subscribeWardHelp, type HelpRequest, type HelpView } from "./ward-help-events";
 import { subscribeShortcutsKey } from "./ward-shortcuts-key";
 
-export { WardHelpScreenButton } from "./ward-help-screen-button";
-
 // The sheet, the tour and their content load only when first needed, so every page's first load
 // stays the same size.
 const WardHelpSheet = dynamic(() => import("./ward-help-sheet").then((m) => m.WardHelpSheet));
@@ -20,7 +18,7 @@ const WardShortcutsSheet = dynamic(() => import("./ward-shortcuts-sheet").then((
 const WardHelpHints = dynamic(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints));
 const WardWhatsNew = dynamic(() => import("./ward-whats-new").then((m) => m.WardWhatsNew));
 
-type Open = { view: HelpView; ask?: string } | { showMe: string };
+type Open = { view: HelpView; ask?: string; task?: string } | { showMe: string };
 
 /**
  * Mounted once by the header. Draws nothing until something calls `openWardHelp`, `askWardHelp` or
@@ -34,7 +32,7 @@ export function WardHelpHost() {
   useEffect(
     () =>
       subscribeWardHelp((request: HelpRequest) => {
-        if (request.kind === "view") setOpen({ view: request.view });
+        if (request.kind === "view") setOpen({ view: request.view, task: request.task });
         else if (request.kind === "ask") setOpen({ view: "screen", ask: request.question });
         else setOpen({ showMe: request.id });
       }),
@@ -47,13 +45,26 @@ export function WardHelpHost() {
   const startTour = useCallback(() => setOpen({ view: "tour" }), []);
   const setView = useCallback((view: HelpView) => setOpen({ view }), []);
   const close = useCallback(() => setOpen(null), []);
+  const shortcutsFromHelp = useCallback(() => {
+    setOpen(null);
+    setShortcuts(true);
+  }, []);
   if (open && "showMe" in open) {
-    return askOn ? <WardShowMe id={open.showMe} onClose={close} onBack={() => setOpen({ view: "screen" })} /> : null;
+    const id = open.showMe;
+    return askOn ? <WardShowMe id={id} onClose={close} onBack={() => setOpen({ view: "tasks", task: id })} /> : null;
   }
   if (open?.view === "tour") return <WardTour onClose={close} />;
   if (open)
     return (
-      <WardHelpSheet view={open.view} ask={askOn ? (open.ask ?? "") : undefined} onView={setView} onClose={close} />
+      <WardHelpSheet
+        view={open.view}
+        task={open.task}
+        ask={askOn ? (open.ask ?? "") : undefined}
+        showMeOn={askOn}
+        onView={setView}
+        onClose={close}
+        onShortcuts={shortcutsFromHelp}
+      />
     );
   if (shortcuts) return <WardShortcutsSheet onClose={closeShortcuts} />;
   return signedIn ? (

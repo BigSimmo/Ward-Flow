@@ -124,11 +124,11 @@ describe("the statistics section list", () => {
    * the guard would quietly stop applying to sections nobody decided to exempt. Naming the ids means
    * a sixth section that wants a hub-page chooser has to be added HERE, by somebody, on purpose.
    *
-   * Both exempt sections are choosers that live on the hub PAGE itself rather than on a sub-route,
-   * because in both cases the audience is already on that page: five health services, and the
-   * referral form's own list of community teams.
+   * The exempt sections are choosers that live on the hub PAGE itself rather than on a sub-route,
+   * because in each case the audience is already on that page: five health services, the referral
+   * form's own list of community teams, and (since D-91, Josh, 31 Oct 2026) the one unit finder.
    */
-  const CHOOSERS_ON_THE_HUB_PAGE = new Set(["service", "community"]);
+  const CHOOSERS_ON_THE_HUB_PAGE = new Set(["service", "community", "units"]);
 
   it("keeps every section that is not a hub-page chooser under a sub-path of the hub", () => {
     const subPathSections = STATISTICS_SECTIONS.filter((candidate) => !CHOOSERS_ON_THE_HUB_PAGE.has(candidate.id));
@@ -185,18 +185,18 @@ describe("the section hrefs resolve to routes that exist", () => {
 
   /**
    * The third section has no page of its own — per-unit detail is served by two dynamic routes, so
-   * it is reached by choosing a unit. Its href therefore points at the comparisons page's chooser
-   * anchor, and this check is what stops that arrangement being "tidied" into an href for a route
+   * it is reached by choosing a unit. Its href therefore points at the one unit finder's anchor on
+   * the statistics home page (D-91), and this check is what stops that arrangement being "tidied" into an href for a route
    * that does not exist.
    */
-  it("sends the per-unit section to the chooser on the comparisons page", () => {
+  it("sends the per-unit section to the one unit finder on the statistics home page", () => {
     const perUnit = statisticsSectionById("units");
-    // A literal, not `${STATISTICS_COMPARE_HREF}#${STATISTICS_UNIT_CHOOSER_ID}` — an expectation
+    // A literal, not `${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}` — an expectation
     // rebuilt from the same constants the source composes agrees with any value they produce.
-    expect(perUnit?.href).toBe("/ward-flow/statistics/compare#choose-a-unit");
+    expect(perUnit?.href).toBe("/ward-flow/statistics#choose-a-unit");
     expect(perUnit?.href).toBe(STATISTICS_UNIT_CHOOSER_HREF);
     expect(STATISTICS_UNIT_CHOOSER_ID).toBe("choose-a-unit");
-    expect(existsSync(routeFile(STATISTICS_COMPARE_HREF))).toBe(true);
+    expect(existsSync(routeFile(STATISTICS_HOME_HREF))).toBe(true);
   });
 });
 
@@ -476,11 +476,11 @@ describe("every statistics route path is written as a literal, where the scan ca
     expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/ward/${encodeURIComponent(unitId)}`");
     expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/ed/${encodeURIComponent(edId)}`");
     expect(FACADE_SOURCE).toContain("`/ward-flow/statistics/service/${encodeURIComponent(serviceId)}`");
-    expect(SECTIONS_SOURCE).toContain("`/ward-flow/statistics/compare#${STATISTICS_UNIT_CHOOSER_ID}`");
-    // The fourth section's own chooser fragment — deliberately built FROM `STATISTICS_HOME_HREF`,
-    // unlike the two dynamic-route builders above. Its whole point is to sit on the hub page
-    // itself, so composing it from that same constant is the correct form here, not the composition
+    // Both choosers' fragments (the unit finder's since D-91) are deliberately built FROM
+    // `STATISTICS_HOME_HREF`, unlike the dynamic-route builders above. Their whole point is to sit on
+    // the hub page itself, so composing from that same constant is the correct form here, not the composition
     // the two `not.toContain` checks below forbid for the routes that must be visible to the scan.
+    expect(SECTIONS_SOURCE).toContain("`${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}`");
     expect(SECTIONS_SOURCE).toContain("`${STATISTICS_HOME_HREF}#${STATISTICS_SERVICE_CHOOSER_ID}`");
 
     // And the composition that hid two of them may not come back.

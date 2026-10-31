@@ -332,6 +332,54 @@ describe("WardGlobalSearch", () => {
     expect(input).not.toHaveAttribute("aria-activedescendant");
   });
 
+  it.each([{ isComposing: true }, { keyCode: 229 }])("leaves input-method candidate keys alone (%j)", (composition) => {
+    const { onNavigate } = renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: personQuery } });
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    const selected = input.getAttribute("aria-activedescendant");
+    for (const key of ["Enter", "Escape", "ArrowDown", "ArrowUp"]) {
+      expect(fireEvent.keyDown(input, { key, ...composition })).toBe(true);
+      expect(input).toHaveAttribute("aria-activedescendant", selected);
+      expect(input).toHaveValue(personQuery);
+    }
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
+
+  it("keeps Home/End for editing until a row is selected and preserves modified text-selection keys", () => {
+    renderSearch();
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.change(input, { target: { value: "form" } });
+    for (const key of ["Home", "End"]) {
+      expect(fireEvent.keyDown(input, { key })).toBe(true);
+      expect(input).not.toHaveAttribute("aria-activedescendant");
+    }
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    const selected = input.getAttribute("aria-activedescendant");
+    expect(fireEvent.keyDown(input, { key: "End", shiftKey: true })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: "Home", ctrlKey: true })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: "ArrowDown", metaKey: true })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: "ArrowUp", altKey: true })).toBe(true);
+    expect(input).toHaveAttribute("aria-activedescendant", selected);
+    expect(fireEvent.keyDown(input, { key: "End" })).toBe(false);
+    expect(input).not.toHaveAttribute("aria-activedescendant", selected);
+    expect(fireEvent.keyDown(input, { key: "Home" })).toBe(false);
+    expect(input).toHaveAttribute("aria-activedescendant", selected);
+  });
+
+  it("requires a fresh selection when a different task replaces a row with the same destination", () => {
+    const task = buildActionInbox(wardMovements.filter(isOpen), NOW_ANCHOR, units)[0];
+    expect(task).toBeDefined();
+    const props = { movements: wardMovements, patients: wardPatients, units };
+    const { rerender } = render(<WardGlobalSearch {...props} tasks={[task]} />);
+    const input = screen.getByTestId("ward-global-search-input");
+    fireEvent.focus(input);
+    fireEvent.keyDown(input, { key: "ArrowDown" });
+    expect(input).toHaveAttribute("aria-activedescendant");
+    rerender(<WardGlobalSearch {...props} tasks={[{ ...task, id: `${task.id}-replacement` }]} />);
+    expect(input).not.toHaveAttribute("aria-activedescendant");
+  });
+
   it("keeps the popup open on stale deferred results but ignores Enter until the current query has rendered", () => {
     const { onNavigate } = renderSearch();
     const input = screen.getByTestId("ward-global-search-input");
@@ -344,6 +392,8 @@ describe("WardGlobalSearch", () => {
     expect(onNavigate).not.toHaveBeenCalled();
     // The popup must not unmount for the stale render: that was the per-keystroke flash on iPhone.
     expect(screen.getByTestId("ward-global-search-popup")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-global-search-popup")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("Updating search…");
     expect(input).not.toHaveAttribute("aria-activedescendant");
   });
 

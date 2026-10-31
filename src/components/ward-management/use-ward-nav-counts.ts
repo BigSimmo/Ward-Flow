@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { usePathname } from "next/navigation";
 
 import {
@@ -9,10 +10,13 @@ import {
   useWardNetwork,
 } from "@/components/ward-management/ward-flow-provider";
 import { WARD_SHELL_ROLE, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { useAccessShellRole } from "@/components/ward-management/shell/ward-access-store";
+import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { wardNavCounts, type WardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { unitInScope } from "@/components/ward-management/ward-role-access";
+import { totalReadyBedsNow } from "@/components/ward-management/ward-bed-states";
 
 /**
  * The sidebar's role and its counts, for whichever of the three shapes is asking.
@@ -39,6 +43,13 @@ import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
  * the id separately in the panel would be a second place for the two to disagree about which route
  * they are on. See `wardPlaceIdFor` in `ward-place.ts`: it is a bare id, `undefined` on any route
  * that does not name one, never a resolved or validated place.
+ *
+ * Capacity counts the desk's own place (Josh, 30 Oct 2026, the new sidebar and header): a desk held
+ * to a site, service or ward keeps every ward's beds in view (they hold no patient), so its Capacity
+ * counted the network's ready beds (26) for a site bed manager. The figure is the same rule
+ * (`totalReadyBedsNow`) over the desk's own wards only. People (journeys, referrals, waits) and bed
+ * releases are already narrowed by the workspace scope, so every other count is unchanged. The
+ * statewide coordinator, executive and access admin count the whole network, as before.
  */
 export function useWardNavCounts(): {
   role: WardChromeRole;
@@ -63,21 +74,34 @@ export function useWardNavCounts(): {
   const routeRole = wardChromeRole(pathname);
   // Role access plan: a non-coordinator desk's nav and Tasks follow its own role.
   const deskRole = useAccessShellRole(WARD_SHELL_ROLE);
+  const { scope } = useEffectiveWardAccess();
+  const placeUnits = useMemo(() => {
+    if (scope.kind !== "site" && scope.kind !== "service" && scope.kind !== "ward") return null;
+    const places = wardPlaceLookup(units);
+    return units.filter((unit) => unitInScope(scope, unit.id, places));
+  }, [scope, units]);
+  const counts = wardNavCounts({
+    movements,
+    units,
+    sites: network.sites,
+    referrals,
+    bedReleases,
+    leaveBeds,
+    admissions,
+    now,
+    thresholds,
+    service,
+  });
   return {
     role: deskRole === WARD_SHELL_ROLE ? routeRole : deskRole,
     shellRole: deskRole,
-    counts: wardNavCounts({
-      movements,
-      units,
-      sites: network.sites,
-      referrals,
-      bedReleases,
-      leaveBeds,
-      admissions,
-      now,
-      thresholds,
-      service,
-    }),
+    counts:
+      placeUnits && counts.capacity
+        ? {
+            ...counts,
+            capacity: { ...counts.capacity, value: totalReadyBedsNow(placeUnits, admissions ?? [], bedReleases) },
+          }
+        : counts,
     placeId: wardPlaceIdFor(pathname),
   };
 }

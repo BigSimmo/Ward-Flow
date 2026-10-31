@@ -50,6 +50,8 @@ it.each(["raw", "backup"])("loads a valid %s configuration into draft and applie
   expect(screen.getByRole("spinbutton", { name: "ED access target" })).toHaveAttribute("aria-valuenow", "720");
   expect(screen.getByTestId("import-saved-configuration").textContent).toBe(before);
   fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+  // Save opens a review first (Settings round 3); its Save change button saves.
+  fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
   expect(JSON.parse(screen.getByTestId("import-saved-configuration").textContent!)).toEqual(configuration);
 });
 

@@ -1,7 +1,10 @@
 "use client";
 
+// Capacity's Step down board. List names are surname first (D-83); the Review button keeps the
+// spoken order.
+
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
@@ -11,9 +14,9 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { WardPanel } from "@/components/ward-management/ward-panel";
+import { CapacityPanel } from "./capacity-panel";
 import { deriveStepDownBoard } from "@/components/ward-management/ward-step-down";
-import styles from "./step-down-board.module.css";
+import styles from "@/components/ward-management/capacity/step-down-board.module.css";
 
 /**
  * Top 25 item 8 and item 16: each step-down
@@ -22,7 +25,7 @@ import styles from "./step-down-board.module.css";
  * 10:13 PM AWST): no combined swap, each leg is referred on its own; a movement needing a gender
  * placement review is routed to Placement instead of being offered here.
  */
-export function StepDownBoard({ now }: { now: Instant }) {
+export function StepDownBoard({ now, titleSlot }: { now: Instant; titleSlot?: ReactNode }) {
   const { admissions, units, movements, patients, referrals, dispatch, configuration, setFocusMovementId } =
     useWardFlowSelect(
       "admissions",
@@ -61,7 +64,11 @@ export function StepDownBoard({ now }: { now: Instant }) {
   );
 
   return (
-    <WardPanel title="Step down board" count={`${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}>
+    <CapacityPanel
+      title="Step down board"
+      titleSlot={titleSlot}
+      count={titleSlot ? undefined : `${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}
+    >
       <div data-testid="capacity-step-down-board">
         {rows.length === 0 ? (
           <p className={styles.absent}>No patient is marked for step down.</p>
@@ -72,7 +79,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
               return (
                 <li key={row.admission.id} className={styles.row} data-testid="step-down-row">
                   <p className={styles.who}>
-                    {patientOf(row.admission).displayName} <span className={styles.meta}>on {row.fromUnit.name}</span>
+                    {patientOf(row.admission).formalName} <span className={styles.meta}>on {row.fromUnit.name}</span>
                   </p>
                   {row.transferMovement &&
                   row.transferMovement.referredUnitIds.length >= configuration.parallelReferralCap ? (
@@ -150,7 +157,7 @@ export function StepDownBoard({ now }: { now: Instant }) {
                               return (
                                 <li key={incoming.id} className={styles.ward} data-testid="step-down-swap-option">
                                   <span>
-                                    {patientOf(incoming).displayName} (
+                                    {patientOf(incoming).formalName} (
                                     {incoming.security === "Secure"
                                       ? "Secure"
                                       : incoming.highAcuity
@@ -239,6 +246,6 @@ export function StepDownBoard({ now }: { now: Instant }) {
           </ul>
         )}
       </div>
-    </WardPanel>
+    </CapacityPanel>
   );
 }

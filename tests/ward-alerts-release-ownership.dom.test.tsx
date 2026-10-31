@@ -18,8 +18,13 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
-/** P019 (Josh, 27 Oct 2026, 10:02 PM AWST): an alert you took can be handed back to the queue. */
+/**
+ * P019 (Josh, 27 Oct 2026, 10:02 PM AWST): an alert you took can be handed back to the queue. The
+ * Alerts redesign (Josh, 31 Oct 2026) names the button and its confirm Hand back, apart from the
+ * pulled bed's Release; the question and the "Released <alert>" toast are unchanged.
+ */
 function openAndTake() {
   const view = render(
     <ToastProvider>
@@ -28,6 +33,7 @@ function openAndTake() {
       </WardFlowProvider>
     </ToastProvider>,
   );
+  openAlertKindGroups(view.container);
   const row = [...view.container.querySelectorAll<HTMLElement>("li[data-alert-id]")].find((li) =>
     li.textContent?.includes("ED mental health team"),
   )!;
@@ -40,18 +46,18 @@ function openAndTake() {
 }
 
 const releaseButton = (panel: HTMLElement) =>
-  within(panel).getByRole("button", { name: (name) => name.startsWith("Release ") && !name.includes("pulled bed") });
+  within(panel).getByRole("button", { name: (name) => name.startsWith("Hand back ") });
 
 describe("alerts: release an alert you took (P019)", () => {
-  it("offers Release after Take, asks first, and records Released by", () => {
+  it("offers Hand back after Take, asks first, and records Released by", () => {
     const { panel, title } = openAndTake();
     expect(title.length).toBeGreaterThan(0);
     const release = releaseButton(panel);
-    expect(release).toHaveTextContent(/^Release$/);
+    expect(release).toHaveTextContent(/^Hand back$/);
 
     fireEvent.click(release);
     const dialog = screen.getByRole("dialog", { name: `Hand ${title} back to the queue?` });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Release" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hand back" }));
 
     expect(within(panel).getByRole("button", { name: /^Take / })).toBeInTheDocument();
     expect(screen.getByText(`Released ${title}`)).toBeInTheDocument();
@@ -62,7 +68,7 @@ describe("alerts: release an alert you took (P019)", () => {
     const { panel, title } = openAndTake();
     fireEvent.click(releaseButton(panel));
     const dialog = screen.getByRole("dialog", { name: `Hand ${title} back to the queue?` });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Release" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Hand back" }));
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: "Undo" }));
     });
@@ -107,8 +113,8 @@ function confirmSyntheticRelease(dispatch: WardCommandDispatch) {
       </WardFlowProvider>
     </ToastProvider>,
   );
-  fireEvent.click(screen.getByRole("button", { name: "Release Synthetic alert" }));
-  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Release" }));
+  fireEvent.click(screen.getByRole("button", { name: "Hand back Synthetic alert" }));
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Hand back" }));
 }
 
 describe("shared Release confirmation and Undo lifetime", () => {

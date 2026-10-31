@@ -420,11 +420,13 @@ describe("owner pins carried over from the retired full-page form", () => {
     expect(screen.getByRole("button", { name: "Send referral" })).toBeInTheDocument();
   });
 
-  it("says a blank suburb goes as Suburb not known, so no fixed address can still be referred", () => {
+  // New referral redesign (approved 31 Oct 2026): the catchment card's one status line says the
+  // suburb is not on the referral, rather than a separate "Suburb on the referral" line.
+  it("says a blank suburb is not on the referral, so no fixed address can still be referred", () => {
     renderDrawer({ initialPatientId: "PT-002" });
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "" } });
-    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Suburb not known");
+    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("suburb not on the referral");
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
     expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Perth");
   });

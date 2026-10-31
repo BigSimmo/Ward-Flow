@@ -1,4 +1,5 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
@@ -114,7 +115,8 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     openReferral("missing-operational-record");
     const dossier = screen.getByRole("dialog", { name: "Referral unavailable" });
     expect(dossier).toHaveTextContent("No patient or clinical information has been inferred");
-    expect(within(dossier).getByRole("button", { name: "Accept referral" })).toBeDisabled();
+    // The kit button keeps its tab stop and says why it is unavailable (aria-disabled, not disabled).
+    expect(within(dossier).getByRole("button", { name: "Accept referral" })).toHaveAttribute("aria-disabled", "true");
     expect(dossier).not.toHaveTextContent(/PT-4409|RF-8824|clear pathology/);
   });
 
@@ -161,14 +163,19 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" }));
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent(`accepted for ${TEAM_NAME} follow-up`);
     expect(screen.getByTestId("community-acceptance-result")).toHaveTextContent("No clinician assignment was recorded");
-    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" })).toBeDisabled();
+    expect(within(screen.getByRole("dialog")).getByRole("button", { name: "Accept referral" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("opens the actual triage record for Review and accurately describes row contacts", () => {
     start();
     fireEvent.click(screen.getByRole("button", { name: "Create referral" }));
     fireEvent.click(screen.getByRole("button", { name: "Log team contact" }));
-    expect(document.getElementById("actionToastMsg")).toHaveTextContent("does not record patient or referral contact");
+    expect(screen.getByTestId("community-action-toast")).toHaveTextContent(
+      "does not record patient or referral contact",
+    );
     fireEvent.click(screen.getByRole("button", { name: "Review" }));
     const referralId = screen.getByTestId("referral-id").textContent!;
     expect(screen.getByRole("dialog", { name: /^Referral triage: / })).toBeInTheDocument();

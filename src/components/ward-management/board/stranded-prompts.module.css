@@ -11,15 +11,24 @@
   padding: var(--ward-space-8) var(--ward-space-12);
 }
 
+/* Drawn 40px (kit standard, Josh 31 Oct 2026: "no 48px controls"); the invisible cover keeps the
+   48px tap floor. */
 .summary {
+  position: relative;
   display: flex;
   align-items: center;
-  min-height: var(--ward-tap, 3rem);
+  min-height: 40px;
   gap: var(--ward-space-8);
   cursor: pointer;
   color: var(--ink);
   font-size: var(--t-2);
   font-weight: 700;
+}
+
+.summary::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .count {

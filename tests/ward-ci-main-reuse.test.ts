@@ -4,7 +4,13 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { gateBatchArgs, gateBatchBlobPath } from "../scripts/check-ward-expected-reds.mjs";
-import { decideMainReuse, runEvidenceGap, workflowCounts } from "../scripts/ward-ci-public/main-reuse.mjs";
+import {
+  decideMainReuse,
+  runEvidenceGap,
+  TESTED_TREE_TITLE,
+  testedTreeFromAnnotations,
+  workflowCounts,
+} from "../scripts/ward-ci-public/main-reuse.mjs";
 
 const workflow = readFileSync(new URL("../.github/workflows/ward-flow.yml", import.meta.url), "utf8");
 const counts = workflowCounts(workflow);
@@ -104,6 +110,32 @@ describe("main-push reuse decision", () => {
       job.name === "Ward Flow coverage" ? passedJob(job.name, "Run unit suite with coverage thresholds") : job,
     );
     expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: legacy }] })).verified).toBe(true);
+  });
+
+  it("reuses a head that was behind main when its run tested exactly this tree", () => {
+    const behind = { headTree: "e".repeat(40), compare: { status: "diverged", behind_by: 2 } };
+    const run = { ...evidence().runs[0], testedTree: tree };
+    expect(decideMainReuse(evidence({ ...behind, runs: [run] }))).toMatchObject({ verified: true, pr: 75 });
+    // Main moved after the run: its merge ref was a different tree, so the suite runs again.
+    expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, testedTree: "f".repeat(40) }] }))).toMatchObject({
+      verified: false,
+      reason: expect.stringContaining("tested a different tree"),
+    });
+    // A run from before the notice existed proves nothing for a head that was behind.
+    expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, testedTree: null }] })).verified).toBe(false);
+    // The recorded tree never excuses missing job evidence.
+    const jobs = greenJobs().filter((job) => job.name !== "Ward Flow coverage");
+    expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, jobs }] })).verified).toBe(false);
+  });
+
+  it("reads the tested tree only from one notice with the exact title", () => {
+    const notice = { title: TESTED_TREE_TITLE, annotation_level: "notice", message: `${tree}\n` };
+    expect(testedTreeFromAnnotations([notice])).toBe(tree);
+    expect(testedTreeFromAnnotations([notice, { ...notice, message: "e".repeat(40) }])).toBeNull();
+    expect(testedTreeFromAnnotations([{ ...notice, annotation_level: "warning" }])).toBeNull();
+    expect(testedTreeFromAnnotations([{ ...notice, title: "Other" }])).toBeNull();
+    expect(testedTreeFromAnnotations([{ ...notice, message: "not-a-tree" }])).toBeNull();
+    expect(testedTreeFromAnnotations(null)).toBeNull();
   });
 
   it("refuses an older green contradicted by a newer completed failure", () => {

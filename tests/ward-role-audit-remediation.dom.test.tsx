@@ -51,9 +51,10 @@ afterEach(() => {
 describe("community cancellation keeps context until its command is answered", () => {
   it("keeps the chosen reason after a backdrop tap and identifies the person instead of the journey ID", () => {
     const { dialog, select } = openCancellation(vi.fn());
-    expect(within(dialog).getByRole("heading")).not.toHaveTextContent(movement.id);
-    // Surname first, as every record shows the person.
-    expect(within(dialog).getByRole("heading")).toHaveTextContent(resolveSubjectPatient(movement, state).formalName);
+    expect(dialog).not.toHaveTextContent(movement.id);
+    // Surname first, as every record shows the person: the redesign names them under the title.
+    expect(within(dialog).getByRole("heading")).toHaveTextContent("Cancel this team's transport booking");
+    expect(dialog).toHaveTextContent(resolveSubjectPatient(movement, state).formalName);
     fireEvent.click(dialog.parentElement!);
     expect(dialog).toBeInTheDocument();
     expect(select).toHaveValue(reason);
@@ -69,10 +70,14 @@ describe("community cancellation keeps context until its command is answered", (
     );
     const { dialog, select, opener } = openCancellation(raise);
     const confirm = within(dialog).getByRole("button", { name: "Confirm cancel" });
-    const close = within(dialog).getByRole("button", { name: "Close dialog" });
+    expect(within(dialog).getByRole("button", { name: "Close dialog" })).toBeInTheDocument();
     fireEvent.click(confirm);
-    expect(close).toBeDisabled();
-    fireEvent.click(close);
+    // While saving the kit Dialog takes its close button away, and Keep booking is disabled.
+    expect(within(dialog).queryByRole("button", { name: "Close dialog" })).toBeNull();
+    const keep = within(dialog).getByRole("button", { name: "Keep booking" });
+    expect(keep).toBeDisabled();
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(keep);
     fireEvent.keyDown(within(dialog).getByRole("button", { name: "Confirm cancel" }), { key: "Escape" });
     fireEvent.click(dialog.parentElement!);
     fireEvent.click(confirm);

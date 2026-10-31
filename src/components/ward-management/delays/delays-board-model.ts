@@ -7,6 +7,7 @@
  * here invents a time limit or a status. The 8, 12 and 24 hour bands are the same named waits the
  * rest of the screen uses (see `delays-view-model.ts`), not new clinical limits.
  */
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
@@ -314,11 +315,12 @@ function rowMatchesFilters(
     (!filters.severe || row.severe) &&
     (filters.view === null || inWaitingView(filters.view, row, thresholds)) &&
     (binIds === null || binIds.has(row.movement.id)) &&
+    // Every word, folded, in any order (search and forms review, 31 Oct 2026).
     (needle === "" ||
-      nameOf(row.movement).toLowerCase().includes(needle) ||
-      (originName(row.movement) ?? row.movement.originEdId ?? communityOriginLabel(row.movement.originCommunity))
-        .toLowerCase()
-        .includes(needle))
+      fieldsMatchEveryWord(needle, [
+        nameOf(row.movement),
+        originName(row.movement) ?? row.movement.originEdId ?? communityOriginLabel(row.movement.originCommunity),
+      ]))
   );
 }
 

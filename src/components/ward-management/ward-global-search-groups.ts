@@ -95,6 +95,9 @@ export function censusRowItem(row: CensusRow): SearchResultItem {
   };
 }
 
+/** Help's rows for a query, or its fixed reply (`note`) to a clinical question. */
+export type HelpSearchRows = { readonly items: readonly SearchResultItem[]; readonly note?: string };
+
 export type SearchResultGroup = {
   key: string;
   heading: string;
@@ -111,6 +114,8 @@ export function smartSearchGroups(
   units: Unit[],
   lookup: PatientLookup,
   answer?: SearchAnswer,
+  /** Help's own answers for the query, from the caller (`ward-global-search-help.tsx`). */
+  help: readonly SearchResultItem[] = [],
 ): SearchResultGroup[] {
   const g: SearchResultGroup[] = [];
 
@@ -298,6 +303,42 @@ export function smartSearchGroups(
       })),
     });
   }
+
+  if (smartResults.suburbs.length > 0) {
+    g.push({
+      key: "suburbs",
+      heading: "Suburb catchment",
+      items: smartResults.suburbs.map((result) => ({
+        kind: "suburb",
+        kindLabel: "Suburb",
+        id: result.suburb.toLowerCase(),
+        title: result.postcodes.length > 0 ? `${result.suburb} ${result.postcodes.join(", ")}` : result.suburb,
+        // A contested or unreviewed suburb names no single clinic: the lookup's own status says why.
+        meta:
+          result.status === "Reviewed clinic match"
+            ? `${result.clinic} · ${result.service}`
+            : `${result.status} · check in the suburb lookup`,
+        href: result.href,
+      })),
+    });
+  }
+
+  if (smartResults.contacts.length > 0) {
+    g.push({
+      key: "contacts",
+      heading: "Contacts",
+      items: smartResults.contacts.map((contact) => ({
+        kind: "contact",
+        kindLabel: "Contact",
+        id: contact.entry.id,
+        title: contact.entry.name,
+        meta: [contact.number, contact.entry.place].filter(Boolean).join(" · "),
+        href: contact.href,
+      })),
+    });
+  }
+
+  if (help.length > 0) g.push({ key: "help", heading: "Help", items: [...help] });
 
   const order = searchGroupOrder(smartResults.intent, trimmed);
   const position = new Map<string, number>(order.map((key, index) => [key, index]));

@@ -112,10 +112,16 @@ import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
  * the Data views before it measures this route. CI then measured the departments table's
  * min-content at 528px, at or above its 520px pin, so that pin is now 560px (35rem). It then measured
  * the wards table's min-content at 597px, above its 592px pin, so that pin is now 640px (40rem).
+ *
+ * ⚠️ UPDATED AGAIN, 31 Oct 2026, for the statistics redesign: the wards table gained an Occupancy
+ * column (`WARD_COLUMNS` in `statistics-compare-screen.tsx`), so it has 6 header cells. Re-measured
+ * in Chromium at 1440x900 on the dev server with min-width cleared to 0px (commit 830b04a59):
+ * min-content 583px, max-content 692px. The pin is 704px (44rem) in `statistics-compare.module.css`,
+ * whose comment records the same measurement; that commit missed this record.
  */
 const OWNED = "/ward-flow/statistics/compare";
 const OWNED_TABLES: readonly { readonly testId: string; readonly columns: number; readonly minWidthPx: number }[] = [
-  { testId: "ward-statistics-compare-wards", columns: 5, minWidthPx: 640 },
+  { testId: "ward-statistics-compare-wards", columns: 6, minWidthPx: 704 },
   { testId: "ward-statistics-compare-eds", columns: 4, minWidthPx: 560 },
 ];
 

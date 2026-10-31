@@ -64,7 +64,7 @@ function Booked({ id }: { id: string }) {
 }
 
 describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
-  it("takes the transport status from Legal now, warns a late ETA, and says why an empty ETA is not saved", () => {
+  it("shows Legal now to check against, warns a late ETA, and says why an empty ETA is not saved", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientNowScreen movementId="WF-011" />
@@ -76,10 +76,14 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
       target: { value: "Ambulance (St John)" },
     });
     fireEvent.click(within(form).getByTestId("ward-patient-escort-no"));
-    // A4-7 (A34 form): filled in from the form in force (Form 4C), and the other answer stays open.
-    expect(within(form).getByTestId("ward-patient-legal-involuntary")).toBeChecked();
+    // A4-7 (A34 form), Josh 31 Oct 2026: neither answer starts ticked; the form in force (Form 4C)
+    // shows as plain text under the question to check the call against.
+    expect(within(form).getByTestId("ward-patient-legal-involuntary")).not.toBeChecked();
     expect(within(form).getByTestId("ward-patient-legal-voluntary")).not.toBeChecked();
-    expect(form).toHaveTextContent("Legal now: Involuntary inpatient, Form 4C. Filled in from Legal now.");
+    expect(form).toHaveTextContent("Legal now: Involuntary inpatient, Form 4C.");
+    expect(form).not.toHaveTextContent("Filled in from Legal now");
+    fireEvent.click(within(form).getByTestId("ward-patient-legal-involuntary"));
+    fireEvent.click(within(form).getByTestId("ward-patient-transport-estimated-day-today"));
 
     // A4-6: Save with no ETA says what is left and records nothing.
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-7" } });

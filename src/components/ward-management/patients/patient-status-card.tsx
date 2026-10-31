@@ -140,7 +140,7 @@ export interface PatientStatusContext {
    * (accepting pulls no bed and creates no movement). The card says so, and links the ward board
    * where the bed is held, instead of reading "Not active".
    */
-  acceptedReferral?: { unitName: string; boardHref: string };
+  acceptedReferral?: { unitName: string; boardHref?: string };
   /**
    * Flag `awol-bed-hold-review` (paused by D-65, on everywhere since Josh's 20 Oct 2026 "turn on all
    * features"): with the tracker on, whether it also asks for a review of the held bed past

@@ -76,6 +76,7 @@ import {
 } from "./workstation-desks";
 import { dispatchPersonaSyncForRole, usePersonaDeskId, useShellPersonaRole } from "./persona-sync";
 import styles from "./workstation-switcher.module.css";
+import fold from "./desk-switcher.module.css";
 
 export interface OperatorSwitcherModalProps {
   readonly isOpen: boolean;
@@ -125,7 +126,12 @@ function sameAccess(a: WardAccess, b: WardAccess): boolean {
 }
 
 /**
- * Switch workstation, direction D (Josh, 9 Oct 2026): a site drawer with an inline preview.
+ * Go to a desk. Switch workstation, direction D (Josh, 9 Oct 2026): a site drawer with an inline preview.
+ * Built from the pop-desk mock-up (31 Oct 2026): each health service folds to one summary row
+ * (hospitals, people waiting in its EDs, beds ready), so the drawer opens short; the service of the
+ * desk you are on opens by itself; a search opens every match; a zero is a quiet grey figure; the ED
+ * figure says "waiting in ED", the rail's words for the same count; and in the shared workspace a
+ * desk the signed-in role cannot open is not listed. The local demo lists every desk.
  * Search and recents on top, the desk you are on and what it can do, the statewide desks, then
  * every hospital with its ED and wards. A click expands a desk in place with its live figures and
  * what that role can do; Open desk (or a double click) navigates to that role's own home.
@@ -173,6 +179,11 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   const hereId = currentDeskId(pathname);
   const here = allDesks.find((desk) => desk.id === hereId);
   const [openSites, setOpenSites] = useState<ReadonlySet<string>>(() => new Set(here?.site ? [here.site] : []));
+  // each health service folds to one summary row; the service of the desk you are on opens.
+  const [openServices, setOpenServices] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(here?.site ? sites.filter((site) => site.site === here.site).map((site) => site.service ?? "Other") : []),
+  );
   const isCoordinatorRoute = wardChromeRole(pathname) === "coordinator";
   // Overall review (20 Oct 2026): a desk opened by its link is viewed as the person on the rail,
   // so the row says so rather than naming the desk's own role as though it were theirs.
@@ -210,10 +221,15 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
     noteDeskSwitch(pathname === href ? undefined : pathname);
   }
 
+  /** Whether the signed-in role can open this address. Always true in the local demo. */
+  function canReach(href: string): boolean {
+    if (!keepsSignedInRole || accessIsWholeNetwork(currentAccess)) return true;
+    return screenDecision(currentAccess, screenForPath(href), wardPlaceLookup(units)).open;
+  }
+
   /** False, with a note, when the signed-in role cannot open this address. */
   function reachable(href: string): boolean {
-    if (!keepsSignedInRole || accessIsWholeNetwork(currentAccess)) return true;
-    if (screenDecision(currentAccess, screenForPath(href), wardPlaceLookup(units)).open) return true;
+    if (canReach(href)) return true;
     setPreviewNote("That desk is not part of your role. To work as another of your roles, use Switch role.");
     return false;
   }
@@ -302,7 +318,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
     : recentDeskIds()
         .filter((id) => id !== hereId)
         .map((id) => allDesks.find((desk) => desk.id === id))
-        .filter((desk): desk is Desk => desk !== undefined)
+        .filter((desk): desk is Desk => desk !== undefined && canReach(desk.href))
         .slice(0, 3);
 
   // Owner answer 38: the wards a patient was referred to are named to coordinators only. Their
@@ -321,11 +337,14 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
     .filter((unit): unit is NonNullable<typeof unit> => unit !== undefined);
   const focusEd = focusMovement ? edById(focusMovement.originEdId) : undefined;
 
+  // In the shared workspace a desk the signed-in role cannot open is not listed (31 Oct 2026); the
+  // local demo lists every desk, since there any desk can be opened.
+  const listed = (desk: Desk) => canReach(desk.href);
   const visibleSites = sites
-    .map((site) => ({ ...site, desks: site.desks.filter((desk) => deskMatches(desk, query)) }))
+    .map((site) => ({ ...site, desks: site.desks.filter((desk) => listed(desk) && deskMatches(desk, query)) }))
     .filter((site) => site.desks.length > 0);
-  const visibleTeams = teams.filter((desk) => deskMatches(desk, query));
-  const visibleStatewide = statewide.filter((desk) => deskMatches(desk, query));
+  const visibleTeams = teams.filter((desk) => listed(desk) && deskMatches(desk, query));
+  const visibleStatewide = statewide.filter((desk) => listed(desk) && deskMatches(desk, query));
   const nothing = searching && !visibleSites.length && !visibleTeams.length && !visibleStatewide.length;
 
   const row = (desk: Desk, label?: string) => (
@@ -445,7 +464,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
             <span className={styles.roleIcon}>
               <Icon icon={ROLE_ICON[here.role]} size={16} />
             </span>
-            <span className={styles.who}>
+            <span className={`${styles.who} ${fold.whoWrap}`}>
               <b>{here.name}</b>
               <span>
                 {isViewersDesk(here)
@@ -458,7 +477,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
           </button>
           {hereOpen ? (
             <div id={`${baseId}-workstation-here-can`} className={styles.hereBody}>
-              <p className={styles.eyebrow}>You can here</p>
+              <p className={styles.eyebrow}>What you can do here</p>
               <CanList role={here.role} />
             </div>
           ) : null}
@@ -467,7 +486,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
 
       {!searching ? (
         <div className={styles.stateGrid} role="group" aria-label="Statewide desks">
-          {statewide.map((desk) => (
+          {statewide.filter(listed).map((desk) => (
             <Link
               key={desk.id}
               href={desk.href}
@@ -479,39 +498,47 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
               }}
             >
               <Icon icon={ROLE_ICON[desk.role]} size={16} />
-              <span className={styles.who}>
+              <span className={`${styles.who} ${fold.whoWrap}`}>
                 <b>{deskRoleLabel(desk.role)}</b>
-                <span>{statewideLine(desk)}</span>
+                {/* the current desk says so in words, so its ring never reads as keyboard focus. */}
+                <span className={fold.tileLine}>
+                  {desk.id === hereId ? "Current · " : null}
+                  {statewideLine(desk)}
+                  {desk.pastTarget ? <PastTarget count={desk.pastTarget} /> : null}
+                </span>
               </span>
-              {desk.pastTarget ? <StatusGlyph tone="danger" /> : null}
             </Link>
           ))}
           {accessOn ? (
             <>
-              <button
-                type="button"
-                className={styles.stateTile}
-                data-testid="workstation-open-executive"
-                onClick={() => openAccessDesk({ role: "executive", scope: { kind: "statewide" } }, STATISTICS_HREF)}
-              >
-                <Icon icon={Eye} size={16} />
-                <span className={styles.who}>
-                  <b>Executive</b>
-                  <span>Statewide figures only</span>
-                </span>
-              </button>
-              <button
-                type="button"
-                className={styles.stateTile}
-                data-testid="workstation-open-admin"
-                onClick={() => openAccessDesk({ role: "admin", scope: { kind: "statewide" } }, SETTINGS_HREF)}
-              >
-                <Icon icon={Users} size={16} />
-                <span className={styles.who}>
-                  <b>Access admin</b>
-                  <span>Who works where, no patients</span>
-                </span>
-              </button>
+              {canReach(STATISTICS_HREF) ? (
+                <button
+                  type="button"
+                  className={styles.stateTile}
+                  data-testid="workstation-open-executive"
+                  onClick={() => openAccessDesk({ role: "executive", scope: { kind: "statewide" } }, STATISTICS_HREF)}
+                >
+                  <Icon icon={Eye} size={16} />
+                  <span className={`${styles.who} ${fold.whoWrap}`}>
+                    <b>Executive</b>
+                    <span>Statewide figures only</span>
+                  </span>
+                </button>
+              ) : null}
+              {canReach(SETTINGS_HREF) ? (
+                <button
+                  type="button"
+                  className={styles.stateTile}
+                  data-testid="workstation-open-admin"
+                  onClick={() => openAccessDesk({ role: "admin", scope: { kind: "statewide" } }, SETTINGS_HREF)}
+                >
+                  <Icon icon={Users} size={16} />
+                  <span className={`${styles.who} ${fold.whoWrap}`}>
+                    <b>Access admin</b>
+                    <span>Who works where, no patients</span>
+                  </span>
+                </button>
+              ) : null}
             </>
           ) : null}
         </div>
@@ -545,67 +572,129 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
             <div className={styles.site}>{visibleStatewide.map((desk) => row(desk))}</div>
           </DeskGroup>
         ) : null}
-        {groupByService(visibleSites).map(([service, group]) => (
-          <DeskGroup key={service} label={service} service={SERVICE_SWATCH[service] ?? "statewide"}>
-            {accessOn && !searching && isHealthService(service) ? (
+        {groupByService(visibleSites).map(([service, group]) => {
+          const serviceOpen = searching || openServices.has(service);
+          const edWaiting = group.reduce(
+            (sum, site) => sum + site.desks.reduce((n, desk) => n + (desk.role === "ed" ? (desk.waiting ?? 0) : 0), 0),
+            0,
+          );
+          const wardsReady = group.reduce(
+            (sum, site) => sum + site.desks.reduce((n, desk) => n + (desk.role === "ward" ? (desk.ready ?? 0) : 0), 0),
+            0,
+          );
+          const pastTarget = group.reduce(
+            (sum, site) =>
+              sum + site.desks.reduce((n, desk) => n + (desk.role === "ed" ? (desk.pastTarget ?? 0) : 0), 0),
+            0,
+          );
+          return (
+            <section key={service} className={styles.group} aria-label={service}>
               <button
                 type="button"
-                className={buttonClass({ variant: "ghost", size: "sm" })}
-                data-testid={`workstation-open-service-${SERVICE_SWATCH[service] ?? "other"}`}
+                className={fold.serviceHead}
+                aria-expanded={serviceOpen}
+                disabled={searching}
                 onClick={() =>
-                  openAccessDesk({ role: "coordinator", scope: { kind: "service", service } }, COORDINATOR_HOME_HREF)
+                  setOpenServices((current) => {
+                    const next = new Set(current);
+                    if (next.has(service)) next.delete(service);
+                    else next.add(service);
+                    return next;
+                  })
                 }
               >
-                {service} coordinator desk
+                <Icon icon={ChevronDown} size={14} className={styles.chev} />
+                <span
+                  className={styles.svcDot}
+                  data-service={SERVICE_SWATCH[service] ?? "statewide"}
+                  aria-hidden="true"
+                />
+                <b className={fold.serviceName}>{service}</b>
+                <span className={fold.serviceMeta}>
+                  {group.length} {group.length === 1 ? "hospital" : "hospitals"}
+                </span>
+                {/* a zero is a quiet figure, like "0 ready" beside it; past target is said in words. */}
+                <span className={styles.mini}>
+                  <span className={edWaiting > 0 ? undefined : fold.none}>
+                    <span className={styles.mono}>{edWaiting}</span> waiting in ED
+                  </span>
+                  {pastTarget > 0 ? <PastTarget count={pastTarget} /> : null}
+                </span>
+                <span className={styles.mini}>
+                  <span className={styles.mono}>{wardsReady}</span> ready
+                </span>
               </button>
-            ) : null}
-            {group.map((site) => {
-              const isSiteOpen = searching || openSites.has(site.site);
-              const ed = site.desks.find((desk) => desk.role === "ed");
-              const wards = site.desks.filter((desk) => desk.role === "ward");
-              const ready = wards.reduce((sum, desk) => sum + (desk.ready ?? 0), 0);
-              return (
-                <div key={site.site} className={styles.site}>
-                  <button
-                    type="button"
-                    className={styles.siteHead}
-                    aria-expanded={isSiteOpen}
-                    onClick={() => toggleSite(site.site)}
-                    disabled={searching}
-                  >
-                    <Icon icon={ChevronDown} size={14} className={styles.chev} />
-                    <Icon icon={Building2} size={16} />
-                    <b className={styles.siteName}>{site.site}</b>
-                    {ed ? (
-                      <span className={styles.mini}>
-                        {ed.pastTarget ? <StatusGlyph tone="danger" /> : null}
-                        <span className={styles.mono}>{ed.waiting}</span> awaiting bed in ED
-                      </span>
-                    ) : null}
-                    {wards.length ? (
-                      <span className={styles.mini}>
-                        <span className={styles.mono}>{ready}</span> ready
-                      </span>
-                    ) : null}
-                  </button>
-                  {isSiteOpen ? (
-                    <div className={styles.siteBody}>
-                      {/* The hospital is already named above, so its ED row says what it is. */}
-                      {site.desks.map((desk) => row(desk, desk.role === "ed" ? "Emergency department" : undefined))}
-                      {accessOn ? (
-                        <BedManagerDesk
-                          siteCode={siteCodeOf(site.desks, units)}
-                          siteName={site.site}
-                          onOpen={(access) => openAccessDesk(access, CAPACITY_HREF)}
-                        />
-                      ) : null}
-                    </div>
+              {serviceOpen ? (
+                <div className={fold.serviceBody}>
+                  {accessOn && !searching && isHealthService(service) && canReach(COORDINATOR_HOME_HREF) ? (
+                    <button
+                      type="button"
+                      className={buttonClass({ variant: "ghost", size: "sm" })}
+                      data-testid={`workstation-open-service-${SERVICE_SWATCH[service] ?? "other"}`}
+                      onClick={() =>
+                        openAccessDesk(
+                          { role: "coordinator", scope: { kind: "service", service } },
+                          COORDINATOR_HOME_HREF,
+                        )
+                      }
+                    >
+                      {service} coordinator desk
+                    </button>
                   ) : null}
+                  {group.map((site) => {
+                    const isSiteOpen = searching || openSites.has(site.site);
+                    const ed = site.desks.find((desk) => desk.role === "ed");
+                    const wards = site.desks.filter((desk) => desk.role === "ward");
+                    const ready = wards.reduce((sum, desk) => sum + (desk.ready ?? 0), 0);
+                    return (
+                      <div key={site.site} className={styles.site}>
+                        <button
+                          type="button"
+                          className={styles.siteHead}
+                          aria-expanded={isSiteOpen}
+                          onClick={() => toggleSite(site.site)}
+                          disabled={searching}
+                        >
+                          <Icon icon={ChevronDown} size={14} className={styles.chev} />
+                          <Icon icon={Building2} size={16} />
+                          <b className={styles.siteName}>{site.site}</b>
+                          {ed ? (
+                            <span className={styles.mini}>
+                              <span className={ed.waiting ? undefined : fold.none}>
+                                <span className={styles.mono}>{ed.waiting ?? 0}</span> waiting in ED
+                              </span>
+                              {ed.pastTarget ? <PastTarget count={ed.pastTarget} /> : null}
+                            </span>
+                          ) : null}
+                          {wards.length ? (
+                            <span className={styles.mini}>
+                              <span className={styles.mono}>{ready}</span> ready
+                            </span>
+                          ) : null}
+                        </button>
+                        {isSiteOpen ? (
+                          <div className={styles.siteBody}>
+                            {/* The hospital is already named above, so its ED row says what it is. */}
+                            {site.desks.map((desk) =>
+                              row(desk, desk.role === "ed" ? "Emergency department" : undefined),
+                            )}
+                            {accessOn && canReach(CAPACITY_HREF) ? (
+                              <BedManagerDesk
+                                siteCode={siteCodeOf(site.desks, units)}
+                                siteName={site.site}
+                                onOpen={(access) => openAccessDesk(access, CAPACITY_HREF)}
+                              />
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </DeskGroup>
-        ))}
+              ) : null}
+            </section>
+          );
+        })}
         {visibleTeams.length ? (
           <TeamGroup
             count={visibleTeams.length}
@@ -654,7 +743,7 @@ function BedManagerDesk({
       data-testid={`workstation-open-bed-manager-${siteCode}`}
       onClick={() => onOpen({ role: "bed_manager", scope: { kind: "site", siteCode } })}
     >
-      Bed manager desk, {siteName}
+      Site bed manager desk, {siteName}
     </button>
   );
 }
@@ -669,7 +758,23 @@ function groupByService(sites: { site: string; service?: string; desks: Desk[] }
 }
 
 function statewideLine(desk: Desk): string {
-  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active` : `${desk.waiting ?? 0} awaiting bed in ED`;
+  return desk.role === "officer" ? `${desk.activeJobs ?? 0} active jobs` : `${desk.waiting ?? 0} waiting in ED`;
+}
+
+/**
+ * " · 3 past target" after a wait figure, the red glyph beside the words (All EDs' term).
+ * The separator sits outside the unbreakable part, so it keeps its spaces and ends a wrapped line.
+ */
+function PastTarget({ count }: { count: number }) {
+  return (
+    <>
+      <span aria-hidden="true"> · </span>
+      <span className={fold.pastTarget}>
+        <StatusGlyph tone="danger" />
+        <span className={styles.mono}>{count}</span> past target
+      </span>
+    </>
+  );
 }
 
 /** The ED access target as people say it: `24h`, or `5h 30m` when it is not whole hours. */

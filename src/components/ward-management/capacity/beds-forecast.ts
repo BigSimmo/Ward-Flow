@@ -37,7 +37,7 @@ const STAGES_STILL_NEEDING_A_BED: readonly MovementStage[] = [
   "accepted_awaiting_bed",
 ];
 
-export type BedsForecastHorizon = {
+type BedsForecastHorizon = {
   /** The window's length in hours, from `BEDS_FORECAST_HORIZON_DAYS`. */
   hours: number;
   /** The end of the window, `now + hours`. Releases due at or before it count, overdue ones included. */

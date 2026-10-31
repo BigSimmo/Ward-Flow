@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { expect, it, vi } from "vitest";
 
@@ -21,6 +21,13 @@ import * as statistics from "@/components/ward-management/ward-statistics";
  * and an unrecorded average is left out of the bars and named in words beneath them.
  */
 function chartFigure(): HTMLElement {
+  // The ward chart opens on Occupancy and its first eight wards: choose Stay, then Show all.
+  const card = screen.getByTestId("statistics-compare-ward-chart");
+  if (!screen.queryByText("Ward average stay bar chart")) {
+    fireEvent.click(within(card).getByRole("radio", { name: "Stay" }));
+  }
+  const more = within(card).queryByRole("button", { name: /^Show all/ });
+  if (more) fireEvent.click(more);
   // The bar list names itself in a visually hidden figcaption.
   return screen.getByText("Ward average stay bar chart").closest("figure")!;
 }

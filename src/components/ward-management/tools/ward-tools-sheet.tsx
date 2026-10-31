@@ -296,6 +296,9 @@ export function WardToolsSheet({
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
   const canOpen = useCanOpenHref();
   const executive = useExecutiveStatisticsControl().executive;
+  // The new frame (Josh, 31 Oct 2026) drops the header's Synthetic pill, so the Demo controls live
+  // here on a desktop too, where the board clock opens them. The executive chrome keeps its pill.
+  const showDemo = isPhone || !executive;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const [open, setOpen] = useState<ReadonlySet<ToolsSheetToolId>>(() => new Set());
   const rows = useRef(new Map<ToolsSheetToolId, HTMLDivElement>());
@@ -313,15 +316,23 @@ export function WardToolsSheet({
 
   useEffect(() => {
     if (!openRequest) return;
+    let cancelled = false;
+    let frame = 0;
     let scroll = 0;
-    const frame = window.requestAnimationFrame(() => {
+    // The row opens straight away (a microtask, not an animation frame), so a slow or paused page
+    // still shows the asked-for tool; only the scroll waits for the frames after it has drawn.
+    queueMicrotask(() => {
+      if (cancelled) return;
       setOpen((current) => new Set(current).add(openRequest.tool));
-      scroll = window.requestAnimationFrame(() => {
-        rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
-        onRequestHandled?.();
+      frame = window.requestAnimationFrame(() => {
+        scroll = window.requestAnimationFrame(() => {
+          rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
+          onRequestHandled?.();
+        });
       });
     });
     return () => {
+      cancelled = true;
       window.cancelAnimationFrame(frame);
       window.cancelAnimationFrame(scroll);
     };
@@ -352,8 +363,8 @@ export function WardToolsSheet({
       </div>
 
       {/* Change 8 (D-77, 21 Oct 2026): on a desktop Tools keeps working tools only. New referral,
-          Handover sheet, Bed meeting TV and Out of area each have their own place already, and the
-          Demo controls open from the Synthetic pill. The phone has no pill, so it keeps them all. */}
+          Handover sheet, Bed meeting TV and Out of area each have their own place already. The
+          phone keeps them all. The Demo controls sit at the foot (`showDemo`). */}
       <Group title="Do now">
         {isPhone && canRefer ? (
           <button type="button" className={styles.row} onClick={() => onNewReferral()}>
@@ -506,12 +517,19 @@ export function WardToolsSheet({
         </Group>
       ) : null}
 
-      {/* Change 8 (D-77): desktop Demo lives in the Synthetic pill's menu, so desktop Tools keeps only
-          the Hospital feed here. Phone has no pill, so it keeps both rows. */}
-      <section className={`${styles.group} ${styles.demoGroup}`} aria-label={isPhone ? "Demo" : "Hospital feed"}>
+      {/* Demo and the Hospital feed. The executive chrome's Demo lives in its Synthetic pill's menu,
+          so its desktop Tools keeps only the Hospital feed here. */}
+      <section className={`${styles.group} ${styles.demoGroup}`} aria-label={showDemo ? "Demo" : "Hospital feed"}>
         <div className={styles.card}>
-          {isPhone
-            ? tool("demo", FlaskConical, "Demo", "Scenario, clock and reset. Synthetic data only.", <WardDemoPanel />)
+          {showDemo
+            ? tool(
+                "demo",
+                FlaskConical,
+                "Demo",
+                "Scenario, clock and reset. Synthetic data only.",
+                // A desktop shows the one list the pill's Demo menu showed; the phone keeps its own.
+                <WardDemoPanel oneList={!isPhone} />,
+              )
             : null}
           {tool(
             "feed",

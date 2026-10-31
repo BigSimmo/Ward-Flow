@@ -1,5 +1,7 @@
 "use client";
 
+// Redesign (approved 31 Oct 2026): the record's cards and chips on the kit's radii.
+
 // PersonEntry: one person's discharge plan, shared by the bed board's slide-out and its printed
 // sheet. Split out of ward-board.tsx to keep that file under the line cap.
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
@@ -8,6 +10,7 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import styles from "./board.module.css";
+import redesign from "./ward-board-panels.module.css";
 import { expectedPhrase, movesPhrase, type Occupant } from "./ward-board-model";
 
 /** True when the long-stay tag already names the recorded blocker, so the plan does not repeat it. */
@@ -144,7 +147,7 @@ export function PersonEntry({
   return (
     <>
       {/* 1. Identity & Stay Card */}
-      <div className={styles.detailIdCard}>
+      <div className={`${styles.detailIdCard} ${redesign.idCard}`}>
         <div className={styles.detailStayRow}>
           <p className={`${styles.personStay} ${styles.flushMargin}`}>
             {occupant.days === null ? (
@@ -172,11 +175,13 @@ export function PersonEntry({
         <div className={styles.detailName}>{displayName}</div>
 
         <div className={styles.detailChips}>
-          {age !== null && <span className={styles.detailChip}>{age} yrs</span>}
-          <span className={styles.detailChip}>{occupant.sex}</span>
-          <span className={styles.detailChip}>Gender: {occupant.gender ?? "Not recorded"}</span>
-          <span className={styles.detailChip}>{occupant.homeRegion ?? "Region unrecorded"}</span>
-          {resolvedPatient?.umrn && <span className={styles.detailChip}>UMRN {resolvedPatient.umrn}</span>}
+          {age !== null && <span className={`${styles.detailChip} ${redesign.chip}`}>{age} yrs</span>}
+          <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.sex}</span>
+          <span className={`${styles.detailChip} ${redesign.chip}`}>Gender: {occupant.gender ?? "Not recorded"}</span>
+          <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.homeRegion ?? "Region unrecorded"}</span>
+          {resolvedPatient?.umrn && (
+            <span className={`${styles.detailChip} ${redesign.chip}`}>UMRN {resolvedPatient.umrn}</span>
+          )}
         </div>
 
         {occupant.stepDownCandidate && (
@@ -201,7 +206,7 @@ export function PersonEntry({
       </div>
 
       {/* 2. Catchment & Demographic Card */}
-      <div className={styles.detailSectionCard}>
+      <div className={`${styles.detailSectionCard} ${redesign.sectionCard}`}>
         <div className={styles.detailSectionHeading}>Catchment & Team</div>
         <div className={styles.catchmentGrid}>
           <div className={styles.catchmentItem}>
@@ -224,7 +229,7 @@ export function PersonEntry({
       </div>
 
       {/* 3. Clinical & Transport Card */}
-      <div className={styles.detailSectionCard}>
+      <div className={`${styles.detailSectionCard} ${redesign.sectionCard}`}>
         <div className={styles.detailSectionHeading}>Clinical & Transport</div>
         {occupant.awayAtEdHours !== null && (
           <p className={styles.personAway} data-testid="ward-board-person-away">
@@ -246,7 +251,7 @@ export function PersonEntry({
       </div>
 
       {/* 4. What is Happening Today / Leaving Plan Card */}
-      <div className={styles.detailSectionCard}>
+      <div className={`${styles.detailSectionCard} ${redesign.sectionCard}`}>
         <div className={styles.detailSectionHeading}>What is happening today</div>
         <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
         {occupant.expectedDays !== null && (

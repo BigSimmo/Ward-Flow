@@ -13,9 +13,11 @@ import {
   type ReactElement,
   type ReactNode,
   type ButtonHTMLAttributes,
+  type MouseEvent,
   type RefObject,
 } from "react";
 import { ChevronDown, Pencil, X, MoreHorizontal } from "lucide-react";
+import { Sheet, useIsPhone } from "@/components/wf";
 import styles from "./ed-board-controls.module.css";
 import { EdConfirmedStep, EdUnavailableNote } from "./ed-screen-row-menu";
 
@@ -71,9 +73,11 @@ function EdPopover({
     if (typeof element.showPopover === "function") element.showPopover();
     else element.style.display = "block";
     position();
-    element
-      .querySelector<HTMLElement>(listbox ? '[aria-selected="true"], button' : menu ? "button" : "input, button")
-      ?.focus({ preventScroll: true });
+    // Redesign (pop-ed-actions): a menu opens on the row's next step, its one filled item.
+    (
+      (menu ? element.querySelector<HTMLElement>('[data-next-step]:not([aria-disabled="true"])') : null) ??
+      element.querySelector<HTMLElement>(listbox ? '[aria-selected="true"], button' : menu ? "button" : "input, button")
+    )?.focus({ preventScroll: true });
     let frame = 0;
     const schedule = () => {
       if (!frame) {
@@ -129,7 +133,10 @@ function EdPopover({
         }
         if ((menu || listbox) && ["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
           event.preventDefault();
-          const options = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+          // A folded "Not available yet" list is skipped until it is opened.
+          const options = [...event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")].filter(
+            (option) => !option.closest("[hidden]:not([popover])"),
+          );
           const current = options.indexOf(document.activeElement as HTMLButtonElement);
           const index =
             event.key === "Home"
@@ -473,8 +480,138 @@ function flatten(children: ReactNode): ReactNode[] {
   );
 }
 
+/** The menu's three groups. Redesign (Josh, 31 Oct 2026): "and" in plain words, not "&". */
+const ED_ACTION_GROUPS = ["Review and disposition", "Transfer and handover", "Legal and referral"] as const;
+
+type ItemProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  "data-testid"?: string;
+  testId?: string;
+  menuItem?: boolean;
+  expanded?: boolean;
+};
+
+/**
+ * Sorts the row's items for the menu: the actions open now into their group, and each greyed
+ * action, with the note under it, into "Not available yet" (redesign, pop-ed-actions, Josh
+ * 31 Oct 2026). Anything else (a screen-reader sentence) keeps its place at the end.
+ */
+function sortEdMenuItems(children: ReactNode, menu: boolean) {
+  const groups = ED_ACTION_GROUPS.map((name) => ({ name, items: [] as ReactNode[] }));
+  const blocked: { key: string; item: ReactNode; note?: ReactNode }[] = [];
+  const other: ReactNode[] = [];
+  let last: { group: number } | { blocked: (typeof blocked)[number] } | undefined;
+  for (const child of flatten(children)) {
+    if (isValidElement<ItemProps>(child) && child.type === EdUnavailableNote) {
+      // The greyed item's note: its reason, why, who acts next and its one fix, all shown at once.
+      const note = cloneElement(child as ReactElement<ItemProps>, { menuItem: menu, expanded: true });
+      if (last && "blocked" in last) last.blocked.note = note;
+      else if (last) groups[last.group].items.push(note);
+      else other.push(note);
+      continue;
+    }
+    if (isValidElement<ItemProps>(child) && (child.type === "button" || child.type === EdConfirmedStep)) {
+      // A confirmed step (Audit 1 CS-07) is a menu item too; it carries its test id as a prop.
+      const key = (child.type === EdConfirmedStep ? child.props.testId : child.props["data-testid"]) ?? "";
+      const item =
+        child.type === EdConfirmedStep
+          ? cloneElement(child as ReactElement<ItemProps>, { menuItem: menu })
+          : cloneElement(child, { role: menu ? "menuitem" : undefined });
+      if (child.type === "button" && child.props["aria-disabled"] === "true") {
+        const entry = { key, item };
+        blocked.push(entry);
+        last = { blocked: entry };
+        continue;
+      }
+      const group = /examine|outcome/.test(key) ? 0 : /handover|transport|arrival-plan/.test(key) ? 1 : 2;
+      groups[group].items.push(item);
+      last = { group };
+    } else other.push(child);
+  }
+  return { groups, blocked, other };
+}
+
+/** The menu's body: the record items, the actions open now in their groups, then the greyed ones folded. */
+function EdActionList({
+  children,
+  menu,
+  testId,
+  onViewRecord,
+  onEditPresentation,
+  onEditPlan,
+}: {
+  children: ReactNode;
+  menu: boolean;
+  testId: string;
+  onViewRecord: () => void;
+  onEditPresentation: () => void;
+  onEditPlan: () => void;
+}) {
+  const [foldOpen, setFoldOpen] = useState(false);
+  const foldId = useId();
+  const { groups, blocked, other } = sortEdMenuItems(children, menu);
+  return (
+    <>
+      {/* Redesign: the record items take a heading like every other group. Design audit DA-05: a
+          menu may hold only menu items or groups, so each group is a labelled group. */}
+      <div role="group" aria-label="Patient record" className={styles.menuGroup} data-first-group="">
+        <span aria-hidden="true" className={styles.menuGroupLabel}>
+          Patient record
+        </span>
+        <button type="button" role={menu ? "menuitem" : undefined} onClick={onViewRecord}>
+          View patient record
+        </button>
+        <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPresentation}>
+          Edit presentation
+        </button>
+        <button type="button" role={menu ? "menuitem" : undefined} onClick={onEditPlan}>
+          Edit plan
+        </button>
+      </div>
+      {groups.map(
+        (group) =>
+          group.items.length > 0 && (
+            <div key={group.name} role="group" aria-label={group.name} className={styles.menuGroup}>
+              <span aria-hidden="true" className={styles.menuGroupLabel}>
+                {group.name}
+              </span>
+              {group.items}
+            </div>
+          ),
+      )}
+      {blocked.length > 0 ? (
+        // Redesign: greyed actions fold away, each with its reason, why, who acts next and its fix.
+        <div className={styles.fold} data-testid={`${testId}-not-available`}>
+          <button
+            type="button"
+            role={menu ? "menuitem" : undefined}
+            className={styles.foldToggle}
+            aria-expanded={foldOpen}
+            aria-controls={foldId}
+            data-menu-keep-open=""
+            onClick={() => setFoldOpen((open) => !open)}
+          >
+            Not available yet ({blocked.length})
+            <ChevronDown aria-hidden="true" className={styles.foldChevron} />
+          </button>
+          <div id={foldId} role="group" aria-label="Not available yet" hidden={!foldOpen}>
+            {blocked.map((entry) => (
+              <div key={entry.key} className={styles.blockedItem}>
+                {entry.item}
+                {entry.note}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {other}
+    </>
+  );
+}
+
 export function EdActionsMenu({
   patientName,
+  formalName,
+  umrn,
   children,
   testId,
   triggerTestId,
@@ -484,6 +621,10 @@ export function EdActionsMenu({
   compact = false,
 }: {
   patientName: string;
+  /** The name surname first (D-83), for the menu's header. Falls back to `patientName`. */
+  formalName?: string;
+  /** Shown beside the name in the menu's header. */
+  umrn?: string;
   children: ReactNode;
   testId: string;
   triggerTestId: string;
@@ -496,37 +637,31 @@ export function EdActionsMenu({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<string>();
   const anchor = useRef<HTMLButtonElement>(null);
-  const groups: { name: string; items: ReactNode[] }[] = [
-    { name: "Review & disposition", items: [] },
-    { name: "Transfer & handover", items: [] },
-    { name: "Legal & referral", items: [] },
-  ];
-  const other: ReactNode[] = [];
-  let lastGroup: number | undefined;
-  for (const child of flatten(children)) {
-    // Usability review (Josh approved 24 Oct 2026): a greyed item's visible "why" stays under that item, in its group.
-    if (isValidElement(child) && child.type === EdUnavailableNote && lastGroup !== undefined) {
-      groups[lastGroup].items.push(cloneElement(child as ReactElement<{ menuItem?: boolean }>, { menuItem: true }));
-      continue;
-    }
-    if (
-      isValidElement<ButtonHTMLAttributes<HTMLButtonElement> & { "data-testid"?: string; testId?: string }>(child) &&
-      (child.type === "button" || child.type === EdConfirmedStep)
-    ) {
-      // A confirmed step (Audit 1 CS-07) is a menu item too; it carries its test id as a prop.
-      const key = (child.type === EdConfirmedStep ? child.props.testId : child.props["data-testid"]) ?? "";
-      lastGroup = /examine|outcome/.test(key) ? 0 : /handover|transport|arrival-plan/.test(key) ? 1 : 2;
-      groups[lastGroup].items.push(
-        child.type === EdConfirmedStep
-          ? cloneElement(child as ReactElement<{ menuItem?: boolean }>, { menuItem: true })
-          : cloneElement(child, { role: "menuitem" }),
-      );
-    } else other.push(child);
-  }
+  const isPhone = useIsPhone();
+  const who = formalName ?? patientName;
   function close() {
     setOpen(false);
     setReason(undefined);
   }
+  const list = (menu: boolean) => (
+    <EdActionList
+      menu={menu}
+      testId={testId}
+      onViewRecord={onViewRecord}
+      onEditPresentation={onEditPresentation}
+      onEditPlan={onEditPlan}
+    >
+      {children}
+    </EdActionList>
+  );
+  // Pressing an action that is open now closes the menu; a greyed item and the fold's own toggle do not.
+  const closeOnAction = (event: MouseEvent<HTMLElement>) => {
+    const button = event.target instanceof Element ? event.target.closest("button") : null;
+    if (button && button.getAttribute("aria-disabled") !== "true" && !button.hasAttribute("data-menu-keep-open")) {
+      close();
+      anchor.current?.focus();
+    }
+  };
   return (
     <>
       <button
@@ -535,7 +670,7 @@ export function EdActionsMenu({
         className={styles.actionsTrigger}
         data-testid={triggerTestId}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup={isPhone ? "dialog" : "menu"}
         aria-label={`Actions for ${patientName}`}
         data-compact={compact ? "true" : undefined}
         title={compact ? "More actions" : undefined}
@@ -553,66 +688,64 @@ export function EdActionsMenu({
           </>
         )}
       </button>
-      <EdPopover
-        open={open}
-        onClose={close}
-        anchor={anchor}
-        label={`Actions for ${patientName}`}
-        width={330}
-        menu
-        testId={testId}
-      >
-        <header className={styles.popoverHeading}>
-          <b>Patient actions</b>
-          <span>{patientName}</span>
-        </header>
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- reads the focused button's disabled reason, and the buttons take the keys */}
-        <div
-          className={styles.actionItems}
-          onFocus={(event) =>
-            setReason(
-              event.target instanceof HTMLButtonElement &&
-                event.target.getAttribute("aria-disabled") === "true" &&
-                // The blocker mock-up (26 Oct 2026): a note that opens its own reason in place needs no copy below.
-                !event.target.nextElementSibling?.hasAttribute("data-unavailable-detail")
-                ? event.target.title
-                : undefined,
-            )
-          }
-          onClick={(event) => {
-            const button = event.target instanceof Element ? event.target.closest("button") : null;
-            if (button && button.getAttribute("aria-disabled") !== "true") {
-              close();
-              anchor.current?.focus();
-            }
-          }}
+      {isPhone ? (
+        // Redesign: on a phone the same list is a bottom sheet, at the kit's row size.
+        <Sheet
+          open={open}
+          onClose={close}
+          title="Patient actions"
+          description={umrn ? `${who} · ${umrn}` : who}
+          testId={testId}
+          mobileBreakpoint="phone"
+          returnFocusRef={anchor}
         >
-          <button type="button" role="menuitem" onClick={onViewRecord}>
-            View patient record
-          </button>
-          <button type="button" role="menuitem" onClick={onEditPresentation}>
-            Edit presentation
-          </button>
-          <button type="button" role="menuitem" onClick={onEditPlan}>
-            Edit plan
-          </button>
-          {/* Design audit DA-05: a menu may hold only menu items or groups, so each group is a
-              labelled group, not a section with a heading. */}
-          {groups.map(
-            (group) =>
-              group.items.length > 0 && (
-                <div key={group.name} role="group" aria-label={group.name} className={styles.menuGroup}>
-                  <span aria-hidden="true" className={styles.menuGroupLabel}>
-                    {group.name}
-                  </span>
-                  {group.items}
-                </div>
-              ),
-          )}
-          {other}
-        </div>
-        {reason && <p className={styles.reason}>{reason}</p>}
-      </EdPopover>
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- closes the sheet after an action, and the buttons take the keys */}
+          <div className={styles.actionItems} data-sheet="" onClick={closeOnAction}>
+            {list(false)}
+          </div>
+        </Sheet>
+      ) : (
+        <EdPopover
+          open={open}
+          onClose={close}
+          anchor={anchor}
+          label={`Actions for ${patientName}`}
+          width={340}
+          menu
+          testId={testId}
+        >
+          <header className={styles.actionsHeading}>
+            <b>Patient actions</b>
+            <span>
+              {who}
+              {umrn ? (
+                <>
+                  {" "}
+                  · <span className={styles.mono}>{umrn}</span>
+                </>
+              ) : null}
+            </span>
+          </header>
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- reads the focused button's disabled reason, and the buttons take the keys */}
+          <div
+            className={styles.actionItems}
+            onFocus={(event) =>
+              setReason(
+                event.target instanceof HTMLButtonElement &&
+                  event.target.getAttribute("aria-disabled") === "true" &&
+                  // The blocker mock-up (26 Oct 2026): a note that shows its own reason needs no copy below.
+                  !event.target.nextElementSibling?.hasAttribute("data-unavailable-detail")
+                  ? event.target.title
+                  : undefined,
+              )
+            }
+            onClick={closeOnAction}
+          >
+            {list(true)}
+          </div>
+          {reason && <p className={styles.reason}>{reason}</p>}
+        </EdPopover>
+      )}
     </>
   );
 }

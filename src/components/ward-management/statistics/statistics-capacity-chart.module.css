@@ -195,9 +195,9 @@
   background: var(--wf-hover);
 }
 
+/* Selected: the tint alone, no side edge (Josh, 31 Oct 2026: no coloured side stripes). */
 .row[aria-pressed="true"] {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent);
 }
 
 .row:focus-visible {
@@ -381,7 +381,7 @@
   flex-direction: column;
 }
 
-.wardList a {
+.wardList > * {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
@@ -392,13 +392,13 @@
   text-decoration: none;
 }
 
-.wardList a span {
+.wardList > * span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.wardList a strong {
+.wardList > * strong {
   font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
   color: var(--wf-ink-2);
 }

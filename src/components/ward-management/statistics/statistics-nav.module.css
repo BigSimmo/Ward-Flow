@@ -124,3 +124,67 @@
   padding: 0 12px;
   box-shadow: inset 0 0 0 1px var(--wf-accent);
 }
+
+/*
+ * The phone chip row fades at an edge where more chips lie past it (Josh, 31 Oct 2026), in place of a
+ * hard cut ("…es 6", a lone "E"). The fades follow the row's own scroll: none at the start edge until
+ * the row has moved, none at the end once the last chip (Weekly) is in view. So the current chip,
+ * scrolled into view, sits clear, and the neighbour it pushes off the left edge fades out rather than
+ * being cut. Browsers without scroll-driven animation keep a plain row.
+ */
+@property --stats-chip-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --stats-chip-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes chipFade {
+  0% {
+    --stats-chip-fade-start: 0px;
+    --stats-chip-fade-end: 28px;
+  }
+  10%,
+  90% {
+    --stats-chip-fade-start: 28px;
+    --stats-chip-fade-end: 28px;
+  }
+  100% {
+    --stats-chip-fade-start: 28px;
+    --stats-chip-fade-end: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  @media (max-width: 48rem) {
+    .chipNav {
+      animation: chipFade linear both;
+      animation-timeline: scroll(self inline);
+      -webkit-mask-image: linear-gradient(
+        to right,
+        transparent,
+        black var(--stats-chip-fade-start),
+        black calc(100% - var(--stats-chip-fade-end)),
+        transparent
+      );
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        black var(--stats-chip-fade-start),
+        black calc(100% - var(--stats-chip-fade-end)),
+        transparent
+      );
+    }
+  }
+}
+
+/* Preview only: the statistics mock-ups not yet built wrap their page in this (no layout change).
+   Delete it with the last statistics fork under src/components/ward-redesign/. */
+.scope {
+  display: contents;
+}

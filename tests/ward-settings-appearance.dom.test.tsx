@@ -52,7 +52,6 @@ function renderSettings() {
       </WardFlowProvider>
     </ToastProvider>,
   );
-  fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
 }
 
 function themeAttribute(): string | null {
@@ -210,38 +209,41 @@ describe("the settings screen's appearance control", () => {
 
 // Audit settings-15 (Josh, 13 Oct 2026): Glare is a fourth Theme choice, so Theme never reads Dark
 // while the page is in Glare's light.
-describe("the settings screen's Glare theme choice", () => {
+// Josh, 31 Oct 2026: the bright-room theme is shown as "Bright light" (Glare is a retired word).
+// The stored key and the root's data-mode="glare" keep their ids.
+describe("the settings screen's Bright light theme choice", () => {
   function themeRadio(name: string) {
     return within(screen.getByTestId("ward-settings-appearance")).getByRole("radio", { name });
   }
 
-  it("offers Auto, Light, Dark and Glare in one Theme control, with no separate Glare switch", () => {
+  it("offers Auto, Light, Dark and Bright light in one Theme control, with no separate switch", () => {
     renderSettings();
     const names = within(screen.getByTestId("ward-settings-appearance"))
       .getAllByRole("radio")
       .map((radio) => radio.textContent);
-    expect(names).toEqual(["Auto", "Light", "Dark", "Glare"]);
+    expect(names).toEqual(["Auto", "Light", "Dark", "Bright light"]);
     expect(screen.queryByRole("switch", { name: "Glare mode" })).toBeNull();
+    expect(screen.queryByRole("switch", { name: "Bright light" })).toBeNull();
   });
 
-  it("turns Glare on through its own key and marks Glare, not Dark, as the theme", () => {
+  it("turns Bright light on through its own key and marks it, not Dark, as the theme", () => {
     renderSettings();
     fireEvent.click(themeRadio("Dark"));
-    fireEvent.click(themeRadio("Glare"));
-    expect(document.documentElement.getAttribute("data-mode"), "Glare did not reach the root").toBe("glare");
+    fireEvent.click(themeRadio("Bright light"));
+    expect(document.documentElement.getAttribute("data-mode"), "Bright light did not reach the root").toBe("glare");
     expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBe("on");
-    expect(themeRadio("Glare").getAttribute("aria-checked")).toBe("true");
+    expect(themeRadio("Bright light").getAttribute("aria-checked")).toBe("true");
     expect(themeRadio("Dark").getAttribute("aria-checked")).toBe("false");
 
     fireEvent.click(themeRadio("Dark"));
-    expect(document.documentElement.hasAttribute("data-mode"), "Glare stayed on after Dark").toBe(false);
+    expect(document.documentElement.hasAttribute("data-mode"), "Bright light stayed on after Dark").toBe(false);
     expect(window.localStorage.getItem(GLARE_STORAGE_KEY)).toBeNull();
     expect(themeRadio("Dark").getAttribute("aria-checked")).toBe("true");
   });
 
-  it("follows a Glare change made from anywhere else", () => {
+  it("follows a Bright light change made from anywhere else", () => {
     renderSettings();
     act(() => applyGlare(true));
-    expect(themeRadio("Glare").getAttribute("aria-checked"), "the theme did not follow the store").toBe("true");
+    expect(themeRadio("Bright light").getAttribute("aria-checked"), "the theme did not follow the store").toBe("true");
   });
 });

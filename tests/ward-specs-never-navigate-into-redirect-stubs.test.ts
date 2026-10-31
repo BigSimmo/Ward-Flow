@@ -239,7 +239,7 @@ function renderableTestIds(route: string): Set<string> {
     /*
      * 🔴 **IDS ARRIVING AS A PROP ARE NOT WRITTEN AS `data-testid=` ANYWHERE, AND MISSING THEM
      * INVENTS VIOLATIONS.** Eleven ward components render `data-testid={testId}` from a prop —
-     * `WardPanel`, `WardTable`, `WardDailySheet`, `CapacityScreen`'s group bodies and more — so the
+     * `WardPanel`, `WardTable`, `WardDailySheet`, the shared `Drawer` and more — so the
      * id itself is written at the CALL SITE, 70 times, as `testId="ward-…"`. Scanning only the
      * attribute would leave every one of those out of the renderable set and report any spec waiting
      * for one as a defect.
@@ -694,15 +694,15 @@ describe("no ward spec navigates into a redirect stub and then waits for the scr
 
     /*
      * The prop arm, proved on a real screen rather than asserted in a comment. `CapacityScreen`
-     * reaches `WardTable`, which writes `data-testid={testId}`; the id itself is only ever written
-     * at the call site as `testId="ward-capacity-gap-table"`. If this regressed, every spec waiting
-     * on a panel or table id would be accused of a defect it does not have.
+     * reaches the shared `Drawer`, which writes `data-testid={testId}`; the id itself is only ever
+     * written at the call site as `testId="ward-capacity-ward-drawer"`. If this regressed, every
+     * spec waiting on a panel or table id would be accused of a defect it does not have.
      */
     expect(
       renderableTestIds("/ward-flow/capacity"),
       "an id supplied through a `testId` prop is no longer being collected, so this guard will " +
         "report false defects against every panel and table handle in the estate",
-    ).toContain("ward-capacity-gap-table");
+    ).toContain("ward-capacity-ward-drawer");
 
     const stubs = redirectStubs();
     expect(

@@ -273,10 +273,13 @@
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
    keep the glass card above. A toast that closes itself (Undo or timed) shows no X, as drawn. */
 @media (max-width: 48rem) {
-  /* F-15: 12px above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
-     92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. */
+  /* F-15: above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
+     92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. The gap
+     is 12px unless the shell sets --wf-toast-dock-gap (the new frame sets 24px, from the mock-ups). */
   .toastRegion {
-    --wf-toast-rest: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 12px);
+    --wf-toast-rest: calc(
+      var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + var(--wf-toast-dock-gap, 12px)
+    );
     left: 12px;
     right: 12px;
     bottom: var(--wf-toast-rest);

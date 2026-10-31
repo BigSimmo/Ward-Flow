@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
@@ -7,7 +7,6 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
 
 /**
  * 🔴 **RE-POINTED AT `CapacityScreen` ON 2026-09-06, AFTER THE SIGNAL IT ASKS FOR WAS BUILT.**
@@ -38,6 +37,10 @@ import { showWardTable } from "./helpers/capacity-ward-table";
  * occupancy and no ward claims to be mid-update. The caution is still on the screen for data that
  * disagrees; its placement and scope assertions moved, unchanged in intent, to
  * `ward-sexmix-caution-placement.dom.test.tsx`, which builds that disagreement directly.
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the network table and its per-row sex-mix cell are gone.
+ * Each ward's gender mix ("Female N · Male N") and the mid-update caution now sit in its ward
+ * drawer, opened from the ward's bed map card, so every case below reads them there.
  */
 const SUBJECT = "rph-adult-secure";
 
@@ -80,7 +83,43 @@ function renderBoard() {
       <RecordLeaving />
     </WardFlowProvider>,
   );
-  showWardTable();
+}
+
+/** A ward card's visible name: its text without the spelled-out code a screen reader hears. */
+function visibleName(element: Element | null): string {
+  if (!element) return "";
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll("abbr + span").forEach((node) => node.remove());
+  return (clone.textContent ?? "").trim();
+}
+
+/** Opens a ward's drawer from its bed map card, as a coordinator would. */
+function openWardDrawer(unitId: string): HTMLElement {
+  const unit = allUnits().find((candidate) => candidate.id === unitId);
+  if (!unit) throw new Error(`no unit ${unitId}`);
+  const map = document.getElementById("capacity-bed-map");
+  if (!map) throw new Error("no bed map on the Capacity screen");
+  const card = Array.from(map.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="dialog"]')).find(
+    (button) => visibleName(button.firstElementChild) === unit.name,
+  );
+  if (!card) throw new Error(`no bed map card for ${unitId}`);
+  fireEvent.click(card);
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  expect(drawer).toHaveAccessibleName(unit.name);
+  return drawer;
+}
+
+const CAUTION = /may not be settled/iu;
+
+/** The open drawer's gender mix fact ("Female N · Male N"), or null when the drawer shows none. */
+function sexMixIn(drawer: HTMLElement): HTMLElement | null {
+  return within(drawer).queryByText(/^Female \d+ · Male \d+$/u);
+}
+
+function sexMixOf(unitId: string): HTMLElement {
+  const cell = sexMixIn(openWardDrawer(unitId));
+  if (!cell) throw new Error(`${unitId}'s drawer shows no gender mix`);
+  return cell;
 }
 
 describe("the Capacity screen says when a ward's bed records are mid-update", () => {
@@ -101,10 +140,12 @@ describe("the Capacity screen says when a ward's bed records are mid-update", ()
 
   it("says nothing on a settled board", () => {
     renderBoard();
-    expect(
-      screen.queryByTestId(`ward-capacity-mid-update-${SUBJECT}`),
-      "a caution shown on a settled board would be ignored within a day and make every figure look doubtful",
-    ).not.toBeInTheDocument();
+    for (const unit of allUnits()) {
+      expect(
+        within(openWardDrawer(unit.id)).queryByText(CAUTION),
+        `${unit.id}: a caution shown on a settled board would be ignored within a day and make every figure look doubtful`,
+      ).not.toBeInTheDocument();
+    }
   });
 
   // CHANGED 25 September 2026 (see the file header): was "warns on the ward whose bed was
@@ -113,17 +154,17 @@ describe("the Capacity screen says when a ward's bed records are mid-update", ()
   // to be mid-update, while this ward's figure really did move (so the silence is not vacuous).
   it("a person leaving moves the ward's sex register with its occupancy, and no ward claims to be mid-update", () => {
     renderBoard();
-    const totalBefore = sexMixTotal(screen.getByTestId(`ward-capacity-sexmix-${SUBJECT}`).textContent);
+    const totalBefore = sexMixTotal(sexMixOf(SUBJECT).textContent);
 
     fireEvent.click(screen.getByRole("button", { name: "record leaving" }));
 
     expect(
-      sexMixTotal(screen.getByTestId(`ward-capacity-sexmix-${SUBJECT}`).textContent),
+      sexMixTotal(sexMixOf(SUBJECT).textContent),
       "the person who left is still counted in the ward's sex mix",
     ).toBe(totalBefore - 1);
     for (const unit of allUnits()) {
       expect(
-        screen.queryByTestId(`ward-capacity-mid-update-${unit.id}`),
+        within(openWardDrawer(unit.id)).queryByText(CAUTION),
         `${unit.id} claims to be mid-update, but the departure moved its sex register and occupancy together`,
       ).not.toBeInTheDocument();
     }
@@ -164,7 +205,7 @@ describe("the Capacity screen says when a ward's bed records are mid-update", ()
      * non-zero mix. A wrong key zeroes all of them at once, which is exactly the shape this catches
      * and the equality above cannot.
      */
-    const allCells = allUnits().map((u) => screen.queryByTestId(`ward-capacity-sexmix-${u.id}`)?.textContent ?? "");
+    const allCells = allUnits().map((u) => sexMixIn(openWardDrawer(u.id))?.textContent ?? "");
     const nonZero = allCells.filter((t) => /[1-9]/u.test(t)).length;
     /*
      * ⚠️ **THE FAILURE MESSAGE CARRIES THE POPULATION WALKED, AND THAT IS NOT DECORATION.** The first
@@ -185,7 +226,7 @@ describe("the Capacity screen says when a ward's bed records are mid-update", ()
 
     // Sourced from the unit rather than hand-written here, so a fixture change cannot leave this
     // asserting a figure the ward no longer holds.
-    expect(screen.getByTestId(`ward-capacity-sexmix-${SUBJECT}`)).toHaveTextContent(before);
+    expect(sexMixOf(SUBJECT)).toHaveTextContent(before);
 
     fireEvent.click(screen.getByRole("button", { name: "record leaving" }));
 
@@ -194,16 +235,16 @@ describe("the Capacity screen says when a ward's bed records are mid-update", ()
      * move, because a bed release did not know whose bed it was. It now does: the bed frees when a
      * named person leaves, and their own recorded gender bucket goes down by one in the same write.
      * So the figure moves by exactly one, the screen shows what the ward now records, and the
-     * mid-update caution stays away because the pair still agree. The caution's placement (in the
-     * sex-mix cell, never under Ready) is kept in `ward-sexmix-caution-placement.dom.test.tsx`.
+     * mid-update caution stays away because the pair still agree. The caution's placement (with the
+     * gender mix, never under Ready) is kept in `ward-sexmix-caution-placement.dom.test.tsx`.
      */
-    const after = screen.getByTestId(`ward-capacity-sexmix-${SUBJECT}`);
+    const after = sexMixOf(SUBJECT);
     expect(sexMixTotal(after.textContent), "the sex mix did not move when the person left").toBe(
       unit!.sexMix.Female + unit!.sexMix.Male - 1,
     );
     expect(after).not.toHaveTextContent(before);
     expect(
-      screen.queryByTestId(`ward-capacity-mid-update-${SUBJECT}`),
+      within(openWardDrawer(SUBJECT)).queryByText(CAUTION),
       "the ward claims to be mid-update although its sex register and occupancy moved together",
     ).not.toBeInTheDocument();
   });

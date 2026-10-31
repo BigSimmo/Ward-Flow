@@ -8,7 +8,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn() }),
 }));
 
-import { showWardTable } from "./helpers/capacity-ward-table";
+import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { OfficerScreen } from "@/components/ward-management/officer/officer-screen";
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
@@ -29,6 +29,7 @@ import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen"
 import { DischargeRecordDetail } from "@/components/ward-management/discharges/discharge-detail-panes";
 import { useDischargeWorkspaceState } from "@/components/ward-management/discharges/use-discharge-workspace-state";
 import { DischargePopulationSwitch } from "@/components/ward-management/discharges/discharge-board-filters";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 function Override({
   dispatch,
@@ -58,6 +59,9 @@ function deferred() {
     fail = reject;
   });
   return { promise, finish, fail };
+}
+function seedUnitName(unitId: string): string {
+  return seedWardFlowState().units.find((unit) => unit.id === unitId)!.name;
 }
 function renderCommand(children: ReactNode, dispatch: WardCommandDispatch) {
   return render(
@@ -354,20 +358,23 @@ describe("role restrictions and record actors", () => {
     expect(screen.getByText("Expected departure updated.")).toBeInTheDocument();
   });
 
-  it("explains coordinator-only capacity requests at the table and sidebar", () => {
+  it("offers a ward desk no coordinator-only capacity request in the ward drawer or This shift", () => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } });
     });
     const dispatch = vi.fn();
     renderCommand(<CapacityScreen />, dispatch);
-    showWardTable();
-    const request = screen.getByTestId("ward-capacity-refresh-rph-adult-secure");
-    expect(request).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(request);
+    // Capacity redesign (31 Oct 2026): a desk that may not ask a ward to confirm sees no Ask
+    // control at all, rather than a locked one with a reason.
+    const shift = within(screen.getByRole("region", { name: "Bed counts confirmed" }));
+    expect(shift.queryByRole("button", { name: /^Ask .+ to confirm its beds$/u })).toBeNull();
+    const card = bedMapCards().find((candidate) => wardCardName(candidate) === seedUnitName("rph-adult-secure"));
+    expect(card, "the bed map must draw the ward desk's own ward").toBeDefined();
+    fireEvent.click(card!);
+    const drawer = within(screen.getByTestId("ward-capacity-ward-drawer"));
+    expect(drawer.queryByRole("button", { name: "Ask the ward" })).toBeNull();
     expect(dispatch).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByTestId("ward-capacity-network-row-rph-adult-secure"));
-    expect(screen.getByRole("button", { name: "Request ward update" })).toHaveAttribute("aria-disabled", "true");
   });
 
   it("makes coordinator alert operations unavailable to a ward desk with an explanation", () => {
@@ -377,6 +384,7 @@ describe("role restrictions and record actors", () => {
     });
     const dispatch = vi.fn();
     renderCommand(<AlertsScreen />, dispatch);
+    openAlertKindGroups();
     const row = [...document.querySelectorAll<HTMLElement>("li[data-alert-id]")].find((entry) =>
       entry.textContent?.includes("ED mental health team"),
     )!;

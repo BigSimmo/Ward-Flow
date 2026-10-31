@@ -1,3 +1,4 @@
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
@@ -237,14 +238,8 @@ export function searchHub(entries: HubEntry[], query: string, kind: HubKind | "a
   if (needle === "") return scoped;
   // Every typed word must appear, in any order, as the header search matches EDs: "fremantle older"
   // finds the Fremantle older adult ward rather than nothing (search review, 19 October 2026).
-  const tokens = needle.split(/\s+/);
-  return scoped.filter((entry) => {
-    const haystack = [entry.name, entry.site, entry.service]
-      .filter((value): value is string => typeof value === "string")
-      .join(" ")
-      .toLowerCase();
-    return tokens.every((token) => haystack.includes(token));
-  });
+  // Folded as the header search folds it, so "St Johns" finds St John's (31 Oct 2026).
+  return scoped.filter((entry) => fieldsMatchEveryWord(needle, [entry.name, entry.site, entry.service]));
 }
 
 /**
@@ -271,25 +266,6 @@ export function hubCounts(entries: HubEntry[], query: string): Record<HubKind | 
     ed: matched.filter((entry) => entry.kind === "ed").length,
     community: matched.filter((entry) => entry.kind === "community").length,
   };
-}
-
-/**
- * Ready beds summed by health service, ward entries only (Ready is a ward-only figure). Ordered by
- * `wardServiceOrder` (`ward-derivations.ts`) — the app's own canonical service order — rather than
- * insertion order, which would otherwise follow whatever order `units` happened to arrive in.
- */
-export function readyByService(entries: HubEntry[]): { service: string; ready: number }[] {
-  const totals = new Map<string, number>();
-  for (const entry of entries) {
-    if (entry.kind !== "ward" || entry.service === undefined || entry.ready === undefined) continue;
-    totals.set(entry.service, (totals.get(entry.service) ?? 0) + entry.ready);
-  }
-  return wardServiceOrder
-    .filter((service) => totals.has(service))
-    .map((service) => ({
-      service,
-      ready: totals.get(service) ?? 0,
-    }));
 }
 
 /**

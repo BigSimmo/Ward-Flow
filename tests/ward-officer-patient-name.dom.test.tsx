@@ -42,8 +42,8 @@ describe("transport officer job cards name the patient", () => {
     );
     if (!job) throw new Error("no linked officer job");
     const info = resolveSubjectPatient(job, state);
-    const full = phone ? info.formalName : info.displayName;
-    const shown = full;
+    // Transport redesign (D-83, Josh 31 Oct 2026): surname first at every width, not only on a phone.
+    const shown = info.formalName;
     expect(screen.getByTestId(`ward-officer-patient-${job.id}`)).toHaveTextContent(shown);
     expect(screen.getByTestId(`ward-officer-select-${job.id}`)).toHaveAccessibleName(
       new RegExp(shown.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")),
@@ -69,7 +69,7 @@ describe("transport officer job cards name the patient", () => {
       const info = resolveSubjectPatient(movement, state);
       if (info.patient) {
         linked++;
-        expect(line).toHaveTextContent(info.displayName);
+        expect(line).toHaveTextContent(info.formalName);
       } else {
         unlinked++;
         expect(line).toHaveTextContent("Not recorded");

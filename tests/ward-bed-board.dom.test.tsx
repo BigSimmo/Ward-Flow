@@ -24,6 +24,7 @@ import { layoutBedNumbers } from "@/components/ward-management/ward/ward-bed-lay
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 const UNIT = "scgh-adult-open";
 
@@ -83,7 +84,7 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
 
     // Nothing picked: pressing an occupied bed opens its panel, which offers the move.
     fireEvent.click(occupied);
-    fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+    fireEvent.click(getBedStep("Move to another bed"));
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/^Picked up .* from bed \d+\. \d+ beds? fits?/);
     expect(screen.getByTestId(`ward-board-bed-${to}`)).toHaveAttribute("data-fits", "true");
     // An occupied bed does not fit, and is dimmed by colour, not hidden.
@@ -117,7 +118,7 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     renderBoard();
     const occupied = firstBed((label) => !/free|closed|pulled/.test(label));
     fireEvent.click(occupied);
-    fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+    fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(screen.getByRole("button", { name: "Put down" }));
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent("Put down. Nothing changed.");
     expect(screen.queryByRole("button", { name: "Put down" })).not.toBeInTheDocument();
@@ -241,7 +242,10 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
           <WardScreen unitId={UNIT} />
         </WardFlowProvider>,
       );
+      // The round shows its first 8 beds, then Show more (redesign approved 31 Oct 2026).
       const list = within(screen.getByTestId("ward-phone-round-list"));
+      expect(list.getAllByRole("button", { name: /^Bed / })).toHaveLength(8);
+      fireEvent.click(screen.getByRole("button", { name: "Show 16 more beds" }));
       const rows = list.getAllByRole("button", { name: /^Bed / });
       // Each bed once, all 24, and in bed order: never grouped or re-sorted.
       expect(rows).toHaveLength(24);

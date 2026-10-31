@@ -15,6 +15,8 @@ export type DialogAction = {
   loading?: boolean;
   /** Why the action is unavailable. Keeps the tab stop and shows the reason. */
   disabledReason?: string;
+  /** Focus starts here when the dialog opens (a confirm starts on its safe choice). */
+  autoFocus?: boolean;
 };
 
 export type DialogProps = {
@@ -41,6 +43,8 @@ export type DialogProps = {
   /** Where focus returns on close. Defaults to whatever had focus when the dialog opened. */
   returnFocusRef?: RefObject<HTMLElement | null>;
   size?: "sm" | "md" | "lg";
+  /** "alertdialog" for a question that needs an answer before going on (a confirm). */
+  role?: "dialog" | "alertdialog";
   className?: string;
   "data-testid"?: string;
 };
@@ -66,6 +70,7 @@ export function Dialog({
   initialFocusRef,
   returnFocusRef,
   size = "md",
+  role = "dialog",
   className,
   ...data
 }: DialogProps) {
@@ -111,7 +116,7 @@ export function Dialog({
       >
         <div
           ref={panelRef}
-          role="dialog"
+          role={role}
           aria-modal="true"
           aria-labelledby={titleId}
           aria-describedby={description ? descId : undefined}
@@ -155,6 +160,7 @@ export function Dialog({
                   loading={action.loading}
                   disabledReason={action.disabledReason}
                   onClick={action.onAction}
+                  data-sheet-autofocus={action.autoFocus ? "" : undefined}
                 >
                   {action.label}
                 </Button>

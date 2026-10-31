@@ -123,7 +123,8 @@
   min-width: 0;
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-13) / 18px var(--wf-font);
-  white-space: nowrap;
+  /* "Due 2 days ago" wraps at narrow widths rather than ending in "…". */
+  white-space: normal;
 }
 
 /* ---- hero ---- */
@@ -1494,30 +1495,6 @@ fieldset.formRow {
   font: 600 var(--wf-fs-16) / 1 var(--wf-mono);
 }
 
-.phoneMore {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  width: 100%;
-  min-height: var(--ward-tap, 3rem);
-  padding: 0 14px;
-  box-sizing: border-box;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface-2);
-  color: var(--wf-ink-1);
-  font: 500 var(--wf-fs-14) / 1 var(--wf-font);
-  cursor: pointer;
-}
-
-.phoneMore > .sub {
-  margin-left: auto;
-}
-
-.phoneSearch {
-  height: 44px;
-}
-
 .phoneBar {
   position: fixed;
   right: var(--wf-s-3);
@@ -1712,41 +1689,6 @@ fieldset.formRow {
   white-space: normal;
 }
 
-/* ---------- Since the bed meeting: delta twins (v10) ---------- */
-
-.since {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-width: 0;
-  padding-right: var(--wf-s-4);
-  border-right: 1px solid var(--wf-on-hero-div);
-  color: var(--wf-hero-ink-2);
-  font-size: var(--wf-fs-12);
-  white-space: nowrap;
-}
-
-.sinceLabel {
-  overflow: hidden;
-  color: var(--wf-hero-ink-3);
-  font-weight: 600;
-  letter-spacing: var(--wf-tr-caps);
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-}
-
-.sinceTwin {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-@media (max-width: 75rem) {
-  .sinceLabel {
-    display: none;
-  }
-}
-
 .phoneSince {
   grid-column: 1 / -1;
   margin: 0;
@@ -1756,10 +1698,6 @@ fieldset.formRow {
   font-size: var(--wf-fs-12);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.phoneSince [data-wf-twin] {
-  font-size: var(--wf-fs-12);
 }
 
 /* v10 phone card (11 Oct 2026): the UMRN reads as plain mono (still a link to the profile), and the

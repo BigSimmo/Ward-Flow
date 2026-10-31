@@ -58,14 +58,15 @@
   padding: var(--wf-s-1) var(--wf-s-1) var(--wf-s-1) 0;
 }
 
+/* The eyebrow wraps on every screen rather than hiding its end ("GOVERNANCE · THIS S…", lane S's
+ * desktop check, 31 Oct 2026), as it already did on phone. */
 .eyebrow {
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   letter-spacing: var(--wf-tr-caps);
   text-transform: uppercase;
   color: var(--wf-hero-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 /* Device sweep (24 Oct 2026): the title never clips mid-word ("70 open mo"). When the title and its
@@ -726,6 +727,35 @@
   .hero[data-band="off"]::after,
   :global([data-wf-scroller]) .hero[data-wf-hero="band"]:not([data-band])::after {
     display: none;
+  }
+
+  /* Kit (#1118 handover, build suggestion 4): every page prints through the Hero, which printed as
+     a dark band with a squeezed title. On paper it is a plain bordered box in black ink, the title
+     takes the full first line and the counts wrap under it. Status colours keep their day values. */
+  .hero.hero {
+    --wf-hero-ink: #000;
+    --wf-hero-ink-2: #222;
+    --wf-hero-ink-3: #444;
+    --wf-danger: var(--wf-danger-ink, #a3281a);
+    --wf-warning: var(--wf-warning-ink, #7a4f00);
+    --wf-success: var(--wf-success-ink, #1d6b45);
+    --wf-info: var(--wf-info-ink, #1f5a8a);
+    --wf-focus-ring: #000;
+    background: none;
+    border: 1px solid #999;
+    box-shadow: none;
+    color: #000;
+    break-inside: avoid;
+  }
+  .row {
+    flex-wrap: wrap;
+  }
+  .titleBlock {
+    flex: 1 1 100%;
+  }
+  .stats {
+    overflow: visible;
+    flex-wrap: wrap;
   }
 }
 

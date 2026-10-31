@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { type ReactNode, useId } from "react";
+import { useId } from "react";
 
 import { StatusGlyph, cx } from "@/components/wf";
 
@@ -79,17 +79,18 @@ export function EdNeedsYou({
   );
 }
 
-/** What the page no longer stacks under the board, as links to where each lives. */
-export function EdElsewhereLinks({ links }: { links: { href: string; title: string; sub: ReactNode }[] }) {
+/**
+ * What the page no longer stacks under the board, as links to where each lives. ED board redesign
+ * (31 Oct 2026): one quiet footer line under the board, not a card; each link's description is its
+ * tooltip.
+ */
+export function EdElsewhereLinks({ links }: { links: { href: string; title: string; sub: string }[] }) {
   return (
-    <nav className={cx(styles.card, styles.framed)} aria-label="Elsewhere" data-testid="ward-ed-elsewhere">
+    <nav className={styles.linksFoot} aria-label="Elsewhere" data-testid="ward-ed-elsewhere">
       {links.map((link) => (
-        <Link key={link.href} href={link.href} className={styles.link}>
-          <span className={styles.text}>
-            <b className={styles.kind}>{link.title}</b>
-            <span className={styles.person}>{link.sub}</span>
-          </span>
-          <ChevronRight size={16} aria-hidden="true" className={styles.chev} />
+        <Link key={link.href} href={link.href} title={link.sub}>
+          {link.title}
+          <ChevronRight size={14} aria-hidden="true" />
         </Link>
       ))}
     </nav>

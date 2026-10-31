@@ -1,0 +1,248 @@
+/* Referrals, redesigned: wrapping queue rows, the ward offers as a table, history folded away. */
+
+/* Queue rows wrap instead of cutting the patient line off ("Adult, not a wa…"). */
+.wrapRows.wrapRows td,
+.wrapRows.wrapRows td * {
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.offers {
+  margin: var(--wf-s-3) 0 0;
+  border-top: 1px solid var(--wf-line);
+}
+.offersTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+.offersNote {
+  margin-inline-start: auto;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--wf-ink-3);
+}
+.offersTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.offersTable thead th {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-3);
+}
+.offersTable tbody th,
+.offersTable td {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  text-align: start;
+  vertical-align: middle;
+  color: var(--wf-ink-1);
+}
+.offersTable tbody th {
+  font-weight: 600;
+}
+.offerLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: inherit;
+  text-decoration: none;
+}
+.offerLink:hover {
+  text-decoration: underline;
+}
+.offerPhoneAnswer {
+  display: none;
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  white-space: nowrap;
+}
+
+/* The decision pane's three show-more controls, one style (Josh, 30 October 2026): a full-width
+   row with a line above, the words on the left and the app's chevron on the right, turning when
+   open. Written history is a button; Submitted documentation and Referrer cancelled? are today's
+   native disclosures, wrapped in .disclosure so only their summary row is restyled. */
+.disclosure {
+  display: contents;
+}
+.disclosure.disclosure > details {
+  display: grid;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+.disclosureRow,
+.disclosure.disclosure > details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: start;
+  list-style: none;
+  cursor: pointer;
+}
+.disclosure.disclosure > details > summary::-webkit-details-marker {
+  display: none;
+}
+.disclosureRow::after,
+.disclosure.disclosure > details > summary::after {
+  content: "";
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: var(--wf-ink-3);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    center / 16px no-repeat;
+}
+.disclosureRow[aria-expanded="true"]::after,
+.disclosure.disclosure > details[open] > summary::after {
+  transform: rotate(180deg);
+}
+.disclosureRow:hover,
+.disclosure.disclosure > details > summary:hover {
+  color: var(--wf-accent-ink);
+}
+.disclosureRow:focus-visible,
+.disclosure.disclosure > details > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+@media (max-width: 48rem) {
+  .disclosureRow,
+  .disclosure.disclosure > details > summary {
+    min-height: 48px;
+  }
+}
+
+/* Needs as short words ("Locked", "Transport"), one under another so the narrow column holds them. */
+.needWords.needWords {
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+.needWords.needWords > span {
+  white-space: nowrap;
+}
+/* Room for "Transport" on one line. */
+.colNeeds.colNeeds {
+  width: 5.75rem;
+}
+
+@media (max-width: 48rem) {
+  .offersTable thead {
+    display: none;
+  }
+  /* Two-line rows: name and waiting time on the first line, the ward asked then its answer on the
+     second ("BTY Adult Secure · Awaiting answer"). The whole row is the tap target. */
+  .offersTable tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name wait"
+      "wards wards";
+    gap: 2px var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-3);
+    border-top: 1px solid var(--wf-line);
+  }
+  .offersTable tbody th,
+  .offersTable td {
+    padding: 0;
+    border: 0;
+  }
+  .offerName {
+    grid-area: name;
+  }
+  .offersTable .offerWait {
+    grid-area: wait;
+    text-align: end;
+  }
+  .offersTable .offerWards {
+    grid-area: wards;
+    color: var(--wf-ink-2);
+  }
+  /* The answer reads after the ward on the second line, so its own cell steps out. */
+  .offersTable .offerAnswer {
+    display: none;
+  }
+  .offersTable .offerPhoneAnswer {
+    display: inline;
+  }
+  .offerLink {
+    min-height: 0;
+  }
+  .offerLink::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  /* The desktop toolbar's chip and order note already sit elsewhere, so its empty strip goes. */
+  .toolbarDesk.toolbarDesk {
+    display: none;
+  }
+}
+
+/* Phone hero: "Decision overdue" is the longest label, so each figure takes at least its own width
+   instead of an equal third that cut it ("Decision overdu"). */
+.figures.figures {
+  grid-auto-columns: minmax(max-content, 1fr);
+}
+
+/* Laptop and tablet: the waiting chart takes the band's full width, with beds ready below it.
+   Side by side it shrank to a sliver and its 24h and 72h labels printed over each other. */
+@media (max-width: 85rem) {
+  .heroBand.heroBand {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .heroBand.heroBand > :last-child {
+    padding-inline-start: 0;
+    border-inline-start: 0;
+  }
+}
+
+/* No side edges (Josh, 31 Oct 2026): the selected row keeps the selected tint with a neutral
+   border, not a coloured stripe on its left. */
+.wrapRows.wrapRows tr:has([aria-pressed="true"]) {
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+}
+/* The overdue row's red left bar goes too; the wait cell's warning glyph and "overdue" carry it. */
+.wrapRows.wrapRows tr > td:first-child::before {
+  display: none;
+}
+/* Review fix 9: the phone card's red left bar goes as well; its "overdue" tag carries it. */
+.wrapRows.wrapRows [data-overdue="true"]::before {
+  display: none;
+}

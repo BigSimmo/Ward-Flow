@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
-import { showWardTable } from "./helpers/capacity-ward-table";
+import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as the sibling dom suites (ward-screen.dom.test.tsx,
@@ -70,8 +70,15 @@ function renderCapacity() {
       <CapacityScreen />
     </WardFlowProvider>,
   );
-  showWardTable();
   return view;
+}
+
+/** One ward's card on Capacity's bed map, folded group or not. */
+function bedMapCard(unitId: string): HTMLButtonElement {
+  const name = allUnits().find((unit) => unit.id === unitId)!.name;
+  const card = bedMapCards().find((candidate) => wardCardName(candidate) === name);
+  if (!card) throw new Error(`The bed map draws no card for ${unitId}.`);
+  return card;
 }
 
 function renderEd() {
@@ -372,7 +379,7 @@ describe("emergency department intake picker", () => {
     raiseReferralWithForm("3B");
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     // Still a 3B. The examination no longer replaces the clinician's chosen form.
     expect(screen.getByTestId("probe")).toHaveTextContent(`${FIRST_RAISED_ID}|3B|`);
@@ -391,7 +398,7 @@ describe("emergency department intake picker", () => {
     raiseReferralWithForm("3B");
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
     expect(screen.getByTestId(`ward-ed-next-${FIRST_RAISED_ID}`)).toHaveTextContent("Refer to a ward");
     expect(screen.getByTestId(`ward-ed-outcome-toggle-${FIRST_RAISED_ID}`)).toBeInTheDocument();
   });
@@ -828,7 +835,9 @@ describe("the statewide capacity table the ED page links to says which ready bed
   /*
    * ED A2 (owner pick, 11 Oct 2026): the ED page no longer repeats the statewide capacity table; it
    * links to the Capacity screen, which owns it. The ruling below travels with the table, so these
-   * assertions now read that screen's network table and also pin the ED page's link to it.
+   * assertions read that screen and also pin the ED page's link to it. Since the Capacity redesign
+   * (31 Oct 2026) the network table is gone and each ward is a card on the bed map, so they read
+   * the ward's card: its Ready figure and its note line.
    */
   /*
    * 🔴 **OWNER RULING 2026-09-05, CARRIED TO THIS SCREEN 2026-09-06.** "Ready" counts beds the
@@ -862,19 +871,19 @@ describe("the statewide capacity table the ED page links to says which ready bed
     );
     cleanup();
     renderCapacity();
-    const row = screen.getByTestId(`ward-capacity-network-row-${PREPARING_UNIT}`);
-    const cell = within(row).getByTestId("ward-capacity-network-ready");
-    const note = within(cell).getByTestId("ward-capacity-network-pending");
+    const card = bedMapCard(PREPARING_UNIT);
+    const note = card.querySelector<HTMLElement>('[class*="wardNote"]');
+    expect(note, "the ward's card shows no note line").not.toBeNull();
 
-    expect(note).toHaveTextContent(/still being made ready/u);
+    expect(note).toHaveTextContent(/being made ready/u);
 
     /*
-     * The figure is read with the note stripped out, and compared against `unitCapacity` — the same
-     * derivation the screen calls. Asserting the whole cell's text would conflate the ruling working
-     * with the defect it forbids, which is exactly how the sibling guard on the ward screen came to
-     * go red for the right behaviour.
+     * The figure is read on its own, and compared against `unitCapacity`, the ward's availability
+     * before any cleaning count (the bed map draws it from `bedStates`). Asserting the whole card's text would conflate the ruling working with the
+     * defect it forbids, which is exactly how the sibling guard on the ward screen came to go red
+     * for the right behaviour.
      */
-    const figure = (cell.textContent ?? "").replace(note.textContent ?? "", "").trim();
+    const figure = (card.querySelector('[class*="wardReadyN"]')?.textContent ?? "").trim();
     const unit = allUnits().find((candidate) => candidate.id === PREPARING_UNIT)!;
     expect(figure, "the cleaning count was subtracted from Ready; the owner ruled the number does not move").toBe(
       String(unitCapacity(unit, bedReleases).available),
@@ -890,11 +899,10 @@ describe("the statewide capacity table the ED page links to says which ready bed
       (unit) => !bedReleases.some((r) => r.unitId === unit.id && r.state === "discharged" && r.preparing),
     )!;
     renderCapacity();
-    const quietRow = screen.getByTestId(`ward-capacity-network-row-${quiet.id}`);
     expect(
-      within(quietRow).queryByTestId("ward-capacity-network-pending"),
+      bedMapCard(quiet.id).textContent,
       `${quiet.id} has nothing being made ready and must not claim it does`,
-    ).toBeNull();
+    ).not.toMatch(/being made ready/u);
   });
 });
 
@@ -1112,14 +1120,17 @@ describe("direct CMHT referral pathway from ED screen", () => {
     // Record an examination outcome for WF-001
     fireEvent.click(screen.getByTestId("ward-ed-examine-toggle-WF-001"));
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
-    // Now referral is unlocked
-    expect(cmhtToggle).not.toHaveAttribute("aria-disabled");
+    // Now referral is unlocked. Redesign (pop-ed-actions, Josh 31 Oct 2026): a greyed item sits
+    // under "Not available yet" in the row menu and moves to its group once open, so the control is
+    // found again rather than held from before.
+    const unlockedCmhtToggle = screen.getByTestId("ed-refer-cmht-WF-001");
+    expect(unlockedCmhtToggle).not.toHaveAttribute("aria-disabled");
     expect(screen.queryByTestId("ward-ed-cmht-unavailable-WF-001")).not.toBeInTheDocument();
 
     // Open the panel
-    fireEvent.click(cmhtToggle);
+    fireEvent.click(unlockedCmhtToggle);
     const panel = screen.getByTestId("ward-ed-cmht-panel-WF-001");
     expect(panel).toBeInTheDocument();
 
@@ -1185,7 +1196,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
 
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${FIRST_RAISED_ID}`));
     fireEvent.click(screen.getByRole("radio", { name: "Further examination ordered" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     // The control is offered again — the repeat-examination guard's own precondition — rather
     // than reporting "already examined" the way it would for any other outcome.
@@ -1193,7 +1204,7 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     expect(toggle).not.toHaveAttribute("aria-disabled");
     fireEvent.click(toggle);
     fireEvent.click(screen.getByRole("radio", { name: "Inpatient treatment order" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     const history = screen.getByTestId(`ward-ed-examination-history-${FIRST_RAISED_ID}`);
     expect(history).toHaveTextContent("further examination ordered");
@@ -1227,13 +1238,15 @@ describe("emergency department — repeat examination (owner item 7)", () => {
     fireEvent.change(screen.getByTestId(`ward-ed-transport-estimated-time-${revokedId}`), {
       target: { value: "14:30" },
     });
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    fireEvent.click(screen.getByTestId(`ward-ed-transport-estimated-day-today-${revokedId}`));
     fireEvent.click(screen.getByTestId(`ward-ed-book-transport-confirm-${revokedId}`));
 
     fireEvent.click(screen.getByTestId(`ward-ed-handover-${revokedId}`));
 
     fireEvent.click(screen.getByTestId(`ward-ed-examine-toggle-${revokedId}`));
     fireEvent.click(screen.getByRole("radio", { name: "Revoked — does not proceed" }));
-    fireEvent.click(screen.getByRole("button", { name: "Confirm examination outcome" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save outcome" }));
 
     const flag = screen.getByTestId(`ward-ed-examination-revoked-flag-${revokedId}`);
     expect(flag).toHaveTextContent("The examination was revoked and this movement still has a bed pulled.");

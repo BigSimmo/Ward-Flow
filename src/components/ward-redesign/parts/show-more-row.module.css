@@ -1,0 +1,28 @@
+/* The one "Show more" row (30 October 2026): centred, 600, a line above; 40px, 48px on a phone. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: center;
+  cursor: pointer;
+}
+.row:hover {
+  text-decoration: underline;
+}
+.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+@media (max-width: 48rem) {
+  .row {
+    height: 48px;
+  }
+}

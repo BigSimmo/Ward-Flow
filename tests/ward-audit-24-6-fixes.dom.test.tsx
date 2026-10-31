@@ -62,7 +62,8 @@ describe("TC-03: Record a form takes the date written on the form", () => {
     const save = () => screen.getByTestId("ward-legal-forms-register-confirm");
     // Blank date means today, and today's 23:50 has not happened yet.
     expect(save()).toHaveAttribute("aria-disabled", "true");
-    fireEvent.change(screen.getByTestId("ward-legal-forms-new-date"), { target: { value: "2026-10-24" } });
+    // The kit's DD/MM/YYYY box (bug list row 25).
+    fireEvent.change(screen.getByTestId("ward-legal-forms-new-date"), { target: { value: "24/10/2026" } });
     expect(save()).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(save());
     expect(saved).toEqual([23 * 60 + 50]);
@@ -72,7 +73,7 @@ describe("TC-03: Record a form takes the date written on the form", () => {
     const saved: Instant[] = [];
     const sheet = renderAt(DAY + 10, (at) => saved.push(at));
     fireEvent.change(within(sheet).getByLabelText("Time on form"), { target: { value: "09:00" } });
-    fireEvent.change(screen.getByTestId("ward-legal-forms-new-date"), { target: { value: "2026-10-25" } });
+    fireEvent.change(screen.getByTestId("ward-legal-forms-new-date"), { target: { value: "25/10/2026" } });
     const save = screen.getByTestId("ward-legal-forms-register-confirm");
     expect(save).toHaveAttribute("aria-disabled", "true");
     expect(save).toHaveAttribute("title", "Enter the date and time written on the form, no later than now.");

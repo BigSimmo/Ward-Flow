@@ -1,7 +1,8 @@
 // The setup file already loads these matchers; importing them here as well lets the commit-time
 // per-file type check see them.
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -39,6 +40,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { queryBedStep } from "./helpers/ward-bed-steps";
 
 /** A ward with people in it, found from the seed; the bed is found on screen, since seeded stays have no bed number. */
 const UNIT_ID = wardAdmissions.find((a) => a.state === "occupied")?.unitId;
@@ -63,7 +65,7 @@ async function openMarkAtEd() {
   await screen.findByRole("dialog");
   for (bedNumber = 1; bedNumber <= 40; bedNumber += 1) {
     openBed(bedNumber);
-    const button = screen.queryByRole("button", { name: "Mark at an ED" });
+    const button = queryBedStep("Mark at an ED");
     if (button) return button;
   }
   throw new Error("no bed on this ward offers Mark at an ED");

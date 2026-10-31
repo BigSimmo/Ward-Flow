@@ -1,0 +1,17 @@
+/* The Movements row's typed legal line (Josh, 31 Oct 2026). The line wraps in full rather than ending
+   in "…", so neither the typed time nor the "(limits not legally checked)" tag is cut at the cell
+   edge. The doubled class outranks the shared `.sub` truncation in movement-flow.module.css; the
+   narrow and phone layouts there keep their own rules. The glyph keeps a small gap from the form name. */
+.legalLine.legalLine {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.legalGlyph {
+  margin-right: 4px;
+  vertical-align: 1px;
+}
+
+.legalTag > span {
+  white-space: normal;
+}

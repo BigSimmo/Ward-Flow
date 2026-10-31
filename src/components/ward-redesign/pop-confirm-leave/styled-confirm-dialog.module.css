@@ -1,0 +1,26 @@
+/* Preview: the styled confirm's two answers in the kit footer's look (a hairline, the quiet answer
+   before the one filled button), bleeding to the panel's edges from inside the body. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-1) calc(-1 * var(--wf-s-4)) calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* Phone: 40px buttons with an invisible cover for a larger tap area, never 48px tall. */
+@media (max-width: 48rem) {
+  .actions .btn {
+    min-height: 40px;
+    height: 40px;
+  }
+
+  .actions .btn::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}

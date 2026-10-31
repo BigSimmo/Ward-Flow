@@ -15,11 +15,11 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { requiredRoleForPermission, setDeskRole } from "@/components/ward-management/ward-role-gate";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { PatientLastSeenCard, PatientLeaveCard, PatientLegalNowCard, PatientWhyCard } from "./patient-now-cards";
-import { type PatientNowRecord, clock, dur } from "./patient-now-records";
-import styles from "./patient-now.module.css";
-import { Button, JourneyStrip, buttonClass } from "@/components/wf";
-import { patientJourneyStages } from "./patient-journey";
+import { type PatientNowRecord, clock } from "./patient-now-records";
+import { PatientJourneyTimeline } from "./patient-journey-timeline";
+import { Button, buttonClass } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { type TabKey } from "./patient-now-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
 import type { LeaveBed, Movement, TransportProvider, Unit } from "@/components/ward-management/ward-model";
@@ -27,6 +27,7 @@ import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import { plural } from "@/components/ward-management/ward-plural";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 /** The values and handlers `PatientNowScreen` passes to its Now tab. */
 export type PatientNowPanelProps = {
@@ -77,6 +78,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // script-budget.json after the 18 Oct 2026 file split. Before the split this code was memoised as
   // part of PatientNowScreen; nothing it renders runs an effect, so plain re-rendering looks the same.
   "use no memo";
+  // Access audit (31 Oct 2026): New referral shows only where this desk can open the referral form.
+  const canOpenHref = useCanOpenHref();
   const {
     acceptingUnit,
     callTargets,
@@ -119,32 +122,65 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     wardForm,
     wardRefusal,
   } = props;
+  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
+  // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
+  // none of the ward's changes (leave, gone to ED, discharge date are ward or coordinator only), so the
+  // Record a change card of greyed buttons and its "Switch to Ward desk" link are left out for this desk.
+  const ownTeamDesk = useEffectiveWardAccess().role === "community";
+  const wardChangeOpen = !ownTeamDesk || gate("RECORD_LEAVE_BED").allowed;
+  const whyCard =
+    isLiveBedflow && liveMovement ? (
+      <PatientWhyCard
+        // UX review 24 Oct 2026: "Why they're here" was cut short beside the Opened chip at 1280px.
+        title="Why"
+        chip={`Opened ${formatInstantWithDay(liveMovement.openedAt, now)}`}
+        history={resolved.liveReferral?.history}
+        fallback={record.reason}
+        movement={liveMovement}
+        patient={livePatient}
+      />
+    ) : mode === "ward" || mode === "ed" ? (
+      <PatientWhyCard
+        title="Why admitted"
+        // Redesign (Josh, 30 Oct): the unit is the hero's eyebrow, so this card does not repeat it.
+        history={resolved.liveReferral?.history}
+        fallback={record.reason}
+        patient={livePatient}
+      />
+    ) : null;
+  // Community clinician: Why admitted moves into the left column, where Record a change would be, so
+  // the page has no empty column beside the rail.
+  const whyMovesLeft = ownTeamDesk && mode === "ward" && !wardChangeOpen && !isPhone;
+  const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
+  const referralMain = isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
+  // Community clinician: with no ward change to record, the phone bar held only the copy icon in an
+  // otherwise empty band. Copy takes the bar as its labelled main action instead, as Ask more wards
+  // does on the coordinator's patient page.
+  const copyAsMain = ownTeamDesk && isPhone && !phoneMovement && !referralMain;
   return (
     <PatientNowLayout
       mode={mode}
       context={statusContext}
       statusCardProps={{
         barLead:
-          isPhone && !phoneMovement ? (
-            <Button
-              iconOnly
-              icon={Copy}
-              aria-label={copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary"}
-              onClick={handleCopySummary}
-            />
+          isPhone && !phoneMovement && !copyAsMain ? (
+            <Button iconOnly icon={Copy} aria-label={copyLabel} onClick={handleCopySummary} />
           ) : undefined,
         // Phone keeps the patient's own New referral (preselected) when there is no stay to act on.
-        barMain:
-          isPhone && (mode === "idle" || mode === "cto") ? (
-            <Link
-              href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
-              className={buttonClass({ variant: "pri" })}
-              data-testid="ward-person-refer-outpatient"
-            >
-              <FileText size={16} aria-hidden="true" />
-              New referral
-            </Link>
-          ) : undefined,
+        barMain: referralMain ? (
+          <Link
+            href={newReferralHref}
+            className={buttonClass({ variant: "pri" })}
+            data-testid="ward-person-refer-outpatient"
+          >
+            <FileText size={16} aria-hidden="true" />
+            New referral
+          </Link>
+        ) : copyAsMain ? (
+          <Button variant="pri" icon={Copy} onClick={handleCopySummary}>
+            {copyLabel}
+          </Button>
+        ) : undefined,
         phoneFoot: phoneStatusFoot,
       }}
       legal={
@@ -158,27 +194,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           />
         ) : null
       }
-      why={
-        isLiveBedflow && liveMovement ? (
-          <PatientWhyCard
-            // UX review 24 Oct 2026: "Why they're here" was cut short beside the Opened chip at 1280px.
-            title="Why"
-            chip={`Opened ${formatInstantWithDay(liveMovement.openedAt, now)}`}
-            history={resolved.liveReferral?.history}
-            fallback={record.reason}
-            movement={liveMovement}
-            patient={livePatient}
-          />
-        ) : mode === "ward" || mode === "ed" ? (
-          <PatientWhyCard
-            title="Why admitted"
-            chip={stayUnit ? stayUnit.name : undefined}
-            history={resolved.liveReferral?.history}
-            fallback={record.reason}
-            patient={livePatient}
-          />
-        ) : null
-      }
+      why={whyMovesLeft ? null : whyCard}
       change={
         <>
           {isLiveBedflow &&
@@ -204,7 +220,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
               })()}
             </div>
           ) : null}
-          {mode === "ward" ? (
+          {whyMovesLeft ? whyCard : null}
+          {mode === "ward" && wardChangeOpen ? (
             <>
               <PatientWardChangeCard
                 key={resolved.liveAdmission?.id}
@@ -261,24 +278,9 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           {/* Device audit (11 Oct 2026): the journey ribbon sits below the body, not in the hero, so
               the hero holds the status and the steps only. The phone keeps its own card above. */}
           {isLiveBedflow && liveMovement && !phoneMovement ? (
-            <section className={styles.sec} aria-labelledby="pn-journey-head">
-              <h2 id="pn-journey-head" className={styles.secH}>
-                Journey so far
-              </h2>
-              {(() => {
-                const stages = patientJourneyStages(liveMovement, now);
-                return (
-                  <JourneyStrip
-                    label="Journey since this movement opened"
-                    stages={stages}
-                    formatDuration={dur}
-                    // The note names the stages too short to label on the bar ("Short stages: In ED 18m").
-                    // One stage has none, and its Now line would only repeat the label under the bar.
-                    note={stages.length > 1}
-                  />
-                );
-              })()}
-            </section>
+            // Redesign (31 Oct 2026): a timeline of what was recorded, newest first, in place of the
+            // near-empty bar.
+            <PatientJourneyTimeline movement={liveMovement} now={now} onOpenHistory={() => openTab("history")} />
           ) : null}
         </>
       }

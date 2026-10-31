@@ -5,6 +5,7 @@
  */
 import styles from "./statistics-v6.module.css";
 import type { ReleasedCount } from "./executive-statistics-contract";
+import { useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { SMALL_NUMBER_NOT_SHOWN, smallNumberText } from "../ward-access-scope";
 import { CLINICAL_VALUES } from "../ward-clinical-values";
 
@@ -46,7 +47,15 @@ export function sumStatisticsCounts(counts: readonly StatisticsCount[]): Statist
   return released ? { kind: "exact", value: total } : total;
 }
 
-export function ExecutiveStatisticsUnavailable() {
+export function ExecutiveStatisticsUnavailable({ loading }: { loading?: boolean } = {}) {
+  const control = useExecutiveStatisticsControl();
+  // While the first report is on its way, a calm loading line, not "unavailable" (Josh, 31 Oct 2026).
+  if (loading ?? control.loading)
+    return (
+      <p role="status" data-testid="ward-statistics-loading">
+        Loading the executive view…
+      </p>
+    );
   return (
     <p role="status" data-testid="ward-statistics-unavailable">
       Statistics are unavailable for this desk. Refresh the workspace to try again.

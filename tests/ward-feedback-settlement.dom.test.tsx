@@ -79,7 +79,9 @@ function fill() {
   fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: own.umrn } });
   fireEvent.change(screen.getByLabelText("Given name"), { target: { value: own.givenName } });
   fireEvent.change(screen.getByLabelText("Family name"), { target: { value: own.familyName } });
-  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: own.dateOfBirth } });
+  fireEvent.change(screen.getByLabelText("Date of birth"), {
+    target: { value: own.dateOfBirth.split("-").reverse().join("/") },
+  });
 }
 
 beforeEach(() => router.push.mockClear());
@@ -176,7 +178,7 @@ describe("patient registration command settlement", () => {
       act(() => vi.advanceTimersByTime(3000));
       expect(router.push.mock.calls.length).toBe(0);
       expect(screen.getByTestId("ward-add-patient-saved-outside-view").textContent).toContain(
-        `${own.givenName} ${own.familyName} added, ${own.umrn}`,
+        `${own.familyName}, ${own.givenName} added, ${own.umrn}`,
       );
       expect(screen.getByTestId("ward-add-patient-submit").getAttribute("aria-disabled")).not.toBeNull();
       expect((screen.getByLabelText(/Record number|UMRN/i) as HTMLInputElement).value).toBe("");
@@ -243,12 +245,18 @@ describe("escalation feedback", () => {
   it.each(["accepted", "refused", "failed", "cancelled"] as const)("waits for its own %s outcome", async (status) => {
     const command = deferred<WardCommandOutcome>();
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Override dispatch={() => command.promise}>
-          <DelaysScreen />
-        </Override>
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Override dispatch={() => command.promise}>
+            <DelaysScreen />
+          </Override>
+        </WardFlowProvider>
+      </ToastProvider>,
     );
+    // Round 8 (31 Oct 2026): "Under 8 hours" is folded; a user unfolds the wait bands first.
+    for (const band of screen.queryAllByTestId(/^delays-band-/u)) {
+      if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+    }
     showEveryDelayRow();
     const movement = seedWardFlowState().movements.find((entry) => isOpen(entry) && !entry.escalation)!;
     const panel = inspectDelayPerson(movement.id);

@@ -35,6 +35,7 @@ My ward
 - Shift+A: Open Activity.
 - Shift+R: Start a new referral.
 - [: Fold the side menu to icons, or open it again.
+- Alt+N: Jump to the newest notice's button, and back. Option+N on a Mac.
 - Esc: Close what is open, or step back.
 - ?: Show these shortcuts. On Handover and Referrals, list that page's own keys.
 

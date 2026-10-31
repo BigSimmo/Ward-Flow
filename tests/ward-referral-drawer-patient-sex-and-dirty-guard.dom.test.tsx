@@ -24,18 +24,20 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const route = vi.hoisted(() => ({ pathname: "/ed/rph-ed" }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
     prefetch: vi.fn(),
   }),
-  usePathname: () => "/ed/rph-ed",
+  usePathname: () => route.pathname,
   useSearchParams: () => new URLSearchParams(),
 }));
 
 afterEach(() => {
   cleanup();
+  route.pathname = "/ed/rph-ed";
   discardReferralDraft();
   window.sessionStorage.clear();
 });
@@ -217,6 +219,8 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
   });
 
   it("guards unsaved rule edits in SettingsScreen on beforeunload", () => {
+    // The rule editor is the coordinator's (Settings by login, 31 Oct 2026), so open Settings there.
+    route.pathname = "/ward-flow/settings";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <SettingsScreen />
@@ -225,13 +229,9 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
 
     expect(fireBeforeUnload()).toBe(false);
 
-    // Toggle a rule or edit a field on the Placement Rules tab
-    const checkboxes = screen.queryAllByRole("checkbox");
-    const switches = screen.queryAllByRole("switch");
-    const targetToggle = switches[0] ?? checkboxes[0];
-    if (targetToggle) {
-      fireEvent.click(targetToggle);
-      expect(fireBeforeUnload()).toBe(true);
-    }
+    // Settings by login (31 Oct 2026): the first switches on the page are this browser's own
+    // settings, which save at once. Edit a rule itself so the draft is unsaved.
+    fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
+    expect(fireBeforeUnload()).toBe(true);
   });
 });

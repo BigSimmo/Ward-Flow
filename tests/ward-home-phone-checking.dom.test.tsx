@@ -8,6 +8,12 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider } from "@/components/wf";
 
 vi.mock("@/components/ward-management/coordinator/home-layout", () => ({ useHomeLayout: () => "phone" }));
+// Phone Home's "More for this list" menu opens Alerts history through the app router.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/ward-flow",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
 
 /**
  * P109 (27 Oct 2026): phone Home dropped the hero's Checking strip, so a stale bed count or a ward

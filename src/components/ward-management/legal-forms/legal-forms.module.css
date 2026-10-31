@@ -275,6 +275,20 @@
   cursor: default;
 }
 
+/* Redesign (Josh, 31 Oct 2026): the hero's two actions read as buttons, pushed to the end of the
+   figures' row, at the app's 40px control height. */
+.heroCopy.heroAction {
+  height: auto;
+  min-height: 40px;
+  border-color: var(--wf-hero-edge);
+  background: transparent;
+  font-weight: 600;
+}
+
+.firstHeroAction {
+  margin-inline-start: auto;
+}
+
 .heroCopyCount {
   font: 600 var(--wf-fs-15) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
@@ -1008,6 +1022,31 @@ button.taskLabel[aria-pressed="true"] {
   white-space: normal;
 }
 
+/* Record a form (redesign, Josh 31 Oct 2026): Clear at the left, the reason beside Save at the right.
+   It wraps only when the reason and Save no longer fit beside Clear (a phone). */
+.recordFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.recordFoot > :last-child {
+  margin-left: auto;
+}
+
+.recordFoot button {
+  flex-shrink: 0;
+}
+
+.draftNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
 .recordForm,
 .extendBody,
 .tellBody {
@@ -1374,13 +1413,6 @@ button.taskLabel[aria-pressed="true"] {
 
 /* Device sweep R1-05/B6-17 (24 Oct 2026): the action keeps its whole label ("Copy for handover 6"); the shared phone hero
  * actions row already wraps. */
-.phoneHeroAction {
-  flex: 1 1 0;
-  justify-content: center;
-  min-width: 0;
-  min-width: fit-content;
-}
-
 .phoneViews {
   position: sticky;
   top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));

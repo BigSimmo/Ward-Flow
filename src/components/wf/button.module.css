@@ -24,12 +24,16 @@
     border-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
-/* Placement decisions keep a full touch target on phone, tablet and desktop. */
-.b[data-placement-action] {
-  --wf-h-md: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));
+/* Placement decisions (Accept, Pull, Decline) keep a full 48px button on phones and other touch
+   screens: the one exception to "no 48px controls" (Josh, 31 Oct 2026, 10:34). With a mouse they are
+   the same size as every other button (Referrals build check, 31 Oct). */
+@media (max-width: 48rem), (pointer: coarse) {
+  .b[data-placement-action] {
+    --wf-h-md: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));
 
-  min-height: var(--wf-h-md);
-  min-width: var(--wf-h-md);
+    min-height: var(--wf-h-md);
+    min-width: var(--wf-h-md);
+  }
 }
 
 .b:active {
@@ -236,33 +240,70 @@
 }
 
 /* Disabled with a visible reason. */
+/* Narrow panels (lane E's Transport job panel, Josh 31 Oct 2026): the button keeps its whole label
+   and the reason wraps onto more lines instead of being cut; when both cannot share a line, the pair
+   drops to two rows. Nothing is hidden. */
 .withReason {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
+  max-width: 100%;
+}
+
+.withReason > button {
+  flex: none;
 }
 
 .reason {
   display: inline-flex;
+  flex: 1 1 10rem;
   align-items: center;
   gap: 6px;
   min-width: 0;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   color: var(--wf-ink-3);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: anywhere;
 }
 
-/* Phone: every button is at least the 48px tap floor, whatever its size. */
+/* Phone (kit standard, Josh 31 October 2026: "no 48px controls"; the #1118 mock-ups' button
+   sizing): a button shows at 40px (a small one at 32px) and keeps the 48px tap floor with an
+   invisible cover above and below (and beside an icon-only one), so it is never drawn 48px tall.
+   Placement decisions keep their full-size button (above). */
 @media (max-width: 48rem) {
-  .b {
-    min-height: var(--spacing-tap, 3rem);
+  .b:not([data-placement-action]) {
+    height: 40px;
+    min-height: 40px;
   }
-  .iconOnly {
-    min-width: var(--spacing-tap, 3rem);
+  .sm:not([data-placement-action]) {
+    height: 32px;
+    min-height: 32px;
+  }
+  .iconOnly:not([data-placement-action]) {
+    width: 40px;
+    min-width: 40px;
+  }
+  .sm.iconOnly:not([data-placement-action]) {
+    width: 32px;
+    min-width: 32px;
+  }
+  .b:not([data-placement-action])::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+  .sm:not([data-placement-action])::after {
+    inset: -8px 0;
+  }
+  .iconOnly:not([data-placement-action])::after {
+    inset: -4px;
+  }
+  .sm.iconOnly:not([data-placement-action])::after {
+    inset: -8px;
   }
 }
 

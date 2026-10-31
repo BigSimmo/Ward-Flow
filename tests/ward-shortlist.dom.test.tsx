@@ -49,6 +49,16 @@ function ShortlistHarness() {
   );
 }
 
+/**
+ * Home redesign (30 Oct 2026): wards that take this person only with an override reason sit behind
+ * their own disclosure, so the wards that fit lead. Opens it, as a coordinator would, when a test
+ * needs one of those wards.
+ */
+function showOverrideWards() {
+  const toggle = screen.queryByTestId("ward-shortlist-review-toggle");
+  if (toggle && toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
+}
+
 function renderShortlist() {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -286,6 +296,7 @@ describe("the override form says what the bed failed on, in text a coordinator c
     // "Find another bed", which keeps the override path reachable.
     const another = screen.queryByTestId("ward-shortlist-find-another-bed");
     if (another) fireEvent.click(another);
+    showOverrideWards();
     const candidates = screen.getAllByTestId(/^ward-shortlist-candidate-/);
     expect(candidates.length, `${movementId} offers no candidate, so nothing below is exercised`).toBeGreaterThan(0);
 
@@ -432,6 +443,7 @@ describe("ShortlistPanel: live referrals are pre-selected and locked (RA1, item 
    *  suite proves what a coordinator can actually click, not merely what the reducer accepts. */
   function referBothThroughTheScreen() {
     renderReRefer();
+    showOverrideWards();
     fireEvent.click(screen.getByTestId(`ward-shortlist-candidate-${UNIT_A}`));
     fireEvent.click(screen.getByTestId(`ward-shortlist-candidate-${UNIT_B}`));
     fireEvent.click(screen.getByTestId("ward-shortlist-refer"));

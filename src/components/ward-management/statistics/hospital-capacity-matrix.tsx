@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BedDouble, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { BedDouble, Check, ChevronDown, ChevronUp } from "lucide-react";
 
-import { Icon, Segmented, StatusGlyph, TextInput, rowDim, tableClasses } from "@/components/wf";
+import { Icon, Segmented, StatusGlyph, rowDim, tableClasses } from "@/components/wf";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_DETAILS, BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
@@ -59,7 +59,7 @@ const COLUMN_LABELS: Record<SortColumn, string> = {
  * add up to its beds. Without `admissions` no pull can be told apart, so Pulled is 0 and a pulled
  * patient stays inside Occupied. `service`, when given, highlights that health service's wards and
  * dims the rest by colour; the status choice does the same. Neither hides a row (v10 filter rule).
- * Only the typed search narrows the list.
+ * Its typed filter went in the search and forms review (Josh, 30 Oct 2026): 23 wards need none.
  */
 export function HospitalCapacityMatrix({
   units,
@@ -74,7 +74,6 @@ export function HospitalCapacityMatrix({
   leaveBeds?: readonly LeaveBed[];
   service?: string | null;
 }) {
-  const [filterText, setFilterText] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortCol, setSortCol] = useState<SortColumn>("rate");
   const [sortDir, setSortDir] = useState<SortDirection>("desc");
@@ -114,17 +113,7 @@ export function HospitalCapacityMatrix({
   const highlighting = service !== null || statusFilter !== "all";
   const isMatch = (r: UnitCapacityRow) => inService(r) && (statusFilter === "all" || r.status === statusFilter);
 
-  const filteredRows = useMemo(() => {
-    const q = filterText.trim().toLowerCase();
-    return rows.filter(
-      (r) =>
-        !q ||
-        r.name.toLowerCase().includes(q) ||
-        r.siteName.toLowerCase().includes(q) ||
-        r.siteCode.toLowerCase().includes(q) ||
-        r.service.toLowerCase().includes(q),
-    );
-  }, [rows, filterText]);
+  const filteredRows = rows;
   const matchedCount = filteredRows.filter(isMatch).length;
 
   const sortedRows = useMemo(() => {
@@ -187,16 +176,6 @@ export function HospitalCapacityMatrix({
       data-testid="ward-statistics-overview-capacity-matrix-card"
     >
       <div className={styles.toolbar}>
-        <TextInput
-          type="search"
-          icon={Search}
-          boxClassName={styles.search}
-          placeholder="Filter wards or hospitals"
-          aria-label="Filter capacity matrix"
-          value={filterText}
-          onChange={(e) => setFilterText(e.target.value)}
-          data-testid="ward-statistics-capacity-matrix-search"
-        />
         <Segmented
           label="Ward status"
           value={statusFilter}
@@ -241,7 +220,7 @@ export function HospitalCapacityMatrix({
             {sortedRows.length === 0 ? (
               <tr>
                 <td colSpan={7} className={styles.empty}>
-                  No units match &ldquo;{filterText}&rdquo;
+                  No units recorded
                 </td>
               </tr>
             ) : (

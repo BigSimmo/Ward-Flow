@@ -102,7 +102,8 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
 
     // Opening a desk announces it (persona sync); the shift cockpit shows that desk's person.
     act(() => dispatchPersonaSyncForRole("ed"));
-    expect(screen.getAllByText(/Sr M\. Gallagher · Triage liaison nurse/).length).toBeGreaterThanOrEqual(1);
+    // Q58 (Josh, 31 Oct 2026): the rail names the person surname first.
+    expect(screen.getAllByText(/Gallagher, Sr M\. · Triage liaison nurse/).length).toBeGreaterThanOrEqual(1);
     fireEvent.click(within(drawer).getByRole("button", { name: "Close" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Go to a desk" })).not.toBeInTheDocument());
     expect(personaBtn).toHaveAttribute("aria-expanded", "false");

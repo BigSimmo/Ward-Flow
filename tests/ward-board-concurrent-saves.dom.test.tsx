@@ -39,6 +39,7 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 const UNIT = "scgh-adult-open";
 const beds = () => Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']"));
@@ -47,7 +48,7 @@ const label = (cell: HTMLElement) => cell.getAttribute("aria-label") ?? "";
 /** Moves an occupied bed's person to a free bed; nothing changes on screen until the server answers. */
 function move(from: HTMLElement, to: HTMLElement) {
   fireEvent.click(from);
-  fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+  fireEvent.click(getBedStep("Move to another bed"));
   fireEvent.click(to);
 }
 
