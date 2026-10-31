@@ -81,7 +81,8 @@ type WardScreenHomeSectionProps = {
     reason?: DeclineReason | undefined;
   }[];
   breakdown: CapacityBreakdown;
-  capacityConfirmationForm: () => ReactElement;
+  /** Not drawn here: Confirm capacity figures is its own dialog (31 Oct 2026). Optional until the ward screen stops passing it. */
+  capacityConfirmationForm?: () => ReactElement;
   pendingBedReleases: BedRelease[];
   unitLeaveBeds: LeaveBed[];
   resolvePatientIdentity: (subject: PatientResolutionSubject) => ResolvedPatientInfo;

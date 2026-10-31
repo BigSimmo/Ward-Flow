@@ -188,7 +188,7 @@ export function wardBedRoster({
       status === "ready" || status === "closed" || recordedSubject === undefined
         ? undefined
         : resolvePatientIdentity(recordedSubject);
-    const patientAlias = status === "ready" || status === "closed" ? undefined : patientInfo?.displayName;
+    const patientAlias = status === "ready" || status === "closed" ? undefined : patientInfo?.formalName;
     const stayDays = admission && status !== "incoming" ? admissionStayDays(admission, now) : null;
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission ? isConstantObservation(admission.observation) : false;
@@ -325,7 +325,7 @@ export function wardBedRoster({
         ? [
             {
               bed: entry.heldBedNumber,
-              name: resolvePatientIdentity(entry).displayName,
+              name: resolvePatientIdentity(entry).formalName,
             },
           ]
         : [],
@@ -336,7 +336,7 @@ export function wardBedRoster({
         ? [
             {
               bed: movement.heldBedNumber,
-              name: resolvePatientIdentity(movement).displayName,
+              name: resolvePatientIdentity(movement).formalName,
             },
           ]
         : [],
@@ -435,7 +435,7 @@ export function wardLiveFormAlerts({
       title: "Referral awaiting this ward's answer",
       countdown: stageCopy[movement.stage].label,
       // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-      text: `${resolvePatientIdentity(movement).displayName} from ${originPlaceLabel(movement)}.`,
+      text: `${resolvePatientIdentity(movement).formalName} from ${originPlaceLabel(movement)}.`,
       actionLabel: "Answer",
       actionTarget: "answer" as const,
     })),
@@ -450,7 +450,7 @@ export function wardLiveFormAlerts({
         actionTarget: "arrival";
         movementId: string;
       }> = [];
-      const patientName = resolvePatientIdentity(movement).displayName;
+      const patientName = resolvePatientIdentity(movement).formalName;
       const dueAt = currentLegalDueAt(movement);
       if (dueAt !== undefined) {
         const remaining = minutesUntil(dueAt, now);

@@ -8,6 +8,7 @@ import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/wa
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 const UNIT = "scgh-adult-open";
 const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/ward/scgh-adult-open" }));
@@ -124,7 +125,7 @@ describe("Ward command feedback", () => {
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
     const drawer = within(screen.getByTestId("bed-telemetry-drawer"));
-    fireEvent.click(drawer.getByRole("button", { name: /^(Record|Update) blocker$/ }));
+    fireEvent.click(getBedStep(/^(Record|Update) blocker$/, screen.getByTestId("bed-telemetry-drawer")));
     fireEvent.change(drawer.getByRole("combobox", { name: "Discharge blocker" }), {
       target: { value: "Awaiting accommodation" },
     });
@@ -158,7 +159,7 @@ describe("Ward command feedback", () => {
     const control = commands();
     mount(control, <WardScreen unitId={UNIT} />);
     selectOccupiedBoardBed();
-    fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+    fireEvent.click(getBedStep("Move to another bed"));
     const free = screen
       .getAllByTestId(/^ward-board-bed-\d+$/)
       .find((bed) => bed.dataset.state === "ready" && bed.dataset.fits === "true");
