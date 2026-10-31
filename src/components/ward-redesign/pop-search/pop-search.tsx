@@ -15,6 +15,7 @@ import { useWardBarTasks } from "@/components/ward-management/shell/ward-bar-sta
 import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 
 import { GlobalSearch } from "./global-search";
+import { useHeaderHelp } from "./search-help";
 
 /** The app bar's own search box, found once the bar has drawn. */
 function findBarSearch(): HTMLElement | null {
@@ -28,6 +29,11 @@ function findBarSearch(): HTMLElement | null {
  * draws the redesigned fork (`global-search.tsx`) in the same place in the app bar, with the same
  * props the bar gives it, and opens it on load as "/" does. The bar's own box is hidden while the
  * mock-up shows, and comes back when it closes.
+ *
+ * Round 3 (D-91, 31 Oct 2026): the fork follows draft PR #1123's real search, so it lists Help
+ * answers, on-call contacts and a suburb's catchment, with the desk's Help lookups passed in here as
+ * #1123's Help wrapper passes them. The box reads "Search Ward Flow". On a phone it opens as a
+ * full-height sheet like Help; a computer keeps the popover, with the matched words marked.
  */
 export function PopSearch({ page }: { page: ReactNode }) {
   const now = useWardFlowClock();
@@ -55,6 +61,7 @@ export function PopSearch({ page }: { page: ReactNode }) {
     "leaveBeds",
   );
   const { shellRole } = useWardNavCounts();
+  const { findHelp, onHelpResult } = useHeaderHelp();
   const accessNav = useAccessNavFilter();
   const oneAlertsQueue = accessNav(ALERTS_ACCESS_ENTRY).length > 0 && wardTasksAreActionableForRole(shellRole);
   const { tasksActiveItems } = useWardBarTasks({
@@ -136,7 +143,9 @@ export function PopSearch({ page }: { page: ReactNode }) {
               tasksAreAlerts={oneAlertsQueue}
               plannedAdmissions={plannedAdmissions}
               now={now}
-              placeholder="Search"
+              placeholder="Search Ward Flow"
+              findHelp={findHelp}
+              onHelpResult={onHelpResult}
               accessLifetime={accessLifetime}
               canOpenHref={canOpenHref}
               canRunAction={canRunAction}

@@ -1,0 +1,67 @@
+/* Time buttons beside a typed time (parts/time-presets.tsx, D-91). Quiet: hairline, no fill, the
+   kit standard's 30px at 13px on a laptop; 32px on a phone with a 48px invisible tap area. */
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preset {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--wf-m-fast) var(--wf-ease),
+    color var(--wf-m-fast) var(--wf-ease);
+}
+
+.preset:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.preset:active {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.preset:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .preset {
+    height: 32px;
+    padding: 0 12px;
+  }
+
+  .preset::after {
+    content: "";
+    position: absolute;
+    inset: -8px -3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preset {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .preset {
+    border-color: ButtonText;
+  }
+}

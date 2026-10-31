@@ -2,7 +2,19 @@
 
 import Link from "next/link";
 import { createContext, useContext, useMemo, type MouseEvent } from "react";
-import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboard, Plus, Users } from "lucide-react";
+import {
+  BedSingle,
+  Building2,
+  CircleHelp,
+  ClipboardList,
+  FileText,
+  Hospital,
+  LayoutDashboard,
+  MapPin,
+  PhoneCall,
+  Plus,
+  Users,
+} from "lucide-react";
 
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
 import { calendarDateOf, demoDayZero } from "@/components/ward-management/ward-clock";
@@ -597,10 +609,27 @@ function SimplePreview({ item, onOpen }: { item: GlobalSearchPreviewItem; onOpen
       <ClipboardList size={16} strokeWidth={1.75} aria-hidden="true" />
     ) : item.kind === "view" && item.id === "hub" ? (
       <Building2 size={16} strokeWidth={1.75} aria-hidden="true" />
+    ) : item.kind === "contact" ? (
+      <PhoneCall size={16} strokeWidth={1.75} aria-hidden="true" />
+    ) : item.kind === "suburb" ? (
+      <MapPin size={16} strokeWidth={1.75} aria-hidden="true" />
+    ) : item.kind === "help" ? (
+      <CircleHelp size={16} strokeWidth={1.75} aria-hidden="true" />
     ) : (
       <LayoutDashboard size={16} strokeWidth={1.75} aria-hidden="true" />
     );
-  const verb = item.kind === "action" ? item.title : item.kind === "form" ? "Open register" : "Open";
+  // Round 3 (#1123's groups): a contact or suburb says where it opens; a Help answer has no button,
+  // because choosing its row runs Show me or opens it in Help (the fork's `openedAsHelp`).
+  const verb =
+    item.kind === "action"
+      ? item.title
+      : item.kind === "form"
+        ? "Open register"
+        : item.kind === "contact"
+          ? "Open On-call"
+          : item.kind === "suburb"
+            ? "Open suburb lookup"
+            : "Open";
   return (
     <>
       <div className={styles.head}>
@@ -609,14 +638,19 @@ function SimplePreview({ item, onOpen }: { item: GlobalSearchPreviewItem; onOpen
         </span>
         <div className={styles.headText}>
           <p className={styles.title}>{item.title}</p>
-          {item.meta ? <p className={styles.sub}>{item.meta}</p> : null}
+          {/* Round 3: the whole line wraps, so an answer, a clinic or a number is never cut off. */}
+          {item.meta ? <p className={`${styles.sub} ${local.subWraps}`}>{item.meta}</p> : null}
         </div>
       </div>
-      <div className={styles.actions}>
-        <Action href={item.href} primary onOpen={onOpen} testId="ward-global-search-preview-open">
-          {verb}
-        </Action>
-      </div>
+      {item.kind === "help" ? (
+        <p className={`${styles.sub} ${local.subWraps}`}>Choose the answer to see how it is done.</p>
+      ) : (
+        <div className={styles.actions}>
+          <Action href={item.href} primary onOpen={onOpen} testId="ward-global-search-preview-open">
+            {verb}
+          </Action>
+        </div>
+      )}
     </>
   );
 }

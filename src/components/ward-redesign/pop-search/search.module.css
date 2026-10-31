@@ -22,3 +22,103 @@ span.stepCurrent {
     width: min(48.75rem, calc(var(--wgs-bar-w, 100vw) - 2rem));
   }
 }
+
+/* D-91: the matched words in a row. A quiet accent tint with the row's own ink, never a yellow
+   highlighter; it still reads on the hovered and the keyboard-chosen row. */
+mark.mark {
+  margin: 0 -1px;
+  padding: 0 1px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--wf-accent) 16%, transparent);
+  color: inherit;
+  font-weight: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+@media (forced-colors: active) {
+  mark.mark {
+    background: Mark;
+    color: MarkText;
+  }
+}
+
+/* D-91: the phone search sheet (search-sheet.tsx), drawn as Help's drawer. The field and the kind
+   chips stay pinned at the top while the results scroll under them. */
+div.sheetBody {
+  padding-top: 0;
+}
+
+div.sheetDock {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 0 10px;
+  background: var(--wf-surface-2);
+}
+
+/* The chips row sits under the field, without the palette's own rule and inset. */
+div.sheetKinds {
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* The kit standard on a phone: 32px chips, each with a 48px invisible tap area (the module's ::after). */
+div.sheetKinds > button {
+  height: 32px;
+}
+
+/* The results sit on one white card, as Help's answers do. */
+div.sheetResults {
+  min-width: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+div.sheetResults > div {
+  overflow: visible;
+}
+
+/* Round 3 (rule: names, places, roles and answers wrap in full, a phone has no hover): a row's title
+   and its line wrap rather than end in "…", and so does the preview's line. */
+span.rowTitle {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+span.rowMeta {
+  overflow: visible;
+  flex-wrap: wrap;
+  row-gap: 0;
+  white-space: normal;
+}
+
+span.rowMeta > span {
+  overflow: visible;
+}
+
+p.subWraps {
+  overflow: visible;
+  white-space: normal;
+}
+
+/* A wrapped row keeps its icon beside the title's first line rather than floating in the middle. */
+a.rowOption {
+  align-items: flex-start;
+  padding-block: 10px;
+}
+
+a.rowOption > span:first-child {
+  height: 20px;
+}
+
+@media (max-width: 48rem) {
+  a.rowOption {
+    padding-block: 7px;
+  }
+}
