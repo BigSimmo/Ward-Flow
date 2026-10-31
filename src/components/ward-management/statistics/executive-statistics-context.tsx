@@ -103,12 +103,15 @@ export function ExecutiveStatisticsLivePreviewProvider({
   enabled,
   identity,
   projection,
+  loading,
   controls,
   children,
 }: {
   enabled: boolean;
   identity: object | null;
   projection: ExecutiveLivePreviewProjection | null;
+  /** The host says whether a missing projection is still on its way; without it, missing means loading. */
+  loading?: boolean;
   controls?: Pick<ExecutiveStatisticsControl, "paused" | "togglePause">;
   children?: ReactNode;
 }) {
@@ -119,7 +122,7 @@ export function ExecutiveStatisticsLivePreviewProvider({
         executive: enabled,
         ready: data !== null,
         // The preview's projector loads on demand; until its first report the view is loading.
-        loading: enabled && identity !== null && projection === null,
+        loading: enabled && identity !== null && projection === null && loading !== false,
         paused: controls?.paused ?? false,
         togglePause: controls?.togglePause ?? null,
       }}
