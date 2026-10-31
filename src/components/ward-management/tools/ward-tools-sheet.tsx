@@ -316,15 +316,23 @@ export function WardToolsSheet({
 
   useEffect(() => {
     if (!openRequest) return;
+    let cancelled = false;
+    let frame = 0;
     let scroll = 0;
-    const frame = window.requestAnimationFrame(() => {
+    // The row opens straight away (a microtask, not an animation frame), so a slow or paused page
+    // still shows the asked-for tool; only the scroll waits for the frames after it has drawn.
+    queueMicrotask(() => {
+      if (cancelled) return;
       setOpen((current) => new Set(current).add(openRequest.tool));
-      scroll = window.requestAnimationFrame(() => {
-        rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
-        onRequestHandled?.();
+      frame = window.requestAnimationFrame(() => {
+        scroll = window.requestAnimationFrame(() => {
+          rows.current.get(openRequest.tool)?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
+          onRequestHandled?.();
+        });
       });
     });
     return () => {
+      cancelled = true;
       window.cancelAnimationFrame(frame);
       window.cancelAnimationFrame(scroll);
     };
