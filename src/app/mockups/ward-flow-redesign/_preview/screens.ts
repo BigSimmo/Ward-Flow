@@ -459,6 +459,9 @@ export function mockupHrefForAppPath(href: string, rolePrefix?: string): string 
     ? MOCKUP_SCREENS.find((screen) => screen.slug.startsWith(rolePrefix) && screen.appPath === path)
     : undefined;
   if (asRole) return `${MOCKUP_BASE}/${asRole.slug}`;
+  // A page not drawn for this role is not drawn: falling back to the coordinator's page would switch
+  // the desk, the rail and the data under the reviewer.
+  if (rolePrefix) return null;
   const exact = MOCKUP_SCREENS.find((screen) => screen.appPath === path && !screen.role);
   if (exact) return `${MOCKUP_BASE}/${exact.slug}`;
   const prefixed = PREFIX_SCREENS.find(([prefix]) => path.startsWith(prefix));
