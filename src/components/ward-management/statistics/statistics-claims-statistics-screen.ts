@@ -95,8 +95,10 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
     claim:
       "`BedRelease` carries a single `confirmedAt` that every readiness act before departure overwrites, not one " +
       "instant per act; after departure it holds the departure time and preparation keeps it. " +
-      "Only cleared discharge blockers keep their own instants: on the release in `clearedBlockHistory`, or on the " +
-      "admission in `stayBlockClearances` when no release is linked.",
+      "Only discharge blockers keep their own instants: when the current one was last recorded in " +
+      "`blockerRecordedAt` (31 Oct 2026, so a site sign-off can tell a review from an unrelated update), and " +
+      "cleared ones on the release in `clearedBlockHistory`, or on the admission in `stayBlockClearances` when no " +
+      "release is linked.",
     sourceFile: WARD_MODEL_BED_RELEASE,
     evidence: BED_RELEASE_BODY,
     falsifiedBy: {
