@@ -770,7 +770,8 @@ export function ReferralPatientStep({
                 <strong>{catchmentTeam}</strong>
                 {!catchmentConfirmed ? (
                   <small>
-                    {catchmentSuburb
+                    {catchmentSuburb &&
+                    catchmentRoutingDestinations(lookupCatchment(catchmentSuburb))?.[0] === catchmentTeam
                       ? `Suggested from suburb ${catchmentSuburb}. Confirm catchment below.`
                       : "Confirm catchment below."}
                   </small>
@@ -790,11 +791,9 @@ export function ReferralPatientStep({
               </button>
             </div>
           ) : null}
-          {catchmentTeam && !catchmentEditing ? (
-            <p className={styles.bodyMeta} data-testid="ward-referral-suburb-note">
-              Suburb on the referral: <strong>{suburbKnown ? catchmentSuburb : suburbUnknownLabels.not_known}</strong>
-            </p>
-          ) : null}
+          <p className={styles.bodyMeta} data-testid="ward-referral-suburb-note">
+            Suburb on the referral: <strong>{suburbKnown ? catchmentSuburb : suburbUnknownLabels.not_known}</strong>
+          </p>
           {(!catchmentTeam || catchmentEditing) && (
             <div className={styles.fieldGrid}>
               <Field label="Patient suburb" htmlFor={`${sectionId}-suburb`}>

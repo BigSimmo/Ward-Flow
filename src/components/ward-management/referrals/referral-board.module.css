@@ -1395,17 +1395,11 @@
   margin: 0;
 }
 
-@media (min-width: 40rem) {
-  .summarySheet {
-    width: min(44rem, calc(100vw - 3rem));
-    max-width: none;
-  }
-}
-
 .isbar > div {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--wf-s-1);
+  /* Wide enough for "Recommendation", which ran into its answer at 7.5rem (layout sweep, REF-01). */
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
 }
 
 .isbar dt {

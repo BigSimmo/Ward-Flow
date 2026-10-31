@@ -279,7 +279,6 @@ export function IsbarSheet({
       onClose={onClose}
       title="Referral summary"
       description="ISBAR, from what the referral records. Nothing here is inferred."
-      contentClassName={styles.summarySheet}
       footer={
         <div className={styles.sheetFoot}>
           <Button variant="ghost" size="sm" onClick={onClose}>

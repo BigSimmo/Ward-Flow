@@ -4937,20 +4937,11 @@
 .moreActionsSummary {
   display: flex;
   align-items: center;
-  gap: var(--wf-s-2);
   min-height: var(--wf-h-md);
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-13);
   font-weight: 500;
   cursor: pointer;
-}
-
-.moreActionsSummary > svg {
-  flex-shrink: 0;
-}
-
-.moreActions[open] > .moreActionsSummary > svg {
-  transform: rotate(90deg);
 }
 
 .moreActionsSummary:focus-visible {

@@ -445,7 +445,10 @@ it("clears an unsaved paper-form region on Clear and when the movement changes",
   fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "country" } });
   fireEvent.change(screen.getByLabelText("Movement"), { target: { value: openMovements[1]!.id } });
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");
+  // Empty the movement first, so Clear (not the movement-change reset) must clear the region.
+  fireEvent.change(screen.getByLabelText("Movement"), { target: { value: "" } });
   fireEvent.change(screen.getByTestId("ward-legal-forms-record-region"), { target: { value: "metro" } });
+  expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("metro");
   fireEvent.click(screen.getByRole("button", { name: "Clear" }));
   fireEvent.change(screen.getByLabelText("Form type"), { target: { value: "1A" } });
   expect(screen.getByTestId("ward-legal-forms-record-region")).toHaveValue("");

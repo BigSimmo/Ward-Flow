@@ -590,7 +590,7 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               onClick={submitDraft}
               disabledReason={draftMissing ?? (overrideReasonMissing ? "Choose an override reason first" : undefined)}
               data-testid="ward-planned-submit"
-              aria-describedby={draftIdentity ? selectedIdentityId : undefined}
+              aria-describedby={form?.mode === "book" && draftIdentity ? selectedIdentityId : undefined}
             >
               {form?.mode === "change" ? "Save" : "Book"}
             </Button>

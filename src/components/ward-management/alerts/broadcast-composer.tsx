@@ -228,7 +228,7 @@ export function BroadcastComposer({
             id="alerts-broadcast-safeguard"
             checked={broadcastConfirmed}
             onChange={(e) => setBroadcastConfirmed(e.target.checked)}
-            label="I confirm this directive is clinically authorised for immediate broadcast to the chosen scope."
+            label="I confirm this directive is clinically authorised for immediate statewide network broadcast."
           />
         </div>
         <div className={styles.drawerFoot}>
