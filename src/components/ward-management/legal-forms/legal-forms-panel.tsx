@@ -315,8 +315,12 @@ export function FocusPanel({
                   />
                 </Field>
                 <Field label="Time" id={`legal-forms-written-time-${movement.id}`}>
+                  {/* Bug list row 24: typed 24-hour HH:MM, as Record a form does, never the browser's
+                      12-hour picker. The same parser reads it (HH:MM or HHMM). */}
                   <TextInput
-                    type="time"
+                    placeholder="HH:MM"
+                    inputMode="numeric"
+                    autoComplete="off"
                     icon={Clock}
                     value={draft.time}
                     onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))}
