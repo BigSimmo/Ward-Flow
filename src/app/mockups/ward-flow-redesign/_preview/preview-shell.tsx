@@ -1,19 +1,27 @@
 "use client";
 
 import { useMemo, type MouseEvent, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { NavigationPromisesContext, PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 
 import { useOptionalToast } from "@/components/wf";
 import { PreviewBarMount as WardBarMount } from "@/components/ward-redesign/shell/preview-bar";
 import { PreviewRail as WardRail } from "@/components/ward-redesign/shell/preview-rail";
+// shell-next (30 Oct 2026): `?shell=next` draws the sidebar and header redesign instead.
+import { NextBarMount } from "@/components/ward-redesign/shell-next/next-bar";
+import { NextRail } from "@/components/ward-redesign/shell-next/next-rail";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
 import { mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";
+
+/** A link from a page drawn in the redesigned frame stays in that frame. */
+function keepShell(target: string | null, nextShell: boolean): string | null {
+  return target && nextShell ? `${target}?shell=next` : target;
+}
 
 /** The app bar's and the phone dock's Activity buttons. */
 const ACTIVITY_TRIGGERS = '[data-testid="ward-bar-activity-trigger"], [data-testid="ward-phone-menu-activity"]';
@@ -43,10 +51,17 @@ export function PreviewShell({
   children: ReactNode;
 }) {
   const realRouter = useRouter();
+  // The shareable copy has no search-params context, so it reads the address itself.
+  const shellParam =
+    useSearchParams()?.get("shell") ??
+    (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("shell"));
+  const nextShell = shellParam === "next";
+  const Rail = nextShell ? NextRail : WardRail;
+  const BarMount = nextShell ? NextBarMount : WardBarMount;
   const toast = useOptionalToast();
   const router = useMemo<AppRouterInstance>(() => {
     const go = (href: string, replace: boolean) => {
-      const target = mockupHrefForAppPath(href, rolePrefix);
+      const target = keepShell(mockupHrefForAppPath(href, rolePrefix), nextShell);
       if (target) {
         if (replace) realRouter.replace(target);
         else realRouter.push(target);
@@ -58,7 +73,7 @@ export function PreviewShell({
       replace: (href) => go(href, true),
       prefetch: () => {},
     };
-  }, [realRouter, toast, rolePrefix]);
+  }, [realRouter, toast, rolePrefix, nextShell]);
 
   const keepLinksInMockups = (event: MouseEvent<HTMLDivElement>) => {
     // Mock-up only: the Activity button opens the page's redesigned panel when the page has one.
@@ -74,7 +89,7 @@ export function PreviewShell({
     if (!href.startsWith("/") || href.startsWith("/mockups/")) return;
     event.preventDefault();
     event.stopPropagation();
-    const target = mockupHrefForAppPath(href, rolePrefix);
+    const target = keepShell(mockupHrefForAppPath(href, rolePrefix), nextShell);
     if (target) realRouter.push(target);
     else toast?.push({ tone: "info", title: NOT_DRAWN });
   };
@@ -84,9 +99,9 @@ export function PreviewShell({
       <NavigationPromisesContext.Provider value={null}>
         <PathnameContext.Provider value={appPath}>
           <div className={layoutStyles.shellRow} onClickCapture={keepLinksInMockups}>
-            <WardRail />
+            <Rail />
             <div className={layoutStyles.shellContent} data-wf-scroller="">
-              <WardBarMount />
+              <BarMount />
               <WardGround>{children}</WardGround>
             </div>
           </div>

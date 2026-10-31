@@ -85,6 +85,8 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
   const [device, setDevice] = useState<Device>(savedDevice);
   const [theme, setTheme] = useState<Theme>("system");
   const [view, setView] = useState<View>("redesign");
+  // shell-next (30 Oct 2026): the sidebar and header redesign, off until Josh has compared the two.
+  const [frame, setFrame] = useState<"today" | "next">("today");
   const [fit, setFit] = useState(true);
   const [stageWidth, setStageWidth] = useState(1000);
   const stage = useRef<HTMLDivElement>(null);
@@ -118,6 +120,7 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
   const query = new URLSearchParams();
   if (entry.pop) query.set("pop", entry.pop);
   if (theme !== "system") query.set("theme", theme);
+  if (frame === "next") query.set("shell", "next");
   const src =
     mode === "next"
       ? `${MOCKUP_BASE}/${entry.screen}${query.size ? `?${query}` : ""}`
@@ -126,6 +129,7 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
   const showToday = view === "today";
   const note = NOTES[entry.slug];
   const build = BUILD_NOTES[entry.slug];
+  const shellBuild = frame === "next" ? BUILD_NOTES["shell-next"] : undefined;
 
   return (
     <div className={styles.viewer}>
@@ -147,6 +151,15 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
             ]}
             value={view}
             onChange={setView}
+          />
+          <Segmented
+            label="Sidebar and header"
+            items={[
+              { id: "today" as const, label: "Today's frame" },
+              { id: "next" as const, label: "New frame" },
+            ]}
+            value={frame}
+            onChange={setFrame}
           />
           <Segmented
             label="Device"
@@ -260,6 +273,16 @@ function Viewer({ mode = "next", built }: { mode?: "next" | "static"; built: rea
               <h3>How this one is built</h3>
               <ol>
                 {build.map((text) => (
+                  <NoteItem key={text} line={{ text }} />
+                ))}
+              </ol>
+            </>
+          ) : null}
+          {shellBuild ? (
+            <>
+              <h3>The new sidebar and header</h3>
+              <ol>
+                {shellBuild.map((text) => (
                   <NoteItem key={text} line={{ text }} />
                 ))}
               </ol>

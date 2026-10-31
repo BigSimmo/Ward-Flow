@@ -739,4 +739,10 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** the 48-hour figure leads with its range in muted ink (may move); the overdue figure shows once (34 overdue, not held up). The phone Bed forecast sheet stacks figures, bars, then levers. Highlight chips name their noun (Open bed ready · 15 wards) and open the service groups that hold a match.",
     "**Review round (30 October):** Ask the ward is the one name for the request, on the kit's small button; the ward drawer's own title and close replace Back to network. Planned admissions and Step down board use the card title style.",
   ],
+  "shell-next": [
+    "**Header:** one Alerts button carries the alerts count and a dot for unread notices; Activity is the second tab of its panel (on Home it opens Home's own Activity panel). The place comes before the page: 'Statewide › Capacity'. Board time stays on tablet. The search box reads 'Search patients' (short enough for the narrowest bar, with Back and a long title).",
+    "**Bed alerts stay about capacity (Josh, 30 Oct 2026):** a small card leads with occupancy per place, with the 85% mark on each bar, says in words how many are over 85%, and gives beds ready as the second line. A site, service or ward desk reads its own wards first (the bed manager sees 'RPH 88.2%', as its Capacity page), then its health service; other desks keep Metro and the fullest service.",
+    "**Sidebar:** each count's hover title says whose figure it is ('Waiting: 6 waiting in ED, for RPH and the EDs this desk covers'). Any page under More can be pinned under the role's menu, in the sidebar and the tablet Menu (this browser tab only; nothing is saved). The person is named once, in the foot with Switch. The executive and access admin desks show no handover countdown.",
+    "**Still open:** the phone's bottom bar keeps separate Alerts and Activity buttons, because it is Josh's locked design. Closed-sidebar count badges already existed, so they are unchanged.",
+  ],
 };
