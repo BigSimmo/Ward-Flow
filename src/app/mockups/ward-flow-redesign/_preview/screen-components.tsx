@@ -10,9 +10,8 @@ import type { ComponentType } from "react";
 const CapacityScreen = dynamic<MockupPageProps>(() =>
   import("@/components/ward-management/capacity/capacity-screen").then((module) => module.CapacityScreen),
 );
-const HomeActivityPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/home-activity/home-activity-page").then((module) => module.HomeActivityPage),
-);
+// Home is built into the app (lane H): the preview draws the real screen (built-home.tsx).
+const BuiltHome = dynamic<MockupPageProps>(() => import("./built-home").then((module) => module.BuiltHome));
 const NewReferralRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/new-referral/new-referral-redesign").then((module) => module.NewReferralRedesign),
 );
@@ -122,7 +121,7 @@ export type MockupPageProps = { openOnLoad?: string };
 /** Preview only: the redesigned page drawn for each mock-up slug. */
 export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps>>> = {
   capacity: CapacityScreen,
-  home: HomeActivityPage,
+  home: BuiltHome,
   waiting: WaitingPage,
   "new-referral": NewReferralRedesign,
   ward: RealWardScreen,

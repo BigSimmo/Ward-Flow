@@ -88,11 +88,6 @@ const PopStateOffline = dynamic<{ page: ReactNode }>(() =>
 const PopStateToast = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-state-toast/pop-state-toast").then((module) => module.PopStateToast),
 );
-const PopStateNotWired = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-state-not-wired/pop-state-not-wired").then(
-    (module) => module.PopStateNotWired,
-  ),
-);
 
 /**
  * shell-next (Josh, 31 Oct 2026): with `?shell=next` the Menu popup is the new frame's own phone Menu
@@ -157,5 +152,4 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "state-error": PopStateError,
   "state-offline": PopStateOffline,
   "state-toast": PopStateToast,
-  "state-not-wired": PopStateNotWired,
 };

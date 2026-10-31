@@ -248,6 +248,11 @@ blocked in production, D-91). From then on, each build works from `main`, where 
 6. Delete the fork folder (page, its `as-*` copies and its popups) in the same PR, with its entries in
    `_preview/screens.ts`, `built-pages.ts`, `screen-components.tsx`, `popup-components.tsx`, `build-notes.ts` and any
    `max-lines-baseline.mjs` line. `npm run check:mockups` must pass.
+   **A built page that pop-ups are still drawn over** (agreed with lane H, 31 Oct 2026) keeps its slug in
+   `built-pages.ts` and `screens.ts`; its `screen-components.tsx` entry draws the real screen on the preview world
+   (Home: `_preview/built-home.tsx`). Delete only the fork folder and replace its build notes with one "Built into
+   the app" line. The slug leaves the lists once nothing is drawn over it. If the real screen will not render in the
+   static preview build, keep the fork as the backdrop and say so in the PR.
 7. Update tests: unit and DOM tests for changed behaviour, test ids kept or migrated, `tests/ward-help-howto.test.ts`
    if a Show me target moved. `check:diff-integrity` explains any drop.
 8. Browser check at 1440, 1024 and 390 px, light and dark: no sideways scroll, nothing under the dock, no text under

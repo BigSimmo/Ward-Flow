@@ -58,6 +58,9 @@ function renderShortlist() {
 describe("ShortlistPanel: a single-gender ward offers the non-binary placement form instead of hiding as unavailable (WF-012)", () => {
   it("FSH Adult Secure is offered with the gender-placement form, and submitting succeeds", () => {
     renderShortlist();
+    // Home redesign (30 Oct 2026): a ward that takes this person only with a recorded reason sits
+    // behind the override disclosure, which is the coordinator's first tap.
+    fireEvent.click(screen.getByTestId("ward-shortlist-review-toggle"));
 
     // The canary: if this ward had been filtered into the `unavailable` bucket, its candidate row
     // would not exist at all and every assertion below would fail for the wrong reason.

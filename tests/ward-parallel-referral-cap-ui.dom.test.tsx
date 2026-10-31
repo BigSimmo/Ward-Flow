@@ -82,7 +82,10 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
       </ToastProvider>,
     );
 
-    expect(screen.getByText(/of 2 parallel/)).toBeInTheDocument();
+    // Placement redesign (Josh, 31 Oct 2026): WF-009's wards need an override reason, so they sit
+    // behind their own disclosure, and the To line with its parallel count shows once a ward is chosen.
+    const toggle = screen.queryByTestId("ward-shortlist-review-toggle");
+    if (toggle && toggle.getAttribute("aria-expanded") !== "true") fireEvent.click(toggle);
 
     const candidates = screen.getAllByTestId(/^ward-shortlist-candidate-/);
     expect(
@@ -91,6 +94,7 @@ describe("coordinator/shortlist-panel.tsx reads the configured parallel referral
     ).toBeGreaterThanOrEqual(3);
 
     fireEvent.click(candidates[0]);
+    expect(screen.getByText(/of 2 parallel/)).toBeInTheDocument();
     fireEvent.click(candidates[1]);
     expect(candidates[0]).toHaveAttribute("aria-pressed", "true");
     expect(candidates[1]).toHaveAttribute("aria-pressed", "true");

@@ -1071,6 +1071,11 @@ export function CoordinatorScreen() {
                   phone={isPhone}
                   handlers={alertHandlers}
                   selectedReferralId={selectedReferralId}
+                  onSelectReferral={(referralId) => {
+                    setSelectedAlertId(undefined);
+                    selectMovement(undefined);
+                    selectReferral(referralId);
+                  }}
                   // WS-04 (workflow speed audit, 26 Oct 2026): Decide opens the decision itself, the
                   // referral on the Referrals board with Accept and Decline, never a read-only preview.
                   decideHref={referralBoardHref}

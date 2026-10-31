@@ -17,6 +17,7 @@ import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
 
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./home-list.module.css";
 
 /** `onClear` is left out inside a sheet, which has its own Close. */
@@ -49,7 +50,16 @@ export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; no
           <StatusGlyph tone={entry.group === "act" ? "danger" : "warning"} />
           {entry.item.title}
         </p>
-        <p className={styles.alertDetail}>{alertDetail(entry.item)}</p>
+        <p className={styles.alertDetail}>
+          {alertDetail(entry.item)}
+          {/* A passed legal form's detail is its typed time; the tag says no legal limit was checked. */}
+          {legalEnded !== undefined ? (
+            <>
+              {" "}
+              <LegalLimitsNotChecked variant="tag" />
+            </>
+          ) : null}
+        </p>
         {/* With a patient open in Placement below, the patient, origin and destination are already
             there, so the card keeps only the reason, who owns it when that is not you, and what to do. */}
         {inPlacement ? (

@@ -34,5 +34,4 @@ export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward/ward-home-tab.tsx": 2150,
   "src/components/ward-management/ward-patients-seed.ts": 1800,
   "src/components/ward-management/ward/ward-answer-view.tsx": 1750,
-  "src/components/ward-redesign/home-activity/placement-panel.tsx": 2750,
 };

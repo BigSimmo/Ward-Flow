@@ -177,7 +177,6 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-state-error", label: "Error", group: "States", over: "home", pop: "state-error" },
   { slug: "pop-state-offline", label: "Offline", group: "States", over: "home", pop: "state-offline" },
   { slug: "pop-state-toast", label: "Toast", group: "States", over: "home", pop: "state-toast" },
-  { slug: "pop-state-not-wired", label: "Not wired", group: "States", over: "home", pop: "state-not-wired" },
 ];
 
 /** Prefix routes: any address under these opens the one example drawn for them. */
