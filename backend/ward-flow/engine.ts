@@ -595,14 +595,17 @@ export function archivePartialViewForWorld(
 }
 
 /**
- * H-0694, H-0179: a whole-network desk skips the role check below, so the command is recorded under
- * the desk's own role, never the role its screen sent. A statewide coordinator acting on a ward page
- * is written down as the Bed coordinator, not the ward. The demonstration controls keep `demo`, and
- * marking a notice read keeps its role, which names the notice's addressee (`reduceInboxEvent`).
+ * H-0694, H-0179: every coordinator desk skips the role check below, so the command is recorded under
+ * the desk's own role, never the role its screen sent. A coordinator acting on a ward page is written
+ * down as the Bed coordinator, not the ward. This covers a service coordinator as well as the
+ * statewide one (access audit, 31 Oct 2026): a service coordinator also skips the role check, so
+ * without this its change was recorded as the ward's or ED's. The demonstration controls keep `demo`
+ * (refused below for anyone but the statewide coordinator), and marking a notice read keeps its role,
+ * which names the notice's addressee (`reduceInboxEvent`).
  */
 export function deskCommand(access: WardAccess, supplied: unknown): unknown {
   const fields = supplied as Record<string, unknown> | null;
-  if (!accessIsWholeNetwork(access) || typeof fields?.role !== "string") return supplied;
+  if (access.role !== "coordinator" || typeof fields?.role !== "string") return supplied;
   if (fields.role === "demo" || fields.role === access.role || fields.type === "MARK_NOTICE_READ") return supplied;
   return { ...fields, role: access.role };
 }

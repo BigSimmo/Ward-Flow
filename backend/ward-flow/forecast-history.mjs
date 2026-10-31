@@ -28,6 +28,17 @@ const FORECAST_REASON_ROLES = Object.freeze([
   "executive",
 ]);
 
+/**
+ * The role a missed-day reason is recorded under: the desk's own, from the server's record of the
+ * desk, never the `by` the browser sent (access audit, 31 Oct 2026). `null` for a desk that records
+ * no reasons, such as the access admin, which sees no patients and has no forecast.
+ * @param {string} role
+ * @returns {string | null}
+ */
+export function forecastReasonRole(role) {
+  return FORECAST_REASON_ROLES.includes(role) ? role : null;
+}
+
 const INT_MIN = -2147483648;
 const INT_MAX = 2147483647;
 const whole = (/** @type {unknown} */ value) =>
