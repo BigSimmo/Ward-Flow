@@ -206,7 +206,7 @@ Quick in, quicker out. Nothing moves without a reason, and nothing bounces on da
 - **One control per value.** A stepper or a slider, never both. The 12px floor holds inside controls, range ends included.
 - **Print.** Controls carry `data-print-hide`. Print also hides row actions, toasts, tips, menus and drawers, and repeats table headers on each page. Print is ink on white with no glass or shadow, grids collapse to one column, cards and rows never split across pages, and every printed page shows its window and when it was generated.
 - **Counts.** Each figure has one source. "N of M" only when N rows are shown, otherwise "Top 10 of 70". Hero chips, tab counts and list lengths agree.
-- **Content.** Dates as "Fri 9 Oct". 24 hour time. Durations from one formatter (`durText`) with no seconds: under 1h as 45m, under 48h as 3h 20m, from 48h as 7d 1h, never "169h 0m". A list may add a relative part in ink-3: "Fri 16 Oct, in 7d", "2d ago". Thousands separators. Percentages to one decimal place. A colon means clock time only. Counts must reconcile across a page: the hero, a tile and a list never disagree about the same thing. Legal forms are named by their Mental Health Act 2014 form name and period, not a section number, unless the section has been verified. Where the app does not check a legal limit it says "Legal limits not checked here". Say a time once: "Sent 3 days ago · Due 2 days ago", not the clock time and the relative time side by side. Legal-form times are shown only as typed, never as a countdown, "due in" or "passed … ago", and never used to order a list (D-93, replacing D-71 item 5).
+- **Content.** Dates as "Fri 9 Oct". 24 hour time. Durations from one formatter (`durText`) with no seconds: under 1h as 45m, under 48h as 3h 20m, from 48h as 7d 1h, never "169h 0m". A list may add a relative part in ink-3: "Fri 16 Oct, in 7d", "2d ago". Thousands separators. Percentages are whole numbers on cards, rows and chips (86%, Capacity, approved 31 Oct); one decimal place only in a report table where the difference matters. A colon means clock time only. Counts must reconcile across a page: the hero, a tile and a list never disagree about the same thing. Legal forms are named by their Mental Health Act 2014 form name and period, not a section number, unless the section has been verified. Where the app does not check a legal limit it says "Legal limits not checked here". Say a time once: "Sent 3 days ago · Due 2 days ago", not the clock time and the relative time side by side. Legal-form times are shown only as typed, never as a countdown, "due in" or "passed … ago", and never used to order a list (D-93, replacing D-71 item 5).
 - **Warnings.** Fewer, kept only where an owner rule or a real risk needs them (Josh, 31 Oct). Say each once, quietly, as a glyph and words rather than a coloured box. Safeguard wording stays word for word. A missing fact reads "Not recorded" in ink-3, amber only where the gap stops the next step.
 - **Age.** Every confirmed figure shows its age ("15m since confirmed"). Past its threshold it takes the amber circle and names the action.
 - **Header strip, stat rows and graphs (Josh, 31 Oct 2026: "I like your choices").** From the Waiting mock-up, rounds 5 and 6 (`ward-redesign/waiting/waiting-polish.module.css`, branch `claude/project-thread-li661n`, 33e932ea8). Full note: `waiting-mockup/design-system-note-graphs-and-header.md` in the build folder.
@@ -350,7 +350,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 
 ## 17. Redesign patterns (31 Oct 2026)
 
-Learnt from the redesign mock-ups (PR #1118: Home, Capacity, Waiting and Referrals, with the kit in `src/components/wf`). Josh approved the Waiting patterns at 09:42, every other page and pop-up except Capacity, Waiting and Referrals at 09:04, and Referrals at 10:22. Capacity and Waiting are approved one at a time as their rework lands. The rules below are the ones that held across all four pages. Anything still moving is listed at the end.
+Learnt from the redesign mock-ups (PR #1118: Home, Capacity, Waiting and Referrals, with the kit in `src/components/wf`). Josh approved the Waiting patterns at 09:42, every other page and pop-up except Capacity, Waiting and Referrals at 09:04, Capacity at 10:07, Referrals at 10:22 and Waiting round 8 at 10:26. The rules below are the ones that held across all four pages. Anything still moving is listed at the end.
 
 **Pages.**
 
@@ -360,8 +360,10 @@ Learnt from the redesign mock-ups (PR #1118: Home, Capacity, Waiting and Referra
 - **Show the first rows, then Show more.** A list longer than about eight rows shows its first rows, then the kit's `ShowMoreRow` ("Show 8 more", "Show fewer"). Never a small box that scrolls inside a panel.
 - **Group repeats.** Several identical items become one row with one action ("Chase all").
 - **One filled button per row or panel.** The rest are quiet.
+- **One design for every desk.** Role versions of a page share one layout and differ only in what the desk may see or do (Capacity: the bed manager sees its own site's bed types, the executive sees counts only and no names). A control a desk can never use is not shown; a control that is unavailable for now stays, `aria-disabled` with its reason.
+- **Checklists** (Waiting's daily check, approved 31 Oct): one head line with the count by kind, the bulk action ("Mark all 17 checked") and Hide; the people as a grid of one-line cards, three across on a laptop, each with its time and opening that person; the first nine, then Show more. A check that needs looking first keeps that rule (open the list before marking it checked).
 - **Chips together.** A page's filter and highlight chips sit in one row, and a chip with nobody in it is hidden. Phone chip rows show the count first and slide in one row with a soft edge fade (`phoneRows.chipRow`), never cut off.
-- **Fewer warnings.** Keep a warning only where an owner rule or a real risk needs it, say it once, and keep it quiet: a small glyph and words, not a coloured box. Safeguard wording stays word for word ("Not legally checked.", "Legal limits not checked here"). Missing facts read "Not recorded" in ink-3, with amber only where the gap stops the next step.
+- **Fewer warnings.** Keep a warning only where an owner rule or a real risk needs it, say it once, and keep it quiet: a small glyph and words, not a coloured box. Safeguard wording stays word for word ("Not legally checked.", "Legal limits not checked here"). Missing facts read "Not recorded" in ink-3, with amber only where the gap stops the next step. How (Capacity, approved 31 Oct): a caveat becomes one short line with the full sentence one tap away ("Distance only, not suitability"); a line that repeats "How this is worked out" goes; a conditional warning shows only when it applies (the confirmation limit only when a count is overdue); a card with nothing to note has no note line; the page foot is one short line. Keep a caveat that changes how a figure is read ("Estimate only", "range only").
 - **Names.** Surname first, in full, wrapping onto a second line rather than being cut ("Jenkinwood, Sarah"). Place names wrap in full too. The line under a name adds only what nothing else on the row says.
 - **Short time words.** Say a time once: "Sent 3 days ago · Due 2 days ago". Legal-form times are only shown as typed (D-93).
 - **Less is more.** Josh dropped extra marks that added clutter on review (names on chart bubbles, a "None fit" tag, an extra tab). Add a mark, tag or tab only when it answers a question the page cannot already answer.
@@ -380,7 +382,7 @@ Learnt from the redesign mock-ups (PR #1118: Home, Capacity, Waiting and Referra
 **Graphs and grids** (add to the Waiting patterns in section 9).
 
 - **Heat-map grids** show the number alone in each cell, the shade deepening as it grows, with an empty day as a faint dot. Days that may still move (after tomorrow) carry a fine hatch, the same hatch the chart uses, so "may move" looks the same everywhere. A planned item is a small accent "+1" in the cell's corner. Day heads are two lines (Sat over 31), today in accent blue, and each row ends with its total. Column heads stay at the 12px floor (Josh, 31 Oct).
-- **Bed pictures.** A ward's beds read as one picture: "1 ready of 20 beds", the bed type as a tag, the bed squares, then one line with occupied, on leave, pulled and closed.
+- **Bed pictures.** A ward's beds read as one picture: "1 ready of 20 beds", the bed type as a tag, the bed squares, then one line with occupied, on leave, pulled and closed. On a bed map card the ready figure leads on the right, green, grey at 0, with "19 of 24 occupied" under the name; the bed squares always fit one line; the small note line ("2 pulled · 3 closed · 1 on leave") shows only when there is something to note, a stale count first in amber. In rows view every value sits in a tidy column, with no separate beds column.
 - **One timeline per record:** a single rail in time order with a live Now point and the due time. History and corrections fold underneath.
 
 **Controls (the kit).**
@@ -391,11 +393,7 @@ Learnt from the redesign mock-ups (PR #1118: Home, Capacity, Waiting and Referra
 
 **Frame.** The drawer that lists what needs doing is headed "Alerts", not "Tasks". Pinned pages in the sidebar last for the open browser tab only; remembering them per person needs a privacy decision first. The app bar has no "Synthetic prototype" pill; the footer's synthetic-data notice stays, and the TV view and printouts keep a small synthetic-data mark.
 
-**Still in flux (31 Oct, 10:30 UTC).** Referrals was approved at 10:22, so its patterns are above. Write these into the rules only once Josh approves the page:
-
-1. Capacity: the warnings cut to the minimum and the two bed map layouts (polish in progress).
-2. Waiting: the person panel's width and the daily check grid (round 8, under review).
-3. The shared footer that says "Synthetic prototype" twice (with the frame).
+**Still in flux (31 Oct, 10:35 UTC).** Capacity (10:07), Referrals (10:22) and Waiting round 8 (10:26) are approved, so their patterns are above. One item remains: the shared footer that says "Synthetic prototype" twice (with the frame). Add new items here until Josh approves them.
 
 ## Appendix: where the v8.2 rules went
 
