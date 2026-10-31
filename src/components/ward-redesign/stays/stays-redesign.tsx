@@ -66,7 +66,7 @@ import redesign from "./stays-redesign.module.css";
 import { WardBoardFlowColumn } from "@/components/ward-management/board/ward-board-flow-column";
 import { WardBoardGridColumn } from "./stays-grid-column"; // Redesign: phone shows 8 beds, then Show more
 import { LeavingDestinationField, WardBoardDetailPanel } from "@/components/ward-redesign/stays/stays-detail-panel"; // Redesign: kit close, card radius
-import { WardBoardWorkBand } from "@/components/ward-management/board/ward-board-work-band";
+import { WardBoardWorkBand } from "@/components/ward-redesign/pop-board-blocker/board-blocker-work-band";
 import { WardBoardPrintSections } from "@/components/ward-management/board/ward-board-print-sections";
 import { SAVE_NOT_CONFIRMED, saveProblem } from "@/components/ward-management/ward-save-failure";
 import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";

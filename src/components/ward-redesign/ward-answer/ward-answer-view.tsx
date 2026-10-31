@@ -75,7 +75,7 @@ import {
   OVERRIDE_SUBMIT_UNAVAILABLE_REASON,
 } from "@/components/ward-management/ward/ward-home-tab";
 import { declineTargetLeftNote } from "@/components/ward-management/ward/decline-target-left";
-import { WardAcceptDialog } from "@/components/ward-management/ward/ward-answer-accept-dialog";
+import { WardAcceptDialog } from "@/components/ward-redesign/pop-ward-accept/ward-accept-dialog";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
