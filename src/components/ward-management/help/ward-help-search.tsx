@@ -60,11 +60,14 @@ export function WardHelpSearch({
   role,
   home,
   onNavigate,
+  onGlossaryTerm,
   glossary,
 }: {
   role: WardTourRole;
   home: string | undefined;
   onNavigate?: () => void;
+  /** Opens Words at a glossary term the search found, so a word result does something. */
+  onGlossaryTerm?: (term: string) => void;
   /** The sheet's own glossary (site directory), so the site codes shown in Words can be found. */
   glossary?: readonly GlossaryTerm[];
 }) {
@@ -122,6 +125,11 @@ export function WardHelpSearch({
   }
 
   function act(result: HelpSearchResult) {
+    if (result.key.startsWith("term:") && onGlossaryTerm) {
+      close(false);
+      onGlossaryTerm(result.title);
+      return;
+    }
     const mine = !result.desks || result.desks.includes(role);
     if (result.howToId && walks(result, mine)) {
       close(false);

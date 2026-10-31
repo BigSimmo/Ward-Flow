@@ -85,7 +85,14 @@ describe("askHelp", () => {
     const paperOnly = Array.isArray(desks) ? desks[0] : undefined;
     expect(paperOnly).toBeDefined();
     if (!paperOnly) return;
-    for (const matches of [askHelp("ward flow down", paperOnly), closestHowTos("down", paperOnly, 50)]) {
+    // "last" and "saved" are only in the Handover twin's answer, so its own twin must stand in.
+    for (const matches of [
+      askHelp("ward flow down", paperOnly),
+      askHelp("last", paperOnly),
+      askHelp("Ward Flow down last saved", paperOnly),
+      closestHowTos("down", paperOnly, 50),
+      closestHowTos("last", paperOnly, 50),
+    ]) {
       const ids = matches.map((match) => match.howTo.id);
       expect(ids).toContain("downtime-paper");
       expect(ids).not.toContain("downtime");

@@ -918,12 +918,18 @@ export function correctedQuestionWords(query: string): readonly string[] {
 export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean };
 
 /**
- * Drops another desk's how-to when this desk has its own with the same title (the downtime pair),
- * so no login is pointed at a twin it cannot follow.
+ * This login's own how-to with the same title as `howTo` (the downtime pair), else `howTo` itself.
+ * A question that only matches the twin this login cannot follow still gets the answer it can.
  */
-function withoutOtherDeskTwins<T extends HowToMatch>(matches: readonly T[]): T[] {
-  const ownTitles = new Set(matches.filter((entry) => entry.forThisDesk).map((entry) => entry.howTo.title));
-  return matches.filter((entry) => entry.forThisDesk || !ownTitles.has(entry.howTo.title));
+export function ownTwinOf(howTo: HowTo, role: WardTourRole): HowTo {
+  if (howToFor(howTo, role)) return howTo;
+  return HOW_TOS.find((other) => other.title === howTo.title && howToFor(other, role)) ?? howTo;
+}
+
+/** Each how-to once, keeping its first (best-ranked) place. */
+function onceEach<T extends HowToMatch>(sorted: readonly T[]): T[] {
+  const seen = new Set<string>();
+  return sorted.filter(({ howTo }) => !seen.has(howTo.id) && Boolean(seen.add(howTo.id)));
 }
 
 /**
@@ -950,17 +956,18 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
       }
     }
     if (hits < needed) return [];
-    const forThisDesk = howToFor(howTo, role);
-    return [{ howTo, forThisDesk, hits, score, order }];
+    const own = ownTwinOf(howTo, role);
+    return [{ howTo: own, forThisDesk: howToFor(own, role), hits, score, order }];
   });
   // An answer far weaker than the best (one shared word such as "bed") is noise, not a lead.
   const best = Math.max(0, ...scored.map((entry) => entry.score));
-  return withoutOtherDeskTwins(scored)
+  const ranked = scored
     .filter((entry) => entry.score * 2 >= best)
     .sort(
       (a, b) =>
         b.hits - a.hits || Number(b.forThisDesk) - Number(a.forThisDesk) || b.score - a.score || a.order - b.order,
-    )
+    );
+  return onceEach(ranked)
     .slice(0, limit)
     .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
 }
@@ -975,11 +982,13 @@ export function closestHowTos(query: string, role: WardTourRole, limit = 3): rea
   const scored = HOW_TOS.flatMap((howTo, order) => {
     const { strong, weak } = wordsOf(howTo);
     const score = words.reduce((sum, word) => sum + (strong.has(word) ? 3 : weak.has(word) ? 1 : 0), 0);
-    const forThisDesk = howToFor(howTo, role);
-    return score ? [{ howTo, forThisDesk, score, order }] : [];
+    const own = ownTwinOf(howTo, role);
+    return score ? [{ howTo: own, forThisDesk: howToFor(own, role), score, order }] : [];
   });
-  return withoutOtherDeskTwins(scored)
-    .sort((a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order)
+  const ranked = scored.sort(
+    (a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order,
+  );
+  return onceEach(ranked)
     .slice(0, limit)
     .map(({ howTo, forThisDesk }) => ({ howTo, forThisDesk }));
 }

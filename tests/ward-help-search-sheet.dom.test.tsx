@@ -74,4 +74,25 @@ describe("Help sheet search field", () => {
     expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
     expect(screen.queryByRole("dialog", { name: "Search Help" })).toBeNull();
   });
+
+  it("opens Words at a glossary word the search found", async () => {
+    function Host() {
+      const [view, setView] = useState<"screen" | "glossary">("screen");
+      return (
+        <WardHelpSheet
+          view={view}
+          ask={undefined}
+          onView={(next) => setView(next === "glossary" ? "glossary" : "screen")}
+          onClose={vi.fn()}
+        />
+      );
+    }
+    render(<Host />);
+    fireEvent.click(screen.getByTestId("ward-help-search-field"));
+    fireEvent.change(screen.getByRole("combobox"), { target: { value: "pull expired" } });
+    fireEvent.click(screen.getByTestId("ward-help-search-result-term:Pull expired"));
+    expect(screen.queryByRole("dialog", { name: "Search Help" })).toBeNull();
+    expect(screen.getByTestId("ward-help-glossary")).toBeTruthy();
+    await waitFor(() => expect(document.activeElement?.id).toBe("ward-help-term-pull-expired"));
+  });
 });

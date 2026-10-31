@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+
 import type { GlossaryTerm } from "../help/ward-help-content";
 import { CONFUSABLE_TERMS, GLOSSARY_GROUPS, glossaryGroup, relatedTerms, SAVE_HELP_TERMS } from "./ward-help-glossary";
 import styles from "../help/ward-help-sheet.module.css";
@@ -8,18 +10,29 @@ function termId(term: string): string {
   return `ward-help-term-${term.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 }
 
+function find(term: string) {
+  const target = document.getElementById(termId(term));
+  target?.scrollIntoView?.({ block: "center" });
+  target?.focus();
+}
+
 /**
  * The glossary in Words (Josh, 31 Oct 2026: one search box). Help's own search finds a word, so the
  * glossary keeps no filter of its own: every word is listed in its group, and See also scrolls to
  * the related word.
  */
-export function WardHelpGlossary({ termsSource }: { termsSource: readonly GlossaryTerm[] }) {
+export function WardHelpGlossary({
+  termsSource,
+  found,
+}: {
+  termsSource: readonly GlossaryTerm[];
+  /** A word Help's search found: brought into view and focused once Words has drawn it. */
+  found?: { readonly term: string };
+}) {
   const terms = [...termsSource, ...SAVE_HELP_TERMS];
-  function find(term: string) {
-    const target = document.getElementById(termId(term));
-    target?.scrollIntoView?.({ block: "center" });
-    target?.focus();
-  }
+  useEffect(() => {
+    if (found) find(found.term);
+  }, [found]);
   return (
     <section className={styles.group} aria-label="Glossary" data-testid="ward-help-glossary">
       <p className={styles.note}>{terms.length === 1 ? "1 word or code" : `${terms.length} words and codes`}</p>

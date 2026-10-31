@@ -2,7 +2,7 @@
 
 import { CircleHelp, Keyboard } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -107,6 +107,8 @@ function WardHelpSheetView({
 }: WardHelpSheetProps & { termsSource: ReturnType<typeof glossaryForSites> }) {
   const pathname = usePathname() ?? "";
   const role = useTourRole();
+  // A word picked in search: a new object each time, so picking the same word again still moves to it.
+  const [foundTerm, setFoundTerm] = useState<{ readonly term: string }>();
   const guide = DESK_GUIDES[role];
   const { home, deskHome } = useTourFacts(role);
   // Home's address prefixes every page, so it matches only itself: Settings must not show Home's help.
@@ -188,7 +190,16 @@ function WardHelpSheetView({
         {asked ? (
           <WardHelpAsk role={role} home={deskHref} initialQuery={asked} onClose={onClose} termsSource={termsSource} />
         ) : (
-          <WardHelpSearch role={role} home={deskHref} onNavigate={onClose} glossary={termsSource} />
+          <WardHelpSearch
+            role={role}
+            home={deskHref}
+            onNavigate={onClose}
+            onGlossaryTerm={(term) => {
+              setFoundTerm({ term });
+              onView("glossary");
+            }}
+            glossary={termsSource}
+          />
         )}
       </div>
 
@@ -260,7 +271,7 @@ function WardHelpSheetView({
 
       {tab === "glossary" ? (
         <>
-          <WardHelpGlossary termsSource={termsSource} />
+          <WardHelpGlossary termsSource={termsSource} found={foundTerm} />
           <WardHelpReference role={role} onClose={onClose} />
         </>
       ) : null}
