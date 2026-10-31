@@ -264,7 +264,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const online = useOnlineStatus();
   const selectedService = useServiceScope();
   const [panel, setPanel] = useState<Panel>(null);
-  const [menuQuery, setMenuQuery] = useState("");
   const menuTrigger = useRef<HTMLButtonElement>(null);
   const menuReturnFocus = useRef<HTMLElement | null>(null);
   const activityTrigger = useRef<HTMLButtonElement>(null);
@@ -294,7 +293,6 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     () =>
       subscribeWardMenu((opener) => {
         menuReturnFocus.current = opener ?? menuTrigger.current;
-        setMenuQuery("");
         setPanel("menu");
       }),
     [],
@@ -734,10 +732,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             <span className={phone.whoMeta}>Go to a desk</span>
           </span>
         </button>
-        <label className={bar.drawerSearch}>
-          <span className="sr-only">Filter pages</span>
-          <input value={menuQuery} onChange={(event) => setMenuQuery(event.target.value)} placeholder="Filter pages" />
-        </label>
+        {/* One search: it already finds every page below, so the separate "Filter pages" box went in the
+            search and forms review (Josh, 30 Oct 2026). */}
         <WardPublicSearch
           catalogue={report}
           accessLifetime={shell.accessLifetime ?? ""}
@@ -751,11 +747,9 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
           <section key={group.label}>
             <h2 className={phone.heading}>{group.label}</h2>
             <ul className={phone.list}>
-              {group.entries
-                .filter((entry) => entry.label.toLocaleLowerCase().includes(menuQuery.toLocaleLowerCase()))
-                .map((entry) => (
-                  <li key={entry.id}>{navLink(entry, true)}</li>
-                ))}
+              {group.entries.map((entry) => (
+                <li key={entry.id}>{navLink(entry, true)}</li>
+              ))}
             </ul>
           </section>
         ))}

@@ -95,14 +95,9 @@ describe("Summary's executive aggregate view", () => {
     const pressure = screen.getByTestId("ward-statistics-pressure");
     fireEvent.click(within(pressure).getByRole("button", { name: /^Show all/ }));
     expect(pressure.querySelectorAll("tbody tr")).toHaveLength(base.wards.length);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter wards or hospitals" }), {
-      target: { value: base.wards[0].name },
-    });
-    expect(pressure.querySelectorAll("tbody tr")).toHaveLength(1);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter emergency departments" }), {
-      target: { value: "No matching department" },
-    });
-    expect(screen.getByTestId("ward-statistics-emergency-departments").querySelectorAll("tbody tr")).toHaveLength(0);
+    // The two tables' typed filters went in the search and forms review (Josh, 30 Oct 2026).
+    expect(screen.queryByRole("searchbox", { name: "Filter wards or hospitals" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("searchbox", { name: "Filter emergency departments" })).not.toBeInTheDocument();
     const stages = screen.getByTestId("statistics-overview-stages-chart");
     fireEvent.click(within(stages).getByRole("radio", { name: "Data" }));
     expect(screen.getByTestId("ward-statistics-overview-stage-table")).toBeInTheDocument();
