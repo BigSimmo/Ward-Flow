@@ -27,6 +27,9 @@ function renderBoard() {
 }
 
 function renderedIds(group: string): string[] {
+  // Discharges redesign (approved 31 Oct 2026): a group shows its first rows, then Show more.
+  const more = screen.queryByTestId(`ward-discharge-more-${group}`)?.querySelector("button");
+  if (more?.getAttribute("aria-expanded") === "false") fireEvent.click(more);
   const body = screen.getByTestId(`ward-discharge-group-${group}`);
   return [...body.querySelectorAll("tr[data-release-id]")].map((row) => row.getAttribute("data-release-id")!);
 }

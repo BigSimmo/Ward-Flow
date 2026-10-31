@@ -32,7 +32,9 @@ describe("ward board: the ward's own tentative diagnosis (FD-10)", () => {
         <WardBoard unitId="rph-adult-secure" />
       </WardFlowProvider>,
     );
-    fireEvent.click(within(screen.getByTestId("ward-board-bed-1")).getByRole("button"));
+    const bed1 = within(screen.getByTestId("ward-board-bed-1")).getByRole("button");
+    // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
+    if (bed1.getAttribute("aria-pressed") !== "true") fireEvent.click(bed1);
 
     const form = screen.getByTestId("ward-board-ward-diagnosis-form");
     const record = within(form).getByTestId("ward-board-ward-diagnosis-record");

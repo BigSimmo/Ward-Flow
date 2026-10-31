@@ -10,7 +10,8 @@ import type { ChangesSinceLastLook } from "./coordinator/since-last-look";
 import styles from "./since-last-look-pill.module.css";
 
 /** Subscribe here so review/open state never rerenders the Ward/ED screen. */
-export function SinceLastLookPill({ scopeKey }: { scopeKey: string }) {
+/** `pillClassName` styles the pill as its host's own pill (My ward's phone hero passes Home's hero pill). */
+export function SinceLastLookPill({ scopeKey, pillClassName }: { scopeKey: string; pillClassName?: string }) {
   const { scenario, referrals, movements, units, bedReleases, worldGeneration } = useWardFlowSelect(
     "scenario",
     "referrals",
@@ -27,7 +28,16 @@ export function SinceLastLookPill({ scopeKey }: { scopeKey: string }) {
   );
   const { changes, markSeen } = useSinceLastLook(world, now, { scopeKey, windowMinutes: 15 });
   const boundary = `${scopeKey}:${userId}:${worldGeneration}:${scenario}`;
-  return <ScopedReview key={boundary} scopeKey={scopeKey} changes={changes} markSeen={markSeen} now={now} />;
+  return (
+    <ScopedReview
+      key={boundary}
+      scopeKey={scopeKey}
+      changes={changes}
+      markSeen={markSeen}
+      now={now}
+      pillClassName={pillClassName}
+    />
+  );
 }
 
 function ScopedReview({
@@ -35,11 +45,13 @@ function ScopedReview({
   changes,
   markSeen,
   now,
+  pillClassName,
 }: {
   scopeKey: string;
   changes: ChangesSinceLastLook;
   markSeen: () => void;
   now: Instant;
+  pillClassName?: string;
 }) {
   const [review, setReview] = useState<ChangesSinceLastLook | null>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -66,7 +78,7 @@ function ScopedReview({
           ref={trigger}
           variant="sec"
           size="sm"
-          className={styles.pill}
+          className={pillClassName ? `${styles.pill} ${pillClassName}` : styles.pill}
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => {

@@ -32,12 +32,6 @@ const PopMenu = dynamic<{ page: ReactNode }>(() =>
 const PopCreate = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-create/pop-create").then((module) => module.PopCreate),
 );
-const PopWardSwitcher = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-ward-switcher/pop-ward-switcher").then((module) => module.PopWardSwitcher),
-);
-const PopShiftBrief = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-shift-brief/pop-shift-brief").then((module) => module.PopShiftBrief),
-);
 const PopDesk = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-desk/pop-desk").then((module) => module.PopDesk),
 );
@@ -50,17 +44,8 @@ const PopMorePages = dynamic<{ page: ReactNode }>(() =>
 const PopTour = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-tour/pop-tour").then((module) => module.PopTour),
 );
-const PopBedRecord = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-bed-record/pop-bed-record").then((module) => module.PopBedRecord),
-);
-const PopConfirmBeds = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-confirm-beds/pop-confirm-beds").then((module) => module.PopConfirmBeds),
-);
 const PopBroadcast = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-broadcast/pop-broadcast").then((module) => module.PopBroadcast),
-);
-const PopWardNotices = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-ward-notices/pop-ward-notices").then((module) => module.PopWardNotices),
 );
 const PopReferWard = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-refer-ward/pop-refer-ward").then((module) => module.PopReferWard),
@@ -102,9 +87,6 @@ const PopCommunityTransportCancel = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-community-transport-cancel/pop-community-transport-cancel").then(
     (module) => module.PopCommunityTransportCancel,
   ),
-);
-const PopBoardBlocker = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-board-blocker/pop-board-blocker").then((module) => module.PopBoardBlocker),
 );
 const PopClearance = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-clearance/pop-clearance").then((module) => module.PopClearance),
@@ -189,16 +171,11 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   demo: PopDemo,
   menu: PopMenuForFrame,
   create: PopCreate,
-  "ward-switcher": PopWardSwitcher,
-  "shift-brief": PopShiftBrief,
   desk: PopDesk,
   "service-picker": PopServicePicker,
   "more-pages": PopMorePages,
   tour: PopTour,
-  "bed-record": PopBedRecord,
-  "confirm-beds": PopConfirmBeds,
   broadcast: PopBroadcast,
-  "ward-notices": PopWardNotices,
   "refer-ward": PopReferWard,
   "ed-actions": PopEdActions,
   "log-transport": PopLogTransport,
@@ -210,7 +187,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "community-record": PopCommunityRecord,
   "community-transport-book": PopCommunityTransportBook,
   "community-transport-cancel": PopCommunityTransportCancel,
-  "board-blocker": PopBoardBlocker,
   clearance: PopClearance,
   "idle-warning": PopIdleWarning,
   "idle-lock": PopIdleLock,

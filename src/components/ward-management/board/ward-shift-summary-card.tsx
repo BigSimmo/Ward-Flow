@@ -44,7 +44,8 @@ export function WardShiftSummaryCard({ unit, now }: { unit: Pick<Unit, "id" | "n
         level={3}
         eyebrow
         id={`${baseId}-shift-heading`}
-        title={`${window.label} on ${unit.name}`}
+        // The dialog title already names the ward.
+        title={window.label}
         meta={<span data-testid="ward-shift-summary-span">{window.inProgress ? `${span}, so far` : span}</span>}
       />
       <div className={styles.toggle} data-testid="ward-shift-summary-which">

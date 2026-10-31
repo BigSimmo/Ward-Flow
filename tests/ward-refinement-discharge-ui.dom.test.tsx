@@ -116,7 +116,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
       within(screen.getByRole("dialog", { name: "Reset the demo?" })).getByRole("button", { name: "Reset demo" }),
     );
 
-    expect(screen.getByRole("button", { name: /^Now, bed releases \d+$/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/u })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
 
@@ -128,27 +128,28 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
   it("keeps bed releases and admission records as separate counted populations", () => {
     renderDischarges();
-    const releases = screen.getByRole("button", { name: /^Now, bed releases \d+$/u });
+    // Discharges redesign (approved 31 Oct 2026): Now names the hero's figure, the releases listed to
+    // work now; History keeps its count of admission records.
+    const releases = screen.getByRole("button", { name: /^Now, \d+ to work now$/u });
     const records = screen.getByRole("button", { name: /^History, admission records \d+$/u });
-    const releaseCount = populationCount(releases);
     const recordCount = populationCount(records);
-    expect(releaseCount).toBeGreaterThan(0);
     expect(recordCount).toBeGreaterThan(0);
-    // CHANGED 25 September 2026: the release population now includes releases beyond today and
-    // discharges older than a day, which the worklist leaves out (and says so in its footer), so
-    // "All" counts the worklist's own four groups rather than the whole population.
     const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
-    const worklistCount =
-      groups.blocked.length + groups.confirmed.length + groups.expected.length + groups["discharged-today"].length;
-    expect(worklistCount + groups.excludedBeyondToday + groups.completedBeforeToday).toBe(releaseCount);
-    // Decision 5 (review 12 Oct 2026): the Status dropdown's "All statuses" carries the count.
+    const toWork = groups.blocked.length + groups.confirmed.length + groups.expected.length;
+    expect(toWork).toBeGreaterThan(0);
+    expect(releases).toHaveAccessibleName(`Now, ${toWork} to work now`);
+    // The headline counts the rows listed; "open" beside it is every release not yet discharged.
+    const open = bedReleases.filter((release) => release.state !== "discharged").length;
+    expect(screen.getByRole("heading", { name: new RegExp(`^${toWork} to work now`, "u") })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-discharge-bed-days-past")).toHaveTextContent(new RegExp(`of ${open} open`, "u"));
+    // Josh, 30 Oct: "All statuses" carries no count, so no third total sits beside the hero's two.
     const allStatuses = () =>
       within(screen.getByRole("combobox", { name: "Status" })).getByRole("option", { name: /^All statuses/u });
-    expect(allStatuses()).toHaveTextContent(`All statuses · ${worklistCount}`);
+    expect(allStatuses()).toHaveTextContent(/^All statuses$/u);
 
     fireEvent.click(records);
-    expect(allStatuses()).toHaveTextContent(`All statuses · ${recordCount}`);
-    expect(allStatuses()).not.toHaveTextContent(`All statuses · ${releaseCount + recordCount}`);
+    expect(allStatuses()).toHaveTextContent(/^All statuses$/u);
+    expect(screen.getByRole("heading", { name: /^\d+ admission records? open/u })).toBeInTheDocument();
   });
 
   it("filters to the linked patients, opens one, and clears that identity on filter and population changes", () => {
@@ -181,7 +182,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
 
-    fireEvent.click(screen.getByRole("button", { name: /^Now, bed releases \d+$/u }));
+    fireEvent.click(screen.getByRole("button", { name: /^Now, \d+ to work now$/u }));
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
   });

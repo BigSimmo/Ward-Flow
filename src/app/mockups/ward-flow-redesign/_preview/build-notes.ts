@@ -6,28 +6,6 @@ export const GROUND =
   "Built in React on 29 October 2026 from branch claude/core-pages-design-review-f5vf4g, which carries main at b6aa5cd (with #1109 Help) merged in. Each page reads the same synthetic world as /ward-flow, pinned to the 10:42 demo night, and is drawn inside the app's real menu and header. Synthetic data only. Nothing here is built into the app until Josh approves that page (D-74).";
 
 export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
-  "as-ward-home": [
-    "**As the nurse in charge**, My ward opens on Dabakarn's beds, the Ward flow list and This shift, with Confirm numbers in the header.",
-    "**New:** Handover stays a visible button beside More, because handing over is this desk's own job (a commented role branch in the one My ward copy).",
-    "**Still open:** bed 12 reads 'Name not recorded' on this desk but 'Marrowby, Ines' for the coordinator; the access scope withholds her record from Dabakarn. Is that intended?",
-  ],
-  "as-ward-stays": [
-    "**As the nurse in charge**, Stays is Dabakarn's own. Change ward is gone: a ward desk cannot open other wards, so it listed nothing it could use.",
-    "**Kept:** Before handover with They have left and Record a blocker.",
-    "**Round 2:** the phone shows the first 8 beds, then 'Show 12 more beds'; a bed you chose past the fold stays drawn so its sheet still works.",
-  ],
-  "as-ward-discharges": [
-    "**As the nurse in charge**, the header reads 'Bed release · Dabakarn' instead of 'all services'.",
-    "**Removed:** the Service and Ward filters (one choice each), the ward name under every person, and the second 'Blocked by barrier' panel that repeated the first.",
-    "**Round 2:** one barrier panel and the shared Discharges changes (see Discharges).",
-    "**Review round (30 October):** as the coordinator's Discharges: '4 to work now · of 14 open', '4 to work · 1 discharged', Held up as the one word, barrier and day clicks stay on Now, the day chart counts releases (closed wards left out), Chase opens Barriers and Confirm date the date control. Own-ward wording and filters kept.",
-  ],
-  "as-ward-handover": [
-    "**As the nurse in charge**, the sheet is titled for Dabakarn, with no scope picker.",
-    "**New:** empty groups fold into one line, so the table opens on real rows; the footer says '1 bed ready on Dabakarn' instead of the statewide finding-a-ward bar.",
-    "**Removed:** the Finding a ward chip (the coordinator's job).",
-    "**Round 2:** '1 person to hand over'. The Declined and Escalated chips go on the ward desk, because they belong to the coordinator's bed search and a ward never learns another ward's refusal (FD-23).",
-  ],
   "as-ward-referrals": [
     "**As the nurse in charge**, Referrals opens on 'Nothing for Dabakarn to answer' (or 'N for Dabakarn to answer'): only this ward's own incoming lines.",
     "**Removed:** destination pills and Refused once (every line is to this ward, and a ward never learns another ward's refusal, FD-23), Next overdue, the Bed meeting list, the waiting runway and the statewide Beds ready figure.",
@@ -70,11 +48,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-ed-legal-forms": [
     "**As the ED clinician**, the page already lists only Peel ED's people on forms, with times as typed and 'Not legally checked' word for word. Nothing needed changing for this role.",
   ],
-  "as-ed-handover": [
-    "**As the ED clinician**, the sheet says 'Peel ED' instead of 'All records you can access'.",
-    "**Removed:** the Beds tab, the beds-ready meter and the ward admitted and discharged counts: an ED holds no ward, so they were always 0.",
-    "**Still open:** the greyed sign-off notice appears three times on desktop. Drop the sign-off section for this desk?",
-  ],
   "as-ed-statistics": [
     "**As the ED clinician**, Statistics is Peel ED's own page, as the real menu opens it (D-80), not the network hub.",
     "**New:** a counts-only ED desk leads with the time-since-opening bands and the declines counts.",
@@ -114,16 +87,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
     "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
     "**Round 2:** empty Broadcast, Notices and History tabs go on this desk, and so does Copy for handover (the officer's copy is on My jobs). No stray ' · ' when the UMRN is withheld.",
-  ],
-  "as-bed-manager-ward": [
-    "**As the site bed manager**, the real gating already works: Confirm numbers is offered, Raise referral is greyed, answering and placing are blocked.",
-    "**New:** no Start the round, drug count, seclusion check or sign-off reminders, and Morning bed numbers with Confirm first in This shift (role branches in the one My ward copy).",
-  ],
-  "as-bed-manager-discharges": [
-    "**As the site bed manager**, Discharges opens on Royal Perth's own releases ('Bed release · Royal Perth Hospital').",
-    "**Removed:** the Service filter and the service name after each ward (one site, one service).",
-    "**Round 2:** one barrier panel beside the list, as on Discharges.",
-    "**Review round (30 October):** as the coordinator's Discharges: '7 to work now · of 23 open', Held up as the one word, clicks stay on Now, first rows then Show more. Only the ward or the coordinator can change an expected date, so an expected release here offers Open (on Milestones), not Confirm date (Josh agreed, 30 October).",
   ],
   "as-bed-manager-referrals": [
     "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
@@ -175,32 +138,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the time is the same typed HH:MM field Record a form uses, read by the same parser, replacing the browser's 12-hour picker. The title is 'Add the time', the link's own name. Phone controls are back to the kit's sizes.",
     "**For the build:** today's side-panel form still uses the browser's 12-hour time picker.",
   ],
-  "pop-bed-record": [
-    "**Built from a copy of today's bed drawer** with My ward's own wiring, so Record that they have left, blockers, Mark at an ED, observation level, discharge date and the confirm steps work as now. It opens on the first bed that needs a look.",
-    "**New:** one filled button chosen by the stay (held up: Update blocker; away at an ED: Mark them back; due out or past date: Record that they have left; settled: none), with one plain button and More beside it.",
-    "**New:** a 'Why they have not left' notice under the four facts, from what the ward recorded. Surname first; the fact tiles wrap instead of cutting off; Patient page sits beside the name. The drawer is 500 px wide (was 460) so the three buttons fit.",
-    "**Kept:** the four headline facts, the Overview, Plan to leave and Timeline tabs, Patient page, and the paper-authority and criteria notes.",
-    "**Round 2:** phone and desktop show the same four tiles (Stay, Legal, Going out, Observation); a community treatment order shows as 'CTO'. The planned leaving date reads as a day, not a time. Rows show only when they add something. The vital signs sentence stays word for word.",
-  ],
-  "pop-confirm-beds": [
-    "**Built from a copy of today's Confirm capacity figures dialog**, with the same two confirm handlers, so it saves the beds and the morning numbers as now, now in the shared dialog.",
-    "**New:** four fact tiles first (Staffed beds, In use, Ready, Closed), Pulled and Open-and-vacant in one quiet line, then a − / + control for the free beds showing the change as you go.",
-    "**New:** one filled button: 'Confirm beds and morning numbers (09:30)' while they are due, with 'Confirm beds only' beside Cancel.",
-    "**Kept:** 'Writes to Dabakarn only — never any other ward', 'Currently confirmed … at …', and Review today's expected discharges (which now goes to Stays and discharges).",
-    "**Round 2:** the section is 'Beds free to offer', the tiles' own words. 'Writes to Dabakarn only — never any other ward' stays word for word. The three buttons sit on one row on desktop, and the number box matches the − and + buttons.",
-  ],
   "pop-broadcast": [
     "**Built from a copy of today's broadcast composer** and the Alerts screen's draft and Dispatch, drawn over Alerts where it lives, so it sends the same network alert as now.",
     "**New:** a wider dialog in the middle of the screen: the form on the left (Severity and Expires side by side), and on the right a preview of what each desk will see, with who it goes to and the desk count.",
     "**New:** Dispatch stays greyed until the box is ticked and says what is left ('Tick the confirmation first.').",
     "**Kept:** every field, the template list and the confirmation wording. One column, full screen, on a phone.",
     "**Round 2:** the count is said once, on 'Goes to'. 'What each desk sees' replaces 'Preview on every desk'. The subtitle keeps the safeguard words: 'Records a synthetic directive. No external alert is sent.' The two-column dialog now always draws.",
-  ],
-  "pop-ward-notices": [
-    "**Built from a copy of today's Notices panel**, opened as now (right-hand sheet on a computer, tall sheet on a phone), with My ward's own Confirm numbers and Acknowledge.",
-    "**New:** names are surname first; only Act now rows keep a filled button (a Check row's Open transfer is plain); a list longer than 8 shows its first 6, then Show more.",
-    "**Kept:** the filters, the Needs attention and From the coordinator sections, and the buzz sound switch.",
-    "**Round 2:** notices of the same kind share one row with a line per person, as the Alerts drawer does. 'Overdue' is kept for legal form times; morning numbers say 'Late' and arrivals 'Late arrival'. Focus starts on Close.",
   ],
   "pop-refer-ward": [
     "**Built from the ED row's own Refer to a ward link**, read into the same request the app bar opens, for the first person on the Peel ED board whose next step is Refer to a ward: ward chosen, sent from Peel ED, patient and referral filled in.",
@@ -226,19 +169,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** New referral is the one filled button, then Log a delay, Update a bed and Add patient (today's order).",
     "**New:** a small 'Or record' heading over the three secondary rows.",
     "**Round 2:** the subtitle goes, and Log a delay reads 'Patient and reason', the same as Tools.",
-  ],
-  "pop-ward-switcher": [
-    "**Built on today's Switch ward menu's own rules**: the same access filter and the same navigation to the chosen ward.",
-    "**New:** this ward sits at the top, ticked; wards at the same hospital come next, then 'Elsewhere in East Metro'. Each shows its cohort, security and 'n of N ready', from the Wards page's figures.",
-    "**New:** after 6 rows under Elsewhere, a Show more link. On a phone it is a bottom sheet at the kit's row size.",
-    "**Still open:** today's menu lists only the same hospital (or the service when the hospital has no other ward). Showing the wider service is a proposal for Josh.",
-    "**Round 2:** rows are back to 40 px, as in the Service picker; hospital names wrap; a ward named for its security does not say 'Open' twice.",
-  ],
-  "pop-shift-brief": [
-    "**Today's Shift brief dialog, unchanged**, opened for Dabakarn over My ward (where its Shift brief button is), so Copy, Print and Close work as now.",
-    "**Still open:** no design changes, because there were no review notes for it. Josh to say what to change.",
-    "**Round 2:** tiles say when ('Pulled now', 'Left in 24h', 'Pulled in 24h'), so two figures no longer share a label. The stamp is one short line; the full 'not a record of any real day' wording stays in the brief.",
-    "**Your answer (30 October):** no tentative diagnosis on the printed brief (privacy); the board's own panel still shows it. Still open: the 'Pulled now' tile and the 'Bed already given away' row show the same figure (recommend dropping one).",
   ],
   "pop-desk": [
     "**Built from a copy of today's Go to a desk drawer**, so search, recents, the statewide tiles and opening a desk work as now.",
@@ -471,32 +401,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone:** unchanged; the step list already reads well.",
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
   ],
-  handover: [
-    "**Built from a copy of today's Handover page**, so the shift switcher, the meeting-order groups, highlights, Copy summary, the downtime pack, Present and Print all work as now.",
-    "**New:** Since previous handover is one line of figures instead of four large boxes. The hero's Changed since chip still hides and shows it.",
-    "**New:** a sign-off bar stays at the foot of the screen while the table scrolls. It says how many checks are clear, names the ones still open, and has Open checklist and Sign off. Sign off sends the same command as the panel and is available exactly when the panel's is.",
-    "**New:** Due by shows its first 4 rows, with the rest behind Show more.",
-    "**Phone:** unchanged; it already keeps Sign off at the foot.",
-    "**Round 2:** one Sign off at a time: the bar shows only when the side panel's Sign off is off screen, titled '15:00 handover'. Open checks are neutral chips; Show more reads 'Show 6 more'. The wait reason reads 'Opens after the previous handover'.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  ward: [
-    "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet, so a diff against today's files shows the change. Names are surname first, the Form 4A time shows as typed, and the phone round list shows 8 beds then Show more.",
-    "**Today's My ward screen, with a redesign stylesheet on top.** Its main file and the bed tiles are each over the repository's 1,500-line limit, so they cannot be copied whole. Every bed, the filters, Place or move, This shift and Confirm numbers work exactly as now.",
-    "**Applied here:** bed tiles show the whole name on up to two lines; the desktop toolbar shows On TV, Raise referral and Referral form, with Notices, Shift brief and Handover in More; Ward flow opens on its busiest list instead of an empty one.",
-    "**To change in the real files once approved (not drawn here):** the heading states the ward's position (\"1 bed ready, 16 occupied\") with the facts line moved into the eyebrow; Ward flow's busiest-list default set where the list choice lives.",
-    '**Found while building:** bed tiles and Notices write names first name first ("Gareth Ferrowmoor"). D-83 says surname first everywhere, so this needs a fix in the real tile.',
-    "**Round 2:** a typed form time that is neither within its first warning nor passed leaves Act now and shows on that person's Admissions row, still as typed ('Form 1 ends Mon 09:00 as typed'). Times within the warning or passed stay in Act now with their words, and the header count counts the same rows. Today's demo night has no such time on Dabakarn, so the page looks unchanged; the path is checked from the code.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  stays: [
-    "**Built from a copy of today's Stays and discharges board**, so the filters, the order, the length-of-stay bands, the bed record, the shift brief and Change ward all work as now.",
-    "**New:** the same full-width hero as Ward home. It still carries everything the old card did: the ward name, site, locked split, Ready now and the band figures, the being-made-ready and constraint sentences, and the As at time.",
-    "**New:** the ten day figures are one Also on this ward line, without the two the hero already shows. Worth a look and Your part in tomorrow's forecast sit in one notice. Bed cards are five to a row and names wrap.",
-    "**The record column:** it stays on screen, as your ruling of 30 August keeps it, and now opens on the first bed that needs a look instead of sitting empty (point 16). Close leaves it empty for the rest of the visit.",
-    "**Round 2:** the phone shows the first 8 beds, then Show more. Away-at-an-ED rows say 'Their bed is still held for them.' in full, and '1 release held up' is singular.",
-  ],
   "ed-board": [
     "**Built from a copy of today's ED board**, so the ED peer strip, the access-target card, the filter chips, Record exam, Log transport booking, the row menus, the patient record and On TV all work as now.",
     "**New:** one table. The Lists section under it repeated the same nine people, so on desktop it folds behind one closed row; nothing in it is lost. The Form column shows the form number, with the description in the record and the tooltip. Statewide capacity and Seen in the last 24 hours are one footer line.",
@@ -515,17 +419,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
     "**Round 3:** the phone highlight chips read count first ('6 Over 24 hours').",
-  ],
-  discharges: [
-    "**Built from a copy of today's Discharges page**, so the five filters, Now and History, Copy counts, Print list, Blocked first order and the release panel all work as now.",
-    '**The totals (point 20, my pick for you to confirm):** the headline counts the rows listed, "59 to work now", with "of 207 open · 148 due in 2+ days, not listed" beside it. From the code: 207 is every release not yet gone; 59 are those due by tomorrow, past their date or held up; the filter\'s 63 is those 59 plus 4 discharged in the last day.',
-    "**New:** each row leads with the person, then the ward and service, and has one action named for what it needs (Chase, Confirm date, Open). Each opens the release panel, where today's real actions are recorded.",
-    "**Round 2:** one barrier panel. The List / Barriers switch and its table are gone, because they were a third copy of the same counts. On a tablet the panel sits beside the day chart instead.",
-    "**Round 2:** the Status filter reads 'All listed · 63' (the 59 plus 4 discharged in the last day), and the footer says '148 due in 2+ days, not listed'. Each row shows the timing on top and the whole date underneath.",
-    "**Review round (30 October):** the headline reads '59 to work now · of 207 open' (open means not yet discharged; 59 are the ones listed to work now); the Status filter reads 'All statuses' and the list says '59 to work · 4 discharged'. '148 due in 2+ days' sits only in the list footer.",
-    "**Review round (30 October):** one word, 'Held up', for a release with a blocker. The barrier panel and the day chart count bed releases, the list's own rows, so they match the hero, and a click on either highlights within Now instead of jumping to History.",
-    "**Review round (30 October):** Chase opens the release on its barriers and Confirm date on its 'New expected out' control. Before the weekend or public holiday is a short notice above the list, person first. Each group shows its first 6 rows then Show more; on a wide screen the day chart sits under the barrier panel. Phone rows are three lines with the button beside the stage.",
-    "**Agrees with Capacity:** the day chart leaves closed wards out, as Capacity's forecast does (Josh, 30 October).",
   ],
   alerts: [
     "**Built from a copy of today's Alerts page**, so Now, Broadcast, Notices and History, the Urgency, Lanes and Owner views, Notify me, Copy for handover and every row action work as now.",
@@ -619,14 +512,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the title names the person surname first instead of the movement number; the reason starts at 'Choose a reason…'; Confirm cancel says why it is unavailable until a reason is chosen.",
     "**Kept:** 'Why is the job being cancelled? The provider is told.', word for word.",
     "**Still open:** no booking in the sample belongs to a community team, so it is drawn as Midland for the first open booking (Tremalow, Noor), and Confirm cancel is refused with today's message. That is correct; a Midland booking would show the happy path.",
-    "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
-  ],
-  "pop-board-blocker": [
-    "**Built from a copy of today's bed board work band** (`board/ward-board-work-band.tsx`), so the Needs you tiles and the blocker save work as now; only the blocker dialog is redesigned.",
-    "**New:** on the shared dialog, titled 'Record a blocker' like the tile's button, with the person surname first, the tile's label and tag, then the nine reasons as radios (two columns on a computer, one on a phone).",
-    "**New:** no reason starts chosen; Confirm blocker says 'Choose a reason first' until one is tapped.",
-    "**Kept:** every reason word for word, and the page's own focus handling.",
-    "**Removed:** 'Bed / Subject:' and 'Timing indicator:' labels; the tile's label and tag show under the title instead.",
     "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
   ],
   "pop-clearance": [

@@ -15,6 +15,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 const RPH_ADULT_SECURE = "rph-adult-secure";
 
@@ -57,7 +58,7 @@ describe("WardScreen & WardIndex audit remediation", () => {
     fireEvent.click(within(drawer).getByRole("tab", { name: "Plan to leave" }));
     expect(drawer).toHaveTextContent(/Today:\s*None recorded/i);
 
-    fireEvent.click(within(drawer).getByRole("button", { name: "Record blocker" }));
+    fireEvent.click(getBedStep("Record blocker", drawer));
     const select = within(drawer).getByRole("combobox", { name: "Discharge blocker" });
     fireEvent.change(select, { target: { value: "Awaiting accommodation" } });
     fireEvent.click(within(drawer).getByRole("button", { name: "Save blocker" }));

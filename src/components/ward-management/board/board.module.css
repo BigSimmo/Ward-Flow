@@ -958,14 +958,20 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  /* This summary is the control that opens the fold, so it carries the tap floor the rest of this
-     file gives its controls. Measured at 375px before the token went on: 44px, four short of the
-     48 this repo requires — the padding alone had been enough on a desktop and was not on a phone. */
-  min-height: var(--ward-tap);
+  /* This summary is the control that opens the fold. Kit standard (Josh, 31 Oct 2026: "no 48px
+     controls"): drawn at least 40px, with an invisible cover above and below keeping the 48px tap floor. */
+  position: relative;
+  min-height: 40px;
   gap: var(--ward-space-4) var(--ward-space-12);
   padding: var(--ward-space-12);
   list-style: none;
   cursor: pointer;
+}
+
+.workBandSummary::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .workBandSummary::-webkit-details-marker {
@@ -1039,13 +1045,12 @@
 .triageFigure {
   min-width: 0;
   overflow: hidden;
-  border-left: var(--ward-space-1) solid var(--ward-divider);
   padding-left: var(--ward-space-8);
 }
 
+/* No side edge (Josh, 31 Oct 2026): the words "shown in Going out" carry the emphasis. */
 .triageFigureLed {
-  border-left-width: var(--ward-space-3);
-  border-left-color: var(--ward-border-strong);
+  font-weight: 600;
 }
 
 /*
@@ -1139,9 +1144,11 @@
   text-transform: uppercase;
 }
 
+/* Drawn 40px (kit standard, "no 48px controls"); the invisible cover keeps the 48px tap floor. */
 .flowToggleButton {
+  position: relative;
   display: inline-flex;
-  min-height: var(--ward-tap);
+  min-height: 40px;
   align-items: center;
   justify-content: center;
   border: var(--ward-space-1) solid var(--ward-border);
@@ -1163,6 +1170,12 @@
  * weight alone is what a monochrome sheet keeps, `aria-pressed` is what a screen reader gets, and
  * the fill is what an eye catches at a glance. Never the fill alone.
  */
+.flowToggleButton::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
 .flowToggleButtonOn {
   border-color: var(--ward-border-strong);
   background: var(--surface-inset);
@@ -2169,9 +2182,9 @@
 
   /* Selection on paper is WEIGHT and a word, never a fill — a filled entry on a sheet that has
      recorded no decision reads as a decision made. */
+  /* No side edge (Josh, 31 Oct 2026): the "Selected on screen" word carries it. */
   .personSelected {
-    border-left: var(--ward-space-3) solid CanvasText;
-    padding-left: var(--ward-space-8);
+    padding-left: 0;
   }
 
   .personSelectedMark {
@@ -2188,8 +2201,7 @@
    band ramp holds to. The panel itself is `display: none` on screen, so these are only ever seen
    on paper; they are declared here so nothing about them is conditional. */
 .personSelected {
-  border-left: var(--ward-space-3) solid var(--ink);
-  padding-left: var(--ward-space-8);
+  padding-left: 0;
 }
 
 .personSelectedMark {
@@ -2897,7 +2909,7 @@
 }
 
 .workBandSummary {
-  min-height: var(--spacing-tap);
+  min-height: 40px;
   padding: 0.625rem 1rem;
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
@@ -2937,8 +2949,8 @@
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
   background: var(--surface);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  /* No side edge (Josh, 31 Oct 2026): a plain neutral border; the tag carries the tone. */
+  border: 1px solid var(--wf-line, var(--line));
   box-shadow: var(--lift-sm);
   min-width: 0;
   transition:
@@ -2953,18 +2965,10 @@
   transform: translateY(-1px);
 }
 
-.shiftTile[data-tone="warn"] {
-  border-left-color: var(--warn);
-}
-
 .shiftTile[data-tone="warn"] .shiftTag {
   color: var(--wf-ink-1);
   background: transparent;
   border-color: color-mix(in oklab, var(--warn) 30%, transparent);
-}
-
-.shiftTile[data-tone="danger"] {
-  border-left-color: var(--danger);
 }
 
 .shiftTile[data-tone="danger"] .shiftTag {
@@ -3726,9 +3730,12 @@
   background: var(--surface);
 }
 
+/* Going out, Coming in and Since yesterday: drawn 40px (kit standard, "no 48px controls"), with an
+   invisible cover above and below keeping the 48px tap floor. */
 .tabList button {
+  position: relative;
   display: inline-flex;
-  min-height: var(--spacing-tap);
+  min-height: 40px;
   align-items: center;
   gap: 0.375rem;
   margin-bottom: -1px;
@@ -3737,6 +3744,12 @@
   color: var(--muted);
   font-size: var(--t-1);
   font-weight: 600;
+}
+
+.tabList button::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 .tabList button:hover,
@@ -3984,7 +3997,7 @@
   }
 
   .tabList button {
-    min-height: var(--spacing-tap);
+    min-height: 40px;
     flex: 1 1 auto;
     justify-content: center;
     padding-inline: 0.5rem;
@@ -4232,23 +4245,36 @@
 }
 
 @media (max-width: 55rem), (pointer: coarse) {
+  /* Shift row buttons and the flow toggle: drawn 40px (kit standard, "no 48px controls"); each
+     carries an invisible cover above and below keeping the 48px tap floor. */
   .shiftCtl {
-    min-height: var(--ward-tap, 48px);
-    min-width: var(--ward-tap, 48px);
+    position: relative;
+    min-height: 40px;
+    min-width: 40px;
     padding: 0.5rem 0.75rem;
+  }
+  .shiftCtl::after,
+  .shiftBedLink::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
   .shiftRowActs {
     gap: 8px;
   }
   .shiftBedLink {
-    min-height: var(--ward-tap, 48px);
+    position: relative;
+    min-height: 40px;
     display: inline-flex;
     align-items: center;
   }
-  .detailClose,
-  .flowToggleButton {
+  .detailClose {
     min-height: var(--ward-tap, 48px);
     min-width: var(--ward-tap, 48px);
+  }
+  .flowToggleButton {
+    min-height: 40px;
+    min-width: 40px;
   }
   .bedState,
   .pastMark,
@@ -4453,7 +4479,6 @@
 
 .personBlocker {
   background: color-mix(in oklab, var(--danger) 8%, var(--surface));
-  border-left: 3px solid var(--danger);
   border-radius: 2px;
   padding: 0.375rem 0.625rem;
   font-size: var(--t-0);
@@ -4464,7 +4489,6 @@
 
 .dateMovedAlert {
   background: color-mix(in oklab, var(--warn) 8%, var(--surface));
-  border-left: 3px solid var(--warn);
   border-radius: 2px;
   padding: 0.375rem 0.625rem;
   font-size: var(--t-0);
@@ -5575,7 +5599,7 @@
   }
 
   .screen .shiftCtl {
-    min-height: var(--spacing-tap, 3rem);
+    min-height: 40px;
   }
 }
 
@@ -5869,7 +5893,7 @@
 
   .screen .flowToggleButton {
     min-width: 0;
-    min-height: var(--spacing-tap, 3rem);
+    min-height: 40px;
     margin: 0;
     text-align: center;
     overflow-wrap: break-word;

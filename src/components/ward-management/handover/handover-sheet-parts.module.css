@@ -1,0 +1,126 @@
+/* Handover sheet parts: the since line, Show more under Due by, the sign-off bar and the phone chip row. */
+.mono {
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+}
+
+.sinceLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+.sinceTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.sinceItems {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.sinceItems li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+.sinceItems b {
+  color: var(--wf-ink-1);
+}
+.sinceDetail {
+  color: var(--wf-ink-3);
+}
+
+/* The one Show more row fills its cell edge to edge (over the table's first- and last-cell padding)
+   and draws the only line above it, so the row before it drops its own. */
+.moreRow.moreRow > td:is(:first-child, :last-child) {
+  height: auto;
+  padding: 0;
+}
+tr:has(+ .moreRow) > td {
+  border-bottom-color: transparent;
+}
+
+.signBar {
+  position: sticky;
+  bottom: var(--wf-s-3);
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin-top: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+}
+.signLead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--wf-fs-13);
+}
+.signCount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.signOpen {
+  display: flex;
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.signOpen li {
+  padding: 2px var(--wf-s-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+}
+.signActions {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin-inline-start: auto;
+}
+
+/* Tablet: the bar keeps to one line; Open checklist names the open checks. */
+@media (max-width: 64rem) {
+  ul.signOpen {
+    display: none;
+  }
+}
+
+/* Phone: the highlight chips are one sliding row (parts/phone-rows.module.css, Josh, 31 Oct). The row
+   keeps to the content edges, so its fade sits at the panel's right edge as on Movements. */
+@media (max-width: 48rem) {
+  .phChipRow.phChipRow {
+    margin-inline: 0;
+    padding-inline: 0;
+  }
+}
+
+/* The danger dot on the Escalated chip keeps a small gap before the word. */
+.chipGlyph {
+  margin-right: 4px;
+}
