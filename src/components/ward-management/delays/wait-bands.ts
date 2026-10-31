@@ -61,7 +61,7 @@ export function windowText(minutes: number): string {
 
 /** Shared view words with their hour figures closed up the same way ("within 3h"). */
 export function tightHours(text: string): string {
-  return text.replace(/(\d) h\b/g, "$1h");
+  return text.replace(/(\d) h\b/g, (_match, digit: string) => `${digit}h`);
 }
 
 /**

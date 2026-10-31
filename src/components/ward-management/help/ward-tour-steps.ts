@@ -304,7 +304,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "answer",
-          { sel: "#ward-awaiting-answer" },
+          // Ward flow opens on its busiest list, so the referrals list may be the hidden pane; the
+          // Referrals choice above it is always on screen (document order puts it first).
+          { sel: '[aria-label="Ward flow list"] [role="radio"], #ward-awaiting-answer' },
           "Referrals to answer",
           `Referrals sent to ${place ?? "your ward"} wait here for your answer. Accept, or decline with a reason, and the sender sees your answer straight away.`,
         ),

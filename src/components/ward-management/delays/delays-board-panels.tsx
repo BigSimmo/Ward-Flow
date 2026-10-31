@@ -18,7 +18,6 @@ import {
   ServerCog,
   Stethoscope,
   TriangleAlert,
-  UserRound,
   X,
 } from "lucide-react";
 import { ShowMoreRow } from "@/components/wf";
@@ -51,7 +50,7 @@ import {
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { edHref, movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import styles from "./delays-board.module.css";
 import { ago, originLabel } from "./delays-board-rows";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
@@ -504,12 +503,8 @@ export function PersonPanel({
               ED board
             </Link>
           ) : null}
-          {movement.patientId && canOpen(patientHref(movement.patientId)) ? (
-            <Link href={patientHref(movement.patientId)}>
-              <UserRound size={14} aria-hidden="true" />
-              Record
-            </Link>
-          ) : null}
+          {/* No "Record" link here: D-14 keeps the patient link default-deny, and this panel is not on
+              its allowlist. "Journey" above opens the movement, whose drawer names the person (O-16.3). */}
         </nav>
       )}
     </section>

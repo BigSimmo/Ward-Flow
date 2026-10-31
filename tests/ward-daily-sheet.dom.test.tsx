@@ -575,12 +575,12 @@ describe("every count on the sheet is POSSIBLE for this ward, not merely compute
     const statewide = sinceYesterday(wardAdmissions, WARD_ADMISSIONS_ANCHOR);
     const line = screen.getByTestId("ward-daily-sheet-since").textContent ?? "";
 
-    // Redesign (Josh, 31 Oct 2026): each tile names its period, so "pulled now" and "pulled in 24h"
+    // Redesign (Josh, 31 Oct 2026): each tile names its period, so "pulled now" and "pulled since yesterday"
     // no longer read as one figure with two values.
-    expect(line).toContain(`${movement.discharged} left in 24h`);
-    expect(line).toContain(`${movement.pulled} pulled in 24h`);
+    expect(line).toContain(`${movement.discharged} left since yesterday`);
+    expect(line).toContain(`${movement.pulled} pulled since yesterday`);
     expect(line).toContain(`${movement.datesMoved} date`);
-    expect(line).toContain("moved in 24h");
+    expect(line).toContain("moved since yesterday");
 
     // Non-vacuity: the statewide figure really is bigger, so "this ward's" is a claim with teeth.
     // Without this, a board handed all 267 records would satisfy the three assertions above by
