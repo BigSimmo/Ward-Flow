@@ -1,5 +1,5 @@
 /*
- * The community team screen's side panels and prompt lists: search, notices, since you looked, how
+ * The community team screen's side panels and prompt lists: notices, since you looked, how
  * to reach, on duty, coverage, and the two Worth attention lists. Each is built from the screen's
  * view on every render, the same element the screen used to build inline, so a panel that renders
  * nothing is still `null`.
@@ -11,9 +11,8 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { Badge, SinceYouLooked, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
+import { SinceYouLooked, StatusGlyph, type WfTone } from "@/components/wf";
 import { ratifiedSameServiceNames } from "@/components/ward-management/community/community-ratified-aliases";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
 import { daysBetween, formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -24,7 +23,6 @@ import {
   contactForTeam,
 } from "@/components/ward-management/community/community-team-contact-mapping";
 import { REFERENCE_TEAM_CAVEAT } from "@/components/ward-management/reference/ward-reference-teams";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import phoneCss from "./community-team-phone.module.css";
 import v6 from "./community-team-v6.module.css";
@@ -32,9 +30,6 @@ import { DEMO_COMMUNITY_STAFF } from "./community-demo-cohort";
 import { teamSinceItems, elapsedSinceOrUnderADay } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-
-/** Search results shown at once; the rest are reached by typing more of the name or UMRN. */
-const SEARCH_RESULT_LIMIT = 8;
 
 /**
  * The side column's sample roster (v6 "On duty today"). Illustrative only, the same eight example
@@ -169,62 +164,6 @@ export function communityPhoneAttentionItems(view: CommunityScreenView) {
     );
   }
   return phoneAttentionItems;
-}
-
-/** The sample-patient search, as a render function its popover or phone sheet calls with close. */
-export function communitySearchRenderer(view: CommunityScreenView) {
-  const { setActiveDrawer, setSelectedPatientId, searchQuery, setSearchQuery, searchResults } = view;
-  const renderSearch = (close: () => void) => (
-    <div className={v6.search}>
-      <TextInput
-        type="search"
-        id="q"
-        icon={Search}
-        aria-label="Search sample patients"
-        placeholder="Type UMRN or name..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        onClear={() => setSearchQuery("")}
-      />
-      {searchQuery.trim() === "" ? (
-        <p className={v6.searchNote} data-testid="ward-community-search-hint">
-          Type a name or UMRN to search the sample patients.
-        </p>
-      ) : searchResults.length === 0 ? (
-        <p className={v6.searchNote} data-testid="ward-community-search-empty">
-          No sample patient matches &ldquo;{searchQuery.trim()}&rdquo;.
-        </p>
-      ) : (
-        <ul className={v6.searchList}>
-          {searchResults.slice(0, SEARCH_RESULT_LIMIT).map((patient) => (
-            <li key={patient.id}>
-              <button
-                type="button"
-                className={v6.searchHit}
-                data-testid={`ward-community-search-hit-${patient.id}`}
-                onClick={() => {
-                  setSelectedPatientId(patient.id);
-                  setActiveDrawer("pxDrawer");
-                  close();
-                }}
-              >
-                <span className={v6.searchHitTop}>
-                  <strong>
-                    {patientDisplayName(patient)} · {patient.umrn}
-                  </strong>
-                  <Badge size="sm">{patient.legalStatus ?? "Legal status not recorded"}</Badge>
-                </span>
-                <span className={v6.searchHitMeta}>
-                  {patient.catchmentCommunityTeam ?? "Community team not recorded"}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-  return renderSearch;
 }
 
 /** This team's notices, newest first, or null when there are none. */

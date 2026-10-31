@@ -30,6 +30,11 @@ import { HELP_USED_STORAGE_KEY } from "@/components/ward-management/help/ward-he
 import { CLINICAL_REPLY } from "@/components/ward-management/help/ward-help-search-index";
 import { WardHelpAsk } from "@/components/ward-management/help/ward-help-ask";
 
+/** The Ask box on its own, empty, as a question handed over with no words opens it. */
+function renderAsk() {
+  return render(<WardHelpAsk role="coordinator" home="/ward-flow" initialQuery="" onClose={vi.fn()} />);
+}
+
 function renderSheet(ask: string | undefined) {
   return render(<WardHelpSheet view="screen" ask={ask} onView={vi.fn()} onClose={vi.fn()} />);
 }
@@ -123,7 +128,7 @@ describe("Ask help in the Help sheet", () => {
   });
 
   it("finds settings and says plainly when nothing matches", () => {
-    renderSheet("");
+    renderAsk();
     const input = screen.getByTestId("ward-help-ask-input");
     fireEvent.change(input, { target: { value: "dark mode" } });
     expect(screen.getByTestId("ward-help-ask-answer-theme")).toBeTruthy();
@@ -136,7 +141,7 @@ describe("Ask help in the Help sheet", () => {
     const push = vi.spyOn(window.history, "pushState");
     const replace = vi.spyOn(window.history, "replaceState");
     const before = window.location.href;
-    renderSheet("");
+    renderAsk();
     fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "bed qzxvwk qzxvwl" } });
     fireEvent.click(within(screen.getAllByTestId(/^ward-help-ask-answer-/)[0]).getByRole("button"));
     const stored = [window.localStorage, window.sessionStorage]
@@ -151,7 +156,7 @@ describe("Ask help in the Help sheet", () => {
 
   it("counts an answer as used when someone opens it, as its id only", () => {
     window.localStorage.removeItem(HELP_USED_STORAGE_KEY);
-    renderSheet("");
+    renderAsk();
     fireEvent.change(screen.getByTestId("ward-help-ask-input"), { target: { value: "how do I cancel transport" } });
     // The first answer shows by itself, which is not a use.
     expect(window.localStorage.getItem(HELP_USED_STORAGE_KEY)).toBeNull();

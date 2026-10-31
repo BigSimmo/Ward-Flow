@@ -1,3 +1,4 @@
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { type HealthService, type Site } from "@/components/ward-management/ward-model";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { wardSites } from "@/components/ward-management/ward-sites";
@@ -126,6 +127,15 @@ export function entrySearchFields(entry: DirectoryEntry): string[] {
     entry.email ?? "",
     ...entry.lines.map((item) => `${item.number ?? ""} ${item.label}`),
   ];
+}
+
+/**
+ * The one contact matcher, shared by the On-call page, the Tools sheet's Contacts and the header
+ * search (search and forms review, 31 Oct 2026): every typed word, in any order, folded, and a
+ * number matches with its spaces and brackets ignored.
+ */
+export function entryMatchesQuery(entry: DirectoryEntry, query: string): boolean {
+  return query.trim() !== "" && fieldsMatchEveryWord(query, entrySearchFields(entry));
 }
 
 /** Directory order: the metro services, then children's, country and private. */

@@ -1,14 +1,13 @@
 "use client";
 
-import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "../ward-care-journey";
 import type { DischargeOpenHandle } from "../ward-discharge-records";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsPhone, useOptionalToast } from "@/components/wf";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
 import {
   admissionBelongsToTeam,
   admissionsWithNoCommunityTeam,
@@ -49,7 +48,7 @@ import {
   type PatientResolutionSubject,
 } from "@/components/ward-management/ward-patient-resolver";
 import type { CommunityDeclineReason } from "@/components/ward-management/ward-model";
-import { findPatients, type Patient } from "@/components/ward-management/ward-patients";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import { useCommunityContactSave } from "./use-community-contact-save";
 import { CommunityAboutThisData, CommunityWorthAttention, type CommunityPhoneListId } from "./community-team-phone";
@@ -332,7 +331,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   useHoldOpenForm(declineOpenFor !== undefined, declineOpenFor && `referral:${declineOpenFor}`);
   const [declineDraft, setDeclineDraft] = useState<CommunityDeclineReason | undefined>(undefined);
   const [activeModal, setActiveModal] = useState<{ referral: CommunityScopedReferral } | null>(null);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // The shared toast region shows it, as every desk's outcome is shown (notifications pass).
+  const setToastMessage = useActionToast({ testId: "community-action-toast", tone: "info" });
   // Device audit option A (11 Oct 2026): the page opens on the first list with someone in it
   // (`firstListWithSomeone`, below, once the lists are built), until the reader picks another.
   const [chosenTab, setChosenTab] = useState<ActiveTabType | null>(null);
@@ -399,12 +399,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [showCareEditor, setShowCareEditor] = useState(false);
   const [careAccess, setCareAccess] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const [triageFilter, setTriageFilter] = useState<"all" | "p1" | "p2" | "p3" | "ed">("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const [caseloadFilter, setCaseloadFilter] = useState<CaseloadFilter>("all");
-  // The search and the dossier read the patient records themselves. Until 25 Sept 2026 both read a
-  // typed table: three fixed search hits whatever was typed, and a dossier whose clinician, care
-  // tier and review date belonged to nobody's record.
-  const searchResults = findPatients(patients, searchQuery);
+  // The dossier reads the patient record itself. Until 25 Sept 2026 it read a typed table, with a
+  // clinician, care tier and review date that belonged to nobody's record.
   const selectedPatient: Patient | undefined = patients.find((patient) => patient.id === selectedPatientId);
   const contactSave = useCommunityContactSave({
     dispatch,
@@ -416,7 +413,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },
-    onQuickMessage: setToastMessage,
+    // CT-09: a save that did not go through stays until it is closed, as a warning.
+    onQuickMessage: (message, warning) => setToastMessage(warning ? { warning: message } : message),
   });
   const { contactRecord, contactSaveMessage, contactSaveDisabled } = contactSave;
   const [dismissedTaskIds, setDismissedTaskIds] = useState<Set<string>>(new Set());
@@ -459,14 +457,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   }
 
   useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
-
-  useEffect(() => {
     // Escape runs last (window), after any open layer has handled it.
     function handleEscape(e: KeyboardEvent) {
       if (e.key !== "Escape" || e.defaultPrevented) return;
@@ -474,32 +464,11 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setActiveModalType(null);
       setActiveDrawer(null);
     }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "/" && areCharacterShortcutsEnabled()) {
-        // An open sheet or dialog keeps the keys: the shortcut must not reach the page behind it.
-        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || hasOpenSheet()) return;
-        const target = e.target;
-        const inEditable =
-          target instanceof HTMLElement &&
-          (target.tagName === "INPUT" ||
-            target.tagName === "TEXTAREA" ||
-            target.tagName === "SELECT" ||
-            target.isContentEditable);
-        if (inEditable) return;
-        e.preventDefault();
-        // Claimed here, on the document, before the shared header's window listener takes it
-        // for the global search (as `community-index.tsx` does). WardRail owns the bracket shortcut.
-        e.stopPropagation();
-        // The hero's search popover opens from its own trigger and focuses its input itself.
-        if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
-        document.getElementById("q")?.focus();
-      }
-    }
+    // "/" is the header search's own key here: the team page's sample-patient search was removed
+    // as a copy of it (search and forms review, Josh, 30 Oct 2026).
     window.addEventListener("keydown", handleEscape);
-    document.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -979,7 +948,6 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     cancelTransportBlocked,
     activeModal,
     setActiveModal,
-    toastMessage,
     setToastMessage,
     chosenTab,
     setChosenTab,
@@ -1022,11 +990,8 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     setCareAccess,
     triageFilter,
     setTriageFilter,
-    searchQuery,
-    setSearchQuery,
     caseloadFilter,
     setCaseloadFilter,
-    searchResults,
     selectedPatient,
     contactRecord,
     contactSaveMessage,
@@ -1160,7 +1125,7 @@ export function CommunityScreen(props: CommunityScreenProps) {
       </div>
     );
   }
-  const { isPhone, toastMessage, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal } = view;
+  const { isPhone, activeDrawer, acceptanceMessage, acceptanceError, acceptanceRefusal } = view;
 
   return (
     <div className={styles.screen} data-ward-design="third-edition" data-testid="ward-community-screen">
@@ -1224,17 +1189,6 @@ export function CommunityScreen(props: CommunityScreenProps) {
         {/* ── Modals (mounted only when activeModalType !== null) ── */}
         <CommunityScreenNoteModal view={view} />
 
-        <div
-          id="actionToast"
-          className={`${styles.actionToast} ${toastMessage ? styles.show : ""}`}
-          role="status"
-          aria-live="polite"
-        >
-          <span className={styles.toastIcon} aria-hidden="true">
-            ℹ
-          </span>
-          <span id="actionToastMsg">{toastMessage ?? ""}</span>
-        </div>
         {activeDrawer !== "referral" && activeDrawer !== "referralDrawer" && acceptanceMessage && (
           <p role={acceptanceError || acceptanceRefusal ? "alert" : "status"} data-testid="community-acceptance-result">
             {acceptanceMessage}

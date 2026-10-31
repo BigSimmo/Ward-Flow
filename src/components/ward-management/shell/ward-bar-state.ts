@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
@@ -245,7 +246,7 @@ export function useWardBarActivity({
     return changes.filter(
       (change) =>
         (activityCategoryFilter === "all" || activityChangeCategory(change) === activityCategoryFilter) &&
-        `${change.text} ${change.time}`.toLowerCase().includes(query),
+        (query === "" || fieldsMatchEveryWord(query, [change.text, change.time])),
     );
   }, [shownActivity?.changes, activityCategoryFilter, deferredActivityQuery]);
   const scopedNotices = useMemo(
@@ -261,7 +262,8 @@ export function useWardBarActivity({
   const visibleNotices = scopedNotices.filter(
     (notice) =>
       (!unreadOnly || notice.readAt === undefined) &&
-      noticeText(notice.sentence).toLowerCase().includes(deferredActivityQuery.trim().toLowerCase()),
+      (deferredActivityQuery.trim() === "" ||
+        fieldsMatchEveryWord(deferredActivityQuery, [noticeText(notice.sentence)])),
   );
   // Item 48, Q2 (owner answer 48, 2026-09-17): "counts show unread only" — `scopedNotices` itself
   // still carries every notice this chrome may see, read or not (read notices stay in the list),

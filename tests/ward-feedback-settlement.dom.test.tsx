@@ -176,7 +176,7 @@ describe("patient registration command settlement", () => {
       act(() => vi.advanceTimersByTime(3000));
       expect(router.push.mock.calls.length).toBe(0);
       expect(screen.getByTestId("ward-add-patient-saved-outside-view").textContent).toContain(
-        `${own.givenName} ${own.familyName} added, ${own.umrn}`,
+        `${own.familyName}, ${own.givenName} added, ${own.umrn}`,
       );
       expect(screen.getByTestId("ward-add-patient-submit").getAttribute("aria-disabled")).not.toBeNull();
       expect((screen.getByLabelText(/Record number|UMRN/i) as HTMLInputElement).value).toBe("");
@@ -243,11 +243,13 @@ describe("escalation feedback", () => {
   it.each(["accepted", "refused", "failed", "cancelled"] as const)("waits for its own %s outcome", async (status) => {
     const command = deferred<WardCommandOutcome>();
     render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <Override dispatch={() => command.promise}>
-          <DelaysScreen />
-        </Override>
-      </WardFlowProvider>,
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Override dispatch={() => command.promise}>
+            <DelaysScreen />
+          </Override>
+        </WardFlowProvider>
+      </ToastProvider>,
     );
     // Round 8 (31 Oct 2026): "Under 8 hours" is folded; a user unfolds the wait bands first.
     for (const band of screen.queryAllByTestId(/^delays-band-/u)) {

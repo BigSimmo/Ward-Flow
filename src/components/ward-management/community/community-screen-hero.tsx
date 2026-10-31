@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
-import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, Popover, SrOnly, TextInput } from "@/components/wf";
+import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
@@ -17,7 +17,6 @@ import { referralWaitLine } from "@/components/ward-management/referrals/referra
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
-import { communitySearchRenderer } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
 
 /**
@@ -61,7 +60,6 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
     activeTab,
     sentReferrals,
   } = view;
-  const renderSearch = communitySearchRenderer(view);
   return (
     <div className={v6.standing}>
       {/*
@@ -134,25 +132,6 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
                 </Button>
               )}
             />
-            <Popover
-              label="Search sample patients"
-              align="end"
-              panelClassName={v6.searchPanel}
-              trigger={(props) => (
-                <Button
-                  {...props}
-                  variant="onHero"
-                  size="sm"
-                  iconOnly
-                  icon={Search}
-                  id="ward-community-search-trigger"
-                  aria-label="Search sample patients by name or UMRN"
-                  title="Search sample patients by name or UMRN"
-                />
-              )}
-            >
-              {renderSearch}
-            </Popover>
           </>
         }
         bar={

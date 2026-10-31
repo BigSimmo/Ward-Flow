@@ -35,7 +35,6 @@ import {
 } from "./community-screen-helpers";
 import {
   communityPhoneAttentionItems,
-  communitySearchRenderer,
   communityNoticesSection,
   communitySinceElement,
   communityHowToReachPanel,
@@ -131,7 +130,6 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
   const howToReachPanel = communityHowToReachPanel(view);
   const onDutyPanel = communityOnDutyPanel(view);
   const coveragePanel = communityCoveragePanel(view);
-  const renderSearch = communitySearchRenderer(view);
   const phoneAttentionItems = communityPhoneAttentionItems(view);
 
   // Built only on a phone, so desktop does no phone work.
@@ -602,7 +600,6 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
         howToReach={howToReachPanel}
         onDuty={onDutyPanel}
         coverage={coveragePanel}
-        search={renderSearch}
         samples={[
           { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
           { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },

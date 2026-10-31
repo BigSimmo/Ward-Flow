@@ -16,7 +16,7 @@ import {
 
 import { StatusGlyph, type WfTone } from "@/components/wf";
 import { type CapacityFigure, type Movement, type Notice } from "@/components/ward-management/ward-model";
-import { wardClearanceAlerts } from "./ward-clearance-alerts";
+import { wardAlerts } from "./ward-alert-counts";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
@@ -25,7 +25,6 @@ import {
   splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import {
   NAME_NOT_RECORDED,
@@ -38,7 +37,6 @@ import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { triggerUrgentBuzzAlert, useAudioBuzzPreference } from "@/components/ward-management/shell/ward-sound-store";
 
-import { buzzKeys, refreshRequestIsOpen } from "./ward-buzz-keys";
 // Notices option A (Josh, 22 Oct 2026): the ward's Notices use the shared Alerts drawer's own rows,
 // header, filter and footer, so a ward and a coordinator read one pattern.
 import drawer from "../ward-tasks-drawer.module.css";
@@ -67,6 +65,8 @@ export interface WardNotificationCenterProps {
   onConfirmMorningRollup?: () => void;
   onAcknowledgeNotice?: (noticeId: string) => void;
   onDismissBuzz?: (buzzKey: string) => void;
+  /** Buzzes acknowledged on this screen: they leave the list, as they leave the button's count. */
+  dismissedBuzzKeys?: readonly string[];
   onClose?: () => void;
   /** Phone (20 Oct 2026): shown inside a pop-up sheet, which carries its own title and Close. */
   inSheet?: boolean;
@@ -230,6 +230,7 @@ export function WardNotificationCenter({
   onConfirmMorningRollup,
   onAcknowledgeNotice,
   onDismissBuzz,
+  dismissedBuzzKeys,
   onClose,
   inSheet = false,
 }: WardNotificationCenterProps) {
@@ -256,12 +257,23 @@ export function WardNotificationCenter({
   const [soundEnabled, setSoundEnabled] = useAudioBuzzPreference();
   const baseId = useId();
 
-  // 1. Coordinator Buzzes matching unitId, still open: the ward's capacity confirmation answers one
-  // on every desk (DEC-L5-04). Keys come from the whole list so a dismissal keeps its key.
-  const keys = buzzKeys(refreshRequests);
-  const matchingBuzzes = refreshRequests
-    .map((buzz, index) => ({ buzz, buzzKey: keys[index] ?? "" }))
-    .filter(({ buzz }) => buzz.unitId === unitId && refreshRequestIsOpen(buzz, allocatable));
+  // 2. Ward work: the morning numbers, late arrivals and clearance gaps.
+  const isCensusOverdue = Boolean(morningRollupDeadlinePassed && !morningRollupConfirmed);
+  // One count for the list and the Notices button (ward-alert-counts.ts), so they never disagree.
+  const alerts = wardAlerts({
+    unitId,
+    now,
+    movements,
+    notices,
+    refreshRequests,
+    allocatable,
+    dismissedBuzzKeys,
+    censusOverdue: isCensusOverdue,
+  });
+
+  // 1. Coordinator Buzzes matching unitId, still open and not acknowledged here: the ward's capacity
+  // confirmation answers one on every desk (DEC-L5-04).
+  const matchingBuzzes = alerts.buzzes;
 
   const hasUrgentBuzz = matchingBuzzes.some(({ buzz }) => buzz.urgent === true);
 
@@ -286,22 +298,16 @@ export function WardNotificationCenter({
       (right[0]?.buzz.at ?? 0) - (left[0]?.buzz.at ?? 0),
   );
 
-  // 2. Ward work: the morning numbers, late arrivals and clearance gaps.
-  const isCensusOverdue = Boolean(morningRollupDeadlinePassed && !morningRollupConfirmed);
   const censusLateMinutes = Math.max(0, minuteOfDay(now) - morningRollupDeadlineMinutes);
 
-  const overdueArrivals = movements.filter((m) => {
-    if (m.acceptedUnitId !== unitId) return false;
-    const eta = m.arrivalDetails?.estimatedArrivalAt;
-    if (eta === undefined) return false;
-    return now > eta + LATE_ARRIVAL_GRACE_MINUTES;
-  });
+  // An arrival is late only while it is still on its way (an arrived patient is not late).
+  const overdueArrivals = alerts.overdueArrivals;
 
   // Audit 1, CS-14 (20 Oct 2026): list incoming journeys with no clearance recorded on their own row.
   // A ward screen reads the transfer's own record only: referral data reaches ward code through the
   // ward-scoped projection (FD-23), which carries no clearance, so the row says "on the transfer".
   // Each row counts once in the badge (ward-clearance-alerts.ts), so a shown row never sits under a zero.
-  const { missing: missingClearances, unrecorded: unrecordedClearances } = wardClearanceAlerts(movements, unitId);
+  const { missingClearances, unrecordedClearances } = alerts;
 
   // Option A: a clearance row opens that patient's request in the ward's Answer view, or the transfer
   // once accepted. The request is named in the query, so the Answer view does not land on the oldest one.
@@ -323,16 +329,11 @@ export function WardNotificationCenter({
   };
 
   // 3. Direct Ward Notices
-  const wardNotices = notices.filter((n) => noticeIsForWardChrome(n, "ward", unitId, now));
+  const wardNotices = alerts.wardNotices;
 
   // Counts for the heading, the filter and the badge. "Check" holds clearance not recorded: a gap to
   // check, not an alarm, but still counted so every row shown is in the total.
-  const buzzCount = matchingBuzzes.length;
-  const unreadNoticesCount = wardNotices.filter((n) => n.readAt === undefined).length;
-  const actCount = (isCensusOverdue ? 1 : 0) + overdueArrivals.length + missingClearances.length;
-  const checkCount = unrecordedClearances.length;
-  const coordinatorCount = buzzCount + unreadNoticesCount;
-  const totalUnreadAlerts = actCount + checkCount + coordinatorCount;
+  const { act: actCount, check: checkCount, coordinator: coordinatorCount, total: totalUnreadAlerts } = alerts.counts;
 
   const filters: { id: FilterKey; label: string; count: number }[] = [
     { id: "all", label: "All", count: totalUnreadAlerts },

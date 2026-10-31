@@ -21,7 +21,11 @@ type Options = Pick<WardFlowContextValue, "dispatch" | "shared"> & {
   teamId: string;
   generation: number;
   onAccepted: (source: Source) => void;
-  onQuickMessage: (message: string) => void;
+  /**
+   * A message for the quick "Log team contact" button, which has no line of its own to show it.
+   * `warning` is true when the save did not go through or is not confirmed (CT-09: it must stay).
+   */
+  onQuickMessage: (message: string, warning: boolean) => void;
 };
 
 /** A contact is recorded only by this command's answer, including its original-ID Retry. */
@@ -55,9 +59,10 @@ export function useCommunityContactSave(options: Options) {
     active.current = null;
     setAttempt(null);
   }, []);
-  const say = useCallback((started: Attempt, message: string | undefined) => {
+  // Every message but "Saving contact…" reports a save that did not go through or is not confirmed.
+  const say = useCallback((started: Attempt, message: string | undefined, warning = true) => {
     setMessage(message);
-    if (message && started.source === "quick") latest.current.onQuickMessage(message);
+    if (message && started.source === "quick") latest.current.onQuickMessage(message, warning);
   }, []);
   const accept = useCallback(
     (started: Attempt) => {
@@ -131,7 +136,8 @@ export function useCommunityContactSave(options: Options) {
           ? "Save is not confirmed. Use Retry before recording another contact."
           : WARD_STILL_SAVING;
       setMessage(message);
-      if (source === "quick") latest.current.onQuickMessage(message);
+      // Still saving is not a failure; an unconfirmed save is.
+      if (source === "quick") latest.current.onQuickMessage(message, message !== WARD_STILL_SAVING);
       return;
     }
     const started: Attempt = {
@@ -141,7 +147,7 @@ export function useCommunityContactSave(options: Options) {
     };
     active.current = started; // Synchronous: a second click cannot enqueue another command.
     setAttempt(started);
-    say(started, "Saving contact…");
+    say(started, "Saving contact…", false);
     const failed = () => finish(started, { commandId: "", status: "failed" });
     try {
       const completion = confirmedWardCommand(

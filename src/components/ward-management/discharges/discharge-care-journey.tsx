@@ -1,5 +1,6 @@
 "use client";
 
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-derivations";
@@ -24,6 +25,7 @@ import type { DischargeRecord, WardRecordActor } from "../ward-discharge-records
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { formatInstantWithDay, perthDateTimeLocal } from "../ward-clock";
 import { useWardFormSave } from "../use-ward-form-save";
+import { isPhoneWidth } from "@/components/ward-management/ward-phone-width";
 import styles from "./discharges-third-edition.module.css";
 const words = (value: string) => value.replaceAll("_", " ");
 /** Fresh audit W-4: stored values read as plain labels, never as raw codes. */
@@ -78,6 +80,13 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   const [submitted, setSubmitted] = useState<number | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
   const [cohort, setCohort] = useState("adult");
+  // Search and forms review (31 Oct 2026): leaving with typed but unrecorded care details asks
+  // first. Memory only; nothing typed is kept anywhere (D-18).
+  const [unrecorded, setUnrecorded] = useState(false);
+  useDirtyStateGuard({
+    isDirty: unrecorded,
+    confirmMessage: "You have discharge details that are not recorded yet. Leave without recording them?",
+  });
   // Audit 24-3 SV-5: a shared refusal reaches only the outcome, so it is said here too.
   const careSave = useWardFormSave(record.admissionId);
   const care = record.careJourney;
@@ -98,6 +107,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       return;
     }
     setLocalError(null);
+    setUnrecorded(false);
     setSubmitted(rejections.length);
     const patientId = record.identity.patient.id;
     careSave.submit(
@@ -118,10 +128,18 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
     );
   }
   const section = (title: string, children: ReactNode, change: (data: FormData) => unknown) => (
-    <details>
+    <details
+      onToggle={(e) => {
+        // Opening a section on a larger screen puts the cursor in its first field, ready to type.
+        // A phone keeps the page still, as the keyboard would cover the form.
+        if (!e.currentTarget.open || isPhoneWidth()) return;
+        e.currentTarget.querySelector<HTMLElement>("input:not([type=hidden]), select, textarea")?.focus();
+      }}
+    >
       <summary>{title}</summary>
       <form
         className={styles.filters}
+        onInput={() => setUnrecorded(true)}
         onSubmit={(e: FormEvent<HTMLFormElement>) => {
           e.preventDefault();
           change(new FormData(e.currentTarget));

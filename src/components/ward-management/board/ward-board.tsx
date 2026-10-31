@@ -34,15 +34,12 @@ import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 
-import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-
 import { asAtStamp } from "./ward-daily-sheet";
 import { StrandedPrompts, WardForecastShare } from "./stranded-prompts";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
 import styles from "./board.module.css";
-import { BoardToastView } from "./ward-board-toast";
-import type { ActionToast } from "@/components/ward-management/ward-action-toast";
+import { useActionToast, useTaggedToast } from "@/components/ward-management/use-action-toast";
 import { TransportExceptionDialog } from "@/components/ward-management/transport-exception-dialog";
 import { arrivalGaps } from "@/components/ward-management/ward-transport-checks";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
@@ -285,7 +282,9 @@ export function WardBoard({
     }, 60);
     return () => window.clearTimeout(timer);
   }, [sheetOpen]);
-  const [toastMessage, setToastMessage] = useState<ActionToast | null>(null);
+  // A refusal stays until it is closed (CT-09); the shared toast region is the one place it is read.
+  const setToastMessage = useActionToast({ testId: "ward-board-toast" });
+  const boardToast = useTaggedToast("ward-board-toast");
 
   /*
    * Walkthrough D12 (25 Sept 2026): the board announced success without checking whether the
@@ -301,7 +300,7 @@ export function WardBoard({
   // `record` makes the dispatch itself, with a literal event type at the call site, so every
   // dispatch stays readable to the override-surfaces guard; this only brackets it with the check.
   // H-0371 (D-83, Josh 27 Oct 2026): the screen reader hears the toast's own words, the patient's
-  // name included, as Handover and ED already say it.
+  // name included, as Handover and ED already say it: the shared toast region reads them once.
   const dispatchAndReport = useCallback(
     (record: () => ReturnType<WardCommandDispatch>, success: string) => {
       const check = { prior: rejections.length, success };
@@ -323,10 +322,8 @@ export function WardBoard({
     rejections,
     now,
     routeRole: "ward",
-    onMessage: (message, tone) => {
-      setToastMessage(tone === "warning" ? { warning: message } : message);
-      announceToWardShell(message);
-    },
+    toast: boardToast,
+    onMessage: (message, tone) => setToastMessage(tone === "warning" ? { warning: message } : message),
   });
   const recordDepartureAndReport = (
     record: () => ReturnType<WardCommandDispatch>,
@@ -370,16 +367,7 @@ export function WardBoard({
         ? `Not recorded: ${refusalReasonText(refused.reason)}. Nothing was changed.`
         : check.success;
     setToastMessage(refused || unaccepted ? { warning: msg } : msg);
-    announceToWardShell(refused || unaccepted ? msg : check.success);
-  }, [outcomeToken, rejections]);
-
-  useEffect(() => {
-    if (!toastMessage) return;
-    const timer = setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
-    return () => clearTimeout(timer);
-  }, [toastMessage]);
+  }, [outcomeToken, rejections, setToastMessage]);
   /*
    * The tile to hand focus back to once the slide-out closes.
    *
@@ -904,7 +892,6 @@ export function WardBoard({
       if (!matchingMovement) {
         const msg = `Cannot confirm arrival: no movement matches ${item.who || nameFor(item.selectableKey)}.`;
         setToastMessage({ warning: msg });
-        announceToWardShell("Cannot confirm arrival: no movement matches this patient.");
         return;
       }
       if (arrivalGaps(matchingMovement).length > 0) {
@@ -924,9 +911,6 @@ export function WardBoard({
       if (!matchingLeave && !isAwayAtEd) {
         const msg = `Nothing to mark back: no leave or emergency department absence is recorded for ${who}. Nothing was changed.`;
         setToastMessage({ warning: msg });
-        announceToWardShell(
-          "Nothing to mark back: no leave or emergency department absence is recorded for this patient. Nothing was changed.",
-        );
         return;
       }
       dispatchAndReport(
@@ -1470,8 +1454,6 @@ export function WardBoard({
             </div>
           </div>
         ) : null}
-
-        <BoardToastView toast={toastMessage} />
       </main>
       <TransportExceptionDialog
         open={arriveCheck !== null}

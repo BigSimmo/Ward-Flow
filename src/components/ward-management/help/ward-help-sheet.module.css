@@ -111,16 +111,6 @@
   gap: var(--wf-s-2);
 }
 
-/* A quiet dot in front of each point, aligned to the first line. */
-.point {
-  flex: none;
-  width: 5px;
-  height: 5px;
-  margin-top: 7px;
-  border-radius: 50%;
-  background: var(--wf-ink-3);
-}
-
 /* The step number in front of a job: a small framed tile, ink not colour. */
 .step {
   display: grid;
@@ -157,38 +147,6 @@
 }
 
 /* ── Your desk ───────────────────────────────────────────────────────────────────────────── */
-
-.desk {
-  display: grid;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.deskCard {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-3);
-  min-height: 44px;
-}
-
-.deskText {
-  display: grid;
-  gap: 1px;
-  min-width: 0;
-}
-
-.deskText > span {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-}
-
-.deskText > h3 {
-  margin: 0;
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-}
 
 /* ── Buttons and links ───────────────────────────────────────────────────────────────────── */
 
@@ -275,16 +233,29 @@
 
 /* Phone: the full-width pill track the Activity drawer uses, each section a 44px tap. */
 @media (max-width: 48rem) {
+  /* Five sections on one sliding row at the kit's phone size (D-91): each keeps its full label and
+   * the row scrolls sideways, as the kit's segmented switch does, instead of wrapping to two rows. */
   .views {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
     padding: 2px;
     border-radius: var(--wf-r-track);
   }
 
+  .views::-webkit-scrollbar {
+    display: none;
+  }
+
   .views > button {
-    min-height: 44px;
-    padding: 0 4px;
+    flex: 0 0 auto;
+    min-height: 2.75rem;
+    padding: 0 12px;
     border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-fs-13);
+    white-space: nowrap;
   }
 }
 
@@ -466,10 +437,12 @@
 
 /* ── This screen ─────────────────────────────────────────────────────────────────────────── */
 
+/* The screen's (or desk's) name and purpose sit on the page, not in a card, lined up with the group
+   headings (round 2, #1118). */
 .screenHead {
   display: grid;
   gap: 4px;
-  padding: var(--wf-s-3);
+  padding: 0 var(--wf-s-1);
 }
 
 .screenHead > h3 {
@@ -478,35 +451,6 @@
   font-size: var(--wf-fs-15);
   font-weight: 600;
   letter-spacing: -0.01em;
-}
-
-.shortcuts > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-3);
-  min-height: 48px;
-  padding: 6px var(--wf-s-3);
-  color: var(--wf-ink-1);
-  font-weight: 600;
-  list-style: none;
-  cursor: pointer;
-}
-
-.shortcuts > summary::-webkit-details-marker {
-  display: none;
-}
-
-.shortcuts > summary:hover {
-  background: var(--wf-hover);
-}
-
-.shortcuts[open] > summary {
-  border-bottom: 1px solid var(--wf-line);
-  background: var(--wf-surface-2);
-}
-
-.shortcuts[open] > summary .caret {
-  transform: rotate(180deg);
 }
 
 .rowIcon {
@@ -526,33 +470,8 @@
   height: 16px;
 }
 
-.keys {
-  display: grid;
-  margin: 0;
-}
-
-.keys > div + div {
-  border-top: 1px solid var(--wf-line);
-}
-
-.key {
-  display: grid;
-  grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--wf-s-3);
-  padding: 8px var(--wf-s-3);
-}
-
-.key dt,
-.key dd {
-  margin: 0;
-}
-
-.key dd {
-  color: var(--wf-ink-2);
-}
-
-.key kbd {
+/* A key in the Reference's shortcut list, drawn as a key. */
+.entry kbd {
   display: inline-grid;
   place-items: center;
   height: 20px;
@@ -583,8 +502,7 @@
 .goLink:focus-visible,
 .example:focus-visible,
 .answerTitle:focus-visible,
-.linkRow:focus-visible,
-.shortcuts > summary:focus-visible {
+.linkRow:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: -2px;
 }
@@ -597,12 +515,6 @@
 @media (prefers-reduced-motion: reduce) {
   .caret {
     transition: none;
-  }
-}
-
-@media (forced-colors: active) {
-  .point {
-    background: CanvasText;
   }
 }
 
@@ -690,48 +602,6 @@
   }
 }
 
-/* Search first; desk, tour and Reference share a quiet utility row. */
-.utilityRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-.utilityRow .deskCard {
-  gap: var(--wf-s-2);
-}
-.utilityRow .deskText > h3 {
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-.tourLink {
-  min-height: 44px;
-  padding: 0 var(--wf-s-1);
-  border-color: transparent;
-  background: transparent;
-  font-size: var(--wf-fs-12);
-  font-weight: 500;
-}
-.utilityRow > .reference {
-  border: 0;
-  background: transparent;
-}
-.utilityRow > .reference > summary {
-  padding: var(--wf-s-3) var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-}
-.utilityRow > .reference[open] {
-  grid-column: 1 / -1;
-  border: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-}
-.utilityRow > .reference[open] > summary {
-  padding-inline: var(--wf-s-3);
-}
-.utilityRow:has(> .reference[open]) > .desk {
-  grid-column: 1 / -1;
-}
 .glossaryFilters {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.85fr);
@@ -769,5 +639,116 @@
 @media (width <= 360px) {
   .glossaryFilters {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ── Redesign (Josh, 30 Oct 2026; #1118 and the Core Pages artifact) ─────────────────────── */
+
+/* Under the title: the desk, and the screen this Help speaks for. */
+.context {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* A folded row's own words, and its quiet count ("3 steps") before the caret. */
+.answerName {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.answerMeta {
+  flex: none;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+}
+
+.linkRow > .answerMeta {
+  margin-left: auto;
+  color: var(--wf-accent-ink, var(--wf-accent-strong));
+  font-weight: 600;
+}
+
+/* A question's answer, folded under it until asked for. */
+.answer {
+  margin: 0;
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: 1.5;
+}
+
+/* Show me and Go to under a desk job. */
+.jobLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--wf-s-3);
+}
+
+button.goLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* The foot of every view: Reference, then the tour and the shortcuts side by side. */
+.endRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+/* The footer's What's new date, as a quiet link in the footer's own type. */
+.footLink {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.footLink:hover {
+  color: var(--wf-ink-1);
+}
+
+.footLink:focus-visible {
+  outline: 2px solid var(--wf-ink-1);
+  outline-offset: 2px;
+}
+
+.endRow > button {
+  flex: 1 1 10rem;
+}
+
+button.linkRow {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Round 2 (#1118): phone rows are 44px. */
+@media (max-width: 48rem) {
+  .endRow > button,
+  .answerTitle,
+  button.linkRow {
+    min-height: 44px;
+  }
+
+  button.goLink {
+    min-height: 44px;
   }
 }

@@ -64,6 +64,10 @@ describe("All EDs — filters highlight and dim, they never hide", () => {
   it("has no keyword box (D-91): the header search finds an ED", () => {
     renderIndex();
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    // "/" is left for the header search.
+    const slash = new KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true });
+    window.dispatchEvent(slash);
+    expect(slash.defaultPrevented).toBe(false);
   });
 
   it("keeps every ED when the filters match nothing, and offers Reset", () => {

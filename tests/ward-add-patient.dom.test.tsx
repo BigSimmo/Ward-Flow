@@ -178,7 +178,7 @@ describe("AddPatientForm", () => {
     fillDraft();
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
-    expect(await screen.findByTestId("toast")).toHaveTextContent("Testable Newcomer added, UM999999");
+    expect(await screen.findByTestId("toast")).toHaveTextContent("Newcomer, Testable added, UM999999");
   });
 });
 

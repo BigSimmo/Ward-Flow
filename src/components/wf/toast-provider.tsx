@@ -16,6 +16,8 @@ import { ConfirmHost } from "./confirm-dialog";
 import { OverlayPortal } from "./overlay-root";
 import overlayStyles from "./overlay.module.css";
 import { type ToastNextStep, type ToastUndo, ToastView } from "./toast";
+import { useToastJumpKey } from "./toast-keyboard";
+import { timedToastMs } from "./toast-timing";
 
 type ToastTone = "success" | "info" | "warning" | "danger";
 
@@ -48,6 +50,8 @@ export type Toast = {
   announceKey?: number;
   /** Leaves out the provider's `offlineNote`: for a toast that is itself about being offline. */
   skipOfflineNote?: boolean;
+  /** Test id of the card. Defaults to "toast"; a screen's own outcome can keep its own name. */
+  testId?: string;
 };
 
 export type ToastInput = Omit<Toast, "id">;
@@ -67,6 +71,8 @@ export type ToastApi = {
    * a caller that writes the provider's offline note into its own text.
    */
   savesOnDevice?: () => boolean;
+  /** Whether the toast with this id is still on screen (not closed, timed out or pushed out). */
+  isShown?: (id: string) => boolean;
 };
 
 /**
@@ -82,6 +88,7 @@ type ToastContextValue = {
   toasts: Toast[];
   push: (toast: ToastInput) => string;
   dismiss: (id: string) => void;
+  isShown: (id: string) => boolean;
   /** Runs Undo and closes its toast unless the caller temporarily blocks it with false. */
   undoAndDismiss: (id: string, onUndo: ToastUndo["onUndo"]) => void | false;
   savesOnDevice: () => boolean;
@@ -89,8 +96,28 @@ type ToastContextValue = {
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
+/** A short timed outcome's time; a longer one gets a little more (`timedToastMs`). */
 const DEFAULT_DURATION = 6000;
 const MAX_VISIBLE_TOASTS = 5;
+
+/** A warning or danger stays until it is closed (Audit 24-7, CT-09), so a full stack never drops one. */
+function isLasting(toast: Toast) {
+  return toast.tone === "warning" || toast.tone === "danger";
+}
+
+/**
+ * Keeps at most five cards by pushing out the oldest that is not a warning or danger, never the
+ * one just pushed. With nothing else to push out, every warning stays, past the five if need be.
+ */
+function capVisible(all: Toast[]): Toast[] {
+  const next = all.slice();
+  while (next.length > MAX_VISIBLE_TOASTS) {
+    const oldest = next.findIndex((toast, index) => index < next.length - 1 && !isLasting(toast));
+    if (oldest < 0) break;
+    next.splice(oldest, 1);
+  }
+  return next;
+}
 
 /**
  * Nothing in the system announced async outcomes: an upload that failed in the
@@ -108,8 +135,7 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   useEffect(() => {
     const remember = () => {
       const target = document.activeElement;
-      if (!(target instanceof HTMLElement) || target === document.body || target.closest('[data-testid="toast"]'))
-        return;
+      if (!(target instanceof HTMLElement) || target === document.body || target.closest("[data-wf-toast]")) return;
       recentControls.current = [target, ...recentControls.current.filter((element) => element !== target)].slice(0, 8);
     };
     document.addEventListener("focusin", remember);
@@ -145,7 +171,7 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   const dismiss = useCallback(
     (id: string) => {
       const active = document.activeElement;
-      if (active?.closest('[data-testid="toast"]')) {
+      if (active?.closest("[data-wf-toast]")) {
         // The triggering save strip may have disappeared; keep earlier surviving controls too.
         pendingFocusReturn.current = recentControls.current;
       }
@@ -158,6 +184,8 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
     },
     [expire],
   );
+
+  const isShown = useCallback((id: string) => toastsRef.current.some((toast) => toast.id === id), []);
 
   // Settles the toast before the caller's onUndo runs, so nothing that callback does (closing or
   // pushing out its own toast) can also expire it, and the toast still closes if the callback throws.
@@ -231,10 +259,10 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
       counter.current += 1;
       const id = `toast-${counter.current}`;
       const all = [...toastsRef.current, { ...toast, id, announceKey: 0 }];
-      const next = all.slice(-MAX_VISIBLE_TOASTS);
+      const next = capVisible(all);
       toastsRef.current = next;
       setToasts(next);
-      for (const evicted of all.slice(0, all.length - next.length)) {
+      for (const evicted of all.filter((toast) => !next.includes(toast))) {
         expire(evicted);
         settled.current.delete(evicted.id);
       }
@@ -244,8 +272,8 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
   );
 
   const value = useMemo(
-    () => ({ toasts, push, dismiss, undoAndDismiss, savesOnDevice }),
-    [toasts, push, dismiss, undoAndDismiss, savesOnDevice],
+    () => ({ toasts, push, dismiss, isShown, undoAndDismiss, savesOnDevice }),
+    [toasts, push, dismiss, isShown, undoAndDismiss, savesOnDevice],
   );
 
   return (
@@ -274,7 +302,11 @@ export function useOptionalToast(): ToastApi | null {
   const push = context?.push;
   const dismiss = context?.dismiss;
   const savesOnDevice = context?.savesOnDevice;
-  return useMemo(() => (push && dismiss ? { push, dismiss, savesOnDevice } : null), [push, dismiss, savesOnDevice]);
+  const isShown = context?.isShown;
+  return useMemo(
+    () => (push && dismiss ? { push, dismiss, savesOnDevice, isShown } : null),
+    [push, dismiss, savesOnDevice, isShown],
+  );
 }
 
 function ToastCard({
@@ -288,18 +320,17 @@ function ToastCard({
 }) {
   // An Undo toast runs on its own window alone: a shorter duration would close it and commit early.
   // Audit 24-7 (CT-09): a warning or danger toast stays until dismissed unless its caller sets a time.
-  const lasting = Boolean(toast.action) || toast.tone === "warning" || toast.tone === "danger";
-  const duration = toast.undo ? 0 : (toast.duration ?? (lasting ? 0 : DEFAULT_DURATION));
-
-  useEffect(() => {
-    if (duration <= 0) return;
-    const timer = setTimeout(() => onDismiss(toast.id), duration);
-    return () => clearTimeout(timer);
-  }, [duration, onDismiss, toast.id, toast.announceKey]);
+  // A timed toast with no time of its own stays a little longer for each extra word (6 to 12 s), and
+  // its clock pauses while it is hovered, holds focus or the tab is hidden (`ToastView`).
+  const lasting = Boolean(toast.action) || isLasting(toast);
+  const duration = toast.undo
+    ? 0
+    : (toast.duration ?? (lasting ? 0 : timedToastMs(DEFAULT_DURATION, toast.title, toast.body)));
 
   return (
     <ToastView
-      data-testid="toast"
+      data-testid={toast.testId ?? "toast"}
+      data-wf-toast=""
       data-tone={toast.tone}
       data-announce-key={toast.announceKey ?? 0}
       // Closes itself (Undo window or timer): the phone pill drops its X, as the v10 mockup draws it.
@@ -312,6 +343,9 @@ function ToastCard({
       title={<span key={toast.announceKey ?? 0}>{toast.title}</span>}
       body={toast.body ? <span key={`body-${toast.announceKey ?? 0}`}>{toast.body}</span> : undefined}
       meta={toast.meta}
+      timeout={
+        duration > 0 ? { ms: duration, onTimeout: () => onDismiss(toast.id), restartKey: toast.announceKey } : undefined
+      }
       action={
         toast.action
           ? {
@@ -345,14 +379,20 @@ function ToastCard({
  * surface that owns its own portal can place it. `role="status"` + `aria-live="polite"`
  * so an outcome is announced without interrupting whatever the user is reading —
  * a failed upload is important, but it is not a reason to cut off a dose sentence.
+ *
+ * Alt+N (`toast-keyboard.ts`) takes focus to the newest notice's first control and back.
  */
 function ToastRegion() {
   const context = useContext(ToastContext);
+  const regionRef = useRef<HTMLDivElement>(null);
+  useToastJumpKey(regionRef);
   if (!context) return null;
   const { toasts, dismiss, undoAndDismiss } = context;
 
   const region = (
     <div
+      ref={regionRef}
+      data-wf-toast-host=""
       data-testid="toast-region"
       role="status"
       aria-live="polite"

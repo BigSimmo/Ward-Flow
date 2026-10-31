@@ -34,7 +34,8 @@
   outline: 2px solid var(--wf-ink-1);
   outline-offset: 2px;
 }
-@media (width <= 640px) {
+/* Lifted over the phone dock wherever the dock shows (up to 48rem, the app's phone width). */
+@media (max-width: 48rem) {
   .hint {
     bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }

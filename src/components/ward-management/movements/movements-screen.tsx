@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import Link from "next/link";
 import { waitingHref } from "@/components/ward-management/delays/waiting-href";
@@ -526,7 +527,8 @@ export function MovementsScreen() {
   const matchesSearch =
     searchTerm === ""
       ? null
-      : (movement: Movement) => movementSearchText(movement, patients, referrals).includes(searchTerm);
+      : // Every word, folded, in any order: "OQuinn" finds O'Quinn and "UM 100001" the UMRN.
+        (movement: Movement) => fieldsMatchEveryWord(searchTerm, [movementSearchText(movement, patients, referrals)]);
   const highlightOptions = heroHighlights(now, accessTarget);
   const highlightTest: ((movement: Movement) => boolean) | null =
     highlight === null

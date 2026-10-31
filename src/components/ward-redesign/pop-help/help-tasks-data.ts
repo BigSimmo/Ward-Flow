@@ -108,7 +108,7 @@ const FROM_1119: Readonly<Record<string, { go?: readonly string[]; showMe?: read
   },
 };
 
-export type MockTask = Omit<HowTo, "go"> & {
+export type MockTask = Omit<HowTo, "go" | "computerOnly"> & {
   readonly topic: TaskTopic;
   readonly go?: string | readonly string[];
   readonly computerOnly: boolean;

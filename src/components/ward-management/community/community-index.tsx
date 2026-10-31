@@ -1,5 +1,6 @@
 "use client";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -240,17 +241,24 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     return map;
   }, [allTeams, factsFor]);
 
-  // Suburb names and service labels, so search matches the fields the page promises, not only names.
+  // Suburb names, their postcodes and service labels, so search matches what the box promises
+  // ("Team, suburb or postcode"), not only names. Postcodes added 31 Oct 2026.
   const teamSearchHaystack = useMemo(() => {
+    const postcodesBySuburb = new Map<string, Set<string>>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      if (!row.postcode) continue;
+      const bucket = postcodesBySuburb.get(row.suburb) ?? new Set<string>();
+      bucket.add(row.postcode);
+      postcodesBySuburb.set(row.suburb, bucket);
+    }
     const map = new Map<string, string>();
     for (const team of allTeams) {
       const mapping = mapClinicToServiceAndHospital(team.name);
-      const suburbs = suburbsByClinicKey.get(clinicKey(team.name));
+      const suburbs = [...(suburbsByClinicKey.get(clinicKey(team.name)) ?? [])];
+      const postcodes = suburbs.flatMap((suburb) => [...(postcodesBySuburb.get(suburb) ?? [])]);
       map.set(
         team.name,
-        [team.name, mapping.code, mapping.name, mapping.displayName, ...(suburbs ? [...suburbs] : [])]
-          .join(" ")
-          .toLowerCase(),
+        [team.name, mapping.code, mapping.name, mapping.displayName, ...suburbs, ...postcodes].join(" "),
       );
     }
     return map;
@@ -361,8 +369,8 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
         if (alikeOnly && !collisionByName.has(team.name)) return false;
         if (sharedSuburbOnly && !sharedSuburbs.teams.has(team.name)) return false;
         if (normalizedQuery) {
-          const haystack = teamSearchHaystack.get(team.name) ?? team.name.toLowerCase();
-          if (!haystack.includes(normalizedQuery)) return false;
+          const haystack = teamSearchHaystack.get(team.name) ?? team.name;
+          if (!fieldsMatchEveryWord(normalizedQuery, [haystack])) return false;
         }
         return true;
       }),
@@ -674,11 +682,12 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 type="search"
                 icon={Search}
                 boxClassName={styles.searchBox}
-                placeholder={isPhone ? "Team, suburb or postcode" : "Search"}
+                placeholder="Team, suburb or postcode"
                 autoComplete="off"
                 aria-label="Search team names"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
+                onClear={() => setQuery("")}
                 onKeyDown={(event) => {
                   if (event.key === "Escape" && query) {
                     event.stopPropagation();

@@ -12,7 +12,7 @@
  */
 import { useCallback } from "react";
 
-import { howToHref } from "@/components/ward-management/help/ward-help-ask";
+import { howToHref } from "@/components/ward-management/help/ward-help-href";
 import { askWardHelp, showWardHowTo } from "@/components/ward-management/help/ward-help-events";
 import {
   CLINICAL_REPLY,

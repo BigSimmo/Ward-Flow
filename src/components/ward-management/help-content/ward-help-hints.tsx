@@ -8,6 +8,7 @@ import { ROLE_SCREENS, screenForPath } from "../ward-role-access";
 import { WARD_HOME_HREF } from "../ward-nav";
 import { ADMIN_SETTINGS_HELP, screenHelpFor } from "../help/ward-help-content";
 import { openWardHelp } from "../help/ward-help-events";
+import { useCornerCardEscape } from "../help/use-corner-card-escape";
 import { parseTourAutoDone, TOUR_AUTO_DONE_STORAGE_KEY } from "../help/ward-tour-auto-start";
 import { parseTourSeen, useTourRole, useTourSeen } from "../help/ward-help-store";
 import type { WardTourRole } from "../help/ward-help-store";
@@ -126,7 +127,10 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
     }, 1500);
     return () => window.clearTimeout(timer);
   }, [toured, blocked, topic, screen, role, key]);
-  if (!help || blocked || offered !== key || !hintsAllowed(toured, role, topic)) return null;
+  const showing = Boolean(help && !blocked && offered === key && hintsAllowed(toured, role, topic));
+  // Escape is "Got it".
+  useCornerCardEscape(showing, () => setOffered(null));
+  if (!help || !showing) return null;
   return (
     <OverlayPortal layer="overlay" name="ward-help-hint">
       <aside className={styles.hint} aria-label={`${help.title} help`} data-testid="ward-help-hint">
