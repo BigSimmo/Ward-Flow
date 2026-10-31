@@ -380,7 +380,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3 (D-91):** follows #1123's smarter search: Help answers, on-call contacts and a suburb or postcode's catchment, each with its own group and icon. The box reads 'Search Ward Flow'.",
     "**Round 3:** on a phone it opens as a full-height sheet like Help, with the field and kind chips pinned at the top. A computer keeps the popover, with matched words marked in a calm tint.",
     "**Round 3:** people and records come first and Help answers last, unless the query is a question (how, where, why, what). 'Did you mean?' names are gone: never a typo match for a person or UMRN. Rows and previews wrap in full.",
-    "**For the build:** today's app shows a 'Did you mean?' group of similar names; dropping it needs Josh's yes, as it is a typo match on people.",
+    "**Josh (31 Oct 2026):** drop today's 'Did you mean?' group of similar names: it is a typo match on people, and choosing the wrong patient is the greater risk.",
   ],
   "pop-help": [
     "**Built from a copy of today's Help sheet** (not PR #1109's version). It opens on This screen, as the rail's Help does.",

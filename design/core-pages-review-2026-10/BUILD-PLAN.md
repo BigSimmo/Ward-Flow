@@ -425,7 +425,7 @@ Real paths are under `src/components/ward-management/` unless shown. Rows 36 to 
 | 47  | `tests/ward-tour-steps.test.ts` expects the tour sentence round 3 removed ("This takes about…")                                                             | needs a fix in the build (Help and tour build)         |
 | 48  | Alt+N (jump to newest notice) is missing from the real shortcut list                                                                                        | needs a fix in the build (#1124 A or Help build)       |
 | 49  | Admin phone "Give for 90 days" buttons are tall (`as-admin-home`)                                                                                           | needs a fix in the build (Settings Access build)       |
-| 50  | Search's "Did you mean?" similar-names group is a typo match on people                                                                                      | Josh to confirm dropping it; then the search build     |
+| 50  | Search's "Did you mean?" similar-names group is a typo match on people                                                                                      | Josh agreed (31 Oct): drop it in the search build      |
 
 ## 7. Checks not yet run anywhere
 
