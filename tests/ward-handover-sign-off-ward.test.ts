@@ -2,8 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { BroadcastAlert } from "@/components/ward-management/alerts/ward-broadcast-model";
 import { bedMeetingAgenda } from "@/components/ward-management/bed-meeting/bed-meeting-agenda";
-import { handoverSignedBefore } from "@/components/ward-management/handover/handover-model";
-import { handoverSignOffUnitId } from "@/components/ward-management/handover/handover-scope-rules";
+import { handoverSignOffPlace, handoverSignedBefore } from "@/components/ward-management/handover/handover-model";
+import {
+  handoverSignOffUnitId,
+  recordHandoverSignOff,
+} from "@/components/ward-management/handover/handover-scope-rules";
+import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { scopeBroadcastAlerts } from "@/components/ward-management/ward-access-scope-records";
 import { commandScopeRefusal, scopeWardFlowState } from "@/components/ward-management/ward-access-state";
@@ -92,6 +96,60 @@ describe("decision 41: a handover sign-off names its ward", () => {
       "This change names a record outside your role's place.",
     );
     expect(commandScopeRefusal(seed, wardDesk, command(wardA!.id), options)).toBeNull();
+  });
+});
+
+describe("Q67: a whole-network sign-off reads Whole network, an older one keeps Ward not recorded", () => {
+  it("labels each sign-off only from what its record holds", () => {
+    expect(handoverSignOffPlace({ unitId: wardA!.id }, seed.units)).toBe(wardA!.name);
+    expect(handoverSignOffPlace({ network: true }, seed.units)).toBe("Whole network");
+    // A sign-off saved before 31 Oct 2026 holds no ward and no mark, whoever signed it.
+    expect(handoverSignOffPlace({}, seed.units)).toBe("Ward not recorded");
+    expect(handoverSignOffPlace({ unitId: "no-such-ward" }, seed.units)).toBe("Ward not recorded");
+  });
+
+  it("stores the mark, refuses it with a ward, and refuses it from any desk but the statewide one", () => {
+    const network = wardFlowReducer(seed, {
+      type: "RECORD_HANDOVER_SIGN_OFF",
+      role: "coordinator",
+      now: NOW,
+      network: true,
+    });
+    expect(network.rejections).toEqual([]);
+    expect(network.handoverSignOffs.at(-1)).toEqual({ at: NOW, by: "coordinator", network: true });
+    const both = wardFlowReducer(seed, {
+      type: "RECORD_HANDOVER_SIGN_OFF",
+      role: "coordinator",
+      now: NOW,
+      unitId: wardA!.id,
+      network: true,
+    });
+    expect(both.rejections.at(-1)?.reason).toMatch(/not both/);
+    expect(both.handoverSignOffs).toEqual(seed.handoverSignOffs);
+    const command = { type: "RECORD_HANDOVER_SIGN_OFF", role: "coordinator", now: NOW, network: true };
+    const service: WardAccess = { role: "coordinator", scope: { kind: "service", service: "East Metro" } };
+    expect(commandScopeRefusal(seed, service, command, options)).toBe(
+      "Only the statewide coordinator signs off the whole network.",
+    );
+    const statewide: WardAccess = { role: "coordinator", scope: { kind: "statewide" } };
+    expect(commandScopeRefusal(seed, statewide, command, options)).toBeNull();
+  });
+
+  it("sends the mark only when the caller says the desk is whole-network and names no ward", () => {
+    const sent: WardFlowEvent[] = [];
+    const dispatch = (event: WardFlowEvent) => void sent.push(event);
+    expect(recordHandoverSignOff(dispatch, NOW, "coordinator", undefined, true)).toEqual({
+      role: "coordinator",
+      at: NOW,
+      network: true,
+    });
+    expect(recordHandoverSignOff(dispatch, NOW, "coordinator")).toEqual({ role: "coordinator", at: NOW });
+    expect(recordHandoverSignOff(dispatch, NOW, "coordinator", wardA!.id, true)).toEqual({
+      role: "coordinator",
+      at: NOW,
+      unitId: wardA!.id,
+    });
+    expect(sent.map((event) => "network" in event)).toEqual([true, false, false]);
   });
 });
 

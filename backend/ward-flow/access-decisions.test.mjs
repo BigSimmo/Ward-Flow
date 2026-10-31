@@ -40,6 +40,28 @@ test("41: a ward desk is sent its own ward's sign-offs only, and may sign off no
   assert.deepEqual(next.state.handoverSignOffs.at(-1)?.unitId, wardA.id);
 });
 
+test("Q67: the server marks a statewide desk's ward-less sign-off as the whole network's, and no one else's", async () => {
+  const { engine, world } = await setup();
+  const [wardA] = world.state.units;
+  const signOff = { type: "RECORD_HANDOVER_SIGN_OFF", role: "coordinator" };
+  const stamped = engine.deskCommand(engine.STATEWIDE, signOff);
+  assert.deepEqual(stamped, { ...signOff, network: true });
+  assert.equal(signOff.network, undefined, "the supplied command is not changed in place");
+  const { world: next } = engine.applyCommand(world, stamped, at);
+  assert.equal(next.state.handoverSignOffs.at(-1)?.network, true);
+  // A sign-off that names a ward stays that ward's.
+  const named = { ...signOff, unitId: wardA.id };
+  assert.deepEqual(engine.deskCommand(engine.STATEWIDE, named), named);
+  // A service coordinator is not the whole network: no mark, and one it sends is refused.
+  const service = engine.parseAccess("coordinator", { kind: "service", service: "South Metro" });
+  assert.ok(service, "a synthetic service coordinator");
+  assert.equal(engine.deskCommand(service, signOff).network, undefined);
+  assert.equal(
+    engine.commandRefusal(world, service, { ...signOff, network: true }, at),
+    "Only the statewide coordinator signs off the whole network.",
+  );
+});
+
 test("42: a service access admin gives its own service's team and officer roles; a service coordinator gives none", async () => {
   const { engine, world } = await setup();
   const south = { kind: "service", service: "South Metro" };

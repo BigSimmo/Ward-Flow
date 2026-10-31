@@ -2249,6 +2249,12 @@ export type WardFlowEvent =
        * shared server fills it from a one-ward desk). A whole-network sign-off names none.
        */
       unitId?: string;
+      /**
+       * Q67 (Josh, 31 Oct 2026): set only on a whole-network desk's sign-off that names no ward, so
+       * History reads "Whole network". The shared server sets it from the desk's membership and
+       * refuses it from any other desk. Never set together with `unitId`.
+       */
+      network?: true;
     }
   | {
       /** Record that a team was contacted: the contact itself, not a sent message. Stores team, time and role. */

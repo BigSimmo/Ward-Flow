@@ -640,6 +640,9 @@ export function commandScopeRefusal(
     typeof command.unitId !== "string"
   )
     return "A ward's handover sign-off names its ward.";
+  // Q67 (Josh, 31 Oct 2026): only a whole-network desk (returned above) signs off the whole network.
+  if (command.type === "RECORD_HANDOVER_SIGN_OFF" && command.network !== undefined)
+    return "Only the statewide coordinator signs off the whole network.";
   // Resolve the recipients from the whole workspace before projecting it for the caller. Seeing
   // one part of an alert permits a local answer, not extending or ending it for every recipient.
   if (command.type === "DISPATCH_BROADCAST_ALERT") {

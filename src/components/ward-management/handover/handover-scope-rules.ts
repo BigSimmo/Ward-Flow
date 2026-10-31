@@ -86,14 +86,18 @@ export function recordHandoverSignOff(
   now: Instant,
   role: WardFlowRole = "coordinator",
   unitId?: string,
-): { role: WardFlowRole; at: Instant; unitId?: string } | null {
+  wholeNetwork = false,
+): { role: WardFlowRole; at: Instant; unitId?: string; network?: true } | null {
   if (!canDispatch(role, "RECORD_HANDOVER_SIGN_OFF")) return null;
+  // Q67 (Josh, 31 Oct 2026): a whole-network desk's sign-off that names no ward says so, so History
+  // reads "Whole network". The caller passes `wholeNetwork` from the desk's access, never the role.
+  const place = unitId !== undefined ? { unitId } : wholeNetwork ? { network: true as const } : {};
   try {
-    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now, ...(unitId === undefined ? {} : { unitId }) });
+    dispatch({ type: "RECORD_HANDOVER_SIGN_OFF", role, now, ...place });
   } catch {
     return null;
   }
-  return { role, at: now, ...(unitId === undefined ? {} : { unitId }) };
+  return { role, at: now, ...place };
 }
 
 /** Decision 41: the ward a handover scope's sign-off names, or none for a wider sheet. */

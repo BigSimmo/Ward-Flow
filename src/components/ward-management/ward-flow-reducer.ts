@@ -453,6 +453,11 @@ export type HandoverSignOffRecord = {
    * before 31 Oct 2026; those read "Ward not recorded" and are never given a guessed ward.
    */
   unitId?: string;
+  /**
+   * Q67 (Josh, 31 Oct 2026): a whole-network desk's sign-off of the whole network, read in History
+   * as "Whole network". Absent on every older sign-off, which keeps "Ward not recorded".
+   */
+  network?: true;
 };
 
 /** Record that a team was contacted. Not a sent message. */

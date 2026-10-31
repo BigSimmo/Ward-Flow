@@ -430,12 +430,16 @@ export function reduceRecordedStayEvent(
       // shared server refuses a ward desk's sign-off that names none (`commandScopeRefusal`).
       if (event.unitId !== undefined && !findUnit(state, event.unitId))
         return reject(state, event, `no ward found for id ${event.unitId}`);
+      // Q67: a sign-off is one ward's sheet or the whole network's, never both.
+      if (event.network === true && event.unitId !== undefined)
+        return reject(state, event, "a sign-off names one ward or the whole network, not both");
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       const recorded: HandoverSignOffRecord = {
         at: event.now,
         by: event.role,
         ...(event.unitId === undefined ? {} : { unitId: event.unitId }),
+        ...(event.network === true ? { network: true } : {}),
       };
       const existing = Array.isArray(state.handoverSignOffs) ? state.handoverSignOffs : [];
       return { ...state, handoverSignOffs: [...existing, recorded] };
