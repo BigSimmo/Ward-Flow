@@ -1033,3 +1033,16 @@ is inferred.
 - **Unchanged:** the warning colours from each user's own settings stay, always with their words ("within 1h", "within 3h", "passed"), and lists still order by the typed time without moving rows (D-71 item 3). D5 and D-70 hold: nothing computes a Mental Health Act period. Bed pull limits, transport waits and decision targets are not legal times and keep their own wording.
 - **Where:** Legal forms, the Patient page, Home (queue and placement panel), Movements and the movement drawer, Waiting, the ED board, Patients search, My ward, Alerts (queue, detail and copied text), the Tasks drawer and Home's alert cards. The shared wording lives in `legal-forms/legal-time-as-typed.ts`, and `tests/ward-legal-as-typed-guard.test.ts` fails if a duration formatter is applied to a legal time again.
 - **Why:** staff read the typed time against the paper form. A running figure beside it is a second, unchecked number that can disagree with the form, which the as-typed rule exists to prevent. The mock-ups already show legal times this way (D-91 design master).
+
+## D-94. Design rulings of 31 October 2026
+
+- **Date:** 31 October 2026 (`2026-10-31`). **Decided by:** Josh, in the redesign work (the 48px exception at 10:34 UTC).
+- **Decision:**
+  1. No 48px controls. On a phone a kit button is drawn at 40px (32px small) and keeps the 48px tap area with an invisible cover. Phone tabs are 32px in a 40px track. Desktop segmented and pill tabs are 30px at 13px. Placement decisions (Accept, Pull, Decline) stay a full 48px on phones, the one exception (Josh, 10:34). The 12px text floor stays.
+  2. No coloured side edges, stripes or tone-coloured borders on rows, cards, tiles or stat boxes ("it feels tacky"). Tone goes in the StatusGlyph or a small tinted tag. This replaces the 9 October thin act-now edge.
+  3. The kit's styled "Leave this page?" confirm replaces the browser's own box.
+  4. Dates are typed in the kit's DD/MM/YYYY date box.
+  5. Fewer warnings, kept only where a rule or real risk needs them. Safeguard wording stays word for word.
+  6. The drawer is headed "Alerts". Sidebar pins last for the open tab only.
+- **Boundary:** approves no page build, merge or release.
+- **Written rules:** `design/v9/design-system-v9.md` section 14 and HOW-WE-WORK section 6.
