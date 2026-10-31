@@ -814,7 +814,8 @@ first-describe wording, is the reliable part. Back to [the code map index](READM
 ### Shell, chrome and shared UI primitives (53 files)
 
 - **`tests/ward-activity-category-filters.dom.test.tsx`** (116 lines) — Activity category filter chips
-- **`tests/ward-alerts-css-tap-and-edge-bars.test.ts`** (63 lines) — alerts.module.css — no coloured edge bars (F3.3)
+- **`tests/ward-alerts-css-tap-and-edge-bars.test.ts`** (52 lines) — alerts.module.css — no coloured edge bars (F3.3) and a 48px tap area on its buttons (F3.4)
+- **`tests/css-tap-area-helper.test.ts`** (60 lines) — proves `tests/helpers/css-tap-area.ts`: a control meets the 48px tap area by its own min-height or by a 40px (32px small) drawn size plus an `::after` cover (Josh, 31 Oct 2026: no 48px controls)
 - **`tests/ward-back-sync-and-focus-trap.dom.test.tsx`** (268 lines) — Issue 3: Movement Drawer Browser Back Sync
 - **`tests/ward-bar-fill-only-edges.test.ts`** (243 lines) — WardBar draws the split it can no longer fill
 - **`tests/ward-bar-referral-link.dom.test.tsx`** (95 lines) — links to `/referrals/new` open the referral slide-out in place; arriving there opens it over the board
