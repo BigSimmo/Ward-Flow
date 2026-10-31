@@ -41,13 +41,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the empty decision panel goes, so an empty queue takes the full width. The phone hero drops Overdue, Tier 1 and Beds ready for a ward desk, as desktop does. 'No referral or bed offer for Dabakarn.'",
     "**Review round (30 October):** the coordinator's Referrals fixes, from its own components (Fit in wards, Needs in words, ward names in History, Legal status not recorded, Since referral, one disclosure style, the median's basis); Offered to your ward rows are two lines on a phone.",
   ],
-  "as-ward-waiting": [
-    "**As the nurse in charge**, the eyebrow reads 'Waiting · coming to Dabakarn', and 'Waiting on you' becomes 'Waiting on the coordinator', because on this board 'you' meant the coordinator.",
-    "**New:** the side column opens on the first person, and a short list opens every wait band in full.",
-    "**Removed:** whose-move tiles, saved views, the graphs, the registers and Longest quiet (the coordinator's chase list); and from the person panel, other wards' eligibility (FD-23) and Escalate.",
-    "**Kept:** legal times as typed.",
-    "**Review round (30 October):** the coordinator's Waiting fixes, said for the ward: '8 to 24 hours · includes 1 in transit', 'Form due soon, as typed', '0 forms past their time' and 'No referrals awaiting your ward's decision'. Journey sits at the top of the person panel on a laptop; on a phone each row puts the ED first.",
-  ],
   "as-ward-legal-forms": [
     "**As the nurse in charge**, the title reads '2 forms on moves to Dabakarn'. Times show only as typed; 'Not legally checked' is kept word for word.",
     "**New:** an 'Admitted on a form' group carries the app's own sentence on who records the next form.",
@@ -79,12 +72,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** the Bed meeting list, 'statewide' and the median decision time; the highlight pills and runway show only while an ED review waits on this desk.",
     "**Round 2:** the card reads 'Open referrals'. Journey is a quiet link with the person's name spoken, not eight outlined buttons. The phone figure reads 'Finding a ward', as the table does.",
     "**Review round (30 October):** the coordinator's Referrals fixes, from its own components; the phone hero says Decision overdue. This desk shows no median, as before.",
-  ],
-  "as-ed-waiting": [
-    "**As the ED clinician**, 'you' in the shared wording means the coordinator, so it now says 'Coordinator' and 'Waiting on the coordinator'.",
-    "**Removed:** the ED code on every row, 'ED' in the search box, the Catchment switch and the whose-move grid: with one ED they said nothing new.",
-    "**Kept:** Escalate greyed with the app's own reason; legal times as typed.",
-    "**Review round (30 October):** the coordinator's Waiting fixes: the 8 to 24 hours band with who is in transit, 'Form due soon, as typed', nouns on the legal counts, the No update figure filters, and the blocker chips sit two by two on a phone. Escalate and Journey sit at the top of the person panel and wrap beside 'Coordinator only'.",
   ],
   "as-ed-legal-forms": [
     "**As the ED clinician**, the page already lists only Peel ED's people on forms, with times as typed and 'Not legally checked' word for word. Nothing needed changing for this role.",
@@ -587,14 +574,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 3:** the row's legal line shows the form time as typed with the not-legally-checked tag; no 'expiry in' or 'passed … ago' (a copy of the stage row).",
   ],
   waiting: [
-    "**Built from a copy of today's Waiting page** (the board and its wrapper), so filters, the person panel, escalation and the graphs work as they do now.",
-    "**New:** Longest wait grouped by wait (over 24 hours all shown, over 8 hours the first four, under 8 hours folded), rows naming the ED by its short name, the daily check as one line, and the header's figures in one row with nothing overlapping.",
-    '**Legal times as typed (D-70):** no time left is counted down. The Legal column reads "Ends 17:22 as typed" (colour from your warning settings, always with words); the person panel adds "As typed on the form" and "Not legally checked".',
-    "**Review round (30 October):** Escalate and Journey sit at the top of the person panel on a laptop, not below the candidate wards; the phone keeps them pinned at the foot. The middle band is '8 to 24 hours', and each band says who is not in an ED ('includes 4 in transit'), so it is not read against the header's Over 8h.",
-    "**Review round (30 October):** the header says '0 forms past their time' and 'Form due within 1h'; 'No update for 2h and over' now filters the list like its neighbours; the referrals line reads '7 referrals awaiting a decision, not yet on this list'. The By blocker form group reads 'Form due soon, as typed' (it holds forms due within your urgent window; passed ones are in Form overdue).",
-    "**Phone:** the four blocker chips sit two by two, the daily check is one line ('Daily check: 17 to check') whose list shows 8 then Show more, and each row puts the ED before the UMRN.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Round 3:** on a phone the owner chips read count first ('41 Waiting on you'), and rows wrap the name and place line in full.",
+    "**Built into the app (31 October):** this is the real Waiting page (round 8, approved by Josh on 31 October), with the nurse in charge's and ED clinician's views as role branches in the same screen. It stays here only as the backdrop for the Loading (Waiting) pop-up.",
   ],
   eds: [
     "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",

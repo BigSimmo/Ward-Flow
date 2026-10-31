@@ -26,8 +26,15 @@ const ReferralsRedesign = dynamic<MockupPageProps>(() =>
 const MovementsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/movements/movements-redesign").then((module) => module.MovementsRedesign),
 );
-const WaitingRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/waiting/waiting-redesign").then((module) => module.WaitingRedesign),
+// Built into the app (31 Oct 2026): Waiting draws the real screen, kept here as the backdrop for
+// the Loading (Waiting) pop-up.
+const WaitingPage = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/delays/delays-screen").then(
+    (module) =>
+      function WaitingScreen() {
+        return <module.DelaysScreen />;
+      },
+  ),
 );
 const WardRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/ward/ward-redesign").then((module) => module.WardRedesign),
@@ -139,9 +146,6 @@ const AsWardReferralsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsWardReferralsPage,
   ),
 );
-const AsWardWaitingPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-waiting/as-ward-waiting-page").then((module) => module.AsWardWaitingPage),
-);
 const AsWardLegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-legal-forms/as-ward-legal-forms-page").then(
     (module) => module.AsWardLegalFormsPage,
@@ -175,9 +179,6 @@ const AsEdHomePage = dynamic<MockupPageProps>(() =>
 );
 const AsEdReferralsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-referrals/as-ed-referrals-page").then((module) => module.AsEdReferralsPage),
-);
-const AsEdWaitingPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ed-waiting/as-ed-waiting-page").then((module) => module.AsEdWaitingPage),
 );
 const AsEdLegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ed-legal-forms/as-ed-legal-forms-page").then(
@@ -298,7 +299,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   capacity: CapacityRedesign,
   home: HomeActivityPage,
   movements: MovementsRedesign,
-  waiting: WaitingRedesign,
+  waiting: WaitingPage,
   eds: EdIndexRedesign,
   referrals: ReferralsRedesign,
   "new-referral": NewReferralRedesign,
@@ -337,7 +338,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ward-stays": AsWardStaysPage,
   "as-ward-discharges": AsWardDischargesPage,
   "as-ward-referrals": AsWardReferralsPage,
-  "as-ward-waiting": AsWardWaitingPage,
   "as-ward-legal-forms": AsWardLegalFormsPage,
   "as-ward-handover": AsWardHandoverPage,
   "as-ward-statistics": AsWardStatisticsPage,
@@ -346,7 +346,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-ward-settings": AsWardSettingsPage,
   "as-ed-home": AsEdHomePage,
   "as-ed-referrals": AsEdReferralsPage,
-  "as-ed-waiting": AsEdWaitingPage,
   "as-ed-legal-forms": AsEdLegalFormsPage,
   "as-ed-handover": AsEdHandoverPage,
   "as-ed-statistics": AsEdStatisticsPage,
