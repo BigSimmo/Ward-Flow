@@ -233,7 +233,7 @@ describe("the bar's Alerts button", () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
     expect(await screen.findByRole("dialog", { name: "Alerts" })).toBeInTheDocument();
     // The list inside is still this desk's task list (`ward-tasks-drawer.tsx`).
-    const drawer = await screen.findByRole("complementary", { name: "Tasks" });
+    const drawer = await screen.findByRole("complementary", { name: "Alerts" });
     expect(within(drawer).queryByTestId("ward-tasks-open-alerts")).toBeNull();
     expect(within(drawer).queryByTestId("ward-tasks-jump-alerts")).toBeNull();
   });

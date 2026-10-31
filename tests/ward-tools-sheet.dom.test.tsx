@@ -55,9 +55,10 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 
   it("keeps working tools only on a desktop, as change 8 mocked (D-77)", () => {
     renderSheet();
-    // Each has its own place already, and the demo controls open from the Synthetic pill.
-    expect(screen.queryByRole("region", { name: "Demo" })).toBeNull();
-    expect(screen.queryByTestId("ward-tools-toggle-demo")).toBeNull();
+    // Each has its own place already. The new frame (Josh, 31 Oct 2026) drops the header's Synthetic
+    // pill, so the Demo controls sit at the foot of Tools on a desktop too (the board clock opens them).
+    expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-demo")).toBeTruthy();
     for (const gone of [/New referral/u, /Handover sheet/u, /Bed meeting TV/u, /Out of area/u]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
       expect(screen.queryByRole("link", { name: gone })).toBeNull();

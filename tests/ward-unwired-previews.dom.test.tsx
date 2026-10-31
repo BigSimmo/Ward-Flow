@@ -101,7 +101,7 @@ describe.each(BUILDS)("a %s build", (build, shown) => {
         records={seed}
       />,
     );
-    const drawer = screen.getByRole("complementary", { name: "Tasks" });
+    const drawer = screen.getByRole("complementary", { name: "Alerts" });
     const item = items.find((entry) => entry.title === "Multiple destinations declined")!;
     const card = within(within(drawer).getByTestId(`ward-task-${item.id}`).closest("li")!);
     fireEvent.click(card.getByRole("button", { name: "Contact" }));
