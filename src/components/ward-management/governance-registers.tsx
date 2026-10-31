@@ -309,6 +309,8 @@ function GovernanceSession({
     allowed && opening && rows.some((event) => event.id === opening.id && event.generation === opening.generation)
       ? opening
       : null;
+  // Pin the event the pane opened on, so a newer event arriving cannot retarget a review in progress.
+  if (selection === undefined && opening) setSelection(opening);
   const history = selected ? historyFor(selected) : [];
   const reviewAttempt = pending
     ? [...events]
