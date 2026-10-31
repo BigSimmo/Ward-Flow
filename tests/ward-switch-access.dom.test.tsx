@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
@@ -50,6 +50,21 @@ function showWard(unitIds: string[], accessOn = true) {
   );
 }
 
+/**
+ * Redesign (31 Oct 2026): Switch ward opens a panel with this ward ticked and every other ward the
+ * desk may open as a row button; Close and Show more are the panel's only other buttons.
+ */
+function wardChoices(panel: HTMLElement): HTMLElement[] {
+  return within(panel)
+    .getAllByRole("button")
+    .filter(
+      (button) =>
+        !/^(Close Switch ward|Show (more|fewer|\d))/u.test(
+          button.getAttribute("aria-label") ?? button.textContent ?? "",
+        ),
+    );
+}
+
 describe("ward switch destinations", () => {
   it("does not offer a switch when the desk can open only its current ward", () => {
     expect(others.length).toBeGreaterThan(0);
@@ -62,13 +77,11 @@ describe("ward switch destinations", () => {
     const covered = others[0];
     showWard([current.id, covered.id]);
     await user.click(screen.getByRole("button", { name: switchName }));
-    const menu = screen.getByRole("menu");
-    expect(
-      within(menu)
-        .getAllByRole("menuitem")
-        .map((item) => item.textContent),
-    ).toEqual([expect.stringContaining(covered.name)]);
-    await user.click(within(menu).getByRole("menuitem", { name: new RegExp(covered.name) }));
+    const panel = screen.getByRole("dialog", { name: "Switch ward" });
+    expect(wardChoices(panel).map((item) => item.textContent)).toEqual([expect.stringContaining(covered.name)]);
+    // The panel's own stylesheet turns pointer events back on inside the overlay layer; jsdom loads
+    // no stylesheet, so the row is pressed directly.
+    fireEvent.click(within(panel).getByRole("button", { name: new RegExp(covered.name) }));
     expect(routing.push).toHaveBeenCalledWith(`/ward-flow/ward/${covered.id}`);
   });
 
@@ -76,6 +89,6 @@ describe("ward switch destinations", () => {
     const user = userEvent.setup();
     showWard([current.id], false);
     await user.click(screen.getByRole("button", { name: switchName }));
-    expect(within(screen.getByRole("menu")).getAllByRole("menuitem").length).toBe(others.length);
+    expect(wardChoices(screen.getByRole("dialog", { name: "Switch ward" })).length).toBe(others.length);
   });
 });

@@ -50,8 +50,9 @@ it("names identified release rows and distinguishes aggregate copying from print
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
   try {
     renderBoard();
-    expect(screen.getByRole("button", { name: /Now, bed releases/ })).toBeInTheDocument();
-    expect(screen.getByText(/Bed releases, blocked first/)).toBeInTheDocument();
+    // Discharges redesign (approved 31 Oct 2026): Now names the hero's figure, and "held up" is the word.
+    expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/ })).toBeInTheDocument();
+    expect(screen.getByText(/Bed releases, held up first/)).toBeInTheDocument();
     expect(screen.getByText(/Bed releases · Identifiers may be included/)).toBeInTheDocument();
     expect(screen.getByTestId("ward-discharge-copy")).toHaveTextContent("Copy counts");
     expect(screen.getByTestId("ward-discharge-print")).toHaveAccessibleName("Print list (may include identifiers)");
@@ -201,15 +202,35 @@ function releaseGroup(key: ReleaseGroupKey, table = releaseWorklist()): HTMLElem
   return within(table).getByTestId(`ward-discharge-group-${key}`);
 }
 
-/** Actual release rows have a ward opener; group headers and honest empty rows do not. */
-function releaseRows(key: ReleaseGroupKey, table = releaseWorklist()): HTMLElement[] {
-  return within(releaseGroup(key, table))
-    .getAllByRole("row")
-    .filter((row) => within(row).queryByRole("button") !== null);
+/**
+ * Discharges redesign (approved 31 Oct 2026): each group shows its first rows, then Show more, at
+ * every width. The suite reads whole groups, so it opens the rest first.
+ */
+function showWholeGroup(key: ReleaseGroupKey, table = releaseWorklist()): void {
+  const more = within(releaseGroup(key, table)).queryByRole("button", { name: /^Show \d+ more/ });
+  if (more) fireEvent.click(more);
 }
 
+/** Actual release rows carry their release id; group headers, Show more and honest empty rows do not. */
+function releaseRows(key: ReleaseGroupKey, table = releaseWorklist()): HTMLElement[] {
+  showWholeGroup(key, table);
+  return within(releaseGroup(key, table))
+    .getAllByRole("row")
+    .filter((row) => row.hasAttribute("data-release-id"));
+}
+
+/** The row's opener: since the redesign it names the person; the row's own action button follows it. */
+function rowOpener(row: HTMLElement): HTMLElement {
+  const opener = within(row).getAllByRole("button")[0];
+  if (!opener) throw new Error("release row has no opener");
+  return opener;
+}
+
+/** Since the redesign the row leads with the person; the ward is the line under the name. */
 function releaseRowForWard(key: ReleaseGroupKey, wardName: string): HTMLElement {
-  const row = within(releaseGroup(key)).getByRole("button", { name: wardName }).closest("tr");
+  const row = releaseRows(key).find(
+    (candidate) => within(candidate).queryByText(new RegExp(`^${escapeRegExp(wardName)} · `)) !== null,
+  );
   if (!row) throw new Error(`${wardName} has no containing release row`);
   return row;
 }
@@ -273,7 +294,7 @@ describe("DischargeBoard", () => {
     renderBoard();
 
     const groups = within(releaseWorklist())
-      .getAllByTestId(/^ward-discharge-group-/)
+      .getAllByTestId(/^ward-discharge-group-(?!toggle-)/)
       .map((group) => group.getAttribute("data-testid"));
     expect(groups).toEqual(RELEASE_GROUP_KEYS.map((key) => `ward-discharge-group-${key}`));
 
@@ -307,7 +328,7 @@ describe("DischargeBoard", () => {
 
     expect(
       within(releaseGroup("blocked")).getByRole("heading", {
-        name: new RegExp(`^Blocked\\s+${expectedGroups.blocked.length}$`, "u"),
+        name: new RegExp(`^Held up\\s+${expectedGroups.blocked.length}$`, "u"),
       }),
     ).toBeInTheDocument();
     expect(
@@ -383,9 +404,9 @@ describe("DischargeBoard", () => {
     // longer exists, so the confirmed-and-blocked release is found by its rendered Stage text
     // instead, and the ward name it belongs to is read off that same row.
     const confirmedBlockedRow = blockedRowByStage("Confirmed");
-    const wardName = within(confirmedBlockedRow).getByRole("button").textContent;
-    if (!wardName) {
-      throw new Error("the confirmed-and-blocked row's ward button has no text");
+    const personName = rowOpener(confirmedBlockedRow).textContent;
+    if (!personName) {
+      throw new Error("the confirmed-and-blocked row's opener has no text");
     }
 
     // WT-17: Blocked can now hold two rows for one ward, so the row is matched by its release.
@@ -404,7 +425,7 @@ describe("DischargeBoard", () => {
     // itself rather than pinned as a literal. The property under test — the role is shown exactly
     // once, alongside its freshness stamp — does not depend on which role string it actually is.
     const confirmedBlockedRow = blockedRowByStage("Confirmed");
-    fireEvent.click(within(confirmedBlockedRow).getByRole("button"));
+    fireEvent.click(rowOpener(confirmedBlockedRow));
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
     const stamp = within(detail).getByText(/^Confirmed \d{2}:\d{2} · .+$/);
     const role = stamp.textContent?.replace(/^Confirmed \d{2}:\d{2} · /, "") ?? "";
@@ -430,9 +451,9 @@ describe("DischargeBoard", () => {
     ).toBeGreaterThan(0);
 
     const excluded = screen.getByTestId("ward-discharge-excluded");
-    expect(within(excluded).getByText(new RegExp(`^${expectedExcluded} expected in 2\\+ days$`))).toHaveTextContent(
-      new RegExp(`^${expectedExcluded}\\b`),
-    );
+    expect(
+      within(excluded).getByText(new RegExp(`^${expectedExcluded} due in 2\\+ days, not listed$`)),
+    ).toHaveTextContent(new RegExp(`^${expectedExcluded}\\b`));
     expect(excluded.textContent?.toLowerCase()).not.toContain("none");
   });
 
@@ -447,7 +468,7 @@ describe("DischargeBoard", () => {
       const rows = releaseRows(key, table);
       expect(rows.length, `${key} has no release row, so its detail freshness was not exercised`).toBeGreaterThan(0);
       for (const row of rows) {
-        fireEvent.click(within(row).getByRole("button"));
+        fireEvent.click(rowOpener(row));
         expect(details).toBeInTheDocument();
         expect(within(details).getByText(/^Confirmed \d{2}:\d{2} ·/)).toBeInTheDocument();
         inspected += 1;
@@ -484,7 +505,7 @@ describe("DischargeBoard", () => {
     // listed — holds regardless of what the baseline number is.
     const excludedBefore = Number(
       within(screen.getByTestId("ward-discharge-excluded"))
-        .getByText(/^\d+ expected in 2\+ days$/)
+        .getByText(/^\d+ due in 2\+ days, not listed$/)
         .textContent?.match(/^(\d+)/)?.[1],
     );
     expect(Number.isFinite(excludedBefore)).toBe(true);
@@ -500,9 +521,9 @@ describe("DischargeBoard", () => {
     // EVENING_SHIFT_END_MINUTES + 100), so the excluded count must move by exactly one — the half
     // of the spec's promise the earlier excluded-count test cannot exercise on its own.
     const excluded = screen.getByTestId("ward-discharge-excluded");
-    expect(within(excluded).getByText(new RegExp(`^${excludedBefore + 1} expected in 2\\+ days$`))).toHaveTextContent(
-      new RegExp(`^${excludedBefore + 1}\\b`),
-    );
+    expect(
+      within(excluded).getByText(new RegExp(`^${excludedBefore + 1} due in 2\\+ days, not listed$`)),
+    ).toHaveTextContent(new RegExp(`^${excludedBefore + 1}\\b`));
     expect(excluded.textContent?.toLowerCase()).not.toContain("none");
 
     // Being counted and being listed are different things (D5): the new release is `expected`,
@@ -736,7 +757,7 @@ describe("DischargeBoard", () => {
     expect(completed.textContent?.toLowerCase()).toContain(`${after.completedBeforeToday} discharge`);
 
     const excludedAfter = screen.getByTestId("ward-discharge-excluded");
-    expect(excludedAfter).toHaveTextContent(`${after.excludedBeyondToday} expected in 2+ days`);
+    expect(excludedAfter).toHaveTextContent(`${after.excludedBeyondToday} due in 2+ days, not listed`);
     expect(excludedAfter.textContent?.toLowerCase()).not.toContain("none");
 
     const listedAfter = (["blocked", "confirmed", "expected"] as const)

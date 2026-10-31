@@ -34,17 +34,36 @@ function renderAtDesk(access: WardAccess) {
 }
 
 describe("handover filter offers only the desk's own places (issues #802, #815)", () => {
-  it("a ward desk is offered its own ward and no other ward", () => {
-    const select = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+  it("a ward desk is offered its own wards and no other ward", () => {
+    const select = renderAtDesk({
+      role: "ward",
+      scope: { kind: "ward", unitIds: ["brm-adult-secure", "bun-adult-open"] },
+    });
     const wards = within(select)
       .getAllByRole("group")
       .find((group) => group.getAttribute("label") === "Ward");
-    expect(wards?.querySelectorAll("option")).toHaveLength(1);
+    expect(wards?.querySelectorAll("option")).toHaveLength(2);
     expect(within(select).getByRole("option", { name: "Mabu Liyan / Broome Mental Health Unit" })).toBeInTheDocument();
+    expect(within(select).getByRole("option", { name: "Bunbury Acute Psychiatric Unit" })).toBeInTheDocument();
     const teams = within(select)
       .getAllByRole("group")
       .find((group) => group.getAttribute("label") === "Community team");
     expect(teams?.querySelectorAll("option")).toHaveLength(0);
+  });
+
+  // Approved redesign (Josh, 31 Oct 2026): a one-ward desk is the nurse in charge's own sheet, so
+  // there is nothing to filter and no picker at all.
+  it("a one-ward desk has no scope picker", () => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardAccessScope>
+          <HandoverPage />
+        </WardAccessScope>
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByRole("combobox", { name: "Filter the sheet" })).toBeNull();
   });
 
   it("a statewide coordinator keeps every ward", () => {

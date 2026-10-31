@@ -40,7 +40,7 @@ export function ReadyByRoadTime({
    * When given, each row is a link to the ward instead of a select button. The phone uses this:
    * its Overview tab hides the rail where a selected ward's details would open.
    */
-  wardHref?: (unitId: string) => string;
+  wardHref?: (unitId: string) => string | undefined;
 }) {
   const baseId = useId();
   const departments = allEmergencyDepartments();

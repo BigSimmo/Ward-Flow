@@ -58,6 +58,7 @@ import type { ExecutiveReportingFoundation } from "../src/components/ward-manage
 import { setForceDynamicLoading } from "./setup/jsdom.setup";
 import { ExecutiveStatisticsLivePreviewProvider } from "../src/components/ward-management/statistics/executive-statistics-context";
 import { WardExecutiveChromeMount } from "../src/components/ward-management/shell/ward-workspace-host";
+import { TOUR_SEEN_STORAGE_KEY } from "../src/components/ward-management/help/ward-help-store";
 let report: ExecutiveReportingFoundation;
 beforeAll(() => {
   const source = seedWardFlowState();
@@ -151,10 +152,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("the real layout's authenticated executive branch", () => {
-  it("shows unavailable while the public chrome chunk or preview projection is pending", async () => {
+  it("says the executive view is loading, not unavailable, while the public chrome chunk or preview projection is pending", async () => {
     setForceDynamicLoading(true);
     const view = await openLayout();
-    expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-loading")).toHaveTextContent("Loading the executive view…");
+    expect(screen.queryByTestId("ward-statistics-unavailable")).toBeNull();
     expect(screen.queryByTestId("public-report")).toBeNull();
     setForceDynamicLoading(false);
     await act(async () => {
@@ -173,7 +175,8 @@ describe("the real layout's authenticated executive branch", () => {
         </WardExecutiveChromeMount>
       </ExecutiveStatisticsLivePreviewProvider>,
     );
-    expect(screen.getByTestId("ward-statistics-unavailable")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-loading")).toHaveTextContent("Loading the executive view…");
+    expect(screen.queryByTestId("ward-statistics-unavailable")).toBeNull();
     expect(screen.queryByTestId("public-report")).toBeNull();
     expect(guard.raw).not.toHaveBeenCalled();
   });
@@ -246,6 +249,8 @@ describe("the real layout's authenticated executive branch", () => {
     expect(guard.seed).not.toHaveBeenCalled();
   });
   it("keeps service selection, exact bed alerts, appearance and the existing Help sheet usable", async () => {
+    // Help opens the desk's tour until it has been seen (as the shared rail's does), so mark it seen.
+    window.localStorage.setItem(TOUR_SEEN_STORAGE_KEY, "coordinator,executive");
     await openLayout();
     fireEvent.click(screen.getByTestId("ward-bar-service-trigger"));
     fireEvent.click(

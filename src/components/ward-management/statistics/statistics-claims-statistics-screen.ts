@@ -16,6 +16,7 @@ import {
   WARD_BED_AVAILABILITY,
   WARD_REFERRALS,
   STATISTICS_SCREEN,
+  STATISTICS_REFERRALS_TODAY_CARD,
   REFERRAL_ADDRESSING_BODY,
   WARD_DESTINATION_ARM,
   WARD_DESTINATION_ARM_GAINS_A_UNIT_ID,
@@ -392,7 +393,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
   // ── statistics-screen.tsx — refusals so far ───────────────────────────────────────────────────
   {
     id: "statistics-screen/refused-so-far/referred-unit-ids-holds-the-wards-still-deciding",
-    renderedIn: STATISTICS_SCREEN,
+    renderedIn: STATISTICS_REFERRALS_TODAY_CARD,
     rendered: 'data-testid="ward-statistics-refused-so-far"',
     claim: "`Movement.referredUnitIds` is the list of units currently holding a live referral, not a single id.",
     sourceFile: WARD_MODEL,
@@ -401,7 +402,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
   },
   {
     id: "statistics-screen/refused-so-far/the-condition-is-nothing-pending-and-a-refusal-on-record",
-    renderedIn: STATISTICS_SCREEN,
+    renderedIn: STATISTICS_REFERRALS_TODAY_CARD,
     rendered: 'data-testid="ward-statistics-refused-so-far-count"',
     claim:
       "The counted condition is exactly `referredUnitIds` empty, `declines` non-empty and no accepting unit " +
@@ -478,7 +479,7 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
   },
   {
     id: "statistics-screen/refused-so-far/the-cap-on-parallel-referrals-exists",
-    renderedIn: STATISTICS_SCREEN,
+    renderedIn: STATISTICS_REFERRALS_TODAY_CARD,
     /* The page RENDERS the cap's value rather than typing it, so the numeral cannot go stale; what
        this pins is that the constant the page reads is still the cap it says it is. */
     rendered: 'data-testid="ward-statistics-refused-so-far-cap"',

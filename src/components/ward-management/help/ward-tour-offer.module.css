@@ -15,7 +15,8 @@
 }
 
 /* Above the phone's bottom tab bar, as the what's new note does. */
-@media (width <= 640px) {
+/* Lifted over the phone dock wherever the dock shows (up to 48rem, the app's phone width). */
+@media (max-width: 48rem) {
   .offer {
     bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }

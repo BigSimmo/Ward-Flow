@@ -24,13 +24,14 @@ import {
   SrOnly,
   StatusGlyph,
   cx,
+  phoneRows,
   tableClasses,
   type StackSegment,
   type WfFill,
   useIsPhone,
 } from "@/components/wf";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -63,12 +64,13 @@ import {
   legalExpiryReminderSummary,
   legalFormBreakdown,
   legalFormGroupRows,
-  legalFormRowClassification,
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
-import { formProgression } from "./legal-form-progression";
 import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
 import { FocusPanel, type FocusTab } from "./legal-forms-panel";
+import { AddTimeDialog } from "./legal-forms-add-time";
+import { ChecklistView, FormRow, GAP_LABEL, PhoneFormRow, ROW_COLUMNS } from "./legal-form-rows";
+import type { WrittenSave } from "./legal-forms-written-time";
 import {
   ExtendSheet,
   RecordFormSheet,
@@ -81,7 +83,6 @@ import {
   CATALOGUE,
   STANDING_TONE,
   clockStanding,
-  durText,
   formTitle,
   handoverLines,
   hasGap,
@@ -89,12 +90,12 @@ import {
   isOwnedLegalFormCode,
   receiptEventAccepts,
   recentTellSubjects,
-  recordedFacts,
-  standingWord,
+  standingSuffix,
+  typedTimeStanding,
   typedTimeText,
   type RecordGap,
 } from "./legal-forms-view";
-import { typedClock } from "./legal-time-as-typed";
+import { TYPED_TIME_KEY } from "./legal-time-as-typed";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
 import styles from "./legal-forms.module.css";
@@ -124,11 +125,6 @@ type Highlight =
   | null;
 
 const CODE_FILLS: WfFill[] = ["data-1", "data-2", "data-3", "neutral", "closed"];
-const GAP_LABEL: Record<RecordGap, string> = {
-  written: "Time written",
-  received: "Form received",
-  examination: "Examination",
-};
 /** Form type chips shown before "+N" in Forms in force, so the chips stay on one line. */
 const CODE_CHIPS_SHOWN = 3;
 
@@ -211,6 +207,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     movement: recordOnOpen ? (initialMovementId ?? "") : "",
   });
   const [extendId, setExtendId] = useState<string | null>(null);
+  // Add the time (redesign): the row's link opens the written-time form as its own pop-up.
+  const [addTimeId, setAddTimeId] = useState<string | null>(null);
+  const [addTimeRefusalsAtOpen, setAddTimeRefusalsAtOpen] = useState(0);
   const [tell, setTell] = useState<{ party: SupportNotificationParty | null; key: string | null } | null>(null);
   const { copied, copyNotice, copyText } = useLegalFormsCopy();
   const [tasksOpen, setTasksOpen] = useState(false);
@@ -354,8 +353,22 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     fill: entry.fill,
     label: `Form ${entry.code}`,
   }));
-  const next = withDeadline[0];
+  // Ward role (nurse in charge): a ward's few rows already lead with the next to end, so no hero card.
+  const next = routeRole === "ward" ? undefined : withDeadline[0];
   const nextStanding = next ? clockStanding(next, now, thresholds) : "none";
+  const nextTyped = next ? typedTimeStanding(next, now, thresholds) : undefined;
+  // Ward role: with nobody admitted on a form the ward cannot record here. The Admitted on a form
+  // group says so, so the greyed Record a form is left out rather than repeated.
+  const recordOffered = !(routeRole === "ward" && admitted.length === 0);
+  // Ward role: the ward's own place, named in the title.
+  const ownUnitIds = access.scope.kind === "ward" ? access.scope.unitIds : [];
+  const ownWardName = units.find((unit) => ownUnitIds.includes(unit.id))?.name;
+  const movesTitle =
+    routeRole === "ward" && ownWardName
+      ? `${rows.length} ${rows.length === 1 ? "form" : "forms"} on moves to ${ownWardName}`
+      : `${rows.length} forms on open moves`;
+  // Every count names its noun ("1 form to act on", not "1 Act now"; Josh, 30 Oct 2026).
+  const forms = (count: number) => (count === 1 ? "form" : "forms");
   const closedWithForms = movements
     .filter((movement) => !isOpen(movement) && movement.legalForm !== undefined)
     .sort((a, b) => (b.closure?.at ?? b.openedAt) - (a.closure?.at ?? a.openedAt));
@@ -373,20 +386,29 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     dimmed: highlight !== null && !matches(movement),
     onSelect: select,
     onAddTime: (target: Movement) => {
-      select(target);
-      setTab("now");
-      setFocusGap((previous) => ({ gap: "written", nonce: (previous?.nonce ?? 0) + 1 }));
+      setAddTimeRefusalsAtOpen(rejections.length);
+      setAddTimeId(target.id);
     },
   });
 
-  const admittedList = (
-    <LegalFormsAdmitted
-      {...{ rows: admitted, now, nameOf, umrnOf, wardNameOf, onRecord: openRecord }}
-      recordUnavailable={
-        writtenGate.reason ?? (routeRole === "ed" ? "The admitting ward records the next form." : undefined)
-      }
-    />
-  );
+  // Ward role: with nobody admitted on a form the group still shows, saying where the ward records one.
+  const admittedList =
+    routeRole === "ward" && admitted.length === 0 ? (
+      <section aria-label="Admitted on a form" data-testid="ward-legal-forms-admitted">
+        <div className={styles.groupHead}>
+          <span>Admitted on a form</span>
+          <span className={styles.groupCount}>0</span>
+        </div>
+        <p className={styles.absent}>{WARD_RECORDS_ADMITTED}</p>
+      </section>
+    ) : (
+      <LegalFormsAdmitted
+        {...{ rows: admitted, now, nameOf, umrnOf, wardNameOf, onRecord: openRecord }}
+        recordUnavailable={
+          writtenGate.reason ?? (routeRole === "ed" ? "The admitting ward records the next form." : undefined)
+        }
+      />
+    );
   const historyList =
     isPhone && closedWithForms.length > 0 ? (
       // v10 phone: one row per closed move, the code chip first and the closing time at the end.
@@ -468,6 +490,37 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     );
   };
 
+  // The panel's form and the Add the time pop-up record the written time the same way.
+  const saveWritten = (target: Movement, { writtenAt, region, ageBand }: WrittenSave, onAccepted: () => void) => {
+    if (!recordGate.allowed) return;
+    const formCode = target.legalForm?.code;
+    if (!isOwnedLegalFormCode(formCode)) return;
+    const movementId = target.id;
+    runRecorded(
+      () => {
+        const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
+        const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
+        // The form closes only once the engine has accepted the time.
+        const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
+          outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
+        if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
+        else closeIfAccepted(completion);
+        return completion;
+      },
+      {
+        success: "Form time recorded",
+        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+        undone: "Form time undone.",
+      },
+    );
+  };
+  const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
+  const addTimeRefusal = addTimeTarget
+    ? rejections
+        .slice(addTimeRefusalsAtOpen)
+        .findLast((entry) => entry.movementId === addTimeTarget.id && entry.attempted === "RECORD_LEGAL_FORM_WRITTEN")
+    : undefined;
+
   const focusPanel = selected ? (
     <FocusPanel
       key={selected.id}
@@ -483,29 +536,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       onClose={() => setSelectedId(null)}
       focusGap={focusGap}
       refusal={lastWrittenRefusal?.reason}
-      onSaveWritten={({ writtenAt, region, ageBand }, onAccepted) => {
-        if (!recordGate.allowed) return;
-        const formCode = selected.legalForm?.code;
-        if (!isOwnedLegalFormCode(formCode)) return;
-        const movementId = selected.id;
-        runRecorded(
-          () => {
-            const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
-            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
-            // The panel's Change form closes only once the engine has accepted the time.
-            const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
-              outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
-            if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
-            else closeIfAccepted(completion);
-            return completion;
-          },
-          {
-            success: "Form time recorded",
-            undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
-            undone: "Form time undone.",
-          },
-        );
-      }}
+      onSaveWritten={(written, onAccepted) => saveWritten(selected, written, onAccepted)}
       recordUnavailable={recordGate.reason}
       onMarkReceived={() => markReceived(selected)}
       markReceivedUnavailable={receivedUnavailable(selected)}
@@ -746,34 +777,41 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               className={styles.phoneHero}
               eyebrow="Mental Health Act forms"
               chip={<LiveChip state="live" onHero age={formatInstant(now)} />}
-              title={`${rows.length} forms on open moves`}
+              title={movesTitle}
               sub={`${voluntary} voluntary, no form · warnings at ${formatReminderHours(reminders.soonHours)} and ${formatReminderHours(reminders.urgentHours)}`}
               figures={[
-                { id: "act", value: actNow, label: "Act now", tone: "danger" },
+                { id: "act", value: actNow, label: `${forms(actNow)} to act on`, tone: "danger" },
                 {
                   id: "soon",
                   value: reminders.withinSoon,
-                  label: `Within ${formatReminderHours(reminders.soonHours)}`,
+                  label: `${forms(reminders.withinSoon)} within ${formatReminderHours(reminders.soonHours)}`,
                   tone: "warning",
                 },
-                { id: "none", value: noDeadline.length, label: "Time not written", tone: "closed" },
+                {
+                  id: "none",
+                  value: noDeadline.length,
+                  label: `${forms(noDeadline.length)}, time not written`,
+                  tone: "closed",
+                },
               ]}
               actions={
                 <>
-                  <Button
-                    variant="onHero"
-                    icon={Plus}
-                    className={styles.phoneHeroAction}
-                    disabledReason={sheetReason}
-                    reasonDisplay="tooltip"
-                    onClick={() => openRecord()}
-                  >
-                    Record a form
-                  </Button>
+                  {recordOffered ? (
+                    <Button
+                      variant="onHero"
+                      icon={Plus}
+                      className={phoneRows.heroPill}
+                      disabledReason={sheetReason}
+                      reasonDisplay="tooltip"
+                      onClick={() => openRecord()}
+                    >
+                      Record a form
+                    </Button>
+                  ) : null}
                   <Button
                     variant="onHero"
                     icon={ClipboardCopy}
-                    className={styles.phoneHeroAction}
+                    className={phoneRows.heroPill}
                     disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
                     reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}
@@ -784,17 +822,20 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               }
             />
             <LegalLimitsNotChecked />
-            <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
-              <ClipboardList size={16} aria-hidden="true" />
-              <span className={styles.cellStack}>
-                <span className={styles.name}>Record and tell</span>
-                <span className={styles.sub}>
-                  <strong className={styles.mono}>{phoneTaskCount}</strong> items to record across {phoneTaskForms}{" "}
-                  forms
+            {/* Ward role: with nothing to record or tell, the ward's phone skips the card. */}
+            {routeRole === "ward" && phoneTaskCount === 0 ? null : (
+              <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
+                <ClipboardList size={16} aria-hidden="true" />
+                <span className={styles.cellStack}>
+                  <span className={styles.name}>Record and tell</span>
+                  <span className={styles.sub}>
+                    <strong className={styles.mono}>{phoneTaskCount}</strong> items to record across {phoneTaskForms}{" "}
+                    forms
+                  </span>
                 </span>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
+                <ChevronRight size={16} aria-hidden="true" />
+              </button>
+            )}
             <Segmented<View>
               className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
               label="View"
@@ -812,6 +853,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   {highlightCount} of {rows.length} highlighted, all rows stay
                 </p>
               ) : null}
+              {/* The one colour key, near the list (Josh, 30 Oct 2026). */}
+              {view === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
               {view === "clocks" ? (
                 <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
                   {rows.length === 0 ? (
@@ -831,7 +874,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <div className={styles.groupHead}>
                         <span>Time not written</span>
                         <span className={styles.groupCount}>{noDeadline.length}</span>
-                        <span className={styles.groupOrder}>most period used</span>
+                        <span className={styles.groupOrder}>longest open first</span>
                       </div>
                       <ul className={styles.phoneList}>
                         {noDeadline.map((movement) => (
@@ -886,7 +929,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 title={
                   <>
                     <SrOnly>Legal forms, </SrOnly>
-                    {`${rows.length} forms on open moves`}
+                    {movesTitle}
                   </>
                 }
                 titleMeta={
@@ -898,7 +941,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <button type="button" className={styles.nextCard} onClick={() => select(next)}>
                         <span className={styles.nextEyebrow}>
                           <StatusGlyph tone={STANDING_TONE[nextStanding]} size={9} />
-                          {nextStanding === "passed" ? "Passed" : "Next to end"}
+                          {/* The colour's words beside its glyph ("Next to end · within 1h"). */}
+                          {nextStanding === "passed"
+                            ? "Passed"
+                            : `Next to end${nextTyped ? standingSuffix(nextTyped) : ""}`}
                         </span>
                         <span className={styles.nextName}>
                           {nameOf(next)} <span className={styles.heroCode}>{next.legalForm?.code}</span>
@@ -906,15 +952,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                         <span className={styles.nextTime}>{typedTimeText(next, now)}</span>
                       </button>
                     ) : null}
-                    <Button
-                      variant="light"
-                      icon={Plus}
-                      disabledReason={sheetReason}
-                      reasonDisplay="tooltip"
-                      onClick={() => openRecord()}
-                    >
-                      Record a form
-                    </Button>
+                    {recordOffered ? (
+                      <Button
+                        variant="light"
+                        icon={Plus}
+                        disabledReason={sheetReason}
+                        reasonDisplay="tooltip"
+                        onClick={() => openRecord()}
+                      >
+                        Record a form
+                      </Button>
+                    ) : null}
                   </div>
                 }
                 bar={
@@ -922,7 +970,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <HeroStat
                       inline
                       value={actNow}
-                      label="Act now"
+                      label={`${forms(actNow)} to act on`}
                       tone="danger"
                       pressed={highlight?.kind === "act"}
                       onToggle={() => toggleHighlight({ kind: "act" })}
@@ -930,7 +978,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <HeroStat
                       inline
                       value={reminders.withinSoon}
-                      label={`Within ${formatReminderHours(reminders.soonHours)}`}
+                      label={`${forms(reminders.withinSoon)} within ${formatReminderHours(reminders.soonHours)}`}
                       tone="warning"
                       pressed={highlight?.kind === "soon"}
                       onToggle={() => toggleHighlight({ kind: "soon" })}
@@ -938,14 +986,14 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                     <HeroStat
                       inline
                       value={noDeadline.length}
-                      label="Time not written"
+                      label={`${forms(noDeadline.length)}, time not written`}
                       tone="neutral"
                       pressed={highlight?.kind === "none"}
                       onToggle={() => toggleHighlight({ kind: "none" })}
                     />
                     <button
                       type="button"
-                      className={styles.heroCopy}
+                      className={cx(styles.heroCopy, styles.heroAction, styles.firstHeroAction)}
                       aria-disabled={handover.length === 0 ? "true" : undefined}
                       title={
                         handover.length === 0 ? "No typed expiry is coming up" : "Copy upcoming expiries for handover"
@@ -958,7 +1006,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       <span>{copied === "handover" ? "Copied" : "Copy for handover"}</span>
                       <span className={styles.heroCopyCount}>{handover.length}</span>
                     </button>
-                    <button type="button" className={styles.heroCopy} onClick={() => setTasksOpen(true)}>
+                    <button
+                      type="button"
+                      className={cx(styles.heroCopy, styles.heroAction)}
+                      onClick={() => setTasksOpen(true)}
+                    >
                       <ClipboardList size={14} aria-hidden="true" />
                       <span>Record and tell</span>
                       <span className={styles.heroCopyCount}>{phoneTaskCount}</span>
@@ -993,7 +1045,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       {highlight
                         ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
                         : view === "clocks"
-                          ? "Act now first, then earliest typed time"
+                          ? // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
+                            TYPED_TIME_KEY
                           : null}
                     </span>
                   }
@@ -1153,6 +1206,20 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             return completion && "then" in completion ? completion.then(accepted, unconfirmed) : accepted(completion);
           }}
         />
+        {addTimeTarget ? (
+          <AddTimeDialog
+            key={addTimeTarget.id}
+            movement={addTimeTarget}
+            name={nameOf(addTimeTarget)}
+            umrn={umrnOf(addTimeTarget)}
+            now={now}
+            dayZero={dayZero}
+            recordUnavailable={recordGate.reason}
+            refusal={addTimeRefusal?.reason}
+            onClose={() => setAddTimeId(null)}
+            onSave={(written, onAccepted) => saveWritten(addTimeTarget, written, onAccepted)}
+          />
+        ) : null}
         <ExtendSheet
           target={movements.find((movement) => movement.id === extendId) ?? null}
           label={(() => {
@@ -1193,308 +1260,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
         />
       </main>
       <WardPrototypeFooter testId="ward-legal-forms-governance" />
-    </div>
-  );
-}
-
-const ROW_COLUMNS = "minmax(0,1.25fr) minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,0.95fr)";
-/** The short word for a fact still to record, as the To record column names it. */
-const TO_RECORD_WORD: Record<RecordGap, string> = {
-  written: "Time written",
-  received: "Received",
-  examination: "Examined",
-};
-const CHECK_COLUMNS = "minmax(0,1.4fr) 56px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)";
-
-type FormRowProps = {
-  movement: Movement;
-  now: Instant;
-  name: string;
-  umrn: string;
-  edName: string;
-  wardName: string | null;
-  selected: boolean;
-  highlighted: boolean;
-  dimmed: boolean;
-  onSelect: (movement: Movement) => void;
-  onAddTime: (movement: Movement) => void;
-};
-
-/**
- * One row. `legalFormRowClassification` decides the tone; the row keeps the record-row hooks
- * (`data-record-key` for the movement id, `record-id` for the patient's formal name) that the
- * population tests read. A highlight marks the row and never hides it.
- */
-function FormRow({
-  movement,
-  now,
-  name,
-  umrn,
-  edName,
-  wardName,
-  selected,
-  highlighted,
-  dimmed,
-  onSelect,
-  onAddTime,
-}: FormRowProps) {
-  const thresholds = useDueSoonThresholds();
-  const legalForm = movement.legalForm;
-  if (!legalForm) {
-    throw new Error(`FormRow rendered for movement ${movement.id}, which carries no legal form`);
-  }
-  const classification = legalFormRowClassification(movement, now, thresholds);
-  const standing = clockStanding(movement, now, thresholds);
-  const reason = legalDeadlineText(movement, now);
-  const facts = recordedFacts(movement);
-  const done = facts.filter((fact) => fact.at !== undefined).length;
-  const missing = facts.filter((fact) => fact.at === undefined).map((fact) => TO_RECORD_WORD[fact.gap]);
-  const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
-  // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
-  const progression = formProgression(movement);
-  const dueAt = currentLegalDueAt(movement);
-  const hasDue = dueAt !== undefined;
-
-  return (
-    <DataRow
-      as="li"
-      columns={ROW_COLUMNS}
-      selected={selected}
-      actNow={isActNow(standing)}
-      dim={dimmed}
-      interactive
-      className={styles.row}
-      data-highlighted={highlighted ? "true" : undefined}
-      data-ward-primitive="record-row"
-      data-record-key={movement.id}
-      data-tone={classification.tone}
-    >
-      <button
-        type="button"
-        className={styles.rowButton}
-        aria-pressed={selected}
-        aria-label={`${name}, ${legalFormName(legalForm)}, ${reason}`}
-        onClick={() => onSelect(movement)}
-      />
-      <span className={styles.cellStack}>
-        <span className={styles.name} data-ward-primitive="record-id">
-          {name}
-        </span>
-        <span className={cx(styles.sub, styles.mono)}>{umrn}</span>
-      </span>
-      <span className={styles.formCell}>
-        <span className={styles.code}>{legalForm.code}</span>
-        <span className={styles.formTitle} title={formTitle(legalForm.code)}>
-          {formTitle(legalForm.code)}
-        </span>
-      </span>
-      <span className={styles.cellStack}>
-        <span className={styles.truncate}>{edName}</span>
-        <span className={cx(styles.sub, styles.truncate)}>{wardName ? `to ${wardName}` : "No receiving ward"}</span>
-      </span>
-      <span className={styles.cellStack}>
-        {progression ? (
-          <>
-            <span className={styles.leftLine}>
-              <StatusGlyph tone="closed" size={9} />
-              <span className={styles.sub}>Ended {progression.endedWhen}</span>
-            </span>
-            <span className={styles.sub}>Form {progression.nextCode} to record</span>
-          </>
-        ) : hasDue ? (
-          <>
-            <span className={styles.leftLine}>
-              <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-              <strong className={styles.leftValue}>{typedClock(dueAt!, now)}</strong>
-              <span className={styles.sub}>{standingWord(standing, thresholds)}</span>
-            </span>
-            <span className={styles.sub}>{standing === "passed" ? "Ended" : "Ends"}, as typed</span>
-          </>
-        ) : (
-          <>
-            <span className={styles.leftLine}>
-              <StatusGlyph tone="closed" size={9} />
-              <span className={styles.sub}>
-                {movement.formedAt === undefined ? "No time written" : "No expiry typed"}
-              </span>
-            </span>
-            {canAddTime ? (
-              <button
-                type="button"
-                className={styles.rowLink}
-                aria-label={`Add the time for ${name}`}
-                onClick={() => onAddTime(movement)}
-              >
-                Add the time
-              </button>
-            ) : (
-              <span className={cx(styles.sub, styles.mono)}>In ED {durText(now - movement.openedAt)}</span>
-            )}
-          </>
-        )}
-        <span className={styles.srOnly}>{reason}</span>
-      </span>
-      <span className={styles.recorded}>
-        {facts.length === 0 ? (
-          <span className={styles.sub} aria-hidden="true">
-            –
-          </span>
-        ) : missing.length === 0 ? (
-          <>
-            <StatusGlyph tone="success" size={9} />
-            <span className={styles.recordedText}>All recorded</span>
-          </>
-        ) : (
-          <>
-            <StatusGlyph tone="neutral" size={9} />
-            {/* One fact names itself; more show as a count so the cell never cuts a word. */}
-            <span className={styles.recordedText} title={missing.join(", ")}>
-              {missing.length === 1 ? missing[0] : `${missing.length} to record`}
-            </span>
-          </>
-        )}
-        <span className={styles.srOnly}>
-          {facts.length === 0 ? "Nothing to record for this form" : `${done} of ${facts.length} recorded`}
-        </span>
-      </span>
-    </DataRow>
-  );
-}
-
-/**
- * Phone row (v10): the code chip, the name, the form and where, with the typed time at the end.
- * The whole row opens the form sheet; an act now row takes the thin red edge, a dimmed row recedes
- * by colour only.
- */
-function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimmed, onSelect }: FormRowProps) {
-  const thresholds = useDueSoonThresholds();
-  const legalForm = movement.legalForm!;
-  const standing = clockStanding(movement, now, thresholds);
-  const facts = recordedFacts(movement);
-  const missing = facts.filter((fact) => fact.at === undefined).length;
-  const where = wardName ? `${edName} to ${wardName}` : edName;
-  const dueAt = currentLegalDueAt(movement);
-  const hasDue = dueAt !== undefined;
-  return (
-    <PhoneListRow
-      as="li"
-      className={styles.phoneRow}
-      data-testid={`ward-legal-phone-row-${movement.id}`}
-      {...(dimmed ? { "data-dim": "true" } : {})}
-      actNow={isActNow(standing)}
-      leading={<span className={styles.code}>{legalForm.code}</span>}
-      name={name}
-      meta={
-        <>
-          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>
-          <span className={styles.phoneMetaLine}>
-            {where}
-            {missing > 0 ? ` · ${missing} to record` : ""}
-          </span>
-        </>
-      }
-      // Josh's no-wrap rule: the typed time and its word on one line ("15:42 as typed"), never a count.
-      value={
-        hasDue ? (
-          <span className={styles.leftLine}>
-            <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-            {typedClock(dueAt!, now)}
-            <span className={styles.phoneTimeWord}>{standing === "passed" ? "ended, as typed" : "as typed"}</span>
-          </span>
-        ) : (
-          <span className={styles.leftLine}>
-            {durText(now - movement.openedAt)}
-            <span className={styles.phoneTimeWord}>in ED</span>
-          </span>
-        )
-      }
-      aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}`}
-      onSelect={() => onSelect(movement)}
-    />
-  );
-}
-
-/** Checklist view: who still needs what recorded, one column per fact. */
-function ChecklistView({
-  rows,
-  now,
-  nameOf,
-  umrnOf,
-  selectedId,
-  isHighlighted,
-  highlightOn,
-  onSelect,
-}: {
-  rows: Movement[];
-  now: Instant;
-  nameOf: (movement: Movement) => string;
-  umrnOf: (movement: Movement) => string;
-  selectedId: string | null;
-  isHighlighted: (movement: Movement) => boolean;
-  highlightOn: boolean;
-  onSelect: (movement: Movement) => void;
-}) {
-  const gaps: RecordGap[] = ["written", "received", "examination"];
-  return (
-    <div className={styles.table} role="region" aria-label="Checklist">
-      <DataRow head columns={CHECK_COLUMNS} aria-hidden="true" className={styles.headRow}>
-        <span className={tableClasses.th}>Patient</span>
-        <span className={tableClasses.th}>Form</span>
-        {gaps.map((gap) => (
-          <span key={gap} className={tableClasses.th}>
-            {GAP_LABEL[gap]}
-          </span>
-        ))}
-      </DataRow>
-      <ul className={styles.rowList}>
-        {rows.map((movement) => {
-          const facts = recordedFacts(movement);
-          const on = isHighlighted(movement);
-          return (
-            <DataRow
-              key={movement.id}
-              as="li"
-              columns={CHECK_COLUMNS}
-              selected={movement.id === selectedId}
-              interactive
-              dim={highlightOn && !on}
-              className={cx(styles.row, styles.checkRow)}
-              data-highlighted={on ? "true" : undefined}
-            >
-              <button
-                type="button"
-                className={styles.rowButton}
-                aria-pressed={movement.id === selectedId}
-                aria-label={`${nameOf(movement)}, ${legalFormName(movement.legalForm!)}`}
-                onClick={() => onSelect(movement)}
-              />
-              <span className={styles.cellStack}>
-                <span className={styles.name}>{nameOf(movement)}</span>
-                <span className={cx(styles.sub, styles.mono)}>{umrnOf(movement)}</span>
-              </span>
-              <span className={styles.code}>{movement.legalForm?.code}</span>
-              {gaps.map((gap) => {
-                const fact = facts.find((entry) => entry.gap === gap);
-                if (!fact) {
-                  return (
-                    <span key={gap} className={styles.sub} data-label={GAP_LABEL[gap]}>
-                      {gap === "written" ? "Not recorded here" : "Not needed"}
-                    </span>
-                  );
-                }
-                return (
-                  <span key={gap} className={styles.leftLine} data-label={GAP_LABEL[gap]}>
-                    <StatusGlyph tone={fact.at !== undefined ? "success" : "neutral"} size={9} />
-                    <span className={cx(styles.sub, fact.at !== undefined && styles.mono)}>
-                      {fact.at !== undefined ? formatInstantWithDay(fact.at, now) : "To record"}
-                    </span>
-                  </span>
-                );
-              })}
-            </DataRow>
-          );
-        })}
-      </ul>
     </div>
   );
 }

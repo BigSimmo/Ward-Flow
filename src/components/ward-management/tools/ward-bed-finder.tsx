@@ -15,6 +15,7 @@ import { unitHealthService } from "../ward-service-scope";
 import { siteByCode } from "../ward-sites";
 import { COHORTS, HEALTH_SERVICES, type BedRelease, type Cohort, type HealthService, type Unit } from "../ward-model";
 import { unitHref } from "../shell/ward-facade";
+import { useCanOpenHref } from "../shell/ward-access";
 import styles from "./ward-tools-sheet.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 
@@ -253,8 +254,31 @@ function ExecutiveBedFinder({ onNavigate }: { onNavigate: () => void }) {
     </div>
   );
 }
+/** One ward's line in the operational list: its name, place, designation and Ready count. */
+function BedFinderRowText({ row, now }: { row: BedFinderRow; now: Instant }) {
+  return (
+    <>
+      <span>
+        <strong>{row.unit.name}</strong>
+        <small>
+          {siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode} · {row.service ?? "Service not recorded"}
+          {row.home ? " · Home service" : ""}
+        </small>
+        <small>{designationSummary(row.unit)}</small>
+      </span>
+      <span className={styles.matchCount}>
+        <b>{row.free}</b> Ready
+        <small>Recorded {formatInstantWithDay(row.recordedAt, now)}</small>
+        {row.pending > 0 ? <small>{row.pending} pending</small> : null}
+      </span>
+    </>
+  );
+}
 function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
   const { units, admissions, bedReleases, now } = useWardFlowSelect("units", "admissions", "bedReleases", "now");
+  // Access audit (31 Oct 2026): a ward links to its page only for a desk that may open that page,
+  // by the same role table the menu reads. Another desk still reads the row, as plain text.
+  const canOpen = useCanOpenHref();
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
   const rows = findBeds(units, admissions, bedReleases, filters);
   const set =
@@ -320,23 +344,16 @@ function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
             <ul className={styles.matchList} aria-label="Ready beds by ward">
               {rows.map((row) => (
                 <li key={row.unit.id}>
-                  <Link className={styles.matchRow} href={unitHref(row.unit.id)} onClick={onNavigate}>
-                    <span>
-                      <strong>{row.unit.name}</strong>
-                      <small>
-                        {siteByCode(row.unit.siteCode)?.name ?? row.unit.siteCode} ·{" "}
-                        {row.service ?? "Service not recorded"}
-                        {row.home ? " · Home service" : ""}
-                      </small>
-                      <small>{designationSummary(row.unit)}</small>
-                    </span>
-                    <span className={styles.matchCount}>
-                      <b>{row.free}</b> Ready
-                      <small>Recorded {formatInstantWithDay(row.recordedAt, now)}</small>
-                      {row.pending > 0 ? <small>{row.pending} pending</small> : null}
-                    </span>
-                    <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
-                  </Link>
+                  {canOpen(unitHref(row.unit.id)) ? (
+                    <Link className={styles.matchRow} href={unitHref(row.unit.id)} onClick={onNavigate}>
+                      <BedFinderRowText row={row} now={now} />
+                      <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
+                    </Link>
+                  ) : (
+                    <div className={styles.matchRow} data-testid="ward-bed-finder-row-plain">
+                      <BedFinderRowText row={row} now={now} />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>

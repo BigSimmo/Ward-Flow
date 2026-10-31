@@ -16,6 +16,7 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 /** Stream A, 9 Oct 2026: ownership and snooze on the Alerts screen, as the reducer records them. */
 const NOW = NOW_ANCHOR;
@@ -55,6 +56,7 @@ function renderScreen() {
 describe("alerts: ownership and snooze", () => {
   it("stops offering Take once the coordinator owns the row", () => {
     const { container } = renderScreen();
+    openAlertKindGroups(container);
     // A row the engine addressed to someone else, so taking it changes who holds it.
     const row = [...container.querySelectorAll<HTMLElement>("li[data-alert-id]")].find((li) =>
       li.textContent?.includes("ED mental health team"),
@@ -67,8 +69,8 @@ describe("alerts: ownership and snooze", () => {
     expect(screen.getByText(/^You own "/)).toBeInTheDocument();
 
     expect(within(panel).queryByRole("button", { name: /^Take / })).toBeNull();
-    // P019: the owner is offered Release in place of the greyed "Yours".
-    expect(within(panel).getByRole("button", { name: /^Release (?!pulled bed)/ })).toHaveTextContent("Release");
+    // P019: the owner is offered Hand back (the Alerts redesign's name for Release) in place of the greyed "Yours".
+    expect(within(panel).getByRole("button", { name: /^Hand back / })).toHaveTextContent("Hand back");
     expect(within(panel).getByText(/Owned by Bed coordinator since/)).toBeInTheDocument();
   });
 

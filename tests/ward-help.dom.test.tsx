@@ -126,11 +126,18 @@ describe("help sheet", () => {
     expect(screen.getByTestId("ward-help-screen").textContent).toContain(SCREEN_HELP.movements.purpose);
   });
 
-  it("answers the screen's own questions and lists the keyboard shortcuts", () => {
+  it("answers the screen's own questions one at a time and offers the keyboard shortcuts at the foot", () => {
     route.pathname = "/ward-flow/handover";
-    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} />);
-    expect(screen.getByTestId("ward-help-questions").textContent).toContain("How do I hand over to the next shift?");
-    expect(screen.getByTestId("ward-help-shortcuts").textContent).toContain("Shift+R");
+    const onShortcuts = vi.fn();
+    render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={vi.fn()} onShortcuts={onShortcuts} />);
+    const questions = screen.getByTestId("ward-help-questions");
+    const question = within(questions).getByRole("button", { name: "How do I hand over to the next shift?" });
+    // Redesign (#1118): each answer is folded until asked for.
+    expect(question.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(question);
+    expect(question.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(screen.getByTestId("ward-help-shortcuts"));
+    expect(onShortcuts).toHaveBeenCalledTimes(1);
   });
 
   it("offers the desk guide on a screen with no help page, instead of Home's help", () => {
@@ -230,7 +237,7 @@ describe("help sheet", () => {
 });
 
 describe("rail Help row", () => {
-  it("says New and opens the tour until the tour is seen, then opens screen help", async () => {
+  it("says New and opens the tour until the tour is seen, then opens How do I… (D-90)", async () => {
     const opened: string[] = [];
     const listener = (event: Event) => opened.push((event as CustomEvent<{ view: string }>).detail.view);
     window.addEventListener("ward-flow-open-help", listener);
@@ -239,7 +246,7 @@ describe("rail Help row", () => {
     fireEvent.click(screen.getByTestId("ward-rail-help"));
     act(() => markTourSeen("coordinator"));
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
-    expect(opened).toEqual(["tour", "screen"]);
+    expect(opened).toEqual(["tour", "tasks"]);
     window.removeEventListener("ward-flow-open-help", listener);
   });
 });

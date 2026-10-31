@@ -664,7 +664,7 @@
   color: inherit;
   width: 100%;
   box-sizing: border-box;
-  min-height: 48px;
+  min-height: 2.5rem;
   align-content: center;
   justify-content: center;
 }
@@ -1105,18 +1105,23 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): drawn 40px, with an invisible cover
+     above and below for the 48px tap floor. */
   .btn {
-    min-height: var(--ward-tap, 48px);
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
     padding: 0 1rem;
+  }
+
+  .btn::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 
   .declineOption {
     /* 44px (v9 rows), as in ward.module.css: stacked radio rows at 48px left wide gaps. */
     min-height: var(--wf-touch, 2.75rem);
-  }
-
-  .bedCell {
-    min-height: var(--ward-tap, 48px);
   }
 }
 
@@ -1681,9 +1686,18 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .decisionArea > button,
+  /* Kit phone size (Josh, 31 Oct 2026: "no 48px controls"): the bed squares are drawn 40px, and an
+     invisible cover above and below keeps the 48px tap floor, as the kit's phone pills do. Accept
+     and Decline take the kit's phone button size from the component. */
   .bedCell {
-    min-height: var(--spacing-tap, 3rem);
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
+  }
+
+  .bedCell::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
   }
 }
 
@@ -1766,7 +1780,8 @@
   .capacityInput {
     flex: 1 1 auto;
     min-width: 0;
-    min-height: var(--spacing-tap, 3rem);
+    /* The kit's phone field height (44px), not 48px. */
+    min-height: var(--wf-touch, 2.75rem);
   }
 
   .capacityRow > button {
@@ -2185,32 +2200,9 @@ details[open] > summary > .phoneFoldChevron {
     letter-spacing: 0;
   }
 
-  .phoneClear {
-    display: flex;
-    flex-direction: column;
-    gap: var(--wf-s-1);
-    padding: var(--wf-s-3) var(--wf-s-4);
-  }
-
-  .phoneClearTitle {
-    display: flex;
-    align-items: center;
-    gap: var(--wf-s-2);
-    margin: 0;
-    font: 600 var(--wf-fs-15) / 1.3 var(--wf-font);
-    color: var(--wf-ink-1);
-  }
-
-  .phoneClearText {
-    margin: 0;
-    font-size: var(--wf-fs-13);
-    color: var(--wf-ink-2);
-  }
-
+  /* The kit's phone button size (40px with its 48px cover) comes from the component. */
   .decisionArea > button {
     justify-content: center;
-    /* DA-19 (design audit): the project's 48 px touch size, not 44 px. */
-    min-height: var(--spacing-tap, 3rem);
     border-radius: var(--wf-r-ctl);
   }
 }
@@ -2317,7 +2309,8 @@ details[open] > summary > .phoneFoldChevron {
   display: flex;
   align-items: center;
   gap: var(--wf-s-3);
-  min-height: var(--spacing-tap, 3rem);
+  /* The kit's choice row height (44px), not 48px (Josh, 31 Oct 2026). */
+  min-height: var(--wf-touch, 2.75rem);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
@@ -2367,10 +2360,18 @@ details[open] > summary > .phoneFoldChevron {
   margin-top: 5px;
 }
 
+/* Drawn at the kit's 40px phone size; the cover keeps the 48px tap floor (Josh, 31 Oct 2026). */
 .phoneWaitlist > button {
+  position: relative;
   width: 100%;
-  min-height: var(--spacing-tap, 3rem);
+  min-height: var(--wf-phone-pill-h);
   border-radius: var(--wf-r-ctl);
+}
+
+.phoneWaitlist > button::after {
+  content: "";
+  position: absolute;
+  inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
 }
 
 .phoneAcceptFacts {
@@ -2442,7 +2443,8 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 .phoneSheetInput {
-  min-height: var(--spacing-tap, 3rem);
+  /* The kit's phone field height (44px), not 48px. */
+  min-height: var(--wf-touch, 2.75rem);
   padding: 0 var(--wf-s-3);
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-md);
@@ -2558,6 +2560,15 @@ details[open] > summary > .phoneFoldChevron {
   }
 }
 
+/* Tablet landscape (1001px up): the frame's closed icon rail (4rem, `--rail-closed-w` in
+   ward-rail.module.css) sits beside the work, so the pinned row starts at the content column's edge
+   rather than under the rail, where it clipped "Pull time limit" (QA, 31 Oct 2026). */
+@media screen and (min-width: 1001px) and (max-width: 64rem) {
+  .decisionArea {
+    left: 4rem;
+  }
+}
+
 /* iPad portrait: the Census bed strip fits a 20-bed ward on one row (bed 19 no longer wraps). */
 @media screen and (min-width: 48.0625rem) and (max-width: 64rem) {
   .bedGrid {
@@ -2565,11 +2576,156 @@ details[open] > summary > .phoneFoldChevron {
   }
 }
 
-/* DR-05: Accept, Decline and Confirm decline keep the owner's 48 px floor on any touch screen,
- * touch tablets included, not only in the phone width block above. */
+/* DR-05: Accept, Decline and Confirm decline keep the 48 px tap floor on any touch screen, touch
+ * tablets included, through an invisible cover; none is drawn 48px (Josh, 31 Oct 2026: "no 48px
+ * controls"). */
 @media (pointer: coarse) {
-  .decisionArea > button,
-  .declineForm button[type="submit"] {
-    min-height: var(--spacing-tap, 3rem);
+  /* Accept and Decline keep the kit's own button size; a cover reaches the tap floor. */
+  .decisionArea > button::after {
+    content: "";
+    position: absolute;
+    inset: calc((var(--wf-h-sm) - var(--spacing-tap, 3rem)) / 2) 0;
   }
+
+  .declineForm button[type="submit"] {
+    position: relative;
+    min-height: var(--wf-phone-pill-h);
+  }
+
+  .declineForm button[type="submit"]::after {
+    content: "";
+    position: absolute;
+    inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}
+
+/* Redesign (Josh, 31 Oct 2026). Nothing to answer: one line, not a full-width panel holding one
+ * sentence. Doubled classes outrank the panel's own layout rules above. */
+.allAnsweredPanel.allAnsweredPanel {
+  flex-direction: row;
+  align-items: center;
+  box-shadow: none;
+}
+
+.allAnswered {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  min-width: 0;
+}
+
+.allAnswered > p {
+  margin: 0;
+}
+
+.allAnsweredLine {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* Census squares filled by state. The words stay in each square's name for screen readers. Doubled
+ * classes outrank the `.bedCell.vacant` style rules above on every width. Borders stay neutral and
+ * the tinted fill carries the state (no side edges or tone borders, Josh, 31 Oct 2026). */
+.cell.cell.fillReady {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-success) 30%, var(--wf-surface));
+}
+
+.cell.cell.fillPulled {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-info) 30%, var(--wf-surface));
+}
+
+.cell.cell.fillClosed {
+  border: 1px dashed var(--wf-line-ctl);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wf-warning) 30%, var(--wf-surface)) 0 4px,
+    var(--wf-surface) 4px 8px
+  );
+}
+
+.cell.cell.fillOccupied {
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.cell.cell > span:first-child {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+}
+
+.cell.cell.fillReady > span:first-child {
+  color: var(--wf-success-ink);
+}
+
+.cell.cell.fillPulled > span:first-child {
+  color: var(--wf-info-ink);
+}
+
+.cell.cell.fillClosed > span:first-child {
+  color: var(--wf-warning-ink);
+}
+
+.cell.cell.fillOccupied > span:first-child {
+  color: var(--wf-ink-3);
+}
+
+/* The census key: a swatch per state with its count. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: 0 var(--wf-s-4) var(--wf-s-2);
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.legendCount {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+  display: inline-block;
+  width: var(--wf-s-3);
+  height: var(--wf-s-3);
+  border-radius: calc(var(--wf-r-xs) / 2);
+  box-sizing: border-box;
+}
+
+.swatch.fillReady {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-success) 30%, var(--wf-surface));
+}
+
+.swatch.fillPulled {
+  border: 1px solid var(--wf-line);
+  background: color-mix(in srgb, var(--wf-info) 30%, var(--wf-surface));
+}
+
+.swatch.fillClosed {
+  border: 1px dashed var(--wf-line-ctl);
+  background: color-mix(in srgb, var(--wf-warning) 30%, var(--wf-surface));
+}
+
+.swatch.fillOccupied {
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
 }

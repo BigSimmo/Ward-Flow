@@ -1,0 +1,164 @@
+/*
+ * shell-next (Josh, 30 Oct 2026): the redesigned rail's new parts, over `ward-rail.module.css`,
+ * which is unchanged. Doubled classes outrank the single-class rule they adjust.
+ */
+
+/* Bed alerts as a small capacity card: a head with the words ("1 over 85%"), one row per place with
+   its meter and occupancy, and the ready beds as the quieter second line. The whole card is still
+   the one button that opens the full list. */
+.capacityCard.capacityCard {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
+  min-height: 0;
+  padding: 0.5rem 0.625rem 0.5625rem 0.75rem;
+}
+
+.capacityHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.capacityHead > :last-child {
+  margin-left: 0;
+}
+
+.capacityRows {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.capacityReady {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.capacityReady b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Pin to my menu: a quiet toggle at the end of each row in More. 44px tall, as every rail row. */
+.pinRow {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pinRow > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pinButton {
+  /* The tablet Menu sheet orders its links (the current page first), so the pin sits last. */
+  order: 99;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: none;
+  color: var(--wf-ink-3);
+  cursor: pointer;
+}
+
+.pinButton svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.pinButton:hover {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+}
+
+.pinButton[aria-pressed="true"] {
+  color: var(--wf-accent-ink);
+}
+
+.pinButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+/* The pinned pages, under the role's own menu. */
+.pinnedHead {
+  margin-top: 0.5rem;
+}
+
+/* The tablet Menu sheet shows the capacity card (the rail, and its card, are hidden there). */
+.sheetAlertsShow.sheetAlertsShow {
+  display: flex;
+}
+
+/* Under a count in the menu: whose figure it is ("For your ward"), since touch has no hover. */
+.countNote {
+  margin: -0.125rem 0 0.375rem;
+  display: block;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-11);
+  line-height: 1.3;
+}
+
+/* The top of the phone Menu: the desk's capacity card. */
+.phoneTop {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.phoneCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.625rem 0.75rem 0.75rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-ink-2);
+  text-decoration: none;
+}
+
+.phoneCard:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Skip to the page (before the rail): hidden until it has keyboard focus, for keyboard users. */
+.skipLink {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 50;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-font);
+  box-shadow: var(--wf-e3);
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Names and roles wrap in full (owner rule): the shift card's "name · role" line cut a long role
+   ("Triage liaison nu…") at 1440. It now takes a second line instead. */
+.shiftSubWrap.shiftSubWrap {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+}

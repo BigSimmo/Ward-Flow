@@ -37,8 +37,8 @@ export function shiftConfirmations(units: readonly Unit[], now: Instant): ShiftC
 
 /**
  * A capacity figure with its run of unchanged confirmations. `unchangedShifts` belongs on
- * `CapacityFigure` (`ward-model-vocabulary.ts`); it lives here until that file is free to change,
- * and nothing sets it until `CONFIRM_CAPACITY` does.
+ * `CapacityFigure` (`ward-model-vocabulary.ts`); it lives here until that file is free to change.
+ * `CONFIRM_CAPACITY` (`ward-flow-bed-events.ts`) sets it with `nextUnchangedShifts` (31 Oct 2026).
  */
 export type CountedFigure = CapacityFigure & { unchangedShifts?: number };
 

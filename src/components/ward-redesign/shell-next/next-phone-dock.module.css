@@ -1,0 +1,47 @@
+/*
+ * The mock-ups' phone dock (next-phone-menu.tsx), on top of today's dock styles
+ * (ward-management/shell/ward-phone-menu.module.css). Phone only, as the dock itself.
+ *
+ * Final round (Josh, 31 Oct 2026): "Coming and going" keeps its full name and wraps to two lines,
+ * so the icons are held at the top of each tab instead of sitting on the label. A one-line dock
+ * keeps exactly today's positions (icon 8px from the top, label ending 2px above the foot). A dock
+ * with a two-line label gives every tab the same two-line label area, so its icons and the labels'
+ * first lines line up across the dock, and the dock grows by 8px with the page clearances following.
+ */
+
+.dock.dock {
+  align-items: stretch;
+}
+
+.item.item {
+  justify-content: flex-start;
+  padding-top: 8px;
+}
+
+.label.label {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  line-height: 12px;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.twoLine .item.item {
+  padding-top: 4px;
+}
+
+.twoLine .label.label {
+  min-height: 24px;
+}
+
+/* The taller dock (48px row + 8px): the page's last rows and any bar seated on the dock follow it.
+   The keyboard-open rule (ward-phone-page-dock.module.css) still outranks this. */
+@media (max-width: 48rem) {
+  :global(body):has(.twoLine.twoLine) {
+    --wf-dock-clear: calc(80px + max(8px, env(safe-area-inset-bottom, 0px)));
+    --wf-dock-top: calc(58px + max(8px, env(safe-area-inset-bottom, 0px)));
+  }
+}

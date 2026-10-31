@@ -91,6 +91,10 @@ describe("settings screen due-time warning rows", () => {
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES));
 
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+
+    // Save opens a review first (Settings round 3); its Save change button saves.
+
+    fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-due-soon-urgent")).toHaveTextContent(String(DUE_SOON_URGENT_MINUTES + 15));
     // The second warning was untouched and saves unchanged.
     expect(screen.getByTestId("probe-due-soon")).toHaveTextContent(String(DUE_SOON_MINUTES));

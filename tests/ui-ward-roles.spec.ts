@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
+import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
@@ -255,14 +256,13 @@ test.describe("@mockup Ward screen", () => {
     await card.getByTestId("ward-pull-WF-003").click();
     await expect(card).toContainText("Bed pull 4h 00m left");
 
-    // On a desktop the demo controls open from the header's Synthetic pill as the Demo menu
-    // (change 8, D-77, 21 Oct 2026), a layout-level sibling of `wardScreen` rather than a
-    // descendant of it, so `page`-scoped. A phone keeps them in Tools.
-    await page.getByRole("button", { name: /^Data mode: Synthetic prototype/ }).click();
+    // The header has no Synthetic pill now (Josh, 30-31 Oct 2026): on a desktop the board clock
+    // opens Tools at its Demo row, a layout-level sibling of `wardScreen`, so `page`-scoped.
+    await page.getByTestId("ward-bar-demo-clock").click();
 
     // The menu must never be mistaken for a clinical action, checked in words, not merely by
     // colour: its heading row and its opening notice both say so explicitly.
-    const menu = page.getByRole("dialog", { name: "Demo" });
+    const menu = page.getByTestId("ward-bar-tools-sheet").getByRole("region", { name: "Demo" });
     await expect(menu).toContainText(/synthetic data only/i);
     const panel = menu.getByTestId("ward-tools-demo-panel");
     await expect(panel).toBeVisible();
@@ -283,10 +283,10 @@ test.describe("@mockup Ward screen", () => {
     await expect(card).not.toContainText("Bed pull 4h 00m left");
   });
 
-  // Change 8 (D-77): the Demo menu sits under the header's Synthetic pill, below a sheet's modal
-  // layer. The Board time pill in the Tools sheet footer closes the sheet first, so the menu it
-  // opens is on top and holds focus rather than opening unreachable behind the sheet (Codex, #558).
-  test("the Tools sheet footer's Board time pill closes the sheet and opens the Demo menu on top", async ({ page }) => {
+  // Change 8 (D-77), updated 31 Oct 2026: the header has no Synthetic pill, so the Board time pill in
+  // the Tools sheet footer closes the sheet and reopens Tools at its Demo row, holding focus there
+  // rather than leaving it behind a closed sheet (Codex, #558).
+  test("the Tools sheet footer's Board time pill reopens Tools at the Demo row", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto("/ward-flow/referrals", { waitUntil: "domcontentloaded" });
     await page.getByTestId("ward-bar-tools-trigger").click();
@@ -294,10 +294,9 @@ test.describe("@mockup Ward screen", () => {
     await expect(sheet).toBeVisible();
     await sheet.getByRole("button", { name: /Open demo controls$/ }).click();
 
-    await expect(sheet).toBeHidden();
-    const menu = page.getByRole("dialog", { name: "Demo" });
+    const menu = sheet.getByRole("region", { name: "Demo" });
     await expect(menu.getByTestId("ward-tools-demo-panel")).toBeVisible();
-    await expect.poll(() => menu.evaluate((node) => node.contains(document.activeElement))).toBe(true);
+    await expect.poll(() => sheet.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   });
 
   /**
@@ -389,9 +388,16 @@ test.describe("@mockup Transport officer screen", () => {
     await expect(stageButtons).toHaveCount(1);
     await expect(stageButtons).toHaveAttribute("data-testid", "ward-officer-enroute-WF-005");
     await expect(stageButtons).toHaveText("Mark en route");
-    // Pinned and reachable without scrolling, at a full tap height.
+    // Pinned and reachable without scrolling, at a full tap height. Kit (Josh, 31 Oct 2026): the
+    // phone button is drawn 40px and an invisible ::after cover makes up the 48px tap area.
     const box = await stageButtons.boundingBox();
-    expect(box!.height).toBeGreaterThanOrEqual(48);
+    const tapHeight = await stageButtons.evaluate((button) => {
+      const cover = getComputedStyle(button, "::after");
+      const drawn = button.getBoundingClientRect().height;
+      if (cover.content === "none" || cover.position !== "absolute") return drawn;
+      return drawn - parseFloat(cover.top) - parseFloat(cover.bottom);
+    });
+    expect(tapHeight).toBeGreaterThanOrEqual(48);
     expect(box!.y).toBeGreaterThanOrEqual(0);
     expect(box!.y + box!.height).toBeLessThanOrEqual(844);
 
@@ -860,6 +866,8 @@ test.describe("@mockup Emergency department screen", () => {
     const legalReason016 = page.getByTestId("ward-ed-transport-legal-reason-WF-016");
     if (await legalReason016.isVisible()) await legalReason016.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-016").fill("14:30");
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    await page.getByTestId("ward-ed-transport-estimated-day-today-WF-016").check();
     await page.getByTestId("ward-ed-book-transport-confirm-WF-016").click();
 
     await expect(readyHandover).not.toHaveAttribute("aria-disabled", "true");
@@ -1024,6 +1032,8 @@ test.describe("@mockup Emergency department screen", () => {
     // Exact, not `> 0`: RF-009 is the only referral this department's inbox should hold.
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    // The inbox sits under the board's Lists, folded shut on a desktop (ED board redesign).
+    await openEdLists(page);
     const rphRow = page.getByTestId("ward-ed-inbox-row-RF-009");
     await expect(rphRow).toBeVisible();
     await expect(rphRow).toHaveAttribute("data-ed-id", "rph-ed");
@@ -1051,6 +1061,7 @@ test.describe("@mockup Emergency department screen", () => {
     // Exact, not `> 0`: RF-013 is the only referral this department's inbox should hold.
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    await openEdLists(page);
     const peelRow = page.getByTestId("ward-ed-inbox-row-RF-013");
     await expect(peelRow).toBeVisible();
     await expect(peelRow).toHaveAttribute("data-ed-id", "peel-ed");
@@ -1099,6 +1110,7 @@ test.describe("@mockup Emergency department screen", () => {
 
     await expect(page.locator('[data-testid^="ward-ed-inbox-row-"]')).toHaveCount(1);
 
+    await openEdLists(page);
     await page
       .getByTestId("ward-ed-inbox-row-RF-009")
       .getByRole("button", { name: /View referral/u })
@@ -1263,7 +1275,7 @@ test.describe("@mockup Role switcher — the loop", () => {
     const examineForm = page.getByTestId("ward-ed-examine-form-WF-315");
     await expect(examineForm).toBeVisible();
     await examineForm.getByRole("radio", { name: "Inpatient treatment order" }).check();
-    await examineForm.getByRole("button", { name: "Confirm examination outcome" }).click();
+    await examineForm.getByRole("button", { name: "Save outcome" }).click();
     // Since 2026-08-24 the examination does NOT change the form — WF-315 stays on its 1A — and
     // the movement remains referable. What changes is that the examination is now recorded, so
     // the outstanding item for WF-315 must no longer read "Examination" once this submits. The
@@ -1370,6 +1382,8 @@ test.describe("@mockup Role switcher — the loop", () => {
     const legalReason315 = page.getByTestId("ward-ed-transport-legal-reason-WF-315");
     if (await legalReason315.isVisible()) await legalReason315.selectOption("treating_team_confirmed");
     await page.getByTestId("ward-ed-transport-estimated-time-WF-315").fill("14:30");
+    // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+    await page.getByTestId("ward-ed-transport-estimated-day-today-WF-315").check();
     await page.getByTestId("ward-ed-book-transport-confirm-WF-315").click();
     // Proves the booking actually landed rather than just asserting the clicks happened: before
     // this, `handoverBlockedReason` renders the control `aria-disabled="true"` and a click on it
@@ -1517,20 +1531,23 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
 
     // --- Step 2: confirm zero allocatable beds, on this same page, no reload. ---
     // The capacity form opens from "Confirm numbers". It is not on the Decisions queue.
+    // Redesign (31 Oct 2026): it is the shared dialog, which opens over the page from <body>, so it
+    // is found on the page rather than inside the ward screen. The beds alone are confirmed by
+    // "Confirm beds only" while the morning numbers are due, or by "Confirm beds" once they are in.
     await wardScreen.getByRole("button", { name: /Confirm (today.s )?numbers/ }).click();
-    await wardScreen.getByTestId("ward-capacity-input").fill("0");
-    await wardScreen.getByTestId("ward-capacity-submit").click();
+    const confirmDialog = page.getByRole("dialog", { name: /Confirm capacity figures/ });
+    await expect(confirmDialog).toBeVisible();
+    await confirmDialog.getByTestId("ward-capacity-input").fill("0");
+    await confirmDialog.getByRole("button", { name: /^Confirm beds( only)?$/u }).click();
 
     // --- Step 3: the ward's own screen must move. This is the exact proof the reviewer
     // performed and found failing: "typing 0 into Confirm allocatable beds ... beds: Ready 2
     // ... Currently confirmed 2" — the screen that raised the event never moved. ---
     await expect(bedGrid).toContainText("Ready 0");
     await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
-    await expect(wardScreen.getByText(/Currently confirmed 0 at/)).toBeVisible();
-    await wardScreen
-      .getByRole("dialog", { name: /Confirm capacity figures/ })
-      .getByRole("button", { name: "Done" })
-      .click();
+    await expect(confirmDialog.getByText(/Currently confirmed 0 at/)).toBeVisible();
+    await confirmDialog.getByRole("button", { name: "Close capacity confirmation" }).click();
+    await expect(confirmDialog).toHaveCount(0);
 
     // --- Step 4: the Hold control must stop advertising an action the reducer would now
     // refuse — the reviewer's Proof 2 ("hold button ... aria-disabled = null ... nothing
@@ -1555,7 +1572,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
       .getByRole("navigation", { name: "Ward Flow views" })
       .getByRole("link", { name: /^Capacity\b/u })
       .click();
-    await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
     const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
     const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
     await expect(rphNode).toContainText("Ready 0");

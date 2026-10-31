@@ -136,7 +136,7 @@ export const CHROME_ROLE_LABELS: Record<WardChromeRole, string> = {
   ed: "ED clinician",
   officer: "Transport officer",
   community: "Community clinician",
-  bed_manager: "Bed manager",
+  bed_manager: "Site bed manager",
   executive: "Executive",
 };
 import type { Instant } from "@/components/ward-management/ward-clock";

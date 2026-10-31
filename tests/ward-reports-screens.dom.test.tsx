@@ -317,9 +317,9 @@ describe("read-only report screens", () => {
       fireEvent.click(within(filters).getByRole("button"));
       const sheet = screen.getByRole("dialog", { name: "Record kind and view" });
       expect(within(sheet).getByRole("radiogroup", { name: "View as" })).toBeTruthy();
-      fireEvent.click(within(sheet).getByRole("radio", { name: "Ward nurse" }));
+      fireEvent.click(within(sheet).getByRole("radio", { name: "Ward manager" }));
       fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
-      expect(screen.getByTestId("ward-chronology-phone-filters")).toHaveTextContent("Ward nurse");
+      expect(screen.getByTestId("ward-chronology-phone-filters")).toHaveTextContent("Ward manager");
       expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
     } finally {
       vi.unstubAllGlobals();
@@ -330,31 +330,44 @@ describe("read-only report screens", () => {
   it("lists patients Family, Given in family-name order, and groups each board day once (ops-24, ops-18)", () => {
     route.pathname = "/ward-flow/reports/chronology";
     inProvider(<PatientChronologyScreen />);
-    const picker = screen.getByTestId("ward-chronology-patient") as HTMLSelectElement;
-    const options = [...picker.options].filter((option) => option.value !== "");
-    expect(options.length).toBeGreaterThan(1);
-    const names = options.map((option) => option.textContent!.split(" · ")[0]!);
+    // The start list shows 6, then one Show more, then points to the search (Josh, 31 Oct 2026).
+    expect(screen.getAllByTestId("ward-chronology-start-patient")).toHaveLength(6);
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more of \d+$/u }));
+    const people = screen.getAllByTestId("ward-chronology-start-patient").map((row) => ({
+      name: row.children[0]!.textContent!,
+      umrn: row.children[1]!.textContent!,
+    }));
+    expect(people.length).toBeGreaterThan(6);
+    expect(screen.getByText(/ of \d+ · search for anyone else$/u)).toBeInTheDocument();
+    const names = people.map((person) => person.name);
     for (const name of names) expect(name).toMatch(/^[^,]+, [^,]+$/u);
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
     // Every day heading appears once per patient, whatever the device's time zone.
     let headings = 0;
-    for (const option of options) {
-      fireEvent.change(picker, { target: { value: option.value } });
+    for (const person of people) {
+      const search = screen.getByTestId("ward-chronology-patient");
+      fireEvent.focus(search);
+      fireEvent.change(search, { target: { value: person.umrn } });
+      const option = Array.from(document.querySelectorAll('[role="option"]')).find((item) =>
+        item.textContent?.includes(person.umrn),
+      );
+      fireEvent.mouseDown(option!);
       // A plain selector, not *ByRole: role queries over every patient's table took minutes in CI.
       const days = Array.from(document.querySelectorAll('[scope="rowgroup"]')).map(
         (cell) => cell.firstElementChild?.firstChild?.textContent ?? "",
       );
-      expect(new Set(days).size, `${option.value}: ${days.join(" | ")}`).toBe(days.length);
+      expect(new Set(days).size, `${person.umrn}: ${days.join(" | ")}`).toBe(days.length);
       headings += days.length;
     }
-    expect(headings).toBeGreaterThan(options.length);
+    expect(headings).toBeGreaterThan(people.length);
   }, 90_000);
 
   it("asks for a patient before showing any chronology", () => {
     inProvider(<PatientChronologyScreen />);
     expect(screen.queryByTestId("ward-chronology-table")).toBeNull();
     expect(screen.queryByTestId("ward-chronology-csv")).toBeNull();
-    fireEvent.change(screen.getByTestId("ward-chronology-patient"), { target: { value: "PT-013" } });
+    expect(screen.getByText("What a chronology holds")).toBeTruthy();
+    fireEvent.click(screen.getAllByTestId("ward-chronology-start-patient")[0]!);
     expect(screen.getByTestId("ward-chronology-table")).toBeTruthy();
   });
 
@@ -704,7 +717,7 @@ describe("read-only report screens", () => {
     fireEvent.click(table.getAllByRole("button")[0]);
     expect(screen.getByRole("button", { name: "Copy row" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Next" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("radio", { name: "Ward nurse" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Ward manager" }));
     expect(screen.getByTestId("ward-chronology-nurse-view")).toBeTruthy();
     expect(screen.queryByRole("radio", { name: "Audit" })).toBeNull();
   });

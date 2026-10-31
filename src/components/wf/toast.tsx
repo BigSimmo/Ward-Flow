@@ -6,6 +6,7 @@ import { Button } from "./button";
 import { cx } from "./cx";
 import styles from "./overlay.module.css";
 import { StatusGlyph, type WfTone } from "./status-glyph";
+import { useCountdown, useDocumentHidden } from "./toast-timing";
 
 /**
  * An Undo window on the toast. A 2px line under the toast shrinks over `durationMs` and pauses
@@ -24,6 +25,16 @@ export type ToastUndo = {
    * the toast being pushed out by newer ones, so a deferred action can commit here.
    */
   onExpire?: () => void;
+};
+
+/**
+ * A timed toast's own clock. It pauses while the toast is hovered, holds focus or the tab is
+ * hidden, so an outcome is not lost while the person looks away; a new `restartKey` starts again.
+ */
+type ToastTimeout = {
+  ms: number;
+  onTimeout: () => void;
+  restartKey?: unknown;
 };
 
 export type ToastNextStep = {
@@ -45,6 +56,13 @@ export type ToastViewProps = {
   nextStep?: ToastNextStep;
   /** Undo with a time window and its shrinking line. */
   undo?: ToastUndo;
+  /** Closes the toast after a pausable time. Ignored when `undo` is set: the window is the clock. */
+  timeout?: ToastTimeout;
+  /**
+   * The toast is on its way out: it plays the exit, takes no pointer or focus and is hidden from
+   * assistive technology, so the live region never reads it a second time.
+   */
+  leaving?: boolean;
   onClose?: () => void;
   /** Accessible name of the close button. */
   closeLabel?: string;
@@ -55,6 +73,8 @@ export type ToastViewProps = {
   "data-announce-key"?: number;
   /** "true" when the toast closes itself; the phone pill then hides its X. */
   "data-auto-dismiss"?: string;
+  /** Marks a card the provider renders, whatever its test id. */
+  "data-wf-toast"?: string;
 };
 
 type UndoPhase = "running" | "undone" | "expired";
@@ -98,7 +118,7 @@ function useUndoWindow(undo: ToastUndo | undefined, paused: boolean) {
   return { phase, secondsLeft, finish: () => setPhase("undone") };
 }
 
-/** Pauses the Undo window while the toast is hovered or holds focus. No handlers without Undo. */
+/** Pauses a toast's clock while it is hovered or holds focus. No handlers without a clock. */
 function useUndoPause(enabled: boolean) {
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -115,12 +135,23 @@ function useUndoPause(enabled: boolean) {
   return { paused: hovered || focused, handlers };
 }
 
-function UndoButton({ undo, phase, finish }: { undo: ToastUndo; phase: UndoPhase; finish: () => void }) {
+function UndoButton({
+  undo,
+  phase,
+  finish,
+  primary,
+}: {
+  undo: ToastUndo;
+  phase: UndoPhase;
+  finish: () => void;
+  primary: boolean;
+}) {
   return (
     <Button
       variant="ghost"
       size="sm"
       className={styles.toastAction}
+      data-toast-primary={primary ? "" : undefined}
       // Stays in place once used or run out, so focus is never dropped, but no longer acts.
       aria-disabled={phase !== "running" || undefined}
       onClick={() => {
@@ -151,14 +182,28 @@ export function ToastView({
   action,
   nextStep,
   undo,
+  timeout,
+  leaving = false,
   onClose,
   closeLabel = "Dismiss",
   className,
   style,
   ...data
 }: ToastViewProps) {
-  const { paused, handlers } = useUndoPause(Boolean(undo));
-  const { phase, secondsLeft, finish } = useUndoWindow(undo, paused);
+  const timed = !undo && Boolean(timeout && timeout.ms > 0);
+  const { paused, handlers } = useUndoPause(Boolean(undo) || timed);
+  const hidden = useDocumentHidden();
+  // An Undo window keeps running in a hidden tab: a caller may commit when it ends, and that save
+  // must not wait for the person to come back.
+  const { phase, secondsLeft, finish } = useUndoWindow(undo, paused || leaving);
+  useCountdown(
+    timed ? (timeout?.ms ?? 0) : 0,
+    paused || hidden || leaving,
+    () => timeout?.onTimeout(),
+    timeout?.restartKey,
+  );
+  // Alt+N lands on the first control that acts: a running Undo, the action, the next step or close.
+  const primary = undo && phase === "running" ? "undo" : action ? "action" : nextStep ? "next" : "close";
 
   return (
     <div
@@ -172,7 +217,10 @@ export function ToastView({
           : style
       }
       data-undo={undo ? phase : undefined}
-      data-paused={undo && paused ? "true" : undefined}
+      data-paused={(undo || timed) && (paused || (timed && hidden)) ? "true" : undefined}
+      data-leaving={leaving ? "true" : undefined}
+      aria-hidden={leaving || undefined}
+      inert={leaving || undefined}
       // The phone pill reads the tone to drop the success and info glyph; a caller's own wins.
       data-tone={tone}
       {...handlers}
@@ -191,7 +239,13 @@ export function ToastView({
         </span>
       ) : null}
       {action ? (
-        <Button variant="ghost" size="sm" className={styles.toastAction} onClick={action.onAction}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.toastAction}
+          data-toast-primary={primary === "action" ? "" : undefined}
+          onClick={action.onAction}
+        >
           {action.label}
         </Button>
       ) : null}
@@ -201,6 +255,7 @@ export function ToastView({
             href={nextStep.href}
             className={styles.toastAction}
             data-testid="toast-next-step"
+            data-toast-primary={primary === "next" ? "" : undefined}
             onClick={() => {
               nextStep.onNextStep?.();
             }}
@@ -213,13 +268,14 @@ export function ToastView({
             size="sm"
             className={styles.toastAction}
             data-testid="toast-next-step"
+            data-toast-primary={primary === "next" ? "" : undefined}
             onClick={() => nextStep.onNextStep?.()}
           >
             {nextStep.label}
           </Button>
         )
       ) : null}
-      {undo ? <UndoButton undo={undo} phase={phase} finish={finish} /> : null}
+      {undo ? <UndoButton undo={undo} phase={phase} finish={finish} primary={primary === "undo"} /> : null}
       {onClose ? (
         <Button
           variant="ghost"
@@ -228,6 +284,7 @@ export function ToastView({
           icon={X}
           aria-label={closeLabel}
           className={styles.toastClose}
+          data-toast-primary={primary === "close" ? "" : undefined}
           onClick={onClose}
         />
       ) : null}

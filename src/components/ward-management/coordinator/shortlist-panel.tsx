@@ -292,11 +292,13 @@ export function ReferralPlacementPanel({ referral, now }: { referral: Referral; 
           <Fact label="Waiting" value={waitingLabel} />
         </dl>
         {/* WS-04 (workflow speed audit, 26 Oct 2026): this preview was a dead end with no decision.
-            Decide opens the referral on the Referrals board, where Accept and Decline live. */}
+            Decide opens the referral on the Referrals board, where Accept and Decline live. Home
+            redesign (31 Oct 2026): the kit's shared primary button at the kit's own size (40px
+            with a 48px tap cover on a phone), in place of the old `--accent` confirm button. */}
         <div className={styles.shortlistActionRow}>
           <Link
             href={referralBoardHref(referral.id)}
-            className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+            className={buttonClass({ variant: "pri", className: shortlistStyles.decide })}
             aria-label={`Decide referral for ${patientLabel}`}
             data-testid="ward-referral-placement-decide"
           >
@@ -378,10 +380,21 @@ export function ShortlistPanel({
    *  no reason can buy (collapsed behind a disclosure that states its count). */
   const groups = useMemo(() => fitGroups(shortlist, movement), [shortlist, movement]);
   const [unavailableOpen, setUnavailableOpen] = useState(false);
+  // Wards that take this person only with an override reason sit behind one disclosure, so the
+  // wards that fit lead; it opens itself while one of them is chosen.
+  const [reviewOpen, setReviewOpen] = useState(false);
   const [candidatesOpen, setCandidatesOpen] = useState(true);
-  // A collapsed Candidates list hides every ward, so open it before taking the person there.
+  // A collapsed Candidates list hides every ward, so open it before taking the person there. With
+  // no ward that fits with a bed ready, the first ward a person can choose is behind the override
+  // disclosure, so that opens too: Choose a ward still reaches the same first choosable ward.
   const chooseWard = (from: HTMLElement) => {
-    if (!candidatesOpen) flushSync(() => setCandidatesOpen(true));
+    const openReview = groups.bed.length === 0 && groups.review.length > 0 && !reviewOpen;
+    if (!candidatesOpen || openReview) {
+      flushSync(() => {
+        setCandidatesOpen(true);
+        if (openReview) setReviewOpen(true);
+      });
+    }
     focusFirstCandidate(from);
   };
 
@@ -422,7 +435,6 @@ export function ShortlistPanel({
   const checkedCount = useMemo(() => checkedGates(sortedGates).length, [sortedGates]);
   const metCount = useMemo(() => checkedGates(sortedGates).filter((g) => g.pass).length, [sortedGates]);
   const notMetCount = checkedCount - metCount;
-  const [gateFilter, setGateFilter] = useState<"all" | "open">("all");
   const eligibilityDetailsRef = useRef<HTMLDetailsElement>(null);
 
   /**
@@ -586,7 +598,6 @@ export function ShortlistPanel({
     setWithdrawReason("");
     setGenderPlacementReason("");
     setGenderPlacementChecked(false);
-    setGateFilter("all");
   }
 
   if (!movement) {
@@ -695,6 +706,11 @@ export function ShortlistPanel({
   // acting on it is not.
   const referredCandidates = referTargets.map((unitId) => shortlist.find((candidate) => candidate.unit.id === unitId));
   const hasReferSelection = referTargets.length > 0;
+  const reviewShown =
+    reviewOpen ||
+    groups.review.some(
+      (candidate) => referTargets.includes(candidate.unit.id) || liveUnitIds.includes(candidate.unit.id),
+    );
   /** The action bar's "To <ward>": the wards Refer will act on, by name. */
   const referTargetNames = referTargets.map(
     (unitId) => units.find((unit) => unit.id === unitId)?.name ?? "an unresolved unit",
@@ -1083,7 +1099,9 @@ export function ShortlistPanel({
     // ⚠️ A measured road route, shown only where one exists, informing a choice and never making
     // one. The testid must not begin `ward-shortlist-candidate-` (other suites count those).
     const route = referenceDistance(originEd?.referenceEdId, siteByCode(candidate.unit.siteCode)?.referenceSiteId);
-    const label = isLive ? "Referred" : isSelected ? "Selected" : FIT_LABEL[kind].word;
+    // The tick and the selected card already say Selected (and `aria-pressed` tells assistive
+    // technology); only a live referral needs its word.
+    const label = isLive ? "Referred" : undefined;
     return (
       <li key={candidate.unit.id}>
         <button
@@ -1106,45 +1124,43 @@ export function ShortlistPanel({
           </span>
           <span className={shortlistStyles.candidateTop}>
             <span className={styles.shortlistCandidateName}>{candidate.unit.name}</span>
-            <span
-              className={shortlistStyles.candidateState}
-              data-state={
-                isLive ? "live" : isSelected ? "selected" : candidate.verdict.eligible ? "eligible" : "review"
-              }
-            >
-              <StatusGlyph tone={isLive ? "info" : FIT_LABEL[kind].tone} size={9} />
-              {label}
+            <span className={`${shortlistStyles.cardRight} ${shortlistStyles.tabularNum}`}>
+              {label ? (
+                <span className={shortlistStyles.candidateState} data-state="live">
+                  <StatusGlyph tone="info" size={9} />
+                  {label}
+                </span>
+              ) : null}
+              {route !== null ? (
+                <span data-testid={`ward-shortlist-route-${candidate.unit.id}`}>
+                  {route.km === 0 ? (
+                    "Same site"
+                  ) : (
+                    <>
+                      {/* The card shows the road time; the distance sentence stays for assistive
+                      technology (visually hidden on every card now). */}
+                      <span className={shortlistStyles.routeLong}>
+                        {`${route.km} km by road from ${originEd?.siteCode ?? "ED"}, about `}
+                      </span>
+                      {`${route.min} min`}
+                    </>
+                  )}
+                </span>
+              ) : null}
             </span>
           </span>
-          <span className={shortlistStyles.candidateMeta}>
-            {route !== null ? (
-              <span
-                className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}
-                data-testid={`ward-shortlist-route-${candidate.unit.id}`}
-              >
-                {route.km === 0 ? (
-                  "Same site"
-                ) : (
-                  <>
-                    <span className={shortlistStyles.routeLong}>
-                      {`${route.km} km by road from ${originEd?.siteCode ?? "ED"}, about `}
-                    </span>
-                    {`${route.min} min`}
-                  </>
-                )}
-              </span>
-            ) : null}
-            <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-              {capacityLine(candidate.unit, bedReleases, admissions)}
+          <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
+            {capacityLine(candidate.unit, bedReleases, admissions)}
+          </span>
+          {/* "Eligible now" repeats the group heading, so the card no longer shows it; it stays for
+          assistive technology. A reason for review is always on screen. */}
+          {candidate.verdict.eligible ? (
+            <span className={`${shortlistStyles.candidateReason} sr-only`}>{candidateReason(candidate.verdict)}</span>
+          ) : (
+            <span className={`${styles.shortlistCandidateReasonBad} ${shortlistStyles.candidateReason}`}>
+              {candidateReason(candidate.verdict)}
             </span>
-          </span>
-          <span
-            className={`${
-              candidate.verdict.eligible ? styles.shortlistCandidateReasonOk : styles.shortlistCandidateReasonBad
-            } ${shortlistStyles.candidateReason}`}
-          >
-            {candidateReason(candidate.verdict)}
-          </span>
+          )}
           {notice ? (
             <span
               className={`${
@@ -1185,15 +1201,21 @@ export function ShortlistPanel({
         >
           <span className={shortlistStyles.candidateTop}>
             <span className={styles.shortlistCandidateName}>{candidate.unit.name}</span>
-            <span className={shortlistStyles.candidateState} data-state={kind}>
-              <StatusGlyph tone={FIT_LABEL[kind].tone} size={9} />
-              {FIT_LABEL[kind].word}
-            </span>
+            {kind === "no-bed" ? null : (
+              <span className={shortlistStyles.candidateState} data-state={kind}>
+                <StatusGlyph tone={FIT_LABEL[kind].tone} size={9} />
+                {FIT_LABEL[kind].word}
+              </span>
+            )}
           </span>
           <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
             {capacityLine(candidate.unit, bedReleases, admissions)}
           </span>
-          <span className={styles.shortlistCandidateReasonBad}>{reason}</span>
+          <span
+            className={`${styles.shortlistCandidateReasonBad} ${kind === "no-bed" ? shortlistStyles.quietReason : ""}`}
+          >
+            {reason}
+          </span>
           <span id={describedBy} className="sr-only">
             Unavailable: {reason}. No recorded reason can place this person here.
           </span>
@@ -1277,9 +1299,18 @@ export function ShortlistPanel({
               <Link href={referral?.patientId ? patientHref(referral.patientId) : movementHref(movement.id)}>
                 {patientIdentity.formalName}
               </Link>
+              <span
+                className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge} ${shortlistStyles.tier}`}
+                data-tier={movement.urgency}
+              >
+                <span aria-hidden="true">T{movement.urgency}</span>
+                <SrOnly>Tier {movement.urgency}</SrOnly>
+              </span>
             </h3>
             <span className={shortlistStyles.subjectSub}>
-              <span className={shortlistStyles.tabularNum}>{patientUmrn}</span> · {originLabel}
+              <span className={shortlistStyles.tabularNum}>{patientUmrn}</span> ·{" "}
+              {/* The department by name alone (Home redesign, 30 Oct 2026): its site code repeated it. */}
+              {originEd ? originLabel.slice(`${originEd.siteCode} · `.length) : originLabel}
             </span>
           </div>
           <div className={shortlistStyles.subjectBadges}>
@@ -1293,59 +1324,38 @@ export function ShortlistPanel({
                 Flagged<SrOnly> urgent</SrOnly>
               </span>
             ) : null}
-            <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={movement.urgency}>
-              <span aria-hidden="true">T{movement.urgency}</span>
-              <SrOnly>Tier {movement.urgency}</SrOnly>
-            </span>
           </div>
         </div>
         {nextStepSection}
-        {isPhone ? (
-          <dl className={shortlistStyles.factGrid} data-phone="true">
-            <Fact label="Waiting" value={durMinutes(waitedMinutes)} urgent={overTarget} />
-            <Fact label="Target" value={durMinutes(targetMinutes)} />
-            <Fact label="Sex and age group" value={`${movement.sex}, ${movement.cohort.toLowerCase()}`} />
-            <Fact
-              label="Security and legal"
-              value={`${movement.security}, ${movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}`}
+        {/* Two fact lines on every size, as the desktop's (Josh, 19 Oct 2026; Home redesign 30 Oct
+            2026): the phone's four-box grid said the same facts in twice the height. Each fact keeps
+            its label for assistive technology; overdue is a glyph and the word, never colour alone. */}
+        <div className={shortlistStyles.factLines} data-testid="ward-shortlist-facts">
+          <dl className={shortlistStyles.factLine}>
+            <InlineFact label="Sex" value={movement.sex} />
+            <InlineFact label="Age group" value={movement.cohort} />
+            <InlineFact label="Security" value={movement.security} />
+            <InlineFact
+              label="Legal"
+              value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}
             />
-            {suburbLabel ? <Fact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
+            {suburbLabel ? <InlineFact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
           </dl>
-        ) : (
-          // Desktop: two compact lines instead of the six-box grid (Home placement redesign, Josh
-          // 19 Oct 2026). Each fact keeps its label for assistive technology; overdue is a glyph
-          // and the word, never colour alone.
-          <div className={shortlistStyles.factLines} data-testid="ward-shortlist-facts">
-            <dl className={shortlistStyles.factLine}>
-              <InlineFact label="Sex" value={movement.sex} />
-              <InlineFact label="Age group" value={movement.cohort} />
-              <InlineFact label="Security" value={movement.security} />
-              <InlineFact
-                label="Legal"
-                value={movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus}
-              />
-              {suburbLabel ? <InlineFact label="Suburb" value={suburbLabel} testId="ward-shortlist-suburb" /> : null}
-            </dl>
-            <p
-              className={`${shortlistStyles.factLine} ${shortlistStyles.waitLine} ${shortlistStyles.tabularNum}`}
-              data-urgent={overTarget ? "true" : undefined}
-              data-testid="ward-shortlist-wait-line"
-            >
-              {overTarget ? <StatusGlyph tone="danger" size={9} /> : null}
-              {`Waiting ${durMinutes(waitedMinutes)} (target ${durMinutes(targetMinutes)})`}
-              {overTarget ? <span className={shortlistStyles.waitOverdue}>· overdue</span> : null}
-            </p>
-          </div>
-        )}
+          <p
+            className={`${shortlistStyles.factLine} ${shortlistStyles.waitLine} ${shortlistStyles.tabularNum}`}
+            data-urgent={overTarget ? "true" : undefined}
+            data-testid="ward-shortlist-wait-line"
+          >
+            {overTarget ? <StatusGlyph tone="danger" size={9} /> : null}
+            {`Waiting ${durMinutes(waitedMinutes)} (target ${durMinutes(targetMinutes)})`}
+            {overTarget ? <span className={shortlistStyles.waitOverdue}>· overdue</span> : null}
+          </p>
+        </div>
         {movement.legalForm ? (
           <p className={shortlistStyles.legalLine} data-urgent={legalBreached ? "true" : undefined}>
             {`${legalFormLine(movement, now)} · ${movement.legalStatus}`}
             {legalDueAt !== undefined ? <LegalLimitsNotChecked variant="tag" /> : null}
           </p>
-        ) : null}
-        {/* Desktop states the tier targets once, at the panel foot; the phone sheet keeps it here. */}
-        {isPhone && (overTarget || movement.urgency === 1) ? (
-          <p className={shortlistStyles.targetNote}>{TIER_TARGETS_NOTE}</p>
         ) : null}
 
         {hasRecordedReferral ? (
@@ -1534,72 +1544,13 @@ export function ShortlistPanel({
           </>
         ) : (
           <span
-            className={`${styles.shortlistUnresolvedBadge} ${shortlistStyles.destLine}`}
+            className={`${styles.shortlistUnresolvedBadge} ${shortlistStyles.destLine} ${hasEligible ? shortlistStyles.quietLine : ""}`}
             data-tone="neutral"
             data-testid="ward-shortlist-no-destination"
           >
             {hasEligible ? "No destination recorded yet." : "No eligible destination found yet."}
           </span>
         )}
-        {activeUnit && sortedGates.length > 0 ? (
-          <div className={shortlistStyles.governanceSummaryBar} data-testid="ward-shortlist-governance-summary">
-            <button
-              type="button"
-              className={shortlistStyles.checksClearPill}
-              data-testid="ward-shortlist-checks-clear-pill"
-              data-tone={notMetCount > 0 ? "warn" : "good"}
-              onClick={() => {
-                if (eligibilityDetailsRef.current) {
-                  eligibilityDetailsRef.current.open = true;
-                  // F-34: no smooth scroll for people who asked for reduced motion.
-                  const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-                  eligibilityDetailsRef.current.scrollIntoView({
-                    behavior: reduce ? "auto" : "smooth",
-                    block: "nearest",
-                  });
-                }
-              }}
-            >
-              {/* Labelled in words, not a bare "8/9 · 1 open" (Home placement redesign, Josh 19 Oct 2026). */}
-              {`Checks: ${metCount} of ${checkedCount} met`}
-              {notMetCount > 0 ? (
-                <span className={shortlistStyles.checksClearWarn}>, {notMetCount} to review</span>
-              ) : null}
-            </button>
-            <div className={shortlistStyles.gateFilterGroup} role="group" aria-label="Filter eligibility checks">
-              <button
-                type="button"
-                className={shortlistStyles.gateFilterBtn}
-                data-testid="ward-shortlist-gate-filter-all"
-                aria-pressed={gateFilter === "all"}
-                aria-controls="ward-shortlist-gate-list"
-                onClick={() => {
-                  setGateFilter("all");
-                  if (eligibilityDetailsRef.current) {
-                    eligibilityDetailsRef.current.open = true;
-                  }
-                }}
-              >
-                All checks ({sortedGates.length})
-              </button>
-              <button
-                type="button"
-                className={shortlistStyles.gateFilterBtn}
-                data-testid="ward-shortlist-gate-filter-open"
-                aria-pressed={gateFilter === "open"}
-                aria-controls="ward-shortlist-gate-list"
-                onClick={() => {
-                  setGateFilter((current) => (current === "open" ? "all" : "open"));
-                  if (eligibilityDetailsRef.current) {
-                    eligibilityDetailsRef.current.open = true;
-                  }
-                }}
-              >
-                Still to review ({notMetCount})
-              </button>
-            </div>
-          </div>
-        ) : null}
       </header>
 
       {movement.arrivalDetails || movement.stage === "pulled" ? (
@@ -1687,51 +1638,24 @@ export function ShortlistPanel({
                 {candidatesOpen ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
               </span>
             </button>
-            {/* FitHighlight counts: the same four groups State bedflow counts (`home-fit.ts`), so the
-            two columns always agree. */}
-            <div
-              className={`${shortlistStyles.candidateCounts} ${shortlistStyles.tabularNum}`}
-              role="group"
-              aria-label="Candidate summary"
-            >
-              <span data-tone="good">
-                <StatusGlyph tone="success" size={9} />
-                {groups.bed.length} fit
-              </span>
-              <span data-tone="warn">
-                <StatusGlyph tone="warning" size={9} />
-                {groups["no-bed"].length} no bed
-              </span>
-              <span>
-                <StatusGlyph tone="neutral" size={9} />
-                {groups.review.length} review
-              </span>
-            </div>
             <div id="ward-shortlist-candidates-content" style={candidatesOpen ? undefined : { display: "none" }}>
               {offerable.length === 0 && groups["no-bed"].length === 0 ? (
                 <p className={styles.placeholder}>
                   No eligible destination. No ward can take this person, with or without a recorded reason.
                 </p>
               ) : null}
-              {(
-                [
-                  ["bed", "Fits, bed ready", groups.bed],
-                  ["review", "Needs review", groups.review],
-                ] as const
-              ).map(([kind, title, list]) =>
-                list.length > 0 ? (
-                  <div key={kind} className={shortlistStyles.fitGroup} data-fit-group={kind}>
-                    <h5 className={shortlistStyles.fitGroupHead}>
-                      {title} <span className={shortlistStyles.fitGroupCount}>{list.length}</span>
-                    </h5>
-                    <ul className={styles.shortlistCandidateList}>
-                      {list.map((candidate) => renderCandidate(candidate, kind))}
-                    </ul>
-                  </div>
-                ) : null,
-              )}
-              {/* Fits in every way except a bed: shown with the amber fit tint so the coordinator sees
-              where a bed would do, never selectable (the engine refuses a ward with no bed). */}
+              {/* The wards that fit lead: a bed ready, then fits with no bed now (never selectable: the
+              engine refuses a ward with no bed). */}
+              {groups.bed.length > 0 ? (
+                <div className={shortlistStyles.fitGroup} data-fit-group="bed">
+                  <h5 className={shortlistStyles.fitGroupHead}>
+                    Fits, bed ready <span className={shortlistStyles.fitGroupCount}>{groups.bed.length}</span>
+                  </h5>
+                  <ul className={styles.shortlistCandidateList}>
+                    {groups.bed.map((candidate) => renderCandidate(candidate, "bed"))}
+                  </ul>
+                </div>
+              ) : null}
               {groups["no-bed"].length > 0 ? (
                 <div className={shortlistStyles.fitGroup} data-fit-group="no-bed">
                   <h5 className={shortlistStyles.fitGroupHead}>
@@ -1743,29 +1667,28 @@ export function ShortlistPanel({
                 </div>
               ) : null}
 
-              {/* The caveat for every road distance in the list above, stated once and AS TEXT: a
-            `title` is invisible on a touch screen and to a keyboard. Rendered only when a route
-            can be shown. */}
-              {originEd?.referenceEdId !== undefined ? (
-                <p
-                  className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}
-                  data-testid="ward-shortlist-route-caveat"
-                >
-                  {REFERENCE_DISTANCE_CAVEAT}
-                </p>
+              {/* Wards that take this person only with an override reason: still choosable, so the
+              count is stated while closed and the list opens itself while one of them is chosen. */}
+              {groups.review.length > 0 ? (
+                <div className={styles.shortlistUnavailableBlock} data-fit-group="review">
+                  <button
+                    type="button"
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.disclosure}`}
+                    data-testid="ward-shortlist-review-toggle"
+                    aria-expanded={reviewShown}
+                    onClick={() => setReviewOpen((open) => !open)}
+                  >
+                    {/* Josh (31 Oct 2026): the button states the count, "3 need an override · Show". */}
+                    {groups.review.length} need an override · {reviewShown ? "Hide" : "Show"}
+                    <ChevronDown aria-hidden="true" className={shortlistStyles.chevron} />
+                  </button>
+                  {reviewShown ? (
+                    <ul className={styles.shortlistCandidateList}>
+                      {groups.review.map((candidate) => renderCandidate(candidate, "review"))}
+                    </ul>
+                  ) : null}
+                </div>
               ) : null}
-
-              {/* P125 (audit 27 Oct 2026): "Pulled" in each ward's bed line is the D-81 word and stays;
-            this says once what it means, as text, and opens the Help glossary for the rest. */}
-              <p
-                className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}
-                data-testid="ward-shortlist-pulled-note"
-              >
-                {PULLED_EXPLANATION}{" "}
-                <Button variant="ghost" size="sm" onClick={() => openWardHelp("glossary")}>
-                  {GLOSSARY_LINK_TEXT}
-                </Button>
-              </p>
 
               {/* ⚠️ A DISCLOSURE, NOT A FILTER. These wards fail a gate no recorded reason can buy, so
             there is no choice behind this toggle. The count is stated while collapsed and what is
@@ -1774,13 +1697,13 @@ export function ShortlistPanel({
                 <div className={styles.shortlistUnavailableBlock}>
                   <button
                     type="button"
-                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch} ${shortlistStyles.disclosure}`}
                     data-testid="ward-shortlist-unavailable-toggle"
                     aria-expanded={unavailableOpen}
                     onClick={() => setUnavailableOpen((open) => !open)}
                   >
-                    Does not fit: {groups.no.length} {groups.no.length === 1 ? "ward cannot" : "wards cannot"} take this
-                    person
+                    {groups.no.length} {groups.no.length === 1 ? "ward cannot" : "wards cannot"} take this person
+                    <ChevronDown aria-hidden="true" className={shortlistStyles.chevron} />
                   </button>
                   {unavailableOpen ? (
                     <ul className={styles.shortlistCandidateList} data-testid="ward-shortlist-unavailable-list">
@@ -1789,20 +1712,29 @@ export function ShortlistPanel({
                   ) : null}
                 </div>
               ) : null}
+
+              {/* The road-time caveat and what Pulled means, said once, as one small note (P125 and the
+              route caveat keep their words; they no longer sit between the lists). */}
+              <p
+                className={`${shortlistStyles.listNote} ${shortlistStyles.tabularNum}`}
+                data-testid="ward-shortlist-pulled-note"
+              >
+                {originEd?.referenceEdId !== undefined ? (
+                  <span data-testid="ward-shortlist-route-caveat">{REFERENCE_DISTANCE_CAVEAT} </span>
+                ) : null}
+                {PULLED_EXPLANATION}{" "}
+                <button type="button" className={shortlistStyles.inlineLink} onClick={() => openWardHelp("glossary")}>
+                  {GLOSSARY_LINK_TEXT}
+                </button>
+              </p>
             </div>
           </section>
 
           <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
-            {isPhone && referTargetNames.length === 0 ? null : (
+            {referTargetNames.length === 0 ? null : (
               <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
                 <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
-                  {referTargetNames.length === 0 ? (
-                    "Choose a ward"
-                  ) : (
-                    <>
-                      To <strong>{referTargetNames.join(", ")}</strong>
-                    </>
-                  )}
+                  To <strong>{referTargetNames.join(", ")}</strong>
                 </span>
                 <span className={shortlistStyles.toMeta}>
                   {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
@@ -1829,7 +1761,7 @@ export function ShortlistPanel({
               </p>
             ) : null}
 
-            <div className={styles.shortlistActionRow}>
+            <div className={`${styles.shortlistActionRow} ${shortlistStyles.actions}`}>
               {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
               ward to refer" and takes the person to the fits list; nothing is referred against a
               default (Critical 2), so the choice stays a human tap on a ward. */}
@@ -1863,7 +1795,8 @@ export function ShortlistPanel({
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                   onClick={handleQuickSend}
                 >
-                  {referTargetNames.length === 1 ? `Quick send to ${referTargetNames[0]}` : "Quick send"}
+                  {/* The ward is named on Refer and the To line, so this stays short enough to share a row. */}
+                  Quick send
                 </button>
               ) : null}
               <button
@@ -2111,7 +2044,7 @@ export function ShortlistPanel({
 
       {(() => {
         const eligibilityBadge = activeUnit
-          ? `${metCount} met${notMetCount > 0 ? ` · ${notMetCount} review` : ""}`
+          ? `${metCount} of ${checkedCount} met${notMetCount > 0 ? ` · ${notMetCount} to review` : ""}`
           : "Select ward";
         const eligibilityTone = activeUnit ? (notMetCount > 0 ? "warn" : "good") : "neutral";
 
@@ -2225,7 +2158,6 @@ export function ShortlistPanel({
                       data-testid={`ward-gate-${gate.gate}`}
                       data-pass={String(gate.pass)}
                       data-mark={gateMark(gate)}
-                      hidden={gateFilter === "open" && gate.pass ? true : undefined}
                       className={styles.shortlistGateRow}
                     >
                       {gateMark(gate) === "info" ? (
@@ -2251,11 +2183,6 @@ export function ShortlistPanel({
                     </li>
                   ))}
                 </ol>
-                {gateFilter === "open" && notMetCount === 0 ? (
-                  <p className={styles.placeholder} data-testid="ward-shortlist-all-gates-clear">
-                    All {checkedCount} eligibility checks are met.
-                  </p>
-                ) : null}
               </>
             )}
           </details>
@@ -2832,14 +2759,12 @@ export function ShortlistPanel({
       </details>
       {/* Desktop: the tier targets once, as small text at the panel foot rather than under the
           patient (Home placement redesign, Josh 19 Oct 2026). */}
-      {isPhone ? null : (
-        <p
-          className={`${shortlistStyles.targetNote} ${shortlistStyles.footNote}`}
-          data-testid="ward-shortlist-tier-targets"
-        >
-          {TIER_TARGETS_NOTE}
-        </p>
-      )}
+      <p
+        className={`${shortlistStyles.targetNote} ${shortlistStyles.footNote}`}
+        data-testid="ward-shortlist-tier-targets"
+      >
+        {TIER_TARGETS_NOTE}
+      </p>
     </div>
   );
 }

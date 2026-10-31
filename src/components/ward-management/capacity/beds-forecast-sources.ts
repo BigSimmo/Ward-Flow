@@ -25,7 +25,7 @@ import { forecastReleaseAt } from "../forecast/forecast-release-date";
 type ForecastSourceWindowId = "overdue" | "this_shift" | "next_shift" | "rest_of_day";
 
 /** One discharge a ward has flagged, as the ward recorded it. No patient detail, ever. */
-export type ForecastSourceEntry = {
+type ForecastSourceEntry = {
   releaseId: string;
   expectedAt: Instant;
   state: "confirmed" | "expected";
@@ -57,7 +57,7 @@ type ForecastSourceWard = {
   updatedThisShift: boolean;
 };
 
-export type ForecastSourceWindow = {
+type ForecastSourceWindow = {
   id: ForecastSourceWindowId;
   /** "Overdue from before this shift", "Day shift", "Evening shift" or "Rest of the 24 hours". */
   label: string;

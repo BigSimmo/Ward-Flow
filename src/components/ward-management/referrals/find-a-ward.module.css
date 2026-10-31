@@ -1,0 +1,96 @@
+/* The one "Find a ward" list (find-a-ward.tsx, D-91). Rows reuse the decision list's classes from
+   referral-match-phone.module.css; this file holds the list and the full-length names. Tokens only. */
+
+.finder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* Full ward and hospital names wrap in full rather than ending in "…" (a phone has no hover). */
+.wrap.wrap {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+}
+
+.row {
+  cursor: pointer;
+}
+
+/* No side edges (Josh, 31 Oct 2026): a ticked ward is the selected tint with a neutral border. */
+.row:has(.box:checked) {
+  background: var(--wf-selected);
+  border-color: var(--wf-line);
+}
+
+.row:has(.box:disabled) {
+  cursor: default;
+}
+
+/* A fitting ward the host's limit holds back reads as unavailable, not as a different kind. */
+.row[data-kind="yes"]:has(.box:disabled:not(:checked)) {
+  opacity: 0.6;
+}
+
+.row:has(.box:focus-visible) {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.box {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--wf-accent-strong);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px dashed var(--wf-line);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1.4 var(--wf-font);
+}
+
+/* A host that styles every input in its panel (the Destination sheet's deck does) must not draw a
+   second box inside the search field: the field's own control stays bare, at the kit's sizes. */
+.finder.finder .search input:not([type="checkbox"]) {
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--wf-fs-13);
+  outline: none;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .finder.finder .search input:not([type="checkbox"]) {
+    font-size: max(1rem, 16px);
+  }
+}

@@ -33,7 +33,7 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     expect(scrollContainer).toHaveAttribute("aria-label", "Inpatient movement list");
   });
 
-  it("renders ArrivalTimeModal with accessible group and aria-pressed on ETA presets", () => {
+  it("renders ArrivalTimeModal with an accessible group of ETA time buttons that fill the typed box", () => {
     const seed = seedWardFlowState();
     const movement = seed.movements[0];
 
@@ -46,17 +46,15 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     const presetGroup = screen.getByRole("group", { name: /Estimated Time of Arrival/i });
     expect(presetGroup).toBeInTheDocument();
 
-    const presetButtons = screen.getAllByRole("button", { name: /\+(?:30 min|\d hour)/i });
-    expect(presetButtons.length).toBeGreaterThan(0);
+    // D-91 (31 Oct 2026): the kit's time buttons (Now, +15m, +30m, +1h) each say the time they set
+    // and write it into the typed box. They are actions, not toggles, so they carry no aria-pressed
+    // and none is pressed before a person picks one.
+    const presetButtons = screen.getAllByRole("button", { name: /^(?:Now|\+\d+[mh]), sets \d{2}:\d{2}$/u });
+    expect(presetButtons).toHaveLength(4);
+    presetButtons.forEach((btn) => expect(btn).not.toHaveAttribute("aria-pressed"));
 
-    // Initial check: each preset button has aria-pressed
-    presetButtons.forEach((btn) => {
-      expect(btn).toHaveAttribute("aria-pressed");
-    });
-
-    // Clicking a preset button toggles aria-pressed="true"
-    fireEvent.click(presetButtons[0]);
-    expect(presetButtons[0]).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByRole("button", { name: /^\+30m/u }));
+    expect(screen.getByLabelText("Type the ETA")).toHaveValue("11:12");
   });
 
   it("gives every Form times control a visible label, so it is reachable by name from the keyboard", () => {

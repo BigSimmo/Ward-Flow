@@ -4,7 +4,7 @@ import { edJourneySummaries } from "@/components/ward-management/ed/ed-home-deri
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users } from "lucide-react";
+import { Activity, AlertTriangle, ChevronDown, Clock, Hospital, ListOrdered, Scale, Users, X } from "lucide-react";
 
 import {
   Card,
@@ -37,8 +37,9 @@ import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
   STATISTICS_EDS_HREF,
-  STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+// D-91: the one unit finder, on the Summary page.
+import { STATISTICS_UNIT_FINDER_HREF } from "./statistics-view-switch";
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
@@ -65,6 +66,7 @@ import { PhoneBody, PhoneList, phoneBodyStyles as phone } from "./statistics-pho
 import styles from "./statistics-v6.module.css";
 import detail from "./statistics-detail.module.css";
 import ed from "./statistics-ed-third-edition.module.css";
+import redesign from "./statistics-ed-redesign.module.css";
 
 /**
  * ONE EMERGENCY DEPARTMENT IN DETAIL — the per-department statistics page.
@@ -131,8 +133,8 @@ function OperationalStatisticsEdScreen({
               page showing nothing.
             </p>
             <p>
-              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ed-chooser-link">
-                Choose an emergency department from the comparisons page
+              <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ed-chooser-link">
+                Choose an emergency department with Open a unit
               </Link>{" "}
               to reach one that does exist.
             </p>
@@ -438,6 +440,96 @@ function EdPresentation({
   const section = statisticsSectionById("units")!;
   const longHours = LONG_WAIT_MINUTES / 60;
   const veryLongHours = VERY_LONG_WAIT_MINUTES / 60;
+  // Role view (as ED clinician): an ED desk reads counts only (D-80), so the cards that would list
+  // people (Open ED journeys, Next to cross, by ED) are left out and the counts lead instead.
+  const edCountsDesk = useEffectiveWardAccess().role === "ed" && countsOnly;
+  const bandsCard = (
+    <StatCard
+      icon={Activity}
+      title="Time since opening"
+      // Role view (as ED clinician): the aside splits the chart's journeys where they are; it
+      // repeated the hero's "Open ED journeys" and the split floated above the cards.
+      aside={
+        edCountsDesk ? (
+          <span data-testid="ward-statistics-ed-population">
+            <span aria-hidden="true">
+              {stillInEdShown} still in ED · {inTransitShown} in transit
+            </span>
+            <SrOnly>
+              {stillInEdShown} still in ED, {inTransitShown} in transit or recorded departure
+            </SrOnly>
+          </span>
+        ) : (
+          "Open ED journeys"
+        )
+      }
+      id="ed-bands"
+      data-testid="ward-statistics-ed-bands"
+    >
+      <CardBody className={styles.bodyStack}>
+        <ColumnChart
+          label="Open ED journeys by time since opening"
+          height={96}
+          columns={bands.map((band, index) => ({
+            id: band.label,
+            label: bandShortLabel(index),
+            ...withheldBar(exactStatisticsCount(band.count) ?? 0, bandShown[index]!),
+          }))}
+        />
+        <ul className={styles.srOnly}>
+          {bands.map((band, index) => (
+            <li key={band.label} data-testid={`ward-statistics-ed-band-${slug(band.label)}`}>
+              {band.label},{" "}
+              <span data-testid={`ward-statistics-ed-band-count-${slug(band.label)}`}>
+                {bandShown[index] === 0 ? "none" : bandShown[index]}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </CardBody>
+    </StatCard>
+  );
+  const declinesCard = (
+    // Role view (as ED clinician): the decline cross, as on the network page's Declines by reason;
+    // the tiles stack in the side column and drop the "Declined" the title already says.
+    <StatCard icon={edCountsDesk ? X : Users} title="Declines" aside="Referrals from here" id="ed-declines">
+      <CardBody className={styles.bodyStack}>
+        <div data-testid="ward-statistics-ed-declines">
+          <div className={cx(styles.tiles, edCountsDesk && redesign.stackTiles)} aria-hidden="true">
+            <div className={styles.tile}>
+              <span className={styles.tileLabel}>
+                <StatusGlyph tone="closed" size={9} /> {edCountsDesk ? "No suitable bed" : "Declined, no suitable bed"}
+              </span>
+              <span className={styles.tileValue}>{noFreeBedShown}</span>
+            </div>
+            <div className={styles.tile}>
+              <span className={styles.tileLabel}>
+                <StatusGlyph tone="closed" size={9} /> {edCountsDesk ? "Other" : "Declined, other"}
+              </span>
+              <span className={styles.tileValue}>{notSuitableShown ?? "unknown"}</span>
+            </div>
+          </div>
+          <SrOnly>
+            <p data-testid="ward-stat-ed-declined-no-free-bed">
+              {noFreeBedShown} {noFreeBedShown === 1 ? "decline names" : "declines name"} a ward that had no suitable
+              bed.
+            </p>
+            {notSuitableDeclineCount !== null ? (
+              <p data-testid="ward-stat-ed-declined-not-suitable">
+                {notSuitableShown} {notSuitableShown === 1 ? "decline gave" : "declines gave"} a reason other than
+                having no suitable bed.
+              </p>
+            ) : null}
+          </SrOnly>
+          {notSuitableDeclineCount !== null ? null : (
+            <p className={detail.note} data-testid="ward-stat-ed-declined-not-suitable-unavailable">
+              {declineStatement}
+            </p>
+          )}
+        </div>
+      </CardBody>
+    </StatCard>
+  );
   return (
     <StatisticsPage
       section={section}
@@ -479,8 +571,19 @@ function EdPresentation({
           ) : null}
         </>
       }
-      eyebrowLabel="Emergency department"
-      eyebrowDetail={<span data-testid="ward-statistics-ed-site">{site ? site.name : "Hospital not recorded"}</span>}
+      // Role view (as ED clinician): the eyebrow says where this is in the app and that the desk
+      // reads counts only; the title already names the site, so the eyebrow no longer repeats it.
+      eyebrowLabel={edCountsDesk ? "Statistics" : "Emergency department"}
+      eyebrowDetail={
+        edCountsDesk ? (
+          <span data-testid="ward-statistics-people-not-listed">
+            {site ? `${site.service} · ` : ""}Counts only
+            <SrOnly>, so people are not listed</SrOnly>
+          </span>
+        ) : (
+          <span data-testid="ward-statistics-ed-site">{site ? site.name : "Hospital not recorded"}</span>
+        )
+      }
       now={now}
       paused={paused}
       onTogglePause={togglePause}
@@ -499,7 +602,9 @@ function EdPresentation({
         ],
       }}
       phone={{
-        eyebrow: site ? `${department.siteCode} · ${site.service}` : department.siteCode,
+        eyebrow:
+          (site ? `${department.siteCode} · ${site.service}` : department.siteCode) +
+          (edCountsDesk ? " · Counts only" : ""),
         title: `${shortName(department.name)} ED`,
         sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} urgent`,
         stats: (
@@ -544,22 +649,47 @@ function EdPresentation({
           />
           <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
           <HeroStat value={small(urgent)} label="Urgent" />
-          <HeroStat value={small(over24h)} label={`Over ${longHours}h`} />
+          {/* Role view (as ED clinician): marked as Longest is, since it counts the same long waits. */}
+          <HeroStat
+            value={small(over24h)}
+            label={
+              <span className={styles.flagged}>
+                {edCountsDesk && exactStatisticsCount(over24h) !== 0 ? <StatusGlyph tone="warning" size={9} /> : null}
+                {`Over ${longHours}h`}
+              </span>
+            }
+          />
           {/* Five figures at most (v10). No ward yet is the wait list's own No ward filter count,
               so the hero leaves it out; the export still carries it. */}
         </>
       }
     >
-      <p className={styles.muted} data-testid="ward-statistics-ed-population">
-        {stillInEdShown} still in ED · {inTransitShown} in transit or recorded departure. Open journeys retain ED
-        accountability until arrival. The physical split includes recorded ED outcomes; times run from journey opening.
-      </p>
+      {/* Role view (as ED clinician): the split is Time since opening's aside, so no loose line here. */}
+      {edCountsDesk ? null : (
+        <p className={styles.muted} data-testid="ward-statistics-ed-population">
+          {stillInEdShown} still in ED · {inTransitShown} in transit
+          <span className="sr-only"> or with a recorded departure</span>. Open journeys retain ED accountability until
+          arrival. The physical split includes recorded ED outcomes; times run from journey opening.
+        </p>
+      )}
       {isPhone && countsOnly ? (
         <PhoneBody testId="ward-statistics-ed-phone">
-          <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />
+          {edCountsDesk ? bandsCard : null}
+          {edCountsDesk ? declinesCard : null}
+          {/* Role view (as ED clinician): "Counts only" is in the eyebrow, once. */}
+          {edCountsDesk ? null : <PeopleNotListed testId="ward-statistics-ed-phone-not-listed" />}
         </PhoneBody>
       ) : isPhone ? (
         personPhone
+      ) : edCountsDesk ? (
+        <>
+          {/* Role view (as ED clinician): the chart leads and Declines is the side column, so the two
+              cards end level; "Counts only" moved to the eyebrow. */}
+          <FlushRow layout="lead2">
+            {bandsCard}
+            {declinesCard}
+          </FlushRow>
+        </>
       ) : (
         <>
           {/* Direction A: the cards on the right set the row's height; the wait list follows it and
@@ -580,73 +710,8 @@ function EdPresentation({
                   {personNext ?? <PeopleNotListed testId="ward-statistics-ed-next-not-listed" />}
                 </CardBody>
               </StatCard>
-              <StatCard
-                icon={Activity}
-                title="Time since opening"
-                aside="Open ED journeys"
-                id="ed-bands"
-                data-testid="ward-statistics-ed-bands"
-              >
-                <CardBody className={styles.bodyStack}>
-                  <ColumnChart
-                    label="Open ED journeys by time since opening"
-                    height={96}
-                    columns={bands.map((band, index) => ({
-                      id: band.label,
-                      label: bandShortLabel(index),
-                      ...withheldBar(exactStatisticsCount(band.count) ?? 0, bandShown[index]!),
-                    }))}
-                  />
-                  <ul className={styles.srOnly}>
-                    {bands.map((band, index) => (
-                      <li key={band.label} data-testid={`ward-statistics-ed-band-${slug(band.label)}`}>
-                        {band.label},{" "}
-                        <span data-testid={`ward-statistics-ed-band-count-${slug(band.label)}`}>
-                          {bandShown[index] === 0 ? "none" : bandShown[index]}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardBody>
-              </StatCard>
-
-              <StatCard icon={Users} title="Declines" aside="Referrals from here" id="ed-declines">
-                <CardBody className={styles.bodyStack}>
-                  <div data-testid="ward-statistics-ed-declines">
-                    <div className={styles.tiles} aria-hidden="true">
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>
-                          <StatusGlyph tone="closed" size={9} /> Declined, no suitable bed
-                        </span>
-                        <span className={styles.tileValue}>{noFreeBedShown}</span>
-                      </div>
-                      <div className={styles.tile}>
-                        <span className={styles.tileLabel}>
-                          <StatusGlyph tone="closed" size={9} /> Declined, other
-                        </span>
-                        <span className={styles.tileValue}>{notSuitableShown ?? "unknown"}</span>
-                      </div>
-                    </div>
-                    <SrOnly>
-                      <p data-testid="ward-stat-ed-declined-no-free-bed">
-                        {noFreeBedShown} {noFreeBedShown === 1 ? "decline names" : "declines name"} a ward that had no
-                        suitable bed.
-                      </p>
-                      {notSuitableDeclineCount !== null ? (
-                        <p data-testid="ward-stat-ed-declined-not-suitable">
-                          {notSuitableShown} {notSuitableShown === 1 ? "decline gave" : "declines gave"} a reason other
-                          than having no suitable bed.
-                        </p>
-                      ) : null}
-                    </SrOnly>
-                    {notSuitableDeclineCount !== null ? null : (
-                      <p className={detail.note} data-testid="ward-stat-ed-declined-not-suitable-unavailable">
-                        {declineStatement}
-                      </p>
-                    )}
-                  </div>
-                </CardBody>
-              </StatCard>
+              {bandsCard}
+              {declinesCard}
             </FlushStack>
           </FlushRow>
 

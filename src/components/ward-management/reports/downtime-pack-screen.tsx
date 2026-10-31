@@ -1,6 +1,5 @@
 "use client";
 
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
   Fragment,
@@ -29,6 +28,8 @@ import {
   Segmented,
   Spinner,
   StatusGlyph,
+  Tabs,
+  phoneRows,
   cx,
   durMinutes,
   tableClasses,
@@ -60,6 +61,7 @@ import { nextDowntimePackAt } from "./downtime-pack-schedule";
 import { useTakeDowntimePack } from "./use-take-downtime-pack";
 import { reportDay, reportMoment } from "./report-parts";
 import styles from "./reports.module.css";
+import tabsStyles from "./downtime-pack-tabs.module.css";
 
 const NOT_RECORDED = "Not recorded";
 const OFFLINE_LABEL = "taken offline";
@@ -74,11 +76,12 @@ const KEEP_A_COPY =
 const TAKING_MS = 450;
 
 type Section = "beds" | "ed" | "moves" | "forms";
+/** Each table is the tab panel its tab controls (`Tabs` idPrefix "downtime"). */
 const SECTION_IDS: Record<Section, string> = {
-  beds: "downtime-beds",
-  ed: "downtime-ed",
-  moves: "downtime-moves",
-  forms: "downtime-legal",
+  beds: "downtime-panel-beds",
+  ed: "downtime-panel-ed",
+  moves: "downtime-panel-moves",
+  forms: "downtime-panel-forms",
 };
 
 /** Wards grouped by service, in the pack's own order, with a subtotal per service. */
@@ -161,6 +164,9 @@ type SheetRow = { title: string; facts: Array<{ id: string; label: string; value
  * v10: one hero with the frozen time and the four totals as chips that jump to their table. After a
  * new snapshot each chip carries a delta twin: the change since the pack it replaced. Phone is its
  * own layout: a compact hero, a four-way segmented control and rows that open a sheet of facts.
+ *
+ * Redesign (approved by Josh, 31 Oct 2026): on screen one table shows at a time, chosen by tabs; the
+ * print copy still holds all four. Service rows read as group headers and ready counts are marked green.
  */
 export function DowntimePackScreen() {
   const now = useWardFlowClock();
@@ -296,14 +302,16 @@ export function DowntimePackScreen() {
       ? { twin: signed(totals[key] - before[key]), twinLabel: twinWords(totals[key] - before[key]) }
       : {};
 
-  const jumpTo = (target: Section) => {
-    document.getElementById(SECTION_IDS[target])?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
-  };
+  // A chip or tab shows its table; the others stay in the print copy only.
+  const jumpTo = (target: Section) => setSection(target);
+  const onScreen = (target: Section) => (isPhone || section === target ? undefined : tabsStyles.printOnlyPanel);
 
   const snapshotButton = (variant: "onHero" | "sec") => (
     <span className={styles.gated}>
       <Button
         variant={variant}
+        // Phone (Josh, 31 Oct 2026): on the hero it is Home's hero pill.
+        className={variant === "onHero" ? phoneRows.heroPill : undefined}
         icon={taking ? undefined : Camera}
         onClick={newSnapshot}
         aria-disabled={!canSnapshot || undefined}
@@ -348,6 +356,7 @@ export function DowntimePackScreen() {
   const printButtonOnHero = (
     <Button
       variant="onHero"
+      className={phoneRows.heroPill}
       icon={Printer}
       onClick={printPack}
       aria-disabled={!ready || undefined}
@@ -387,14 +396,19 @@ export function DowntimePackScreen() {
   // every table in full, never only the section a phone had open (remaining-pages audit 13 Oct 2026).
   const packTables = (
     <>
-      <Card aria-labelledby="downtime-beds-title" id={SECTION_IDS.beds} className={styles.packCard}>
+      <Card
+        aria-labelledby="downtime-beds-title"
+        id={SECTION_IDS.beds}
+        className={cx(styles.packCard, onScreen("beds"))}
+        role={isPhone ? undefined : "tabpanel"}
+      >
         <CardHead
           id="downtime-beds-title"
           icon={BedDouble}
           title="Beds by ward"
           aside={
             <span className={styles.headMeta}>
-              <b>{pack.totals.ready}</b> ready
+              <b className={tabsStyles.readyGreen}>{pack.totals.ready}</b> ready
               {pack.totals.pendingPreparation > 0 ? (
                 <>
                   {" "}
@@ -440,7 +454,7 @@ export function DowntimePackScreen() {
             <tbody>
               {groups.map((group) => (
                 <Fragment key={group.service}>
-                  <tr className={styles.subtotal} data-testid="ward-downtime-subtotal">
+                  <tr className={cx(styles.subtotal, tabsStyles.groupHead)} data-testid="ward-downtime-subtotal">
                     <th scope="rowgroup">
                       {group.service}
                       <span className={styles.subtotalCount}>
@@ -448,7 +462,9 @@ export function DowntimePackScreen() {
                       </span>
                     </th>
                     <td className={styles.num}>{group.total.beds}</td>
-                    <td className={styles.num}>{group.total.ready}</td>
+                    <td className={styles.num}>
+                      {group.total.ready > 0 ? <span className={tabsStyles.readyChip}>{group.total.ready}</span> : 0}
+                    </td>
                     <td className={styles.num}>{group.total.pending}</td>
                     <td className={styles.num}>{group.total.occupied}</td>
                     <td className={styles.num}>{group.total.onLeave}</td>
@@ -460,7 +476,7 @@ export function DowntimePackScreen() {
                       <th scope="row">{ward.name}</th>
                       <td className={styles.num}>{ward.beds}</td>
                       <td className={styles.num}>
-                        {ward.counts.ready > 0 ? <span className={styles.fit}>{ward.counts.ready}</span> : 0}
+                        {ward.counts.ready > 0 ? <span className={tabsStyles.readyChip}>{ward.counts.ready}</span> : 0}
                       </td>
                       <td className={styles.num}>{ward.pendingPreparation}</td>
                       <td className={styles.num}>{ward.counts.occupied}</td>
@@ -477,7 +493,7 @@ export function DowntimePackScreen() {
                 <th scope="row">All wards</th>
                 <td className={styles.num}>{pack.totals.beds}</td>
                 <td className={styles.num} data-testid="ward-downtime-total-ready">
-                  {pack.totals.ready}
+                  {pack.totals.ready > 0 ? <span className={tabsStyles.readyChip}>{pack.totals.ready}</span> : 0}
                 </td>
                 <td className={styles.num}>{pack.totals.pendingPreparation}</td>
                 <td className={styles.num}>{pack.totals.occupied}</td>
@@ -494,7 +510,12 @@ export function DowntimePackScreen() {
         </p>
       </Card>
 
-      <Card aria-labelledby="downtime-ed-title" id={SECTION_IDS.ed} className={styles.packCard}>
+      <Card
+        aria-labelledby="downtime-ed-title"
+        id={SECTION_IDS.ed}
+        className={cx(styles.packCard, onScreen("ed"))}
+        role={isPhone ? undefined : "tabpanel"}
+      >
         <CardHead
           id="downtime-ed-title"
           icon={Users}
@@ -556,7 +577,12 @@ export function DowntimePackScreen() {
         {edPopulation ? <p className={styles.cardNote}>{edPopulation}</p> : null}
       </Card>
 
-      <Card aria-labelledby="downtime-moves-title" id={SECTION_IDS.moves} className={styles.packCard}>
+      <Card
+        aria-labelledby="downtime-moves-title"
+        id={SECTION_IDS.moves}
+        className={cx(styles.packCard, onScreen("moves"))}
+        role={isPhone ? undefined : "tabpanel"}
+      >
         <CardHead
           id="downtime-moves-title"
           icon={Ambulance}
@@ -605,7 +631,12 @@ export function DowntimePackScreen() {
         )}
       </Card>
 
-      <Card aria-labelledby="downtime-legal-title" id={SECTION_IDS.forms} className={styles.packCard}>
+      <Card
+        aria-labelledby="downtime-legal-title"
+        id={SECTION_IDS.forms}
+        className={cx(styles.packCard, onScreen("forms"))}
+        role={isPhone ? undefined : "tabpanel"}
+      >
         <CardHead
           id="downtime-legal-title"
           icon={FileText}
@@ -662,7 +693,7 @@ export function DowntimePackScreen() {
           <div className={styles.phoneScreenOnly} data-print-hide>
             <PhoneHero
               level={1}
-              className={styles.downtimePhoneHero}
+              className={cx(styles.downtimePhoneHero, tabsStyles.heroPillActions)}
               // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
               // frozen pack takes no Demo pill, whose pulse would read as live.
               eyebrow="Downtime pack · synthetic data"
@@ -876,7 +907,7 @@ export function DowntimePackScreen() {
             </span>
           }
           bar={
-            <HeroChips label="Pack totals, each jumps to its table">
+            <HeroChips label="Pack totals, each shows its table">
               <HeroChip
                 value={totals.ready}
                 label={
@@ -887,8 +918,9 @@ export function DowntimePackScreen() {
                 onPress={() => jumpTo("beds")}
                 {...twin("ready")}
               />
-              <HeroChip value={totals.ed} label="Still in ED" onPress={() => jumpTo("ed")} {...twin("ed")} />
-              <HeroChip value={totals.moves} label="Moves pending" onPress={() => jumpTo("moves")} {...twin("moves")} />
+              {/* The chips use the tables' own names, so one thing has one word. */}
+              <HeroChip value={totals.ed} label="ED queue" onPress={() => jumpTo("ed")} {...twin("ed")} />
+              <HeroChip value={totals.moves} label="Pending moves" onPress={() => jumpTo("moves")} {...twin("moves")} />
               <HeroChip value={totals.forms} label="Legal forms" onPress={() => jumpTo("forms")} {...twin("forms")} />
             </HeroChips>
           }
@@ -904,23 +936,24 @@ export function DowntimePackScreen() {
           {KEEP_A_COPY}
         </p>
 
-        {/* Tablet and desktop: the pack runs to thousands of pixels, so a sticky jump row keeps each
-            table one press away once the hero chips have scrolled off (device audit 11 Oct 2026). The
-            hero chips carry the totals, so the row names tables only (UX audit 21 Oct 2026). */}
-        <nav className={styles.jumpRow} aria-label="Jump to a table" data-print-hide>
-          {(
-            [
-              ["beds", "Beds"],
-              ["ed", "ED queue"],
-              ["moves", "Pending moves"],
-              ["forms", "Legal forms"],
-            ] as const
-          ).map(([id, label]) => (
-            <button key={id} type="button" className={styles.jumpItem} onClick={() => jumpTo(id)}>
-              {label}
-            </button>
-          ))}
-        </nav>
+        {/* One table on screen at a time, chosen here; the print copy still holds all four.
+            The hero chips just above carry each table's count, so the tabs name the tables only. */}
+        <div className={tabsStyles.tabBar} data-print-hide>
+          <Tabs<Section>
+            label="Downtime pack section"
+            idPrefix="downtime"
+            value={section}
+            onChange={setSection}
+            className={tabsStyles.tabs}
+            items={[
+              { id: "beds", label: "Beds by ward" },
+              { id: "ed", label: "ED queue" },
+              { id: "moves", label: "Pending moves" },
+              { id: "forms", label: "Legal forms" },
+            ]}
+          />
+          <span className={tabsStyles.tabNote}>Print or save PDF holds all four tables.</span>
+        </div>
 
         {/* F-08: the printout says it holds invented records before its first table. */}
         <p className={cx(styles.printOnly, styles.printMeta)} data-testid="ward-downtime-print-provenance">

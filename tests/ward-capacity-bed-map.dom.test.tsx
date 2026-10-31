@@ -1,274 +1,223 @@
-import { readFileSync } from "node:fs";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-
-import { BedMap, bedMapWards, groupBedMapWardsByService } from "@/components/ward-management/capacity/bed-map";
+import { bedMapWards, groupBedMapWardsByService } from "@/components/ward-management/capacity/bed-map";
+import { BedMapCards } from "@/components/ward-management/capacity/capacity-bed-map-cards";
+import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import type { CapacityModel } from "@/components/ward-management/capacity/capacity-model";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-drawer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
-import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
-import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { bedMapCards, bedMapGroup, bedMapRegion, bedSquares, bedSquaresOf } from "./helpers/capacity-ward-table";
 
-const units = allUnits();
+/**
+ * Capacity's bed map (`capacity-bed-map-cards.tsx`, the October 2026 redesign): every ward as a
+ * card with one square per bed, grouped by health service. The squares are decorative and the
+ * card says the same in words; pressing a card opens the ward drawer.
+ *
+ * Every expected figure is read from `bedMapWards` / `networkWardRows` over the same state the map
+ * draws, never hand-written. The old `BedMap` component's hatch, carousel, service shortcuts and
+ * per-square links went with the redesign; their cases were retired with it.
+ */
+type MapState = Pick<WardFlowState, "units" | "bedReleases" | "admissions" | "leaveBeds">;
 
-function squaresIn(wardBlock: HTMLElement, state: "ready" | "pulled" | "closed" | "occupied"): HTMLElement[] {
-  return Array.from(wardBlock.querySelectorAll(`[data-bed-map-state="${state}"]`));
+const seeded = seedWardFlowState();
+const seededWards = bedMapWards(seeded.units, [...seeded.bedReleases], seeded.admissions, seeded.leaveBeds);
+const seededGroups = groupBedMapWardsByService(seededWards);
+
+/** The three fields of the page model that `BedMapCards` reads, built from the given state. */
+function mapModel(state: MapState): CapacityModel {
+  const model: Pick<CapacityModel, "mapGroups" | "networkRows" | "now"> = {
+    mapGroups: groupBedMapWardsByService(
+      bedMapWards(state.units, [...state.bedReleases], state.admissions, state.leaveBeds),
+    ),
+    networkRows: networkWardRows(state.units, NOW_ANCHOR, state.bedReleases, state.admissions, state.leaveBeds),
+    now: NOW_ANCHOR,
+  };
+  return model as CapacityModel;
 }
 
-describe("BedMap — the network's whole bed supply, one square per bed", () => {
-  it("has a non-empty population to render, or every assertion below is vacuous", () => {
-    expect(units.length).toBeGreaterThan(0);
-  });
+function renderMap(state: MapState, onSelectWard: (unitId: string) => void = vi.fn()) {
+  return render(
+    <BedMapCards model={mapModel(state)} onSelectWard={onSelectWard} highlight={null} onHighlight={vi.fn()} />,
+  );
+}
 
-  /**
-   * ⚠️ THE FIRST TEST NAMED IN THIS TASK'S BRIEF: the map must draw exactly as many squares of each
-   * state as the derivations report, per ward — walked over every real unit, not one hand-picked
-   * example.
-   */
-  it("draws exactly as many squares of each ruled state as bedStates reports, for every ward", () => {
-    const expected = bedMapWards(units, bedReleases, wardAdmissions, leaveBeds);
-    expect(
-      expected.reduce((sum, ward) => sum + ward.pulled, 0),
-      "no ward has a pulled bed — the Pulled squares are untested",
-    ).toBeGreaterThan(0);
-    render(<BedMap units={units} bedReleases={bedReleases} admissions={wardAdmissions} leaveBeds={leaveBeds} />);
-    for (const ward of expected) {
-      const block = screen.getByTestId(`ward-bed-map-ward-${ward.unit.id}`);
-      expect(squaresIn(block, "ready"), ward.unit.id).toHaveLength(ward.ready);
-      expect(squaresIn(block, "pulled"), ward.unit.id).toHaveLength(ward.pulled);
-      expect(squaresIn(block, "closed"), ward.unit.id).toHaveLength(ward.closed);
-      expect(squaresIn(block, "occupied"), ward.unit.id).toHaveLength(ward.occupied);
-      const total = ward.ready + ward.pulled + ward.closed + ward.occupied;
-      expect(total, `${ward.unit.id}: drawn squares do not sum to its ${ward.unit.beds} beds`).toBe(ward.unit.beds);
-    }
-  });
+function renderScreen() {
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <CapacityScreen />
+    </WardFlowProvider>,
+  );
+}
 
-  it("hatches exactly the beds still being made ready, and never more than the ready count", () => {
-    const expected = bedMapWards(units, bedReleases);
-    const preparingWards = expected.filter((ward) => ward.pendingPreparation > 0);
-    expect(preparingWards.length, "no ward has a bed pending preparation — this guard proves nothing").toBeGreaterThan(
-      0,
+/** Each ward's card, paired with its derived figures by the group order both share. */
+function cardsByWard(groups = seededGroups) {
+  return groups.flatMap((group) => {
+    if (group.wards.length === 0) return [];
+    const section = bedMapGroup(group.service);
+    expect(section, `${group.service} has wards but no group on the map`).not.toBeNull();
+    const cards = bedMapCards(section!);
+    expect(cards, `${group.service} draws a different number of cards than it has wards`).toHaveLength(
+      group.wards.length,
     );
-    render(<BedMap units={units} bedReleases={bedReleases} />);
-    for (const ward of expected) {
-      const block = screen.getByTestId(`ward-bed-map-ward-${ward.unit.id}`);
-      const hatched = block.querySelectorAll('[data-bed-map-preparing="true"]');
-      expect(hatched.length, ward.unit.id).toBe(ward.pendingPreparation);
-      expect(hatched.length, `${ward.unit.id}: more hatched squares than ready ones`).toBeLessThanOrEqual(ward.ready);
-      // Every hatched square is drawn as a READY square (same base state), never a state of its own.
-      for (const square of Array.from(hatched)) {
-        expect(square.getAttribute("data-bed-map-state"), ward.unit.id).toBe("ready");
-      }
-    }
+    return group.wards.map((ward, index) => ({ ward, card: cards[index]! }));
   });
+}
 
-  /**
-   * 🔴 STATIC PROOF that a prepared bed's fill equals a ready bed's, because jsdom applies no
-   * CSS-module styles (the same limitation `ward-capacity-screen.dom.test.tsx`'s own
-   * ".attentionWho" test records) — so the property is proved by reading the stylesheet rather than
-   * a computed style. `.preparing` may add a `background-image` (the hatch); if it ever declares a
-   * `background-color` or the `background` shorthand, a prepared bed's fill would stop being a
-   * ready bed's fill by construction.
-   */
-  it("never lets the hatch declare its own fill — a prepared bed's fill is a ready bed's fill", () => {
-    const css = readFileSync("src/components/ward-management/capacity/bed-map.module.css", "utf8");
-    const rule = /\.preparing\s*\{([^}]*)\}/mu.exec(css);
-    expect(rule, "no .preparing rule found — the assertion below would be vacuous").not.toBeNull();
-    const body = (rule as RegExpExecArray)[1];
-    expect(body, "the preparing hatch declares its own background-color").not.toMatch(/background-color\s*:/u);
-    expect(body, "the preparing hatch uses the background shorthand, which would erase .ready's fill").not.toMatch(
-      /(?<![-\w])background\s*:/u,
-    );
-  });
-
-  /**
-   * 🔴 CORRECTS THIS TASK'S OWN BUILD BRIEF, which stated "WACHS has no inpatient unit reporting to
-   * this board." Checked against `ward-sites.ts`: WACHS carries five real units today. This test
-   * proves the general rule instead, on a MINIMAL synthetic network built for the purpose — a
-   * service with nothing in it gets a sentence, never a heading over an empty group (the same
-   * discipline `WardGroupHeading` enforces by throwing, applied here without importing a
-   * people-scoped component for a ward count).
-   */
-  it("states a service with no reporting unit in words, and never heads an empty group", () => {
-    const withoutWachs = units.filter((unit) => {
-      // WACHS units in today's fixture: Albany, Bunbury, Broome, Geraldton, Kununurra.
-      return !["alb-adult-open", "bun-adult-open", "brm-adult-secure", "ger-adult-open", "kun-adult-open"].includes(
-        unit.id,
-      );
-    });
-    expect(withoutWachs.length, "removed too many units — this fixture would be vacuous").toBeLessThan(units.length);
-    const groups = groupBedMapWardsByService(bedMapWards(withoutWachs, bedReleases));
-    const wachsGroup = groups.find((group) => group.service === "WACHS");
-    expect(wachsGroup?.wards.length, "the synthetic fixture still has a WACHS unit").toBe(0);
-
-    render(<BedMap units={withoutWachs} bedReleases={bedReleases} />);
-    expect(
-      screen.queryByRole("heading", { name: /WACHS/u }),
-      "an empty service must not be headed",
-    ).not.toBeInTheDocument();
-    expect(screen.getByText(/WACHS has no inpatient unit reporting to this board/iu)).toBeInTheDocument();
-  });
-
-  /**
-   * The other half of the same property, against the REAL fixture: today WACHS is not empty, so the
-   * map must render it as a normal heading and ward blocks, not the absence sentence. This is the
-   * test that would go red the day the brief's claim about WACHS becomes true.
-   */
-  it("renders WACHS as a normal heading with real ward blocks in today's fixture", () => {
-    render(<BedMap units={units} bedReleases={bedReleases} />);
-    expect(screen.getByRole("heading", { name: /WACHS/u })).toBeInTheDocument();
-    expect(screen.queryByText(/WACHS has no inpatient unit/iu)).not.toBeInTheDocument();
-  });
-
-  it("names every state in the legend, including the hatched one", () => {
-    render(<BedMap units={units} bedReleases={bedReleases} />);
-    const legend = screen.getByLabelText("Bed map legend");
-    expect(within(legend).getByText(/^Ready$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/still being made ready/iu)).toBeInTheDocument();
-    expect(within(legend).getByText(/^Pulled/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/^Closed/u)).toBeInTheDocument();
-    // "Held" now means only a bed kept for a patient on leave, which is never a square of its own.
-    expect(within(legend).queryByText(/Held|Blocked/u)).not.toBeInTheDocument();
-    expect(within(legend).getByText(/^Occupied$/u)).toBeInTheDocument();
-  });
-
-  it("gives every square an accessible name", () => {
-    render(<BedMap units={units} bedReleases={bedReleases} />);
-    const readyBeds = screen.getAllByRole("link", { name: "Ready bed" });
-    const preparingBeds = screen.getAllByRole("link", { name: "Ready bed — still being made ready" });
-    const closedBeds = screen.getAllByRole("link", { name: "Closed bed — not offered" });
-    const occupiedBeds = screen.getAllByRole("link", { name: "Occupied bed" });
-    expect(readyBeds.length + preparingBeds.length).toBeGreaterThan(0);
-    expect(closedBeds.length).toBeGreaterThan(0);
-    expect(occupiedBeds.length).toBeGreaterThan(0);
-  });
-
-  /**
-   * ⚠️ ZERO READS "none", NEVER "0" — the same rule this whole screen already applies to Ready and
-   * Locked (`ward-capacity-zero-spelling.dom.test.tsx`, census §8). Floored on a real ward actually
-   * having a zero ready count so the word branch is exercised against real data.
-   */
-  it("states a ward's zero ready count as 'none', never a bare '0'", () => {
-    const expected = bedMapWards(units, bedReleases);
-    const zeroReadyWards = expected.filter((ward) => ward.ready === 0);
-    expect(zeroReadyWards.length, "no ward has a zero ready count — this guard proves nothing").toBeGreaterThan(0);
-    render(<BedMap units={units} bedReleases={bedReleases} />);
-    for (const ward of zeroReadyWards) {
-      const block = screen.getByTestId(`ward-bed-map-ward-${ward.unit.id}`);
-      expect(block, ward.unit.id).toHaveTextContent(/none ready/iu);
-      expect(block.textContent ?? "", `${ward.unit.id} kept a bare 0 beside "ready"`).not.toMatch(/\b0 ready/u);
-    }
-  });
-
-  it("renders the overview first and exposes the legend when bed detail is selected", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CapacityScreen />
-      </WardFlowProvider>,
-    );
-    const panel = screen.getByRole("region", { name: "Bed map" });
-    expect(panel).toBeInTheDocument();
-    expect(within(panel).queryByLabelText("Bed map legend")).not.toBeInTheDocument();
-    fireEvent.click(within(panel).getByRole("button", { name: "Bed detail" }));
-    expect(within(panel).getByLabelText("Bed map legend")).toBeInTheDocument();
-  });
-
-  // P093 (Josh, 9:55 PM 27 Oct 2026, option A): a square now opens its ward's bed board.
-  it("links a bed square to its ward's bed board", () => {
-    const onSelectWard = vi.fn();
-    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
-    const firstWard = units[0];
-    const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
-    const firstSquare = block.querySelector(`[data-testid="ward-bed-map-square-${firstWard.id}"]`);
-    expect(firstSquare, "bed square exists").not.toBeNull();
-    expect(firstSquare).toHaveAttribute("href", `/ward-flow/ward/${firstWard.id}?tab=board`);
-  });
-
-  it("calls onSelectWard when clicking the ward card body", () => {
-    const onSelectWard = vi.fn();
-    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
-    const firstWard = units[0];
-    const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
-    fireEvent.click(block);
-    expect(onSelectWard).toHaveBeenCalledWith(firstWard.id);
-  });
-
-  // P093: a square is a link now, so Enter follows it to the bed board; keyboard users reach it by Tab.
-  it("makes every bed square a keyboard-reachable link", () => {
-    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={vi.fn()} />);
-    const firstWard = units[0];
-    const block = screen.getByTestId(`ward-bed-map-ward-${firstWard.id}`);
-    const firstSquare = block.querySelector(`[data-testid="ward-bed-map-square-${firstWard.id}"]`);
-    expect(firstSquare?.tagName).toBe("A");
-    expect(firstSquare).toHaveAttribute("href", `/ward-flow/ward/${firstWard.id}?tab=board`);
-  });
-
-  it("advances carousel on Next button click without triggering onSelectWard", () => {
-    const onSelectWard = vi.fn();
-    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
-    // Service with multiple wards (e.g. North Metro has 4 wards)
-    const serviceGroup = screen.getByTestId("ward-bed-map-service-North Metro");
-    const nextBtns = within(serviceGroup).getAllByRole("button", { name: /next ward/iu });
-    expect(nextBtns.length).toBeGreaterThan(0);
-    fireEvent.click(nextBtns[0]);
-    // Clicking next button must NOT select the ward
-    expect(onSelectWard).not.toHaveBeenCalled();
-  });
+afterEach(() => {
+  window.sessionStorage.clear();
 });
 
-describe("bed-map service shortcut feedback", () => {
-  it("keeps the jumped-to service selected when the previous service's trailing edge is visible", () => {
-    let notify: IntersectionObserverCallback = () => {};
-    vi.stubGlobal(
-      "IntersectionObserver",
-      class {
-        constructor(callback: IntersectionObserverCallback) {
-          notify = callback;
-        }
-        observe() {}
-        disconnect() {}
-      },
-    );
-    try {
-      render(<BedMap units={units} bedReleases={bedReleases} initialLayout="grid" initialBedDetail={false} />);
-      const nav = screen.getByRole("navigation", { name: "Bed map service shortcuts" });
-      const south = within(nav).getByRole("button", { name: /South Metro/u });
-      fireEvent.click(south);
-      for (const section of document.querySelectorAll<HTMLElement>("[data-service]")) {
-        const service = section.dataset.service;
-        const top = service === "South Metro" ? 152 : service === "East Metro" ? -800 : 2000;
-        const bottom = service === "South Metro" ? 1152 : service === "East Metro" ? 150 : 2500;
-        vi.spyOn(section, "getBoundingClientRect").mockReturnValue({ top, bottom } as DOMRect);
-      }
-      const previous = screen.getByTestId("ward-bed-map-service-East Metro");
-      act(() =>
-        notify(
-          [
-            {
-              target: previous,
-              isIntersecting: true,
-              boundingClientRect: previous.getBoundingClientRect(),
-              intersectionRatio: 0.01,
-              intersectionRect: previous.getBoundingClientRect(),
-              rootBounds: null,
-              time: 0,
-            },
-          ],
-          {} as IntersectionObserver,
-        ),
+describe("Capacity bed map — the network's whole bed supply, one square per bed", () => {
+  it("has a non-empty population to render, or every assertion below is vacuous", () => {
+    expect(seededWards.length).toBeGreaterThan(0);
+  });
+
+  /**
+   * The map must draw exactly as many squares of each kind as the derivations report, per ward —
+   * walked over every real unit, not one hand-picked example. Pulled beds share the occupied
+   * square ("Occupied or pulled") since the redesign.
+   */
+  it("draws exactly as many squares of each kind as bedStates reports, for every ward", () => {
+    expect(
+      seededWards.reduce((sum, ward) => sum + ward.pulled, 0),
+      "no ward has a pulled bed — the pulled half of the occupied squares is untested",
+    ).toBeGreaterThan(0);
+    renderScreen();
+    for (const { ward, card } of cardsByWard()) {
+      expect(bedSquaresOf(card, "ready"), ward.unit.id).toHaveLength(ward.ready);
+      expect(bedSquaresOf(card, "used"), ward.unit.id).toHaveLength(ward.occupied + ward.pulled);
+      expect(bedSquaresOf(card, "closed"), ward.unit.id).toHaveLength(ward.closed);
+      expect(bedSquares(card), `${ward.unit.id}: drawn squares do not sum to its ${ward.unit.beds} beds`).toHaveLength(
+        ward.unit.beds,
       );
-      expect(south).toHaveAttribute("aria-current", "location");
-      expect(within(nav).getByRole("button", { name: /East Metro/u })).not.toHaveAttribute("aria-current");
-    } finally {
-      vi.unstubAllGlobals();
     }
+  });
+
+  it("states every bed still being made ready in words, and never takes it off the ready squares", () => {
+    const preparing = seededWards.filter((ward) => ward.pendingPreparation > 0);
+    expect(preparing.length, "no ward has a bed pending preparation — this guard proves nothing").toBeGreaterThan(0);
+    renderScreen();
+    for (const { ward, card } of cardsByWard()) {
+      if (ward.pendingPreparation > 0) {
+        expect(card, ward.unit.id).toHaveTextContent(`${ward.pendingPreparation} being made ready`);
+      } else {
+        expect(card.textContent ?? "", ward.unit.id).not.toMatch(/being made ready/u);
+      }
+      // Owner ruling 2026-09-05: a bed being cleaned is never subtracted from Ready.
+      expect(bedSquaresOf(card, "ready"), ward.unit.id).toHaveLength(ward.ready);
+    }
+  });
+
+  /**
+   * A service with nothing in it is never headed over an empty group. Proved on a MINIMAL synthetic
+   * network built for the purpose (WACHS removed). That such a service is also stated in words is
+   * pinned in `ward-capacity-network-fold-empty-service.dom.test.tsx`.
+   */
+  it("never heads an empty service group", () => {
+    const withoutWachs = seeded.units.filter((unit) => {
+      // WACHS units in today's fixture: Albany, Bunbury, Broome, Geraldton.
+      return !["alb-adult-open", "bun-adult-open", "brm-adult-secure", "ger-adult-open"].includes(unit.id);
+    });
+    expect(withoutWachs.length, "removed too many units — this fixture would be vacuous").toBeLessThan(
+      seeded.units.length,
+    );
+    const groups = groupBedMapWardsByService(bedMapWards(withoutWachs, [...seeded.bedReleases]));
+    expect(
+      groups.find((group) => group.service === "WACHS")?.wards.length,
+      "the synthetic fixture still has a WACHS unit",
+    ).toBe(0);
+
+    renderMap({ ...seeded, units: withoutWachs });
+    expect(screen.queryByRole("heading", { name: /WACHS/u }), "an empty service must not be headed").toBeNull();
+    expect(bedMapGroup("WACHS")).toBeNull();
+  });
+
+  /** The other half, against the REAL fixture: today WACHS is not empty, so it is a normal group. */
+  it("renders WACHS as a normal heading with real ward cards in today's fixture", () => {
+    renderScreen();
+    const wachs = seededGroups.find((group) => group.service === "WACHS")!;
+    expect(wachs.wards.length, "WACHS has no ward in today's fixture").toBeGreaterThan(0);
+    const section = bedMapGroup("WACHS");
+    expect(section).not.toBeNull();
+    expect(within(section!).getByRole("heading", { name: /WACHS/u })).toBeInTheDocument();
+    expect(bedMapCards(section!)).toHaveLength(wachs.wards.length);
+  });
+
+  it("names every kind of square in the bed map key, and no Held or Blocked square", () => {
+    renderScreen();
+    const legend = within(bedMapRegion()).getByLabelText("Bed map key");
+    expect(within(legend).getByText(/^Ready$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^Occupied or pulled$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^Closed$/u)).toBeInTheDocument();
+    // "Held" means only a bed kept for a patient on leave, which is never a square of its own.
+    expect(within(legend).queryByText(/Held|Blocked/u)).toBeNull();
+  });
+
+  it("hides the decorative squares from assistive technology and states each ward's beds in words", () => {
+    renderScreen();
+    for (const { ward, card } of cardsByWard()) {
+      const strip = card.querySelector("i")?.parentElement;
+      expect(strip, ward.unit.id).toHaveAttribute("aria-hidden", "true");
+      expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready || "None"}\\s*ready`, "u"));
+      expect(card, ward.unit.id).toHaveTextContent(`${ward.occupied + ward.pulled} of ${ward.unit.beds} occupied`);
+    }
+  });
+
+  /**
+   * ⚠️ ZERO READS "none", NEVER "0" — the rule this whole screen applies to Ready and Locked
+   * (`ward-capacity-zero-spelling.dom.test.tsx`, census §8). Floored on a real ward actually having
+   * a zero ready count so the word branch is exercised against real data.
+   *
+   * 🔴 Fails on the redesign as first built: `WardCard` in `capacity-bed-map-cards.tsx` draws the
+   * bare figure (`<b>{ward.ready}</b> ready`). Left failing for the owner to rule on, not retired.
+   */
+  it("states a ward's zero ready count as 'none', never a bare '0'", () => {
+    const zeroReady = seededWards.filter((ward) => ward.ready === 0);
+    expect(zeroReady.length, "no ward has a zero ready count — this guard proves nothing").toBeGreaterThan(0);
+    renderScreen();
+    for (const { ward, card } of cardsByWard()) {
+      if (ward.ready !== 0) continue;
+      expect(card, ward.unit.id).toHaveTextContent(/none ready/iu);
+      expect(card.textContent ?? "", `${ward.unit.id} kept a bare 0 beside "ready"`).not.toMatch(/\b0\s*ready/u);
+    }
+  });
+
+  it("calls onSelectWard with the ward's own id when its card is pressed", () => {
+    const onSelectWard = vi.fn();
+    renderMap(seeded, onSelectWard);
+    const [{ ward, card }] = cardsByWard();
+    fireEvent.click(card);
+    expect(onSelectWard).toHaveBeenCalledOnce();
+    expect(onSelectWard).toHaveBeenCalledWith(ward.unit.id);
+  });
+
+  it("makes every ward card a keyboard-reachable button that opens the ward drawer", async () => {
+    renderScreen();
+    const user = userEvent.setup();
+    const cards = cardsByWard();
+    for (const { card } of cards) {
+      expect(card.tagName).toBe("BUTTON");
+      expect(card).toHaveAttribute("type", "button");
+      expect(card).toHaveAttribute("aria-haspopup", "dialog");
+    }
+    const [{ ward, card }] = cards;
+    card.focus();
+    await user.keyboard("{Enter}");
+    const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+    expect(within(drawer).getByRole("link", { name: "Open ward" })).toHaveAttribute(
+      "href",
+      `/ward-flow/ward/${ward.unit.id}`,
+    );
   });
 });
 
 describe("valid capacity observations with ongoing preparation", () => {
-  it("renders zero offered beds and the actual preparation record without crashing or extra squares", () => {
+  it("draws zero ready squares and states the actual preparation record, without extra squares", () => {
     const state = seedWardFlowState();
     const release = state.bedReleases.find((row) => row.state === "discharged" && row.preparing)!;
     const unit = state.units.find((row) => row.id === release.unitId)!;
@@ -282,39 +231,35 @@ describe("valid capacity observations with ongoing preparation", () => {
       expectedRevision: unit.allocatable.revision ?? 0,
     });
     expect(next.rejections).toEqual([]);
-    render(
-      <BedMap
-        units={next.units}
-        bedReleases={next.bedReleases}
-        admissions={next.admissions}
-        leaveBeds={next.leaveBeds}
-      />,
-    );
-    const block = screen.getByTestId(`ward-bed-map-ward-${unit.id}`);
-    expect(squaresIn(block, "ready")).toHaveLength(0);
-    expect(screen.getByTestId(`ward-bed-map-preparation-unoffered-${unit.id}`)).toHaveTextContent(
-      "1 discharged bed(s) still being made ready outside the offered Ready count",
-    );
-    expect(block.querySelectorAll("[data-bed-map-state]")).toHaveLength(unit.beds);
-    expect(block.querySelectorAll('[data-bed-map-preparing="true"]')).toHaveLength(0);
+    const nextWards = bedMapWards(next.units, [...next.bedReleases], next.admissions, next.leaveBeds);
+    const ward = nextWards.find((entry) => entry.unit.id === unit.id)!;
+    expect(ward.ready).toBe(0);
+    expect(ward.pendingPreparation).toBeGreaterThan(0);
+
+    renderMap(next);
+    const { card } = cardsByWard(groupBedMapWardsByService(nextWards)).find((entry) => entry.ward.unit.id === unit.id)!;
+    expect(bedSquaresOf(card, "ready")).toHaveLength(0);
+    expect(bedSquares(card)).toHaveLength(unit.beds);
+    expect(card).toHaveTextContent(`${ward.pendingPreparation} being made ready`);
   });
-  it("renders an explicit arrival reconciliation warning without adding a physical overflow square", () => {
+
+  it("states an arrival awaiting reconciliation in the ward drawer, without a physical overflow square", () => {
     const state = seedWardFlowState();
-    const unit = state.units[0];
+    const unit = state.units[0]!;
     const observed = { ...unit, arrivalCapacityConflicts: [{ movementId: "SYN-ARRIVAL", at: NOW_ANCHOR }] };
-    render(
-      <BedMap
-        units={[observed]}
-        bedReleases={state.bedReleases}
-        admissions={state.admissions}
-        leaveBeds={state.leaveBeds}
-      />,
+    const [row] = networkWardRows([observed], NOW_ANCHOR, state.bedReleases, state.admissions, state.leaveBeds);
+    expect(row!.arrivalCapacityConflicts).toBe(1);
+
+    renderMap({ ...state, units: [observed] });
+    expect(bedSquares(bedMapCards()[0]!)).toHaveLength(unit.beds);
+
+    const { container } = render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CapacityWardSidebar row={row!} onBack={vi.fn()} now={NOW_ANCHOR} />
+      </WardFlowProvider>,
     );
-    expect(screen.getByTestId(`ward-bed-map-arrival-conflict-${unit.id}`)).toHaveTextContent(
-      "1 arrival(s) awaiting capacity reconciliation",
-    );
-    expect(screen.getByTestId(`ward-bed-map-ward-${unit.id}`).querySelectorAll("[data-bed-map-state]")).toHaveLength(
-      unit.beds,
-    );
+    const beds = within(container).getByRole("region", { name: "Beds now" });
+    expect(bedSquares(beds)).toHaveLength(unit.beds);
+    expect(container).toHaveTextContent("1 arrival(s) awaiting capacity reconciliation.");
   });
 });

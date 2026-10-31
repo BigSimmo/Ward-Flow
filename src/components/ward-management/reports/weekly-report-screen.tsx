@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { BedDouble, Clock, Hospital, Printer, ShieldAlert, XCircle } from "lucide-react";
+import { BedDouble, Clock, Hospital, Printer, XCircle } from "lucide-react";
 
 import {
   Button,
@@ -19,8 +19,8 @@ import { formatSheetMoment, splitDuration, type Instant } from "@/components/war
 import { OUT_OF_AREA_BANDS, TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
-import { dateOf } from "@/components/ward-management/statistics/statistics-dates";
-import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
+import { dateOf } from "../statistics/statistics-dates";
+import { StatCard, StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
 import {
   PhoneBody,
   PhoneCard,
@@ -29,7 +29,7 @@ import {
   PhoneList,
   PhonePinnedAction,
   phoneBodyStyles as phone,
-} from "@/components/ward-management/statistics/statistics-phone-parts";
+} from "../statistics/statistics-phone-parts";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
@@ -43,6 +43,7 @@ import { PilotMeasuresSection, PilotMeasuresView } from "./pilot-measures-sectio
 import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
 import styles from "./reports.module.css";
+import weekly from "./weekly-report.module.css";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 
 /** The out of area bands, in the words the rest of the app uses for them. */
@@ -64,7 +65,7 @@ function weekLabel(week: ReportWeek, dayZero: Date): string {
 }
 
 function ReasonList({ reasons, testId }: { reasons: { reason: string; count: number | string }[]; testId: string }) {
-  if (reasons.length === 0) return <p className={styles.empty}>None recorded</p>;
+  if (reasons.length === 0) return null;
   return (
     <ul className={styles.reasons} data-testid={testId}>
       {reasons.map((entry) => (
@@ -339,7 +340,11 @@ function WeeklyReportView({
             <>
               <HeroStat value={report.edWaits.count} label={`New ED waits ${targetText}`} />
               <HeroStat value={report.outOfArea.bedDays} label="Out of area bed days" />
-              <HeroStat value={delayedDays} label="Delayed discharge days" />
+              {/* "not enough history" is said in the label, never set as a big figure. */}
+              <HeroStat
+                value={delayedUnknown ? "—" : delayedDays}
+                label={delayedUnknown ? "Delayed discharge days, not enough history yet" : "Delayed discharge days"}
+              />
               <HeroStat value={occupancyText} label={OCCUPIED_TIME_LABEL} />
             </>
           }
@@ -347,7 +352,9 @@ function WeeklyReportView({
           onTogglePause={togglePause ?? undefined}
         />
 
-        <p className={styles.disclosure} data-testid="ward-weekly-period">
+        {/* the phone already gives the week in the hero and under the week switch, so the
+            exact period line is hidden on a phone screen and kept for desktop and every print. */}
+        <p className={`${styles.disclosure} ${weekly.phoneScreenHidden}`} data-testid="ward-weekly-period">
           Period: {outputMoment(week.start)} (inclusive) to {outputMoment(week.end)} (exclusive).
           {week.countedEnd < week.end ? <> Counted to {outputMoment(week.countedEnd)} (exclusive).</> : null}
         </p>
@@ -366,12 +373,15 @@ function WeeklyReportView({
               ]}
             />
             <p className={phone.note} data-testid="ward-weekly-range">
-              {weekLabel(week, dayZero)} · generated {outputMoment(now)}
+              {/* the hero sub already names the week, so this line says only when it was made. */}
+              {week.countedEnd < week.end ? `Counted to ${outputMoment(week.countedEnd)} · ` : ""}
+              Generated {outputMoment(now)}
             </p>
             <PhoneCard
               icon={Clock}
+              // the aside "In the week it passed 24h" was cut off at 390px and repeats the title's
+              // "first passing", so the title carries it alone.
               title={`ED waits first passing ${phoneTargetText}`}
-              aside={`In the week it passed ${longHoursLabel}`}
             >
               <PhoneFacts
                 flush
@@ -400,39 +410,40 @@ function WeeklyReportView({
               />
             </PhoneCard>
             <PhoneCard icon={BedDouble} title="Delayed discharge" aside="Past the expected date">
-              <PhoneFacts
-                flush
-                facts={[
-                  {
-                    id: "days",
-                    label: "Bed days",
-                    value: delayedDays,
-                    testId: "ward-weekly-delayed-days",
-                  },
-                  { id: "people", label: "People", value: delayedPeople },
-                ]}
-              />
-              {delayedNote ? (
+              {delayedUnknown ? (
+                <p className={phone.note} data-testid="ward-weekly-delayed-days">
+                  Not enough history yet. No expected date was held for this week, so delayed discharge bed days and
+                  people cannot be counted.
+                </p>
+              ) : (
+                <PhoneFacts
+                  flush
+                  facts={[
+                    {
+                      id: "days",
+                      label: "Bed days",
+                      value: delayedDays,
+                      testId: "ward-weekly-delayed-days",
+                    },
+                    { id: "people", label: "People", value: delayedPeople },
+                  ]}
+                />
+              )}
+              {delayedNote && !delayedUnknown ? (
                 <p className={phone.note} data-testid="ward-weekly-delayed-history">
                   {delayedNote}
                 </p>
               ) : null}
             </PhoneCard>
-            <PhoneCard icon={XCircle} title="Declines" aside="Placement and referral">
+            {/* Josh, 30 Oct 2026: declines and overrides share one card, as on desktop. */}
+            <PhoneCard icon={XCircle} title="Declines and overrides" aside="Placement and referral">
               <PhoneFacts
                 flush
                 facts={[
-                  { id: "placement", label: "Placement", value: report.declines.placement },
-                  { id: "referral", label: "Referral", value: report.declines.referral },
-                ]}
-              />
-            </PhoneCard>
-            <PhoneCard icon={ShieldAlert} title="Overrides" aside="Placement and referral">
-              <PhoneFacts
-                flush
-                facts={[
-                  { id: "placement", label: "Placement", value: report.overrides.placement },
-                  { id: "referral", label: "Referral", value: report.overrides.referral },
+                  { id: "declined-placement", label: "Placement declines", value: report.declines.placement },
+                  { id: "declined-referral", label: "Referral declines", value: report.declines.referral },
+                  { id: "override-placement", label: "Placement overrides", value: report.overrides.placement },
+                  { id: "override-referral", label: "Referral overrides", value: report.overrides.referral },
                 ]}
               />
             </PhoneCard>
@@ -551,17 +562,25 @@ function WeeklyReportView({
                 <p className={`${styles.disclosure} ${styles.cardFootNote}`}>{OUT_OF_AREA_META}</p>
               </StatCard>
               <StatCard title="Delayed discharge" icon={BedDouble}>
-                <dl className={styles.figures}>
-                  <div className={styles.figure}>
-                    <dt>Bed days</dt>
-                    <dd data-testid="ward-weekly-delayed-days">{delayedDays}</dd>
-                  </div>
-                  <div className={styles.figure}>
-                    <dt>People</dt>
-                    <dd>{delayedPeople}</dd>
-                  </div>
-                </dl>
-                {delayedNote ? (
+                {delayedUnknown ? (
+                  // with no expected date held for the week, a sentence instead of two "Not known" figures.
+                  <p className={weekly.sentence} data-testid="ward-weekly-delayed-days">
+                    Not enough history yet. No expected date was held for this week, so delayed discharge bed days and
+                    people cannot be counted.
+                  </p>
+                ) : (
+                  <dl className={styles.figures}>
+                    <div className={styles.figure}>
+                      <dt>Bed days</dt>
+                      <dd data-testid="ward-weekly-delayed-days">{delayedDays}</dd>
+                    </div>
+                    <div className={styles.figure}>
+                      <dt>People</dt>
+                      <dd>{delayedPeople}</dd>
+                    </div>
+                  </dl>
+                )}
+                {delayedNote && !delayedUnknown ? (
                   <p
                     className={`${styles.disclosure} ${styles.cardFootNote}`}
                     data-testid="ward-weekly-delayed-history"
@@ -575,20 +594,29 @@ function WeeklyReportView({
               </StatCard>
             </div>
 
-            <div className={styles.grid3}>
-              <StatCard
-                title="Declines"
-                icon={XCircle}
-                meta={`${report.declines.placement} placement · ${report.declines.referral} referral`}
-              >
-                <ReasonList reasons={report.declines.byReason} testId="ward-weekly-declines" />
-              </StatCard>
-              <StatCard
-                title="Overrides"
-                icon={ShieldAlert}
-                meta={`${report.overrides.placement} placement · ${report.overrides.referral} referral`}
-              >
-                <ReasonList reasons={report.overrides.byReason} testId="ward-weekly-overrides" />
+            <div className={weekly.grid2}>
+              {/* declines and overrides share one card; an empty list is one line, not a card. */}
+              <StatCard title="Declines and overrides" icon={XCircle} meta="Placement and referral">
+                <div className={weekly.decisionBlocks}>
+                  <section className={weekly.decisionBlock} aria-label="Declines">
+                    <p className={weekly.decisionHead}>
+                      <b>Declines</b>
+                      <span className={styles.num}>
+                        {report.declines.placement} placement · {report.declines.referral} referral
+                      </span>
+                    </p>
+                    <ReasonList reasons={report.declines.byReason} testId="ward-weekly-declines" />
+                  </section>
+                  <section className={weekly.decisionBlock} aria-label="Overrides">
+                    <p className={weekly.decisionHead}>
+                      <b>Overrides</b>
+                      <span className={styles.num}>
+                        {report.overrides.placement} placement · {report.overrides.referral} referral
+                      </span>
+                    </p>
+                    <ReasonList reasons={report.overrides.byReason} testId="ward-weekly-overrides" />
+                  </section>
+                </div>
               </StatCard>
               <StatCard title="Occupancy" icon={BedDouble} meta={`${report.occupancy.beds} current total beds`}>
                 <dl className={styles.figures}>

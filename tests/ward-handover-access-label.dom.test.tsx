@@ -36,9 +36,31 @@ function renderAtDesk(access: WardAccess) {
   return writeText;
 }
 
+// A ward desk with one ward is the nurse in charge's own sheet (approved redesign, Josh, 31 Oct 2026):
+// it is titled for that ward and has no scope picker. A ward desk with two wards keeps the picker.
+const TWO_WARD_DESK: WardAccess = {
+  role: "ward",
+  scope: { kind: "ward", unitIds: ["brm-adult-secure", "bun-adult-open"] },
+};
+
 describe("handover labels describe the records the desk can access", () => {
+  it("names a one-ward desk's own ward on screen, in copy and on the print sheet, with no scope picker", async () => {
+    const label = "Mabu Liyan / Broome Mental Health Unit";
+    const writeText = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+    expect(screen.queryByRole("combobox", { name: "Filter the sheet" })).toBeNull();
+    expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
+    fireEvent.click(screen.getByRole("button", { name: "Copy summary" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    expect(writeText.mock.calls[0]?.[0]).toContain(label);
+    fireEvent.click(screen.getByTestId("ward-handover-more"));
+    fireEvent.click(screen.getByRole("menuitem", { name: /Print handover/ }));
+    const print = screen.getByTestId("ward-handover-print-sheet");
+    expect(print).toHaveTextContent(label);
+    expect(print).not.toHaveTextContent("Whole network");
+  });
+
   it.each([
-    [{ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } }, "All records you can access"],
+    [TWO_WARD_DESK, "All records you can access"],
     [{ role: "coordinator", scope: { kind: "statewide" } }, "Whole network"],
   ] satisfies readonly (readonly [WardAccess, string])[])(
     "uses the same all-records label on screen, in copy and on the print sheet for %j",
@@ -59,7 +81,7 @@ describe("handover labels describe the records the desk can access", () => {
   );
 
   it("keeps the explicit ward and service selection labels", async () => {
-    const writeText = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
+    const writeText = renderAtDesk(TWO_WARD_DESK);
     const select = screen.getByRole("combobox", { name: "Filter the sheet" });
     for (const optionName of ["Mabu Liyan / Broome Mental Health Unit", "WACHS"]) {
       const option = within(select).getByRole("option", { name: optionName }) as HTMLOptionElement;

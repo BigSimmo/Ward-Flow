@@ -53,6 +53,13 @@
   line-height: var(--wf-lh-12);
 }
 
+/* Browser check (31 Oct 2026): beside the counts at 1024 the hero's one-line eyebrow ended in
+ * "GOVERNANCE · THIS S…". The words now wrap onto a second line instead of being cut. */
+.heroEyebrow {
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
 .heroActions {
   display: inline-flex;
   align-items: center;
@@ -532,7 +539,7 @@
 
 .eventRow[aria-pressed="true"] {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
 }
 
 .eventTime {

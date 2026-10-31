@@ -2,8 +2,7 @@
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
-import Link from "next/link";
-import { AlarmClock, Bell, ChevronRight, Clock, Columns3, List, Activity, Users, X } from "lucide-react";
+import { AlarmClock, ChevronRight, Clock, Columns3, List, Users, X } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import {
@@ -64,6 +63,7 @@ import {
   admissionIdOfInboxId,
   raisedAt,
   resolveAlertSubject,
+  shownAgeFrom,
   type AlertKind,
 } from "./alerts-model";
 import {
@@ -82,18 +82,19 @@ import { TodayChart } from "./alerts-visuals";
 import { alertChecks } from "./alerts-checks";
 import { alertsHistory } from "./alerts-history";
 import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
+import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
+import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
 import { AlertsBroadcastPanel, AlertsHistoryPanel, AlertsNoticesPanel } from "./alerts-tab-panels";
 import { BroadcastComposer } from "./broadcast-composer";
 
 import { ForecastAlertsGroup } from "@/components/ward-management/forecast/forecast-alerts-group";
 import styles from "./alerts.module.css";
+import parts from "./alerts-screen-parts.module.css";
 import {
   Button,
   Count,
   Card,
   Drawer,
-  EmptyState,
-  FilterChip,
   PhoneSheet,
   PillTabs,
   Segmented,
@@ -146,7 +147,9 @@ function AlertsWorkspace() {
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
   // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
   const broadcastDisabledReason =
-    coordDesk || access.role === "bed_manager" ? undefined : "Only the coordinator or a bed manager can broadcast.";
+    coordDesk || access.role === "bed_manager"
+      ? undefined
+      : "Only the coordinator or a site bed manager can broadcast.";
 
   const state = useWardFlowSelect(
     "movements",
@@ -179,6 +182,8 @@ function AlertsWorkspace() {
     broadcastAlerts,
     notices,
   } = state;
+  // Nurse in charge: the ward's own name (title, side panel); undefined on any other desk.
+  const wardName = ownWardName(access, units);
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
   const raise = useWardRaise(deskRole);
@@ -466,9 +471,11 @@ function AlertsWorkspace() {
   const activeEntries = useMemo(() => toEntries(inbox, false), [toEntries, inbox]);
   const snoozedEntries = useMemo(() => toEntries(snoozedInbox, true), [toEntries, snoozedInbox]);
   const oldestRaised = useMemo(() => {
-    const times = activeEntries.flatMap((entry) =>
-      entry.group === "running" || entry.raised === undefined ? [] : [entry.raised],
-    );
+    // A passed legal form adds no age: its time reads as typed (D-93).
+    const times = activeEntries.flatMap((entry) => {
+      const from = entry.group === "running" ? undefined : shownAgeFrom(entry.item, entry.raised);
+      return from === undefined ? [] : [from];
+    });
     return times.length > 0 ? Math.min(...times) : undefined;
   }, [activeEntries]);
   const actEntries = activeEntries.filter((entry) => entry.group === "act");
@@ -480,11 +487,23 @@ function AlertsWorkspace() {
   const needYouCount = actEntries.filter((entry) => entry.mine && !entry.seen).length;
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
-  const maxAge = Math.max(1, ...allEntries.map((entry) => (entry.raised === undefined ? 0 : now - entry.raised)));
+  const maxAge = Math.max(
+    1,
+    ...allEntries.map((entry) => {
+      const from = shownAgeFrom(entry.item, entry.raised);
+      return from === undefined ? 0 : now - from;
+    }),
+  );
   const owners = useMemo(() => {
     const names = [...new Set(allEntries.map((entry) => entry.owner))];
     return names.sort((a, b) => (a === COORDINATOR ? -1 : b === COORDINATOR ? 1 : a.localeCompare(b)));
   }, [allEntries]);
+  // The owners a highlight can pick: an alert nobody owns adds no blank one, and a desk with none gets
+  // no owner menu and no Owner arrangement. Transport officer: the owner parts are the coordinator's
+  // (only the coordinator takes an alert), so the officer has none.
+  const namedOwners = access.role === "officer" ? [] : owners.filter(Boolean);
+  // Nurse in charge: a quiet ward gets one line, not two empty groups and a sort rule over nothing.
+  const quietWard = wardName !== undefined && allEntries.length === 0;
 
   // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first.
   const nextQueue = useMemo(() => {
@@ -845,7 +864,9 @@ function AlertsWorkspace() {
   const heroTitle =
     actEntries.length > 0
       ? `${actEntries.length} act now${needYouCount > 0 ? `, ${needYouCount} new to you` : ""}`
-      : "No alert needs you";
+      : wardName
+        ? `No alert for ${wardName}`
+        : "No alert needs you";
 
   // ---- Queue views ----
   const rowFor = (entry: QueueEntry) =>
@@ -856,15 +877,18 @@ function AlertsWorkspace() {
     );
   // Closing-the-loop (package E): alerts naming one record show as one grouped item. Recorded order,
   // no re-sorting; every alert keeps its own row inside the item. See `alert-linked-groups.ts`.
+  // Alerts redesign (point 17): runs of one recorded kind also show as one group row.
   const linkedItems = (
     items: LinkedQueueItem<QueueEntry>[],
     listClassName: string,
     sectionLabels: readonly string[],
     renderEntry: (entry: QueueEntry) => ReactNode,
   ) =>
-    items.map((queued) =>
+    groupSameKind(items).map((queued) =>
       queued.kind === "single" ? (
         renderEntry(queued.entry)
+      ) : queued.kind === "kind" ? (
+        <KindGroup key={queued.key} group={queued} now={now} listClassName={listClassName} renderEntry={renderEntry} />
       ) : (
         <LinkedAlertItem
           key={queued.key}
@@ -923,14 +947,16 @@ function AlertsWorkspace() {
     shownEarlier: urgencyLinked.shownEarlier[section] ?? 0,
     sectionLabels: urgencyLabels,
   });
-  const urgencyView = (
+  const urgencyView = quietWard ? (
+    <p className={styles.groupEmpty}>Nothing in Act now or Waiting.</p>
+  ) : (
     <>
       {groupSection(
         "act",
         "Act now",
         actEntries,
         <GroupHead tone="danger" label="Act now" count={actEntries.length} />,
-        "None firing now. The conditions checked are named in the header.",
+        "Nothing to act on now.",
         urgencyLink(0),
       )}
       {access.role === "coordinator" || access.role === "bed_manager" ? (
@@ -938,9 +964,7 @@ function AlertsWorkspace() {
           now={now}
           className={styles.group}
           readOnly={access.role === "bed_manager"}
-          head={(count) => (
-            <GroupHead tone="warning" label="Forecast" count={count} aside="coordinators, bed managers" />
-          )}
+          head={(count) => <GroupHead tone="warning" label="Forecast" count={count} />}
         />
       ) : null}
       {groupSection(
@@ -1040,7 +1064,7 @@ function AlertsWorkspace() {
     { id: "broadcast" as const, label: "Broadcast", count: (activeBroadcast ? 1 : 0) + livePullNows.length },
     { id: "notices" as const, label: "Notices", count: feedNotices.length },
     { id: "history" as const, label: "History", count: history.length },
-  ];
+  ].filter((item) => access.role !== "officer" || item.id === "now" || item.count > 0); // Officer: no empty tabs.
 
   // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
   // chose it, says so above its actions.
@@ -1104,60 +1128,16 @@ function AlertsWorkspace() {
     />
   );
 
-  const checkingFoot = (
-    <div className={styles.checking}>
-      <span className={styles.checkingLabel}>Checking</span>
-      <ul className={styles.checkList} aria-label="Conditions checked">
-        {checks.map((check) => {
-          const scopeId = `alerts-check-${check.key}`;
-          const body = (
-            <>
-              <span className={styles.mono}>{check.n}</span>
-              {check.label}
-            </>
-          );
-          return (
-            <li key={check.key} aria-label={check.label} data-zero={check.n === 0 ? "true" : undefined}>
-              {!check.href && !check.kind ? (
-                <span className={styles.check} title={check.scope} aria-describedby={scopeId}>
-                  {body}
-                </span>
-              ) : check.href ? (
-                <Link className={styles.check} href={check.href} title={check.scope} aria-describedby={scopeId}>
-                  {body}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  className={styles.check}
-                  title={check.scope}
-                  aria-pressed={watchHighlight === check.kind}
-                  aria-describedby={scopeId}
-                  onClick={() => {
-                    setTab("now");
-                    setWatchHighlight((current) => (current === check.kind ? null : (check.kind ?? null)));
-                  }}
-                >
-                  {body}
-                </button>
-              )}
-              <SrOnly id={scopeId}>{check.scope}</SrOnly>
-            </li>
-          );
-        })}
-        <li aria-label="Not checked: handover sheets" className={styles.notChecked}>
-          <span className={styles.check} title="Nothing in this system records when a shift hands over.">
-            <X size={12} aria-hidden="true" />
-            Not checked: handover sheets
-          </span>
-          <SrOnly>
-            Handover sheets. Nothing in this system records when a shift hands over, so there is no deadline to measure
-            and this screen cannot tell you whether one is due.
-          </SrOnly>
-        </li>
-      </ul>
-    </div>
+  const onWatch = (kind: AlertKind | undefined) => {
+    setTab("now");
+    setWatchHighlight((current) => (current === kind ? null : (kind ?? null)));
+  };
+  // A quiet ward's checks sit under "Checked for <ward>" or in the Checking sheet, already titled.
+  const checkingList = (
+    <CheckingList checks={checks} watchHighlight={watchHighlight} onWatch={onWatch} showLabel={!quietWard} />
   );
+  // Nurse in charge: a quiet ward's side panel lists the checks, so the hero leaves them out.
+  const checkingFoot = quietWard ? undefined : <ChecksChip checks={checks}>{checkingList}</ChecksChip>;
 
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
@@ -1240,104 +1220,93 @@ function AlertsWorkspace() {
 
               {tab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
-                  <div className={styles.toolbar}>
-                    <Segmented
-                      label="Arrange by"
-                      value={arrangeBy}
-                      onChange={setArrangeBy}
-                      items={[
-                        {
-                          id: "urgency",
-                          label: (
-                            <>
-                              <List size={14} aria-hidden="true" /> Urgency
-                            </>
-                          ),
-                        },
-                        {
-                          id: "lanes",
-                          label: (
-                            <>
-                              <Columns3 size={14} aria-hidden="true" /> Lanes
-                            </>
-                          ),
-                        },
-                        {
-                          id: "owner",
-                          label: (
-                            <>
-                              <Users size={14} aria-hidden="true" /> Owner
-                            </>
-                          ),
-                        },
-                      ]}
-                    />
-                    <span className={styles.toolbarRule} aria-hidden="true" />
-                    {anyHighlight ? null : <span className={styles.quiet}>Highlight</span>}
-                    <div className={styles.chipRow} role="group" aria-label="Highlight by owner">
-                      {owners.map((owner) => (
-                        <FilterChip
-                          key={owner}
-                          className={styles.filterBtn}
-                          pressed={ownerHighlight === owner}
-                          onPressedChange={() => setOwnerHighlight((current) => (current === owner ? null : owner))}
-                          count={allEntries.filter((entry) => entry.owner === owner).length}
+                  {/* Nurse in charge: one ward needs no arrange-by or owner lens. */}
+                  {wardName !== undefined ? null : (
+                    <div className={styles.toolbar}>
+                      <Segmented
+                        label="Arrange by"
+                        value={arrangeBy}
+                        onChange={setArrangeBy}
+                        items={[
+                          {
+                            id: "urgency",
+                            label: (
+                              <>
+                                <List size={14} aria-hidden="true" /> Urgency
+                              </>
+                            ),
+                          },
+                          {
+                            id: "lanes",
+                            label: (
+                              <>
+                                <Columns3 size={14} aria-hidden="true" /> Lanes
+                              </>
+                            ),
+                          },
+                          // A desk with no owner to pick (the transport officer) has no Owner arrangement.
+                          ...(namedOwners.length === 0
+                            ? []
+                            : [
+                                {
+                                  id: "owner" as const,
+                                  label: (
+                                    <>
+                                      <Users size={14} aria-hidden="true" /> Owner
+                                    </>
+                                  ),
+                                },
+                              ]),
+                        ]}
+                      />
+                      <span className={styles.toolbarRule} aria-hidden="true" />
+                      {/* Josh, 31 Oct 2026 (answer 17): the desktop keeps Owner as an Arrange by view and
+                          drops the owner menu that repeated it. Phones, with no Arrange by, keep the menu. */}
+                      {anyHighlight ? (
+                        <span className={styles.highlightNote} role="status">
+                          {highlightedCount} of {allEntries.length} <SrOnly>synthetic rows</SrOnly> highlighted, all
+                          rows stay
+                        </span>
+                      ) : null}
+                      {anyHighlight ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className={styles.btnSm}
+                          aria-label={`Clear highlights, ${highlightedCount} highlighted`}
+                          onClick={clearHighlights}
                         >
-                          {ownerShort(owner, coordDesk)}
-                        </FilterChip>
-                      ))}
+                          Clear <Count n={highlightedCount} />
+                        </Button>
+                      ) : null}
                     </div>
-                    {anyHighlight ? (
-                      <span className={styles.highlightNote} role="status">
-                        {highlightedCount} of {allEntries.length} <SrOnly>synthetic rows</SrOnly> highlighted, all rows
-                        stay
-                      </span>
-                    ) : null}
-                    {anyHighlight ? (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className={styles.btnSm}
-                        aria-label={`Clear highlights, ${highlightedCount} highlighted`}
-                        onClick={clearHighlights}
-                      >
-                        Clear <Count n={highlightedCount} />
-                      </Button>
-                    ) : null}
-                  </div>
+                  )}
                   {isPhone ? (
                     <>
-                      {owners.length > 0 ? (
-                        <div className={styles.phoneChips} role="group" aria-label="Highlight by owner">
-                          {/* Yours is a hero figure on phone, so the chips are the other owners. */}
-                          {owners
-                            .filter((owner) => ownerShort(owner, coordDesk) !== "You")
-                            .map((owner) => (
-                              <FilterChip
-                                key={owner}
-                                className={styles.filterBtn}
-                                pressed={ownerHighlight === owner}
-                                onPressedChange={() =>
-                                  setOwnerHighlight((current) => (current === owner ? null : owner))
-                                }
-                              >
-                                <b className={styles.mono}>
-                                  {allEntries.filter((entry) => entry.owner === owner).length}
-                                </b>
-                                {ownerShort(owner, coordDesk)}
-                              </FilterChip>
-                            ))}
+                      {/* The desktop's owner menu, not a row of chips that ran off the screen. Yours is a
+                          hero figure on phone, so the menu lists the other owners. */}
+                      {wardName === undefined && namedOwners.some((owner) => ownerShort(owner, coordDesk) !== "You") ? (
+                        <div className={parts.phoneOwner}>
+                          <OwnerMenu
+                            owners={namedOwners.filter((owner) => ownerShort(owner, coordDesk) !== "You")}
+                            value={ownerHighlight}
+                            onChange={setOwnerHighlight}
+                            labelFor={(owner) => ownerShort(owner, coordDesk)}
+                            countFor={(owner) => allEntries.filter((entry) => entry.owner === owner).length}
+                          />
                         </div>
                       ) : null}
                       <div className={styles.phoneList}>{urgencyView}</div>
-                      <p className={styles.phoneNote}>Act now first · longest overdue next</p>
+                      {quietWard ? null : <p className={styles.phoneNote}>{alertsOrderLine("urgency")}</p>}
                     </>
                   ) : (
                     <>
                       {view === "lanes" ? lanesView : view === "owner" ? ownerView : urgencyView}
-                      <p className={styles.orderNote} data-testid="ward-alerts-order-note">
-                        {alertsOrderLine(view)}
-                      </p>
+                      {quietWard && view === "urgency" ? null : (
+                        <p className={styles.orderNote} data-testid="ward-alerts-order-note">
+                          {alertsOrderLine(view)}
+                        </p>
+                      )}
                     </>
                   )}
                 </TabPanel>
@@ -1367,84 +1336,64 @@ function AlertsWorkspace() {
               {tab === "history" ? <AlertsHistoryPanel history={history} now={now} /> : null}
             </Card>
 
-            <Card as="section" className={styles.todayCard} aria-label="Today">
-              <div className={styles.todayHead}>
-                <h2 className={styles.todayTitle}>
-                  <Clock size={16} aria-hidden="true" />
-                  Today
-                </h2>
-                <span className={styles.legend}>
-                  <span>
-                    <StatusGlyph tone="danger" size={9} /> Act now
+            {/* Nurse in charge: a quiet ward has no Today to chart. */}
+            {quietWard ? null : (
+              <Card as="section" className={styles.todayCard} aria-label="Today">
+                <div className={styles.todayHead}>
+                  <h2 className={styles.todayTitle}>
+                    <Clock size={16} aria-hidden="true" />
+                    Today
+                  </h2>
+                  <span className={styles.legend}>
+                    <span>
+                      <StatusGlyph tone="danger" size={9} /> Act now
+                    </span>
+                    <span>
+                      <StatusGlyph tone="warning" size={9} /> Waiting
+                    </span>
+                    <span>
+                      <StatusGlyph tone="success" size={9} /> Acted on
+                    </span>
                   </span>
-                  <span>
-                    <StatusGlyph tone="warning" size={9} /> Waiting
-                  </span>
-                  <span>
-                    <StatusGlyph tone="success" size={9} /> Acted on
-                  </span>
-                </span>
-              </div>
-              {todayChart}
-            </Card>
+                </div>
+                {todayChart}
+              </Card>
+            )}
             {isPhone ? (
               <>
-                <button type="button" className={styles.phoneCard} onClick={() => setPhoneToday(true)}>
-                  <Clock size={18} aria-hidden="true" />
-                  <span className={styles.phoneCardText}>
-                    <span className={styles.phoneCardTitle}>Today</span>
-                    <span className={styles.phoneCardMeta}>
-                      <b className={styles.mono}>{allEntries.filter((entry) => entry.raised !== undefined).length}</b>{" "}
-                      raised · <b className={styles.mono}>{history.filter((entry) => entry.action).length}</b> acted on
-                      · <b className={styles.mono}>{(broadcastAlerts ?? []).length}</b> broadcast
+                {quietWard ? null : (
+                  <button type="button" className={styles.phoneCard} onClick={() => setPhoneToday(true)}>
+                    <Clock size={18} aria-hidden="true" />
+                    <span className={styles.phoneCardText}>
+                      <span className={styles.phoneCardTitle}>Today</span>
+                      <span className={styles.phoneCardMeta}>
+                        <b className={styles.mono}>{allEntries.filter((entry) => entry.raised !== undefined).length}</b>{" "}
+                        raised · <b className={styles.mono}>{history.filter((entry) => entry.action).length}</b> acted
+                        on · <b className={styles.mono}>{(broadcastAlerts ?? []).length}</b> broadcast
+                      </span>
                     </span>
-                  </span>
-                  <ChevronRight size={16} aria-hidden="true" />
-                </button>
-                <button type="button" className={styles.phoneCard} onClick={() => setPhoneChecks(true)}>
-                  <Activity size={18} aria-hidden="true" />
-                  <span className={styles.phoneCardText}>
-                    <span className={styles.phoneCardTitle}>
-                      Checking <span className={styles.mono}>{checks.length}</span> conditions
-                    </span>
-                    <span className={styles.phoneCardMeta}>
-                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
-                      sheets not checked
-                    </span>
-                  </span>
-                  <ChevronRight size={16} aria-hidden="true" />
-                </button>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
+                )}
+                <ChecksCard checks={checks} onOpen={() => setPhoneChecks(true)} />
               </>
             ) : (
               /* Device audit (11 Oct 2026): on an iPad in portrait the Checking strip wraps to three lines,
                  so it becomes the phone's one-tap card there (shown by CSS in that range only). */
-              <button
-                type="button"
-                className={`${styles.phoneCard} ${styles.checkingCardPortrait}`}
-                onClick={() => setPhoneChecks(true)}
-              >
-                <Activity size={18} aria-hidden="true" />
-                <span className={styles.phoneCardText}>
-                  <span className={styles.phoneCardTitle}>
-                    Checking <span className={styles.mono}>{checks.length}</span> conditions
-                  </span>
-                  <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
-                    sheets not checked
-                  </span>
-                </span>
-                <ChevronRight size={16} aria-hidden="true" />
-              </button>
+              <ChecksCard checks={checks} className={styles.checkingCardPortrait} onOpen={() => setPhoneChecks(true)} />
             )}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
-              <div className={styles.phoneChecks}>{checkingFoot}</div>
+              {/* The list itself, not the collapsed chip, so one tap reaches it. */}
+              <div className={styles.phoneChecks}>{checkingList}</div>
             </PhoneSheet>
           </div>
 
           {slideOver ? null : (
             <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
               <Card as="div" className={styles.panelCard}>
-                {selectedPanel ?? <EmptyState icon={Bell} title="Pick an alert to see it here" />}
+                {selectedPanel ?? (
+                  <AlertsSidePanelEmpty wardName={wardName} quiet={allEntries.length === 0} checks={checkingList} />
+                )}
               </Card>
             </aside>
           )}

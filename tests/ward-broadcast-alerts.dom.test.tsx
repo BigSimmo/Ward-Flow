@@ -52,7 +52,9 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
     const scope = screen.getByLabelText(/^Target scope$/i);
-    expect(within(scope).getByRole("option", { name: /^All inpatient wards and ED desks/ })).toHaveTextContent(
+    // Redesign (31 Oct 2026): the scope list holds names only; the count is said once, on "Goes to".
+    expect(within(scope).getByRole("option", { name: /^All inpatient wards and ED desks$/ })).toBeInTheDocument();
+    expect(screen.getByText("Goes to").closest("p")).toHaveTextContent(
       `${allUnits().length} wards and ${allEmergencyDepartments().length} ED desks`,
     );
     const severity = screen.getByLabelText(/^Severity$/i);
@@ -82,15 +84,16 @@ describe("Ward Flow Statewide Broadcast Alerts", () => {
     renderAlertsScreen();
     fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
 
-    const confirmBtn = screen.getByTestId("ward-alerts-broadcast-confirm");
-    expect(confirmBtn).toBeDisabled();
+    // Dispatch is re-read each time: its tooltip wrapper comes and goes with the reason it waits for.
+    const confirmBtn = () => screen.getByTestId("ward-alerts-broadcast-confirm");
+    expect(confirmBtn()).toHaveAttribute("aria-disabled", "true");
 
     const safeguard = screen.getByLabelText(/I confirm this directive is clinically authorised/i);
     fireEvent.click(safeguard);
-    expect(confirmBtn).not.toBeDisabled();
+    expect(confirmBtn()).not.toHaveAttribute("aria-disabled", "true");
 
     fireEvent.click(safeguard);
-    expect(confirmBtn).toBeDisabled();
+    expect(confirmBtn()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("dispatches statewide alert, mounts global banner, and renders active directive card", () => {

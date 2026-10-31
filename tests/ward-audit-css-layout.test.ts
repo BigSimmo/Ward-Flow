@@ -10,9 +10,12 @@ import { describe, expect, it } from "vitest";
  *    table must be as wide as its own columns so every row line reaches the end of the scroll.
  *  - Audit P112, the Capacity "Next 48 hours" header: "whole network" was cut to "whole ..." in the
  *    narrow rail. The words must be allowed to wrap, and the header must be allowed to wrap too.
+ *    The Capacity redesign (31 Oct 2026) replaced that header with the "Bed forecast" card head,
+ *    whose actions (Network or Site, By ward, Try a scenario) sit in `.headActions`, so the same
+ *    two promises are pinned there.
  */
 const ED_CSS = readFileSync("src/components/ward-management/ed/ed-index.module.css", "utf8");
-const FORECAST_CSS = readFileSync("src/components/ward-management/capacity/beds-forecast.module.css", "utf8");
+const FORECAST_CSS = readFileSync("src/components/ward-management/capacity/capacity-page.module.css", "utf8");
 
 /** The declarations of every rule whose selector is exactly `.name` (outside or inside a media block). */
 function bodies(css: string, name: string): string[] {
@@ -43,12 +46,13 @@ describe("All EDs table card stays inside its own scroller (P034)", () => {
 });
 
 describe("Capacity forecast header wraps instead of cutting words (P112)", () => {
-  it("lets the header wrap", () => {
-    expect(bodies(FORECAST_CSS, "forecastHeader").some((body) => /flex-wrap:\s*wrap/.test(body))).toBe(true);
+  it("lets the header's actions wrap", () => {
+    expect(bodies(FORECAST_CSS, "headActions").some((body) => /flex-wrap:\s*wrap/.test(body))).toBe(true);
   });
 
-  it("lets the scope words wrap and never ellipsises them", () => {
-    const scope = bodies(FORECAST_CSS, "forecastScope").join("\n");
+  it("lets the header's words wrap and never ellipsises them", () => {
+    const scope = bodies(FORECAST_CSS, "headActions").join("\n");
+    expect(scope.length).toBeGreaterThan(0);
     expect(scope).not.toMatch(/text-overflow:\s*ellipsis/);
     expect(scope).not.toMatch(/white-space:\s*nowrap/);
     expect(scope).not.toMatch(/overflow:\s*hidden/);

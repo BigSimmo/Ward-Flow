@@ -4,6 +4,7 @@ import "@testing-library/jest-dom/vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { BedsReady, bedsReadySummary } from "@/components/ward-management/referrals/referral-board-parts";
+import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -28,6 +29,10 @@ vi.mock("@/components/ward-management/shell/ward-service-store", async (importOr
  * P096, P100, P101 (audit 27 Oct 2026, capacity labels): each figure says what it counts. The highlight
  * chips count wards, occupancy says it includes pulled beds (D-81), and the Referrals band shows its
  * total, cohort cells that add up to it, and locked as a part of them.
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the bed map's highlight chips read "<label> · N wards",
+ * naming their noun, and the bed map's key names occupied and pulled beds together. The ward counts
+ * below come from the same `networkWardRows` call the screen's model makes.
  */
 describe("capacity labels say what each figure counts", () => {
   function renderCapacity(onPhone: boolean) {
@@ -39,21 +44,40 @@ describe("capacity labels say what each figure counts", () => {
     );
   }
 
-  it("Capacity names wards on the chips and pulled beds in the bed map occupancy", () => {
+  it("Capacity names wards on the chips and pulled beds in the bed map key", () => {
+    const seed = seedWardFlowState();
+    const rows = networkWardRows(seed.units, NOW_ANCHOR, seed.bedReleases, seed.admissions, seed.leaveBeds);
+    const wards = (count: number) => `${count} ${count === 1 ? "ward" : "wards"}`;
     renderCapacity(false);
-    expect(screen.getByRole("button", { name: /^Wards with any bed ready/u })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Wards with a locked bed ready/u })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Wards with an open bed ready/u })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /^Locked bed ready/u })).toBeNull();
-    expect(screen.getAllByText(/\d+\.\d% occupancy \(includes \d+ pulled\)/u).length).toBeGreaterThan(0);
+    const chips = within(screen.getByRole("group", { name: "Highlight wards" }));
+    expect(
+      chips.getByRole("button", { name: `Any ready · ${wards(rows.filter((r) => r.ready > 0).length)}` }),
+    ).toBeInTheDocument();
+    expect(
+      chips.getByRole("button", { name: `Locked ready · ${wards(rows.filter((r) => r.lockedReady > 0).length)}` }),
+    ).toBeInTheDocument();
+    expect(
+      chips.getByRole("button", {
+        name: `Open ready · ${wards(rows.filter((r) => r.ready - r.lockedReady > 0).length)}`,
+      }),
+    ).toBeInTheDocument();
+    // Every highlight chip names its noun, so none can be read as the hero's bed counts.
+    const all = chips.getAllByRole("button");
+    expect(all.length).toBeGreaterThan(2);
+    for (const chip of all) expect(chip.textContent).toMatch(/ · \d+ wards?$/u);
+    expect(
+      within(screen.getByRole("list", { name: "Bed map key" })).getByText("Occupied or pulled"),
+    ).toBeInTheDocument();
   });
 
   it("Capacity phone hero says occupancy includes pulled beds", () => {
     const seed = seedWardFlowState();
     renderCapacity(true);
-    const pulled = screen.getAllByText(/^Of beds in use, including (\d+) pulled$/u);
-    expect(pulled.length).toBeGreaterThan(0);
-    expect(Number(/(\d+) pulled/u.exec(pulled[0]!.textContent ?? "")?.[1])).toBeGreaterThan(0);
+    // The pulled count is the "Beds pulled" stat beside it; this label says occupancy includes them.
+    expect(screen.getAllByText(/^In use, including pulled$/u).length).toBeGreaterThan(0);
+    expect(Number(screen.getAllByText("Beds pulled")[0]!.previousElementSibling?.textContent ?? "0")).toBeGreaterThan(
+      0,
+    );
     expect(seed.units.length).toBeGreaterThan(0);
   });
 

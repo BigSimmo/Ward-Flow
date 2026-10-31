@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronRight, Copy } from "lucide-react";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   admissionIdOfInboxId,
@@ -18,7 +19,6 @@ import type { QueueEntry, QueueHandlers } from "@/components/ward-management/ale
 import { answerSilenceReminder } from "@/components/ward-management/delays/delays-derivations";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -27,9 +27,7 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { activeActNowItems, activeTaskItems } from "@/components/ward-management/ward-act-now-items";
-import { currentShift, currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
-import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
+import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { allDeclines, allOverrides, type InboxItem, isOpen } from "@/components/ward-management/ward-derivations";
 import {
@@ -62,29 +60,30 @@ import {
   Hero,
   HeroStat,
   LiveChip,
+  Menu,
   OccupancyRing,
   Segmented,
   Sheet,
+  SrOnly,
+  StatusGlyph,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
+import type { ActivityTab } from "./activity-panel";
+import { useHomeChanges } from "./activity-changes";
 import { ExceptionDrawer, type RegisterTabId } from "./exception-drawer";
+import activity from "./home-activity.module.css";
+import cards from "./home-cards.module.css";
 import styles from "./home.module.css";
 import { HomeEdPressure } from "./home-ed-pressure";
+import { ActivityPanel, PlannedList } from "./home-activity-lazy";
 import { useHomeLayout } from "./home-layout";
 import { BedsGapCard, ChosenAlertCard, HomeReleaseSheet, MyListCard } from "./home-list-lazy";
 import list from "./home-list.module.css";
 import { PlacementPrompt } from "./placement-prompt";
+import { usePlannedRows } from "./planned-rows";
 import { PriorityQueue, type QueueHighlight } from "./priority-queue";
 import { ReferralPlacementPanel, ShortlistPanel } from "./shortlist-panel-lazy";
 import shortlistStyles from "./shortlist-panel.module.css";
-import { SinceLastLookPanel } from "./since-last-look-band-lazy";
-import {
-  SinceLastLookSheetBody,
-  sinceHandoverText,
-  sinceLastLookCount,
-  sinceSheetDescription,
-  useSinceLastLook,
-} from "./since-last-look-panel";
 
 /*
  * Audit S-25: the Home ED filter lasts for this browser session, so opening a patient and coming
@@ -124,9 +123,7 @@ function subscribeHomeEdFilter(onChange: () => void) {
 }
 
 const useHomeEdFilter = createBrowserStore(subscribeHomeEdFilter, readHomeEdFilter, null);
-/** Activity lines shown under "Since you looked". */
-const SINCE_TIMELINE_LINES = 8;
-const HOME_VIEWS = ["needs", "queue"] as const;
+const HOME_VIEWS = ["needs", "queue", "planned"] as const;
 const NEEDS_FOCI = ["all", "act", "decide"] as const;
 const DELAYS_HREF = "/ward-flow/waiting";
 
@@ -168,6 +165,41 @@ const REFUSED_MARKER_EXPLANATION = "Actions the app refused to record this sessi
  * the queue, the registers are never ED-filtered, and the service scope narrows only the
  * queue and the ED card, never Beds that fit or the shortlist.
  */
+/**
+ * Home and Activity (design approved by Josh, 31 Oct 2026, "Yes to all"):
+ *
+ * - three lists, My List, Waiting and Planned (Josh's words); Planned is the rest of the shift
+ *   from times the records already hold (`planned-model.ts`);
+ * - the hero's "new since" count is a changes chip that opens Activity on Changes
+ *   (`activity-panel.tsx`), whose review is explicit (`activity-changes.ts`); the desktop
+ *   "Since you looked" strip and the phone sheet moved into Activity;
+ * - the hero's Checking line folds into one "to check" chip that opens it;
+ * - Beds that fit is a small table that folds to one line while someone is chosen;
+ * - Placement still opens only for the person the coordinator chooses (Josh, Home v7, 22 Oct 2026),
+ *   but its card names the oldest alert to place;
+ * - on a phone, Registers and Alerts history sit under one "More" menu beside the list tabs.
+ */
+/** Phone only: Registers and Alerts history under one "More" menu beside the list tabs. */
+function HomeListMoreMenu({ onRegisters }: { onRegisters: () => void }) {
+  const router = useRouter();
+  return (
+    <Menu
+      label="More for this list"
+      align="end"
+      items={[
+        { id: "registers", label: "Registers", onSelect: onRegisters },
+        { id: "alerts", label: "Alerts history", onSelect: () => router.push("/ward-flow/alerts") },
+      ]}
+      trigger={(props) => (
+        <button type="button" {...props} className={buttonClass({ variant: "ghost", size: "sm" })}>
+          <MoreHorizontal size={16} aria-hidden="true" />
+          <span className="sr-only">More for this list</span>
+        </button>
+      )}
+    />
+  );
+}
+
 export function CoordinatorScreen() {
   const network = useWardNetwork();
   const thresholds = useDueSoonThresholds();
@@ -180,12 +212,10 @@ export function CoordinatorScreen() {
     admissions,
     rejections,
     referrals,
-    refreshRequests,
     dispatch,
     focusMovementId,
     setFocusMovementId,
     configuration,
-    scenario,
     plannedAdmissions,
     patients,
     supportNotifications,
@@ -200,12 +230,10 @@ export function CoordinatorScreen() {
     "admissions",
     "rejections",
     "referrals",
-    "refreshRequests",
     "dispatch",
     "focusMovementId",
     "setFocusMovementId",
     "configuration",
-    "scenario",
     "plannedAdmissions",
     "patients",
     "supportNotifications",
@@ -242,7 +270,7 @@ export function CoordinatorScreen() {
   // Act now and Referrals to decide in the hero narrow My list to that group.
   const [needsFocus, chooseNeedsFocus] = useAddressTab("focus", NEEDS_FOCI, "all");
   // Switching lists clears Placement, so it never shows someone the new list does not highlight.
-  function showView(view: "needs" | "queue") {
+  function showView(view: (typeof HOME_VIEWS)[number]) {
     if (view !== homeView) {
       setSelectedAlertId(undefined);
       selectMovement(undefined);
@@ -262,7 +290,8 @@ export function CoordinatorScreen() {
   const [exceptionsOpen, setExceptionsOpen] = useState(false);
   // Desktop: one strip under the hero, opened from its Exceptions, Declines or New events count.
   // It starts closed. Exceptions and Declines open the registers on their own tab.
-  const [heroPanel, setHeroPanel] = useState<"registers" | "since" | undefined>(undefined);
+  const [heroPanel, setHeroPanel] = useState<"registers" | undefined>(undefined);
+  const [checksOpen, setChecksOpen] = useState(false);
   const [registerTab, setRegisterTab] = useState<RegisterTabId>("exceptions");
   // Overdue and Tier 1 on the hero highlight their rows in the queue; the rest dim, nothing hides.
   const [highlight, setHighlight] = useState<QueueHighlight | undefined>(undefined);
@@ -285,9 +314,9 @@ export function CoordinatorScreen() {
   const isTabletPortrait = layout === "tablet-portrait";
   // Where Placement is a sheet over the page, the chosen alert travels inside it.
   const sheetPlacement = isPhone || isTabletPortrait;
-  // Phone sheets (direction A): Since you looked, or the registers. The patient sheet is
-  // Placement itself, opened by picking a queue row.
-  const [phoneSheet, setPhoneSheet] = useState<{ kind: "since" } | { kind: "exceptions" } | undefined>(undefined);
+  // Phone sheet (direction A): the registers. The patient sheet is Placement itself, opened by
+  // picking a queue row. "Since you looked" moved into Activity.
+  const [phoneSheet, setPhoneSheet] = useState<{ kind: "exceptions" } | undefined>(undefined);
 
   // A ward choice belongs to the movement it was made for, so changing movement clears it.
   function selectMovement(movementId: string | undefined) {
@@ -573,47 +602,27 @@ export function CoordinatorScreen() {
   const overrideRegister = useMemo(() => allOverrides(movements), [movements]);
   const declineRegister = useMemo(() => allDeclines(movements), [movements]);
 
-  const lastLookWorld = useMemo(
-    () => ({ scenario, referrals, movements, units, bedReleases }),
-    [scenario, referrals, movements, units, bedReleases],
-  );
-  const lastLook = useSinceLastLook(lastLookWorld, now);
-  const newEvents = sinceLastLookCount(lastLook.changes);
-
-  // The same timestamped projection the bar's Activity drawer reads; Home shows its newest lines.
-  const recentActivity = useMemo(() => {
-    const activity = deriveCommandActivity({
-      movements,
-      patients,
-      units,
-      referrals,
-      rejections,
-      bedReleases,
-      leaveBeds,
-      admissions,
-      refreshRequests,
-      now,
-      sites: network.sites,
-      thresholds,
-    });
-    return activity.content.changes.slice(0, SINCE_TIMELINE_LINES).map((change) => ({
-      ...change,
-      tone: activity.tones[change.id] ?? "info",
-    }));
-  }, [
-    movements,
-    patients,
-    units,
-    referrals,
-    rejections,
-    bedReleases,
-    leaveBeds,
-    admissions,
-    refreshRequests,
-    now,
-    thresholds,
-    network,
-  ]);
+  // Activity: Changes since the coordinator's last review (saved only when they press Mark reviewed).
+  const changes = useHomeChanges(now);
+  const changeCount = changes.live.length;
+  const [activityOpen, setActivityOpen] = useState(false);
+  const [activityTab, setActivityTab] = useState<ActivityTab | undefined>(undefined);
+  // The panel's code loads on first open and then stays mounted, so closing it can animate.
+  const [activityMounted, setActivityMounted] = useState(false);
+  const openActivity = (tab: ActivityTab) => {
+    setActivityTab(tab);
+    setActivityMounted(true);
+    setActivityOpen(true);
+  };
+  const reviewClock = formatInstantWithDay(changes.reviewedAt ?? changes.shiftStart, now);
+  const changesChipLabel =
+    changeCount === 0
+      ? "No new changes · Activity"
+      : `${changeCount === 1 ? "change" : "changes"} since ${
+          changes.reviewedAt !== undefined ? `your review at ${reviewClock}` : reviewClock
+        } · Review`;
+  const changesChipOpen = () => openActivity(changeCount > 0 ? "changes" : "recent");
+  const plannedRows = usePlannedRows(now);
 
   // Hero counts: every one is read from an existing derivation, never typed.
   const counts = useMemo(
@@ -636,13 +645,27 @@ export function CoordinatorScreen() {
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
-      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit or recorded departure · Limited demo
-      coverage
+      {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
     </span>
   );
   const bedsReady = counts.capacity?.value ?? 0;
   // The highlight chips count the queue they highlight (after the ED and service filters), P002/P003.
   const chips = homeChipFigures(queue, now, selectedEd?.siteCode);
+  // Shortest clear words (Josh, 30 Oct 2026); a chosen ED is still named.
+  // The spoken name keeps the noun (P002: "Tier 1 open journeys", as Movements says it).
+  const edSuffix = selectedEd ? ` · ${selectedEd.siteCode}` : "";
+  const overdueWord = (
+    <>
+      Past target <SrOnly>waits</SrOnly>
+      {edSuffix}
+    </>
+  );
+  const tierOneWord = (
+    <>
+      Tier 1 <SrOnly>open journeys</SrOnly>
+      {edSuffix}
+    </>
+  );
 
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
@@ -674,9 +697,6 @@ export function CoordinatorScreen() {
       notChecked={["CAHS inpatient wards, not modelled", "private hospitals, no live feed"]}
     />
   );
-  // "N new since 07:12": the last look, or the start of this shift when there is none yet.
-  const sinceClock = formatInstantWithDay(lastLook.changes?.since ?? currentShiftStartInstant(now), now);
-  const sinceLabel = `new since ${sinceClock}`;
   const shiftWord = currentShift(now)
     .name.replace(/ Shift$/u, " shift")
     .toLowerCase();
@@ -782,7 +802,7 @@ export function CoordinatorScreen() {
   ) : null;
 
   return (
-    <div className={styles.screen} data-testid="ward-coordinator" data-ward-design="v6">
+    <div className={`${styles.screen} ${activity.glyphScope}`} data-testid="ward-coordinator" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
         <h1 className="sr-only">Bed coordinator</h1>
 
@@ -795,22 +815,16 @@ export function CoordinatorScreen() {
               isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }
             title={heroTitle}
+            // Redesign (Josh, 30 Oct 2026): the synthetic disclosure lives in the app bar and the footer, so
+            // the hero keeps only its facts; on a phone they fold to one line.
             titleMeta={
               isPhone ? (
-                <>
-                  {/* The physical split stays beside the journey total on every screen size. */}
-                  {notWaitingMeta ? (
-                    <>
-                      {notWaitingMeta}
-                      <br />
-                    </>
-                  ) : null}
-                  {`Prototype data, invented records${
-                    statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% in use` : ""
-                  }`}
-                </>
+                <span data-testid="ward-home-ed-population">
+                  {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
+                  {statewideOccupancy !== null ? ` · ${statewideOccupancy.toFixed(1)}% beds in use` : ""}
+                </span>
               ) : (
-                (notWaitingMeta ?? undefined)
+                notWaitingMeta
               )
             }
             stats={
@@ -832,7 +846,7 @@ export function CoordinatorScreen() {
                   />
                   <HeroStat
                     value={chips.overdueInQueue}
-                    label={chips.overdueLabel}
+                    label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
@@ -852,24 +866,20 @@ export function CoordinatorScreen() {
             }
             bar={
               isPhone ? (
-                // v10 phone hero: the full-width "N since you looked at HH:MM" pill and a round
-                // pause. The Live chip itself sits on the eyebrow line (`aside` below). The pill
-                // shows only when something changed (device audit, 11 Oct 2026: "0 since you
-                // looked" cost 45px of hero for nothing).
+                // Redesign: the phone hero's "since you looked" pill becomes the changes chip. It
+                // shows even with nothing new, since it is also the way into Activity.
                 <div className={styles.phoneHeroActs}>
-                  {newEvents > 0 ? (
-                    <Button
-                      variant="onHero"
-                      className={styles.phoneSince}
-                      aria-haspopup="dialog"
-                      aria-expanded={phoneSheet?.kind === "since"}
-                      onClick={() => setPhoneSheet({ kind: "since" })}
-                    >
-                      <b className={styles.phoneSinceMono}>{newEvents}</b>{" "}
-                      {lastLook.changes?.basis === "shift" ? "new since" : "since you looked at"}{" "}
-                      <span className={styles.phoneSinceMono}>{sinceClock}</span>
-                    </Button>
-                  ) : null}
+                  <Button
+                    variant="onHero"
+                    className={`${styles.phoneSince} ${styles.changesChip}`}
+                    aria-haspopup="dialog"
+                    aria-expanded={activityOpen}
+                    aria-controls="home-activity-panel"
+                    onClick={changesChipOpen}
+                    data-testid="home-changes-chip"
+                  >
+                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipLabel}
+                  </Button>
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
@@ -884,7 +894,7 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={referralQueue.length}
-                    label="Referrals to decide"
+                    label="To decide"
                     tone={referralQueue.length > 0 ? "info" : undefined}
                     pressed={homeView === "needs" && needsFocus === "decide"}
                     onToggle={() => toggleFocus("decide")}
@@ -892,7 +902,7 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={chips.overdueInQueue}
-                    label={chips.overdueLabel}
+                    label={overdueWord}
                     tone={chips.overdueInQueue > 0 ? "warning" : undefined}
                     pressed={homeView === "queue" && highlight === "overdue"}
                     onToggle={() => {
@@ -904,7 +914,13 @@ export function CoordinatorScreen() {
                   <HeroStat
                     inline
                     value={chips.tierOneInQueue}
-                    label={chips.tierOneLabel}
+                    // Its own mark (highest tier), so no chip reuses the Act now triangle.
+                    label={
+                      <>
+                        <StatusGlyph tone="neutral" size={10} className={activity.tierGlyph} />
+                        {tierOneWord}
+                      </>
+                    }
                     pressed={homeView === "queue" && highlight === "tier1"}
                     onToggle={() => {
                       showView("queue");
@@ -912,19 +928,36 @@ export function CoordinatorScreen() {
                       toggleHighlight("tier1");
                     }}
                   />
+                  <HeroStat
+                    inline
+                    value={staleBedCounts + wardsNotReporting}
+                    // The chip says how many; opening it says which (it ran off a tablet's edge).
+                    // Amber dot, not the clock: a check is not about time.
+                    label={
+                      <>
+                        {staleBedCounts + wardsNotReporting > 0 ? (
+                          <StatusGlyph tone="warning" size={10} className={activity.dotGlyph} />
+                        ) : null}
+                        to check
+                      </>
+                    }
+                    expanded={checksOpen}
+                    onToggle={() => setChecksOpen((open) => !open)}
+                  />
                 </div>
               )
             }
             barAside={
               isPhone ? undefined : (
+                // The changes chip: opens the redesigned Activity panel on Changes.
                 <HeroStat
                   inline
-                  value={newEvents}
-                  label={sinceLabel}
-                  tone={newEvents > 0 ? "info" : undefined}
-                  expanded={heroPanel === "since"}
-                  controls="ward-home-hero-panel"
-                  onToggle={() => setHeroPanel((open) => (open === "since" ? undefined : "since"))}
+                  command
+                  value={changeCount > 0 ? changeCount : null}
+                  label={changesChipLabel}
+                  // No glyph: the info glyph reads "to decide" on this page, which a change is not.
+                  onToggle={changesChipOpen}
+                  className={styles.changesChip}
                 />
               )
             }
@@ -952,25 +985,15 @@ export function CoordinatorScreen() {
                   </summary>
                   {checkingFoot}
                 </details>
-              ) : (
+              ) : checksOpen ? (
                 checkingFoot
-              )
+              ) : undefined
             }
           />
 
           {heroPanel && !isPhone ? (
             <div id="ward-home-hero-panel" className={styles.registersBand}>
-              {heroPanel === "registers" ? (
-                renderRegisters("band")
-              ) : (
-                <SinceLastLookPanel
-                  changes={lastLook.changes}
-                  now={now}
-                  activity={recentActivity}
-                  onMarkSeen={lastLook.markSeen}
-                  placement="band"
-                />
-              )}
+              {renderRegisters("band")}
             </div>
           ) : null}
 
@@ -1000,20 +1023,23 @@ export function CoordinatorScreen() {
                   value={homeView}
                   onChange={(view) => {
                     showView(view);
-                    if (view === "queue") chooseNeedsFocus("all");
+                    if (view !== "needs") chooseNeedsFocus("all");
                   }}
+                  // Josh's words and capitalisation (30 Oct 2026): My List, Waiting, Planned.
                   items={[
                     {
                       id: "needs",
-                      label: "My list",
+                      label: "My List",
                       tone: actNowCount > 0 ? "danger" : undefined,
                       count: actNowCount + referralQueue.length + waitEntries.length,
                     },
-                    // The same number the list's Patients tab shows; referrals have their own tab inside.
-                    { id: "queue", label: "Everyone waiting", count: queue.length },
+                    // Today's "Everyone waiting" queue; the same number the list's Patients tab shows.
+                    { id: "queue", label: "Waiting", count: queue.length },
+                    { id: "planned", label: "Planned", count: plannedRows.length },
                   ]}
                 />
-                <div className={list.headLinks}>
+                {isPhone ? <HomeListMoreMenu onRegisters={() => setPhoneSheet({ kind: "exceptions" })} /> : null}
+                <div className={list.headLinks} style={isPhone ? { display: "none" } : undefined}>
                   {/* Home v7 (Josh, 22 Oct 2026): the hero's Alerts count became Act now, so the
                       registers open from here: the strip under the hero, or a sheet on a phone. */}
                   <button
@@ -1045,12 +1071,19 @@ export function CoordinatorScreen() {
                   phone={isPhone}
                   handlers={alertHandlers}
                   selectedReferralId={selectedReferralId}
+                  onSelectReferral={(referralId) => {
+                    setSelectedAlertId(undefined);
+                    selectMovement(undefined);
+                    selectReferral(referralId);
+                  }}
                   // WS-04 (workflow speed audit, 26 Oct 2026): Decide opens the decision itself, the
                   // referral on the Referrals board with Accept and Decline, never a read-only preview.
                   decideHref={referralBoardHref}
                   focus={needsFocus}
                   onShowAll={() => chooseNeedsFocus("all")}
                 />
+              ) : homeView === "planned" ? (
+                <PlannedList now={now} rows={plannedRows} />
               ) : (
                 <PriorityQueue
                   movements={queue}
@@ -1084,22 +1117,18 @@ export function CoordinatorScreen() {
                 />
               )}
             </div>
-            <div className={list.rightCol}>
+            <div className={`${list.rightCol} ${list.stickyCol}`}>
               {chosenAlert && !sheetPlacement ? (
                 <ChosenAlertCard entry={chosenAlert} now={now} onClear={closeShortlist} />
               ) : null}
               {isPhone || chosenAlert ? null : (
-                <BedsGapCard
-                  movements={movements}
-                  units={units}
-                  admissions={admissions}
-                  now={now}
-                  bedsReady={bedsReady}
-                />
+                <BedsGapCard now={now} bedsReady={bedsReady} condensed={hasPanelSubject} />
               )}
               {/* An alert with no patient journey (a booking, a notification) has nothing to place. */}
               {chosenAlert && !chosenAlert.movement ? null : placementNode}
-              {!sheetPlacement && !hasPanelSubject && !chosenAlert ? <PlacementPrompt /> : null}
+              {!sheetPlacement && !hasPanelSubject && !chosenAlert ? (
+                <PlacementPrompt next={actEntries.find((entry) => entry.movement)} onOpen={alertHandlers.onSelect} />
+              ) : null}
             </div>
           </div>
 
@@ -1117,42 +1146,6 @@ export function CoordinatorScreen() {
           ) : null}
           {releaseSheetUsed ? (
             <HomeReleaseSheet entry={releaseAlert} onClose={() => setReleaseAlertId(undefined)} />
-          ) : null}
-          {isPhone && phoneSheet?.kind === "since" ? (
-            <Sheet
-              open
-              onClose={() => setPhoneSheet(undefined)}
-              title="Since you looked"
-              description={sinceSheetDescription(lastLook.changes, now)}
-              mobilePlacement="bottom"
-              testId="ward-home-since-sheet"
-              footer={
-                // v10: Copy as handover text is the sheet's primary; Mark as seen stays beside it.
-                <div className={styles.sinceSheetFootRow}>
-                  {lastLook.changes ? (
-                    <Button variant="sec" className={styles.sinceSheetFoot} onClick={lastLook.markSeen}>
-                      Mark as seen
-                    </Button>
-                  ) : null}
-                  <Button
-                    variant="pri"
-                    icon={Copy}
-                    className={styles.sinceSheetFoot}
-                    onClick={() => {
-                      // H-0346: say whether the copy happened, in the Handover page's words.
-                      void copyTextToClipboard(sinceHandoverText(lastLook.changes, now)).then(
-                        () => announceToWardShell("Changes copied as handover text."),
-                        () => announceToWardShell("Copy was blocked by the browser."),
-                      );
-                    }}
-                  >
-                    Copy as handover text
-                  </Button>
-                </div>
-              }
-            >
-              <SinceLastLookSheetBody changes={lastLook.changes} />
-            </Sheet>
           ) : null}
           {isPhone && phoneSheet?.kind === "exceptions" ? (
             <Sheet
@@ -1182,9 +1175,18 @@ export function CoordinatorScreen() {
               />
             </Sheet>
           ) : null}
+          {activityMounted ? (
+            <ActivityPanel
+              open={activityOpen}
+              onClose={() => setActivityOpen(false)}
+              initialTab={activityTab}
+              now={now}
+            />
+          ) : null}
         </div>
         <WardPrototypeFooter
           testId="ward-coordinator-governance"
+          className={cards.footer}
           note={
             <>
               Demo coordinator view · Not approved for clinical use · Limited demo coverage: CAHS inpatient wards are

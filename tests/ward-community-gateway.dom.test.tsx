@@ -472,7 +472,9 @@ describe("Community gateway — directory header layout and service filtering", 
     renderGateway();
     const resultLine = screen.getByTestId("community-gateway-result-line");
     // v6 (7 Oct 2026): the line reads "N of M synthetic team names" and the filter is a segmented control.
-    expect(resultLine).toHaveTextContent("64 of 64 synthetic team names");
+    // Core pages review (approved 31 Oct 2026): the line shows only while a filter narrows the list;
+    // the heading already carries the whole count.
+    expect(resultLine.textContent).toBe("");
 
     const serviceGroup = screen.getByRole("radiogroup", { name: "Filter team names" });
     fireEvent.click(within(serviceGroup).getByRole("radio", { name: /^NMHS/ }));
@@ -486,7 +488,7 @@ describe("Community gateway — directory header layout and service filtering", 
 
     fireEvent.click(resetBtn);
     expect(within(serviceGroup).getByRole("radio", { name: /^All/ })).toHaveAttribute("aria-checked", "true");
-    expect(resultLine).toHaveTextContent("64 of 64 synthetic team names");
+    expect(resultLine.textContent).toBe("");
   });
 
   it("shows the reset button when search or filter is active, and resets on click", () => {

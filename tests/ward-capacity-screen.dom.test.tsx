@@ -7,11 +7,7 @@ import { describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
-import {
-  BEDS_FORECAST_LIMITS,
-  bedsForecast,
-  forecastHeadline,
-} from "@/components/ward-management/capacity/beds-forecast";
+import { BEDS_FORECAST_LIMITS, bedsForecast } from "@/components/ward-management/capacity/beds-forecast";
 import {
   bedKindGaps,
   bedKindTotals,
@@ -20,15 +16,23 @@ import {
   freeingCellText,
   networkWardRows,
 } from "@/components/ward-management/capacity/capacity-derivations";
+import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
+import { shortNeed } from "@/components/ward-management/capacity/capacity-mismatch-band";
+import { gapWords } from "@/components/ward-management/capacity/capacity-range-line";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { bedReleases } from "@/components/ward-management/ward-movements";
-import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
+import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 /**
  * MERGE 02 — the ward-confirmed capacity view and the morning bed-state board become one screen
  * answering one question: where is a bed KIND short across the network?
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the same question, on a new layout. The mismatch by bed
+ * type is the "Mismatch" card (one tile per type), the network total is the bed forecast's "Now"
+ * figure, the ready split is the hero's chips, and each ward is a bed map card that opens its ward
+ * drawer. The gap table, the network ward table, the "Ready now" panel, the Beds freeing / Attention
+ * tabs and the table's scroll notices were removed by the redesign; cases that pinned only those are
+ * retired below, on the record, and every fact they carried is read where it now lives.
  *
  * ⚠️ Every expected value below comes from calling the same derivation functions the screen itself
  * calls (`bedKindGaps`, `bedKindTotals`, `networkWardRows`, `networkTotals`), against the real
@@ -36,30 +40,114 @@ import { showWardTable } from "./helpers/capacity-ward-table";
  * the day the fixture changes, and it goes stale by passing.
  */
 const NOW = NOW_ANCHOR;
-const units = allUnits();
-// CapacityScreen reads `movements` from useWardFlow(), i.e. the full seeded state
-// (seedWardFlowState().movements) that WardFlowProvider populates — not the raw
-// ward-movements.ts fixture array. seedWardFlowState() additively overlays demonstration
-// movements (ward-rulings-demo.ts), growing the seed from 60 to 77 movements (2026-09-25); the
-// raw array stayed at 60. Using the raw array here undercounted every gap-row figure below.
-const gapRows = bedKindGaps(seedWardFlowState().movements, units, NOW);
+// CapacityScreen reads the full seeded state that WardFlowProvider populates
+// (`seedWardFlowState()`), not the raw fixture arrays: the seed additively overlays demonstration
+// movements (ward-rulings-demo.ts), and using the raw arrays undercounted every gap figure once.
+const seed = seedWardFlowState();
+const units = seed.units;
+// ⚠️ THE SAME ARGUMENTS THE SCREEN USES (`useCapacityModel` in `capacity-model.ts`). A test that
+// calls the production function with DIFFERENT arguments from the caller is testing a configuration
+// nothing ships: this file once read `networkWardRows(units, NOW)` while the screen passed
+// `bedReleases`, and two tests failed while both sides were individually correct.
+const gapRows = bedKindGaps(seed.movements, units, NOW, seed.admissions);
 const gapTotals = bedKindTotals(gapRows);
-// ⚠️ THE SAME ARGUMENTS THE SCREEN USES, INCLUDING `bedReleases`. This read `networkWardRows(units,
-// NOW)` and the screen read `(units, now, bedReleases)` — so the expectation and the render
-// disagreed about whether a freeing figure exists at all, and two tests failed while both sides were
-// individually correct. A test that calls the production function with DIFFERENT arguments from the
-// caller is testing a configuration nothing ships.
-const networkRows = networkWardRows(units, NOW, bedReleases);
+const networkRows = networkWardRows(units, NOW, seed.bedReleases, seed.admissions, seed.leaveBeds);
 const netTotals = networkTotals(networkRows);
 
 function renderScreen() {
-  const view = render(
+  return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
-  showWardTable();
-  return view;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+/** A ward card's visible name: its text without the spelled-out code a screen reader hears. */
+function visibleName(element: Element | null): string {
+  if (!element) return "";
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll("abbr + span").forEach((node) => node.remove());
+  return (clone.textContent ?? "").trim();
+}
+
+function bedMap(): HTMLElement {
+  const map = document.getElementById("capacity-bed-map");
+  if (!map) throw new Error("no bed map on the Capacity screen");
+  return map;
+}
+
+/** Every ward card on the bed map, folded service groups included (they stay mounted, hidden). */
+function wardCards(): HTMLElement[] {
+  return Array.from(bedMap().querySelectorAll<HTMLElement>('button[aria-haspopup="dialog"]'));
+}
+
+function cardsOf(unit: { name: string }): HTMLElement[] {
+  return wardCards().filter((card) => visibleName(card.firstElementChild) === unit.name);
+}
+
+function isDimmed(card: HTMLElement): boolean {
+  return /dimmed/u.test(card.className);
+}
+
+/** Opens a ward's drawer from its bed map card, as a coordinator would. */
+function openWardDrawer(unit: { id: string; name: string }): HTMLElement {
+  const [card] = cardsOf(unit);
+  if (!card) throw new Error(`no bed map card for ${unit.id}`);
+  fireEvent.click(card);
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  expect(drawer).toHaveAccessibleName(unit.name);
+  return drawer;
+}
+
+/** The drawer's "Beds now" section: the ready figure, the bed squares and the notes line. */
+function bedsNow(drawer: HTMLElement) {
+  const section = within(drawer).getByRole("region", { name: "Beds now" });
+  return {
+    section,
+    figure: section.querySelector("p span")?.textContent ?? "",
+    notes: Array.from(section.querySelectorAll("p")).at(-1)?.textContent ?? "",
+  };
+}
+
+function drawerFact(drawer: HTMLElement, label: string): HTMLElement {
+  const value = within(drawer).getByText(label, { selector: "dt" }).nextElementSibling;
+  if (!value) throw new Error(`no value beside "${label}"`);
+  return value as HTMLElement;
+}
+
+/** The Mismatch card's tile for one bed type, found by its title. */
+function mismatchTile(need: string): HTMLElement {
+  const card = screen.getByRole("region", { name: "Mismatch" });
+  const title = within(card).getByRole("heading", { level: 3, name: shortNeed(need) });
+  return title.closest("li") as HTMLElement;
+}
+
+/** The tile's "now" figure, beside its title (the Tomorrow line under it is a different figure). */
+function tileNow(tile: HTMLElement): string {
+  return tile.querySelector("h3")?.nextElementSibling?.textContent?.trim() ?? "";
+}
+
+/** One of the bed forecast's three figures ("Now", "Tomorrow", "In 2 days"): value and sub-line. */
+function forecastFigure(label: string): { value: string; sub: string } {
+  const forecast = screen.getByRole("region", { name: "Bed forecast" });
+  const term = within(forecast)
+    .getAllByRole("term")
+    .find((dt) => dt.firstChild?.textContent === label || dt.textContent?.trim().startsWith(label));
+  if (!term) throw new Error(`the bed forecast has no "${label}" figure`);
+  const [value, sub] = Array.from(term.nextElementSibling?.children ?? []);
+  return { value: value?.textContent ?? "", sub: sub?.textContent ?? "" };
+}
+
+function heroChips() {
+  return within(screen.getByRole("group", { name: "Network beds" }));
+}
+
+function highlightChips(): HTMLElement[] {
+  return within(screen.getByRole("group", { name: "Highlight wards" })).getAllByRole("button");
 }
 
 describe("the Capacity screen", () => {
@@ -76,33 +164,34 @@ describe("the Capacity screen", () => {
     // after the fact.
     renderScreen();
     expect(screen.getByRole("main")).toBeInTheDocument();
-    // v6: the hero title reads "Capacity, N beds ready of M" (the first word is screen-reader only).
+    // The hero title reads "Capacity, N beds ready of M" (the first word is screen-reader only).
     expect(screen.getByRole("heading", { level: 1, name: /^Capacity,/u })).toBeInTheDocument();
   });
 
-  it("shows the ready-bed split as a bar whose numbers are the real locked/open sums, never invented", () => {
+  it("shows the ready-bed split in the hero, whose numbers are the real locked/open sums, never invented", () => {
     const totalLocked = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
     const totalReady = netTotals.ready;
     expect(totalReady, "no ready bed in the fixture — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    // WardBar's accessible name names every segment and its count — `\\b`, not `\b`: in a template
-    // literal `\b` is a literal backspace byte, not a regex word boundary, and it can never match.
-    expect(
-      screen.getByRole("img", { name: new RegExp(`Locked ready ${totalLocked}\\b.*Open ready`, "su") }),
-    ).toBeInTheDocument();
-    const readySummary = screen.getByRole("region", { name: "Ready now" });
-    expect(within(readySummary).getByText(String(totalReady), { selector: "strong" })).toBeInTheDocument();
-    expect(within(readySummary).getByText(new RegExp(`^of\\s+${netTotals.beds} beds$`, "u"))).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 }).textContent?.replace(/\s+/gu, " ").trim()).toBe(
+      `Capacity, ${totalReady} beds ready of ${netTotals.beds}`,
+    );
+    expect(heroChips().getByRole("button", { name: /Locked ready/u })).toHaveTextContent(
+      new RegExp(`^${totalLocked}\\s*Locked ready$`, "u"),
+    );
+    expect(heroChips().getByRole("button", { name: /Open ready/u })).toHaveTextContent(
+      new RegExp(`^${totalReady - totalLocked}\\s*Open ready$`, "u"),
+    );
   });
 
-  it("renders exactly the four bed-kind rows the derivations return, each with its own real waiting and beds-that-fit", () => {
+  it("renders exactly the four bed-type tiles the derivations return, each with its own real waiting and beds-that-fit", () => {
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-gap-table");
+    const card = screen.getByRole("region", { name: "Mismatch" });
+    expect(within(card).getAllByRole("heading", { level: 3 })).toHaveLength(gapRows.length);
     for (const row of gapRows) {
-      const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
-      expect(tableRow, `row ${row.id}`).toHaveTextContent(row.need);
-      expect(within(tableRow).getByTestId("ward-capacity-waiting")).toHaveTextContent(String(row.waiting));
-      expect(within(tableRow).getByTestId("ward-capacity-beds-that-fit")).toHaveTextContent(String(row.bedsThatFit));
+      expect(mismatchTile(row.need), `tile ${row.id}`).toHaveTextContent(
+        `${row.waiting} waiting · ${row.bedsThatFit} ready that fit`,
+      );
     }
   });
 
@@ -114,58 +203,43 @@ describe("the Capacity screen", () => {
     const shortfallRows = gapRows.filter((row) => row.gap < 0);
     expect(shortfallRows.length, "the fixture has no shortfall row — this guard proved nothing").toBeGreaterThan(0);
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-gap-table");
     for (const row of shortfallRows) {
-      const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
-      // A glyph, the size of the gap and the word: "6 short".
-      expect(within(tableRow).getByText(/^short$/iu)).toBeInTheDocument();
-      // The magnitude is real too — not just the word.
-      expect(tableRow).toHaveTextContent(`${Math.abs(row.gap)} short`);
+      // A glyph, the size of the gap and the word: "6 short". The magnitude is real too.
+      expect(tileNow(mismatchTile(row.need)), `tile ${row.id}`).toBe(`${Math.abs(row.gap)} short`);
     }
   });
 
-  it("shows a non-negative gap as 'Enough' or 'N spare' in words, never the word 'short'", () => {
+  it("shows a non-negative gap as 'exactly enough' or 'N spare' in words, never the word 'short'", () => {
     const nonNegativeRows = gapRows.filter((row) => row.gap >= 0);
     expect(nonNegativeRows.length, "the fixture has no non-negative row — this guard proved nothing").toBeGreaterThan(
       0,
     );
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-gap-table");
     for (const row of nonNegativeRows) {
-      const tableRow = within(table).getByTestId(`ward-capacity-gap-row-${row.id}`);
-      expect(within(tableRow).queryByText(/^short$/iu)).toBeNull();
-      expect(within(tableRow).getAllByText(row.gap === 0 ? /^enough$/iu : /^spare$/iu).length).toBeGreaterThan(0);
-      if (row.gap > 0) expect(tableRow).toHaveTextContent(`${row.gap} spare`);
+      const now = tileNow(mismatchTile(row.need));
+      expect(now, `tile ${row.id}`).not.toMatch(/short/iu);
+      expect(now, `tile ${row.id}`).toBe(row.gap === 0 ? "exactly enough" : `${row.gap} spare`);
     }
   });
 
-  it("shows the 'all four together' total row, matching bedKindTotals exactly", () => {
+  // The "all four together" total row went with the gap table. The redesign states it once, as the
+  // bed forecast's "Now" figure (the Mismatch card says so in its own comment).
+  it("shows the 'all four together' total as the forecast's Now figure, matching bedKindTotals exactly", () => {
     renderScreen();
-    const totalRow = screen.getByTestId("ward-capacity-gap-total");
-    expect(within(totalRow).getByTestId("ward-capacity-waiting")).toHaveTextContent(String(gapTotals.waiting));
-    expect(within(totalRow).getByTestId("ward-capacity-beds-that-fit")).toHaveTextContent(
-      String(gapTotals.bedsThatFit),
-    );
-    expect(totalRow).toHaveTextContent(
-      gapTotals.gap < 0 ? `${-gapTotals.gap} short` : gapTotals.gap === 0 ? /enough/iu : `${gapTotals.gap} spare`,
-    );
+    const now = forecastFigure("Now");
+    expect(now.value).toBe(gapWords(gapTotals.gap));
+    expect(now.sub).toBe(`${gapTotals.waiting} waiting · ${gapTotals.bedsThatFit} fit`);
   });
 
-  it("lists every network ward exactly once, with an honest denominator on the panel count", () => {
+  it("draws every network ward exactly once on the bed map, with an honest ward count in the hero", () => {
     renderScreen();
     expect(
-      within(screen.getByRole("region", { name: "Wards" })).getByText(
-        new RegExp(`${networkRows.length} wards?\\b`, "u"),
-      ),
-      "the panel count does not say how many wards are shown",
+      screen.getByText(new RegExp(`· ${networkRows.length} wards? ·`, "u")),
+      "the hero does not say how many wards it counts",
     ).toBeInTheDocument();
-    const table = screen.getByTestId("ward-capacity-network-table");
-    const rendered = within(table)
-      .getAllByRole("row")
-      .filter((row) => row.getAttribute("data-testid")?.startsWith("ward-capacity-network-row-"));
-    expect(rendered.length).toBe(networkRows.length);
+    expect(wardCards()).toHaveLength(networkRows.length);
     for (const row of networkRows) {
-      expect(within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`)).toBeInTheDocument();
+      expect(cardsOf(row.unit), `${row.unit.id} is not on the bed map exactly once`).toHaveLength(1);
     }
   });
 
@@ -177,14 +251,14 @@ describe("the Capacity screen", () => {
    * the shape the standing policy warns about: a guard that fights a redesign gets deleted, and the
    * honest guards go with it in the same tidy-up.
    *
-   * **What is asserted now is the CLAIM: each row states its ward's own real ready count.** The
+   * **What is asserted now is the CLAIM: each ward states its own real ready count**, on its bed
+   * map card and in its drawer (the table row it was written against went with the redesign). The
    * word-for-zero transform is applied here as the test's own inverse of the component's, exactly
    * as the retired capacity board's test did, so a rewording of the absence does not break this but
    * a WRONG NUMBER still does.
    */
-  it("names every ward's real ready and locked-ready counts in its own network row", () => {
+  it("names every ward's real ready count on its card and in its drawer", () => {
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-network-table");
 
     /*
      * Floored: if no ward had a zero ready count, the word branch below would never be exercised
@@ -196,37 +270,33 @@ describe("the Capacity screen", () => {
     ).toBeGreaterThan(0);
 
     for (const row of networkRows) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      const readyCell = within(tableRow).getByTestId("ward-capacity-network-ready");
-      const pending = within(readyCell).queryByTestId("ward-capacity-network-pending");
-      const figure = (readyCell.textContent ?? "").replace(pending?.textContent ?? "\u0000", "").trim();
+      const [card] = cardsOf(row.unit);
+      // The card spells a known zero as a word too (its own capital, as it leads the line).
+      const cardFigure = card?.querySelector("b")?.textContent?.trim() ?? "";
+      expect(cardFigure.toLowerCase(), `${row.unit.id}'s card does not show its ready count`).toBe(
+        countCellText(row.ready).toLowerCase(),
+      );
+      if (row.ready === 0) expect(cardFigure).not.toMatch(/0/u);
 
-      expect(figure, `${row.unit.id} has ${row.ready} ready bed(s) and its row does not say so`).toBe(
+      const { figure } = bedsNow(openWardDrawer(row.unit));
+      expect(figure, `${row.unit.id} has ${row.ready} ready bed(s) and its drawer does not say so`).toBe(
         row.ready === 0 ? "none" : String(row.ready),
       );
-
-      // Both directions on the absence: the digit must not survive beside the word, or a cell
+      // Both directions on the absence: the digit must not survive beside the word, or a figure
       // reading "0 none" would pass while still making the claim the rule forbids.
       if (row.ready === 0) expect(figure).not.toMatch(/0/u);
-
-      /*
-       * 🔴 **EXTENDED 2026-09-06 TO THE SAME RULE AS `ready`, ON THE OWNER'S RULING (census §8).**
-       * This asserted `String(row.lockedReady)` while the Ready cell beside it said "none" — which
-       * is exactly the inconsistency the ruling closed: three of 23 rows read `none · 0 · 0`.
-       * Both directions here too, so a cell reading "0 none" cannot pass.
-       */
-      const lockedCell = within(tableRow).getByTestId("ward-capacity-network-locked");
-      expect(lockedCell.textContent?.trim(), `${row.unit.id} has ${row.lockedReady} locked-ready bed(s)`).toBe(
-        row.lockedReady === 0 ? "none" : String(row.lockedReady),
-      );
-      if (row.lockedReady === 0) expect(lockedCell.textContent ?? "").not.toMatch(/0/u);
     }
+    /*
+     * RETIRED 31 Oct 2026 with the network ward table: the per-ward locked-ready column. No single
+     * ward's locked figure is drawn on the redesigned screen; the hero's network sum is asserted
+     * above and the bed map's "Locked ready" highlight marks the wards holding one.
+     */
   });
 
   /**
    * ⚠️ THE TRAP THIS TEST IS FOR: `NetworkWardRow.freeing` is `number | undefined`, and it is
    * `undefined` on every row today (see the field's own doc comment in `capacity-derivations.ts`).
-   * A screen that rendered a bare `{row.freeing}` here would print the literal word "undefined" —
+   * A screen that rendered a bare `{row.freeing}` (now the drawer's "Freeing today") would print the literal word "undefined" —
    * or, worse, a naive `row.freeing ?? 0` would print a false "0", claiming nothing is freeing
    * today. Both are wrong; only a stated absence is honest. This walks every row the fixture
    * actually produces, rather than asserting the shape of one hand-picked row.
@@ -260,19 +330,17 @@ describe("the Capacity screen", () => {
   it("shows a real freeing figure where one exists and states the absence in words where it does not", () => {
     expect(networkRows.length, "no ward rows — this guard would prove nothing").toBeGreaterThan(5);
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-network-table");
     for (const row of networkRows) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      const cell = within(tableRow).getByTestId("ward-capacity-network-freeing");
+      const cell = drawerFact(openWardDrawer(row.unit), "Freeing today");
       expect(cell, `${row.unit.id} rendered the literal word "undefined"`).not.toHaveTextContent(/undefined/iu);
-      expect(cell?.textContent?.trim(), `${row.unit.id} does not render the module's own decision`).toBe(
+      expect(cell.textContent?.trim(), `${row.unit.id} does not render the module's own decision`).toBe(
         freeingCellText(row.freeing),
       );
       if (row.freeing === undefined) {
         // The property, restated at the screen so a future inline rewrite of the cell cannot pass:
         // an absent figure reads as a sentence, never as something a coordinator could take for a
         // count. Unreachable today (see the note above); reachable the day a ward stops reporting.
-        const text = cell?.textContent?.trim() ?? "";
+        const text = cell.textContent?.trim() ?? "";
         expect(text, `${row.unit.id} states its absence with no words at all`).toMatch(/\p{L}/u);
         expect(Number(text), `${row.unit.id} states its absence as a figure`).toBeNaN();
       } else if (row.freeing === 0) {
@@ -286,7 +354,7 @@ describe("the Capacity screen", () => {
          * ⚠️ **`"none"` AND `"Not tracked here"` STAY DIFFERENT STATEMENTS.** `0` is the ward
          * saying none; `undefined` is nobody having said. The branch above holds that half.
          */
-        const text = cell?.textContent?.trim() ?? "";
+        const text = cell.textContent?.trim() ?? "";
         expect(text, `${row.unit.id} reports zero freeing and must say so in a word`).toBe("none");
         expect(text, `${row.unit.id} kept the digit beside the word`).not.toMatch(/0/u);
       } else {
@@ -298,77 +366,68 @@ describe("the Capacity screen", () => {
   });
 
   /**
-   * The panel half of the same property. Asserts the FIGURE the panel reports, not the ARIA shape of
-   * whatever renders it — a bar today, something else after a redesign, and this test does not care.
-   *
-   * 🔴 **THE UNTRACKED ARM WAS ASSERTING A PHRASE THE PANEL HAS NEVER CONTAINED.** It required
-   * `/not tracked/i`; the panel's absence paragraph says "Nothing this screen reads can say how
-   * many beds will free up before the day ends…" and the words "not tracked" appear nowhere in it.
-   * That arm would have failed the moment it ran, and the only reason it never has is that
-   * `freeingTracked` is true for every render the app can produce. **A wrong expectation hidden
-   * behind an unreachable branch is worse than no expectation: it reads, to the next person, as
-   * settled.**
-   *
-   * What it asserts instead are the two fabrications the field's own doc comment names — the
-   * literal word "undefined", and a bare `0` presented as the total. Deliberately NOT a ban on the
-   * WORD "zero": the real paragraph says "A zero here would claim nothing is freeing today", which
-   * mentions a zero in order to explain why it is not shown. Banning the word would go red on the
-   * most honest sentence on the screen.
+   * The total half of the same property, now the hero's "Due out today" chip (the "Beds freeing"
+   * tab that used to carry it went with the redesign). Asserts the FIGURE, and the two fabrications
+   * `NetworkWardRow.freeing`'s own doc comment names — the literal word "undefined", and a bare `0`
+   * presented as the total when nothing is tracked.
    */
-  it("reports the freeing total in its panels, or says the figure is not tracked", () => {
+  it("reports the freeing total in the hero, or says the figure is not tracked", () => {
     const tracked = networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
     const total = tracked.reduce((sum, value) => sum + value, 0);
     renderScreen();
-    const tab = screen.getByRole("tab", { name: "Beds freeing" });
-    expect(tab).toHaveAttribute("aria-selected", "true");
-    const panel = screen.getByRole("tabpanel", { name: "Beds freeing" });
+    const chip = heroChips().getByText("Due out today").parentElement as HTMLElement;
+    const value = chip.firstElementChild?.textContent ?? "";
     if (tracked.length === 0) {
-      expect(panel, "nothing is tracked, so the panel must not print a bare 0 as the total").not.toHaveTextContent(
-        /(?:^|\s)0(?:\s|$)/u,
-      );
-      expect(panel.textContent ?? "", "nothing is tracked, so the panel must say so in words").toMatch(/\p{L}/u);
+      expect(value, "nothing is tracked, so the hero must not print a bare 0 as the total").not.toMatch(/^\s*0\s*$/u);
+      expect(value, "nothing is tracked, so the hero must say so in words").toMatch(/\p{L}/u);
     } else {
-      expect(
-        within(panel).getByRole("heading", { level: 3 }),
-        `the panel should report the real total ${countCellText(total)}`,
-      ).toHaveTextContent(countCellText(total));
+      expect(value, `the hero should report the real total ${total}`).toBe(String(total));
     }
-    expect(panel).not.toHaveTextContent(/undefined/iu);
+    expect(chip).not.toHaveTextContent(/undefined/iu);
   });
 
-  it("puts every named person-fact behind a real unit, never a bare unresolved site code", () => {
+  it("puts every ward behind a real hospital and service, never a bare unresolved site code", () => {
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-network-table");
     // Every unit in this fixture resolves to a real site (`siteByCode`), so the fallback text
-    // must never appear — proving the row reads the real site name rather than showing nothing.
-    expect(within(table).queryByText(/No site matches/u)).toBeNull();
+    // must never appear — proving the drawer reads the real site rather than showing nothing.
+    for (const row of networkRows) {
+      const site = siteByCode(row.unit.siteCode);
+      expect(site, `${row.unit.id}'s site code resolves to no site`).toBeDefined();
+      const drawer = openWardDrawer(row.unit);
+      expect(drawer).toHaveAccessibleDescription(new RegExp(` · ${escapeRegExp(site!.service)}$`, "u"));
+      expect(drawer).not.toHaveAccessibleDescription(/No site matches|Service not recorded/u);
+    }
   });
 
-  it("shows 'Needs you' with exactly the bed kinds that are short, and states the absence in words when none are", () => {
+  // "Needs you" was the Attention tab, removed by the redesign. The Mismatch card's "Short" filter is
+  // the same list: exactly the bed types that are short, or the absence in words.
+  it("shows exactly the bed types that are short under 'Short', and states the absence in words when none are", () => {
     const shortfalls = gapRows.filter((row) => row.gap < 0);
     renderScreen();
-    fireEvent.click(screen.getByRole("tab", { name: "Attention" }));
-    const panel = screen.getByRole("tabpanel", { name: "Attention" });
+    const card = screen.getByRole("region", { name: "Mismatch" });
+    fireEvent.click(within(card).getByRole("radio", { name: /^Short/u }));
     if (shortfalls.length === 0) {
-      expect(panel).toHaveTextContent(/no bed kind is short/iu);
+      expect(card).toHaveTextContent(/no bed type is short/iu);
     } else {
-      for (const row of shortfalls) {
-        expect(within(panel).getByText(row.need)).toBeInTheDocument();
-      }
+      expect(
+        within(card)
+          .getAllByRole("heading", { level: 3 })
+          .map((heading) => heading.textContent),
+      ).toEqual(shortfalls.map((row) => shortNeed(row.need)));
     }
   });
 
   it("keeps the whole-network mismatch facts unchanged while a ward is selected", () => {
     expect(networkRows.length, "no ward can be selected, so this comparison would be vacuous").toBeGreaterThan(0);
     renderScreen();
-    const gapTable = screen.getByTestId("ward-capacity-gap-table");
-    const beforeSelection = gapTable.textContent;
-    expect(beforeSelection, "the mismatch table is empty, so selection cannot be compared").toBeTruthy();
+    const mismatch = () => screen.getByRole("region", { name: "Mismatch" }).textContent;
+    const forecast = () => screen.getByRole("region", { name: "Bed forecast" }).textContent;
+    const beforeSelection = [mismatch(), forecast()];
+    expect(beforeSelection[0], "the mismatch card is empty, so selection cannot be compared").toBeTruthy();
 
-    const wardTable = screen.getByTestId("ward-capacity-network-table");
-    fireEvent.click(within(wardTable).getByRole("button", { name: networkRows[0].unit.name }));
+    openWardDrawer(networkRows[0]!.unit);
 
-    expect(screen.getByTestId("ward-capacity-gap-table").textContent).toBe(beforeSelection);
+    expect([mismatch(), forecast()]).toEqual(beforeSelection);
   });
 
   /**
@@ -378,31 +437,23 @@ describe("the Capacity screen", () => {
    * coordinator could commit two patients and have the second refused at the moment of action,
    * after the ward had been told.
    *
-   * Asserts the PROPERTY, not the sentence: wherever a pending figure exists the row states it and
-   * the Ready number is unchanged; where none exists the row says nothing rather than "0".
+   * Asserts the PROPERTY, not the sentence: wherever a pending figure exists the ward's drawer states it and
+   * the Ready number is unchanged; where none exists it says nothing rather than "0".
    */
   it("states beds still being made ready beside the Ready figure, without altering it", () => {
     const withPending = networkRows.filter((row) => (row.pendingPreparation ?? 0) > 0);
     expect(withPending.length, "no ward has a bed being made ready — this would be vacuous").toBeGreaterThan(0);
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-network-table");
     for (const row of withPending) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      expect(
-        within(tableRow).getByTestId("ward-capacity-network-ready"),
-        `${row.unit.id}: the Ready figure itself must not change`,
-      ).toHaveTextContent(String(row.ready));
-      expect(
-        within(tableRow).getByTestId("ward-capacity-network-pending"),
-        `${row.unit.id} has ${row.pendingPreparation} being made ready and must say so`,
-      ).toHaveTextContent(String(row.pendingPreparation));
+      const { figure, notes } = bedsNow(openWardDrawer(row.unit));
+      expect(figure, `${row.unit.id}: the Ready figure itself must not change`).toBe(countCellText(row.ready));
+      expect(notes, `${row.unit.id} has ${row.pendingPreparation} being made ready and must say so`).toContain(
+        `${row.pendingPreparation} being made ready`,
+      );
     }
     for (const row of networkRows.filter((r) => (r.pendingPreparation ?? 0) === 0)) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      expect(
-        within(tableRow).queryByTestId("ward-capacity-network-pending"),
-        `${row.unit.id} has none pending and must not render a bare zero`,
-      ).toBeNull();
+      const { notes } = bedsNow(openWardDrawer(row.unit));
+      expect(notes, `${row.unit.id} has none pending and must not render a bare zero`).not.toMatch(/being made ready/u);
     }
   });
 
@@ -412,22 +463,28 @@ describe("the Capacity screen", () => {
    *
    * `source === "ward"` means the ward itself stood behind the number; anything else means it was
    * derived from a feed. A coordinator ringing a ward about its own figure needs to know which.
-   * Asserts the PROPERTY against the fixture, not the sentence: a ward-sourced row names the ward,
-   * a derived row does not claim one.
+   * Asserts the PROPERTY against the fixture, not the sentence: a ward-sourced figure names who
+   * confirmed it, a derived one does not claim anyone. Read in each ward's drawer since the redesign.
    */
   it("says who confirmed each capacity figure, and never attributes a derived one to a ward", () => {
     const wardSourced = networkRows.filter((row) => row.unit.allocatable.source === "ward");
     expect(wardSourced.length, "no ward-sourced figure — this assertion would be vacuous").toBeGreaterThan(0);
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-network-table");
+    // Matched against the freshness stamp's own text inside "Confirmed beds", never the drawer,
+    // whose title names the ward regardless (see `ward-capacity-freshness-source.dom.test.tsx`).
     for (const row of wardSourced) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      expect(tableRow, `${row.unit.id} is ward-confirmed and must name the ward`).toHaveTextContent(row.unit.name);
+      const confirmed = within(openWardDrawer(row.unit)).getByRole("region", { name: "Confirmed beds" });
+      expect(
+        within(confirmed).getByText(new RegExp(`^Confirmed .* · ${escapeRegExp(capacityConfirmer(row.unit)!)}$`, "u")),
+        `${row.unit.id} is ward-confirmed and must name who confirmed it`,
+      ).toBeInTheDocument();
     }
     for (const row of networkRows.filter((r) => r.unit.allocatable.source !== "ward")) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      const stamp = within(tableRow).queryByText(/Confirmed .* · /u);
-      expect(stamp, `${row.unit.id} is derived and must not be attributed to a ward`).toBeNull();
+      const confirmed = within(openWardDrawer(row.unit)).getByRole("region", { name: "Confirmed beds" });
+      expect(
+        within(confirmed).queryByText(/^Confirmed .* · /u),
+        `${row.unit.id} is derived and must not be attributed to a ward`,
+      ).toBeNull();
     }
   });
 });
@@ -452,41 +509,43 @@ describe("the Capacity screen", () => {
  * The floor matters as much as the assertion. Both sets must be non-empty and must genuinely
  * differ in size — if the bar ever rendered no key, or the filters no chips, an intersection of
  * nothing would pass while proving nothing.
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the bar and its key are gone. The hero's chips count
+ * BEDS ("Locked ready", "Open ready") and the bed map's highlight chips count WARDS, and the redesign
+ * gave every ward chip its noun ("Locked ready · 7 wards"). So what is asserted now is that every
+ * ward-counting chip names its noun and none reads exactly like a bed-counting hero figure.
  */
 describe("the Capacity screen never labels a bed count and a ward count with the same words", () => {
-  function labelsIn(container: HTMLElement, selector: string): string[] {
-    return (
-      Array.from(container.querySelectorAll(selector))
-        .map((node) => (node.textContent ?? "").replace(/\s+/gu, " ").trim())
-        // Both a key item and a filter chip render "<label> <count>"; the count is what differs
-        // between them and is not part of the name being compared.
-        .map((text) => text.replace(/\s*\d+\s*$/u, "").trim())
-        .filter((text) => text !== "")
-    );
+  /** The hero chips count beds: each chip's label, without its figure. */
+  function heroLabels(): string[] {
+    return heroChips()
+      .getAllByRole("button")
+      .concat(
+        Array.from(screen.getByRole("group", { name: "Network beds" }).querySelectorAll<HTMLElement>(":scope > span")),
+      )
+      .map((chip) => (chip.lastElementChild?.textContent ?? "").replace(/\s+/gu, " ").trim())
+      .filter((text) => text !== "");
   }
 
-  it("has a bar key and a filter group to compare, or the intersection below is vacuous", () => {
+  it("has hero bed chips and bed map ward chips to compare, or the comparison below is vacuous", () => {
     renderScreen();
-    const bar = document.querySelector('[data-ward-primitive="bar"]') as HTMLElement;
-    const filters = document.querySelector('[data-ward-primitive="filters"]') as HTMLElement;
-    expect(bar, "no WardBar on the capacity screen — this guard has nothing to stand over").not.toBeNull();
-    expect(filters, "no filter group on the capacity screen").not.toBeNull();
-    expect(labelsIn(bar, "li").length, "the bar renders no key items").toBeGreaterThan(0);
-    expect(labelsIn(filters, "button").length, "the filter group renders no chips").toBeGreaterThan(0);
+    expect(heroLabels().length, "the hero renders no bed chips").toBeGreaterThan(0);
+    expect(highlightChips().length, "the bed map renders no highlight chips").toBeGreaterThan(0);
   });
 
-  it("shares no label between the bed-counting bar key and the ward-counting filter chips", () => {
+  it("names the noun on every ward-counting chip, so none reads as a bed-counting hero figure", () => {
     renderScreen();
-    const barLabels = labelsIn(document.querySelector('[data-ward-primitive="bar"]') as HTMLElement, "li");
-    const chipLabels = labelsIn(document.querySelector('[data-ward-primitive="filters"]') as HTMLElement, "button");
-    const shared = barLabels.filter((label) => chipLabels.includes(label));
-
-    expect(
-      shared,
-      "these words label a BED count in the bar and a WARD count in the filters, on screen at the " +
-        "same time. Rename one — the numbers are both correct and neither should move.",
-    ).toEqual([]);
+    const beds = heroLabels();
+    const chips = highlightChips().map((chip) => (chip.textContent ?? "").replace(/\s+/gu, " ").trim());
+    for (const chip of chips) {
+      expect(chip, "a ward-counting chip does not say it counts wards").toMatch(/ · \d+ wards?$/u);
+      expect(beds, "a ward-counting chip reads exactly like a bed-counting hero figure").not.toContain(chip);
+    }
+    for (const label of beds) {
+      expect(label, "a bed-counting hero figure is labelled as wards").not.toMatch(/\bwards?$/u);
+    }
   });
+
   /**
    * 🔴 **A WARD'S NAME IS NOT A FIGURE, AND IT SAT IN A CODE FACE.** `.attentionWho` renders
    * `row.unit.name` ("Ward 2K", "Graylands Older Adult") and `row.need` ("A locked adult
@@ -511,15 +570,16 @@ describe("the Capacity screen never labels a bed count and a ward count with the
    * declaration returning to this rule, not the rendered face.
    */
   it("never sets a code face on the slot that holds ward names", () => {
-    const css = readFileSync("src/components/ward-management/capacity/capacity.module.css", "utf8");
-    const rule = /^\.attentionWho\s*\{([^}]*)\}/mu.exec(css);
-    expect(rule, "no .attentionWho rule found — the assertion below would be vacuous").not.toBeNull();
+    // Capacity redesign (31 Oct 2026): `.attentionWho` and `capacity.module.css` are gone; ward names
+    // now sit in the bed map card's `.wardName` slot in `capacity-page.module.css`.
+    const css = readFileSync("src/components/ward-management/capacity/capacity-page.module.css", "utf8");
+    const rule = /^\.wardName\s*\{([^}]*)\}/mu.exec(css);
+    expect(rule, "no .wardName rule found — the assertion below would be vacuous").not.toBeNull();
 
     expect(
       (rule as RegExpExecArray)[1],
-      "a font-family is back on the slot that renders ward names and bed-kind needs. Every one of " +
-        "the 11 nodes carrying this class is prose with no digit in it, so a code face here is a " +
-        "hospital's name typeset as though it were a reference number.",
+      "a font-family is back on the slot that renders ward names. Every one of them is prose, so a " +
+        "code face here is a hospital's name typeset as though it were a reference number.",
     ).not.toMatch(/font-family/u);
   });
   /**
@@ -539,39 +599,36 @@ describe("the Capacity screen never labels a bed count and a ward count with the
    * ⚠️ **`"Not tracked here"` IS NOT IN SCOPE AND MUST NOT BE FOLDED IN.** `undefined` means nobody
    * told this screen; `0` means the ward told us and the answer is none. Those are different
    * statements and collapsing them would fabricate a fact.
+   *
+   * Capacity redesign (31 Oct 2026): the table row is gone, so this reads each ward's bed map card
+   * across: its ready figure and its occupied figure. The drawer's counts are read the same way in
+   * `ward-capacity-zero-spelling.dom.test.tsx`.
    */
-  it("never spells a known zero two ways on the same ward's row", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <CapacityScreen />
-      </WardFlowProvider>,
-    );
-    showWardTable();
-
-    const table = screen.getByTestId("ward-capacity-network-table");
-    const rows = Array.from(table.querySelectorAll("tbody tr"));
-    expect(rows.length, "no ward rows rendered — this guard would prove nothing").toBeGreaterThan(10);
+  it("never spells a known zero two ways on the same ward's card", () => {
+    renderScreen();
+    const cards = wardCards();
+    expect(cards.length, "no ward cards rendered — this guard would prove nothing").toBeGreaterThan(10);
 
     const mixed: string[] = [];
     let sawAZero = 0;
-    for (const row of rows) {
-      const cells = ["ward-capacity-network-ready", "ward-capacity-network-locked", "ward-capacity-network-freeing"]
-        .map((id) => row.querySelector(`[data-testid="${id}"]`)?.textContent?.trim() ?? "")
-        // The pending-preparation note lives inside the Ready cell; the figure is its first line.
-        .map((text) => text.split(/\r?\n/u)[0].trim());
-      const words = cells.filter((t) => t === "none").length;
-      const digits = cells.filter((t) => /^0\b/u.test(t)).length;
+    for (const card of cards) {
+      const occupied = Array.from(card.querySelectorAll("span"))
+        .map((span) => /^(\S+) of \d+ occupied$/u.exec(span.textContent ?? "")?.[1])
+        .find((value) => value !== undefined);
+      const figures = [card.querySelector("b")?.textContent ?? "", occupied ?? ""].map((text) => text.trim());
+      const words = figures.filter((t) => /^none$/iu.test(t)).length;
+      const digits = figures.filter((t) => t === "0").length;
       if (words + digits > 0) sawAZero += 1;
-      if (words > 0 && digits > 0) mixed.push(`${row.textContent?.slice(0, 30)} -> ${cells.join(" | ")}`);
+      if (words > 0 && digits > 0) mixed.push(`${visibleName(card.firstElementChild)} -> ${figures.join(" | ")}`);
     }
 
     // Floor on the POPULATION, never on the findings: a board with no zero at all would pass the
     // assertion below while proving nothing about how a zero is spelled.
-    expect(sawAZero, "no ward row reports a zero in any of the three columns — nothing was checked").toBeGreaterThan(0);
+    expect(sawAZero, "no ward card reports a zero — nothing was checked").toBeGreaterThan(0);
 
     expect(
       mixed,
-      "these rows spell zero as a word in one column and a digit in another, on the same line. " +
+      "these cards spell zero as a word in one figure and a digit in another, on the same card. " +
         "Nothing on screen says the two mean the same thing, so a reader has to assume they do not.",
     ).toEqual([]);
   });
@@ -587,11 +644,14 @@ describe("the Capacity screen never labels a bed count and a ward count with the
  * This describe block replaces Task 1's "actually filter the table" tests with "actually highlight
  * the table, and never remove a row" — the same wiring proof (a click really does something), now
  * pointed at the correct behaviour.
+ *
+ * Capacity redesign (31 Oct 2026): the network table is gone, and the bed map's highlight chips
+ * carry the same ruling: a chip dims the wards that do not match and never removes one.
  */
-describe("the Capacity network filter chips highlight the matching wards and never remove a row", () => {
-  it("clicking 'Has a bed ready' marks exactly its own population and leaves every ward, including the excluded one, on the table", () => {
+describe("the Capacity bed map's highlight chips mark the matching wards and never remove one", () => {
+  it("clicking 'Any ready' marks exactly its own population and leaves every ward, including the excluded one, on the map", () => {
     const readyRows = networkRows.filter((row) => row.ready > 0);
-    // Anti-vacuity floor: the filter must both have something to mark AND leave something
+    // Anti-vacuity floor: the chip must both have something to mark AND leave something
     // unmarked, or this test cannot tell a wired handler from a dead one that marks everything or
     // nothing regardless of which chip is pressed.
     expect(readyRows.length, "no ward has a ready bed in this fixture — this floor is vacuous").toBeGreaterThan(0);
@@ -601,165 +661,115 @@ describe("the Capacity network filter chips highlight the matching wards and nev
     ).toBeLessThan(networkRows.length);
 
     renderScreen();
-    const chip = screen.getByRole("button", { name: `Has a bed ready ${readyRows.length}` });
+    const chip = highlightChips().find((candidate) => /^Any ready · /u.test(candidate.textContent ?? ""))!;
+    // The chip states how many wards it matches, never a bed count standing in for it.
+    expect(chip).toHaveTextContent(`Any ready · ${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`);
     fireEvent.click(chip);
     expect(chip).toHaveAttribute("aria-pressed", "true");
 
-    // The header states the WHOLE board and, separately, how many the chip matches — never one
-    // figure standing in for the other. See the screen's own comment on this panel's count.
-    const region = screen.getByRole("region", { name: "Wards" });
-    const countEl = region.querySelector("[data-ward-panel-count]");
-    expect(countEl?.textContent, "the header no longer states the whole board's own count").toContain(
-      `${networkRows.length} ${networkRows.length === 1 ? "ward" : "wards"}`,
-    );
-    expect(countEl?.textContent, "the header does not say separately how many wards match").toContain(
-      `${readyRows.length} matching`,
+    expect(wardCards().length, "a chip changed how many wards are on the map — this board must never hide a bed").toBe(
+      networkRows.length,
     );
 
-    const table = within(region).getByTestId("ward-capacity-network-table");
-    const renderedRows = within(table)
-      .getAllByRole("row")
-      .filter((row) => row.getAttribute("data-testid")?.startsWith("ward-capacity-network-row-"));
-    expect(
-      renderedRows.length,
-      "a chip changed how many wards are on the table — this board must never hide a bed",
-    ).toBe(networkRows.length);
-
-    // Every row is present, and marked (attribute AND word) exactly according to the predicate —
-    // both directions, so a row cannot be marked "true" without the word or "false" while carrying it.
+    // Every ward is present, and lit or dimmed exactly according to the predicate — both directions.
     for (const row of networkRows) {
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      const shouldMatch = row.ready > 0;
-      expect(tableRow, `${row.unit.id} should be marked matches=${shouldMatch}`).toHaveAttribute(
-        "data-ward-network-row-matches",
-        shouldMatch ? "true" : "false",
-      );
-      expect(
-        within(tableRow).queryByText(/Matches this filter/iu) !== null,
-        `${row.unit.id}: expected the "Matches this filter" word to be present=${shouldMatch}`,
-      ).toBe(shouldMatch);
+      const [card] = cardsOf(row.unit);
+      expect(card, `${row.unit.id} is missing from the map`).toBeDefined();
+      expect(isDimmed(card!), `${row.unit.id}: expected lit=${row.ready > 0}`).toBe(row.ready === 0);
     }
 
-    // The ward the OLD (Task 1) hiding behaviour would have removed from the table entirely.
+    // The ward the OLD (Task 1) hiding behaviour would have removed from the board entirely.
     const excluded = networkRows.find((row) => row.ready === 0);
     expect(excluded, "no ward lacks a ready bed — nothing here proves a hidden ward would be caught").toBeDefined();
-    if (excluded) {
-      expect(
-        within(table).getByTestId(`ward-capacity-network-row-${excluded.unit.id}`),
-        "a non-matching ward was removed from the table — this is the exact defect the owner ruled against",
-      ).toBeInTheDocument();
-    }
+    expect(
+      cardsOf(excluded!.unit),
+      "a non-matching ward was removed from the map — this is the exact defect the owner ruled against",
+    ).toHaveLength(1);
   });
 
   /**
    * 🔴 **THE RULING WRITTEN DOWN AS A TEST, PER THE BRIEF.** Walks every chip the screen renders —
-   * not just "Has a bed ready" — and asserts the row COUNT never moves and every ward's row stays
-   * reachable, floored so an empty filter group or an empty ward list cannot pass this vacuously.
+   * not just "Any ready" — and asserts the card COUNT never moves and every ward's card stays
+   * reachable, floored so an empty chip group or an empty ward list cannot pass this vacuously.
    */
-  it("never removes a ward from the network table, on any chip", () => {
+  it("never removes a ward from the bed map, on any chip", () => {
     renderScreen();
-    const region = screen.getByRole("region", { name: "Wards" });
-    const table = within(region).getByTestId("ward-capacity-network-table");
-    const filterGroup = screen.getByRole("group", { name: "Highlight wards" });
-    const chips = within(filterGroup).getAllByRole("button");
-
+    const chips = highlightChips();
     expect(chips.length, "fewer than two chips exist — switching between them proves nothing").toBeGreaterThan(1);
-    expect(networkRows.length, "no ward rows at all — the row count below would be vacuous").toBeGreaterThan(0);
+    expect(networkRows.length, "no ward rows at all — the card count below would be vacuous").toBeGreaterThan(0);
 
     for (const chip of chips) {
       fireEvent.click(chip);
-      const renderedRows = within(table)
-        .getAllByRole("row")
-        .filter((row) => row.getAttribute("data-testid")?.startsWith("ward-capacity-network-row-"));
-      expect(renderedRows.length, `chip "${chip.textContent}" changed the rendered row count`).toBe(networkRows.length);
+      expect(wardCards().length, `chip "${chip.textContent}" changed the card count`).toBe(networkRows.length);
       for (const row of networkRows) {
-        expect(
-          within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`),
-          `chip "${chip.textContent}" removed ${row.unit.id} from the table`,
-        ).toBeInTheDocument();
+        expect(cardsOf(row.unit), `chip "${chip.textContent}" removed ${row.unit.id} from the map`).toHaveLength(1);
       }
     }
   });
 
   /**
-   * 🔴 **THE BED MAP DRAWS EVERY UNIT UNCONDITIONALLY (`bed-map.tsx`), SO ITS PANEL COUNT MUST
-   * NEVER FOLLOW A SELECTION.** A header reading "40 beds" over a map drawing 303 is exactly the
-   * units-collision incident this screen's own comments already record once (the bed-count vs
-   * ward-count mix-up above); pinned here so a future change that makes this panel read from a
-   * filtered figure is caught immediately rather than found by eye on the running page.
+   * 🔴 **THE BED MAP DRAWS EVERY UNIT UNCONDITIONALLY, SO THE PAGE'S BED COUNT MUST NEVER FOLLOW A
+   * SELECTION.** The bed map's own "N beds" count went with the redesign (the hero has it), so this
+   * pins the hero's headline instead: a header reading "40 beds" over a map drawing 303 is exactly
+   * the units-collision incident this file already records once.
    */
-  it("keeps the bed map's panel count constant across every chip", () => {
+  it("keeps the hero's bed count constant across every chip", () => {
     renderScreen();
-    const bedMapRegion = screen.getByRole("region", { name: "Bed map" });
-    const initialCount = bedMapRegion.querySelector("[data-ward-panel-count]")?.textContent;
-    expect(initialCount, "the bed map panel renders no count at all — this guard has nothing to pin").toBeTruthy();
-    expect(initialCount, "the bed map count should name beds, not wards").toBe(`${netTotals.beds} beds`);
+    const headline = () => screen.getByRole("heading", { level: 1 }).textContent;
+    const initial = headline();
+    expect(initial, "the hero headline should count beds").toContain(`of ${netTotals.beds}`);
 
-    const filterGroup = screen.getByRole("group", { name: "Highlight wards" });
-    const chips = within(filterGroup).getAllByRole("button");
+    const chips = highlightChips();
     expect(
       chips.length,
       "fewer than two chips exist — this proves nothing about following a selection",
     ).toBeGreaterThan(1);
-
     for (const chip of chips) {
       fireEvent.click(chip);
-      const count = bedMapRegion.querySelector("[data-ward-panel-count]")?.textContent;
-      expect(count, `chip "${chip.textContent}" changed the bed map's panel count`).toBe(initialCount);
+      expect(headline(), `chip "${chip.textContent}" changed the hero's bed count`).toBe(initial);
     }
   });
 });
 
-/**
- * 🔴 **ITEM B — THE MISSING SCROLL AFFORDANCE.** `WardTable`'s `hasScrollThreshold` renders a
- * visible wrapper border plus the sentence "This table scrolls sideways on narrow screens." for a
- * caller that has declared a `--ward-table-min-width`. The Wards table retains its scroll floor;
- * the third-edition mismatch band wraps into columns and no longer needs horizontal scrolling.
+/*
+ * RETIRED 31 Oct 2026 with the network ward table (Capacity redesign): "Capacity's tables declare
+ * the scroll affordance they have earned" — "declares horizontal scrolling only when additional
+ * columns are requested" and "shows one scroll notice in the expanded view and removes it when
+ * returning to compact". Both pinned the table's More columns / Key columns switch and its
+ * "This table scrolls sideways on narrow screens." notice; the redesign removed the table and its
+ * column switch, and the bed map that replaced it does not scroll sideways.
  */
-describe("Capacity's tables declare the scroll affordance they have earned", () => {
-  it("declares horizontal scrolling only when additional columns are requested", () => {
-    renderScreen();
-    expect(screen.getByTestId("ward-capacity-network-table")).not.toHaveAttribute("data-ward-scroll-hint");
-    fireEvent.click(screen.getByRole("button", { name: "More columns" }));
-    expect(screen.getByTestId("ward-capacity-network-table")).toHaveAttribute("data-ward-scroll-hint", "true");
-    expect(screen.getByTestId("ward-capacity-gap-table")).not.toHaveAttribute("data-ward-scroll-hint", "true");
-  });
-
-  it("shows one scroll notice in the expanded view and removes it when returning to compact", () => {
-    renderScreen();
-    expect(screen.queryByText("This table scrolls sideways on narrow screens.")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "More columns" }));
-    // The responsive mismatch band must not falsely advertise horizontal scrolling.
-    expect(screen.getAllByText("This table scrolls sideways on narrow screens.")).toHaveLength(1);
-    fireEvent.click(screen.getByRole("button", { name: "Key columns" }));
-    expect(screen.queryByText("This table scrolls sideways on narrow screens.")).not.toBeInTheDocument();
-  });
-});
 
 describe("tomorrow's beds forecast", () => {
-  it("shows the 24 and 48 hour estimates from bedsForecast cleanly in the network summary", () => {
-    const seeded = seedWardFlowState();
+  it("shows the 24 and 48 hour estimates from bedsForecast in the bed forecast's figures", () => {
     // Stream D: the screen counts the seeded planned admissions as beds needed.
     const forecast = bedsForecast(
-      seeded.units,
-      seeded.bedReleases,
-      seeded.admissions,
-      seeded.movements,
+      seed.units,
+      seed.bedReleases,
+      seed.admissions,
+      seed.movements,
       NOW_ANCHOR,
-      seeded.plannedAdmissions,
+      seed.plannedAdmissions,
     );
+    const [tomorrow, twoDays] = forecast.horizons;
+    expect(tomorrow, "the forecast has no 24 hour estimate").toBeDefined();
+    expect(twoDays, "the forecast has no 48 hour estimate").toBeDefined();
     renderScreen();
-    const panel = screen.getByTestId("ward-capacity-beds-forecast");
-    for (const entry of forecast.horizons) {
-      expect(within(panel).getByTestId(`ward-capacity-beds-forecast-${entry.hours}h-likely`)).toHaveTextContent(
-        forecastHeadline(entry.likely),
-      );
-      expect(within(panel).getByTestId(`ward-capacity-beds-forecast-${entry.hours}h-needed`)).toHaveTextContent(
-        `${entry.bedsNeeded} beds needed, ${entry.plannedAdmissions} planned admissions.`,
-      );
-    }
-    expect(within(panel).queryByText("How this was worked out")).toBeNull();
-    // PR #423 prototype disclosure: the forecast states its limits beside the chart on this screen.
-    for (const limit of BEDS_FORECAST_LIMITS) expect(within(panel).getByText(limit)).toBeVisible();
+    expect(forecastFigure("Tomorrow")).toEqual({
+      value: gapWords(tomorrow!.likely),
+      sub: `${gapWords(tomorrow!.low)} to ${gapWords(tomorrow!.high)}`,
+    });
+    // 48 hours rests on softer dates, so it leads with the range and gives the likely figure under it.
+    expect(forecastFigure("In 2 days")).toEqual({
+      value: `${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
+      sub: `Likely ${gapWords(twoDays!.likely)}`,
+    });
+    // PR #423 prototype disclosure: the forecast states its limits. Since the redesign they sit in
+    // its "How this is worked out" fold, under the visible "Estimate only".
+    const panel = screen.getByRole("region", { name: "Bed forecast" });
+    expect(within(panel).getByText("Estimate only")).toBeVisible();
+    const how = within(panel).getByText("How this is worked out").closest("details") as HTMLElement;
+    expect(how, "the forecast has no 'How this is worked out' fold").not.toBeNull();
+    for (const limit of BEDS_FORECAST_LIMITS) expect(within(how).getByText(limit)).toBeInTheDocument();
   });
 });

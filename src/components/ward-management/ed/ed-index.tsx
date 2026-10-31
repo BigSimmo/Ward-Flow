@@ -1,10 +1,8 @@
 "use client";
 
-import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ComponentProps } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps } from "react";
 
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import { Eye, GanttChart, LayoutGrid, List, Search, SlidersHorizontal } from "lucide-react";
@@ -20,14 +18,12 @@ import {
   HeroStat,
   Icon,
   LiveChip,
-  Kbd,
   PhoneListRow,
   PhoneSheet,
   ScrollRow,
   Segmented,
   SrOnly,
   StatusGlyph,
-  TextInput,
   buttonClass,
   cx,
   useIsPhone,
@@ -133,6 +129,12 @@ function rowClock(row: EdRow): WaitClock {
   return row.pastTarget > 0 ? "past" : row.severe > 0 ? "severe" : "in";
 }
 
+/**
+ * October 2026 design review (Josh, 31 Oct 2026): the title counts every department ("62 waiting
+ * across 10 EDs · 8 with someone waiting"), hospital names wrap on the cards instead of ending in
+ * "…", and departments with nobody waiting share one line with an Enter button each, rather than a
+ * full empty card.
+ */
 export function EdIndex() {
   const { movements, patients, referrals, units, configuration } = useWardFlowSelect(
     "movements",
@@ -150,35 +152,15 @@ export function EdIndex() {
   // Smart features idea 9: the order and layout last chosen on this device, never a filter.
   const [order, setOrder] = useDeviceChoice("ward_flow_choice_ed_index_order", ORDERS, "longest");
   const [view, setView] = useDeviceChoice("ward_flow_choice_ed_index_view", VIEWS, "cards");
-  const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [phoneView, setPhoneView] = useState<PhoneView>("list");
   const [phoneFiltersOpen, setPhoneFiltersOpen] = useState(false);
-  const searchRef = useRef<HTMLInputElement>(null);
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if (!areCharacterShortcutsEnabled() || event.key !== "/" || event.defaultPrevented) return;
-      if (hasOpenSheet() || document.querySelector('[aria-modal="true"]')) return;
-      const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-      event.preventDefault();
-      searchRef.current?.focus();
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  // D-91: the keyword box over these ~15 EDs went in the search and forms review (Josh, 30 Oct
+  // 2026). The header search finds an ED by name or site.
 
   const rows: EdRow[] = useMemo(() => {
     // D-14: names come through the shared resolver, the same one the ED board uses.
@@ -232,20 +214,13 @@ export function EdIndex() {
   const longestRow = [...rows].sort((a, b) => b.summary.longestWaitMinutes - a.summary.longestWaitMinutes)[0];
   const longest = longestRow?.summary.longestWaitMinutes ?? 0;
 
-  const matchesQuery = (row: EdRow) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return true;
-    return [row.short, row.summary.ed.name, row.summary.siteName, row.summary.service].some((text) =>
-      text.toLowerCase().includes(q),
-    );
-  };
   const byService = (row: EdRow) => service === "all" || row.summary.service === service;
   const byStatus = (row: EdRow) =>
     status === "all" ||
     (status === "past-target" && row.pastTarget > 0) ||
     (status === "waiting" && row.summary.waiting > 0) ||
     (status === "clear" && row.summary.waiting === 0);
-  const matchesFilters = (row: EdRow) => byService(row) && byStatus(row) && matchesQuery(row);
+  const matchesFilters = (row: EdRow) => byService(row) && byStatus(row);
 
   // v10 rule 5: filters and hero chips highlight and dim. Every ED stays in place in every view.
   const matching = rows.filter(matchesFilters);
@@ -258,15 +233,14 @@ export function EdIndex() {
     return b.summary.longestWaitMinutes - a.summary.longestWaitMinutes || serviceRank(a) - serviceRank(b);
   });
 
-  const isFiltered = service !== "all" || status !== "all" || query !== "";
+  const isFiltered = service !== "all" || status !== "all";
   const resetFilters = () => {
     setService("all");
     setStatus("all");
-    setQuery("");
   };
 
   // Each service count applies the other active filters, so it matches the EDs that option keeps solid.
-  const otherFilters = (row: EdRow) => byStatus(row) && matchesQuery(row);
+  const otherFilters = (row: EdRow) => byStatus(row);
   const services = ED_HOME_SERVICE_BAND_ORDER.filter((name) => rows.some((row) => row.summary.service === name));
   const serviceItems = [
     { id: "all" as ServiceFilter, label: "All EDs", count: rows.filter(otherFilters).length },
@@ -342,24 +316,6 @@ export function EdIndex() {
     <ServicePicker services={services} rows={rows} value={service} onPick={pickService} accessTarget={accessTarget} />
   );
 
-  const searchField = (
-    <TextInput
-      ref={searchRef}
-      type="search"
-      id="edSearchInput"
-      icon={Search}
-      placeholder="ED, hospital or service"
-      aria-label="Highlight emergency departments by keyword"
-      value={query}
-      onChange={(event) => setQuery(event.target.value)}
-      onClear={() => setQuery("")}
-      trailing={query || isPhone ? undefined : <Kbd>/</Kbd>}
-      autoComplete="off"
-      spellCheck={false}
-      boxClassName={styles.search}
-    />
-  );
-
   return (
     <div className={styles.screen} data-testid="ward-ed-index" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -374,7 +330,7 @@ export function EdIndex() {
           level={1}
           title={
             <>
-              <SrOnly>All EDs,</SrOnly> {waiting} waiting in {withWaiting.length} EDs
+              <SrOnly>All EDs,</SrOnly> {waiting} waiting across {rows.length} EDs
             </>
           }
           titleMeta={
@@ -383,7 +339,7 @@ export function EdIndex() {
               ? waiting > 0 && longestRow
                 ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
                 : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-              : undefined
+              : `${withWaiting.length} with someone waiting`
           }
           aside={
             isPhone ? (
@@ -465,10 +421,18 @@ export function EdIndex() {
               <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
             )}
             {isPhone ? (
-              // v10 phone: the status and order button sits beside the search, so the view switch
-              // below runs the full width.
-              <div className={styles.phoneSearchRow}>
-                {searchField}
+              // D-91: with the keyword box gone, the status and order button sits at the end of the
+              // health service chips, so the view switch below still runs the full width.
+              <div className={styles.phoneFilterRow}>
+                <ScrollRow className={styles.phoneServices}>
+                  <Segmented
+                    label="Health service"
+                    items={serviceItems}
+                    value={service}
+                    onChange={setService}
+                    size="md"
+                  />
+                </ScrollRow>
                 <Button
                   variant="sec"
                   iconOnly
@@ -476,22 +440,10 @@ export function EdIndex() {
                   aria-label={`Status and order${status !== "all" ? ", status filtered" : ""}`}
                   aria-haspopup="dialog"
                   onClick={() => setPhoneFiltersOpen(true)}
+                  className={styles.phoneFilterButton}
                   data-testid="ed-index-phone-filters"
                 />
               </div>
-            ) : (
-              searchField
-            )}
-            {isPhone ? (
-              <ScrollRow className={styles.phoneServices}>
-                <Segmented
-                  label="Health service"
-                  items={serviceItems}
-                  value={service}
-                  onChange={setService}
-                  size="md"
-                />
-              </ScrollRow>
             ) : null}
             {isPhone ? null : (
               <Segmented
@@ -517,7 +469,6 @@ export function EdIndex() {
               </>
             )}
             <span className={styles.shownCount}>
-              <span className={styles.filterHint}>Filters and chips highlight, all EDs stay</span>
               {isFiltered ? (
                 <Button variant="ghost" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -550,7 +501,7 @@ export function EdIndex() {
             <EmptyState
               icon={Search}
               title="No match"
-              meta={`No ED matches these filters. All ${rows.length} stay below, dimmed.`}
+              meta={`No ED matches. All ${rows.length} stay below, dimmed.`}
               action={
                 <Button variant="sec" size="sm" onClick={resetFilters}>
                   Reset filters
@@ -582,15 +533,36 @@ export function EdIndex() {
           // eleventh card, and a full-width strip under them at tablet portrait.
           <div className={styles.cardsWithRail}>
             <section className={styles.cardGrid} aria-label="Emergency department cards">
-              {ordered.map((row) => (
-                <EdCard
-                  key={row.summary.ed.id}
-                  row={row}
-                  dim={isDim(row)}
-                  highlight={highlight}
-                  onPreview={() => setPreviewId(row.summary.ed.id)}
-                />
-              ))}
+              {ordered
+                .filter((row) => row.summary.waiting > 0)
+                .map((row) => (
+                  <EdCard
+                    key={row.summary.ed.id}
+                    row={row}
+                    dim={isDim(row)}
+                    highlight={highlight}
+                    onPreview={() => setPreviewId(row.summary.ed.id)}
+                  />
+                ))}
+              {ordered.some((row) => row.summary.waiting === 0) ? (
+                <div className={styles.clearLine} aria-label="Departments with no one waiting" role="group">
+                  <span className={styles.clearLabel}>No one waiting</span>
+                  {ordered
+                    .filter((row) => row.summary.waiting === 0)
+                    .map((row) => (
+                      <span
+                        key={row.summary.ed.id}
+                        className={styles.clearEd}
+                        data-service={row.summary.service}
+                        data-dim={isDim(row) ? "true" : undefined}
+                        data-testid={`ed-index-clear-${row.summary.ed.id}`}
+                      >
+                        <b title={row.summary.ed.name}>{row.short}</b>
+                        <EnterLink row={row} />
+                      </span>
+                    ))}
+                </div>
+              ) : null}
             </section>
             <div className={styles.serviceRail} data-wf-rail>
               {servicePicker}
@@ -772,11 +744,23 @@ function EdCard({
         <RowTrend values={row.trend} name={row.short} testId="ed-row-spark" />
       </div>
       <PeoplePips row={row} highlight={highlight} />
+      {/* The figures wrap between figures, never mid-phrase, so none ends in "…". */}
       <p className={styles.figures}>
-        <b className={styles.num}>{summary.waiting}</b> waiting <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.noBed}</b> no bed <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.held}</b> accepted <span aria-hidden="true">·</span>{" "}
-        <b className={styles.num}>{row.forms}</b> form
+        <span className={styles.fig}>
+          <b className={styles.num}>{summary.waiting}</b> waiting
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={styles.fig}>
+          <b className={styles.num}>{row.noBed}</b> no bed
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={styles.fig}>
+          <b className={styles.num}>{row.held}</b> accepted
+        </span>{" "}
+        <span aria-hidden="true">·</span>{" "}
+        <span className={styles.fig}>
+          <b className={styles.num}>{row.forms}</b> under a form
+        </span>
       </p>
       <div className={styles.cardFoot}>
         <Longest row={row} />
@@ -1099,7 +1083,7 @@ function PhoneEdList({
               <span className={styles.phoneMeta}>
                 <PeoplePips row={item} highlight={highlight} />
                 <span>
-                  {item.noBed} no bed · {item.held} accepted · {item.forms} form
+                  {item.noBed} no bed · {item.held} accepted · {item.forms} under a form
                 </span>
               </span>
             ) : (

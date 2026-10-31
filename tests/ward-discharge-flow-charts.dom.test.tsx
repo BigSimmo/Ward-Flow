@@ -29,16 +29,22 @@ const worklistRows = () =>
     .filter((row) => within(row).queryAllByRole("button").length > 0);
 
 describe("Discharges charts under the table (direction A)", () => {
+  // Discharges redesign (approved 31 Oct 2026): the barrier panel and the day chart sit beside the list on
+  // a wide screen and under it on a tablet, and CSS shows one pair. jsdom applies no media queries, so
+  // both pairs are in the document here; the first of each is read.
+  const dayChart = () => screen.getAllByTestId("ward-discharge-day-chart")[0]!;
+  const barrierBars = () => screen.getAllByTestId("ward-discharge-barrier-bars")[0]!;
+
   it("highlights a day's people in the admission records and hides nobody", () => {
     renderBoard();
-    const chart = screen.getByTestId("ward-discharge-day-chart");
-    const day = within(chart)
+    fireEvent.click(screen.getByRole("button", { name: /^History/u }));
+    const day = within(dayChart())
       .getAllByRole("button", { pressed: false })
       .find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
     expect(day).toBeDefined();
     const expected = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     fireEvent.click(day!);
-    // A click on a chart moves to the people view.
+    // On History a click stays on History and highlights the people (admission records).
     expect(screen.getByRole("button", { name: /^History/u })).toHaveAttribute("aria-pressed", "true");
     const rows = worklistRows();
     const lit = rows.filter((row) => row.getAttribute("data-highlighted") === "true");
@@ -53,16 +59,39 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
   });
 
-  it("groups blocked people by barrier and highlights the barrier picked on the bars", () => {
+  it("highlights a day's bed releases within Now, never jumping to History (Josh, 30 Oct)", () => {
     renderBoard();
-    const bars = screen.getByTestId("ward-discharge-barrier-bars");
+    const day = within(dayChart())
+      .getAllByRole("button", { pressed: false })
+      .find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
+    expect(day).toBeDefined();
+    const due = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
+    fireEvent.click(day!);
+    expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
+    const note = screen.getByTestId("ward-discharge-highlight-note").textContent ?? "";
+    const listed = Number(/^(\d+) of \d+ highlighted, all rows stay/u.exec(note)?.[1]);
+    const notListed = Number(/· (\d+) more that day not listed/u.exec(note)?.[1] ?? 0);
+    // The chart leaves closed wards out (as Capacity's forecast does); the list keeps every row, so it
+    // can only hold as many or more.
+    expect(listed + notListed).toBeGreaterThanOrEqual(due);
+    expect(listed + notListed).toBeGreaterThan(0);
+  });
+
+  it("counts held-up releases by barrier and highlights the barrier picked, within Now", () => {
+    renderBoard();
+    const bars = barrierBars();
+    expect(within(bars).getByText(/^\d+ releases?$/u)).toBeInTheDocument();
     const first = within(bars).getAllByRole("button")[0]!;
-    const count = Number(/: (\d+) blocked/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
+    const count = Number(/: (\d+) held up/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
+    expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    fireEvent.click(screen.getByTestId("ward-discharge-view-barriers"));
-    const table = screen.getByTestId("ward-discharge-barrier-table");
-    expect(table.querySelectorAll('tr[data-highlighted="true"]')).toHaveLength(count);
-    expect(within(table).getByText("No barrier recorded")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(
+      new RegExp(`^${count} of \\d+ highlighted, all rows stay`),
+    );
+    // The List / Barriers switch and its table are gone: one barrier panel.
+    expect(screen.queryByTestId("ward-discharge-view-barriers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-discharge-barrier-table")).not.toBeInTheDocument();
   });
 
   it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
@@ -71,8 +100,8 @@ describe("Discharges charts under the table (direction A)", () => {
     const statusSelect = () => screen.getByRole("combobox", { name: "Status" }) as HTMLSelectElement;
     fireEvent.change(statusSelect(), { target: { value: "confirmed" } });
     expect(statusSelect().value).toBe("confirmed");
-    const first = within(screen.getByTestId("ward-discharge-barrier-bars")).getAllByRole("button")[0]!;
-    const count = Number(/: (\d+) blocked/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
+    const first = within(barrierBars()).getAllByRole("button")[0]!;
+    const count = Number(/: (\d+) held up/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
     expect(statusSelect().value).toBe("all");

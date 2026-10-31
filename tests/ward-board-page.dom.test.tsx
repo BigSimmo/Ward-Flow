@@ -60,6 +60,13 @@ function occupantsFor(unitId: string): Admission[] {
   return admissionsForUnit(wardAdmissions, unitId).filter(bedIsOccupied);
 }
 
+/** The desktop filters are the kit's segmented control (redesign, 31 Oct 2026): one radio each. */
+function boardFilter(label: string): HTMLElement {
+  return within(screen.getByRole("radiogroup", { name: "Narrow stays and discharges" })).getByRole("radio", {
+    name: new RegExp(`^${label}`, "u"),
+  });
+}
+
 describe("ward board page", () => {
   it("Nobody due out shows only arrived occupants with no expected departure", () => {
     const { container } = renderWardBoard(UNIT_ID);
@@ -67,7 +74,7 @@ describe("ward board page", () => {
       (admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) !== null && admission.expectedDischargeAt === null,
     );
     expect(expected.length).toBeGreaterThan(0);
-    const filter = screen.getByTestId("ward-board-filter-quiet");
+    const filter = boardFilter("Nobody due out");
     expect(filter).toHaveTextContent(`Nobody due out${expected.length}`);
     fireEvent.click(filter);
     const visibleTiles = [...container.querySelectorAll<HTMLElement>("[data-bed-kind]")].filter((tile) => !tile.hidden);
@@ -83,9 +90,11 @@ describe("ward board page", () => {
     const { container } = renderWardBoard(UNIT_ID);
     const tile = container.querySelector<HTMLElement>('[data-bed-kind="occupied"]');
     expect(tile).not.toBeNull();
-    fireEvent.click(within(tile!).getByRole("button"));
+    const tileButton = within(tile!).getByRole("button");
+    // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
+    if (tileButton.getAttribute("aria-pressed") !== "true") fireEvent.click(tileButton);
     expect(screen.getByTestId("ward-board-detail")).toHaveAttribute("data-detail-kind", "occupied");
-    const ready = screen.getByTestId("ward-board-filter-ready");
+    const ready = boardFilter("Ready");
     ready.focus();
     fireEvent.click(ready);
     expect(screen.getByTestId("ward-board-detail")).toHaveAttribute("data-detail-kind", "none");
@@ -94,7 +103,7 @@ describe("ward board page", () => {
     expect(ready).toHaveFocus();
     fireEvent.keyDown(ready, { key: "Escape" });
     expect(ready).toHaveFocus();
-    fireEvent.click(screen.getByTestId("ward-board-filter-all"));
+    fireEvent.click(boardFilter("All beds"));
     expect(tile).toBeVisible();
   });
 

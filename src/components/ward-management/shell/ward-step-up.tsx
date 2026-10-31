@@ -12,9 +12,10 @@
  *
  * The password is held only while the dialog is open and is never stored.
  */
+import dynamic from "next/dynamic";
 import { useCallback, useContext, useRef, useState, type ReactNode } from "react";
 
-import { Dialog, Field, SrOnly, TextInput } from "@/components/wf";
+import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { STEP_UP_MINUTES } from "@/components/ward-management/ward-access-shell-rules";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useUnscopedWardFlow } from "./ward-access-context";
@@ -42,6 +43,11 @@ export function forgetStepUp(): void {
 onWardSessionEnd(forgetStepUp);
 
 const CANCELLED = "Cancelled. Nothing was changed.";
+
+// If the code cannot be fetched (offline), the stand-in says so and its Close cancels the step.
+const StepUpDialog = dynamic(
+  withLoadRetry(() => import("./ward-step-up-dialog").then((m) => m.StepUpDialog), "Confirm it is you did not load"),
+);
 
 type Pending = {
   mode: "confirm" | "password";
@@ -129,54 +135,19 @@ export function useStepUp(): { guard: (run: () => Promise<StepUpResult>) => Prom
     }
   };
 
-  const dialog = (
-    <Dialog
-      open={pending !== null}
-      onClose={() => close(CANCELLED)}
-      title="Confirm it is you"
-      description={`Giving access and opening a record outside your care need a sign-in within the last ${STEP_UP_MINUTES} minutes.`}
-      size="sm"
-      data-testid="ward-step-up"
-      primary={{
-        label: pending?.mode === "password" ? "Sign in and carry on" : "Confirm and carry on",
-        onAction: () => void carryOn(),
-        loading: busy,
-        disabledReason:
-          pending?.mode === "password" && password.length === 0 ? "Enter your password first." : undefined,
-      }}
-      secondary={[{ label: "Cancel", onAction: () => close(CANCELLED) }]}
-    >
-      {pending?.mode === "password" ? (
-        <>
-          <Field label="Password" error={error?.kind === "sign-in" ? error.message : undefined}>
-            <TextInput
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              onKeyDown={(event) => {
-                // Enter signs in, as it would in any password box.
-                if (event.key === "Enter" && password.length > 0) {
-                  event.preventDefault();
-                  void carryOn();
-                }
-              }}
-              data-sheet-autofocus="true"
-            />
-          </Field>
-          {/* Field errors are not announced on their own, so a refused sign-in is said here. */}
-          <SrOnly role="status">{error?.kind === "sign-in" ? error.message : ""}</SrOnly>
-          {error?.kind === "action" ? <p role="alert">{error.message}</p> : null}
-        </>
-      ) : (
-        <p>
-          The shared workspace asks for your password again here. In this demonstration there is no password, so confirm
-          to carry on.
-          {error ? <span role="alert"> {error.message}</span> : null}
-        </p>
-      )}
-    </Dialog>
-  );
+  // Phone size trim (31 Oct 2026): the dialog's code loads only when a step asks for it.
+  const dialog =
+    pending !== null ? (
+      <StepUpDialog
+        mode={pending.mode}
+        password={password}
+        setPassword={setPassword}
+        busy={busy}
+        error={error}
+        carryOn={() => void carryOn()}
+        onClose={() => close(CANCELLED)}
+      />
+    ) : null;
 
   return { guard, dialog };
 }

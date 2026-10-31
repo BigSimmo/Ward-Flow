@@ -1,16 +1,13 @@
 "use client";
 
 /**
- * The Delays board, built from the approved Delays page mockup (October 2026): hero counts that
- * filter, four "whose move" tiles, the waiting table grouped by blocker with a timeline under the
- * open row, a registers rail that becomes the person's panel, and three graphs under the table.
- *
- * Every figure is read from the engine (`delays-board-model.ts`). Selecting, filtering and the
- * graphs are presentation state only; the one write is Escalate, which the screen dispatches.
+ * The Delays board (approved mockup, October 2026): hero counts that filter, "whose move" tiles,
+ * the table by blocker, a registers rail that becomes the person's panel, and graphs under it.
+ * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { Activity, ChevronDown, ChevronRight, Flag, Search, X } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -20,6 +17,16 @@ import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-manag
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
+import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
+import { ShowMoreRow } from "@/components/wf";
+import {
+  readDelaysFlat,
+  transitNote,
+  useDelaysFlatStore,
+  useSheetLayout,
+  useSideScroll,
+  writeDelaysFlat,
+} from "./delays-board-stores";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
   CheckingFoot,
@@ -36,7 +43,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import { type DelayCause, type DelayGroup } from "./delays-derivations";
-import { BandBar, Glyph, causeTitle } from "./delays-board-parts";
+import { BandBar, Glyph } from "./delays-board-parts";
 import {
   NO_FILTERS,
   OVER_24H,
@@ -53,7 +60,6 @@ import {
   isBreached,
   isDueSoon,
   isPinned,
-  ownerName,
   ownerTiles,
   runwayBins,
   wardSummary,
@@ -65,28 +71,31 @@ import {
   isOver8hInEd,
 } from "./delays-board-model";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
-import { createBrowserStore } from "@/lib/client-store-factory";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
 import { notWaitingParts, waitingSplit } from "@/components/ward-management/ward-shared-figures";
-import { DelaysInTransitNote } from "@/components/ward-management/delays/delays-in-transit-note";
 import { WAITING_VIEWS } from "./waiting-href";
-import { inWaitingView, queuedReferralCount, waitingViewHint, waitingViewLabel, windowText } from "./waiting-views";
+import { inWaitingView, queuedReferralCount } from "./waiting-views";
 import styles from "./delays-board.module.css";
-import wardPin from "../ward-pinned-switch.module.css";
+import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { PersonPanel, Registers } from "./delays-board-panels";
-import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import {
-  RowTimeline,
-  WaitBar,
-  legalCell,
-  originLabel,
-  phonePrefix,
-  phoneUpdate,
-  updateCell,
-} from "./delays-board-rows";
-import { TierKey } from "../tier-key";
+  rememberReturnRow,
+  rowWithAttribute,
+  useReturnedView,
+  useReturnToPlace,
+} from "@/components/ward-management/use-return-to-place";
+import { WaitBar, phoneUpdate, updateCell } from "./delays-board-rows";
+import { RowTimeline } from "./delays-board-rows";
+import { legalCell, phonePrefix } from "./delays-board-rows";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import waitingKeys from "./waiting.module.css";
+import polish from "./waiting-polish.module.css";
+import { WaitingHeroBar, WaitingKeyRow } from "./waiting-hero-bar";
+import { useWaitingDeskWords } from "./waiting-desk-words";
+import { WaitingOwnerTiles } from "./waiting-owner-tiles";
+import { SearchField } from "@/components/wf";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
 const OPEN_BY_DEFAULT: readonly DelayCause[] = [
@@ -97,47 +106,7 @@ const OPEN_BY_DEFAULT: readonly DelayCause[] = [
 ];
 const GROUP_LIMIT = 5;
 
-/*
- * Audit A3-14: the board opens on Longest wait (forms due first, then longest wait) and remembers
- * the viewer's own choice in this browser. Same safe localStorage pattern as the wallboard store:
- * a blocked or private store never throws, and the server snapshot is the default.
- */
-const DELAYS_ORDER_STORAGE_KEY = "ward_flow_delays_order";
-const DELAYS_ORDER_CHANGE_EVENT = "ward_flow_delays_order_change";
-let delaysOrderFallback: boolean | undefined;
-
-function readDelaysFlat(): boolean {
-  try {
-    return window.localStorage.getItem(DELAYS_ORDER_STORAGE_KEY) !== "blocker";
-  } catch {
-    return delaysOrderFallback ?? true;
-  }
-}
-
-function writeDelaysFlat(flat: boolean): void {
-  try {
-    window.localStorage.setItem(DELAYS_ORDER_STORAGE_KEY, flat ? "longest" : "blocker");
-  } catch {
-    // Private browsing or a blocked store: the choice lasts for this page only.
-    delaysOrderFallback = flat;
-  }
-  try {
-    window.dispatchEvent(new Event(DELAYS_ORDER_CHANGE_EVENT));
-  } catch {
-    // Nothing else depends on the notification.
-  }
-}
-
-function subscribeDelaysOrder(onChange: () => void) {
-  window.addEventListener("storage", onChange);
-  window.addEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
-  return () => {
-    window.removeEventListener("storage", onChange);
-    window.removeEventListener(DELAYS_ORDER_CHANGE_EVENT, onChange);
-  };
-}
-
-const useDelaysFlatStore = createBrowserStore(subscribeDelaysOrder, readDelaysFlat, true);
+const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
 
 export type DelaysBoardProps = {
   groups: DelayGroup[];
@@ -153,67 +122,12 @@ export type DelaysBoardProps = {
   onEscalate: (movement: Movement) => void;
   /** Rendered under the hero: the alias banner, the service scope bar and any notice. */
   banner?: ReactNode;
+  /** Round 4: the daily check's tile in the header (laptop, coordinator). */
+  heroCheck?: ReactNode;
   /** Shown in place of the board's body when nobody is waiting. */
   empty?: ReactNode;
 };
 
-/**
- * Audit A3-16: a collected patient is on the road, not in the ED. Their row says so; the waiting
- * count is unchanged until the rule for collected patients is agreed.
- */
-function transitNote(movement: Movement, now: Instant): string | undefined {
-  const collectedAt = movement.transport?.collectedAt;
-  if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
-    return undefined;
-  return `In transit since ${formatInstantWithDay(collectedAt, now)}`;
-}
-
-/** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
-const SHEET_QUERY = "(max-width: 64rem)";
-
-function isSheetLayout(): boolean {
-  return typeof window.matchMedia === "function" && window.matchMedia(SHEET_QUERY).matches;
-}
-
-function subscribeSheetLayout(onChange: () => void): () => void {
-  if (typeof window.matchMedia !== "function") return () => undefined;
-  const query = window.matchMedia(SHEET_QUERY);
-  query.addEventListener("change", onChange);
-  return () => {
-    query.removeEventListener("change", onChange);
-  };
-}
-
-/** True at or below 64rem, where the person's panel is a sheet over the table. */
-function useSheetLayout(): boolean {
-  return useSyncExternalStore(subscribeSheetLayout, isSheetLayout, () => false);
-}
-
-const byWait = (a: BoardRow, b: BoardRow) => b.waited - a.waited;
-
-/** DA-26 (design audit): which edges of a sideways-scrolling area still hide content. */
-function useSideScroll(): [(node: HTMLDivElement | null) => void, { before: boolean; after: boolean }] {
-  const [node, setNode] = useState<HTMLDivElement | null>(null);
-  const [edges, setEdges] = useState({ before: false, after: false });
-  useEffect(() => {
-    if (node === null || typeof ResizeObserver === "undefined") return;
-    const measure = () => {
-      const before = node.scrollLeft > 1;
-      const after = node.scrollLeft < node.scrollWidth - node.clientWidth - 1;
-      setEdges((current) => (current.before === before && current.after === after ? current : { before, after }));
-    };
-    // The observer reports once on observe, so the first measure needs no direct call.
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    for (const child of Array.from(node.children)) observer.observe(child);
-    node.addEventListener("scroll", measure, { passive: true });
-    return () => {
-      observer.disconnect();
-      node.removeEventListener("scroll", measure);
-    };
-  }, [node]);
-  return [setNode, edges];
-}
 const WAITING_ROUTE = "/ward-flow/waiting";
 /** What Back brings back with the address's filters (`use-return-to-place.ts`): the opened groups. */
 type WaitingPlace = {
@@ -222,6 +136,12 @@ type WaitingPlace = {
 };
 const selectButton = (id: string) => rowWithAttribute("data-testid", `delays-select-${id}`, "button");
 
+/**
+ * Waiting's board (October 2026 redesign, round 8 approved 31 Oct 2026). The review's changes: the
+ * header's figures no longer overlap (the in-transit note leaves the figures, the Checking line becomes one figure), Longest wait groups people by how long they have
+ * waited (over 24 hours all shown, over 8 hours the first four, under 8 hours folded), and each
+ * row names its ED by code ("ARM ED") with the full name on hover.
+ */
 export function DelaysBoard({
   groups,
   now,
@@ -233,10 +153,14 @@ export function DelaysBoard({
   isOutsideService,
   onEscalate,
   banner,
+  heroCheck,
   empty,
 }: DelaysBoardProps) {
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
+  // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
+  const desk = useWaitingDeskWords(units);
+  const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
   const {
     referrals: allReferrals,
@@ -256,6 +180,9 @@ export function DelaysBoard({
   const rows = useMemo(() => boardRows(groups, now, actNowIds), [groups, now, actNowIds]);
   const bins = useMemo(() => runwayBins(rows), [rows]);
   const catchments = useMemo(() => boardCatchments(rows), [rows]);
+  // Role view (nurse in charge): a ward's own list is short; tiles, saved views and graphs only
+  // repeat its few rows.
+  const wardShort = wardDesk && rows.length <= 8;
   const [chosenFilters, setFilters] = useState<BoardFilters>(NO_FILTERS);
   // DA-15: the filters live in the web address, so a reload or a shared link opens the same list
   // (`delays-url-state.ts`). The address is read after hydration and followed whenever it asks for
@@ -308,6 +235,9 @@ export function DelaysBoard({
   const returned = useReturnedView<WaitingPlace>(WAITING_ROUTE);
   const [openGroups, setOpenGroups] = useState<WaitingPlace["openGroups"]>(returned?.openGroups ?? {});
   const [moreGroups, setMoreGroups] = useState<WaitingPlace["moreGroups"]>(returned?.moreGroups ?? {});
+  // Redesign: which wait bands are open, and which show every row.
+  const [bandOpen, setBandOpen] = useState<Partial<Record<WaitBandId, boolean>>>({});
+  const [bandMore, setBandMore] = useState<Partial<Record<WaitBandId, boolean>>>({});
   useReturnToPlace<WaitingPlace>(WAITING_ROUTE, { openGroups, moreGroups }, selectButton);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tableRef = useRef<HTMLElement>(null);
@@ -338,6 +268,13 @@ export function DelaysBoard({
   const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
   // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
   if (selectedId !== null && selected === null) setSelectedId(null);
+  // Role view (nurse in charge): the side column opens on the first person, not on the registers.
+  const [autoOpened, setAutoOpened] = useState(false);
+  // Only where the panel is a side column: as a sheet (phone, tablet, narrow laptop) it would cover the list.
+  if (wardDesk && !autoOpened && !sheet && !isPhone && !portrait && shown[0]) {
+    setAutoOpened(true);
+    setSelectedId(shown[0].movement.id);
+  }
   const filtered = hasFilters(filters);
 
   const set = (patch: Partial<BoardFilters>) => {
@@ -384,6 +321,12 @@ export function DelaysBoard({
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
+    // Longest wait: unfold the person's wait band too, so their row is on screen beside the panel.
+    const band = WAIT_BANDS.find((candidate) => candidate.test(row));
+    if (band !== undefined) {
+      setBandOpen((current) => ({ ...current, [band.id]: true }));
+      setBandMore((current) => ({ ...current, [band.id]: true }));
+    }
     if (sheet) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
@@ -417,25 +360,29 @@ export function DelaysBoard({
   const over24 = rows.filter(isOver24hInEd).length;
   const dueSoon = rows.filter((row) => isDueSoon(row, thresholds)).length;
   const breached = rows.filter(isBreached).length;
+  const formsPast = breached === 1 ? "form past its time" : "forms past their time";
   // Overall review, 20 Oct 2026: the title leads with the one "waiting" figure (`waitingInEds`, the
   // menu badge's figure too), then names whoever else is on this list ("8 in transit"), so the words
   // add up to the list's own count.
   const split = useMemo(() => waitingSplit(rows.map((row) => row.movement)), [rows]);
   const heroTitle = [`${split.waiting} waiting in ED`, ...notWaitingParts(split)].join(", ");
   const silentCount = rows.filter((row) => row.silent).length;
+  // Decision 1: the colour key shows only when a row carries a typed legal time for it to explain.
+  const anyTypedTime = rows.some((row) => currentLegalDueAt(row.movement) !== undefined);
   const urgentMinutes = thresholds.urgentMinutes;
   // B4 (Josh, 19 Oct 2026): the 1 hour chip names its noun, beside the 3 hour Form due view.
-  const dueSoonLabel = `Form due (as written) within ${windowText(urgentMinutes)}`;
-  // Referrals still waiting for a ward's answer are not movements yet, so the list only counts them.
+  const dueSoonLabel = `Form due within ${windowText(urgentMinutes)}`;
+  // Referrals in the Referrals decision queue are not movements yet, so the list only counts them.
   const scope = useServiceScope();
   const queuedReferrals = useMemo(() => queuedReferralCount(allReferrals, scope, units), [allReferrals, scope, units]);
   const referralsLine = (
-    <p className={styles.footNote} data-testid="delays-referrals-line">
+    <p className={`${styles.footNote} ${waitingKeys.referralsLine}`} data-testid="delays-referrals-line">
+      {/* Role view (nurse in charge): the referrals counted are this ward's own to answer. */}
       {queuedReferrals === 0
-        ? "No referrals are waiting for a ward's answer."
-        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral is" : "referrals are"} waiting for a ward's answer, not yet on this list.`}{" "}
+        ? `No referrals awaiting ${wardDesk ? "your ward's" : "a"} decision.`
+        : `${queuedReferrals} ${queuedReferrals === 1 ? "referral" : "referrals"} awaiting ${wardDesk ? "your ward's" : "a"} decision, not yet on this list.`}{" "}
       <Link href="/ward-flow/referrals" className={styles.lnk}>
-        Open Referrals
+        {wardDesk ? "Open Referrals to answer" : "Open Referrals"}
       </Link>
     </p>
   );
@@ -475,7 +422,7 @@ export function DelaysBoard({
   if (filters.owner !== null)
     chips.push({
       key: "owner",
-      label: ownerName(filters.owner),
+      label: desk.ownerName(filters.owner),
       clear: () => {
         set({ owner: null });
       },
@@ -491,7 +438,7 @@ export function DelaysBoard({
   if (filters.cause !== null)
     chips.push({
       key: "cause",
-      label: causeTitle(filters.cause),
+      label: desk.causeTitle(filters.cause),
       clear: () => {
         set({ cause: null });
       },
@@ -515,7 +462,7 @@ export function DelaysBoard({
   if (filters.breached)
     chips.push({
       key: "breached",
-      label: "Past recorded time",
+      label: "Form past its time",
       clear: () => {
         set({ breached: false });
       },
@@ -587,10 +534,17 @@ export function DelaysBoard({
             }}
             data-testid={`delays-select-${movement.id}`}
           >
-            <b className={styles.ellBlock}>{patient.formalName}</b>
-            <span className={styles.ellBlock} data-ward-type-floor="delays-profile">
-              {isPhone ? phonePrefix(row, thresholds) : null}
-              {[patient.umrn, transitNote(movement, now), originLabel(movement)].filter(Boolean).join(" · ")}
+            <b className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`}>{patient.formalName}</b>
+            <span className={`${styles.ellBlock} ${waitingKeys.phWrapLine}`} data-ward-type-floor="delays-profile">
+              {isPhone ? phonePrefix(row, now, thresholds) : null}
+              {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off.
+                  Role view (as ED clinician): every row is this ED's, so its code is left off. */}
+              {(isPhone
+                ? [edDesk ? undefined : originCode(movement), transitNote(movement, now), patient.umrn]
+                : [patient.umrn, transitNote(movement, now), edDesk ? undefined : originCode(movement)]
+              )
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </button>
         </td>
@@ -609,7 +563,7 @@ export function DelaysBoard({
         <td role="cell" className={styles.cWard} data-ward-type-floor="delays-cause">
           <span className={styles.lg}>
             {flat ? (
-              <span className={styles.ell}>{causeTitle(row.cause)}</span>
+              <span className={styles.ell}>{desk.causeTitle(row.cause)}</span>
             ) : (
               <>
                 <Glyph tone={ward.tone} />
@@ -619,7 +573,7 @@ export function DelaysBoard({
           </span>
         </td>
         <td role="cell" className={styles.cLegal}>
-          {legalCell(row, thresholds)}
+          {legalCell(row, now, thresholds)}
         </td>
         <td role="cell" className={styles.cUpd} data-ward-type-floor="delays-since">
           {isPhone ? phoneUpdate(row) : updateCell(row, now)}
@@ -665,7 +619,13 @@ export function DelaysBoard({
       const limit = moreGroups[group.cause] ? list.length : GROUP_LIMIT;
       const owner = list[0].owner;
       body.push(
-        <tr role="row" key={`group-${group.cause}`} className={styles.grpH}>
+        <tr
+          role="row"
+          key={`group-${group.cause}`}
+          className={`${styles.grpH} ${polish.groupRow}`}
+          data-tone={list[0].severe ? "danger" : desk.tagOwner(owner) === "yours" ? "accent" : undefined}
+          data-open={open || undefined}
+        >
           <td role="cell" colSpan={6}>
             <button
               type="button"
@@ -693,12 +653,15 @@ export function DelaysBoard({
               <span className={styles.k} data-delays-group-count>
                 {list.length}
               </span>
-              <span className={styles.mut}>{`${ownerName(owner)} to clear`}</span>
-              <span className={styles.sp} />
-              <span className={styles.mut}>
-                Longest <span className={styles.num}>{splitDuration(list[0].waited)}</span>
+              <span className={polish.ownerTag} data-owner={desk.tagOwner(owner)}>
+                {desk.moveWord(owner)}
               </span>
-              <BandBar bands={bandCounts(list)} className={styles.minibar} />
+              <span className={styles.sp} />
+              <span className={polish.longest}>
+                <span className={polish.longestLabel}>Longest</span>
+                <span className={styles.num}>{splitDuration(list[0].waited)}</span>
+              </span>
+              <BandBar bands={bandCounts(list)} className={`${styles.minibar} ${polish.groupBar}`} />
               {isPhone ? <GroupTrend rows={list} /> : null}
             </button>
           </td>
@@ -710,15 +673,13 @@ export function DelaysBoard({
           body.push(
             <tr role="row" key={`more-${group.cause}`} className={styles.more}>
               <td role="cell" colSpan={6}>
-                <button
-                  type="button"
-                  className={styles.moreBtn}
+                <ShowMoreRow
                   onClick={() => {
                     setMoreGroups((current) => ({ ...current, [group.cause]: true }));
                   }}
                 >
                   {`Show ${list.length - limit} more`}
-                </button>
+                </ShowMoreRow>
               </td>
             </tr>,
           );
@@ -727,7 +688,55 @@ export function DelaysBoard({
   } else {
     // Audit 1, Josh 20 Oct (CS-04, NB-6b): longest wait first for everyone. A recorded form time
     // due soon no longer pins a row; its legal cell and `data-form-due` still mark it.
-    body.push(...[...shown].sort(byWait).flatMap(renderRow));
+    for (const band of WAIT_BANDS) {
+      const list = shown.filter(band.test).sort(byWait);
+      if (list.length === 0) continue;
+      // Role view (nurse in charge): a short ward list opens every band in full rather than folding it.
+      const open = bandOpen[band.id] ?? (wardShort || band.limit > 0);
+      const limit = bandMore[band.id] || wardShort ? list.length : band.limit;
+      const includes = bandIncludes(list); // "includes 3 in transit" (Josh, 30 Oct 2026)
+      body.push(
+        <tr
+          role="row"
+          key={`band-${band.id}`}
+          className={`${styles.grpH} ${polish.groupRow}`}
+          data-tone={band.tone}
+          data-open={open || undefined}
+        >
+          <td role="cell" colSpan={6}>
+            <button
+              type="button"
+              className={styles.gin}
+              aria-expanded={open}
+              aria-label={`${band.title}, ${list.length} ${list.length === 1 ? "person" : "people"}${includes ? `, ${includes}` : ", all in an ED"}, ${open ? band.note : "folded"}`}
+              onClick={() => setBandOpen((current) => ({ ...current, [band.id]: !open }))}
+              data-testid={`delays-band-${band.id}`}
+            >
+              <ChevronDown size={14} aria-hidden="true" className={open ? undefined : styles.folded} />
+              <Glyph tone={band.tone} />
+              <span className={styles.gTitle}>{band.title}</span>
+              <span className={styles.k}>{list.length}</span>
+              {includes && !isPhone ? <span className={styles.mut}>{includes}</span> : null}
+              <span className={styles.sp} />
+              <span className={styles.mut}>{open ? (isPhone && includes) || band.note : "folded"}</span>
+            </button>
+          </td>
+        </tr>,
+      );
+      if (open) {
+        body.push(...list.slice(0, limit).flatMap(renderRow));
+        if (list.length > limit)
+          body.push(
+            <tr role="row" key={`more-${band.id}`} className={styles.more}>
+              <td role="cell" colSpan={6}>
+                <ShowMoreRow onClick={() => setBandMore((current) => ({ ...current, [band.id]: true }))}>
+                  {`Show ${list.length - limit} more`}
+                </ShowMoreRow>
+              </td>
+            </tr>,
+          );
+      }
+    }
   }
   // A person filtered out must never look like a person placed. Whenever filters hide anyone, the
   // table says how many, with a way to show everyone (owner ruling, 9 October 2026).
@@ -791,66 +800,77 @@ export function DelaysBoard({
       return {
         id: row.movement.id,
         name: patient.formalName,
-        sub: [patient.umrn, transitNote(row.movement, now), originLabel(row.movement)].filter(Boolean).join(" · "),
+        sub: [patient.umrn, transitNote(row.movement, now), edDesk ? undefined : originCode(row.movement)]
+          .filter(Boolean)
+          .join(" · "),
         figure: splitDuration(row.waited),
         figureNote: phoneUpdate(row),
         tone: waitTone(row.waited),
-        next: flat ? causeTitle(row.cause) : ward.text,
+        next: flat ? desk.causeTitle(row.cause) : ward.text,
         actNow:
           row.owner === "yours" &&
           (row.cause === "legal_expiring" || row.cause === "legal_breached" || row.waited > OVER_24H),
         selected: selectedId === row.movement.id,
       };
     };
+    // Redesign: the same three wait bands as the desktop table, each one foldable.
     return flat
-      ? [
-          {
-            id: "flat",
-            title: "Longest wait first",
-            rows: [...shown].sort(byWait).map(portraitRow),
-          },
-        ]
+      ? WAIT_BANDS.map((band) => {
+          const list = shown.filter(band.test).sort(byWait);
+          return {
+            id: band.id,
+            title: band.title,
+            tone: band.tone,
+            note: [bandIncludes(list), band.note].filter(Boolean).join(" · "),
+            rows: list.map(portraitRow),
+          };
+        }).filter((group) => group.rows.length > 0)
       : groups.map((group) => {
           const list = shown.filter((row) => row.cause === group.cause).sort(byWait);
           return {
             id: group.cause,
             title: group.title,
             tone: list[0]?.severe ? ("danger" as const) : undefined,
-            note: list[0] ? `${ownerName(list[0].owner)} to clear` : undefined,
+            note: list[0] ? `${desk.ownerName(list[0].owner)} to clear` : undefined,
             rows: list.map(portraitRow),
           };
         });
-  }, [portrait, flat, shown, groups, units, now, selectedId, patientOf]);
-  const portraitRail = portrait ? (
-    <PortraitRail
-      title="Registers"
-      summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
-      description="Escalations, attention, resolved today and the longest quiet"
-      open={railOpen}
-      onOpenChange={setRailOpen}
-    >
-      <Registers
-        escalated={escalated}
-        attention={attention}
-        closedToday={closedToday}
-        rows={rows}
-        now={now}
-        units={units}
-        service={service}
-        isOutsideService={isOutsideService}
-        silentPressed={filters.silent}
-        onSilent={() => {
-          set({ silent: !filters.silent });
-          setRailOpen(false);
-        }}
-        onPick={(id) => {
-          setRailOpen(false);
-          reveal(id);
-        }}
-      />
-    </PortraitRail>
-  ) : null;
-  const tiles = ownerTiles(rows);
+  }, [portrait, flat, shown, groups, units, now, selectedId, patientOf, desk, edDesk]);
+  // Role view (nurse in charge): the registers are the coordinator's, so a ward desk has no rail.
+  const portraitRail =
+    portrait && !wardDesk ? (
+      <PortraitRail
+        title="Registers"
+        summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
+        description="Escalations, attention, resolved today and the longest quiet"
+        open={railOpen}
+        onOpenChange={setRailOpen}
+      >
+        <Registers
+          escalated={escalated}
+          attention={attention}
+          closedToday={closedToday}
+          rows={rows}
+          now={now}
+          units={units}
+          service={service}
+          isOutsideService={isOutsideService}
+          silentPressed={filters.silent}
+          onSilent={() => {
+            set({ silent: !filters.silent });
+            setRailOpen(false);
+          }}
+          onPick={(id) => {
+            setRailOpen(false);
+            reveal(id);
+          }}
+        />
+      </PortraitRail>
+    ) : null;
+  // Role views: the whose-move tiles named from the desk's side.
+  const tiles = ownerTiles(rows).map((tile) =>
+    wardDesk || edDesk ? { ...tile, name: desk.ownerName(tile.owner) } : tile,
+  );
   // C1: the filters that are on, for the phone Filter button. The 12h step and No update 2h+ are
   // already in `chips`; the hero's 8h and 24h figures count once here. The search box is separate.
   const filterCount =
@@ -860,7 +880,8 @@ export function DelaysBoard({
     (filters.view !== null ? 1 : 0);
   /** The quick filter chips: inline above the list, or in the phone Filter sheet (C1). */
   /* B4 saved views: each narrows the list and keeps its order. One view at a time. */
-  const viewChips = (
+  // Role view (nurse in charge): saved views narrow a long list; a ward's few rows need none.
+  const viewChips = wardShort ? null : (
     <>
       {WAITING_VIEWS.map((view) => (
         <button
@@ -868,21 +889,18 @@ export function DelaysBoard({
           type="button"
           className={styles.chip}
           aria-pressed={filters.view === view}
-          title={waitingViewHint(view, thresholds)}
+          title={tightHours(desk.viewHint(view, thresholds))}
           onClick={() => {
             set({ view: filters.view === view ? null : view });
           }}
           data-testid={`delays-view-${view}`}
         >
-          {waitingViewLabel(view, thresholds)}{" "}
+          {/* Josh, 30 Oct 2026: no "(as written)" on form labels. */}
+          {tightHours(desk.viewLabel(view, thresholds).replace(" (as written)", ""))}{" "}
           <span className={styles.k}>{rows.filter((row) => inWaitingView(view, row, thresholds)).length}</span>
         </button>
       ))}
-      {/* Overall review, 20 Oct 2026 ("Waiting is busy"): only the views and the one filter nothing
-          else on the page offers stay here. The 12h step sat between the hero's Over 8h and Over 24h
-          figures, which set the same wait filter, and No update 2h+ repeated the checking line and
-          the Longest quiet register's own "Show all quiet" button. A link can still ask for either
-          (`delays-url-state.ts`), and the applied-filter chip below then shows it with a remove. */}
+      {/* Overall review, 20 Oct 2026: only the views and Locked bed stay here (see delays-url-state.ts). */}
       <button
         type="button"
         className={styles.chip}
@@ -897,11 +915,25 @@ export function DelaysBoard({
       </button>
     </>
   );
+  /* D-91: the one page search field; the placeholder names only what is searched. */
+  const searchField = (
+    <SearchField
+      className={`${waitingKeys.searchField} ${polish.search}`}
+      value={filters.search}
+      onValueChange={(search) => set({ search })}
+      // Role view (as ED clinician): one ED, so the search finds a person only.
+      placeholder={edDesk ? "Name or UMRN" : "Name, UMRN or ED"}
+      label={edDesk ? "Find a person" : "Find a person or ED"}
+    />
+  );
+  // Round 4 header tiles (`waiting-hero-bar.tsx`): the daily check, the longest wait and who passes 8h next.
+  // Role view (as ED clinician): every person is this ED's, so the longest wait names no ED code.
+  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} showOrigin={!edDesk} />;
   const filterRow = (inSheet: boolean) => (
-    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ""}`}>
+    <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ` ${polish.filterRow}`}`}>
       {/* Design review (22 Oct 2026, Josh approved): in the phone Filter sheet the views sit under
           a Views label in a two by two grid lined up with the sheet title, not a ragged wrap. */}
-      {inSheet ? (
+      {inSheet && viewChips !== null ? (
         <div className={styles.sheetViews}>
           <p className={styles.sheetViewsLabel} id={sheetViewsLabelId}>
             Views
@@ -945,23 +977,33 @@ export function DelaysBoard({
     <>
       <Hero
         level={1}
-        eyebrow={isPhone ? `Waiting · ${service ?? "Statewide"}` : "Waiting"}
+        // Role views: a ward desk's list is only the people coming to its ward, and an ED desk's phone
+        // eyebrow names its department, not "Statewide".
+        eyebrow={
+          wardDesk
+            ? desk.ownWardName
+              ? `Waiting · coming to ${desk.ownWardName}`
+              : "Waiting"
+            : isPhone
+              ? `Waiting · ${desk.place ?? service ?? "Statewide"}`
+              : "Waiting"
+        }
         title={heroTitle}
         titleMeta={
           isPhone ? (
             <>
-              Prototype data, invented records · <b>{breached}</b> past recorded time
+              Prototype data, invented records · <b>{breached}</b> {formsPast}
             </>
           ) : (
             <>
-              <b>{breached}</b> past recorded time
+              <b>{breached}</b> {formsPast}
             </>
           )
         }
         testId="delays-hero"
         className={styles.delaysHero}
         // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the list scrolls.
-        condensed={`${heroTitle} · ${breached} past recorded time`}
+        condensed={`${heroTitle} · ${breached} ${formsPast}`}
         stats={
           <div className={styles.stats} role="group" aria-label="Filter by the headline counts">
             {heroStat(
@@ -976,7 +1018,6 @@ export function DelaysBoard({
                 : undefined,
               "delays-stat-over8",
             )}
-            <DelaysInTransitNote split={split} className={styles.footNote} />
             {heroStat(
               over24,
               `Over ${H24}`,
@@ -1002,81 +1043,72 @@ export function DelaysBoard({
                 : undefined,
               "delays-stat-due",
             )}
+            {isPhone
+              ? null
+              : // Josh, 30 Oct 2026: a filter like its neighbours, as Longest quiet's "Show all quiet" is.
+                heroStat(
+                  silentCount,
+                  `No update for ${SILENT_MINUTES / 60}h and over`,
+                  "warning",
+                  filters.silent,
+                  silentCount > 0 || filters.silent ? () => toggle("silent", true) : undefined,
+                  "delays-stat-silent",
+                )}
           </div>
         }
         aside={<LiveChip state="live" onHero />}
+        // Round 5 (Josh, 31 Oct 2026): one slim line in the dark band under the counts: the daily
+        // check, the longest wait and who passes 8h next. Laptop only.
+        bar={isPhone ? undefined : heroBar}
         foot={
           // This page watches conditions, so it says what it checked. Counts only, never "All clear".
-          <CheckingFoot
-            items={[
-              {
-                id: "silent",
-                label: `No update for ${SILENT_MINUTES / 60}h and over`,
-                value: silentCount,
-                tone: silentCount > 0 ? "warning" : "neutral",
-              },
-            ]}
-            notChecked={["system delays, no feed"]}
-          />
+          // Redesign: on desktop the count is a header figure; the phone keeps the line.
+          isPhone ? (
+            <CheckingFoot
+              items={[
+                {
+                  id: "silent",
+                  label: `No update for ${SILENT_MINUTES / 60}h and over`,
+                  value: silentCount,
+                  tone: silentCount > 0 ? "warning" : "neutral",
+                },
+              ]}
+              notChecked={["system delays, no feed"]}
+            />
+          ) : undefined
         }
       />
       {banner}
       {empty !== undefined ? (
-        <div className={styles.split}>
+        <div className={styles.split} data-single={wardDesk || undefined}>
           <section className={`${styles.card} ${styles.emptyCard}`} aria-label="Waiting">
             {empty}
             {referralsLine}
           </section>
-          {registers}
+          {/* Role view (nurse in charge): the registers are the coordinator's. */}
+          {wardDesk ? null : registers}
         </div>
       ) : (
         <>
-          <section className={`${styles.card} ${styles.owners}`} aria-label="Whose move" data-ward-primitive="panel">
-            {tiles.map((tile) => (
-              <button
-                key={tile.owner}
-                type="button"
-                className={styles.own}
-                aria-pressed={filters.owner === tile.owner}
-                onClick={() =>
-                  setFilters((current) => ({
-                    ...current,
-                    owner: current.owner === tile.owner ? null : tile.owner,
-                    cause: null,
-                  }))
-                }
-                data-testid={`delays-owner-${tile.owner}`}
-              >
-                <span className={styles.ownTop}>
-                  <b className={styles.num}>{tile.rows.length}</b>
-                  <span className={styles.ownName}>{tile.name}</span>
-                </span>
-                <BandBar bands={tile.bands} />
-                {/* Audit 11 Oct 2026, phone: one count per chip; the glyph alone flags the sub fact. */}
-                {isPhone ? (
-                  tile.sub.count > 0 ? (
-                    <small>
-                      <Glyph tone={tile.sub.tone} />
-                      <span className="sr-only">{`${tile.sub.count} ${tile.sub.text}`}</span>
-                    </small>
-                  ) : null
-                ) : (
-                  <small>
-                    <Glyph tone={tile.sub.count > 0 ? tile.sub.tone : undefined} />
-                    <span>
-                      <b className={styles.ownSubCount}>{tile.sub.count}</b>
-                      <span className={styles.ownSubText}>{` ${tile.sub.text}`}</span>
-                    </span>
-                  </small>
-                )}
-              </button>
-            ))}
-          </section>
+          {/* Role view (nurse in charge): on a short list the whose-move tiles repeat the Blocker column. */}
+          {wardShort ? null : (
+            <WaitingOwnerTiles
+              tiles={tiles}
+              pressed={filters.owner}
+              isPhone={isPhone}
+              onPress={(owner) =>
+                setFilters((current) => ({ ...current, owner: current.owner === owner ? null : owner, cause: null }))
+              }
+            />
+          )}
 
           <div
-            className={styles.split}
+            className={`${styles.split} ${polish.split}`}
             data-person-open={selected !== null || undefined}
             data-portrait={portrait ? "slide" : undefined}
+            // Role view (nurse in charge, Josh 31 Oct 2026): no registers rail, so with the person panel
+            // closed the list takes the full width instead of leaving an empty column.
+            data-single={(wardDesk && selected === null) || undefined}
           >
             <section
               ref={tableRef}
@@ -1086,43 +1118,18 @@ export function DelaysBoard({
               data-ward-primitive="panel"
               tabIndex={-1}
             >
-              <div className={`${styles.chead} ${wardPin.pinnedSwitch}`}>
+              <div className={`${styles.chead} ${wardPin.pinnedSwitch} ${polish.tableHead}`}>
                 <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
                 <span
                   className={styles.meta}
                   data-testid="delays-shown-count"
                 >{`${shown.length} of ${rows.length}`}</span>
-                <span className={styles.meta} data-testid="delays-order-note">
+                <span className={`${styles.meta} ${polish.orderNote}`} data-testid="delays-order-note">
                   {waitingOrderLine(flat)}
                 </span>
-                <span className={styles.wlegend} aria-hidden="true">
-                  <span>
-                    <i className={styles.lgAct} />
-                    Active
-                  </span>
-                  <span>
-                    <i className={styles.lgQuiet} />
-                    Quiet
-                  </span>
-                  <span>
-                    <i className={styles.lgQuietLong} />
-                    {`Quiet ${SILENT_MINUTES / 60}h+`}
-                  </span>
-                </span>
                 <span className={styles.sp} />
-                <label className={styles.search}>
-                  <Search size={14} aria-hidden="true" />
-                  <input
-                    type="search"
-                    value={filters.search}
-                    onChange={(event) => {
-                      set({ search: event.target.value });
-                    }}
-                    placeholder="Find a person or ED"
-                    aria-label="Find a person or ED"
-                    autoComplete="off"
-                  />
-                </label>
+                {/* Round 4: search and the order switch share one line, at one height. */}
+                {searchField}
                 <div className={styles.seg} role="group" aria-label="Order the table">
                   <button
                     type="button"
@@ -1168,7 +1175,7 @@ export function DelaysBoard({
                   hidden columns can be reached by keyboard, and its cut edge fades. */}
               <div
                 ref={sideScrollRef}
-                className={styles.tableWrap}
+                className={`${styles.tableWrap} ${waitingKeys.phoneTimes}`}
                 hidden={portrait}
                 data-more-before={sideScroll.before || undefined}
                 data-more-after={sideScroll.after || undefined}
@@ -1176,8 +1183,10 @@ export function DelaysBoard({
                 role={sideScroll.before || sideScroll.after ? "region" : undefined}
                 aria-label={sideScroll.before || sideScroll.after ? "Waiting list, scrolls sideways" : undefined}
               >
-                <TierKey />
-                <table className={styles.tbl} data-testid="delays-waiting-list" role="table">
+                {/* Decision 1 (Josh, 30 Oct 2026): the one colour key for typed legal times sits beside
+                    the tier key, on the list it explains. */}
+                <WaitingKeyRow anyTypedTime={anyTypedTime} />
+                <table className={`${styles.tbl} ${polish.noEdge}`} data-testid="delays-waiting-list" role="table">
                   <colgroup>
                     <col className={styles.colP} />
                     <col className={styles.colW} />
@@ -1234,12 +1243,14 @@ export function DelaysBoard({
                   panelRef={panelRef}
                 />
               </>
-            ) : isPhone || portrait ? null : (
+            ) : isPhone || portrait || wardDesk ? null : (
+              // Role view (nurse in charge): escalation and the quiet list are the coordinator's chase.
               registers
             )}
           </div>
 
-          {isPhone ? (
+          {/* Role view (nurse in charge): registers, quiet list, graphs and network delays are the coordinator's. */}
+          {isPhone && !wardDesk ? (
             <div className={styles.phCards} data-testid="delays-phone-cards">
               <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("registers")}>
                 <Flag size={16} aria-hidden="true" className={styles.phCardIcon} />
@@ -1272,7 +1283,7 @@ export function DelaysBoard({
                 <Glyph tone="success" />
                 <span className={styles.phCardText}>
                   <span className={styles.phCardTitle}>Delays with no named person</span>
-                  <span className={styles.phCardMeta}>None recorded statewide</span>
+                  <span className={styles.phCardMeta}>{edDesk ? "None recorded" : "None recorded statewide"}</span>
                 </span>
               </div>
               <PhoneSheet
@@ -1342,7 +1353,7 @@ export function DelaysBoard({
             </div>
           ) : null}
 
-          {isPhone ? null : (
+          {isPhone || wardShort ? null : (
             <DelaysBoardGraphs
               rows={rows}
               shown={shown}

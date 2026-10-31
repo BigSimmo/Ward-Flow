@@ -233,9 +233,14 @@ describe("search choices follow caller-owned permissions", () => {
     );
     const view = render(menu("capacity"));
     await waitFor(() => expect(screen.queryByRole("region", { name: "Searching" })).not.toBeInTheDocument());
-    expect(screen.queryAllByRole("link", { name: /Capacity/ })).toHaveLength(
+    // The Capacity page row itself; a Help "How do I" answer may also link there (Phase 2), and it
+    // passes the same permission filter, so it is checked with the other rows below.
+    expect(screen.queryAllByRole("link", { name: /^Capacity/ })).toHaveLength(
       Number(roleCanOpenHref("/ward-flow/capacity")),
     );
+    expect(
+      screen.queryAllByRole("link", { name: /Capacity/ }).every((link) => roleCanOpenHref(link.getAttribute("href")!)),
+    ).toBe(true);
     view.rerender(menu(units[0]!.name));
     await waitFor(() =>
       expect(

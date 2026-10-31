@@ -3,7 +3,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Activity, Filter, Network } from "lucide-react";
 
-import { BarList, CardBody, Donut, Legend, Segmented, cx, tableClasses } from "@/components/wf";
+import { BarList, CardBody, Donut, Segmented, SrOnly, cx, tableClasses } from "@/components/wf";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import {
   admissionStagePosition,
@@ -218,12 +218,8 @@ export function ServiceOccupancyCard({
       className={className}
       icon={Network}
       title="Occupancy by health service"
-      aside={
-        <span className={styles.muted}>
-          {`${BED_ALERT_THRESHOLD_PERCENT}% line`}
-          {onServiceFilter ? " · Select one to highlight its wards" : null}
-        </span>
-      }
+      // "85% line" named nothing; each tile already says how many wards are at or over it.
+      aside={onServiceFilter ? <span className={styles.muted}>Select one to highlight its wards</span> : undefined}
     >
       <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
         {services.map((entry) => {
@@ -269,7 +265,6 @@ export function EmptyToReadyCard({
       id="empty-to-ready"
       icon={Filter}
       title="Empty to ready"
-      aside={<span className={styles.muted}>Feed vs ward</span>}
       data-testid="ward-statistics-overview-capacity-disclosure"
     >
       <CardBody className={styles.bodyStack} data-testid="ward-statistics-overview-capacity">
@@ -287,29 +282,20 @@ export function EmptyToReadyCard({
             },
             {
               id: "allocatable",
-              label: "Allocatable",
+              // Plain words for the ward's own confirmed figure, so "Feed vs ward" can go.
+              label: "Confirmed by ward",
               value: capacity.allocatable,
               display: <span data-testid="ward-statistics-overview-capacity-allocatable">{capacity.allocatable}</span>,
             },
             { id: "open", label: "Open for placement", value: openNow },
           ]}
         />
-        <Legend
-          className={styles.legendEnd}
-          items={[
-            {
-              id: "ready",
-              fill: "ready",
-              label: (
-                <>
-                  <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready
-                </>
-              ),
-            },
-            { id: "closed", fill: "closed", label: `${closedTotal} closed` },
-            { id: "pending", fill: "data-1", label: `${preparingCount} pending` },
-          ]}
-        />
+        {/* The bars are one colour, so a coloured key would describe marks that are not there. The
+            split is one plain line, in the hero's own words. */}
+        <p className={styles.muted}>
+          <span data-testid="ward-statistics-overview-capacity-ready">{capacity.ready}</span> ready · {closedTotal}{" "}
+          closed · {preparingCount} being made ready
+        </p>
       </CardBody>
     </StatCard>
   );
@@ -334,26 +320,39 @@ function AdmissionStagesCardView({
   const stagesShown = stageTallies.every((stage) => typeof stage.count === "number")
     ? parts(stageTallies.map((stage) => stage.count as number))
     : stageTallies.map((stage) => statisticsCountText(stage.count, small));
+  // Role view (executive): when the small number rule holds back every stage, a chart is four empty
+  // bars on a 0 to 1 axis and a table four "not shown" rows. The card is one line, and the Chart and
+  // Data switch goes; the stages stay in the spoken label.
+  const allHeld = stageTallies.every((stage) => exactStatisticsCount(stage.count) === null);
   return (
     <StatCard
       id="admission-stages"
       icon={Activity}
       title="Admission stages"
       action={
-        <Segmented
-          size="sm"
-          label="Admission stages view"
-          value={stagesView}
-          onChange={setStagesView}
-          items={[
-            { id: "chart", label: "Chart" },
-            { id: "data", label: "Data" },
-          ]}
-        />
+        allHeld ? undefined : (
+          <Segmented
+            size="sm"
+            label="Admission stages view"
+            value={stagesView}
+            onChange={setStagesView}
+            items={[
+              { id: "chart", label: "Chart" },
+              { id: "data", label: "Data" },
+            ]}
+          />
+        )
       }
       data-testid="statistics-overview-stages-chart"
     >
-      {stagesView === "chart" ? (
+      {allHeld ? (
+        <CardBody>
+          <p className={styles.muted} data-testid="ward-statistics-overview-stages-held">
+            {`${stageTallies.length} ${stageTallies.length === 1 ? "stage" : "stages"} not shown under the small number rule`}
+            <SrOnly>{`: ${stageTallies.map((stage) => stage.label).join(", ")}`}</SrOnly>
+          </p>
+        </CardBody>
+      ) : stagesView === "chart" ? (
         <CardBody>
           <BarList
             label="Admissions by stage"
@@ -450,6 +449,34 @@ export function NetworkOverviewCards({
   );
 }
 
+/**
+ * Role view (site bed manager, D-80): the Network cards for a site desk. Admission stages (its own
+ * site's stays) comes first, beside its wards; Occupancy by health service keeps every site as bed
+ * counts. Empty to ready is left out: it is the network's placement funnel, the coordinator's job.
+ */
+export function SiteOverviewCards({
+  units,
+  admissions,
+  bedReleases,
+  leaveBeds,
+}: {
+  units: Unit[];
+  admissions: Admission[];
+  bedReleases: BedRelease[];
+  leaveBeds: LeaveBed[];
+}) {
+  const services = useMemo(
+    () => networkServiceRows(networkUnitRows(units, admissions, bedReleases, leaveBeds)),
+    [units, admissions, bedReleases, leaveBeds],
+  );
+  return (
+    <FlushStack data-testid="ward-statistics-network-cards">
+      <AdmissionStagesCard admissions={admissions} />
+      <ServiceOccupancyCard services={services} />
+    </FlushStack>
+  );
+}
+
 /** Public bed aggregates and already-released admission counts use the same three cards. */
 export function ExecutiveNetworkOverviewCards({ data }: { data: ExecutiveReportingFoundation }) {
   const services: NetworkServiceRow[] = NETWORK_SERVICES.flatMap((entry) => {
@@ -498,13 +525,15 @@ export function ExecutiveNetworkOverviewCards({ data }: { data: ExecutiveReporti
 }
 
 type Counted<T, K extends keyof T> = Omit<T, K> & { [P in K]: StatisticsCount };
-type SummaryWard = {
+export type SummaryWard = {
   id: string;
   name: string;
   site: string;
   hospital: string;
   beds: number;
   ready: number;
+  /** Ready beds still being made ready after a discharge, said beside Ready so it is never read bare. */
+  pendingPreparation: number;
   occupancyRate: number;
   referred: StatisticsCount;
 };
@@ -519,7 +548,7 @@ export type SummaryEd = {
   over24: StatisticsCount;
 };
 type SummaryDeclines = Omit<
-  ReturnType<typeof import("./statistics-derivations").declinesByReason>,
+  ReturnType<typeof import("@/components/ward-management/statistics/statistics-derivations").declinesByReason>,
   "totalCount" | "movementsWithDeclinesCount" | "movementCount" | "tallies"
 > & {
   totalCount: StatisticsCount;
@@ -548,12 +577,14 @@ export type SummaryModel = {
   admissionsCount: StatisticsCount;
   dischargesCount: StatisticsCount;
   arrivals: Counted<
-    ReturnType<typeof import("./statistics-derivations").pullToArrival>,
+    ReturnType<typeof import("@/components/ward-management/statistics/statistics-derivations").pullToArrival>,
     "measuredCount" | "endedCount" | "awaitingArrivalCount" | "incoherentCount"
   >;
   declinesReadout: { ok: true; value: SummaryDeclines } | { ok: false; statement: string };
   blocked: Omit<
-    ReturnType<typeof import("./statistics-derivations").blockedDischargesByReason>,
+    ReturnType<
+      typeof import("@/components/ward-management/statistics/statistics-derivations").blockedDischargesByReason
+    >,
     "totalCount" | "admissionCount" | "tallies"
   > & {
     totalCount: StatisticsCount;

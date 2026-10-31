@@ -1,0 +1,116 @@
+/* Small shared parts for the redesigned pages. Tokens only; nothing under 12 px. */
+
+/* ── Range line: the likely figure on a short-to-spare number line ── */
+.range {
+  position: relative;
+  display: block;
+  height: 14px;
+  margin: var(--wf-s-1) 0;
+}
+.rangeTrack,
+.rangeZero,
+.rangeBand,
+.rangePoint {
+  position: absolute;
+  top: 50%;
+}
+.rangeTrack {
+  left: 0;
+  right: 0;
+  height: 2px;
+  translate: 0 -50%;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-line);
+}
+.rangeZero {
+  width: 1px;
+  height: 12px;
+  translate: 0 -50%;
+  background: var(--wf-ink-3);
+}
+.rangeBand {
+  height: 4px;
+  translate: 0 -50%;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-data-2);
+}
+.rangePoint {
+  width: 10px;
+  height: 10px;
+  translate: -50% -50%;
+  border: 2px solid var(--wf-surface);
+  border-radius: 50%;
+  background: var(--wf-ink-1);
+}
+
+/* ── How this is worked out: one quiet line that opens to the method ── */
+.how {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.how > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: var(--wf-h-sm);
+  cursor: pointer;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  list-style: none;
+}
+.how > summary::-webkit-details-marker {
+  display: none;
+}
+.how > summary svg {
+  transition: rotate var(--wf-m-fast) var(--wf-ease);
+}
+.how[open] > summary svg {
+  rotate: 90deg;
+}
+.how > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+.howBody {
+  max-width: 72ch;
+  margin: var(--wf-s-1) 0 0;
+}
+.howBody p {
+  margin: 0 0 var(--wf-s-2);
+}
+
+/* ── Kicker: the small uppercase label over a figure ── */
+.kicker {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+/* ── Swatch for a legend ── */
+.swatch {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-data-1);
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}

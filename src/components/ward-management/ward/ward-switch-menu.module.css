@@ -1,0 +1,228 @@
+/* My ward's Switch ward chip and its list (redesign approved 31 Oct 2026). Desktop: a popover under the
+   chip. Phone: a bottom sheet. */
+
+/* One quiet hero chip at the kit size that says its job in words: 28px on a laptop, 32px on a phone
+   with a 48px invisible tap area. */
+.trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 8px 0 10px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  border-radius: var(--wf-r-pill, 999px);
+  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
+  color: var(--wf-hero-ink);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  flex: none;
+  cursor: pointer;
+}
+
+.trigger:hover,
+.trigger[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.trigger:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem), (pointer: coarse) {
+  .trigger {
+    height: 32px;
+    padding: 0 10px 0 12px;
+    font-size: var(--wf-fs-13);
+  }
+
+  .trigger::after {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
+  }
+}
+
+.scrim {
+  display: none;
+}
+
+.panel {
+  /* Defaults; the menu writes its anchored place onto the panel's inline style when it opens. */
+  --pick-top: 120px;
+  --pick-left: 8px;
+  position: fixed;
+  top: var(--pick-top);
+  left: var(--pick-left);
+  display: flex;
+  flex-direction: column;
+  width: min(400px, calc(100vw - 16px));
+  max-height: min(560px, calc(100dvh - var(--pick-top) - 16px));
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg, 16px);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  pointer-events: auto;
+  visibility: hidden;
+}
+
+.panel[data-placed] {
+  visibility: visible;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.head strong {
+  font-size: var(--wf-fs-15, 15px);
+}
+
+.scroll {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.group {
+  margin: var(--wf-s-2) var(--wf-s-2) 4px;
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 40px;
+  padding: 6px var(--wf-s-3);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+}
+
+button.row {
+  cursor: pointer;
+}
+
+button.row:hover {
+  background: var(--wf-hover);
+}
+
+.row[aria-current="page"] {
+  background: color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface));
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+}
+
+/* Wraps to a second line rather than cutting off a hospital's name. */
+.detail {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.ready {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.ready b {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.ready[data-none] b {
+  color: var(--wf-ink-3);
+}
+
+.check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--wf-accent);
+}
+
+.none {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 48rem) {
+  /* Josh, 30 Oct: today's control sizes. The close keeps a larger, invisible touch area. */
+  .head button {
+    position: relative;
+  }
+
+  .head button::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
+  }
+
+  .scrim {
+    position: fixed;
+    inset: 0;
+    display: block;
+    /* Final round: the kit's dialog scrim, which darkens in both themes (ink-1 at 40% turned the
+       page grey in dark, where ink-1 is light). */
+    background: var(--wf-scrim-strong, var(--wf-scrim));
+    pointer-events: auto;
+  }
+
+  .panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 85dvh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-radius: var(--wf-r-lg, 16px) var(--wf-r-lg, 16px) 0 0;
+    visibility: visible;
+  }
+}

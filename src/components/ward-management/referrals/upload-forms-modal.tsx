@@ -107,17 +107,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
   return (
     <div
       role="presentation"
-      style={{
-        position: "fixed",
-        inset: 0,
-        backgroundColor: "rgba(15, 23, 42, 0.65)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "1rem",
-      }}
+      className={styles.scrim}
       onClick={(e) => {
         if (e.target === e.currentTarget) dismiss();
       }}
@@ -128,26 +118,9 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${baseId}-upload-modal-title`}
-        style={{
-          backgroundColor: "var(--wf-surface)",
-          color: "var(--wf-ink-1)",
-          borderRadius: "1rem",
-          maxWidth: "32rem",
-          width: "100%",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-          border: "1px solid var(--wf-line)",
-          overflow: "hidden",
-        }}
+        className={styles.panel}
       >
-        <div
-          style={{
-            padding: "1.25rem 1.5rem",
-            borderBottom: "1px solid var(--wf-line)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <div className={styles.head}>
           <div className={styles.titleGroup}>
             <FileUp aria-hidden="true" size={20} style={{ color: "var(--wf-accent)" }} />
             <h2 id={`${baseId}-upload-modal-title`} className={styles.title}>

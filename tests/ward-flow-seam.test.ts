@@ -3,6 +3,8 @@ import { join, posix, relative, resolve } from "node:path";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
+import { isRedesignMockup } from "./helpers/redesign-design-copies";
+
 /**
  * Ward Flow's seam with the rest of this repository.
  *
@@ -251,6 +253,10 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
     const inbound: string[] = [];
     for (const file of allSourceFiles) {
       if (isWardPath(file)) continue;
+      // The redesign mock-ups (D-89, D-91) are Ward Flow's own design copies and their viewer, not
+      // the host app depending on Ward Flow: blocked in production, deleted page by page as each is
+      // built, and leaving with Ward Flow if it goes first. See the helper for the boundary.
+      if (isRedesignMockup(file)) continue;
       for (const specifier of moduleSpecifiers(file)) {
         const target = resolveSpecifier(file, specifier);
         if (target && isWardPath(target)) inbound.push(file + " -> " + specifier);
@@ -286,6 +292,9 @@ describe("ward flow keeps its seam with the rest of the repository", () => {
   it("has its route hardcoded outside itself only in the explicitly approved places", () => {
     const unexpected = allSourceFiles
       .filter((file) => !isWardPath(file))
+      // The redesign mock-ups name Ward Flow's routes because they are copies of its screens
+      // (D-89, D-91), not host files that would need an edit on the day it leaves.
+      .filter((file) => !isRedesignMockup(file))
       .filter((file) => !APPROVED_ROUTE_REFERENCES.has(file))
       .filter((file) => readFileSync(file, "utf8").match(WARD_ROUTE_PATTERN) !== null);
 

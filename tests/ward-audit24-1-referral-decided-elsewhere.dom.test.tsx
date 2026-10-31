@@ -97,11 +97,8 @@ describe("Referrals board: a referral decided elsewhere (B-03)", () => {
     const notice = screen.getByTestId("ward-referral-decided-elsewhere");
     expect(name.length).toBeGreaterThan(0);
     expect(notice.textContent).toContain("was decided elsewhere.");
-    // The row reads "Surname, Given"; the notice reads "Given Surname".
-    const [surname, given] = name.split(", ");
-    expect(notice).toHaveTextContent(
-      `${given} ${surname} was decided elsewhere. Choose the next referral from the queue.`,
-    );
+    // Referrals redesign (Josh, 31 Oct 2026): the notice names the person surname first, as the row does.
+    expect(notice).toHaveTextContent(`${name} was decided elsewhere. Choose the next referral from the queue.`);
     expect(document.querySelector('button[data-testid^="ward-referral-match-accept-"]')).toBeNull();
 
     // Choosing another referral clears the notice.

@@ -1,0 +1,363 @@
+/* Mock-up of the Demo menu (fork of shell/ward-demo-menu.module.css plus the panel layout). */
+.menu {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  width: min(560px, calc(100vw - 16px));
+  max-height: calc(100dvh - 72px);
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg, 16px);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  text-align: start;
+  pointer-events: auto;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.headIcon {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-2));
+  border-radius: var(--wf-r-sm);
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+}
+
+.headIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.headText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.headText strong {
+  font-size: var(--wf-fs-15, 15px);
+}
+
+.headText em {
+  font-size: var(--wf-fs-12);
+  font-style: normal;
+  color: var(--wf-ink-2);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scroll {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-height: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.group {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.groupHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-2);
+}
+
+/* The note sits on its own quiet line under the heading, at every width. */
+.groupHead span {
+  flex-basis: 100%;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-ink-3);
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 6px var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.choice strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.choice em {
+  flex: none;
+  font-size: var(--wf-fs-12);
+  font-style: normal;
+  font-weight: 600;
+  color: var(--wf-accent-ink, var(--wf-accent));
+}
+
+.choice > span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.choice:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--wf-hover);
+}
+
+.choice[aria-checked="true"],
+.choice[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: color-mix(in srgb, var(--wf-accent) 6%, var(--wf-surface));
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.choice:disabled,
+.choice[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.roleLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.roleLine p {
+  flex: 1;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.clockRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.clock {
+  margin-right: auto;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.clock b {
+  margin-left: 4px;
+  font-family: var(--wf-font-mono, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.small,
+.reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.small:hover:enabled {
+  background: var(--wf-hover);
+}
+
+.reset {
+  border-color: color-mix(in srgb, var(--wf-warning) 55%, var(--wf-line-2));
+  background: color-mix(in srgb, var(--wf-warning) 10%, var(--wf-surface));
+}
+
+.small:disabled,
+.reset:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.choice:focus-visible,
+.small:focus-visible,
+.reset:focus-visible,
+.practice summary:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.practice {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.practice summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 0 var(--wf-s-3);
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.practice summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice summary:hover {
+  border-radius: calc(var(--wf-r-md) - 1px);
+  background: var(--wf-hover);
+}
+
+/* The app's chevron, as on Tools' folded rows: down when shut, up when open. */
+.practiceCaret {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--wf-ink-3);
+  transition: transform var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.practice[open] .practiceCaret {
+  transform: rotate(180deg);
+}
+
+.practiceBody {
+  padding: 0 var(--wf-s-3) var(--wf-s-3);
+}
+
+.practiceHeading {
+  display: none;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}
+
+.footFiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin-right: auto;
+}
+
+.footNote {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+@media (max-width: 30rem) {
+  /* Josh, 30 Oct: today's control sizes. The close keeps a larger, invisible touch area. */
+  .head button {
+    position: relative;
+  }
+
+  .head button::after {
+    position: absolute;
+    inset: -6px;
+    content: "";
+  }
+
+  /* Ends above the phone dock (about 84px plus the safe area). */
+  .menu {
+    max-height: calc(100dvh - 64px - 96px - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Final round: on a phone the menu is a bottom sheet over the dock with the kit's scrim behind it,
+   so no sliver of the page is left squeezed between the panel and the dock. */
+.phoneScrim {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .phoneScrim {
+    position: fixed;
+    inset: 0;
+    display: block;
+    background: var(--wf-scrim-strong, var(--wf-scrim));
+    pointer-events: auto;
+  }
+
+  .menu.menu {
+    inset: auto 0 0;
+    width: 100%;
+    max-height: calc(100dvh - 48px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-width: 1px 0 0;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .choice[aria-checked="true"],
+  .choice[aria-pressed="true"] {
+    background: Highlight;
+    color: HighlightText;
+  }
+}

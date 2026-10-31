@@ -5,10 +5,11 @@ import { Button, Card } from "@/components/wf";
 import styles from "./discharge-flow-charts.module.css";
 
 /**
- * The two charts under the discharge table (Discharges direction A, 9 Oct 2026): expected
- * discharges per day and blocked discharges by barrier. Both are filters that HIGHLIGHT: a click
- * marks the matching people in the table and moves them to the top, it never hides anyone.
- * Pure rendering; the board computes every number from the same records its table lists.
+ * The two charts (Discharges direction A, 9 Oct 2026): bed releases per day and held-up releases by
+ * barrier. Both HIGHLIGHT: a click marks the matching people in the list and moves them to the top of
+ * their group, it never hides anyone. Redesign (Josh, 30 Oct): both count bed releases, the list's own
+ * rows, and say "Held up" for a release with a recorded blocker. The day chart can also draw its days
+ * as rows, for the narrow column beside the list.
  */
 
 export type DischargeDayKey = number | "past";
@@ -33,11 +34,14 @@ export function DischargeDayChart({
   selected,
   onSelect,
   onClear,
+  layout = "columns",
 }: {
   days: DischargeDay[];
   selected: DischargeDayKey | null;
   onSelect: (key: DischargeDayKey) => void;
   onClear: () => void;
+  /** "rows": one row a day, as the barrier panel draws its barriers, for the side column. */
+  layout?: "columns" | "rows";
 }) {
   const totals = days.map((day) => day.expected + day.blocked);
   const headingId = useId();
@@ -47,6 +51,9 @@ export function DischargeDayChart({
   const step = Math.max(1, Math.ceil((Math.max(4, ...totals) * 1.15) / GRID_LINES));
   const top = step * GRID_LINES;
   const pct = (value: number) => `${(value / top) * 100}%`;
+  const rowMax = Math.max(1, ...totals);
+  const dayLabel = (day: DischargeDay, total: number) =>
+    `${day.name}: ${total} due, ${day.expected} not held up${day.blocked ? `, ${day.blocked} held up` : ""}`;
   return (
     <Card className={styles.card} aria-labelledby={headingId} data-testid="ward-discharge-day-chart">
       <header className={styles.head}>
@@ -57,68 +64,112 @@ export function DischargeDayChart({
         <ul className={styles.legend} aria-label="Chart key">
           <li>
             <i className={`${styles.swatch} ${styles.swatchExpected}`} aria-hidden="true" />
-            Expected
+            Due
           </li>
           <li>
             <i className={`${styles.swatch} ${styles.swatchBlocked}`} aria-hidden="true" />
-            Blocked
+            Held up
           </li>
           <li>
             <i className={`${styles.swatch} ${styles.swatchWeekend}`} aria-hidden="true" />
             Weekend
           </li>
-          <li>
-            <i className={styles.meanKey} aria-hidden="true" />
-            Mean <b>{mean.toFixed(1)}</b> a day
-          </li>
+          {layout === "columns" ? (
+            <li>
+              <i className={styles.meanKey} aria-hidden="true" />
+              Mean <b>{mean.toFixed(1)}</b> a day
+            </li>
+          ) : null}
         </ul>
       </header>
-      <div className={styles.scroller}>
-        <div
-          className={styles.plot}
-          role="group"
-          aria-label={`Expected discharges, past dates and next ${ahead.length} days`}
-        >
-          <div className={styles.grid} aria-hidden="true">
-            {Array.from({ length: GRID_LINES }, (_, index) => {
-              const value = step * (index + 1);
-              return (
-                <span key={value} className={styles.gridLine} style={{ bottom: pct(value) }}>
-                  <span className={styles.gridValue}>{value}</span>
-                </span>
-              );
-            })}
-            <span className={styles.meanLine} style={{ bottom: pct(mean) }} />
-          </div>
+      {layout === "rows" ? (
+        <ul className={styles.bars} aria-label={`Bed releases, past dates and next ${ahead.length} days`}>
           {days.map((day, index) => {
             const total = totals[index] ?? 0;
             const pressed = selected === day.key;
             return (
-              <button
-                key={String(day.key)}
-                type="button"
-                className={styles.day}
-                data-weekend={day.weekend || undefined}
-                data-past={day.key === "past" || undefined}
-                aria-pressed={pressed}
-                aria-label={`${day.name}: ${total} due, ${day.expected} expected${day.blocked ? `, ${day.blocked} blocked` : ""}`}
-                onClick={() => (pressed ? onClear() : onSelect(day.key))}
-              >
-                <span className={styles.stack} aria-hidden="true">
-                  <span className={styles.total}>{total}</span>
-                  {day.expected > 0 ? (
-                    <span className={styles.barExpected} style={{ height: pct(day.expected) }} />
-                  ) : null}
-                  {day.blocked > 0 ? <span className={styles.barBlocked} style={{ height: pct(day.blocked) }} /> : null}
-                </span>
-                <span className={styles.dayLabel} aria-hidden="true">
-                  {day.label}
-                </span>
-              </button>
+              <li key={String(day.key)}>
+                <button
+                  type="button"
+                  className={`${styles.barRow} ${styles.dayRow}`}
+                  data-weekend={day.weekend || undefined}
+                  aria-pressed={pressed}
+                  aria-label={dayLabel(day, total)}
+                  onClick={() => (pressed ? onClear() : onSelect(day.key))}
+                >
+                  <span className={styles.barLabel}>{day.label}</span>
+                  <span className={`${styles.track} ${styles.dayTrack}`} aria-hidden="true">
+                    {day.expected > 0 ? (
+                      <span
+                        className={styles.dayFillDue}
+                        style={{ width: `${Math.max(2, (day.expected / rowMax) * 100)}%` }}
+                      />
+                    ) : null}
+                    {day.blocked > 0 ? (
+                      <span
+                        className={styles.dayFillHeld}
+                        style={{ width: `${Math.max(2, (day.blocked / rowMax) * 100)}%` }}
+                      />
+                    ) : null}
+                  </span>
+                  <b className={styles.barValue} aria-hidden="true">
+                    {total}
+                  </b>
+                </button>
+              </li>
             );
           })}
+        </ul>
+      ) : (
+        <div className={styles.scroller}>
+          <div
+            className={styles.plot}
+            role="group"
+            aria-label={`Bed releases, past dates and next ${ahead.length} days`}
+          >
+            <div className={styles.grid} aria-hidden="true">
+              {Array.from({ length: GRID_LINES }, (_, index) => {
+                const value = step * (index + 1);
+                return (
+                  <span key={value} className={styles.gridLine} style={{ bottom: pct(value) }}>
+                    <span className={styles.gridValue}>{value}</span>
+                  </span>
+                );
+              })}
+              <span className={styles.meanLine} style={{ bottom: pct(mean) }} />
+            </div>
+            {days.map((day, index) => {
+              const total = totals[index] ?? 0;
+              const pressed = selected === day.key;
+              return (
+                <button
+                  key={String(day.key)}
+                  type="button"
+                  className={styles.day}
+                  data-weekend={day.weekend || undefined}
+                  data-past={day.key === "past" || undefined}
+                  aria-pressed={pressed}
+                  aria-label={dayLabel(day, total)}
+                  onClick={() => (pressed ? onClear() : onSelect(day.key))}
+                >
+                  <span className={styles.stack} aria-hidden="true">
+                    <span className={styles.total}>{total}</span>
+                    {day.expected > 0 ? (
+                      <span className={styles.barExpected} style={{ height: pct(day.expected) }} />
+                    ) : null}
+                    {day.blocked > 0 ? (
+                      <span className={styles.barBlocked} style={{ height: pct(day.blocked) }} />
+                    ) : null}
+                  </span>
+                  <span className={styles.dayLabel} aria-hidden="true">
+                    {day.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
       <footer className={styles.foot}>
         <span>Choose a day to highlight its people in the list.</span>
         {selected !== null ? (
@@ -136,11 +187,14 @@ export function DischargeBarrierBars({
   selected,
   onSelect,
   onClear,
+  counts,
 }: {
   barriers: DischargeBarrier[];
   selected: string | null;
   onSelect: (id: string) => void;
   onClear: () => void;
+  /** What the bars count: bed releases on Now, people (admission records) on History. */
+  counts: "releases" | "people";
 }) {
   const headingId = useId();
   const shown = barriers.filter((barrier) => barrier.count > 0);
@@ -151,16 +205,15 @@ export function DischargeBarrierBars({
       <header className={styles.head}>
         <h2 id={headingId} className={styles.title}>
           <OctagonAlert size={16} aria-hidden="true" />
-          Blocked by barrier
+          Held up by barrier
         </h2>
-        {/* The figure names its noun (device audit, 11 Oct 2026): it counts people whose open
-            record carries a barrier, which is not the hero's count of blocked releases. */}
+        {/* Redesign (Josh, 30 Oct): the same held-up releases the hero chip counts, so one figure. */}
         <span className={styles.count}>
-          {total} {total === 1 ? "person" : "people"}
+          {total} {counts === "releases" ? (total === 1 ? "release" : "releases") : total === 1 ? "person" : "people"}
         </span>
       </header>
       {shown.length === 0 ? (
-        <p className={styles.empty}>No discharge is blocked.</p>
+        <p className={styles.empty}>No release is held up.</p>
       ) : (
         <ul className={styles.bars}>
           {shown.map((barrier) => {
@@ -171,7 +224,7 @@ export function DischargeBarrierBars({
                   type="button"
                   className={styles.barRow}
                   aria-pressed={pressed}
-                  aria-label={`${barrier.label}: ${barrier.count} blocked`}
+                  aria-label={`${barrier.label}: ${barrier.count} held up`}
                   onClick={() => (pressed ? onClear() : onSelect(barrier.id))}
                 >
                   <span className={styles.barLabel}>{barrier.label}</span>

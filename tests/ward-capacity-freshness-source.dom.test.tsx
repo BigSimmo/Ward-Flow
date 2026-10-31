@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 /**
@@ -45,6 +45,11 @@ import { describe, expect, it, vi } from "vitest";
  * ⚠️ **AND THE ASSERTIONS BELOW ARE SCOPED TO THE STAMP, NEVER THE ROW**, precisely so they cannot
  * inherit the tautology described above: `/^Confirmed /` and `/^As at /` match the freshness
  * `<span>`'s own text, which the Ward column can never satisfy.
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the network table is gone. A ward's freshness stamp now
+ * sits in its ward drawer ("Confirmed beds"), opened from the ward's bed map card, so the cases
+ * below open that drawer and read the stamp inside its "Confirmed beds" section. The drawer also
+ * reads the discharge-record accessors, so the mocked context carries inert ones.
  */
 vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/ward-management/ward-flow-provider")>();
@@ -63,7 +68,6 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
 
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 const seeded = seedWardFlowState();
@@ -79,11 +83,32 @@ const mockContext = {
   dispatch: vi.fn(),
   focusMovementId: undefined,
   setFocusMovementId: vi.fn(),
+  // The ward drawer lists discharge records; these suites read only its freshness stamp.
+  readDischargeRecords: () => ({ status: "denied" as const }),
+  openDischargeRecord: vi.fn(),
+  readDischargeRecord: () => null,
 };
 
-function networkRow(unitId: string) {
-  const table = screen.getByTestId("ward-capacity-network-table");
-  return within(table).getByTestId(`ward-capacity-network-row-${unitId}`);
+/** A ward card's visible name: its text without the spelled-out code a screen reader hears. */
+function visibleName(element: Element | null): string {
+  if (!element) return "";
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll("abbr + span").forEach((node) => node.remove());
+  return (clone.textContent ?? "").trim();
+}
+
+/** Opens the ward's drawer from its bed map card and returns its "Confirmed beds" section. */
+function confirmedBeds(unit: { id: string; name: string }) {
+  const map = document.getElementById("capacity-bed-map");
+  if (!map) throw new Error("no bed map on the Capacity screen");
+  const card = Array.from(map.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="dialog"]')).find(
+    (button) => visibleName(button.firstElementChild) === unit.name,
+  );
+  if (!card) throw new Error(`no bed map card for ${unit.id}`);
+  fireEvent.click(card);
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  expect(drawer).toHaveAccessibleName(unit.name);
+  return within(drawer).getByRole("region", { name: "Confirmed beds" });
 }
 
 describe("the Capacity screen's freshness stamp reflects allocatable.source, never an unconditional ward confirmation", () => {
@@ -100,8 +125,7 @@ describe("the Capacity screen's freshness stamp reflects allocatable.source, nev
 
   it("renders 'As at HH:MM' for a feed-sourced unit, never a false ward attribution (review Finding 6)", () => {
     render(<CapacityScreen />);
-    showWardTable();
-    const row = networkRow(FEED_UNIT.id);
+    const row = confirmedBeds(FEED_UNIT);
 
     // The defect this suite exists to catch: passing `confirmedByRole` unconditionally makes every
     // row read "Confirmed HH:MM · NUM <ward>" even where the ward never stood behind the figure.
@@ -114,14 +138,13 @@ describe("the Capacity screen's freshness stamp reflects allocatable.source, nev
 
   it("still names the ward on a ward-sourced unit's stamp, so the fix above cannot be 'drop the attribution'", () => {
     render(<CapacityScreen />);
-    showWardTable();
-    const row = networkRow(WARD_UNIT.id);
+    const row = confirmedBeds(WARD_UNIT);
 
     /*
-     * ⚠️ Matched against the STAMP's own text (`^Confirmed … · NUM <name>$`), not against the row.
-     * The row contains the ward's name in its Ward column regardless, so a row-scoped
-     * `toHaveTextContent(name)` here would pass with the attribution deleted — measured, see the
-     * file header.
+     * ⚠️ Matched against the STAMP's own text (`^Confirmed … · NUM <name>$`), not against the
+     * drawer. The drawer names the ward in its title regardless, so a drawer-scoped
+     * `toHaveTextContent(name)` here would pass with the attribution deleted — measured on the old
+     * table row, see the file header.
      */
     expect(within(row).getByText(new RegExp(`^Confirmed .* · NUM ${WARD_UNIT.name}$`, "u"))).toBeInTheDocument();
     expect(within(row).queryByText(/^As at /u)).not.toBeInTheDocument();

@@ -5,9 +5,20 @@
 import type { ReactNode, RefObject } from "react";
 import { Bell, BellRing, ChevronRight, Copy, Pause, Play, Radio } from "lucide-react";
 
-import { Button, Hero, HeroStat, LiveChip, PhoneHero, PhoneSheet, StatusGlyph, type WfTone } from "@/components/wf";
+import {
+  Button,
+  Hero,
+  HeroStat,
+  LiveChip,
+  PhoneHero,
+  PhoneSheet,
+  StatusGlyph,
+  phoneRows,
+  type WfTone,
+} from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { PageLiveChip, type usePageLive } from "@/components/ward-management/ward-page-live";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import type { getActiveBroadcastAlert } from "./ward-broadcast-model";
 import { minutesText } from "./alerts-model";
@@ -78,6 +89,13 @@ export function AlertsHero({
   handleCopy: () => void;
   checkingFoot: ReactNode;
 }) {
+  const deskRole = useEffectiveWardAccess().role;
+  // Transport officer: only the coordinator takes an alert and only the coordinator or a bed manager
+  // broadcasts, so "Yours" is always 0 and Broadcast never works here. Both are left out.
+  const officerDesk = deskRole === "officer";
+  // Nurse in charge: a ward desk never broadcasts, so the greyed Broadcast is left out too.
+  const wardDesk = deskRole === "ward";
+  const canBroadcast = !officerDesk && !wardDesk;
   return (
     <>
       {isPhone ? (
@@ -113,24 +131,39 @@ export function AlertsHero({
                 pressed: pill === "wait",
                 onPress: () => togglePill("wait"),
               },
-              {
-                id: "mine",
-                value: yoursCount,
-                // P018 (Josh, 27 Oct 2026): "Yours" on every screen, as the desktop hero says.
-                label: "Yours",
-                pressed: pill === "mine",
-                onPress: () => togglePill("mine"),
-              },
+              ...(officerDesk
+                ? []
+                : [
+                    {
+                      id: "mine",
+                      value: yoursCount,
+                      // P018 (Josh, 27 Oct 2026): "Yours" on every screen, as the desktop hero says.
+                      label: "Yours",
+                      pressed: pill === "mine",
+                      onPress: () => togglePill("mine"),
+                    },
+                  ]),
             ]}
             actions={
-              <div className={styles.phoneHeroActions}>
+              <div className={phoneRows.heroPills}>
+                {/* Phone (Josh, 31 Oct 2026): Home's hero pills, side by side. */}
                 {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
                       one primary; a statewide broadcast stays one tap away as a secondary, with Pause between
                       the two so a thumb aiming for Next cannot start a broadcast (P017, 27 Oct 2026). */}
-                <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
-                  Next alert
-                </Button>
+                {/* Nurse in charge: a quiet ward has no next alert, so no filled button that does nothing. */}
+                {wardDesk && nextQueue.length === 0 ? null : (
+                  <Button
+                    className={phoneRows.heroPill}
+                    variant="light"
+                    icon={ChevronRight}
+                    onClick={handleNext}
+                    data-testid="ward-alerts-phone-next"
+                  >
+                    Next alert
+                  </Button>
+                )}
                 <Button
+                  className={phoneRows.heroPill}
                   variant="onHero"
                   icon={live.paused ? Play : Pause}
                   aria-pressed={live.paused}
@@ -139,15 +172,18 @@ export function AlertsHero({
                 >
                   {live.paused ? "Resume" : "Pause"}
                 </Button>
-                <Button
-                  ref={broadcastTriggerRef}
-                  variant="onHero"
-                  icon={Radio}
-                  disabledReason={broadcastDisabledReason}
-                  onClick={(event) => openComposer(event.currentTarget)}
-                >
-                  Broadcast
-                </Button>
+                {canBroadcast ? (
+                  <Button
+                    className={phoneRows.heroPill}
+                    ref={broadcastTriggerRef}
+                    variant="onHero"
+                    icon={Radio}
+                    disabledReason={broadcastDisabledReason}
+                    onClick={(event) => openComposer(event.currentTarget)}
+                  >
+                    Broadcast
+                  </Button>
+                ) : null}
               </div>
             }
           />
@@ -193,29 +229,34 @@ export function AlertsHero({
             ) : undefined
           }
           aside={
-            <div className={styles.heroTools}>
-              <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={notifyOn ? BellRing : Bell}
-                aria-pressed={notifyOn}
-                title="Act-now alerts notify in this open tab. No patient detail is shown."
-                onClick={handleNotify}
-              >
-                Notify me
-              </Button>
-              <Button
-                ref={broadcastTriggerRef}
-                variant="light"
-                size="sm"
-                icon={Radio}
-                disabledReason={broadcastDisabledReason}
-                onClick={(event) => openComposer(event.currentTarget)}
-              >
-                Broadcast alert
-              </Button>
-            </div>
+            // Nurse in charge: with no alert in turn, Next of 0 and an empty handover copy are left out.
+            wardDesk && nextQueue.length === 0 ? undefined : (
+              <div className={styles.heroTools}>
+                <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
+                <Button
+                  variant="onHero"
+                  size="sm"
+                  icon={notifyOn ? BellRing : Bell}
+                  aria-pressed={notifyOn}
+                  title="Act-now alerts notify in this open tab. No patient detail is shown."
+                  onClick={handleNotify}
+                >
+                  Notify me
+                </Button>
+                {canBroadcast ? (
+                  <Button
+                    ref={broadcastTriggerRef}
+                    variant="light"
+                    size="sm"
+                    icon={Radio}
+                    disabledReason={broadcastDisabledReason}
+                    onClick={(event) => openComposer(event.currentTarget)}
+                  >
+                    Broadcast alert
+                  </Button>
+                ) : null}
+              </div>
+            )
           }
           bar={
             <div className={styles.heroBar}>
@@ -236,14 +277,16 @@ export function AlertsHero({
                   pressed={pill === "wait"}
                   onToggle={() => togglePill("wait")}
                 />
-                <HeroStat
-                  inline
-                  value={yoursCount}
-                  label="Yours"
-                  tone="neutral"
-                  pressed={pill === "mine"}
-                  onToggle={() => togglePill("mine")}
-                />
+                {officerDesk ? null : (
+                  <HeroStat
+                    inline
+                    value={yoursCount}
+                    label="Yours"
+                    tone="neutral"
+                    pressed={pill === "mine"}
+                    onToggle={() => togglePill("mine")}
+                  />
+                )}
               </div>
               {activeBroadcast ? (
                 <button
@@ -287,12 +330,16 @@ export function AlertsHero({
                 {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
                 Next of <span className={styles.mono}>{nextQueue.length}</span>
               </Button>
-              <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
-                Copy for handover
-              </Button>
+              {/* Transport officer: the handover copy is on My jobs (Copy handover). */}
+              {officerDesk ? null : (
+                <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
+                  Copy for handover
+                </Button>
+              )}
             </div>
           }
-          foot={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
+          // A quiet ward's checks sit in the side panel instead, so the screen may pass no foot.
+          foot={checkingFoot ? <div className={styles.checkingFootWide}>{checkingFoot}</div> : undefined}
         />
       )}
     </>

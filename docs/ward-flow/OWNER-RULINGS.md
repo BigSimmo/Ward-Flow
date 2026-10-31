@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/war
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**607 rulings/items extracted, across 38 of 44 files.**
+**612 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 350 distinct IDs
+## ID index — 355 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -257,7 +257,12 @@ safe global key across 30 files.
 | `D-86` | `decisions.md`:982 | D-86. No second approver for role grants, at pilot or otherwise (27 October 2026) |
 | `D-87` | `decisions.md`:989 | D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026) |
 | `D-88` | `decisions.md`:1001 | D-88. The public demo opens with a demo code once the front door is on (27 October 2026) |
-| `D-93` | `decisions.md`:1008 | D-93. Legal form times show only as typed, never as a countdown (31 October 2026) |
+| `D-89` | `decisions.md`:1008 | D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026) |
+| `D-90` | `decisions.md`:1016 | D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026) |
+| `D-91` | `decisions.md`:1027 | D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026) |
+| `D-92` | `decisions.md`:1061 | D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026) |
+| `D-93` | `decisions.md`:1071 | D-93. Legal form times show only as typed, never as a countdown (31 October 2026) |
+| `D-94` | `decisions.md`:1079 | D-94. Design rulings of 31 October 2026 |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -547,7 +552,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-89 item(s):
+94 item(s):
 
 - `D-1` — line 16, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 26, heading: "D-2. Railway is disconnected"
@@ -637,7 +642,12 @@ safe global key across 30 files.
 - `D-86` — line 982, heading: "D-86. No second approver for role grants, at pilot or otherwise (27 October 2026)"
 - `D-87` — line 989, heading: "D-87. D-36 and D-37 are replaced by the real-data gate (27 October 2026)"
 - `D-88` — line 1001, heading: "D-88. The public demo opens with a demo code once the front door is on (27 October 2026)"
-- `D-93` — line 1008, heading: "D-93. Legal form times show only as typed, never as a countdown (31 October 2026)"
+- `D-89` — line 1008, heading: "D-89. Redesign mock-up copies of large screens may pass the 1,500-line cap (30 October 2026)"
+- `D-90` — line 1016, heading: "D-90. Help gets How do I…, Show me runs everywhere, and Help is built without a separate mock-up step (30 October 2026)"
+- `D-91` — line 1027, heading: "D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)"
+- `D-92` — line 1061, heading: "D-92. Help goes live before its mock-up review, one search box on Capacity, and referral rows on Home open the panel (31 October 2026)"
+- `D-93` — line 1071, heading: "D-93. Legal form times show only as typed, never as a countdown (31 October 2026)"
+- `D-94` — line 1079, heading: "D-94. Design rulings of 31 October 2026"
 
 ### `archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 

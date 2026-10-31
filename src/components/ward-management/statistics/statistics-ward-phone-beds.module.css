@@ -1,0 +1,122 @@
+/*
+ * The phone bed grid on one ward's statistics, for a ward desk (coordinator review 31 Oct 2026), and
+ * the swatches of the compact bed map's legend.
+ * An even grid (the columns divide the beds where they can, so no bed sits alone on a row), each
+ * state its own fill in the Capacity bed map's colours, and a legend with the same swatches.
+ * Tokens only; the fills are redefined by the theme, so dark mode follows.
+ */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--bed-cols, 10), minmax(0, 1fr));
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bed,
+.swatch {
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-xs);
+}
+
+.bed {
+  aspect-ratio: 1;
+  max-height: 32px;
+}
+
+/* A bed someone is in, or on leave: the Capacity map's used fill. */
+.bed[data-kind="occupied"],
+.bed[data-kind="leave"],
+.swatch[data-kind="occupied"] {
+  background: var(--wf-data-1);
+}
+
+/* Pulled for a person on the way: the used colour in stripes, so it reads as held and not yet in,
+   in both themes (a flat info fill sat too close to the used fill in dark). */
+.bed[data-kind="pulled"],
+.swatch[data-kind="pulled"] {
+  border-color: var(--wf-data-1);
+  background: repeating-linear-gradient(135deg, var(--wf-data-1) 0 3px, var(--wf-surface) 3px 6px);
+}
+
+/* Closed: the Capacity map's closed fill, with an edge so it still reads on a dark card. */
+.bed[data-kind="closed"],
+.swatch[data-kind="closed"] {
+  border-color: var(--wf-line);
+  background: var(--wf-data-closed);
+}
+
+/* Being made ready: the ready colour as an outline over a soft tint, so it is not yet ready. */
+.bed[data-kind="prep"],
+.swatch[data-kind="prep"] {
+  border: 1.5px dashed var(--wf-data-ready);
+  background: color-mix(in srgb, var(--wf-data-ready) 14%, var(--wf-surface));
+}
+
+/* Ready: the Capacity map's ready fill. */
+.bed[data-kind="ready"],
+.swatch[data-kind="ready"] {
+  background: var(--wf-data-ready);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: calc(var(--wf-r-xs) / 2);
+}
+
+.legend b {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+@media (forced-colors: active) {
+  .bed,
+  .swatch {
+    border-color: CanvasText;
+  }
+
+  .bed[data-kind="occupied"],
+  .bed[data-kind="leave"],
+  .swatch[data-kind="occupied"] {
+    background: CanvasText;
+  }
+
+  .bed[data-kind="ready"],
+  .swatch[data-kind="ready"] {
+    background: Highlight;
+  }
+
+  .bed[data-kind="pulled"],
+  .swatch[data-kind="pulled"] {
+    border-style: dashed;
+    background: Canvas;
+  }
+
+  .bed[data-kind="closed"],
+  .swatch[data-kind="closed"] {
+    background: GrayText;
+  }
+}

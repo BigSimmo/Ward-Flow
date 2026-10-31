@@ -1,6 +1,7 @@
 /*
  * The patient pop-up (Movements overhaul, option A, 9 Oct 2026). v8 tokens only: pills and
- * circles, no accent stripes, text truncates rather than wraps, status by shape and colour.
+ * circles, no accent stripes, status by shape and colour. Names, places, the legal line and every
+ * phone fact cell wrap in full rather than ending in "…" (a phone has no hover; Josh, 31 Oct 2026).
  */
 
 .panel {
@@ -19,11 +20,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Wraps in full rather than ending in "…" (31 Oct 2026); the old class name stays. */
 .trunc {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .spacer {
@@ -50,9 +50,7 @@
   font-size: var(--wf-fs-20);
   font-weight: 650;
   line-height: 1.2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .head[data-closed="true"] .name {
@@ -279,9 +277,7 @@
 
 .place {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-weight: 600;
 }
 
@@ -336,6 +332,20 @@
   margin: 0;
 }
 
+.legal {
+  align-items: flex-start;
+}
+
+.legal > svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.legalText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .legal strong {
   font-weight: 600;
 }
@@ -379,9 +389,7 @@
 
 .grid dd {
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-weight: 600;
 }
 
@@ -589,6 +597,7 @@
 
 .phPills {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   min-width: 0;
@@ -597,9 +606,6 @@
 .phPills > * {
   min-width: 0;
   max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .phBody {
@@ -643,13 +649,25 @@
   display: block;
   min-width: 0;
   margin: 0;
-  overflow: hidden;
   color: var(--wf-ink-1);
   font-weight: 600;
   font-size: var(--wf-fs-14);
   line-height: var(--wf-lh-14);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.phLegalWhen {
+  display: block;
+  margin-top: 2px;
+  color: var(--wf-ink-2);
+  font-weight: 400;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-16);
+}
+
+/* The "(limits not legally checked)" tag may wrap inside a half-width phone cell. */
+.phLegalWhen > span {
+  white-space: normal;
 }
 
 .phBox {

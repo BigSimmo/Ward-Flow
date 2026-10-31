@@ -2,7 +2,9 @@
 
 import dynamic from "next/dynamic";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
+
+import { useIsPhone } from "@/components/wf";
 
 import { dayOf } from "@/components/ward-management/ward-clock";
 import { ESCALATION_CONTACTS } from "@/components/ward-management/ward-change-reasons";
@@ -12,6 +14,7 @@ import {
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -26,12 +29,14 @@ import {
 } from "@/components/ward-management/ward-service-scope";
 import { SEVERE_CAUSES, delayGroups } from "./delays-derivations";
 import { DelaysBoard } from "./delays-board";
+import { retitledGroups } from "./wait-bands";
+import { useWaitingDeskWords } from "./waiting-desk-words";
 import styles from "./delays.module.css";
 
-// Coordinators only: loaded on demand so other screens that include Delays stay small.
-const MissedRequestsPanel = dynamic(() =>
-  import("@/components/ward-management/coordinator/missed-requests-panel").then((m) => m.MissedRequestsPanel),
-);
+// Coordinators only: the daily check is loaded on demand so other screens that include Waiting stay small.
+const DailyCheckLine = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckLine));
+const DailyCheckList = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckList));
+const DailyCheckHeroTile = dynamic(() => import("./daily-check-line").then((m) => m.DailyCheckHeroTile));
 
 const ESCALATION_CONTACT = ESCALATION_CONTACTS[0];
 
@@ -44,13 +49,26 @@ export interface DelaysScreenProps {
  * (`delays-board.tsx`); this screen owns the data scope (chosen service),
  * the one write (Escalate to State bed coordination desk) and the page shell.
  */
+/**
+ * Waiting (October 2026 redesign, Josh approved round 8 on 31 Oct 2026): the slim header strip, the
+ * whose-move tiles, the table by wait band, the person panel and the graphs (`delays-board.tsx`).
+ * On a laptop the coordinator's daily check is a tile in the header strip whose list opens under
+ * the header; the phone keeps the one-line check (`daily-check-line.tsx`).
+ */
 export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps = {}) {
   const thresholds = useDueSoonThresholds();
   const accessRole = useEffectiveWardAccess().role;
   const showMissedRequests = accessRole === "coordinator";
+  // Round 4 (Josh, 31 Oct 2026): on a laptop the daily check is a tile in the dark header and its
+  // list opens under the header; the phone keeps the one-line check.
+  const isPhone = useIsPhone();
+  const [checkOpen, setCheckOpen] = useState(false);
+  const checkListId = useId();
 
   const { movements: liveMovements, units, configuration } = useWardFlowSelect("movements", "units", "configuration");
   const service = useServiceScope();
+  // Role views (nurse in charge, ED clinician): the coordinator's own group named from the desk's side.
+  const desk = useWaitingDeskWords(units);
   const now = useWardFlowClock();
   const raise = useWardRaise("coordinator");
   const escalationGate = useRoleGate()("RECORD_ESCALATION");
@@ -64,30 +82,20 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
     [allMovements, service, units],
   );
 
-  // Prototype notices (owner rule D4).
-  const [notice, setNotice] = useState<string | null>(null);
-  // One timer for the latest notice, so an earlier one cannot clear a newer confirmation early.
-  const noticeTimer = useRef<number | undefined>(undefined);
-  const showNotice = (text: string) => {
-    setNotice(text);
-    window.clearTimeout(noticeTimer.current);
-    noticeTimer.current = window.setTimeout(() => {
-      setNotice(null);
-    }, 4000);
-  };
-  useEffect(
-    () => () => {
-      window.clearTimeout(noticeTimer.current);
-    },
-    [],
-  );
+  // Prototype notices (owner rule D4), in the shared toast region. The latest replaces the last; a
+  // refusal or an escalation not confirmed stays until it is closed.
+  const showNotice = useActionToast({ testId: "delays-notice", tone: "info" });
 
   const open = useMemo(() => movements.filter(isOpen), [movements]);
   const openNetworkWide = useMemo(
     () => (movements === allMovements ? open : allMovements.filter(isOpen)),
     [movements, allMovements, open],
   );
-  const groups = useMemo(() => delayGroups(movements, units, now, thresholds), [movements, units, now, thresholds]);
+  // Josh, 30 Oct 2026: this page's blocker titles (`wait-bands.ts`), so no "(as written)" group title.
+  const groups = useMemo(
+    () => desk.groups(retitledGroups(delayGroups(movements, units, now, thresholds))),
+    [movements, units, now, thresholds, desk],
+  );
 
   // D-b: the escalation register is whole-network, so a row outside the chosen service is marked,
   // never dropped.
@@ -98,7 +106,7 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   // Q-12: "Attention" is never dropped. The severe causes across the whole network, plus any urgent
   // movement outside the chosen service, each marked rather than hidden.
   const networkGroups = useMemo(
-    () => (movements === allMovements ? groups : delayGroups(allMovements, units, now, thresholds)),
+    () => (movements === allMovements ? groups : retitledGroups(delayGroups(allMovements, units, now, thresholds))),
     [movements, allMovements, groups, units, now, thresholds],
   );
   const urgentOutsideMovements = useMemo(
@@ -139,7 +147,7 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
   const escalationPendingRef = useRef(new Set<string>());
   const escalate = async (movement: Movement) => {
     if (!escalationGate.allowed) {
-      showNotice(escalationGate.reason ?? "Coordinator only");
+      showNotice({ warning: escalationGate.reason ?? "Coordinator only" });
       return;
     }
     if (escalationPendingRef.current.has(movement.id)) return;
@@ -155,10 +163,10 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
       showNotice(
         outcome?.status === "accepted" && outcome.isCurrent?.() !== false
           ? `Escalated to ${ESCALATION_CONTACT}.`
-          : "Escalation not confirmed. Review the movement before trying again.",
+          : { warning: "Escalation not confirmed. Review the movement before trying again." },
       );
     } catch {
-      showNotice("Escalation not confirmed. Review the movement before trying again.");
+      showNotice({ warning: "Escalation not confirmed. Review the movement before trying again." });
     } finally {
       escalationPendingRef.current.delete(movement.id);
     }
@@ -178,12 +186,13 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           }}
         />
       )}
-      {notice ? (
-        <div className={styles.toastNotice} role="status" aria-live="polite">
-          {notice}
-        </div>
+      {showMissedRequests ? (
+        isPhone ? (
+          <DailyCheckLine />
+        ) : (
+          <DailyCheckList open={checkOpen} listId={checkListId} onClose={() => setCheckOpen(false)} />
+        )
       ) : null}
-      {showMissedRequests ? <MissedRequestsPanel /> : null}
     </>
   );
 
@@ -201,12 +210,27 @@ export function DelaysScreen({ movements: movementsOverride }: DelaysScreenProps
           isOutsideService={isOutsideService}
           onEscalate={escalate}
           banner={banner}
+          heroCheck={
+            showMissedRequests && !isPhone ? (
+              <DailyCheckHeroTile
+                open={checkOpen}
+                onToggle={() => setCheckOpen((current) => !current)}
+                listId={checkListId}
+              />
+            ) : null
+          }
           empty={
             open.length === 0 ? (
               <p className={styles.absent} data-testid="ward-delays-nobody-waiting">
-                {service === null
-                  ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
-                  : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
+                {desk.wardDesk
+                  ? // Role view (nurse in charge): the list holds only people coming to this ward.
+                    "Nobody is waiting in an emergency department for your ward right now. That is a measured count over every open movement to your ward."
+                  : desk.edDesk
+                    ? // Role view (as ED clinician): an ED desk's copy holds only its own department.
+                      "Nobody is waiting in this emergency department right now. That is a measured count over its open movements."
+                    : service === null
+                      ? "Nobody is waiting in any emergency department right now. That is a measured count over every open movement."
+                      : `Nobody is waiting in any emergency department in ${service} right now. That is a measured count over every open movement in ${service}.`}
               </p>
             ) : undefined
           }

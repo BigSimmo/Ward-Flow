@@ -189,12 +189,13 @@ describe("the bed meeting TV view", () => {
       nameOf: () => "",
     });
     expect(figure("bed-meeting-tv-ready")).toBe(shown(sheet.capacity.ready));
-    // CS-10 (Audit 1): the ready figure says how old it is.
-    expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(
+    // CS-10 (Audit 1): the ready figure says how old it is, on the checking line under the tiles
+    // (core pages redesign, 31 Oct 2026: each tile is one figure and one short line).
+    expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(
       /^(Oldest count confirmed|\d+ wards? not confirmed since) \d\d:\d\d/,
     );
     // P025: the network mixes 60 and 90 minute wards, so the TV names the range.
-    expect(screen.getByTestId("bed-meeting-tv-ready-age")).toHaveTextContent(/late after \d+( to \d+)? min/);
+    expect(screen.getByTestId("bed-meeting-tv-checking")).toHaveTextContent(/late after \d+( to \d+)? min/);
     expect(figure("bed-meeting-tv-ed")).toBe(shown(sheet.ed.waiting));
     const { heldUp, confirmed, expected } = sheet.discharges;
     // Held up discharges are listed in the panel, so the headline counts them.
@@ -211,7 +212,7 @@ describe("the bed meeting TV view", () => {
       "Longest ED wait",
       "Beds ready now",
       "Due out today and tomorrow",
-      "Still open",
+      "Open movements",
     ]);
     // Every box says its state in words as well as colour.
     for (const tile of within(screen.getByTestId("bed-meeting-tv-tiles")).getAllByRole("term")) {
@@ -303,7 +304,8 @@ describe("the bed meeting TV view", () => {
     const waits = within(screen.getByTestId("bed-meeting-tv-waits-panel")).getAllByRole("listitem");
     expect(waits.length).toBeGreaterThan(0);
     const names = state.movements
-      .map((movement) => resolve({ movementId: movement.id }).displayName)
+      // Surname first (D-83, core pages redesign).
+      .map((movement) => resolve({ movementId: movement.id }).formalName)
       .filter((name) => name.length > 3);
     expect(names.some((name) => tv.textContent?.includes(name))).toBe(true);
   });
@@ -572,8 +574,8 @@ describe("the ward and ED TV views", () => {
       const tv = screen.getByTestId("bed-meeting-tv");
       expect(tv.querySelector("input, select, textarea, form")).toBeNull();
       const names = [
-        ...state.movements.map((movement) => resolve({ movementId: movement.id }).displayName),
-        ...state.admissions.map((admission) => resolve(admission).displayName),
+        ...state.movements.map((movement) => resolve({ movementId: movement.id }).formalName),
+        ...state.admissions.map((admission) => resolve(admission).formalName),
       ].filter((name) => name.length > 3 && name !== "Name not recorded");
       expect(names.some((name) => tv.textContent?.includes(name))).toBe(true);
       unmount();
@@ -690,11 +692,28 @@ describe("the ward and ED TV views", () => {
   it("names a long wait in words, not by colour alone (TV-10)", () => {
     renderTv();
     const css = readFileSync("src/components/ward-management/bed-meeting/bed-meeting-tv.module.css", "utf8");
-    expect(css).toMatch(/\.list li\[data-long\] \.wait \{\s*text-decoration: underline/u);
+    // Core pages redesign (31 Oct 2026): a triangle marks a long wait, not an underline that read as a link.
+    expect(css).toMatch(/\.table tr\[data-long\] td\[data-wait\]::before \{\s*content: "▲"/u);
     // Past the 24 hour mark the time reads in days, so the words say it as well as the colour.
-    for (const row of screen.getByTestId("bed-meeting-tv").querySelectorAll("li[data-long] [class*=wait]")) {
+    for (const row of screen.getByTestId("bed-meeting-tv").querySelectorAll("li[data-long]")) {
+      expect(row.querySelector("svg")).not.toBeNull();
       expect(row).toHaveTextContent(/\d+d/u);
     }
+  });
+
+  it("keeps 40px controls, a Bed column with room, and full tile rows at 1024 (browser check, 31 Oct 2026)", () => {
+    const css = readFileSync("src/components/ward-management/bed-meeting/bed-meeting-tv.module.css", "utf8");
+    // Change screen, Full screen, Lock as TV and Leave TV view: 40px, not the 52px row touch.
+    expect(css).not.toMatch(/var\(--wf-row-touch\)/u);
+    expect(css).toMatch(/\.action \{[^}]*min-height: 40px;/u);
+    // Beds that fit sizes its columns to their words, so "Bed" never runs into "Waiting".
+    expect(css).toMatch(/\.panels \[data-area="fit"\] \.table \{\s*table-layout: auto;/u);
+    // Five tiles at three a row: the last two take half a row each, so no row ends in a gap.
+    expect(css).toMatch(
+      /\.tile:nth-child\(3n \+ 1\):nth-last-child\(2\),\s*\.tile:nth-child\(3n \+ 2\):last-child \{\s*grid-column: span 3;/u,
+    );
+    renderTv();
+    expect(screen.getByTestId("bed-meeting-tv-tiles").children).toHaveLength(5);
   });
 
   it("says the ready beds' locked share plainly and counts releases held up (TV-11, NA3-02)", () => {

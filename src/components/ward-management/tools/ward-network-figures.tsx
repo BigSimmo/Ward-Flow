@@ -15,6 +15,7 @@ import type { Movement } from "../ward-model";
 import { isOpen } from "../ward-derivations";
 import { edById, edShortName } from "../ward-sites";
 import { StatusGlyph } from "@/components/wf";
+import { useCanOpenHref } from "../shell/ward-access";
 import styles from "./ward-network-figures.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 import { releasedCountText } from "../statistics/statistics-small-numbers";
@@ -270,6 +271,9 @@ function NetworkFiguresView({
   onNavigate?: () => void;
 }) {
   const [category, setCategory] = useState("all");
+  // Access audit (31 Oct 2026): Open statistics only for a desk that may open the statistics hub.
+  // A ward, ED or team desk opens only its own place's page, and an officer or admin none (D-80).
+  const canOpen = useCanOpenHref();
   const figureCount = groups.reduce((sum, group) => sum + group.figures.length, 0);
   return (
     <div className={styles.workspace} data-testid="ward-stats-drawer-content">
@@ -323,9 +327,11 @@ function NetworkFiguresView({
             </dl>
           </section>
         ))}
-      <Link className={styles.moreLink} href={`${root}/statistics`} onClick={onNavigate}>
-        Open statistics <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
-      </Link>
+      {canOpen(`${root}/statistics`) ? (
+        <Link className={styles.moreLink} href={`${root}/statistics`} onClick={onNavigate}>
+          Open statistics <ArrowUpRight aria-hidden="true" strokeWidth={1.75} />
+        </Link>
+      ) : null}
     </div>
   );
 }

@@ -14,7 +14,7 @@ import {
 } from "@/components/ward-management/community/community-derivations";
 import { elapsedDaysPhrase } from "@/components/ward-management/community/community-elapsed";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
-import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { daysBetween, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type {
   CommunityScopedAddressing,
@@ -36,7 +36,8 @@ export const BLANK_TRANSPORT_DRAFT: TransportDraftState = {
   cadNumber: "",
   transportLegalStatus: undefined,
   estimatedTime: "",
-  estimatedDay: "today",
+  // No day chosen (Josh, 31 Oct 2026): neither Today nor Tomorrow is ticked until the person picks one.
+  estimatedDay: undefined,
 };
 
 export type ActiveTabType =
@@ -144,19 +145,6 @@ export function bedStateLabel(admission: Admission): string {
   if (admission.state !== "occupied") return "A bed is pulled — not yet arrived";
   if (admission.awayAtEmergencyDepartmentSince !== null) return "In the bed — currently at an emergency department";
   return "In the bed";
-}
-
-/**
- * How long this person has been in this bed, in whole days, via `daysInBed` — the one place this
- * project computes a stay, counted from `arrivedAt` and never from `pulledAt`. `null` is stated
- * rather than substituted: somebody whose bed is pulled has not arrived, and "0 days" would read as
- * "arrived this morning".
- */
-export function stayLabel(admission: Admission, now: Instant): string {
-  const days = daysInBed(admission, now);
-  if (days === null) return "Not yet arrived, so no length of stay";
-  if (days === 0) return "In this bed under a day";
-  return `In this bed ${days} ${days === 1 ? "day" : "days"}`;
 }
 
 /**

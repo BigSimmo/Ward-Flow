@@ -9,7 +9,7 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 /**
  * P002 and P003 (Josh, 27 Oct 2026, "Go ahead with all recommendations"): Home and Movements print
  * one Tier 1 count (every open journey at tier 1, in transit included) and each label says what it
- * counts. Choosing an ED card narrows Home's chips and the labels say so ("Tier 1, RPH only"); Clear
+ * counts. Choosing an ED card narrows Home's chips and the labels say so ("Tier 1 open journeys · RPH", spoken; "Tier 1 · RPH" shown); Clear
  * also resets the ED card.
  */
 function chip(name: RegExp): HTMLElement {
@@ -40,8 +40,9 @@ describe("Home and Movements print one Tier 1 count (P002)", () => {
         <MovementsScreen />
       </WardFlowProvider>,
     );
-    const meta = within(screen.getByTestId("movements-needs-you")).getByText(/ of \d+ Tier 1 open journeys$/);
-    expect(Number(/of (\d+) Tier 1/.exec(meta.textContent ?? "")?.[1])).toBe(homeTierOne);
+    // Movements redesign (31 Oct 2026): the panel reads "3 of 18 open" under its "Tier 1 now" heading.
+    const meta = within(screen.getByTestId("movements-needs-you")).getByText(/^\d+ of \d+ open$/);
+    expect(Number(/of (\d+) open/.exec(meta.textContent ?? "")?.[1])).toBe(homeTierOne);
   });
 });
 
@@ -52,19 +53,19 @@ describe("an ED card narrows Home's chips and says so (P003)", () => {
         <CoordinatorScreen />
       </WardFlowProvider>,
     );
-    expect(chip(/^\s*\d+\s*Overdue waits$/)).toBeInTheDocument();
+    expect(chip(/^\s*\d+\s*Past target waits$/)).toBeInTheDocument();
     const edCard = screen.getByTestId("ward-ed-rph-ed");
     fireEvent.click(edCard);
     expect(edCard).toHaveAttribute("aria-pressed", "true");
-    expect(chip(/^\s*\d+\s*Overdue waits, RPH only$/)).toBeInTheDocument();
-    const tierOne = chip(/^\s*\d+\s*Tier 1, RPH only$/);
+    expect(chip(/^\s*\d+\s*Past target waits · RPH$/)).toBeInTheDocument();
+    const tierOne = chip(/^\s*\d+\s*Tier 1 open journeys · RPH$/);
     expect(screen.queryByRole("button", { name: /Tier 1 open journeys$/ })).not.toBeInTheDocument();
 
     fireEvent.click(tierOne);
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
 
     expect(screen.getByTestId("ward-ed-rph-ed")).toHaveAttribute("aria-pressed", "false");
-    expect(chip(/^\s*\d+\s*Overdue waits$/)).toBeInTheDocument();
+    expect(chip(/^\s*\d+\s*Past target waits$/)).toBeInTheDocument();
     expect(chip(/^\s*\d+\s*Tier 1 open journeys$/)).toHaveAttribute("aria-pressed", "false");
     expect(window.sessionStorage.length).toBe(0);
   });

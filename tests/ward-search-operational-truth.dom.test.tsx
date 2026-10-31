@@ -18,6 +18,9 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
 const seed = seedWardFlowState();
 function search(movementId: string) {
   render(
@@ -25,7 +28,7 @@ function search(movementId: string) {
       <PatientSearchPage />
     </WardFlowProvider>,
   );
-  fireEvent.change(screen.getByRole("textbox", { name: "Search" }), { target: { value: movementId } });
+  fireEvent.change(screen.getByRole("searchbox", { name: SEARCH_LABEL }), { target: { value: movementId } });
   return [screen.getByTestId(`ward-patient-search-case-${movementId}`)];
 }
 describe("search operational facts on visible cards", () => {
@@ -168,7 +171,7 @@ it("acceptance in principle does not falsely show a bed hold or current inpatien
   expect(probe).toHaveAttribute("data-stage", "accepted_awaiting_bed");
   expect(probe).toHaveAttribute("data-held", "false");
   const mid = probe.getAttribute("data-mid")!;
-  fireEvent.change(screen.getByRole("textbox", { name: "Search" }), { target: { value: mid } });
+  fireEvent.change(screen.getByRole("searchbox", { name: SEARCH_LABEL }), { target: { value: mid } });
   const card = screen.getByTestId(`ward-patient-search-case-${mid}`);
   expect(card).not.toHaveTextContent("Bed hold active");
   expect(card).toHaveTextContent("Accepted, awaiting bed");

@@ -407,3 +407,46 @@
     min-height: var(--wf-touch, 44px);
   }
 }
+
+/* The day chart drawn as rows, in the side column: one row a day, due and held up side by side. */
+.dayRow[data-weekend] {
+  background: var(--wf-surface-2);
+}
+.dayRow[data-weekend]:hover {
+  background: var(--wf-hover);
+}
+.dayRow[aria-pressed="true"] {
+  background: var(--wf-selected);
+}
+.dayTrack {
+  display: flex;
+  gap: 1px;
+}
+.dayFillDue,
+.dayFillHeld {
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+}
+.dayFillDue {
+  background: var(--wf-data-2);
+}
+.dayFillHeld {
+  background: var(--wf-danger);
+}
+.dayFillDue:first-child,
+.dayFillHeld:first-child {
+  border-start-start-radius: var(--radius-pill);
+  border-end-start-radius: var(--radius-pill);
+}
+.dayFillDue:last-child,
+.dayFillHeld:last-child {
+  border-start-end-radius: var(--radius-pill);
+  border-end-end-radius: var(--radius-pill);
+}
+@media (forced-colors: active) {
+  .dayFillDue,
+  .dayFillHeld {
+    background: CanvasText;
+  }
+}

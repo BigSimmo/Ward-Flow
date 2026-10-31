@@ -57,7 +57,7 @@ it("announces accepted dispatch for the selected scope and restores keyboard foc
   fireEvent.click(screen.getByRole("button", { name: "Dismiss notice" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-  expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
+  expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
 });
 
 it("does not reopen an accepted directive or retain its confirmation after a scenario reset", () => {
@@ -68,7 +68,7 @@ it("does not reopen an accepted directive or retain its confirmation after a sce
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(screen.queryByRole("status", { name: "Broadcast feedback" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Broadcast alert" }));
-  expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toBeDisabled();
+  expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByLabelText(/I confirm this directive is clinically authorised/i)).not.toBeChecked();
 });
 

@@ -1,0 +1,142 @@
+/* Preview fork of the Ward Flow error panel, on the --wf-* tokens. Layout follows the original: a
+   synthetic notice above one centred panel. Buttons keep the kit's own size (Josh, 30 Oct 2026). */
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-4);
+  box-sizing: border-box;
+  padding: var(--wf-s-6) var(--wf-s-4);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+}
+
+.notice {
+  width: 100%;
+  max-width: 42rem;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  text-align: center;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.panel {
+  width: 100%;
+  max-width: 42rem;
+  box-sizing: border-box;
+  padding: var(--wf-s-6);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+  text-align: center;
+}
+
+/* The kit's state mark (EmptyState's ringed circle), with the warning in the danger ink. */
+.mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  color: var(--wf-danger);
+}
+
+.title {
+  margin: var(--wf-s-4) 0 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
+  /* No orphan word when the title wraps on a phone. */
+  text-wrap: balance;
+}
+
+.title:focus {
+  /* The heading takes focus on arrival so a screen reader starts here; it is not a control, so it
+     draws no ring. */
+  outline: none;
+}
+
+.description {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.message {
+  margin: var(--wf-s-4) 0 0;
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  text-align: left;
+  white-space: pre-wrap;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.fixed {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.digest {
+  margin: var(--wf-s-2) 0 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.stack {
+  margin-top: var(--wf-s-3);
+  text-align: left;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.stack summary {
+  cursor: pointer;
+}
+
+.stack pre {
+  max-height: 16rem;
+  overflow: auto;
+  margin: var(--wf-s-2) 0 0;
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  white-space: pre-wrap;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+/* Side by side and centred on a desktop; stacked full width on a phone. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-6);
+}
+
+.actions > * {
+  justify-content: center;
+}
+
+@media (max-width: 48rem) {
+  .wrap {
+    padding: var(--wf-s-4) var(--wf-s-3);
+  }
+  .panel {
+    padding: var(--wf-s-4);
+  }
+  .actions {
+    flex-direction: column;
+  }
+}

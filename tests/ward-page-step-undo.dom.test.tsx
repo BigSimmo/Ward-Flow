@@ -34,10 +34,11 @@ describe("Handover sign-off with Undo", () => {
       </ToastProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
-    expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
+    // Approved redesign (31 Oct 2026): on the Patients tab the sign-off bar, not the hero, carries Sign off.
+    expect(screen.getByTestId("ward-handover-sign-bar")).toHaveTextContent("Signed 10:42");
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-    expect(screen.getByTestId("ward-handover-hero-sign-off")).not.toHaveTextContent("Signed 10:42");
+    expect(screen.getByTestId("ward-handover-sign-bar")).not.toHaveTextContent("Signed 10:42");
     expect(screen.getByText("Sign-off undone.")).toBeInTheDocument();
   });
 });

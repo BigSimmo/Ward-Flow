@@ -27,14 +27,15 @@ describe("chronology phone patient picker", () => {
     if (!patient) throw new Error("no patient with chronology records");
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <PatientChronologyScreen />
+        <PatientChronologyScreen initialPatientId={patient.id} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("button", { name: "Choose a patient" }));
+    // The phone header's name opens the picker sheet once a patient is open.
+    fireEvent.click(screen.getByTestId("ward-chronology-phone-who"));
     const list = screen.getByRole("list", { name: "Patients" });
     const fullName = `${patient.familyName}, ${patient.givenName}`;
     const shown = fullName;
-    const choice = within(list).getByRole("button", { name: shown });
+    const choice = within(list).getByRole("button", { name: `${shown}, chosen` });
     expect(choice).toHaveTextContent(shown);
     expect(choice).toHaveTextContent(patient.familyName);
     fireEvent.click(choice);

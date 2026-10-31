@@ -11,8 +11,6 @@ import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
-import { HomeEdAccessLine } from "@/components/ward-management/forecast/forecast-lazy";
-
 import styles from "./home.module.css";
 
 /**
@@ -33,6 +31,11 @@ type HomeEdPressureProps = {
 };
 
 /**
+ * Home and Activity design (approved by Josh 31 Oct 2026): the form line names its noun ("1 form due",
+ * not "1 due soon") so it cannot be read as the hero's Past target waits (short enough for one line;
+ * the spoken name keeps the window), and an ED with
+ * nobody waiting shows only "No wait".
+ *
  * Home's ED strip (direction A, owner 10 Oct 2026). One compact tile per emergency department,
  * longest wait first: code, service, how many wait, the longest wait with its glyph, and the
  * recorded legal deadlines. The heading is for screen readers only; the hero already says what the
@@ -78,31 +81,32 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
             .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
+          const forms = (count: number) => `${count} form${count === 1 ? "" : "s"}`;
 
           const deadline: { tone: WfTone; text: string; spoken: string } =
             row.breaching > 0
-              ? { tone: "danger", text: `${row.breaching} overdue`, spoken: `${row.breaching} overdue` }
+              ? { tone: "danger", text: `${forms(row.breaching)} overdue`, spoken: `${forms(row.breaching)} overdue` }
               : critical > 0
                 ? {
                     tone: "danger",
-                    text: `${critical} due in ${urgentWindow}`,
-                    spoken: `${critical} due within ${urgentWindow} (your default)`,
+                    text: `${forms(critical)} due`,
+                    spoken: `${forms(critical)} due within ${urgentWindow} (your default)`,
                   }
                 : due > 0
                   ? {
                       tone: "warning",
-                      text: `${due} due soon`,
-                      spoken: `${due} due within ${soonWindow} (your default)`,
+                      text: `${forms(due)} due`,
+                      spoken: `${forms(due)} due within ${soonWindow} (your default)`,
                     }
                   : deadlines.length > 0
                     ? {
                         tone: "success",
-                        text: `${deadlines.length} on track`,
-                        spoken: `${deadlines.length} deadline${deadlines.length === 1 ? "" : "s"} on track`,
+                        text: `${forms(deadlines.length)} on track`,
+                        spoken: `${forms(deadlines.length)} on track`,
                       }
                     : row.waiting > 0
-                      ? { tone: "neutral", text: "No deadlines", spoken: "No deadline recorded" }
-                      : { tone: "neutral", text: "No deadlines", spoken: "No patients waiting" };
+                      ? { tone: "neutral", text: "No forms due", spoken: "No form due time recorded" }
+                      : { tone: "neutral", text: "", spoken: "" };
 
           const longestTone: WfTone | null = edLongestWaitTone(
             row.waiting,
@@ -112,11 +116,18 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
 
           const waitText = row.waiting > 0 ? durMinutes(row.longestWaitMinutes) : "No wait";
           const shownService = serviceAcronym && !isPhone ? ` ${serviceAcronym}` : "";
-          const visibleSummary = `${row.ed.siteCode}${shownService}, ${row.waiting} waiting, ${waitText}, ${deadline.text}`;
+          const visibleSummary = [
+            `${row.ed.siteCode}${shownService}`,
+            `${row.waiting} waiting`,
+            waitText,
+            deadline.text,
+          ]
+            .filter(Boolean)
+            .join(", ");
           const spoken = [visibleSummary, `${edShortName(row.ed)} (${serviceAcronym || rawService || "Department"})`];
           if (row.waiting === 0) spoken.push("no patients waiting");
           else spoken.push(`longest ${splitDuration(row.longestWaitMinutes)}`);
-          spoken.push(deadline.spoken);
+          if (deadline.spoken) spoken.push(deadline.spoken);
 
           return (
             <li key={row.ed.id} className={styles.edCell}>
@@ -160,17 +171,18 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                     <span className={styles.edWord}>No wait</span>
                   )}
                 </span>{" "}
-                <span className={`${styles.edLine} ${styles.edDeadline}`} aria-hidden="true">
-                  <StatusGlyph tone={deadline.tone} size={9} />
-                  <span className={styles.edWord}>{deadline.text}</span>
-                </span>
+                {deadline.text ? (
+                  <span className={`${styles.edLine} ${styles.edDeadline}`} aria-hidden="true">
+                    <StatusGlyph tone={deadline.tone} size={9} />
+                    <span className={styles.edWord}>{deadline.text}</span>
+                  </span>
+                ) : null}
               </button>
             </li>
           );
         })}
       </ul>
-      {/* Forecasting build (Josh, 23 Oct 2026, screen 1): who will pass the access target first. */}
-      <HomeEdAccessLine now={now} />
+      {/* The ED access forecast heads Planned now (Home and Activity design, 31 Oct 2026). */}
       {service ? (
         <p className={styles.cardNote} data-testid="ward-pressure-strip-service-foot">
           {`${hiddenByService} departments outside ${service} are not shown.`}

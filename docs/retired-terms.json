@@ -27,6 +27,15 @@
       "since": "2026-10-22",
       "why": "D-78 merges the ward and coordinator decline lists into one list in the coordinator's wording. The ward values No bed, Sex mix and Out of catchment are retired and convert on load.",
       "instead": "Say No suitable bed (no_suitable_bed), Sex designation unavailable (sex_designation_unavailable) or Belongs to another service (belongs_to_another_service)."
+    },
+    {
+      "id": "glare-theme-name",
+      "pattern": "\\bGlare\\b",
+      "flags": "",
+      "allowWhen": "\\b(retired|renamed|replaced|formerly|historical|Bright light)\\b",
+      "since": "2026-10-31",
+      "why": "Josh (31 Oct 2026, Settings by login): the bright-room theme is shown as Bright light. Glare is retired as a visible word; the stored setting keeps its glare id.",
+      "instead": "Say Bright light. Code ids such as glare, applyGlare and data-mode=\"glare\" stay as they are."
     }
   ],
   "historicalFiles": [

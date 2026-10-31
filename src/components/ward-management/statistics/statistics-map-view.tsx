@@ -67,6 +67,7 @@ import {
   withheldBar,
   type StatisticsCount,
 } from "./statistics-small-numbers";
+import { useCanOpenHref } from "../shell/ward-access";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 
 export type MapLens = "beds" | "ed" | "dis" | "stay";
@@ -510,6 +511,8 @@ function MapPresentation({
   aggregate?: ExecutiveReportingFoundation;
 }) {
   const [lens, setLens] = useState<MapLens>("beds");
+  // Every row links only where this desk may open the page (access audit, 31 Oct 2026).
+  const canOpen = useCanOpenHref();
   const [selected, setSelected] = useState<string | null>(null);
   const [highlighted, setHighlighted] = useState<string | null>(null);
 
@@ -651,12 +654,13 @@ function MapPresentation({
               <ol className={styles.rank}>
                 {ranked.map((site, index) => {
                   const ward = lens === "ed" ? undefined : leadWard(site, lens);
-                  const href =
+                  const targetHref =
                     lens === "ed" && site.ed && site.ed.openable !== false
                       ? edStatisticsHref(site.ed.id)
                       : ward
                         ? wardStatisticsHref(ward.unit.id)
                         : null;
+                  const href = targetHref !== null && canOpen(targetHref) ? targetHref : null;
                   const target = lens === "ed" ? `${site.name} ED` : ward ? ward.unit.name : site.name;
                   const more = lens === "ed" ? 0 : site.wards.length - 1;
                   const status = lensStatus(site, lens);
@@ -722,6 +726,8 @@ function MapPresentation({
 
 /** The chosen site: its wards and ED, each a link to its statistics page. */
 function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: MapLens; onClose: () => void }) {
+  const canOpen = useCanOpenHref();
+  const edLinked = site.ed !== undefined && site.ed.openable !== false && canOpen(edStatisticsHref(site.ed.id));
   const edContent = (
     <>
       <span className={styles.siteName}>{statisticsCountText(site.edWaiting)} open ED journeys</span>
@@ -733,7 +739,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
         ) : null}
         {site.edLongest === null ? "none" : `${durMinutes(Math.round(site.edLongest))} longest`}
       </span>
-      {site.ed?.openable === false ? null : <ChevronRight size={14} aria-hidden="true" />}
+      {edLinked ? <ChevronRight size={14} aria-hidden="true" /> : null}
     </>
   );
   return (
@@ -751,22 +757,34 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
         {site.wards.length > 0 ? (
           <div className={styles.siteGroup}>
             <span className={styles.siteLabel}>Wards</span>
-            {site.wards.map((ward) => (
-              <Link key={ward.unit.id} href={wardStatisticsHref(ward.unit.id)} className={styles.siteRow}>
-                <span className={styles.siteName}>{ward.unit.name}</span>
-                <span className={styles.siteFig}>
-                  {ward.pct >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
-                  {ward.pct}% · {ward.ready} ready
-                </span>
-                <ChevronRight size={14} aria-hidden="true" />
-              </Link>
-            ))}
+            {site.wards.map((ward) => {
+              const href = wardStatisticsHref(ward.unit.id);
+              const figures = (
+                <>
+                  <span className={styles.siteName}>{ward.unit.name}</span>
+                  <span className={styles.siteFig}>
+                    {ward.pct >= BED_ALERT_THRESHOLD_PERCENT ? <StatusGlyph tone="warning" size={9} /> : null}
+                    {ward.pct}% · {ward.ready} ready
+                  </span>
+                </>
+              );
+              return canOpen(href) ? (
+                <Link key={ward.unit.id} href={href} className={styles.siteRow}>
+                  {figures}
+                  <ChevronRight size={14} aria-hidden="true" />
+                </Link>
+              ) : (
+                <div key={ward.unit.id} className={styles.siteRow}>
+                  {figures}
+                </div>
+              );
+            })}
           </div>
         ) : null}
         {site.ed ? (
           <div className={styles.siteGroup}>
             <span className={styles.siteLabel}>Emergency department</span>
-            {site.ed.openable === false ? (
+            {!edLinked ? (
               <div className={styles.siteRow}>{edContent}</div>
             ) : (
               <Link href={edStatisticsHref(site.ed.id)} className={styles.siteRow}>
@@ -775,7 +793,7 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
             )}
           </div>
         ) : null}
-        {site.wards.length > 0 ? (
+        {site.wards.length > 0 && canOpen(serviceStatisticsHref(site.service)) ? (
           <Link href={serviceStatisticsHref(site.service)} className={styles.siteService}>
             {site.service} statistics
             <ChevronRight size={14} aria-hidden="true" />
@@ -802,6 +820,7 @@ function BelowMap({
   dayZero: Date;
   aggregate?: ExecutiveReportingFoundation;
 }) {
+  const canOpen = useCanOpenHref();
   if (lens === "ed") {
     if (aggregate)
       return (
@@ -817,7 +836,7 @@ function BelowMap({
             <ul>
               {aggregate.emergencyDepartments.map((ed) => (
                 <li key={ed.id}>
-                  {aggregate.openableEmergencyDepartmentIds.includes(ed.id) ? (
+                  {aggregate.openableEmergencyDepartmentIds.includes(ed.id) && canOpen(edStatisticsHref(ed.id)) ? (
                     <Link href={edStatisticsHref(ed.id)}>
                       {ed.name}: {statisticsCountText(ed.onTheList)}
                     </Link>
@@ -838,7 +857,7 @@ function BelowMap({
       .map((site) => ({
         id: site.ed!.id,
         name: site.name,
-        href: edStatisticsHref(site.ed!.id),
+        href: canOpen(edStatisticsHref(site.ed!.id)) ? edStatisticsHref(site.ed!.id) : undefined,
         entries: site.edEntries,
       }));
     return (
@@ -956,7 +975,11 @@ function BelowMap({
             axis
             rows={wards.map(({ ward, site }) => ({
               id: ward.unit.id,
-              label: <Link href={wardStatisticsHref(ward.unit.id)}>{ward.unit.name}</Link>,
+              label: canOpen(wardStatisticsHref(ward.unit.id)) ? (
+                <Link href={wardStatisticsHref(ward.unit.id)}>{ward.unit.name}</Link>
+              ) : (
+                ward.unit.name
+              ),
               labelText: ward.unit.name,
               sub: site.name,
               value: ward.meanStay ?? 0,
@@ -998,7 +1021,11 @@ function BelowMap({
             .sort((a, b) => b.ready - a.ready || a.service.localeCompare(b.service))
             .map((row) => ({
               id: row.service,
-              label: <Link href={serviceStatisticsHref(row.service)}>{row.service}</Link>,
+              label: canOpen(serviceStatisticsHref(row.service)) ? (
+                <Link href={serviceStatisticsHref(row.service)}>{row.service}</Link>
+              ) : (
+                row.service
+              ),
               labelText: row.service,
               sub: `${row.pct}% occupied · ${row.wards} ${row.wards === 1 ? "ward" : "wards"}`,
               value: row.ready,

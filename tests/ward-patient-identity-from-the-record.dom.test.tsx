@@ -18,6 +18,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 /**
  * **A SCREEN NAMES A MOVEMENT'S PATIENT ONLY FROM THE RECORD.**
@@ -99,6 +100,7 @@ describe("a movement's patient comes from the record, never from a typed-in tabl
         <AlertsScreen />
       </WardFlowProvider>,
     );
+    openAlertKindGroups(container);
     const rows = [...container.querySelectorAll("li")].filter((li) => li.hasAttribute("data-movement-id"));
     expect(rows.length).toBeGreaterThan(3);
     for (const row of rows) {

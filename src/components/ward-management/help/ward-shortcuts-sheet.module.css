@@ -1,0 +1,112 @@
+/*
+ * The keyboard shortcuts sheet (redesign, #1118): three columns, each key drawn beside what it does.
+ * Lazy, like the sheet. Tokens only (`--wf-*`), no literal colour.
+ */
+/* Wide enough for three columns side by side (unlayered, so it outranks the sheet's own width). */
+.sheet {
+  max-width: min(46rem, calc(100vw - 1rem));
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-4, 16px);
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: 1.45;
+}
+
+.column {
+  display: grid;
+  align-content: start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.heading {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* No card round each column: the heading and row dividers carry it. The key column is as wide as
+   the column's widest key, so each key sits close to what it does (round 2, #1118). */
+.list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--wf-s-3);
+  margin: 0;
+}
+
+.row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: var(--wf-s-2) 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.row dt,
+.row dd {
+  margin: 0;
+}
+
+.row dd {
+  color: var(--wf-ink-2);
+}
+
+.key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 22px;
+  padding: 0 6px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-xs, 6px);
+  background: var(--wf-surface);
+  box-shadow: inset 0 -1px 0 var(--wf-line-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  white-space: nowrap;
+}
+
+.more {
+  min-height: var(--wf-target, 28px);
+  padding: 0 0.875rem;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl, 8px);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more:hover {
+  background: var(--wf-hover);
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The sheet is narrow beside a phone-width window: the columns stack. */
+@media (max-width: 48rem) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .more {
+    min-height: 44px;
+  }
+}

@@ -96,7 +96,7 @@ describe("officer screen KPI captions match their populations", () => {
     expect(heroCount("To accept")).toBe(0);
   });
 
-  it("names the screen 'Transport' in the h1 (P195) and keeps the on-board count in its chip", () => {
+  it("names the screen 'Transport' in the h1 (P195) and keeps the collected count in its chip", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
@@ -106,8 +106,14 @@ describe("officer screen KPI captions match their populations", () => {
     // P195 (audit 27 Oct 2026): the h1 is the screen name, not a count.
     const title = screen.getByRole("heading", { level: 1 });
     expect(title.textContent).toBe("Transport");
-    // The on-board figure (8: collected-not-arrived, WF-026/WF-031) still shows in the "On board" chip.
-    expect(heroCount("On board")).toBe(8);
+    // Transport redesign (31 Oct 2026): the count sits beside the h1, never inside it.
+    expect(screen.getByText(/^\d+ jobs? open$/)).toBeInTheDocument();
+    // The collected figure (8: collected-not-arrived, WF-026/WF-031) still shows in its chip, which
+    // now uses the stage column's own word, "Collected" (it read "On board").
+    const chips = screen.getByRole("group", { name: "Highlight jobs" });
+    const collected = within(chips).getByText("Collected").closest("button");
+    expect(Number(collected?.textContent?.match(/^\d+/)?.[0])).toBe(8);
+    expect(within(chips).queryByText("On board")).toBeNull();
   });
 });
 

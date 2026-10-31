@@ -1,0 +1,143 @@
+/* Preview: the redesigned idle lock. One opaque navy cover over the whole frame (nothing of the
+   desk shows through), the name and synthetic-data chip at the top, and the lock in the centre. */
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 100);
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: var(--wf-s-6) var(--wf-s-4);
+  box-sizing: border-box;
+  background:
+    radial-gradient(900px 520px at 50% -10%, color-mix(in srgb, var(--wf-hero-info) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+  font: 400 var(--wf-fs-14) / 1.5 var(--wf-font);
+  animation: fadeIn 300ms var(--wf-ease-out, ease-out) both;
+}
+
+.screen :focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-3);
+}
+
+.wordmark {
+  font: 600 var(--wf-fs-15) / 1.2 var(--wf-font);
+  letter-spacing: -0.01em;
+  color: var(--wf-hero-ink);
+}
+
+.syn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
+  border-radius: var(--wf-r-pill);
+  font: 600 var(--wf-fs-12) / 18px var(--wf-font);
+  color: var(--wf-hero-ink-2);
+}
+
+.syn i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--wf-hero-warning);
+}
+
+.centre {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--wf-s-8) 0;
+  text-align: center;
+}
+
+.lockIcon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--wf-s-2);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.lockIcon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.title {
+  margin: 0;
+  font: 600 var(--wf-fs-28) / 1.2 var(--wf-font);
+  letter-spacing: -0.02em;
+  color: var(--wf-hero-ink);
+  text-wrap: balance;
+}
+
+.text {
+  max-width: 440px;
+  margin: 0;
+  font-size: var(--wf-fs-15);
+  line-height: 1.55;
+  color: var(--wf-hero-ink-2);
+  text-wrap: pretty;
+}
+
+.btn {
+  margin-top: var(--wf-s-3);
+  padding: 0 var(--wf-s-4);
+}
+
+/* Phone: a 40px button with an invisible cover for a larger tap area, never 48px tall. */
+@media (max-width: 48rem) {
+  .screen {
+    padding: var(--wf-s-4);
+  }
+
+  .title {
+    font-size: var(--wf-fs-20);
+  }
+
+  .centre .btn {
+    min-height: 40px;
+    height: 40px;
+  }
+
+  .centre .btn::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+}

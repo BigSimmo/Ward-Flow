@@ -120,13 +120,11 @@ describe("SV-1 seclusion, restraint and incident forms (shared mode)", () => {
         <SeclusionScreen />
       </WardFlowProvider>,
     );
-    // Open on a ward with a patient to choose.
-    const picker = screen.queryByTestId("seclusion-ward") as HTMLSelectElement | null;
-    if (picker)
-      for (const option of Array.from(picker.options)) {
-        fireEvent.change(picker, { target: { value: option.value } });
-        if (within(screen.getByTestId("seclusion-start-patient")).getAllByRole("option").length > 1) break;
-      }
+    // Open on a ward with a patient to choose, from the table of secure wards.
+    for (const row of screen.queryAllByTestId(/^seclusion-ward-row-/u)) {
+      fireEvent.click(row);
+      if (within(screen.getByTestId("seclusion-start-patient")).getAllByRole("option").length > 1) break;
+    }
     return dispatch;
   }
 
@@ -364,6 +362,8 @@ describe("SV-2 community transport dialogs (shared mode)", () => {
     fireEvent.change(within(dialog).getByTestId(`ward-community-transport-estimated-time-${id}`), {
       target: { value: "14:30" },
     });
+    // The redesigned form starts with neither Today nor Tomorrow chosen (Josh, 31 Oct 2026).
+    fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${id}`));
     await press(within(dialog).getByTestId(`ward-community-book-transport-confirm-${id}`));
     expect(dispatch).toHaveBeenCalledTimes(1);
     if (mode === "accepted") {

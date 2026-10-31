@@ -52,15 +52,19 @@ describe("Ward Flow Dialog & Modal Accessibility Semantics", () => {
         trigger.focus();
         fireEvent.click(trigger);
 
-        const dialog = screen.getByRole("dialog", { name: /Record a blocker for/i });
+        // Redesign (31 Oct 2026): the kit Dialog, titled like the tile's button, with the person and
+        // the tile's label as its description.
+        const dialog = screen.getByRole("dialog", { name: "Record a blocker" });
         expect(dialog).toBeInTheDocument();
         expect(dialog).toHaveAttribute("aria-modal", "true");
-        expect(dialog).toHaveAttribute("aria-labelledby", "blocker-dialog-title");
-        expect(dialog).toHaveAttribute("aria-describedby", "blocker-dialog-description");
+        expect(document.getElementById(dialog.getAttribute("aria-labelledby") ?? "")).toHaveTextContent(
+          "Record a blocker",
+        );
+        expect(document.getElementById(dialog.getAttribute("aria-describedby") ?? "")).not.toBeNull();
 
         // Close on Escape
         fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
-        expect(screen.queryByRole("dialog", { name: /Record a blocker for/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("dialog", { name: "Record a blocker" })).not.toBeInTheDocument();
 
         // Focus restoration
         await waitFor(() => {
