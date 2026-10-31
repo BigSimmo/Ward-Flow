@@ -434,7 +434,7 @@ modules, plus five logic-only `.ts` files and one CSS-only stub).
   The owner's compact-style refinement uses floating curved panels, a full-height desktop Tools
   overview with modular columns, a navy Figures feature, pill navigation and restrained surface
   depth. Tasks keeps its fixed controls and independently scrolling cards; Activity uses compact
-  timeline cards. Both themes retain the same hierarchy, and interactive controls remain 48px tall.
+  timeline cards. Both themes retain the same hierarchy, and interactive controls keep a 48px tap area (since 31 October 2026 phone buttons are drawn at 40px with an invisible cover; HOW-WE-WORK section 6).
   The further compact pass reduces header, summary and swatch spacing. Activity categories scroll
   horizontally on narrow screens. Tools → Raise a referral now opens the matching Referrals drawer;
   the New referral source menu remains available. Patient / Referral / Clinical / Placement panels
