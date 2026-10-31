@@ -31,9 +31,13 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * the panel titled "Registers", beside an "Escalations" tab, and its sentences are not in the
  * document until this tab is selected — "Escalations" renders first. Every assertion below is
  * unchanged in what it checks; this only opens the tab that now gates it.
+ *
+ * Round 8 (31 Oct 2026): the panel is "Today's registers", four icon tabs (Escalated, Attention,
+ * Resolved, System). The same Resolved tab still gates the same sentences.
  */
 function openResolvedTab() {
-  fireEvent.click(screen.getByRole("tab", { name: /^Resolved/u }));
+  // Round 8 (31 Oct 2026): the registers are 2x2 icon tabs whose name reads count first ("2 Resolved").
+  fireEvent.click(screen.getByRole("tab", { name: /^\d+\s*Resolved$/u }));
 }
 
 /** The fixture's own answer, so the expectation cannot drift from the world the screen renders. */

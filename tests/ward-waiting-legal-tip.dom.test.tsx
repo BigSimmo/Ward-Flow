@@ -10,7 +10,8 @@ import { formTitleForCode } from "@/lib/form-register";
 /**
  * P197 (Josh, 27 Oct 2026, option A): the Waiting list's Legal chip keeps "Form <code>" and explains
  * it in a tip that opens on keyboard focus and on a tap: "Form <code> (<register title>)", titles
- * from the form register only, with the time left or overdue kept on the end.
+ * from the form register only. A recorded time follows only as typed ("Ends 15:42 as typed", with
+ * "· within 1h" or "· passed"), never a countdown, "left" or "overdue" (D-93).
  */
 afterEach(cleanup);
 
@@ -37,8 +38,11 @@ describe("P197 Waiting Legal column tip", () => {
     act(() => chip!.focus());
     const tip = screen.getByTestId("tooltip");
     expect(tip.textContent).toMatch(
-      new RegExp(`^Form ${code}${title ? ` \\(${title.replace(/[()]/g, "\\$&")}\\)` : ""}(, .+ (left|overdue))?$`),
+      new RegExp(
+        `^Form ${code}${title ? ` \\(${title.replace(/[()]/g, "\\$&")}\\)` : ""}(, End(s|ed) .+ as typed( · (within \\S+|passed))?)?$`,
+      ),
     );
+    expect(tip.textContent).not.toMatch(/\b(left|overdue)\b/);
   });
 
   it("a tap on the chip shows the tip and does not open the row", () => {

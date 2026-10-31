@@ -321,6 +321,12 @@ export function DelaysBoard({
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
     setMoreGroups((current) => ({ ...current, [row.cause]: true }));
+    // Longest wait: unfold the person's wait band too, so their row is on screen beside the panel.
+    const band = WAIT_BANDS.find((candidate) => candidate.test(row));
+    if (band !== undefined) {
+      setBandOpen((current) => ({ ...current, [band.id]: true }));
+      setBandMore((current) => ({ ...current, [band.id]: true }));
+    }
     if (sheet) return;
     window.requestAnimationFrame(() => {
       const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);

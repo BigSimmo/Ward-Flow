@@ -325,9 +325,21 @@ export function PersonPanel({
               <span>
                 <strong>Escalated {ago(now - escalation.at)}</strong>
                 {` (${formatInstantWithDay(escalation.at, now)}) to ${escalation.contact}`}
-                {triedUnits.length === 0
-                  ? " · No units recorded"
-                  : ` · tried ${triedUnits.length} ${triedUnits.length === 1 ? "ward" : "wards"}`}
+                {/* The three escalation facts stay on the note: when, who to, and which wards were
+                    tried, by name, since a ward tried but never asked is named nowhere else. */}
+                {triedUnits.length === 0 ? (
+                  <span data-testid="delays-tried-none">{" · No units recorded"}</span>
+                ) : (
+                  <>
+                    {" · tried "}
+                    {triedUnits.map((unit, index) => (
+                      <span key={unit.id} data-testid="delays-tried-unit">
+                        {index > 0 ? ", " : ""}
+                        {unit.name}
+                      </span>
+                    ))}
+                  </>
+                )}
               </span>
             </p>
           ) : null}

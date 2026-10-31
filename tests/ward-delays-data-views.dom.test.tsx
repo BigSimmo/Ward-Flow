@@ -20,10 +20,11 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 /**
- * The Delays board's data views (approved Delays page mockup, October 2026): the waiting table with
- * its row timeline, the search box, the Longest wait order, and the three graphs under the table.
- * Each graph narrows the same table rather than opening a view of its own, so every case below
- * checks the TABLE after pressing something in a graph.
+ * The Delays board's data views (approved Delays page mockup, October 2026; Waiting redesign round 8,
+ * 31 Oct 2026): the waiting table with its row timeline, the search box, the Longest wait order in
+ * wait bands, and the three graphs under the table (Next 4 hours, Where and whose move, Wait
+ * spread). Each graph narrows or opens the same table rather than a view of its own, so every case
+ * below checks the TABLE after pressing something in a graph.
  *
  * This replaces the PR 48 Focus table / Action workspace layouts, their pagination and the
  * separate wait timeline table, which the approved mockup removed.
@@ -56,6 +57,24 @@ function graphs(): HTMLElement {
   return screen.getByRole("region", { name: "Delay graphs" });
 }
 
+/** The graphs open on Next 4 hours; a user picks another graph by its tab. */
+function openGraph(name: "Next 4 hours" | "Where and whose move" | "Wait spread"): void {
+  fireEvent.click(within(graphs()).getByRole("tab", { name }));
+}
+
+/**
+ * The redesign opens on Longest wait, grouped in wait bands, with Under 8 hours folded. A user opens
+ * each folded band, then every blocker group and "Show N more", so every live row is listed.
+ */
+function showEveryRow(): void {
+  const list = screen.queryByRole("region", { name: "Waiting" });
+  if (list === null) return;
+  for (const band of within(list).queryAllByTestId(/^delays-band-/u)) {
+    if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+  }
+  showEveryDelayRow();
+}
+
 describe("the Delays board's data views", () => {
   it("has the populations the cases below need, or they prove nothing", () => {
     expect(OPEN.length).toBeGreaterThan(20);
@@ -74,12 +93,14 @@ describe("the Delays board's data views", () => {
     renderDelays();
     const withDue = ROWS.filter((row) => row.dueIn !== undefined && row.dueIn >= 0)[0];
     expect(withDue, "no open person carries a future legal time").toBeDefined();
-    showEveryDelayRow();
+    showEveryRow();
     fireEvent.click(screen.getByTestId(`delays-select-${withDue.movement.id}`));
     const timeline = screen.getByTestId(`delays-row-timeline-${withDue.movement.id}`);
     expect(timeline).toHaveTextContent(/Arrived, /u);
     expect(timeline).toHaveTextContent(/Now/u);
-    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} due`, "u"));
+    // The recorded legal time only as typed (D-93): never a countdown, "left" or "overdue".
+    expect(timeline).toHaveTextContent(new RegExp(`Form ${withDue.movement.legalForm!.code} ends as typed`, "u"));
+    expect(timeline).not.toHaveTextContent(/\b(left|overdue)\b/u);
     expect(screen.getByTestId(`delays-select-${withDue.movement.id}`)).toHaveAttribute("aria-expanded", "true");
 
     // Choosing the same row again closes it; only one row's timeline is ever open.
@@ -89,12 +110,12 @@ describe("the Delays board's data views", () => {
 
   it("finds a person by name, and the count follows", () => {
     renderDelays();
-    showEveryDelayRow();
+    showEveryRow();
     const first = within(waiting()).getAllByTestId(/^delays-select-/u)[0];
     const name = first.querySelector("b")?.textContent ?? "";
     expect(name, "the first row shows no name").not.toBe("");
     fireEvent.change(screen.getByRole("searchbox", { name: "Find a person or ED" }), { target: { value: name } });
-    showEveryDelayRow();
+    showEveryRow();
     expect(listed().length, "the search matched more than that one person").toBeGreaterThanOrEqual(1);
     for (const button of within(waiting()).getAllByTestId(/^delays-select-/u)) {
       expect(button).toHaveTextContent(name);
@@ -119,6 +140,8 @@ describe("the Delays board's data views", () => {
   it("Longest wait lists everyone longest first and marks, but does not move, a form time due soon", () => {
     renderDelays();
     fireEvent.click(screen.getByRole("button", { name: "Longest wait" }));
+    // Longest wait groups people in wait bands (over 24h, 8 to 24h, under 8h folded); open them all.
+    showEveryRow();
     const ids = listed();
     expect(ids).toHaveLength(OPEN.length);
     const byId = new Map<string, (typeof ROWS)[number]>(ROWS.map((row) => [row.movement.id, row]));
@@ -131,9 +154,10 @@ describe("the Delays board's data views", () => {
 
   it("the spread graph's lane label filters the table to that owner", () => {
     renderDelays();
+    openGraph("Wait spread");
     const lane = within(graphs()).getByRole("button", { name: /^Wards\b/u });
     fireEvent.click(lane);
-    showEveryDelayRow();
+    showEveryRow();
     const expected = ROWS.filter((row) => ownerOf(row.cause) === "wards").map((row) => row.movement.id);
     expect(new Set(listed())).toEqual(new Set(expected));
     expect(lane).toHaveAttribute("aria-pressed", "true");
@@ -145,6 +169,7 @@ describe("the Delays board's data views", () => {
 
   it("never draws two people's dots on the same spot, however many share a wait", () => {
     // Fourteen people with the same wait: more than the eleven slots the first version searched.
+    // Round 4: a pile stacks at most five dots, then a "+n" pill counts the rest, so nobody is lost.
     const base = OPEN.find((movement) => movement.acceptedUnitId === undefined)!;
     const crowd = Array.from({ length: 14 }, (_, index) => ({
       ...base,
@@ -156,11 +181,17 @@ describe("the Delays board's data views", () => {
         <DelaysScreen movements={crowd} />
       </WardFlowProvider>,
     );
+    openGraph("Wait spread");
     const spots = [...graphs().querySelectorAll<HTMLElement>("button[aria-label*='waited']")].map(
       (dot) => `${dot.style.left}|${dot.style.top}`,
     );
-    expect(spots).toHaveLength(crowd.length);
+    expect(spots.length, "no dots drawn").toBeGreaterThan(0);
     expect(new Set(spots).size, "two dots overlap").toBe(spots.length);
+    const piled = [...graphs().querySelectorAll<HTMLElement>("span")]
+      .map((span) => /^\+(\d+)$/u.exec(span.textContent ?? "")?.[1])
+      .filter((n): n is string => n !== undefined)
+      .reduce((sum, n) => sum + Number(n), 0);
+    expect(spots.length + piled, "a person is neither drawn nor counted in a +n pill").toBe(crowd.length);
   });
 
   it("keeps the table's column headers and cell roles, which the phone card layout relies on", () => {
@@ -193,11 +224,19 @@ describe("the Delays board's data views", () => {
     expect(expected.unavailable.length, "no unavailable ward, so the disclosure is untested").toBeGreaterThan(0);
 
     renderDelays();
+    showEveryRow();
     const panel = inspectDelayPerson(fresh!.id);
-    expect(within(panel).getByText("No ward asked yet")).toBeInTheDocument();
+    // Round 8: the panel opens on Summary; the ward lists sit behind its Wards tab.
+    fireEvent.click(within(panel).getByRole("tab", { name: /^Wards/u }));
+    expect(within(panel).getByText("No ward asked yet")).toBeVisible();
     const section = within(panel).getByTestId(`delays-candidates-${fresh!.id}`);
+    // Round 7: the first five, then Show more. Every offerable ward is reachable, none cut to a count.
+    const more = within(section).queryByRole("button", { name: /^Show \d+ more$/u });
+    if (expected.offerable.length > 5) {
+      expect(more, "more than five candidates, and no Show more").not.toBeNull();
+      fireEvent.click(more!);
+    }
     const offerable = within(section).getByRole("list", { name: "Wards that could take this person" });
-    // Every offerable ward, none cut to a count.
     expect(within(offerable).getAllByRole("listitem")).toHaveLength(expected.offerable.length);
     expect(offerable).toHaveTextContent(expected.offerable[0].name);
 
@@ -217,6 +256,7 @@ describe("the Delays board's data views", () => {
     fireEvent.click(screen.getByRole("button", { name: "By blocker" }));
     const target = ROWS.find((row) => row.cause === "awaiting_transport")!;
     expect(target, "nobody is awaiting transport").toBeDefined();
+    openGraph("Wait spread");
     const dots = within(graphs()).getAllByRole("button", { pressed: false });
     const row = within(waiting()).queryByTestId(`delays-select-${target.movement.id}`);
     expect(row, "transport starts folded, so this proves the dot unfolds it").toBeNull();
@@ -235,17 +275,37 @@ describe("the Delays board's data views", () => {
     );
   });
 
-  it("a half hour on the runway filters to who crosses a line in it, and switches to Longest wait", () => {
+  // Round 4 (Josh, 31 Oct 2026): the runway's half-hour column chart, and its half-hour filter, became
+  // a named "Next 4 hours" list. It names who crosses a line in the window, and a row opens that person.
+  it("Next 4 hours names everyone who crosses a line in it, if nobody moves, and a row opens that person", () => {
     renderDelays();
-    fireEvent.click(within(graphs()).getByRole("tab", { name: "Next 4 hours" }));
-    const bins = runwayBins(ROWS);
-    const busy = bins.find((bin) => bin.ids.size > 0)!;
-    const column = within(graphs()).getAllByRole("button", { name: /cross 8h/u })[busy.index];
-    fireEvent.click(column);
-    expect(column).toHaveAttribute("aria-pressed", "true");
-    expect(new Set(listed())).toEqual(busy.ids);
-    expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
-    expect(within(graphs()).getByText(/match the current filters/u)).toBeInTheDocument();
+    const tab = within(graphs()).getByRole("tab", { name: "Next 4 hours" });
+    expect(tab, "the graphs no longer open on Next 4 hours").toHaveAttribute("aria-selected", "true");
+    const crossings = within(graphs()).getByTestId("delays-next-crossings");
+    expect(within(crossings).getByRole("group", { name: "Next 4 hours, if nobody moves" })).toBeInTheDocument();
+    const more = within(crossings).queryByRole("button", { name: /^Show \d+ more$/u });
+    if (more !== null) fireEvent.click(more);
+
+    const crossingIds = new Set(runwayBins(ROWS).flatMap((bin) => [...bin.ids]));
+    expect(crossingIds.size, "nobody crosses a line in the next 4 hours").toBeGreaterThan(0);
+    const nameOf = (id: string) => resolveSubjectPatient(ROWS.find((row) => row.movement.id === id)!.movement, state);
+    const list = within(crossings).getByRole("list", { name: "Next 4 hours, in time order" });
+    const items = within(list).getAllByRole("button");
+    const named = new Set(items.map((item) => (item.getAttribute("aria-label") ?? "").split(". ")[0]));
+    expect(named).toEqual(new Set([...crossingIds].map((id) => nameOf(id).formalName)));
+    // Legal times in the list are as typed, never a countdown.
+    for (const item of items) expect(item).not.toHaveTextContent(/\b(left|overdue)\b/u);
+
+    const target = [...crossingIds][0];
+    const item = items.find((candidate) =>
+      (candidate.getAttribute("aria-label") ?? "").startsWith(`${nameOf(target).formalName}. `),
+    )!;
+    fireEvent.click(item);
+    expect(screen.getByTestId(`delays-detail-${target}`)).toBeInTheDocument();
+    // Someone who crosses 8h soon has waited under 8h, a band that starts folded. Opened the way a
+    // user would, their row reads open. (The pick does not unfold the band itself: reported.)
+    showEveryRow();
+    expect(screen.getByTestId(`delays-select-${target}`)).toHaveAttribute("aria-expanded", "true");
   });
 
   it("a matrix cell filters to that catchment and owner, and pressing it again clears both", () => {
@@ -255,7 +315,7 @@ describe("the Delays board's data views", () => {
     const count = Number(/: (\d+) waiting/u.exec(cell.getAttribute("aria-label") ?? "")?.[1]);
     expect(count, "nobody is in that cell").toBeGreaterThan(0);
     fireEvent.click(cell);
-    showEveryDelayRow();
+    showEveryRow();
     expect(listed()).toHaveLength(count);
     expect(screen.getByRole("button", { name: "Remove filter East Metro" })).toBeInTheDocument();
     fireEvent.click(within(graphs()).getByRole("button", { name: /^East Metro, Waiting on you: \d+ waiting/u }));
@@ -356,14 +416,14 @@ describe("the Delays board's data views", () => {
   it("a filter that hides the open person closes their panel rather than leave it beside no row", () => {
     renderDelays();
     const open = ROWS.find((row) => !row.locked)!;
-    showEveryDelayRow();
+    showEveryRow();
     fireEvent.click(screen.getByTestId(`delays-select-${open.movement.id}`));
     expect(screen.getByTestId(`delays-detail-${open.movement.id}`)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
     expect(screen.queryByTestId(`delays-detail-${open.movement.id}`)).toBeNull();
     // Clearing the filter must not quietly reopen a panel nobody chose again.
     fireEvent.click(screen.getByRole("button", { name: /^Locked bed \d+$/u }));
-    showEveryDelayRow();
+    showEveryRow();
     expect(screen.getByTestId(`delays-select-${open.movement.id}`)).toBeInTheDocument();
     expect(screen.queryByTestId(`delays-detail-${open.movement.id}`), "the hidden panel came back").toBeNull();
   });
