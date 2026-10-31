@@ -305,8 +305,10 @@
   width: 18%;
 }
 
-.jobsTable th:nth-child(6) {
-  width: 7.5rem;
+/* Redesign (31 Oct 2026): Next is wide enough that "Arrived at ward" is never cut off (7.5rem cut
+   it at the edge). A class on the cell, so a new column never moves the rule onto the wrong one. */
+.jobsTable > thead th.nextCol {
+  width: 9.5rem;
 }
 
 /* With the job panel open the table narrows: the forms column keeps its dots only. */
@@ -366,6 +368,18 @@
   color: var(--wf-ink-2);
 }
 
+/* Redesign: the route cell wraps to a second line rather than ending in "…" when the job panel
+   narrows the table. */
+.jobsTable .routeCell {
+  white-space: normal;
+}
+
+.jobRoute.routeWraps {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .jobMeta {
   display: block;
   overflow: hidden;
@@ -396,6 +410,18 @@
 
 .formsCell [data-complete="true"] {
   color: var(--wf-ink-2);
+}
+
+/* Redesign: the dots, then one line that names its noun ("2 forms missing"), wrapping under them. */
+.formsCell.formsCell {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+.formsMissing {
+  color: var(--wf-warning-ink);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
 }
 
 .etaCell b {
@@ -730,9 +756,11 @@
   font-family: var(--wf-font);
 }
 
+/* Redesign (31 Oct 2026): the four leg steps sit two by two, so "Arrived at ward" is never cut to
+   "Arrived at w…". */
 .actionRow {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--wf-s-2);
 }
 
@@ -747,6 +775,34 @@
 
 .actionDone {
   color: var(--wf-ink-2);
+}
+
+/* Final round (31 Oct 2026): a done leg step reads as done, not as "can't do yet". It cannot be
+   pressed again, so it took the kit's dashed unavailable edge like a step not open yet. A done step
+   has a solid, quiet edge on the plain surface and its check in the success ink; dashed stays only
+   for a step not open yet. */
+.actionDone.actionDone[aria-disabled="true"] {
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.actionDone svg {
+  color: var(--wf-success-ink);
+}
+
+/* Redesign: booking facts the call did not record, on one quiet line under the heading. */
+.notRecorded {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* A status glyph keeps a gap from its words ("CAD to follow"). */
+.glyphLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .nextNote {
@@ -900,26 +956,6 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.packFoot {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
-  background: var(--wf-surface-2);
-  white-space: nowrap;
-}
-
-.packCount {
-  margin-right: auto;
-  color: var(--wf-ink-2);
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-}
-
-.packCount b {
-  color: var(--wf-ink-1);
-  font-family: var(--wf-mono);
 }
 
 .codeChoice {
@@ -1572,6 +1608,10 @@
     border-color: GrayText;
     color: GrayText;
   }
+
+  .actionDone.actionDone[aria-disabled="true"] {
+    border-style: solid;
+  }
 }
 
 /*
@@ -2198,4 +2238,96 @@
 .jobsTable thead th.etaOff,
 .jobsTable .jobRow > td.etaOff {
   display: none;
+}
+
+/* Cancelled transport (redesign, 31 Oct 2026): a plain list in the page's own card, at every width. */
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+}
+
+/*
+ * KIT STAND-IN: the phone hero pills (Josh, 31 Oct 2026: Home's 40px hero pills side by side, in
+ * place of tall full-width hero buttons). Replace with the kit's `phoneRows.heroPills` /
+ * `phoneRows.heroPill` once `@/components/wf` exports them, and delete this block. The doubled class
+ * outranks the kit button's 48px phone tap floor.
+ */
+@media (max-width: 48rem) {
+  .heroToolPills.heroToolPills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+  }
+
+  .heroToolPill.heroToolPill {
+    position: relative;
+    display: inline-flex;
+    flex: 0 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: var(--wf-s-2);
+    width: auto;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+    border-radius: var(--wf-r-ctl);
+    background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+    color: var(--wf-hero-ink);
+    font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+    box-shadow: none;
+  }
+
+  .heroToolPill.heroToolPill svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* A 48px tap area around the 40px pill, without a 48px control. */
+  .heroToolPill.heroToolPill::after {
+    position: absolute;
+    inset: -4px 0;
+    content: "";
+  }
+}
+
+/*
+ * KIT STAND-IN: the one "Show all" row at a list's foot. Replace with the kit's `ShowMoreRow` once
+ * `@/components/wf` exports it (and `officer-show-all-row.tsx` with it). 40px, 44px on a phone.
+ */
+.showAllRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: center;
+  cursor: pointer;
+}
+
+.showAllRow:hover {
+  text-decoration: underline;
+}
+
+.showAllRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+@media (max-width: 48rem) {
+  .showAllRow {
+    height: 44px;
+  }
 }
