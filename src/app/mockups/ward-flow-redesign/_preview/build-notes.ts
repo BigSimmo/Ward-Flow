@@ -428,6 +428,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New (D-83):** names in the duplicate check read surname first.",
     "**Kept:** identity only (D-77), optional gender and Aboriginal status, and Recently added.",
     '**Still open:** the save toasts and the "saved outside this desk\'s view" line still read given name first, as today.',
+    "**Phone (Josh, 31 October):** the form's buttons stack: Add patient full width on top, Reset and Register & start referral side by side under it.",
   ],
   "ward-answer": [
     "**Built from a copy of today's Ward answer view**, so answering, declining, Confirm your beds and the phone layout work as now.",
@@ -443,6 +444,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** "Save to apply" and "Applies now" are plain words, not boxes that look like buttons, and desktop number steppers are compact (touch screens keep 44 px).',
     "**New:** Profile and shift joins Display as one tab, Display and profile. Its Profile card shows only what the app holds: desk profile, role, desk, scope, service in view, shift pattern and this browser's appearance.",
     "**Question for you:** the review notes said not to mock the Profile tab's contents, but the plan asked for one. Keep this real-data card, or drop it?",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "sign-in": [
     "**Built from a copy of today's Sign in screen**, so catchment, shift, role, the appearance switch and the Actions and Limits tabs work as now.",
@@ -460,6 +462,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** the A to Z list uses the page scroll; the letter rail and column heading stick under the bar, and the shorter side column stays pinned.",
     "**Kept:** Names that read alike, Teams by service, Catchment guide, Raise referral and the footer wording.",
     "**Round 2:** the hero drops its Referrals link (the menu opens the board). 'Shared suburbs' and 'Read alike' are the one label each. Phone suburb chips wrap instead of running off the edge.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "community-team": [
     "**Built from a copy of today's community team screen**, so the tabs, Record contact, CTO register, Refer from team, the record drawer and transport booking work as now.",
@@ -476,6 +480,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New (D-83):** the name reads surname first ("Wren, Tobias") in the title and in Copy handover.',
     '**Kept:** the 7-step stepper, the tabs, Copy handover, "Every figure on this screen is invented", and all legal and privacy wording. Cannot move and the right column (Why, Legal now, Who to call) already matched the review, so they stay.',
     "**Phone:** today's phone layout, without the timeline; record tabs keep today's size.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "statistics-compare": [
     "**Built from a copy of today's Compare screen**, so Chart and Data, the measure switches, Pinned wards, CSV and the phone Compare two wards sheet all work as now.",
@@ -500,6 +505,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** service rows read as group headers, and every ready count is marked green.",
     "**Kept:** New snapshot, Print or save PDF, the freeze time, the save-location advice and all safeguard and print wording.",
     "**Still open (D-83):** pack rows still name people first name first. The name is built in the shared `use-take-downtime-pack.ts`, so surname first is a one-line change there when this page is built into the app.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   chronology: [
     "**Built from a copy of today's Patient chronology screen**, so once a patient is chosen the real chronology, filters, side panel, Print and Download CSV work as now.",
@@ -526,6 +532,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Point 10:** the admission roster is the admissions table, built only from the ward's real synthetic admissions. It shows the first 8 rows, then Show more; CSV still exports every matching row.",
     '**Kept:** every figure, the legend, the screen-reader wording and the executive "people not listed" privacy notice.',
     "**Still open:** the Referrals card ends with some empty space, and the phone bed strip is not yet shaded by stay.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "statistics-weekly": [
     "**Built from a copy of today's weekly report**, so the week picker, Print, the period line and every measure work as now, all from the app's own weekly and pilot measures.",
@@ -541,6 +548,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** Compact and Roomy, the 12h/24h/48h zoom, corridors, Next in my queue and the phone layout.",
     "**Not yet redesigned:** the movement drawer that opens from a row is today's drawer (see Movement drawer under Page popups).",
     "**Round 2:** the title drops '8 moving' (the pipeline's Moving stage shows it). Stages say 'longest', as the hero does, and their amber and red use the Over 8h and Past 24h lines, so colours always agree. Tier 1 reads '3 of 18 open' on one line.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   waiting: [
     "**Built from a copy of today's Waiting page** (the board and its wrapper), so filters, the person panel, escalation and the graphs work as they do now.",
@@ -549,6 +558,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** Escalate and Journey sit at the top of the person panel on a laptop, not below the candidate wards; the phone keeps them pinned at the foot. The middle band is '8 to 24 hours', and each band says who is not in an ED ('includes 4 in transit'), so it is not read against the header's Over 8h.",
     "**Review round (30 October):** the header says '0 forms past their time' and 'Form due within 1h'; 'No update for 2h and over' now filters the list like its neighbours; the referrals line reads '7 referrals awaiting a decision, not yet on this list'. The By blocker form group reads 'Form due soon, as typed' (it holds forms due within your urgent window; passed ones are in Form overdue).",
     "**Phone:** the four blocker chips sit two by two, the daily check is one line ('Daily check: 17 to check') whose list shows 8 then Show more, and each row puts the ED before the UMRN.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
   ],
   eds: [
     "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",
@@ -565,11 +575,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** the queue says what its figures are: Fit reads '11 wards', and Needs uses short words (Locked, Transport) instead of icons alone. History names the ward that declined (FSH Older Adult), not its internal code, and drops the queue's 'Longest wait first' note.",
     "**Review round (30 October):** a missing legal status reads 'Legal status not recorded' under the name; the waiting chart is headed 'Since referral' and ends at '72h all tiers'; the median reads 'median time to decide 6h 38m (all 24 decided)'. One word for late decisions: Decision overdue (phone too). The decision pane's show-more controls are one chevron row.",
     "**Phone:** Offered to wards rows are two lines, the patient and waiting time over the ward and its answer.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "new-referral": [
     "**Built from a copy of today's referral slide-out**, in the same panel and steps, so finding a patient, the four steps, the Before you send list, Save draft and the ask-before-closing guard all work as now.",
     '**New:** the Catchment card says what is known in one line, then the four fields, then one row with Catchment not known and Confirm catchment. Today it says "not known" three ways before the first field. The suggested team box shows only once a team has been found.',
     "**Phone:** unchanged; the step list already reads well.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
   ],
   handover: [
     "**Built from a copy of today's Handover page**, so the shift switcher, the meeting-order groups, highlights, Copy summary, the downtime pack, Present and Print all work as now.",
@@ -578,6 +591,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** Due by shows its first 4 rows, with the rest behind Show more.",
     "**Phone:** unchanged; it already keeps Sign off at the foot.",
     "**Round 2:** one Sign off at a time: the bar shows only when the side panel's Sign off is off screen, titled '15:00 handover'. Open checks are neutral chips; Show more reads 'Show 6 more'. The wait reason reads 'Opens after the previous handover'.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   ward: [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet, so a diff against today's files shows the change. Names are surname first, the Form 4A time shows as typed, and the phone round list shows 8 beds then Show more.",
@@ -586,6 +601,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**To change in the real files once approved (not drawn here):** the heading states the ward's position (\"1 bed ready, 16 occupied\") with the facts line moved into the eyebrow; Ward flow's busiest-list default set where the list choice lives.",
     '**Found while building:** bed tiles and Notices write names first name first ("Gareth Ferrowmoor"). D-83 says surname first everywhere, so this needs a fix in the real tile.',
     "**Round 2:** a typed form time that is neither within its first warning nor passed leaves Act now and shows on that person's Admissions row, still as typed ('Form 1 ends Mon 09:00 as typed'). Times within the warning or passed stay in Act now with their words, and the header count counts the same rows. Today's demo night has no such time on Dabakarn, so the page looks unchanged; the path is checked from the code.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   stays: [
     "**Built from a copy of today's Stays and discharges board**, so the filters, the order, the length-of-stay bands, the bed record, the shift brief and Change ward all work as now.",
@@ -601,6 +617,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Found while building:** the Lists write names first name first ("Noor Tremalow"). The board and D-83 put the surname first.',
     "**Round 2:** the phone hero buttons and the Lists row are back to today's sizes (your ruling, 30 October). The Lists row reads 'Lists by step' with each list's count, and the risk table header reads 'Earliest release on record', so it stays on one line.",
     "**Proposals for you:** move 'May pass the access target' under the board, and drop the repeated Find a bed buttons (an ED desk does not find beds itself), making the name the link.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   transport: [
     "**Built from a copy of today's Transport desk**, so Jobs and History, the escort and involuntary filters, both sort orders, the job panel, the forms pack and Copy handover all work as now.",
@@ -609,6 +626,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the Forms cell says one thing ('3 forms missing' or 'All forms'), the title line drops '8 moving, 5 waiting' (the stage chips split it), and 'Jobs need forms' is amber at every width.",
     "**Behaviour change:** cancelled transport now shows at every width. Today it uses the phone-only card, so wider screens never show it.",
     "**Round 2, job panel:** a copy of the real panel lays the four leg steps two by two, so 'Arrived at ward' is never cut to 'Arrived at w…'. Each fact is said once: no 'Accepted' chip in the header, the forms count as '3 to upload', unrecorded booking facts on one 'Not recorded:' line, and 'Legal status not recorded'. Routes wrap when the panel narrows the table.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   patients: [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
@@ -616,6 +634,8 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** table cells wrap instead of ending in "…" ("Sent to 1 place", "RPH Community"), and the highlight chips wrap instead of running off the edge.',
     "**Tablet:** today's tablet table already drops the Heading to column and reads well, so it is unchanged.",
     "**Round 2:** the phone groups sit 3 by 2, so no label ends in '…'; phone lines wrap, so legal wording and places show in full. 'Show 20 not active records' is the same plain link as each group's Show all.",
+    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   discharges: [
     "**Built from a copy of today's Discharges page**, so the five filters, Now and History, Copy counts, Print list, Blocked first order and the release panel all work as now.",
@@ -651,12 +671,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Not done here:** a Chase all button for a group. Each person's Chase transport is inside the group; one button acting on all five needs a new command, so it waits for your yes.",
     "**Round 2:** one word for checks ('8 flagged · 4 clear'). Group rows lead with the same urgency dot as their members and put the oldest wait on the right. On a phone, the owner chips become the desktop's owner menu and Checking opens straight onto its list.",
     "**Question for you:** Owner appears twice (an Arrange by view and the Highlight menu). Recommend keeping the view and dropping the menu on desktop.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "legal-forms": [
     "**Built from a copy of today's Legal forms page** (split into two files to stay under the line cap), so Clocks, Checklist, History, Record a form, Add the time and Record and tell all work as now.",
     '**Kept word for word (point 22, D-77):** the "Not legally checked" notice. My pick is to keep it; say if you decide otherwise.',
     "**New (point 18, D5, D-70):** times show only as typed: \"Ends 11:42, as typed on the form\". The countdown, the band word and the progress bar that were worked out from the typed time are gone, here and on the phone. The rows' warning glyph and the Act now edge are today's own rules and stay.",
     '**New:** the form number stays in its tag and Form 1A\'s name is shortened to "Referral for examination" (the full title is in the record and the tooltip). Time not written shows its first 6 rows with Show more. Copy for handover and Record and tell are drawn as buttons, apart from the figures.',
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "out-of-area": [
     "**Built from a copy of today's Out of area page**, so Away now and History, the Days away, Region and Name orders, the filters, Plan next return, This shift and Ready to go home all work as now.",
@@ -673,6 +695,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** the note that actions are tasks for people and an overdue action is shown, never escalated.",
     "**Round 2:** with nothing waiting, the Actions card is one quiet line. The title is 'Agenda' under 'Bed meeting'. 'Pulled beds, least time left' avoids 'expire', the app's word for legal expiry. Row buttons are today's small size with an invisible larger tap area.",
     "**For the build:** the phone hero shows only 3 of 5 figures; that is the shared hero's phone rule.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   "bed-meeting-tv": [
     "**Built from a copy of today's bed meeting TV**, so Change screen, Full screen, Lock as TV, Leave TV view, the ward and ED screens, the live refresh and the read-only footer all work as now.",
@@ -691,6 +714,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Kept:** the review count, PIR chronology and "Safety incidents not recorded here".',
     '**Still open:** on a portrait tablet the session summary under the list says "Choose an event" until one is chosen. It is the screen\'s resting state, so it is left as it is.',
     "**Round 2:** Gaps reads 'Form gaps' ('67 form gaps across 9 sites'). The phone hero drops a line that repeated the title, tabs and footer. The phone switch is back to today's size; wrapping cells now live in copied files, not overrides.",
+    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   seclusion: [
     "**Built from a copy of today's Seclusion screen**, so the room status buttons (each asking first), Record start, Record end, Record incident, the typed-time checks and the ward-only recording rule (D-80) all work as now.",

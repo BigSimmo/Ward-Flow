@@ -26,6 +26,7 @@ import {
 import { healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 
 import styles from "@/components/ward-management/ed/ed-overview.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 
 type EdOverviewDepartment = {
   id: string;
@@ -109,7 +110,11 @@ export function AsEdOverview({
       {canOpen(addPatientHref) ? (
         <Link
           href={addPatientHref}
-          className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
+          className={buttonClass({
+            variant: "light",
+            size: "sm",
+            className: `${styles.raiseReferral} ${rows.heroPill}`,
+          })}
           data-testid="ward-ed-add-patient"
         >
           <Plus size={14} aria-hidden="true" />

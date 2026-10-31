@@ -106,6 +106,7 @@ import { legalCellAsTyped, phonePrefixAsTyped } from "@/components/ward-redesign
 import { TYPED_TIME_KEY } from "@/components/ward-redesign/legal-forms/typed-time-words";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
@@ -1147,7 +1148,8 @@ export function DelaysBoardRedesign({
           {/* Role view (nurse in charge): on a short list the whose-move tiles repeat the Blocker column. */}
           {wardShort ? null : (
             <section
-              className={`${styles.card} ${styles.owners} ${waitingKeys.ownersFit}`}
+              // Phone (Josh, 31 Oct 2026): one sliding row with Home's fade, in place of two by two.
+              className={`${styles.card} ${styles.owners} ${phoneRows.chipRow}`}
               aria-label="Whose move"
               data-ward-primitive="panel"
             >
@@ -1155,7 +1157,7 @@ export function DelaysBoardRedesign({
                 <button
                   key={tile.owner}
                   type="button"
-                  className={styles.own}
+                  className={`${styles.own} ${phoneRows.chip} ${tile.rows.length === 0 ? phoneRows.zero : ""}`}
                   aria-pressed={filters.owner === tile.owner}
                   onClick={() =>
                     setFilters((current) => ({

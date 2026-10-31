@@ -162,3 +162,9 @@
     box-shadow: none;
   }
 }
+
+/* The hero's buttons keep the hero's own row on the larger screen; on phone they are Home's hero
+   pills, side by side (phone-rows.module.css). */
+.heroPillGroup {
+  display: contents;
+}

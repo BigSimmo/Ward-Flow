@@ -57,6 +57,7 @@ import { downloadCsv } from "@/components/ward-management/statistics/statistics-
 
 import guideStyles from "./community-guide.module.css";
 import styles from "./community-redesign.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 
 /**
  * THE COMMUNITY TEAM INDEX — the front door to `community/[teamId]`.
@@ -522,11 +523,13 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
             <>
               {/* F-08 (phone review, Oct 2026): the standard Demo pill on the phone hero. */}
               {isPhone ? <LiveChip state="live" onHero /> : null}
-              <div className={styles.heroActions}>
+              {/* Phone (Josh, 31 Oct 2026): Guide and Raise referral are Home's hero pills. */}
+              <div className={`${styles.heroActions} ${phoneRows.heroPills}`}>
                 <Button
                   ref={drawerTriggerRef}
                   variant="onHero"
                   icon={BookOpen}
+                  className={phoneRows.heroPill}
                   onClick={() => setDrawerOpen(true)}
                   data-testid="community-action-catchment-guide"
                   aria-haspopup="dialog"
@@ -537,7 +540,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                 {/* Round 2: no Referrals link here; the menu opens the board. */}
                 <Link
                   href="/ward-flow/referrals/new"
-                  className={buttonClass({ variant: "light" })}
+                  className={`${buttonClass({ variant: "light" })} ${phoneRows.heroPill}`}
                   data-testid="community-action-raise-referral"
                 >
                   <Icon icon={Plus} size={16} />
@@ -1370,12 +1373,16 @@ function SuburbLookup({
             trailing={postcodes.length > 0 ? <span className={styles.mono}>{postcodes.join(", ")} WA</span> : undefined}
           />
           {picks.length > 0 ? (
-            <div className={styles.picks} role="group" aria-label="Suburbs whose row names more than one team">
+            <div
+              className={`${styles.picks} ${phoneRows.chipRow}`}
+              role="group"
+              aria-label="Suburbs whose row names more than one team"
+            >
               {picks.map((pick) => (
                 <button
                   key={pick}
                   type="button"
-                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  className={`${buttonClass({ variant: "sec", size: "sm" })} ${phoneRows.chip}`}
                   aria-pressed={pick === trimmed}
                   onClick={() => setSuburb(pick)}
                 >

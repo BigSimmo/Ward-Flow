@@ -39,6 +39,7 @@ import {
 } from "@/components/wf";
 import thirdEdition from "@/components/ward-management/governance-third-edition.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { EventFacts } from "@/components/ward-management/governance-event-facts";
 import {
   PATTERN_HOURS,
@@ -249,7 +250,8 @@ export function GovernancePhone({
           <Button
             variant="onHero"
             icon={ShieldCheck}
-            className={thirdEdition.phoneHeroAction}
+            // Phone (Josh, 31 Oct 2026): Home's hero pill, not a full-width button.
+            className={rows.heroPill}
             disabledReason={toReview.length === 0 ? "Nothing waits for review" : undefined}
             reasonDisplay="tooltip"
             onClick={() => {

@@ -13,7 +13,8 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput } from "@/components/wf";
 import styles from "@/components/ward-management/ward/ward.module.css";
 import noticesSheet from "@/components/ward-management/ward/ward-notices-sheet.module.css";
-import { SinceLastLookPill } from "@/components/ward-management/since-last-look-pill";
+import { SinceLastLookPill } from "@/components/ward-redesign/ward/since-last-look-pill-redesign";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { WardNotificationCenter } from "@/components/ward-management/ward/ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
@@ -178,7 +179,7 @@ export function WardScreenTopBar({
         aside={
           isPhone ? (
             <>
-              <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
+              <SinceLastLookPill scopeKey={`ward:${unit.id}`} pillClassName={rows.heroPill} />
               <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
             </>
           ) : (

@@ -49,6 +49,7 @@ import {
   type MeetingActionRow,
 } from "@/components/ward-management/bed-meeting/bed-meeting-agenda";
 import styles from "./agenda-redesign.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import {
   useBedMeetingDone,
   type MarkBedMeetingActionDone,
@@ -185,19 +186,27 @@ function BedMeetingAgenda() {
           </>
         }
         aside={
-          <>
-            <Button variant="onHero" size="sm" onClick={() => setSheetOpen(true)} data-testid="agenda-open-sheet">
+          // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
+          <div className={`${styles.heroPillGroup} ${rows.heroPills}`}>
+            <Button
+              variant="onHero"
+              size="sm"
+              className={rows.heroPill}
+              onClick={() => setSheetOpen(true)}
+              data-testid="agenda-open-sheet"
+            >
               Bed meeting sheet
             </Button>
             <Button
               variant="light"
               size="sm"
+              className={rows.heroPill}
               onClick={() => router.push("/ward-flow/bed-meeting")}
               data-testid="agenda-start-meeting"
             >
               Start meeting
             </Button>
-          </>
+          </div>
         }
       />
       {sheet ? <BedMeetingSheetDialog open onClose={() => setSheetOpen(false)} sheet={sheet} now={now} /> : null}

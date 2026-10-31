@@ -1022,18 +1022,13 @@
   }
 }
 
-/* v10 phone second pass (11 Oct 2026): the hero's Guide and Raise referral share a row with
- * Raise referral taking the rest; the view switch spans the width; the search is a 44px pill; the
- * health services and Reads alike are separate pill chips, the picked one edged in the accent. */
+/* v10 phone second pass (11 Oct 2026): the view switch spans the width; the search is a 44px pill;
+ * the health services and Reads alike are separate pill chips, the picked one edged in the accent.
+ * (31 Oct 2026: the hero's Guide and Raise referral are Home's hero pills, phone-rows.module.css.) */
 @media (max-width: 48rem) {
   .heroActions {
     width: 100%;
     gap: var(--wf-s-2);
-  }
-
-  .heroActions > [data-testid="community-action-raise-referral"] {
-    flex: 1 1 auto;
-    justify-content: center;
   }
 
   .phonePanes :global([role="radiogroup"]) {
@@ -1144,10 +1139,8 @@
     border-radius: var(--wf-r-ctl);
   }
 
-  /* Round 2: the suburb chips wrap rather than run off the right edge with no hint. */
-  .picks {
-    flex-wrap: wrap;
-  }
+  /* 31 Oct 2026 (Josh): the suburb chips are one sliding row with Home's fade at the right edge
+     (phone-rows.module.css), in place of Round 2's wrap. */
 
   .picks > button {
     flex: 0 0 auto;

@@ -82,6 +82,7 @@ import {
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "./statistics-unit.module.css";
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { CompactBedMap } from "./statistics-unit-bed-map";
 import { ChangeWard } from "./statistics-unit-change-ward";
 import { ADMISSION_STATE_LABELS, ROSTER_FIRST_ROWS, WardPhone, stayDaysOf } from "./statistics-unit-phone";
@@ -464,8 +465,9 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
       title={unit.name}
       titleAction={
         openUnits.length > 1 ? (
-          <span className={ward.titleTools}>
-            <ChangeWard units={openUnits} currentId={unit.id} />
+          // Phone (Josh, 31 Oct 2026): previous, Change ward and next are Home's hero pills.
+          <span className={`${ward.titleTools} ${redesign.heroPillTools} ${phoneRows.heroPills}`}>
+            <ChangeWard units={openUnits} currentId={unit.id} className={phoneRows.heroPill} />
             <UnitStepper
               noun="ward"
               currentId={unit.id}

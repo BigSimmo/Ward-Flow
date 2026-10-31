@@ -80,3 +80,15 @@
     border-color: currentColor;
   }
 }
+
+/* Phone (Josh, 31 Oct 2026): New snapshot and Print are Home's hero pills, side by side
+   (phone-rows.module.css), so they no longer share the row half each as the pack's phone hero sets. */
+@media (max-width: 48rem) {
+  .heroPillActions.heroPillActions > div:last-child > * {
+    flex: 0 1 auto;
+  }
+  .heroPillActions.heroPillActions > div:last-child > * > button,
+  .heroPillActions.heroPillActions > div:last-child > button {
+    width: auto;
+  }
+}

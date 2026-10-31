@@ -131,6 +131,7 @@ import { publishedThresholds } from "@/components/ward-management/settings/setti
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "@/components/ward-redesign/settings/settings-redesign.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { SettingsProfileCard } from "@/components/ward-redesign/as-ward-settings/settings-profile-card";
 import { SettingsSaveBar } from "@/components/ward-redesign/settings/settings-save-bar";
 import {
@@ -1251,8 +1252,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             sub={deskProfile.role}
             // Device audit 11 Oct 2026: no figures on a phone; the name, role and Switch workstation
             // are what this hero is for. The save strip still appears when a rule is unsaved.
+            // Phone (Josh, 31 Oct 2026): Go to a desk is Home's hero pill, not a full-width button.
             actions={
-              <Button variant="onHero" icon={Layers} className={styles.phoneGrow} onClick={goToDesk}>
+              <Button variant="onHero" icon={Layers} className={rows.heroPill} onClick={goToDesk}>
                 Go to a desk
               </Button>
             }

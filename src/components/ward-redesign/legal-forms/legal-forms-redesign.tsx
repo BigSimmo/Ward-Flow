@@ -97,6 +97,8 @@ import { PhoneChecklist } from "@/components/ward-management/legal-forms/legal-f
 import styles from "@/components/ward-management/legal-forms/legal-forms.module.css";
 import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "./legal-forms-redesign.module.css";
+// Phone (Josh, 31 Oct 2026): the hero's actions are Home's hero pills, side by side.
+import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
@@ -766,7 +768,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   <Button
                     variant="onHero"
                     icon={Plus}
-                    className={styles.phoneHeroAction}
+                    className={phoneRows.heroPill}
                     disabledReason={sheetReason}
                     reasonDisplay="tooltip"
                     onClick={() => openRecord()}
@@ -776,7 +778,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   <Button
                     variant="onHero"
                     icon={ClipboardCopy}
-                    className={styles.phoneHeroAction}
+                    className={phoneRows.heroPill}
                     disabledReason={handover.length === 0 ? "No typed expiry is coming up" : undefined}
                     reasonDisplay="tooltip"
                     onClick={() => copyText("handover", handover.join("\n"))}

@@ -6,6 +6,7 @@ import type { ReactNode, RefObject } from "react";
 import { Bell, BellRing, ChevronRight, Copy, Pause, Play, Radio } from "lucide-react";
 
 import { Button, Hero, HeroStat, LiveChip, PhoneHero, PhoneSheet, StatusGlyph, type WfTone } from "@/components/wf";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { PageLiveChip, type usePageLive } from "@/components/ward-management/ward-page-live";
 
@@ -126,17 +127,25 @@ export function AlertsHero({
               },
             ]}
             actions={
-              <div className={styles.phoneHeroActions}>
+              <div className={rows.heroPills}>
+                {/* Phone (Josh, 31 Oct 2026): Home's hero pills, side by side. */}
                 {/* Ops-14 (13 Oct 2026): working the next alert is the common action, so it is the
                       one primary; a statewide broadcast stays one tap away as a secondary, with Pause between
                       the two so a thumb aiming for Next cannot start a broadcast (P017, 27 Oct 2026). */}
                 {/* ROLE BRANCH (ward): a quiet ward has no next alert, so no filled button that does nothing. */}
                 {wardDesk && nextQueue.length === 0 ? null : (
-                  <Button variant="light" icon={ChevronRight} onClick={handleNext} data-testid="ward-alerts-phone-next">
+                  <Button
+                    className={rows.heroPill}
+                    variant="light"
+                    icon={ChevronRight}
+                    onClick={handleNext}
+                    data-testid="ward-alerts-phone-next"
+                  >
                     Next alert
                   </Button>
                 )}
                 <Button
+                  className={rows.heroPill}
                   variant="onHero"
                   icon={live.paused ? Play : Pause}
                   aria-pressed={live.paused}
@@ -147,6 +156,7 @@ export function AlertsHero({
                 </Button>
                 {wardDesk ? null : (
                   <Button
+                    className={rows.heroPill}
                     ref={broadcastTriggerRef}
                     variant="onHero"
                     icon={Radio}

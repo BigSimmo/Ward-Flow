@@ -8,7 +8,16 @@ import { useOptionalRouter } from "@/components/ward-management/statistics/stati
 import type { WardMetadata } from "@/components/ward-management/statistics/statistics-wards-index";
 
 /** The hero's Change ward menu, moved out of the One ward fork to keep it under the file cap. */
-export function ChangeWard({ units, currentId }: { units: WardMetadata[]; currentId: string }) {
+export function ChangeWard({
+  units,
+  currentId,
+  className,
+}: {
+  units: WardMetadata[];
+  currentId: string;
+  /** Extra class for the trigger (the phone hero's pill). */
+  className?: string;
+}) {
   const router = useOptionalRouter();
   return (
     <Menu
@@ -25,7 +34,15 @@ export function ChangeWard({ units, currentId }: { units: WardMetadata[]; curren
         },
       }))}
       trigger={(props) => (
-        <button {...props} type="button" className={buttonClass({ variant: "onHero", size: "sm" })}>
+        <button
+          {...props}
+          type="button"
+          className={
+            className
+              ? `${buttonClass({ variant: "onHero", size: "sm" })} ${className}`
+              : buttonClass({ variant: "onHero", size: "sm" })
+          }
+        >
           Change ward
           <Icon icon={ChevronDown} size={14} />
         </button>

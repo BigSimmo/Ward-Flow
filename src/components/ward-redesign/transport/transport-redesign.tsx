@@ -4,6 +4,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import redesign from "./transport-redesign.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 import { isOfficerJob, officerCancellationNotices } from "@/components/ward-management/officer/officer-jobs";
 import { useTransportCommandFeedback } from "@/components/ward-management/officer/use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -703,8 +704,9 @@ export function TransportRedesign() {
   );
 
   // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
+  // Phone (Josh, 31 Oct 2026): Copy handover and Arrivals are Home's hero pills, side by side.
   const heroTools = (
-    <div className={styles.heroTools}>
+    <div className={isPhone ? rows.heroPills : styles.heroTools}>
       {nextArrival ? (
         <span className={styles.nextArrival} title="Next expected arrival">
           <Icon icon={Clock} size={14} />
@@ -716,7 +718,7 @@ export function TransportRedesign() {
         variant="onHero"
         size="sm"
         icon={Copy}
-        className={styles.copyButton}
+        className={isPhone ? rows.heroPill : styles.copyButton}
         onClick={copyHandover}
         aria-label="Copy handover"
         title="Copy a plain text summary of open jobs"
@@ -729,7 +731,7 @@ export function TransportRedesign() {
           variant="onHero"
           size="sm"
           icon={Clock}
-          className={styles.phArrivalsButton}
+          className={`${styles.phArrivalsButton} ${rows.heroPill}`}
           onClick={() =>
             document
               .getElementById("ward-officer-arrivals-heading")

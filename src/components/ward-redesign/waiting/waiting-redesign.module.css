@@ -81,22 +81,6 @@
   white-space: normal;
 }
 
-/* Phone (Josh, 30 Oct 2026): the four blocker chips sit two by two, all on screen at 390px,
-   instead of one row that scrolls sideways out of sight. Doubled class: beats the board's own
-   phone rule whatever order the sheets load in. */
-@media (max-width: 48rem) {
-  .ownersFit.ownersFit {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    overflow: visible;
-  }
-  .ownersFit.ownersFit > button {
-    justify-content: space-between;
-    min-width: 0;
-    min-height: 3rem;
-  }
-}
-
 /* Desktop and tablet (Josh, 30 Oct 2026): the person panel's actions sit under its title. */
 .actsTop {
   border-top: 0;

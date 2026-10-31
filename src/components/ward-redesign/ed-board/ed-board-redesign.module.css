@@ -58,23 +58,9 @@
   overflow: hidden;
 }
 
-/* Phone: Raise referral and Add patient share one row, half each, instead of one full-width button
-   with a small one under it. Both take the row's height, which is the taller button's own size, never an
-   enlarged one. */
+/* Raise referral and Add patient: the hero's own row on the larger screen. */
 .phoneActions {
   display: contents;
 }
-@media (max-width: 48rem) {
-  .phoneActions {
-    display: grid;
-    flex: 1 1 100%;
-    grid-auto-columns: minmax(0, 1fr);
-    grid-auto-flow: column;
-    gap: var(--wf-s-2);
-  }
-  .phoneActions > * {
-    width: auto;
-    height: auto;
-    justify-content: center;
-  }
-}
+/* Phone (Josh, 31 Oct 2026): Raise referral and Add patient are Home's hero pills, side by side
+   (phone-rows.module.css), in place of two stretched half-width buttons. */

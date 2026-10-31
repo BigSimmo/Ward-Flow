@@ -86,7 +86,7 @@ import { ChecksChip, groupSameKind, KindGroup, OwnerMenu } from "./alerts-redesi
 import { TodayChart } from "@/components/ward-management/alerts/alerts-visuals";
 import { alertChecks } from "@/components/ward-management/alerts/alerts-checks";
 import { alertsHistory } from "@/components/ward-management/alerts/alerts-history";
-import { AlertsHero, type AlertsTab, type HeroPill } from "@/components/ward-management/alerts/alerts-hero";
+import { AlertsHero, type AlertsTab, type HeroPill } from "./alerts-hero";
 import {
   AlertsBroadcastPanel,
   AlertsHistoryPanel,

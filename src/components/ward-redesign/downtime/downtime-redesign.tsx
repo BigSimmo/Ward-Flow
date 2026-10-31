@@ -63,6 +63,7 @@ import { reportDay, reportMoment } from "@/components/ward-management/reports/re
 import styles from "@/components/ward-management/reports/reports.module.css";
 
 import redesign from "./downtime-redesign.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 
 const NOT_RECORDED = "Not recorded";
 const OFFLINE_LABEL = "taken offline";
@@ -327,6 +328,8 @@ export function DowntimeRedesign() {
     <span className={styles.gated}>
       <Button
         variant={variant}
+        // Phone (Josh, 31 Oct 2026): on the hero it is Home's hero pill.
+        className={variant === "onHero" ? rows.heroPill : undefined}
         icon={taking ? undefined : Camera}
         onClick={newSnapshot}
         aria-disabled={!canSnapshot || undefined}
@@ -371,6 +374,7 @@ export function DowntimeRedesign() {
   const printButtonOnHero = (
     <Button
       variant="onHero"
+      className={rows.heroPill}
       icon={Printer}
       onClick={printPack}
       aria-disabled={!ready || undefined}
@@ -707,7 +711,7 @@ export function DowntimeRedesign() {
           <div className={styles.phoneScreenOnly} data-print-hide>
             <PhoneHero
               level={1}
-              className={styles.downtimePhoneHero}
+              className={cx(styles.downtimePhoneHero, redesign.heroPillActions)}
               // F-08 (phone review, Oct 2026): the synthetic marker, as the desktop eyebrow carries it. A
               // frozen pack takes no Demo pill, whose pulse would read as live.
               eyebrow="Downtime pack · synthetic data"

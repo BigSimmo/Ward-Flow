@@ -161,3 +161,29 @@
 .tilesTwoRows > :nth-child(n + 3) {
   border-top: 1px solid var(--wf-line);
 }
+
+/* Phone (Josh, 31 Oct 2026): previous, Change ward and next sit side by side as Home's 40px hero
+   pills (phone-rows.module.css), in place of the stretched 48px row the stats hero gives them. The
+   triple class outranks that row's rules; the arrows keep a 48px tap height with a cover. */
+@media (max-width: 48rem) {
+  .heroPillTools.heroPillTools.heroPillTools {
+    flex: 0 1 auto;
+  }
+  .heroPillTools.heroPillTools.heroPillTools > * {
+    flex: 0 1 auto;
+  }
+  .heroPillTools.heroPillTools.heroPillTools :is(button, a) {
+    width: auto;
+    min-height: 40px;
+  }
+  .heroPillTools.heroPillTools.heroPillTools [data-testid="ward-statistics-unit-stepper"] > a {
+    position: relative;
+    width: 40px;
+    height: 40px;
+  }
+  .heroPillTools.heroPillTools.heroPillTools [data-testid="ward-statistics-unit-stepper"] > a::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}

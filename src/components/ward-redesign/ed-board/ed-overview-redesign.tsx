@@ -28,6 +28,7 @@ import { healthServiceAcronym } from "@/components/ward-management/ward-service-
 
 import styles from "@/components/ward-management/ed/ed-overview.module.css";
 import redesign from "./ed-board-redesign.module.css";
+import rows from "@/components/ward-redesign/parts/phone-rows.module.css";
 
 type EdOverviewDepartment = {
   id: string;
@@ -109,7 +110,7 @@ export function EdOverview({
   const raiseButton = (
     <button
       type="button"
-      className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
+      className={buttonClass({ variant: "light", size: "sm", className: `${styles.raiseReferral} ${rows.heroPill}` })}
       data-testid="ward-ed-raise-referral-toggle"
       onClick={onRaiseReferral}
     >
@@ -125,7 +126,11 @@ export function EdOverview({
       {canOpen(addPatientHref) ? (
         <Link
           href={addPatientHref}
-          className={buttonClass({ variant: "light", size: "sm", className: styles.raiseReferral })}
+          className={buttonClass({
+            variant: "light",
+            size: "sm",
+            className: `${styles.raiseReferral} ${rows.heroPill}`,
+          })}
           data-testid="ward-ed-add-patient"
         >
           <Plus size={14} aria-hidden="true" />
@@ -188,9 +193,9 @@ export function EdOverview({
                 </span>
               ) : null}
               {sinceLastLook}
-              {/* Redesign: Raise referral and Add patient share one row, half each, at the kit's own
-                  button height, instead of one full-width button with a small one under it. */}
-              <div className={redesign.phoneActions}>{actions}</div>
+              {/* Redesign: Raise referral and Add patient share one row as Home's hero pills (31 Oct
+                  2026), instead of one full-width button with a small one under it. */}
+              <div className={`${redesign.phoneActions} ${rows.heroPills}`}>{actions}</div>
             </>
           }
         />
