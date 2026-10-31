@@ -8,7 +8,7 @@
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 1000);
+  z-index: var(--z-modal);
   display: flex;
   align-items: flex-start;
   justify-content: center;

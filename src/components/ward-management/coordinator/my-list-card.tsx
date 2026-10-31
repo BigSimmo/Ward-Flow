@@ -14,7 +14,13 @@ import {
   type QueueEntry,
   type QueueHandlers,
 } from "@/components/ward-management/alerts/alerts-queue";
-import { extractOverdue, minutesText } from "@/components/ward-management/alerts/alerts-model";
+import {
+  extractOverdue,
+  legalTypedEnd,
+  minutesText,
+  shownAgeFrom,
+} from "@/components/ward-management/alerts/alerts-model";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import alertStyles from "@/components/ward-management/alerts/alerts.module.css";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -195,17 +201,22 @@ function DeskAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Instan
   const owner = isYours(entry) ? undefined : `With ${ownerShort(entry.owner)}`;
   const state = entry.seen ? `Acknowledged ${formatInstantWithDay(entry.seen.at, now)}` : undefined;
   const extra = [owner, state].filter(Boolean).join(" · ") || undefined;
-  const age = entry.raised === undefined ? undefined : minutesText(Math.max(0, now - entry.raised));
+  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+  const legalEnded = legalTypedEnd(entry.item);
+  const ageFrom = shownAgeFrom(entry.item, entry.raised);
+  const age = ageFrom === undefined ? undefined : minutesText(Math.max(0, now - ageFrom));
   // "10m" over "10m overdue" says the time twice; the second line keeps only what it adds.
   const overdue = entry.raised === undefined ? null : extractOverdue(entry.item.detail);
   const ageNote =
-    entry.raised === undefined
-      ? "Time not recorded"
-      : overdue
-        ? overdue.startsWith(`${age} `)
-          ? overdue.slice(age!.length + 1)
-          : overdue
-        : `since ${formatInstantWithDay(entry.raised, now)}`;
+    legalEnded !== undefined
+      ? typedTimeLine(legalEnded, now)
+      : entry.raised === undefined
+        ? "Time not recorded"
+        : overdue
+          ? overdue.startsWith(`${age} `)
+            ? overdue.slice(age!.length + 1)
+            : overdue
+          : `since ${formatInstantWithDay(entry.raised, now)}`;
   return (
     <HomeRow
       data={{ "data-alert-id": entry.item.id, "data-movement-id": entry.item.movementId || undefined }}
@@ -251,6 +262,7 @@ function PhoneRow({
   umrn,
   line,
   age,
+  note,
   owner,
 }: {
   data: Record<string, string | undefined>;
@@ -266,13 +278,15 @@ function PhoneRow({
   umrn: string;
   line: string;
   age: string | undefined;
+  /** A line of its own for a passed legal form's typed time, too long for the age column. */
+  note?: string;
   owner: string | undefined;
 }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and its own button is the keyboard route
     <li
-      className={alertStyles.phoneRow}
+      className={`${alertStyles.phoneRow} ${styles.compactRow}`}
       data-act={act ? "true" : undefined}
       data-selected={selected ? "true" : undefined}
       onClick={(event) => {
@@ -285,15 +299,20 @@ function PhoneRow({
       <span className={alertStyles.phoneRowGlyph}>
         <StatusGlyph tone={tone} />
       </span>
-      <span className={alertStyles.phoneRowText}>
+      <span className={`${alertStyles.phoneRowText} ${styles.compactText}`}>
         {href ? (
-          <Link ref={linkRef} href={href} className={alertStyles.rowOpen} aria-label={openLabel}>
+          <Link
+            ref={linkRef}
+            href={href}
+            className={`${alertStyles.rowOpen} ${styles.compactTag}`}
+            aria-label={openLabel}
+          >
             <span className={alertStyles.rowOpenText}>{title}</span>
           </Link>
         ) : (
           <button
             type="button"
-            className={alertStyles.rowOpen}
+            className={`${alertStyles.rowOpen} ${styles.compactTag}`}
             aria-current={selected ? "true" : undefined}
             aria-label={openLabel}
             onClick={onOpen}
@@ -301,16 +320,17 @@ function PhoneRow({
             <span className={alertStyles.rowOpenText}>{title}</span>
           </button>
         )}
-        <span className={alertStyles.phoneRowLine}>
+        <span className={`${alertStyles.phoneRowLine} ${styles.compactWho}`}>
           <span className={alertStyles.who}>
             <strong className={alertStyles.name}>{name}</strong> <strong className={alertStyles.umrn}>{umrn}</strong>
           </span>
         </span>
-        <span className={alertStyles.phoneRowLine}>{line}</span>
+        <span className={`${alertStyles.phoneRowLine} ${styles.compactWhere}`}>{line}</span>
+        {note ? <span className={`${alertStyles.phoneRowLine} ${styles.compactLine}`}>{note}</span> : null}
         {/* The owner sits in the text, not the end column, so a long team name never squeezes the title. */}
-        {owner ? <span className={alertStyles.phoneRowLine}>{`With ${owner}`}</span> : null}
+        {owner ? <span className={`${alertStyles.phoneRowLine} ${styles.compactLine}`}>{`With ${owner}`}</span> : null}
       </span>
-      <span className={alertStyles.phoneRowEnd}>
+      <span className={`${alertStyles.phoneRowEnd} ${styles.compactEnd}`}>
         <span className={alertStyles.phoneRowAge}>{age ?? ""}</span>
       </span>
     </li>
@@ -331,7 +351,13 @@ function PhoneAlertRow({ entry, now, handlers }: { entry: QueueEntry; now: Insta
       name={subject.displayName}
       umrn={subject.umrn}
       line={subject.to ? `${shortPlace(subject.from)} to ${subject.to}` : shortPlace(subject.from)}
-      age={entry.raised === undefined ? undefined : minutesText(Math.max(0, now - entry.raised))}
+      // A passed legal form's typed time takes a line of its own; the age column stays empty for it.
+      age={
+        legalTypedEnd(entry.item) !== undefined || entry.raised === undefined
+          ? undefined
+          : minutesText(Math.max(0, now - entry.raised))
+      }
+      note={legalTypedEnd(entry.item) !== undefined ? typedTimeLine(legalTypedEnd(entry.item)!, now) : undefined}
       owner={isYours(entry) ? undefined : ownerShort(entry.owner)}
     />
   );
@@ -347,6 +373,7 @@ export function MyListCard({
   phone,
   handlers,
   selectedReferralId,
+  onSelectReferral,
   decideHref,
   focus = "all",
   onShowAll,
@@ -361,6 +388,11 @@ export function MyListCard({
   phone: boolean;
   handlers: QueueHandlers;
   selectedReferralId: string | undefined;
+  /**
+   * D-92 (Josh, 31 Oct 2026): a referral row opens that referral in the right-hand panel, as the
+   * Waiting rows do. Only its Decide button goes to the Referrals board.
+   */
+  onSelectReferral: (referralId: string) => void;
   /**
    * WS-04 (workflow speed audit, 26 Oct 2026): where Decide goes, the referral on the Referrals
    * board with Accept and Decline in view. It used to open a read-only preview with neither.
@@ -411,8 +443,8 @@ export function MyListCard({
           act: false,
           selected: selectedReferralId === referral.id,
           title,
-          openLabel: `Decide referral for ${name}`,
-          href: decideHref(referral.id),
+          openLabel: `Open referral for ${name}`,
+          onOpen: () => onSelectReferral(referral.id),
           name,
           umrn: who.umrn,
         };

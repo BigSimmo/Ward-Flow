@@ -18,6 +18,7 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import {
   Avatar,
   Button,
+  DateField,
   FactGrid,
   FilterChip,
   HeroStat,
@@ -25,12 +26,14 @@ import {
   PhoneSheet,
   PillTabs,
   Segmented,
+  ShowMoreRow,
   StatusGlyph,
   Tabs,
   Timeline,
   buttonClass,
   tableClasses,
   cx,
+  phoneRows,
   type WfTone,
   useMediaQuery,
 } from "@/components/wf";
@@ -123,83 +126,55 @@ function Marked({ text, needle }: { text: string; needle: string }) {
 /* ───────────────────────── search bar 1 ───────────────────────── */
 
 /**
- * What sits inside the 36px search pill after the typed text: the date of birth slot when it is on,
- * the live count of people found, the DOB switch, and the "/" hint while the field is empty.
+ * D-91 ("Every page search box has one look"): the census search is the kit's one page search field
+ * (`SearchField`), so the date of birth switch and box sit beside it rather than inside a hand-made
+ * pill. The switch.
  */
-export function SearchAdornment({
-  dobOn,
-  onDobToggle,
-  dob,
-  onDob,
-  count,
-  empty,
-  phone = false,
-}: {
-  dobOn: boolean;
-  onDobToggle: () => void;
-  dob: string;
-  onDob: (next: string) => void;
-  count: number | null;
-  empty: boolean;
-  phone?: boolean;
-}) {
+export function DobToggle({ dobOn, onDobToggle }: { dobOn: boolean; onDobToggle: () => void }) {
   return (
-    <>
-      {dobOn && !phone ? (
-        <span className={styles.dobSeg}>
-          <Icon icon={CalendarDays} size={14} />
-          <input
-            className={styles.dobInput}
-            value={dob}
-            onChange={(event) => onDob(event.target.value)}
-            placeholder="DD/MM/YYYY"
-            aria-label="Date of birth"
-            inputMode="numeric"
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-        </span>
-      ) : null}
-      {count !== null ? (
-        <span className={styles.count} title="People found">
-          {count}
-          <span className="sr-only"> found</span>
-        </span>
-      ) : null}
-      <button
-        type="button"
-        className={styles.dobToggle}
-        aria-pressed={dobOn}
-        onClick={onDobToggle}
-        title={dobOn ? "Remove the date of birth" : "Add a date of birth"}
-      >
-        <Icon icon={CalendarDays} size={14} />
-        DOB
-      </button>
-      {empty && !phone ? (
-        <kbd className={styles.kbd} aria-hidden="true">
-          /
-        </kbd>
-      ) : null}
-    </>
+    <button
+      type="button"
+      className={styles.dobToggle}
+      aria-pressed={dobOn}
+      onClick={onDobToggle}
+      title={dobOn ? "Remove the date of birth" : "Add a date of birth"}
+    >
+      <Icon icon={CalendarDays} size={14} />
+      DOB
+    </button>
   );
 }
 
-/** The phone's own second field for a date of birth, a full 48px row under the search. */
-export function PhoneDobField({ dob, onDob }: { dob: string; onDob: (next: string) => void }) {
+/**
+ * The date of birth box: beside the search on a laptop, a row of its own under it on a phone. The
+ * kit's typed DD/MM/YYYY box, so `dob` is YYYY-MM-DD once a real day is typed and "" until then
+ * (`parseDob` reads both). Clear also empties a half-typed date, which the box keeps to itself.
+ */
+export function DobField({
+  dob,
+  onDob,
+  phone = false,
+}: {
+  dob: string;
+  onDob: (next: string) => void;
+  phone?: boolean;
+}) {
+  const [fresh, setFresh] = useState(0);
   return (
-    <label className={styles.phoneDob}>
-      <Icon icon={CalendarDays} size={16} />
-      <span className="sr-only">Date of birth</span>
-      <input
-        value={dob}
-        onChange={(event) => onDob(event.target.value)}
-        placeholder="Date of birth, DD/MM/YYYY"
-        inputMode="numeric"
-        autoComplete="off"
-        enterKeyHint="search"
-      />
-    </label>
+    <DateField
+      key={fresh}
+      icon={CalendarDays}
+      boxClassName={phone ? styles.phoneDobField : styles.dobField}
+      value={dob}
+      onValueChange={onDob}
+      onClear={() => {
+        onDob("");
+        setFresh((count) => count + 1);
+      }}
+      placeholder={phone ? "Date of birth, DD/MM/YYYY" : "DD/MM/YYYY"}
+      aria-label="Date of birth"
+      enterKeyHint="search"
+    />
   );
 }
 
@@ -417,7 +392,10 @@ export function CensusTable(props: CensusTableProps) {
               <tr>
                 <th scope="col">Tier</th>
                 <th scope="col">Patient</th>
-                <th scope="col">Where now</th>
+                {/* Redesign: one word, so the header stays on one line like the others. */}
+                <th scope="col" aria-label="Where now">
+                  Where
+                </th>
                 {showTo ? <th scope="col">Heading to</th> : null}
                 <th scope="col">Next step</th>
                 <th scope="col">Legal</th>
@@ -483,9 +461,7 @@ export function CensusTable(props: CensusTableProps) {
                   {open && cap < groupRows.length ? (
                     <tr className={styles.moreRow}>
                       <td colSpan={cols}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <ShowMoreRow
                           onClick={
                             group.id === "ward"
                               ? props.onShowAllWard
@@ -493,7 +469,7 @@ export function CensusTable(props: CensusTableProps) {
                           }
                         >
                           Show all {groupRows.length}
-                        </Button>
+                        </ShowMoreRow>
                       </td>
                     </tr>
                   ) : null}
@@ -594,10 +570,18 @@ const CensusTableRow = memo(function CensusTableRow({
       </td>
       {showTo ? (
         <td>
-          <span className={styles.two}>
-            <b>{row.to}</b>
-            <span>{row.toSub}</span>
-          </span>
+          {/* Redesign: inside "No ward asked yet" the group heading already says it; a dash, not "No ward yet". */}
+          {row.group === "ask" ? (
+            <span className={styles.two}>
+              <b aria-hidden="true">—</b>
+              <span className="sr-only">{row.to}</span>
+            </span>
+          ) : (
+            <span className={styles.two}>
+              <b>{row.to}</b>
+              <span>{row.toSub}</span>
+            </span>
+          )}
         </td>
       ) : null}
       <td>
@@ -988,7 +972,7 @@ export function CensusHistory({
           <li key={`${entry.at}-${entry.words}`} className={styles.historyRow}>
             <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
             <Icon icon={Search} size={14} />
-            <span className={styles.truncate}>{entry.words}</span>
+            <span className={styles.wrap}>{entry.words}</span>
             <Button variant="ghost" size="sm" onClick={() => onRerun(entry)}>
               Search again
             </Button>
@@ -1005,7 +989,7 @@ export function CensusHistory({
         <li key={row.key} className={styles.historyRow}>
           <span className={styles.mono}>{formatInstantWithDay(row.at, now)}</span>
           <StatusGlyph tone={row.outcome === "Arrived" ? "success" : "closed"} size={10} />
-          <span className={styles.truncate}>
+          <span className={styles.wrap}>
             <b>{row.name}</b> <span className={styles.mono}>{row.umrn}</span> · {row.outcome}, {row.detail}
           </span>
           {row.patientRecordId ? (
@@ -1127,19 +1111,18 @@ export function PhoneCensus(props: PhoneCensusProps) {
     ...entry,
     rows: rows.filter((row) => row.group === entry.id),
   })).filter((entry) => entry.rows.length > 0 && (entry.id !== "off" || offInList));
-  // The five groups as one radio set: choosing one moves the list to that group's band.
+  // The five jump actions move the list to their group; current marks the last explicit jump.
   const [jumped, setJumped] = useState<CensusGroup | null>(null);
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
-      <div className={styles.phoneGroups} role="radiogroup" aria-label="Where patients are now">
+      <div className={styles.phoneGroups} role="group" aria-label="Where patients are now">
         {CENSUS_GROUPS.map((entry) => {
           const n = searching ? props.matched[entry.id] : props.totals[entry.id];
           return (
             <button
               key={entry.id}
               type="button"
-              role="radio"
-              aria-checked={props.tab === "now" && jumped === entry.id}
+              aria-current={props.tab === "now" && jumped === entry.id ? "true" : undefined}
               className={cx(styles.phoneGroup, searching && n === 0 && styles.phoneGroupZero)}
               onClick={() => {
                 props.onTab("now");
@@ -1154,11 +1137,11 @@ export function PhoneCensus(props: PhoneCensusProps) {
           );
         })}
       </div>
-      <div className={styles.phoneChips} role="group" aria-label="Highlight">
+      <div className={cx(styles.phoneChips, phoneRows.chipRow)} role="group" aria-label="Highlight">
         {CENSUS_HIGHLIGHTS.map((chip) => (
           <FilterChip
             key={chip.id}
-            className={styles.phoneChip}
+            className={cx(styles.phoneChip, phoneRows.chip, props.highlightCounts[chip.id] === 0 && phoneRows.zero)}
             pressed={highlight === chip.id}
             onPressedChange={() => {
               props.onTab("now");
@@ -1166,8 +1149,9 @@ export function PhoneCensus(props: PhoneCensusProps) {
             }}
           >
             {chip.glyph ? <CensusGlyphMark glyph={chip.glyph} size={8} /> : null}
-            {chip.label}
+            {/* D-91 (Josh, 31 Oct 2026): the count comes first, as Home's and Referrals' chips. */}
             <b className={styles.phoneChipCount}>{props.highlightCounts[chip.id]}</b>
+            {chip.label}
           </FilterChip>
         ))}
       </div>
@@ -1225,19 +1209,23 @@ export function PhoneCensus(props: PhoneCensusProps) {
                           </span>
                           <span className={styles.phoneText}>
                             <b className={styles.phoneName}>
-                              <span className={styles.truncate}>
+                              {/* Names wrap in full, never cut with "…". */}
+                              <span className={styles.wrap}>
                                 <Marked text={nameFor(row.name, row.umrn)} needle={props.needle} />
                               </span>
                               {row.confidential ? <span className={styles.restricted}>Restricted</span> : null}
                             </b>
-                            <span className={styles.phoneMeta}>
+                            <span className={cx(styles.phoneMeta, styles.phoneMetaWrap)}>
                               <span className={styles.mono}>
                                 <Marked text={row.umrn} needle={props.needle} />
                               </span>{" "}
                               {/* Date of birth tells near-spelling names apart while a search runs. */}
-                              {searching ? <span>· {dobText(row.dob)} </span> : null}· {row.where}
+                              {searching ? <span>· {dobText(row.dob)} </span> : null}
+                              {/* Redesign: the step line below already says "In transit"; say it once. */}
+                              {row.next.startsWith(row.where) ? null : <>· {row.where}</>}
                             </span>
-                            <span className={styles.phoneMeta}>
+                            {/* Redesign: wraps, so a legal line and a place are never cut with "…". */}
+                            <span className={cx(styles.phoneMeta, styles.phoneMetaWrap)}>
                               {row.next}
                               {row.formCode ? ` · Form ${row.formCode}` : ""}
                             </span>
@@ -1255,24 +1243,19 @@ export function PhoneCensus(props: PhoneCensusProps) {
                   })}
                 </ul>
                 {full ? null : (
-                  <button
-                    type="button"
-                    className={styles.phoneShowAll}
-                    onClick={() => setAllShown((current) => new Set(current).add(group.id))}
-                  >
+                  <ShowMoreRow onClick={() => setAllShown((current) => new Set(current).add(group.id))}>
                     Show all {group.rows.length}
-                  </button>
+                  </ShowMoreRow>
                 )}
               </section>
             );
           })}
+          {/* Redesign: the same plain link as each group's "Show all", at the foot of the list. */}
+          {offCount > 0 && !offInList ? (
+            <ShowMoreRow onClick={() => setOffShown(true)}>Show {offCount} not active records</ShowMoreRow>
+          ) : null}
         </div>
       )}
-      {props.tab === "now" && rows.length > 0 && offCount > 0 && !offInList ? (
-        <button type="button" className={styles.phoneOffMore} onClick={() => setOffShown(true)}>
-          Show {offCount} not active records
-        </button>
-      ) : null}
       <PhoneSheet
         open={open !== null}
         onClose={() => {

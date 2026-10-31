@@ -6,18 +6,32 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 
-import { alertDetail, alertKindLabel, minutesText } from "@/components/ward-management/alerts/alerts-model";
+import {
+  alertDetail,
+  alertKindLabel,
+  legalTypedEnd,
+  minutesText,
+} from "@/components/ward-management/alerts/alerts-model";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { ownerShort, type QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { Button, buttonClass, Card, CardHead, StatusGlyph } from "@/components/wf";
 
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import styles from "./home-list.module.css";
 
 /** `onClear` is left out inside a sheet, which has its own Close. */
 export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; now: Instant; onClear?: () => void }) {
   const kindLabel = alertKindLabel(entry.item.id);
   const inPlacement = Boolean(entry.movement);
-  const age = entry.raised === undefined ? "time not recorded" : `${minutesText(Math.max(0, now - entry.raised))} ago`;
+  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+  const legalEnded = legalTypedEnd(entry.item);
+  const age =
+    legalEnded !== undefined
+      ? typedTimeLine(legalEnded, now)
+      : entry.raised === undefined
+        ? "time not recorded"
+        : `${minutesText(Math.max(0, now - entry.raised))} ago`;
   return (
     <Card className={styles.alertCard} data-testid="home-chosen-alert" aria-label="Chosen alert">
       <CardHead
@@ -36,7 +50,16 @@ export function ChosenAlertCard({ entry, now, onClear }: { entry: QueueEntry; no
           <StatusGlyph tone={entry.group === "act" ? "danger" : "warning"} />
           {entry.item.title}
         </p>
-        <p className={styles.alertDetail}>{alertDetail(entry.item)}</p>
+        <p className={styles.alertDetail}>
+          {alertDetail(entry.item)}
+          {/* A passed legal form's detail is its typed time; the tag says no legal limit was checked. */}
+          {legalEnded !== undefined ? (
+            <>
+              {" "}
+              <LegalLimitsNotChecked variant="tag" />
+            </>
+          ) : null}
+        </p>
         {/* With a patient open in Placement below, the patient, origin and destination are already
             there, so the card keeps only the reason, who owns it when that is not you, and what to do. */}
         {inPlacement ? (

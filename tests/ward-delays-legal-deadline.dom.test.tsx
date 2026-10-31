@@ -1,10 +1,11 @@
 import { renderAllDelays, inspectDelayPerson } from "./helpers/delays-interactions";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
-import { legalDeadlineMinutes } from "@/components/ward-management/delays/delays-derivations";
-import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, splitDuration } from "@/components/ward-management/ward-clock";
+import { TYPED_TIME_KEY } from "@/components/ward-management/delays/waiting-typed-time";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { clockState, DEFAULT_DUE_SOON_THRESHOLDS, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -34,6 +35,30 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * 3B has none, and `tests/ward-legal-figure-guard.test.ts` exists because three separate agents
  * previously invented statutory durations that reached the screen.
  */
+
+/**
+ * Legal times only as typed (D-93, Josh 31 Oct 2026): the Waiting page states the form's full
+ * register name and the time typed on it, never a countdown. None of these may appear beside it.
+ */
+const COUNTDOWN_WORDS = /due in|\bleft\b|overdue|remaining|passed its deadline|-\d+\s?m/iu;
+
+/**
+ * The redesigned table folds "Under 8 hours" and shows the first few of "8 to 24 hours". A person
+ * there is opened the way a user would: unfold the band, then Show more, then the row.
+ */
+function openPerson(id: string): HTMLElement {
+  if (screen.queryByTestId(`delays-select-${id}`) === null) {
+    for (const band of screen.queryAllByTestId(/^delays-band-/u)) {
+      if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+    }
+  }
+  return inspectDelayPerson(id);
+}
+
+/** The panel's typed-time line for one person: "<full register name> ends 15:42" and its "As typed" line. */
+function typedClock(id: string): HTMLElement {
+  return within(openPerson(id)).getByTestId(`delays-legal-clock-${id}`);
+}
 
 function renderAt(now: number) {
   return renderAllDelays(
@@ -104,46 +129,67 @@ describe("the delays screen states the legal deadline it is already reacting to"
     }
   });
 
-  it("names the form and the minutes remaining, for every movement whose deadline is in range", () => {
+  it("names the form and its typed time, never a countdown, for every movement whose deadline is in range", () => {
     /*
      * ⚠️ **RE-POINTED 2026-09-07.** The delays screen no longer renders every patient's full state
-     * chips at once — only the SELECTED one's, inside the panel named "The person you have chosen".
+     * chips at once — only the SELECTED one's, inside the panel named "Why this person is waiting".
      * Selecting one patient at a time is required before its legal-deadline sentence exists in the
      * document at all; the property being walked — "for every movement whose deadline is in range"
      * — is unchanged, it is just proved one selection at a time now instead of one page-wide scan.
+     *
+     * ⚠️ **RE-POINTED 2026-10-31 (D-93).** The figure is now the time TYPED on the form, stated as
+     * typed — "Form 4A (Transport order) ends 15:42" over "As typed on the form · within 1h" — and
+     * never a countdown ("due in", "left", "overdue"). The register name is still required in full.
      */
     renderAt(NOW_ANCHOR);
     for (const movement of expectedToShow(NOW_ANCHOR)) {
-      inspectDelayPerson(movement.id);
-      const minutes = legalDeadlineMinutes(movement, NOW_ANCHOR);
-      expect(minutes, `${movement.id} lost its deadline between the filter and the assertion`).toBeDefined();
       const form = movement.legalForm;
       expect(form, `${movement.id} lost its form between the filter and the assertion`).toBeDefined();
+      const dueAt = form!.dueAt;
+      expect(dueAt, `${movement.id} lost its deadline between the filter and the assertion`).toBeDefined();
+      const clock = typedClock(movement.id);
       expect(
-        screen.getAllByText(`${legalFormName(form!)} due in ${splitDuration(minutes!)}`).length,
-        `${movement.id}: the delays row does not state its legal deadline`,
-      ).toBeGreaterThan(0);
+        within(clock).getByText(`${legalFormName(form!)} ends ${formatInstantWithDay(dueAt!, NOW_ANCHOR)}`),
+        `${movement.id}: the panel does not state its form and typed time`,
+      ).toBeDefined();
+      const standing = typedTimeStanding(movement, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS);
+      expect(
+        within(clock).getByText(`As typed on the form${standingSuffix(standing)}`, { exact: false }),
+        `${movement.id}: the typed time does not say it is as typed`,
+      ).toBeDefined();
+      expect(clock.textContent ?? "", `${movement.id}: a countdown came back`).not.toMatch(COUNTDOWN_WORDS);
+      expect(
+        within(clock).getByTestId("legal-limits-not-checked").textContent,
+        `${movement.id}: the typed time no longer says the limits are not legally checked`,
+      ).toBe("(limits not legally checked)");
     }
+    expect(screen.queryByText(/\bdue in\b|\boverdue\b|\d+m left/iu), "a countdown reached the page").toBeNull();
+    // The page's one key line says the colours compare the typed time with the clock, not the law.
+    expect(screen.getByText(TYPED_TIME_KEY), "the typed-time key no longer says Not legally checked.").toBeDefined();
   });
 
-  it("says a passed deadline has passed, rather than counting down from a negative", () => {
+  it("says a passed typed time ended as typed, rather than counting down from a negative", () => {
     /*
-     * The breached wording is `ward-priority`'s, not a second one invented here. A negative rendered
-     * raw — "due in -10 min" — is the shape this branch exists to prevent, and it is exactly what a
-     * screen shows when somebody formats a countdown without asking what happens after zero.
+     * A negative rendered raw — "due in -10 min" — is the shape this branch exists to prevent, and
+     * it is exactly what a screen shows when somebody formats a countdown without asking what
+     * happens after zero. D-93 (31 Oct 2026): a passed typed time reads "ended 15:42" with the
+     * word "passed", never "overdue" or "passed its deadline 10m ago".
      */
     const wf006 = wardMovements.find((movement) => movement.id === "WF-006");
     const dueAt = wf006?.legalForm?.dueAt;
     expect(dueAt, "WF-006 no longer carries the deadline this case is built on").toBeDefined();
     // Ten minutes past WF-006's own deadline, derived from the fixture rather than typed.
     renderAdvancedBy((dueAt as number) - NOW_ANCHOR + 10);
-    // The state chip carrying this sentence only exists for the SELECTED patient now (see the
-    // "RE-POINTED" note above), so WF-006 must be chosen before its wording can be read at all.
-    inspectDelayPerson("WF-006");
+    const now = (dueAt as number) + 10;
+    // The panel carrying this sentence only exists for the SELECTED patient (see the "RE-POINTED"
+    // note above), so WF-006 must be chosen before its wording can be read at all.
+    const clock = typedClock("WF-006");
     expect(
-      screen.getAllByText(`${legalFormName(wf006!.legalForm!)} passed its deadline ${splitDuration(10)} ago`).length,
-    ).toBeGreaterThan(0);
-    expect(screen.queryByText(/due in -\d+ min/), "a passed deadline is counting down past zero").toBeNull();
+      within(clock).getByText(`${legalFormName(wf006!.legalForm!)} ended ${formatInstantWithDay(dueAt!, now)}`),
+    ).toBeDefined();
+    expect(within(clock).getByText("As typed on the form · passed", { exact: false })).toBeDefined();
+    expect(clock.textContent ?? "", "a passed typed time is counting down past zero").not.toMatch(COUNTDOWN_WORDS);
+    expect(screen.queryByText(/due in -\d+ ?m/u), "a passed deadline is counting down past zero").toBeNull();
   });
 
   it("names the form from the OFFICIAL REGISTER, never the bare code the register falls back to", () => {
@@ -170,12 +216,12 @@ describe("the delays screen states the legal deadline it is already reacting to"
     // Select each one in turn — see the "RE-POINTED" note above: the state chip carrying the form's
     // name only exists for whoever is currently selected.
     for (const movement of titled) {
-      inspectDelayPerson(movement.id);
+      const clock = typedClock(movement.id);
       const withTitle = legalFormName(movement.legalForm!);
       expect(
         // A substring matcher, not a built RegExp: the title contains "(" and ")", and escaping a
         // dynamic string into a pattern is how the first attempt produced an unparseable file.
-        screen.getAllByText((content) => content.includes(withTitle)).length,
+        within(clock).getAllByText((content) => content.includes(withTitle)).length,
         `${movement.id}: the row names the form without its register title (${withTitle})`,
       ).toBeGreaterThan(0);
     }
@@ -206,12 +252,17 @@ describe("the delays screen states the legal deadline it is already reacting to"
     // ANY movement's legal state renders at all, which would make this absence check vacuous rather
     // than a genuine proof that the sentence is withheld for this specific patient.
     for (const movement of withoutDeadline) {
-      inspectDelayPerson(movement.id);
+      const panel = openPerson(movement.id);
       const form = movement.legalForm;
       expect(
-        screen.queryByText(new RegExp(`${legalFormName(form!)} (due in|passed its deadline)`)),
+        within(panel).queryByTestId(`delays-legal-clock-${movement.id}`),
+        `${movement.id} carries no dueAt, so no typed time may be stated for its form`,
+      ).toBeNull();
+      expect(
+        within(panel).queryByText((content) => content.startsWith(`${legalFormName(form!)} end`)),
         `${movement.id} carries no dueAt, so no deadline may be stated for its form`,
       ).toBeNull();
+      expect(panel.textContent ?? "", `${movement.id}: a countdown was invented`).not.toMatch(COUNTDOWN_WORDS);
     }
   });
 });

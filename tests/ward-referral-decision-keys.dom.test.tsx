@@ -96,7 +96,13 @@ describe("decision keys on the Referrals board", () => {
     const wardForm = within(detail()).queryByTestId("ward-referral-match-decline-open");
     fireEvent.keyDown(window, { key: "d" });
     if (wardForm) {
-      expect(within(detail()).getByTestId("ward-referral-match-decline")).toBeInTheDocument();
+      // Referrals redesign (31 Oct 2026): desktop ED review opens the same radio reasons as the ward
+      // sheet, so D opens "Why decline?" and the confirm still waits for a reason.
+      expect(within(detail()).getByRole("radiogroup", { name: "Why decline?" })).toBeInTheDocument();
+      expect(within(detail()).getByTestId(/^ward-referral-match-decline(-emergency_department)?$/)).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      );
     } else {
       expect(document.activeElement?.getAttribute("data-testid")).toMatch(/^ward-referral-match-decline-reason-/);
     }
@@ -134,6 +140,8 @@ describe("decision keys on the Referrals board", () => {
     expect(document.activeElement).toBe(focused);
     expect(within(detail()).queryByTestId("ward-referral-match-confirm-accept-emergency_department")).toBeNull();
     expect(within(detail()).queryByTestId("ward-referral-match-decline")).toBeNull();
+    // Referrals redesign (31 Oct 2026): nor do the ED review's reasons open.
+    expect(within(detail()).queryByRole("radiogroup", { name: "Why decline?" })).toBeNull();
   });
 
   it("gives a read-only desk nothing to press", async () => {

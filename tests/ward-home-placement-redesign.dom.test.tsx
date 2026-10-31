@@ -7,6 +7,7 @@ import { TIER_TARGETS_NOTE } from "@/components/ward-management/coordinator/prio
 import { ShortlistPanel } from "@/components/ward-management/coordinator/shortlist-panel";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { splitDuration } from "@/components/ward-management/ward-clock";
+import { formTimeAsTyped } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -162,6 +163,16 @@ describe("Placement panel redesign", () => {
     expect(within(panel).getAllByText(TIER_TARGETS_NOTE)).toHaveLength(1);
   });
 
+  it("keeps override-only wards behind a button that states the count (Josh, 31 Oct 2026)", () => {
+    const panel = renderPanel({ movementId: "WF-009" });
+    const toggle = within(panel).getByTestId("ward-shortlist-review-toggle");
+    expect(toggle).toHaveTextContent(/^\d+ need an override · Show$/u);
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggle);
+    expect(toggle).toHaveTextContent(/^\d+ need an override · Hide$/u);
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+  });
+
   it("puts the accepted destination and its desk link on one row", () => {
     const movement = seeded(ACCEPTED_ID);
     const panel = renderPanel({ movementId: ACCEPTED_ID });
@@ -174,33 +185,35 @@ describe("Placement panel redesign", () => {
     expect(within(link).getByText(unitName).tagName).toBe("SPAN");
   });
 
-  it("writes a passed legal deadline in plain time beside its not-legally-checked tag", () => {
+  it("writes a passed legal deadline as typed beside its not-legally-checked tag (D-93)", () => {
     const movement = seeded(ACCEPTED_ID);
     const dueAt = movement.legalForm?.dueAt;
     expect(dueAt, "WF-004 must carry a recorded deadline for this to test anything").toBeDefined();
-    // 3413 minutes past the recorded deadline: once "3413 min ago", now "2d 8h ago".
-    const panel = renderPanel({ movementId: ACCEPTED_ID, nowOverride: dueAt! + 3413 });
+    // 3413 minutes past the recorded deadline: once "2d 8h ago", now the typed time only (D-93).
+    const now = dueAt! + 3413;
+    const panel = renderPanel({ movementId: ACCEPTED_ID, nowOverride: now });
     // The legal line under the patient (the "Why this wait" factors also name the deadline).
     const line = within(panel)
-      .getAllByText(/passed its deadline/u)
+      .getAllByText(/ended .+ as typed/u)
       .find((candidate) => within(candidate).queryByTestId("legal-limits-not-checked"));
     expect(line, "the legal line lost its not-legally-checked tag").toBeDefined();
     if (!line) return;
-    expect(line).toHaveTextContent(`Form ${movement.legalForm!.code} passed its deadline ${splitDuration(3413)} ago`);
-    expect(splitDuration(3413)).toBe("2d 8h");
+    expect(line).toHaveTextContent(formTimeAsTyped(movement.legalForm!, now));
+    expect(line).not.toHaveTextContent(splitDuration(3413));
     expect(line.textContent).not.toMatch(/\d+ min ago/u);
     // Owner rule D5: wherever a legal limit shows, it says it was not legally checked.
     expect(within(line).getByTestId("legal-limits-not-checked")).toBeInTheDocument();
   });
 
-  it("labels the checks in words and keeps the filter hooks", () => {
+  // Home redesign (30 Oct 2026): the checks summary is stated once, in words, on the eligibility
+  // checks for the ward shown; the header pill and its filter buttons repeated it and left.
+  it("states the checks summary once, in words, on the eligibility checks", () => {
     const panel = renderPanel({ movementId: ACCEPTED_ID });
-    const pill = within(panel).getByTestId("ward-shortlist-checks-clear-pill");
-    expect(pill.textContent).toMatch(/^Checks: (\d+) of (\d+) met(, \d+ to review)?$/u);
-    expect(within(panel).getByTestId("ward-shortlist-gate-filter-all").textContent).toMatch(/^All checks \(\d+\)$/u);
-    expect(within(panel).getByTestId("ward-shortlist-gate-filter-open").textContent).toMatch(
-      /^Still to review \(\d+\)$/u,
-    );
+    const summary = within(panel).getByRole("group", { name: "Eligibility checks" }).querySelector("summary")!;
+    expect(summary.getAttribute("data-badge")).toMatch(/^\d+ of \d+ met( · \d+ to review)?$/u);
+    expect(within(panel).queryByTestId("ward-shortlist-checks-clear-pill")).toBeNull();
+    expect(within(panel).queryByTestId("ward-shortlist-gate-filter-all")).toBeNull();
+    expect(within(panel).queryByTestId("ward-shortlist-gate-filter-open")).toBeNull();
   });
 
   it("hides the Declines disclosure when nothing was declined, and keeps it when something was", () => {

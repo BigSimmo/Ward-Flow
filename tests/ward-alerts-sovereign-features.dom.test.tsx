@@ -35,7 +35,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.getByRole("region", { name: "ED mental health team" })).toBeInTheDocument();
   });
 
-  it("highlights rows from a hero figure or an owner chip without hiding any", () => {
+  it("highlights rows from a hero figure without hiding any, with no owner menu on desktop", () => {
     const { container } = renderScreen();
     const total = container.querySelectorAll("li[data-alert-id]").length;
     expect(total).toBeGreaterThan(0);
@@ -53,11 +53,9 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     fireEvent.click(clear);
     expect(container.querySelectorAll("li[data-highlighted]")).toHaveLength(0);
 
-    const owners = screen.getByRole("group", { name: "Highlight by owner" });
-    fireEvent.click(within(owners).getByRole("button", { name: /ED team/ }));
-    for (const row of container.querySelectorAll("li[data-highlighted]")) {
-      expect(row).toHaveTextContent("ED mental health team");
-    }
+    // Josh, 31 Oct 2026 (answer 17): the desktop's Owner view under Arrange by replaces the owner menu,
+    // which only phones keep (tests/ward-alerts-screen.dom.test.tsx).
+    expect(screen.queryByRole("combobox", { name: "Highlight by owner" })).not.toBeInTheDocument();
   });
 
   it("opens the most urgent alert in the side panel and moves with Next alert", () => {
@@ -90,7 +88,7 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     [48 * 60, "2d overdue"],
     [3 * 60 + 5, "3h 05m overdue"],
     [5, "5m overdue"],
-  ] as const)("preserves the full recorded overdue duration of %s minutes", (elapsed, expected) => {
+  ] as const)("shows a legal form %s minutes past its typed time as typed, never as %s (D-93)", (elapsed, expected) => {
     function SetExpiry() {
       const { movements, dispatch } = useWardFlow();
       const movement = movements.find((m) => !m.closure && m.legalForm)!;
@@ -117,7 +115,10 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Set recorded expiry" }));
-    expect(screen.getByText(expected, { exact: true })).toBeVisible();
+    // D-93 (31 Oct 2026): legal form times only as typed. The row shows "Ended 09:42 as typed",
+    // and the overdue duration this test used to pin is gone.
+    expect(screen.getAllByText(/^Ended .+ as typed$/u)[0]).toBeVisible();
+    expect(screen.queryByText(expected, { exact: true })).toBeNull();
   });
 
   it("renders synthetic prototype badge in the subheader (FF8)", () => {

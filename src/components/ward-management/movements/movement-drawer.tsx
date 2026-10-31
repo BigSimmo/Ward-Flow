@@ -20,6 +20,11 @@ import {
   transportNeedState,
 } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
+import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
@@ -155,7 +160,6 @@ export function MovementDrawer({
   referrals,
   patients,
   edAccessTargetMinutes,
-  legalUrgentMinutes,
   dispatch,
   onClose,
   onFocusMovement,
@@ -177,8 +181,6 @@ export function MovementDrawer({
    * than the module default (`tests/ward-configuration-read-sites.test.ts`).
    */
   edAccessTargetMinutes: number;
-  /** Settings' `dueSoonUrgentMinutes`: how close a recorded legal expiry turns the line amber. */
-  legalUrgentMinutes: number;
   /** The same store the board behind this pop-up reads from. */
   dispatch: (event: WardFlowEvent) => void;
   onClose: () => void;
@@ -189,6 +191,8 @@ export function MovementDrawer({
   const baseId = useId();
   // Phone only: the tier uses the shared TierTile; desktop keeps its own pill (owner, 2026-10-11).
   const isPhone = useIsPhone();
+  // The typed legal time's colour reads the user's own warning settings, as Waiting and Legal forms do.
+  const thresholds = useDueSoonThresholds();
 
   if (movement === undefined) return null;
 
@@ -245,29 +249,28 @@ export function MovementDrawer({
         ? "Transport not booked"
         : "Transport not recorded";
 
-  // Legal: the register title plus the recorded expiry only. Never a computed limit (D5).
-  const dueAt = movement.legalForm?.dueAt;
-  const legalTone: WfTone | undefined =
-    dueAt === undefined || closure
-      ? undefined
-      : dueAt < now
-        ? "danger"
-        : dueAt - now < legalUrgentMinutes
-          ? "warning"
-          : undefined;
+  // Legal: the register title plus the typed expiry only, as typed. Never a computed limit (D5)
+  // and never a countdown (D-93). The colour comes from the user's warning settings, always with
+  // its words ("within 1h", "passed").
+  const dueAt = currentLegalDueAt(movement);
+  const standing = typedTimeStanding(movement, now, thresholds);
+  const legalTone: WfTone | undefined = dueAt === undefined || closure || !standing.word ? undefined : standing.tone;
   const legalTitle = movement.legalForm
     ? legalFormName(movement.legalForm)
     : movement.legalStatus
       ? `${movement.legalStatus} · No legal form recorded`
       : "No legal form recorded";
+  // A form that ended at the examination or on arrival has history, not a deadline (S-6).
   const legalWhen =
     dueAt === undefined
       ? movement.legalForm
-        ? "no recorded expiry"
+        ? movement.legalForm.dueAt !== undefined
+          ? "ended"
+          : "no recorded expiry"
         : ""
-      : dueAt < now
-        ? `recorded expiry passed ${splitDuration(now - dueAt)} ago`
-        : `recorded expiry ${formatInstantWithDay(dueAt, now)}`;
+      : // Legal times only as typed (D-93): "ended 15:42 as typed · passed", never a count.
+        `${typedTimePhrase(dueAt, now)}${standingSuffix(standing)}`;
+  const legalTyped = dueAt !== undefined;
 
   // Every ward ever asked: live requests, recorded declines and the accepting ward. A decline
   // removes the ward from the live list, so the live list alone would read "None yet".
@@ -333,6 +336,7 @@ export function MovementDrawer({
         legalTitle={legalTitle}
         legalWhen={legalWhen}
         legalTone={legalTone}
+        legalTyped={legalTyped}
         hasBlocker={hasBlocker && !closure}
         open={open}
         onClose={onClose}
@@ -471,9 +475,15 @@ export function MovementDrawer({
       <div className={d.facts}>
         <p className={d.legal} data-tone={legalTone}>
           {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : <FileText size={14} aria-hidden="true" />}
-          <span className={d.trunc}>
+          <span className={d.legalText}>
             <strong>{legalTitle}</strong>
             {legalWhen ? ` · ${legalWhen}` : ""}
+            {legalTyped ? (
+              <>
+                {" "}
+                <LegalLimitsNotChecked variant="tag" />
+              </>
+            ) : null}
           </span>
         </p>
         <dl className={d.grid}>
@@ -751,6 +761,7 @@ function MovementPhoneSheet({
   legalTitle,
   legalWhen,
   legalTone,
+  legalTyped,
   hasBlocker,
   open,
   onClose,
@@ -769,6 +780,8 @@ function MovementPhoneSheet({
   legalWhen: string;
   /** Set when the RECORDED expiry has passed or is near (D5: a typed time, never a computed one). */
   legalTone: WfTone | undefined;
+  /** A typed form time is shown, so the "limits not legally checked" tag goes with it. */
+  legalTyped: boolean;
   hasBlocker: boolean;
   open: boolean;
   onClose: () => void;
@@ -840,18 +853,21 @@ function MovementPhoneSheet({
             <dd>
               {legalTone ? <StatusGlyph tone={legalTone} size={9} /> : null}
               {legalTitle}
+              {/* The typed time sits in the cell, once, with or without a barrier (31 Oct 2026). */}
+              {legalWhen ? (
+                <span className={d.phLegalWhen} data-testid="ward-movement-phone-legal-expiry">
+                  {legalWhen}
+                  {legalTyped ? (
+                    <>
+                      {" "}
+                      <LegalLimitsNotChecked variant="tag" />
+                    </>
+                  ) : null}
+                </span>
+              ) : null}
             </dd>
           </div>
         </dl>
-        {legalTone && !hasBlocker && !closure ? (
-          <div className={d.phBox} data-testid="ward-movement-phone-legal-expiry">
-            <h3 className={d.phLabel}>Legal</h3>
-            <p className={d.phLine}>
-              <StatusGlyph tone={legalTone} size={9} />
-              {legalTitle} · {legalWhen}
-            </p>
-          </div>
-        ) : null}
         {closure ? (
           <div className={d.phBox}>
             <h3 className={d.phLabel}>Ended</h3>
@@ -867,10 +883,7 @@ function MovementPhoneSheet({
               <StatusGlyph tone={waitTone === "danger" ? "danger" : "warning"} size={9} />
               <strong>{movement.blocker}</strong>
             </p>
-            <p className={d.phMeta}>
-              {stageCopy[movement.stage].label}
-              {legalWhen ? ` · ${legalWhen}` : ""}
-            </p>
+            <p className={d.phMeta}>{stageCopy[movement.stage].label}</p>
           </div>
         ) : null}
         {step ? (

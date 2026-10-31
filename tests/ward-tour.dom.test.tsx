@@ -63,6 +63,14 @@ afterEach(() => {
 });
 
 describe("tour player", () => {
+  it("has no dead Back on the first card, and its welcome says how long once (round 2, #1118)", () => {
+    render(<WardTour onClose={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
+    expect(card().textContent).not.toMatch(/This takes about/);
+    act(() => fireEvent.click(screen.getByTestId("ward-tour-next")));
+    expect(screen.getByRole("button", { name: "Back" })).toBeTruthy();
+  });
+
   it("walks the desk's steps, lists what the desk can do last, and marks the tour seen when done", () => {
     const onClose = vi.fn();
     render(<WardTour onClose={onClose} />);

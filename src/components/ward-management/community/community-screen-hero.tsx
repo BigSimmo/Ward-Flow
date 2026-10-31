@@ -9,7 +9,7 @@
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
-import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, Popover, SrOnly, TextInput } from "@/components/wf";
+import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
@@ -17,7 +17,6 @@ import { referralWaitLine } from "@/components/ward-management/referrals/referra
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
-import { communitySearchRenderer } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
 
 /**
@@ -60,8 +59,8 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
     admittedWhileAlreadyWithTeam,
     activeTab,
     sentReferrals,
+    ownTeamOnly,
   } = view;
-  const renderSearch = communitySearchRenderer(view);
   return (
     <div className={v6.standing}>
       {/*
@@ -80,19 +79,22 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
             <span className={v6.heroAnswer} data-testid="ward-community-hero-answer">
               <b>{isDemoMode ? teamConfig.caseload : caseloadRows.length}</b> on the caseload
             </span>
-            <button
-              ref={switchTriggerRef}
-              type="button"
-              className={v6.heroMenuButton}
-              aria-label="Change team"
-              title="Switch community team"
-              aria-haspopup="dialog"
-              aria-expanded={switchOpen}
-              onClick={() => setSwitchOpen(true)}
-              data-testid="ward-community-switch-team"
-            >
-              <Icon icon={ChevronDown} size={14} />
-            </button>
+            {/* A community team desk opens its own team only, so it has no way across. */}
+            {ownTeamOnly ? null : (
+              <button
+                ref={switchTriggerRef}
+                type="button"
+                className={v6.heroMenuButton}
+                aria-label="Change team"
+                title="Switch community team"
+                aria-haspopup="dialog"
+                aria-expanded={switchOpen}
+                onClick={() => setSwitchOpen(true)}
+                data-testid="ward-community-switch-team"
+              >
+                <Icon icon={ChevronDown} size={14} />
+              </button>
+            )}
           </>
         }
         // Device audit option A (11 Oct 2026): one switch. The tabs below the title are the
@@ -100,11 +102,16 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
         foot={
           <CheckingFoot
             items={[
-              {
-                id: "caseload",
-                label: "Caseload",
-                value: isDemoMode ? teamConfig.caseload : caseloadRows.length,
-              },
+              // A community team desk: the title already says how many are on the caseload.
+              ...(ownTeamOnly
+                ? []
+                : [
+                    {
+                      id: "caseload",
+                      label: "Caseload",
+                      value: isDemoMode ? teamConfig.caseload : caseloadRows.length,
+                    },
+                  ]),
               {
                 id: "urgent",
                 label: "Urgent answers",
@@ -134,25 +141,6 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
                 </Button>
               )}
             />
-            <Popover
-              label="Search sample patients"
-              align="end"
-              panelClassName={v6.searchPanel}
-              trigger={(props) => (
-                <Button
-                  {...props}
-                  variant="onHero"
-                  size="sm"
-                  iconOnly
-                  icon={Search}
-                  id="ward-community-search-trigger"
-                  aria-label="Search sample patients by name or UMRN"
-                  title="Search sample patients by name or UMRN"
-                />
-              )}
-            >
-              {renderSearch}
-            </Popover>
           </>
         }
         bar={
@@ -234,7 +222,11 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
           </div>
         }
       />
-      <SrOnly>The bed coordinator&apos;s view of this team&apos;s referrals and bed flow.</SrOnly>
+      <SrOnly>
+        {ownTeamOnly
+          ? "Your team's referrals and bed flow."
+          : "The bed coordinator's view of this team's referrals and bed flow."}
+      </SrOnly>
 
       {/* ── Figures across the top ── */}
       <div className={styles.legacyFigureStrip}>
@@ -275,90 +267,95 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
         </WardFigureStrip>
       </div>
 
-      {/*
-       * Every other team, whatever the catchment source turns out to name. A builder over
-       * `COMMUNITY_TEAM_PAGES` rather than a hand-written list, for the same reason that array is
-       * derived: a further team must reach this navigation by appearing in the catchment source
-       * and by nothing else.
-       *
-       * ⚠️ **THIS SWITCHER IS NOT THE WAY IN. IT IS THE WAY ACROSS — AND THERE IS NOW A WAY IN.**
-       * `/ward-flow/community` (`community-index.tsx`) is the front door: it lists every
-       * team a referral can name, alphabetically, links each one, and `ward-nav.ts` carries it as
-       * the `community` entry so the index is itself reachable from the rail. So a reader who is
-       * not already on a team page reaches any team in two clicks, and this switcher is the
-       * convenience for a reader who is.
-       *
-       * ⚠️ **`tests/ward-nav.test.ts` STILL RECORDS NOUGHT REACHABLE INSTANCES FOR THIS ROUTE,
-       * AND THAT FIGURE NO LONGER MEANS WHAT IT SAYS ON ITS FACE.** Read the entry, not the
-       * number — and note that the count of the full set is deliberately not repeated here, for
-       * the reason the paragraph below gives. It now records a limit of a SOURCE SCAN, not a gap in the navigation: the index
-       * builds its hrefs inside a `.map()` via `communityTeamHref`, and that scan counts a built
-       * site as nought concrete instances **by design**, because reading a builder as
-       * reachability is the defect class the guard exists to catch. Teaching it to count this one
-       * would loosen it. What the index really covers is established by rendering it and reading
-       * the links back out of the markup — `tests/ward-community-index.dom.test.tsx` pins the
-       * linked set against `COMMUNITY_TEAM_PAGES` exactly and goes red on a single missing team.
-       *
-       * ⚠️ **THIS PARAGRAPH HAS NOW BEEN WRONG IN BOTH DIRECTIONS, WHICH IS THE POINT.** Until
-       * 2026-09-01 it claimed the rail already carried a worked instance of this route — the
-       * shape of `board/[unitId]`'s entry in that same test, not of this one. It was corrected to
-       * say the route was an orphan reachable only by typing a URL, which was true for about an
-       * hour, until `/community` landed in the merge that same evening. **A sentence describing
-       * an absence is a sentence with a short shelf life**, because the absence is usually
-       * somebody's next task. Cite the entry and its reasoning, never the bare figure: an
-       * unchanged number whose meaning inverted is the one a careless check waves through.
-       *
-       * ⚠️ **AND NO COUNT OF THE TEAMS IS WRITTEN HERE.** This paragraph carried two of them — a
-       * count of the other teams, and a count of the pages this switcher reaches — and both were
-       * residue from the region era, when membership came from `ward-teams.ts`'s
-       * `COMMUNITY_TEAMS`, a `Record<HomeRegion, string>` this hub deliberately does not read.
-       * The real size is a property of the extracted catchment table, so a figure typed here has
-       * no guard and goes stale the moment that source changes; the retired figures are not
-       * repeated even as history, because a phrase written down is a phrase that can be copied
-       * back. The list renders from the derivation; the prose describes the set.
-       *
-       * ⚠️ **KEPT AS ONE COMMENT WITH THE NOTE BELOW, DELIBERATELY.** `tests/ward-community-corrected-
-       * claims.test.ts` locates "the switcher's own comment" by walking backward from the `<nav>`
-       * to the nearest comment-close and comment-open marker pair, so a second, separate comment
-       * landing between this one and the element it scans for would be captured INSTEAD of this
-       * one — silently shrinking the region every absence pin below is checked against. A
-       * `<nav>`, not a `WardPanel` — the
-       * landmark role is what makes this switcher findable by `getByRole("navigation", ...)`, and
-       * `WardPanel` renders a `<section>`. `composes` borrows the primitive's own header classes
-       * instead, so the chrome matches every other panel on this page exactly rather than
-       * approximately.
-       */}
-      <nav className={styles.teamSwitcher} aria-label="Other community teams">
-        <details className={`${styles.teamDisclosure} source-print`}>
-          <summary className={styles.teamSwitcherHeader}>
-            <span className={styles.teamSwitcherTitle}>Change team</span>
-            <span className={styles.switchCount}>{COMMUNITY_TEAM_PAGES.length - 1} other teams</span>
-          </summary>
-          <div className={styles.teamPopover}>
-            <div className={styles.teamPopoverHeader}>
-              <span>Select team</span>
-              <span className={styles.teamPopoverMeta}>{COMMUNITY_TEAM_PAGES.length - 1} other catchments</span>
-            </div>
-            <ul className={styles.teamList}>
-              {COMMUNITY_TEAM_PAGES.filter((other) => other.id !== team.id).map((other) => {
-                const suburbs = communityTeamSuburbCounts().get(other.name);
-                return (
-                  <li key={other.id} className={styles.teamListItem}>
-                    <Link className={styles.teamLink} href={communityTeamHref(other)}>
-                      <span className={styles.teamLinkName}>{other.name}</span>
-                      {suburbs ? (
-                        <span className={styles.teamLinkMeta}>
-                          {suburbs} {suburbs === 1 ? "suburb" : "suburbs"}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </details>
-      </nav>
+      {/* A community team desk opens its own team only, so it has no way across. */}
+      {ownTeamOnly ? null : (
+        <>
+          {/*
+           * Every other team, whatever the catchment source turns out to name. A builder over
+           * `COMMUNITY_TEAM_PAGES` rather than a hand-written list, for the same reason that array is
+           * derived: a further team must reach this navigation by appearing in the catchment source
+           * and by nothing else.
+           *
+           * ⚠️ **THIS SWITCHER IS NOT THE WAY IN. IT IS THE WAY ACROSS — AND THERE IS NOW A WAY IN.**
+           * `/ward-flow/community` (`community-index.tsx`) is the front door: it lists every
+           * team a referral can name, alphabetically, links each one, and `ward-nav.ts` carries it as
+           * the `community` entry so the index is itself reachable from the rail. So a reader who is
+           * not already on a team page reaches any team in two clicks, and this switcher is the
+           * convenience for a reader who is.
+           *
+           * ⚠️ **`tests/ward-nav.test.ts` STILL RECORDS NOUGHT REACHABLE INSTANCES FOR THIS ROUTE,
+           * AND THAT FIGURE NO LONGER MEANS WHAT IT SAYS ON ITS FACE.** Read the entry, not the
+           * number — and note that the count of the full set is deliberately not repeated here, for
+           * the reason the paragraph below gives. It now records a limit of a SOURCE SCAN, not a gap in the navigation: the index
+           * builds its hrefs inside a `.map()` via `communityTeamHref`, and that scan counts a built
+           * site as nought concrete instances **by design**, because reading a builder as
+           * reachability is the defect class the guard exists to catch. Teaching it to count this one
+           * would loosen it. What the index really covers is established by rendering it and reading
+           * the links back out of the markup — `tests/ward-community-index.dom.test.tsx` pins the
+           * linked set against `COMMUNITY_TEAM_PAGES` exactly and goes red on a single missing team.
+           *
+           * ⚠️ **THIS PARAGRAPH HAS NOW BEEN WRONG IN BOTH DIRECTIONS, WHICH IS THE POINT.** Until
+           * 2026-09-01 it claimed the rail already carried a worked instance of this route — the
+           * shape of `board/[unitId]`'s entry in that same test, not of this one. It was corrected to
+           * say the route was an orphan reachable only by typing a URL, which was true for about an
+           * hour, until `/community` landed in the merge that same evening. **A sentence describing
+           * an absence is a sentence with a short shelf life**, because the absence is usually
+           * somebody's next task. Cite the entry and its reasoning, never the bare figure: an
+           * unchanged number whose meaning inverted is the one a careless check waves through.
+           *
+           * ⚠️ **AND NO COUNT OF THE TEAMS IS WRITTEN HERE.** This paragraph carried two of them — a
+           * count of the other teams, and a count of the pages this switcher reaches — and both were
+           * residue from the region era, when membership came from `ward-teams.ts`'s
+           * `COMMUNITY_TEAMS`, a `Record<HomeRegion, string>` this hub deliberately does not read.
+           * The real size is a property of the extracted catchment table, so a figure typed here has
+           * no guard and goes stale the moment that source changes; the retired figures are not
+           * repeated even as history, because a phrase written down is a phrase that can be copied
+           * back. The list renders from the derivation; the prose describes the set.
+           *
+           * ⚠️ **KEPT AS ONE COMMENT WITH THE NOTE BELOW, DELIBERATELY.** `tests/ward-community-corrected-
+           * claims.test.ts` locates "the switcher's own comment" by walking backward from the `<nav>`
+           * to the nearest comment-close and comment-open marker pair, so a second, separate comment
+           * landing between this one and the element it scans for would be captured INSTEAD of this
+           * one — silently shrinking the region every absence pin below is checked against. A
+           * `<nav>`, not a `WardPanel` — the
+           * landmark role is what makes this switcher findable by `getByRole("navigation", ...)`, and
+           * `WardPanel` renders a `<section>`. `composes` borrows the primitive's own header classes
+           * instead, so the chrome matches every other panel on this page exactly rather than
+           * approximately.
+           */}
+          <nav className={styles.teamSwitcher} aria-label="Other community teams">
+            <details className={`${styles.teamDisclosure} source-print`}>
+              <summary className={styles.teamSwitcherHeader}>
+                <span className={styles.teamSwitcherTitle}>Change team</span>
+                <span className={styles.switchCount}>{COMMUNITY_TEAM_PAGES.length - 1} other teams</span>
+              </summary>
+              <div className={styles.teamPopover}>
+                <div className={styles.teamPopoverHeader}>
+                  <span>Select team</span>
+                  <span className={styles.teamPopoverMeta}>{COMMUNITY_TEAM_PAGES.length - 1} other catchments</span>
+                </div>
+                <ul className={styles.teamList}>
+                  {COMMUNITY_TEAM_PAGES.filter((other) => other.id !== team.id).map((other) => {
+                    const suburbs = communityTeamSuburbCounts().get(other.name);
+                    return (
+                      <li key={other.id} className={styles.teamListItem}>
+                        <Link className={styles.teamLink} href={communityTeamHref(other)}>
+                          <span className={styles.teamLinkName}>{other.name}</span>
+                          {suburbs ? (
+                            <span className={styles.teamLinkMeta}>
+                              {suburbs} {suburbs === 1 ? "suburb" : "suburbs"}
+                            </span>
+                          ) : null}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </details>
+          </nav>
+        </>
+      )}
     </div>
   );
 }

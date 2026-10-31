@@ -13,7 +13,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, ListChecks, Plus } from "lucide-react";
+import { Activity, BedDouble, House, Bell, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -42,7 +42,7 @@ import { requestToolsTool } from "../tools/ward-tools-open";
 import { useAccessNavFilter } from "./ward-access";
 import { useWardFeatureFlagCheck } from "./ward-feature-flag-store";
 import { isPhoneDesktopOnlyPath } from "./ward-phone-desktop-only";
-import { useDeskRoleLabel } from "./ward-access-store";
+import { useDeskRoleLabel, useEffectiveWardAccess } from "./ward-access-store";
 import { CountChip, countIn } from "./ward-phone-menu-parts";
 import { usePhoneCreateOptions } from "./ward-phone-create-options";
 import styles from "./ward-phone-menu.module.css";
@@ -85,17 +85,23 @@ type ResolvedDockSlot =
 /**
  * C2 (Josh, 19 Oct 2026): a bottom bar per role. Two places left of the +, two slots right of it.
  * A ward gets My ward, Referrals, +, Alerts, Handover; the other roles in the B1 table get the same
- * idea from their own menu. Alerts and Activity stay two tabs (the merge was only a "could"). The
- * bed coordinator's dock is unchanged. A slot the desk cannot open is left out.
+ * idea from their own menu. A slot the desk cannot open is left out.
+ *
+ * A phone dock per desk (Josh, 31 Oct 2026: "decide what is the most useful, specific to the
+ * role"): the bed coordinator's dock is kept as designed; every other desk gets the pages it uses
+ * most, with Alerts straight after the + on every desk that has one. A page that leaves the dock
+ * stays in the phone Menu. Handover stays off the dock for the nurse in charge and the bed manager;
+ * it remains on My ward and in the Menu.
  */
 const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
   coordinator: {
     left: [page("command", "Home"), page("referrals", "Referrals")],
     right: [{ kind: "queue" }, { kind: "activity" }],
   },
+  // Nurse in charge: who is arriving and leaving all shift beats Handover.
   ward: {
     left: [page("wards", "My ward"), page("referrals", "Referrals")],
-    right: [{ kind: "alerts" }, page("handover", "Handover")],
+    right: [{ kind: "alerts" }, page("movements", "Coming and going")],
   },
   ed: {
     left: [page("ed", "My ED"), page("referrals", "Referrals")],
@@ -105,18 +111,28 @@ const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonl
     left: [page("officer", "My jobs"), page("alerts", "Alerts")],
     right: [page("on-call", "On-call"), { kind: "activity" }],
   },
+  // Community clinician: where the team's patients are in the bed journey beats the event log.
   community: {
     left: [page("community", "My team"), page("referrals", "Referrals")],
-    right: [{ kind: "alerts" }, { kind: "activity" }],
+    right: [{ kind: "alerts" }, page("movements", "Movements")],
   },
+  // Site bed manager: the site's people waiting in ED for a bed beat Handover.
   bed_manager: {
     left: [page("capacity", "Capacity"), page("wards", "Wards")],
-    right: [{ kind: "alerts" }, page("handover", "Handover")],
+    right: [{ kind: "alerts" }, page("delays", "Waiting")],
   },
+  // Executive: the overview. Its Alerts list is the bed coordinator's and is empty here, so the slot
+  // goes to Capacity. Home is not open to this desk, so the dock reads Statistics, Capacity, Activity.
   executive: {
     left: [page("command", "Home"), page("statistics", "Statistics")],
-    right: [{ kind: "queue" }, { kind: "activity" }],
+    right: [page("capacity", "Capacity"), { kind: "activity" }],
   },
+};
+
+/** The access admin borrows the executive's chrome but works in Governance. */
+const ADMIN_DOCK: { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] } = {
+  left: [page("governance", "Governance")],
+  right: [{ kind: "activity" }],
 };
 
 /** Counted pages that are work waiting on someone. Capacity counts free beds, so it is not here. */
@@ -145,6 +161,7 @@ function phoneMenuModel(
   flagOn?: Parameters<typeof railEntries>[0],
   accessNav: (entries: readonly RailEntry[]) => RailEntry[] = (entries) => [...entries],
   roleLabel: string = CHROME_ROLE_LABELS[role],
+  accessAdmin = false,
 ) {
   // A page that needs a larger screen (the bed meeting TV view) is not offered on a phone at all.
   // Role access plan: only the screens the desk's role may open.
@@ -157,8 +174,9 @@ function phoneMenuModel(
     const entry = byId.get(slot.id);
     return entry ? [{ kind: "page", entry, label: slot.label }] : [];
   };
-  const dock = DOCK[dockRole].left.flatMap(resolve);
-  const dockRight = DOCK[dockRole].right.flatMap(resolve);
+  const dockSlots = accessAdmin ? ADMIN_DOCK : DOCK[dockRole];
+  const dock = dockSlots.left.flatMap(resolve);
+  const dockRight = dockSlots.right.flatMap(resolve);
   const needs = strictNeeds(byId, counts);
   // Nothing twice: a page in the dock or under Needs you leaves its group, and New referral is the +.
   const shown = new Set([
@@ -169,7 +187,8 @@ function phoneMenuModel(
     ...needs.flatMap((need) => (need.entryId ? [need.entryId] : [])),
   ]);
   // B1 (Josh, 19 Oct 2026): the role's own menu first, then everything else in the rail's groups.
-  const menu = roleMenu(entries, role);
+  // The access admin's own menu leads with Governance, as on the rail.
+  const menu = roleMenu(entries, role, accessAdmin);
   const main = menu.main.filter((item) => !shown.has(item.id));
   const groups = [
     { label: roleLabel, entries: main },
@@ -245,10 +264,10 @@ function actNowNeed(actNow: number, oneAlertsQueue: boolean): NeedRow[] {
     : [
         {
           id: "act-now",
-          label: "Act-now tasks",
-          meta: "red rows in Tasks",
+          label: "Act-now alerts",
+          meta: "red rows in Alerts",
           count: actNow,
-          icon: ListChecks,
+          icon: Bell,
           actNow: true,
         },
       ];
@@ -268,6 +287,12 @@ function dockTail(label: string, value: number | undefined, detail: string, plai
   if (value) return `, ${value > 99 ? "99+" : value} ${detail}`;
   return plain.startsWith(label) ? plain.slice(label.length) : "";
 }
+
+/**
+ * Final round (Josh, 31 Oct 2026): a label longer than this ("Coming and going") takes two lines,
+ * and its dock gives every tab the same two-line label area under a top-aligned icon.
+ */
+const DOCK_ONE_LINE_CHARS = 12;
 
 function DockFace({
   icon: Icon,
@@ -375,11 +400,12 @@ function PhoneDock({
             data-testid="ward-phone-menu-tasks"
             onClick={() => onDrawer("tasks")}
           >
+            {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". */}
             <DockFace
-              icon={ListChecks}
-              label="Tasks"
+              icon={Bell}
+              label="Alerts"
               count={tasksCount}
-              tail={dockTail("Tasks", tasksCount, "outstanding", `Tasks, ${tasksCount} outstanding`)}
+              tail={dockTail("Alerts", tasksCount, "outstanding", `Alerts, ${tasksCount} outstanding`)}
             />
           </button>
         );
@@ -422,14 +448,25 @@ function PhoneDock({
         );
     }
   };
-  // B6-05 (device sweep, 24 Oct 2026): a desk with fewer than two slots a side (executive, admin)
-  // keeps the + in the middle column, under the dock's centred hump, with empty cells beside it.
+  // B6-05 (device sweep, 24 Oct 2026): a desk with fewer than two slots a side keeps the + in the
+  // middle column, under the dock's centred hump, with empty cells beside it. A desk with nothing to
+  // start (transport officer, executive, access admin) has no + and no hump, so its tabs share the
+  // dock's width evenly instead of leaving blank slots (Josh, 30 Oct 2026).
   const gap = (count: number, side: string) =>
-    Array.from({ length: Math.max(0, 2 - count) }, (_, index) => (
-      <span key={`${side}-gap-${index}`} aria-hidden="true" />
-    ));
+    canCreate
+      ? Array.from({ length: Math.max(0, 2 - count) }, (_, index) => (
+          <span key={`${side}-gap-${index}`} aria-hidden="true" />
+        ))
+      : null;
+  const tabCount = places.length + right.length;
+  const twoLine = [...places, ...right].some((item) => "label" in item && item.label.length > DOCK_ONE_LINE_CHARS);
   return (
-    <nav className={styles.dock} aria-label="Quick open" data-testid="ward-phone-dock">
+    <nav
+      className={twoLine ? `${styles.dock} ${styles.twoLine}` : styles.dock}
+      aria-label="Quick open"
+      data-testid="ward-phone-dock"
+      style={canCreate || tabCount === 0 ? undefined : { gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))` }}
+    >
       {gap(places.length, "left")}
       {places.map(slot)}
       {canCreate ? (
@@ -445,10 +482,7 @@ function PhoneDock({
             <Plus aria-hidden="true" strokeWidth={2} />
           </button>
         </span>
-      ) : (
-        // The middle cell stays, so the places either side keep their columns.
-        <span className={styles.riseSlot} aria-hidden="true" />
-      )}
+      ) : null}
       {right.map(slot)}
       {gap(right.length, "right")}
     </nav>
@@ -549,6 +583,7 @@ export function WardPhoneMenu({
 }: WardPhoneMenuProps) {
   const pathname = usePathname() ?? "";
   const { counts, shellRole, role: routeRole } = useWardNavCounts();
+  const accessAdmin = useEffectiveWardAccess().role === "admin";
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
@@ -590,7 +625,7 @@ export function WardPhoneMenu({
     dockRight,
     needs: overdueNeeds,
     groups,
-  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel);
+  } = phoneMenuModel(shellRole, counts, dockRole, flagOn, accessNav, deskRoleLabel, accessAdmin);
   // Act-now tasks are the signed-in person's, gated as the bar's Tasks list is (`shellRole`).
   const {
     movements,

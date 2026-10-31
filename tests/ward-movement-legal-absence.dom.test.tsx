@@ -20,7 +20,6 @@ function renderDrawer(movement: Movement, phone: boolean) {
       referrals={[]}
       patients={[]}
       edAccessTargetMinutes={ED_ACCESS_TARGET_MINUTES}
-      legalUrgentMinutes={60}
       dispatch={() => {}}
       onClose={() => {}}
     />,
@@ -52,7 +51,9 @@ describe.each([false, true])("movement legal absence (phone=%s)", (phone) => {
     renderDrawer(movement, phone);
     const dialog = screen.getByRole("dialog");
     expect(dialog).toHaveTextContent(legalFormName(movement.legalForm!));
-    expect(dialog).toHaveTextContent("recorded expiry passed 30m ago");
+    // D-93 (31 Oct 2026): the typed time only, never "recorded expiry passed 30m ago".
+    expect(dialog).toHaveTextContent(/ended \S+ as typed/u);
+    expect(dialog).not.toHaveTextContent("30m ago");
     expect(dialog).not.toHaveTextContent("No legal form recorded");
   });
 });

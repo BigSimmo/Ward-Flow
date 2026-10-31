@@ -743,7 +743,9 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     }
   });
 
-  it("keeps the role switcher in Tools and opens the one Demo panel from the Synthetic pill (change 8)", async () => {
+  // The new frame (Josh, 31 Oct 2026): no Synthetic pill in the header, so the board clock opens the
+  // one Demo panel in Tools (`requestDemoMenu` falls back to Tools). The footer notice stays.
+  it("keeps the role switcher in Tools and opens the one Demo panel from the board clock", async () => {
     const user = userEvent.setup();
     renderShell();
 
@@ -752,24 +754,22 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
     const withinDialog = within(dialog);
 
     // Tools review (15 Oct 2026): one sheet, no Shift desk tab. Change view sits at the top.
-    // Change 8 (D-77, 21 Oct 2026): the scenario controls left Tools for the Synthetic pill.
     expect(withinDialog.queryByRole("button", { name: /^Shift desk$/ })).toBeNull();
     expect(await withinDialog.findByRole("button", { name: /^Change view/ }, { timeout: 15_000 })).toBeVisible();
-    expect(withinDialog.queryByTestId("ward-tools-toggle-demo")).toBeNull();
-    expect(withinDialog.queryByRole("region", { name: "Demo" })).not.toBeInTheDocument();
+    expect(withinDialog.getByRole("region", { name: "Demo" })).toBeInTheDocument();
     expect(withinDialog.queryByRole("link", { name: "Exit to developer hub" })).not.toBeInTheDocument();
     expect(withinDialog.queryByRole("group", { name: "Appearance" })).not.toBeInTheDocument();
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog", { name: /Tools/ })).toBeNull());
 
-    const pill = screen.getByRole("button", { name: /^Data mode: Synthetic prototype/ });
-    await user.click(pill);
-    expect(pill).toHaveAttribute("aria-expanded", "true");
-    const menu = await screen.findByRole("dialog", { name: "Demo" }, { timeout: 15_000 });
-    const panel = await within(menu).findByTestId("ward-tools-demo-panel");
+    expect(screen.queryByRole("button", { name: /^Data mode: Synthetic prototype/ })).toBeNull();
+    await user.click(screen.getByTestId("ward-bar-demo-clock"));
+    const tools = await screen.findByRole("dialog", { name: /Tools/ }, { timeout: 15_000 });
+    const panel = await within(tools).findByTestId("ward-tools-demo-panel");
     // One list of every scenario (the seven standard stories and the opt-in fictional network), so the
     // separate Demo reset block is not repeated here.
-    expect(within(panel).getAllByRole("radio")).toHaveLength(WARD_SCENARIOS.length);
+    const scenarios = within(panel).getByRole("group", { name: "Demo scenario" });
+    expect(within(scenarios).getAllByRole("button")).toHaveLength(WARD_SCENARIOS.length);
     expect(within(panel).queryByTestId("ward-demo-reset")).toBeNull();
   });
 

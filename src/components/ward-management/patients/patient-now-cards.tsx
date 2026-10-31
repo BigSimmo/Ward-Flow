@@ -14,6 +14,7 @@ import { formProgression } from "@/components/ward-management/legal-forms/legal-
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now-cards.module.css";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 import { useDueSoonThresholds, useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
@@ -93,8 +94,8 @@ export function PatientWhyCard({
 
 /**
  * Legal now: only the authority in force and the form still needed. Forms show when they were
- * recorded; a lapse time shows only when a person typed the expiry from the form (D5), with the
- * same time left the Forms and Delays pages show (audit A3-3). Superseded and ended forms are in
+ * recorded; a lapse time shows only when a person typed the expiry from the form (D5), as typed,
+ * the same words the Forms and Delays pages show (audit A3-3; legal times only as typed, 31 Oct 2026). Superseded and ended forms are in
  * Documents.
  */
 export function PatientLegalNowCard({
@@ -107,13 +108,16 @@ export function PatientLegalNowCard({
   movement?: Movement;
   patient?: Patient;
   onAllForms: () => void;
-  /** The demo clock, for the time left on a typed expiry. */
+  /** The demo clock, for the typed expiry's words ("Ends 15:42 as typed"). */
   now?: Instant;
   /** Absent without leave: an order stays in force while the person is missing (audit A3-2). */
   absent?: boolean;
 }) {
   const legalId = useId();
   const thresholds = useDueSoonThresholds();
+  // Access audit (31 Oct 2026): a desk that cannot open Legal forms (the site bed manager) gets no link.
+  const canOpenHref = useCanOpenHref();
+  const canRecordForm = movement !== undefined && canOpenHref(recordFormHref(movement.id));
   const rows: Array<{
     tone: WfTone;
     code: string;
@@ -137,7 +141,8 @@ export function PatientLegalNowCard({
       name: progression
         ? `Ended ${progression.endedWhen}`
         : (formTitleForCode(movement.legalForm.code) ?? "Title not in the forms register"),
-      time: expiry ? expiry.at : recordedAt !== undefined ? clock(recordedAt) : undefined,
+      // The typed expiry is already in `left` ("Ends 15:42 as typed"), so the time is not said twice.
+      time: expiry ? undefined : recordedAt !== undefined ? clock(recordedAt) : undefined,
       left: expiry?.text,
       ended: progression !== undefined,
     });
@@ -233,7 +238,7 @@ export function PatientLegalNowCard({
               <span className={styles.phItemText}>
                 <strong>No form recorded</strong>
               </span>
-              {isOpen(movement) ? (
+              {isOpen(movement) && canRecordForm ? (
                 <Link className={styles.phLink} href={recordFormHref(movement.id)}>
                   Record a form
                 </Link>
@@ -279,7 +284,7 @@ export function PatientLegalNowCard({
             <span className={styles.itemText}>
               <strong>No form recorded</strong>
             </span>
-            {isOpen(movement) ? (
+            {isOpen(movement) && canRecordForm ? (
               <Link className={buttonClass({ size: "sm", variant: "ghost" })} href={recordFormHref(movement.id)}>
                 Record a form
               </Link>

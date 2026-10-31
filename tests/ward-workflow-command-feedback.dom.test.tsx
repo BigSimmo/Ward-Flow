@@ -8,6 +8,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { useWardCommandCompletion } from "@/components/ward-management/ward/use-ward-command-completion";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 function deferred() {
   let resolve!: (outcome: WardCommandOutcome) => void;
@@ -203,7 +204,7 @@ describe("ward command feedback follows its own completion", () => {
     const undoReply = deferred();
     const { occupied, free, record } = renderWard(reply, vi.fn<(...args: unknown[]) => unknown>(), undoReply);
     fireEvent.click(occupied);
-    fireEvent.click(screen.getByRole("button", { name: "Move to another bed" }));
+    fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(free);
     fireEvent.click(free);
     expect(record).toHaveBeenCalledTimes(1);

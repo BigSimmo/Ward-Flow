@@ -717,10 +717,6 @@ button.stat:hover .statV {
   background: var(--wf-selected);
 }
 
-.r[aria-selected="true"] td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent);
-}
-
 .whoBtn {
   display: block;
   width: 100%;
@@ -897,7 +893,6 @@ button.stat:hover .statV {
 
 .sx {
   padding: 10px 18px 12px 16px;
-  box-shadow: inset 3px 0 0 var(--wf-accent);
 }
 
 .sxPlot {
@@ -1123,13 +1118,6 @@ button.stat:hover .statV {
   font-size: var(--wf-fs-12);
 }
 
-.big {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-16);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .reminder,
 .note {
   margin: 0;
@@ -1140,7 +1128,8 @@ button.stat:hover .statV {
 
 .reminder {
   padding: var(--wf-s-2) 10px;
-  border-left: 3px solid var(--wf-warning);
+  /* No side edges (Josh, 31 Oct 2026): a neutral hairline; the warning glyph carries the tone. */
+  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-xs);
   background: var(--wf-surface-2);
 }

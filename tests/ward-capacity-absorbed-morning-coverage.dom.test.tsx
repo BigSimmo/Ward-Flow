@@ -1,20 +1,16 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import {
   countCellText,
-  freeingCellText,
   networkTotals,
   networkWardRows,
 } from "@/components/ward-management/capacity/capacity-derivations";
-import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
-import { capacityBreakdown } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { bedReleases, leaveBeds } from "@/components/ward-management/ward-movements";
-import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * Owner ruling, 2026-09-12 (closing spec D9, open six days): the morning bed-state board's coverage
@@ -58,20 +54,47 @@ import { showWardTable } from "./helpers/capacity-ward-table";
  * SPECIALLING HEADROOM — OWNER RULING 2026-09-06, built here the same day") records that the owner
  * ANSWERED that question on 2026-09-06 — CapacityScreen renders both, per ward, today. That caution
  * is stale and is corrected at its own file, not re-asserted here.
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the network table, its per-ward columns and the "Ready
+ * now" panel are gone. Case 2 now reads the hero's "N beds ready of M"; case 20 reads each ward's
+ * own occupied, pulled and closed beds in its ward drawer, opened from its bed map card. The
+ * per-ward Confirmed and Expected columns went with the table, so that half of case 20 is retired.
+ * The note above about `NetworkRow`'s repeated test ids describes the removed table.
  */
 const NOW = NOW_ANCHOR;
-const units = allUnits();
-const networkRows = networkWardRows(units, NOW, bedReleases, wardAdmissions, leaveBeds);
+const seed = seedWardFlowState();
+// Same arguments `useCapacityModel` passes to `networkWardRows`.
+const networkRows = networkWardRows(seed.units, NOW, seed.bedReleases, seed.admissions, seed.leaveBeds);
 const netTotals = networkTotals(networkRows);
 
 function renderScreen() {
-  const view = render(
+  return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
-  showWardTable();
-  return view;
+}
+
+/** A ward card's visible name: its text without the spelled-out code a screen reader hears. */
+function visibleName(element: Element | null): string {
+  if (!element) return "";
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll("abbr + span").forEach((node) => node.remove());
+  return (clone.textContent ?? "").trim();
+}
+
+/** Opens a ward's drawer from its bed map card, as a coordinator would. */
+function openWardDrawer(unit: { id: string; name: string }): HTMLElement {
+  const map = document.getElementById("capacity-bed-map");
+  if (!map) throw new Error("no bed map on the Capacity screen");
+  const card = Array.from(map.querySelectorAll<HTMLButtonElement>('button[aria-haspopup="dialog"]')).find(
+    (button) => visibleName(button.firstElementChild) === unit.name,
+  );
+  if (!card) throw new Error(`no bed map card for ${unit.id}`);
+  fireEvent.click(card);
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  expect(drawer).toHaveAccessibleName(unit.name);
+  return drawer;
 }
 
 /**
@@ -100,18 +123,27 @@ describe("Case 1 — Capacity identifies synthetic data via the governance foote
     // Hospital names are real directory facts. The synthetic marker applies to the operational data.
     const governance = screen.getByTestId("ward-capacity-governance");
     expect(within(governance).getByText("Synthetic prototype")).toBeVisible();
-    expect(governance).toHaveTextContent(/Modelled network bed capacity/u);
-    expect(governance).toHaveTextContent(/CAHS inpatient wards are not modelled/u);
-    expect(governance).toHaveTextContent(/private live feeds are unavailable/u);
+    // Redesign (31 Oct 2026): the footer note is shorter, "Modelled network · CAHS wards not modelled".
+    expect(governance).toHaveTextContent(/Modelled network/u);
+    expect(governance).toHaveTextContent(/CAHS (inpatient )?wards (are )?not modelled/u);
     expect(governance).toHaveTextContent(/Not approved for clinical use/u);
+  });
+
+  // Josh's warnings trim (31 Oct 2026) dropped "private live feeds are unavailable" from the footer.
+  // What stays is that the figures are a modelled network, so they are never read as every bed in WA.
+  it("still says the figures are a modelled network, not every bed in WA", () => {
+    renderScreen();
+    const footer = screen.getByTestId("ward-capacity-governance");
+    expect(footer).toHaveTextContent(/Modelled network/u);
+    expect(footer).toHaveTextContent(/not modelled/u);
   });
 });
 
 /**
  * Inherits retired case 2 ("renders the headline as availableNow alone, never mixing in
- * confirmedToday, expectedToday or onLeave"). CapacityScreen has no single frozen "headline" the way
- * `MorningPage` did — its closest analogue is the "Ready now" panel, which states `netTotals.ready`
- * of `netTotals.beds` beds and nothing else. `netTotals` (`capacity-derivations.ts`) is computed as
+ * confirmedToday, expectedToday or onLeave"). Since the redesign (31 Oct 2026) CapacityScreen's
+ * headline is the hero's title, which states `netTotals.ready` beds ready of `netTotals.beds` and
+ * nothing else. `netTotals` (`capacity-derivations.ts`) is computed as
  * `{ wards, beds, ready, pendingPreparation }` — it structurally cannot carry a same-day
  * confirmed/expected/closed figure, because nothing sums one into it. This asserts the number itself,
  * independently derived from the real fixture, and floors on confirmed/expected/closed genuinely being
@@ -119,7 +151,7 @@ describe("Case 1 — Capacity identifies synthetic data via the governance foote
  * anchored equality below cannot pass by coincidence on a fixture where every figure happens to
  * agree.
  */
-describe("Case 2 — the Ready-now panel states availableNow alone", () => {
+describe("Case 2 — the hero headline states availableNow alone", () => {
   it("shows exactly netTotals.ready of netTotals.beds beds, never a total inflated by confirmed, expected or closed", () => {
     const confirmedTotal = networkRows.reduce((sum, row) => sum + (row.confirmed ?? 0), 0);
     const expectedTotal = networkRows.reduce((sum, row) => sum + (row.expected ?? 0), 0);
@@ -139,15 +171,11 @@ describe("Case 2 — the Ready-now panel states availableNow alone", () => {
     );
 
     renderScreen();
-    const panel = screen.getByRole("region", { name: "Ready now" });
+    const headline = screen.getByRole("heading", { level: 1 });
     expect(
-      within(panel).getByText(
-        (_, element) =>
-          element?.tagName === "P" &&
-          element.textContent?.replace(/\s+/gu, " ").trim() === `${netTotals.ready} of ${netTotals.beds} beds`,
-      ),
-      `the Ready-now panel must state exactly ${netTotals.ready} of ${netTotals.beds} beds`,
-    ).toBeInTheDocument();
+      headline.textContent?.replace(/\s+/gu, " ").trim(),
+      `the headline must state exactly ${netTotals.ready} beds ready of ${netTotals.beds}`,
+    ).toBe(`Capacity, ${netTotals.ready} beds ready of ${netTotals.beds}`);
   });
 });
 
@@ -156,66 +184,55 @@ describe("Case 2 — the Ready-now panel states availableNow alone", () => {
  * alone, not its hospital's rolled-up total"). The retired case's own mutation targets —
  * `serviceRollup` rolling a site up from the whole network, `SiteBlock` reading its first ward's
  * breakdown, `UnitRow` reading the site rollup instead of the unit's own — do not exist as separate
- * derivation paths here (`ready`/`lockedReady` are already proven per-row against the real fixture by
- * `tests/ward-capacity-screen.dom.test.tsx`'s "names every ward's real ready and locked-ready
- * counts"), but the SAME class of bug is still reachable through `confirmed`/`expected`/`held`/
- * `occupied`, which no existing DOM test checks per-ward against an independently-called
- * `capacityBreakdown`/`unitCapacity` — only summed across a whole service group
- * (`tests/ward-capacity-network-fold.dom.test.tsx`). A mutation that read one ward's figure for
- * every row, or swapped the confirmed/expected columns, would still sum correctly at the group level
- * (the total is the same regardless of which row it came from) and would pass every existing test.
+ * derivation paths here, but the SAME class of bug is still reachable through each ward's occupied,
+ * pulled and closed beds: a mutation that read one ward's figure for every ward would still sum
+ * correctly at the group level and pass every group-level test.
  *
- * Floored the same way the retired case was: confirmed must genuinely vary across wards, and must
- * genuinely differ from expected on at least one ward, or the two mutations above would be
- * numerically invisible on a fixture where every figure happened to coincide.
+ * Since the redesign (31 Oct 2026) these are read in each ward's drawer ("N occupied · N pulled ·
+ * N closed" under its beds). The per-ward Confirmed and Expected columns went with the network
+ * table and are no longer drawn anywhere on Capacity, so that half is retired.
+ *
+ * Floored the same way the retired case was: the figures must genuinely vary across wards, or a
+ * same-value-everywhere mutation would be numerically invisible.
  */
-describe("Case 20 — each ward row renders its own confirmed/expected/pulled/closed/occupied breakdown, never another ward's or the group's rolled-up total", () => {
-  it("matches an independently-computed capacityBreakdown/bedStates for that unit alone, on every row", () => {
-    const confirmedValues = new Set(networkRows.map((row) => row.confirmed));
+describe("Case 20 — each ward's drawer states its own occupied, pulled and closed beds, never another ward's or the group's rolled-up total", () => {
+  it("matches an independently-computed bedStates for that unit alone, on every ward", () => {
+    const states = new Map(
+      networkRows.map((row) => [row.unit.id, bedStates(row.unit, seed.admissions, seed.bedReleases, seed.leaveBeds)]),
+    );
     expect(
-      confirmedValues.size,
-      "every ward's confirmed figure is identical — a same-value-everywhere mutation would be invisible",
+      new Set([...states.values()].map((state) => state.occupied)).size,
+      "every ward's occupied figure is identical — a same-value-everywhere mutation would be invisible",
     ).toBeGreaterThan(1);
-    const rowsWhereConfirmedDiffersFromExpected = networkRows.filter((row) => row.confirmed !== row.expected);
     expect(
-      rowsWhereConfirmedDiffersFromExpected.length,
-      "confirmed equals expected on every ward — a column-swap mutation would be invisible",
-    ).toBeGreaterThan(0);
+      [...states.values()].some((state) => state.pulled > 0),
+      "no ward has a pulled patient — the pulled figure is untested",
+    ).toBe(true);
     expect(
-      networkRows.some((row) => row.pulled > 0),
-      "no ward has a pulled patient — the Pulled column is untested",
+      [...states.values()].some((state) => state.closed > 0),
+      "no ward has a closed bed — the closed figure is untested",
     ).toBe(true);
 
     renderScreen();
-    const table = screen.getByTestId("ward-capacity-network-table");
-
     for (const row of networkRows) {
-      const expectedBreakdown = capacityBreakdown(row.unit, bedReleases, leaveBeds, NOW);
       // Pulled, Closed and Occupied are the ruled boxes (`ward-bed-states.ts`), read from a SEPARATE
       // call with the same inputs the screen passes — reproduced here rather than reusing
       // `row.pulled`/`row.closed`/`row.occupied`, which would just be comparing the production value
       // against itself. Closed is the box once mislabelled "Held".
-      const expectedStates = bedStates(row.unit, wardAdmissions, bedReleases, leaveBeds);
+      const expected = states.get(row.unit.id)!;
+      const beds = within(openWardDrawer(row.unit)).getByRole("region", { name: "Beds now" });
+      const notes = (Array.from(beds.querySelectorAll("p")).at(-1)?.textContent ?? "").split(" · ");
+      const figure = (label: string) =>
+        notes.find((note) => note.endsWith(` ${label.toLowerCase()}`))?.replace(` ${label.toLowerCase()}`, "");
 
-      const tableRow = within(table).getByTestId(`ward-capacity-network-row-${row.unit.id}`);
-      expect(
-        within(tableRow).getByTestId("ward-capacity-network-confirmed"),
-        `${row.unit.id}: confirmed`,
-      ).toHaveTextContent(freeingCellText(expectedBreakdown.confirmedToday));
-      expect(
-        within(tableRow).getByTestId("ward-capacity-network-expected"),
-        `${row.unit.id}: expected`,
-      ).toHaveTextContent(freeingCellText(expectedBreakdown.expectedToday));
-      expect(within(tableRow).getByTestId("ward-capacity-network-pulled"), `${row.unit.id}: pulled`).toHaveTextContent(
-        countCellText(expectedStates.pulled),
+      expect(figure(BED_STATE_LABELS.occupied), `${row.unit.id}: occupied`).toBe(countCellText(expected.occupied));
+      // Pulled and closed are said only when there is one (a zero is left off the line).
+      expect(figure(BED_STATE_LABELS.pulled), `${row.unit.id}: pulled`).toBe(
+        expected.pulled > 0 ? String(expected.pulled) : undefined,
       );
-      expect(within(tableRow).getByTestId("ward-capacity-network-closed"), `${row.unit.id}: closed`).toHaveTextContent(
-        countCellText(expectedStates.closed),
+      expect(figure(BED_STATE_LABELS.closed), `${row.unit.id}: closed`).toBe(
+        expected.closed > 0 ? String(expected.closed) : undefined,
       );
-      expect(
-        within(tableRow).getByTestId("ward-capacity-network-occupied"),
-        `${row.unit.id}: occupied`,
-      ).toHaveTextContent(countCellText(expectedStates.occupied));
     }
   });
 });

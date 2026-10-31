@@ -244,7 +244,8 @@
 
 /* ── The dialog ────────────────────────────────────────────── */
 
-/* The scrim is also the centring frame, so the dialog itself takes no position of its own. */
+/* The scrim is also the centring frame, so the dialog itself takes no position of its own. Like every
+   other dialog, the strong scrim dims the whole page (sidebar and top bar too). */
 .scrim {
   position: fixed;
   inset: 0;
@@ -253,13 +254,14 @@
   align-items: center;
   justify-content: center;
   padding: var(--wf-s-4);
-  background: var(--wf-scrim);
+  background: var(--wf-scrim-strong, var(--wf-scrim));
 }
 
+/* The brief sits in the middle of the screen, clear of the sidebar and the top bar on a laptop. */
 .dialog {
-  width: min(940px, calc(100vw - 32px));
-  max-height: min(90vh, 980px);
-  max-height: min(90dvh, 980px);
+  width: min(860px, 100%);
+  max-height: min(calc(100vh - 160px), 980px);
+  max-height: min(calc(100dvh - 160px), 980px);
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
@@ -322,9 +324,10 @@
   text-overflow: ellipsis;
 }
 
+/* The stamp is a sentence, not a figure: the app's sans in quiet ink, on one line. */
 .dialogStamp {
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
   overflow-wrap: break-word;
 }
 

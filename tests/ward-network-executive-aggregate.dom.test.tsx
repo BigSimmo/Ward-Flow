@@ -276,7 +276,8 @@ describe("Network views consume only the released executive report", () => {
         />,
       ),
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Wards/ }));
+    // The phone switch reads "By hospital / By ward", without counts (31 Oct 2026 build).
+    fireEvent.click(screen.getByRole("radio", { name: "By ward" }));
     expect(screen.getByRole("list", { name: "Wards by beds ready" })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-statistics-more-figures"));
     expect(screen.getByRole("dialog")).toHaveTextContent("Discharges held up");

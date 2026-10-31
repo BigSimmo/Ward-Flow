@@ -1,0 +1,4 @@
+/* The quiet world wraps the page without adding a box of its own. */
+.wrap {
+  display: contents;
+}

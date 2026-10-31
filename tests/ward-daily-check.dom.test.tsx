@@ -1,21 +1,24 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { useState, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
-  MissedRequestsPanel,
+  DailyCheckHeroTile,
+  DailyCheckLine,
+  DailyCheckList,
   markAllLabel,
-  missedCheckCountLine,
-} from "@/components/ward-management/coordinator/missed-requests-panel";
-import { WardFlowClockContext, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+} from "@/components/ward-management/delays/daily-check-line";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * Overall review (20 Oct 2026): the daily check's tick on screen. P027 (Josh, 27 Oct 2026): the
- * words say what is being checked ("5 bed requests to check (missed or sent twice)"), the button
- * names the count ("Mark all 5 checked") and the done line reads "All checked · {by} at {time}".
+ * button names the count ("Mark all 5 checked") and the done line names who ticked it and when.
+ * Waiting redesign (Josh, 30 and 31 Oct 2026): on a phone the check is one line; on a laptop it is
+ * a tile in the header strip whose list opens under the header. Either way the list is opened
+ * before it can be marked checked (UX audit, 21 Oct 2026).
  */
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -27,6 +30,18 @@ vi.mock("next/link", () => ({
 
 const MARK_ALL = /^Mark all (?:\d+ )?checked$/u;
 
+function Laptop() {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <DailyCheckHeroTile open={open} onToggle={() => setOpen((current) => !current)} listId="check-list" />
+      <DailyCheckList open={open} listId="check-list" onClose={() => setOpen(false)} />
+    </>
+  );
+}
+
+const inProvider = (node: ReactNode) => <WardFlowProvider initialNow={NOW_ANCHOR}>{node}</WardFlowProvider>;
+
 describe("Daily check: Mark all checked", () => {
   it("names the count on the button from 2, and reads Mark all checked for 0 or 1", () => {
     expect(markAllLabel(0)).toBe("Mark all checked");
@@ -35,83 +50,50 @@ describe("Daily check: Mark all checked", () => {
     expect(markAllLabel(5)).toBe("Mark all 5 checked");
   });
 
-  it("says 1 bed request to check in the singular, and bed requests for 2 or more", () => {
-    expect(missedCheckCountLine(1)).toBe("1 bed request to check (missed or sent twice)");
-    expect(missedCheckCountLine(2)).toBe("2 bed requests to check (missed or sent twice)");
-    expect(missedCheckCountLine(5)).toBe("5 bed requests to check (missed or sent twice)");
-  });
-
-  it("says how many bed requests to check, and the button names the same count", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <MissedRequestsPanel />
-      </WardFlowProvider>,
-    );
-    const card = screen.getByTestId("ward-missed-check");
-    const meta = /(\d+) bed requests? to check \(missed or sent twice\)/u.exec(card.textContent ?? "");
-    expect(meta, "the card names the count of bed requests to check").not.toBeNull();
-    expect(card).not.toHaveTextContent("to confirm: missed or doubled bed requests");
+  it("phone line: says how many bed requests to check, and the opened list's button names the same count", () => {
+    render(inProvider(<DailyCheckLine />));
+    const line = screen.getByTestId("ward-missed-check");
+    const meta = /(\d+) bed requests? to check, missed or sent twice/u.exec(line.textContent ?? "");
+    expect(meta, "the line names the count of bed requests to check").not.toBeNull();
+    fireEvent.click(within(line).getByRole("button", { name: "Show list" }));
     expect(screen.getByRole("button", { name: markAllLabel(Number(meta![1])) })).toBeInTheDocument();
   });
 
-  it("records who ticked it and when, and keeps the check itself on screen", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <MissedRequestsPanel />
-      </WardFlowProvider>,
-    );
-    const confirmation = screen.getByTestId("ward-missed-check-confirmation");
-    // UX audit (21 Oct 2026): the tick waits until the list has been opened once.
-    expect(screen.getByTestId("ward-missed-check-toggle")).toHaveTextContent("Show list");
-    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
-    expect(screen.getByTestId("ward-missed-check-toggle")).toHaveTextContent("Hide list");
+  it("phone line: offers no tick until the list is open, then records who ticked it and when", () => {
+    render(inProvider(<DailyCheckLine />));
+    expect(screen.queryByRole("button", { name: MARK_ALL })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Show list" }));
+    expect(screen.getByRole("button", { name: "Hide list" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: MARK_ALL }));
 
-    expect(screen.queryByTestId("ward-missed-check-done")).toBeNull();
-    expect(confirmation).toHaveTextContent(`All checked · Bed coordinator at ${formatInstant(NOW_ANCHOR)}`);
-    expect(screen.getByTestId("ward-missed-check")).toHaveTextContent("Daily check");
+    const line = screen.getByTestId("ward-missed-check");
+    expect(line).toHaveTextContent(`all checked by Bed coordinator at ${formatInstantWithDay(NOW_ANCHOR, NOW_ANCHOR)}`);
+    expect(line).toHaveTextContent("Daily check");
+    expect(screen.queryByRole("button", { name: MARK_ALL })).toBeNull();
   });
 
-  it("will not record the tick before the list has been shown", () => {
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <MissedRequestsPanel />
-      </WardFlowProvider>,
-    );
-    const done = screen.getByRole("button", { name: MARK_ALL });
-    expect(done).toHaveAttribute("aria-disabled", "true");
-    expect(done).toHaveAccessibleDescription("Open the list to confirm it");
-    expect(screen.getByText("Open the list to confirm it")).toBeVisible();
-    fireEvent.click(done);
-    expect(screen.getByTestId("ward-missed-check-done")).toBeInTheDocument();
+  it("laptop tile: shows the count in the header, and the list with its tick only once opened", () => {
+    render(inProvider(<Laptop />));
+    const tile = screen.getByTestId("ward-missed-check");
+    expect(tile).toHaveTextContent(/Daily check\s*\d+ to check/u);
+    expect(screen.queryByRole("button", { name: MARK_ALL })).toBeNull();
+
+    fireEvent.click(within(tile).getByRole("button", { name: "Show list" }));
+    const list = screen.getByRole("region", { name: "Daily check" });
+    fireEvent.click(within(list).getByRole("button", { name: MARK_ALL }));
+
+    expect(list).toHaveTextContent(`Checked by Bed coordinator at ${formatInstantWithDay(NOW_ANCHOR, NOW_ANCHOR)}`);
+    expect(tile).toHaveTextContent("all checked by Bed coordinator");
+    // The tap closes nothing and hides nothing: the people stay listed.
+    expect(within(list).getAllByRole("link").length).toBeGreaterThan(0);
   });
 
-  const at = (now: number) => (
-    <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <WardFlowClockContext.Provider value={now}>
-        <MissedRequestsPanel />
-      </WardFlowClockContext.Provider>
-    </WardFlowProvider>
-  );
-  const tick = () => screen.getByRole("button", { name: MARK_ALL });
-
-  it("asks for the list again when a folded list is left into the next day", () => {
-    const { rerender } = render(at(NOW_ANCHOR));
-    // Open then fold the list, so nothing is on screen when the day turns.
-    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
-    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
-    expect(tick()).not.toHaveAttribute("aria-disabled", "true");
-
-    rerender(at(NOW_ANCHOR + 24 * 60));
-    expect(tick()).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
-    expect(tick()).not.toHaveAttribute("aria-disabled", "true");
-  });
-
-  it("keeps the tick available when the list stays open into the next day", () => {
-    const { rerender } = render(at(NOW_ANCHOR));
-    fireEvent.click(screen.getByTestId("ward-missed-check-toggle"));
-    rerender(at(NOW_ANCHOR + 24 * 60));
-    expect(tick()).not.toHaveAttribute("aria-disabled", "true");
+  it("laptop tile: Hide closes the list under the header", () => {
+    render(inProvider(<Laptop />));
+    fireEvent.click(screen.getByRole("button", { name: "Show list" }));
+    const list = screen.getByRole("region", { name: "Daily check" });
+    fireEvent.click(within(list).getByRole("button", { name: "Hide" }));
+    expect(screen.queryByRole("region", { name: "Daily check" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Show list" })).toHaveAttribute("aria-expanded", "false");
   });
 });

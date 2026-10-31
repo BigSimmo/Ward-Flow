@@ -6,6 +6,7 @@ import { BookOpen, Check, Clock, Copy, ExternalLink, X } from "lucide-react";
 
 import {
   Button,
+  DateField,
   Field,
   Segmented,
   StatusGlyph,
@@ -15,44 +16,40 @@ import {
   cx,
   type TimelineItem,
 } from "@/components/wf";
-import { formatInstantWithDay, type Instant, minutesUntil } from "@/components/ward-management/ward-clock";
-import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
+import { formatInstantWithDay, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
 import { formProgression } from "./legal-form-progression";
+import { typedClock } from "./legal-time-as-typed";
 import { currentLegalDueAt, isLegalDeadlineBreached, legalDeadlineText } from "./legal-forms-derivations";
 import {
   STANDING_TONE,
   clockStanding,
-  elapsedFraction,
   formEvents,
   formTitle,
-  instantFromDateAndTimeInputs,
   isOwnedLegalFormCode,
-  leftText,
   needsExamination,
   receiptEventAccepts,
   recordedFacts,
+  standingSuffix,
   standingWord,
+  typedTimeStanding,
   type RecordGap,
 } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
+import {
+  writtenDraftFor,
+  writtenSaveOf,
+  writtenTimeCheck,
+  type WrittenDraft,
+  type WrittenSave,
+} from "./legal-forms-written-time";
 
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): TimelineItem[] {
   return items.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
 }
-
-// "not_recorded" until someone picks a band: a default of Adult would record an age band nobody chose.
-// Finding 210 (27 Oct 2026): region opens the same way, so a country Form 1A is never saved as metro.
-type WrittenDraft = {
-  date: string;
-  time: string;
-  region: LegalClockRegion | "not_recorded";
-  ageBand: LegalClockAgeBand | "not_recorded";
-};
-const BLANK_WRITTEN: WrittenDraft = { date: "", time: "", region: "not_recorded", ageBand: "not_recorded" };
 
 export type FocusTab = "now" | "form" | "history";
 
@@ -99,10 +96,7 @@ export function FocusPanel({
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
   /** Records the written time; `onAccepted` runs only once the engine accepts it. */
-  onSaveWritten: (
-    draft: { writtenAt: number; region: LegalClockRegion | undefined; ageBand: LegalClockAgeBand | null },
-    onAccepted: () => void,
-  ) => void;
+  onSaveWritten: (draft: WrittenSave, onAccepted: () => void) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
   onMarkReceived: () => void;
@@ -122,25 +116,14 @@ export function FocusPanel({
   const breached = isLegalDeadlineBreached(movement, now);
   const facts = recordedFacts(movement);
   // Start from the recorded region, so changing the time never resets a country form to metro.
-  const recordedDraft = (): WrittenDraft => ({
-    ...BLANK_WRITTEN,
-    region: legalForm?.region ?? BLANK_WRITTEN.region,
-    ageBand: legalForm?.ageBand ?? BLANK_WRITTEN.ageBand,
-  });
+  const recordedDraft = (): WrittenDraft => writtenDraftFor(legalForm);
   const [draft, setDraft] = useState<WrittenDraft>(recordedDraft);
   const [changing, setChanging] = useState(false);
   const dateRef = useRef<HTMLInputElement | null>(null);
   const receivedRef = useRef<HTMLButtonElement | null>(null);
   const examRef = useRef<HTMLAnchorElement | null>(null);
-  const typedWrittenAt = instantFromDateAndTimeInputs(draft.date, draft.time, dayZero);
   // The same rule as the Record a form sheet: a form cannot have been written after now.
-  const writtenLater = typedWrittenAt !== undefined && typedWrittenAt > now;
-  const writtenProblem =
-    typedWrittenAt === undefined
-      ? "Enter the time written on the form"
-      : writtenLater
-        ? "The time written cannot be later than now"
-        : undefined;
+  const { writtenProblem } = writtenTimeCheck(draft, now, dayZero);
   const showWrittenForm = isOwnedLegalFormCode(legalForm?.code) && (movement.formedAt === undefined || changing);
 
   useEffect(() => {
@@ -157,23 +140,18 @@ export function FocusPanel({
 
   const submitWritten = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (recordUnavailable || typedWrittenAt === undefined || writtenLater) return;
+    // Region is sent only when chosen. Omitted, a same-form time edit keeps the recorded region.
+    const written = writtenSaveOf(draft, now, dayZero);
+    if (recordUnavailable || !written) return;
     // The Change form closes only on an accepted save; a refusal keeps it open with its reason.
-    onSaveWritten(
-      {
-        writtenAt: typedWrittenAt,
-        // Sent only when chosen. Omitted, a same-form time edit keeps the recorded region.
-        region: draft.region === "not_recorded" ? undefined : draft.region,
-        ageBand: draft.ageBand === "not_recorded" ? null : draft.ageBand,
-      },
-      () => setChanging(false),
-    );
+    onSaveWritten(written, () => setChanging(false));
   };
 
-  const elapsed = elapsedFraction(movement, now);
   // Audit S-6: a form ended by the examination or arrival keeps its typed expiry as history only.
+  // Legal times only as typed (Josh, 31 Oct 2026): the typed clock time and its warning words, never
+  // a running figure or a bar filling towards it.
   const dueAt = currentLegalDueAt(movement);
-  const remaining = dueAt !== undefined ? minutesUntil(dueAt, now) : undefined;
+  const typedStanding = typedTimeStanding(movement, now, thresholds);
 
   return (
     <section className={styles.panel} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
@@ -192,13 +170,13 @@ export function FocusPanel({
       <div className={styles.focusClock} data-tone={STANDING_TONE[standing]}>
         <div className={styles.focusClockLine}>
           <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
-          {remaining !== undefined ? (
+          {dueAt !== undefined ? (
             <>
-              <span className={styles.clockBig}>{leftText(movement, now)}</span>
+              <span className={cx(styles.mono, styles.clockBig)}>{typedClock(dueAt, now)}</span>
               <span className={styles.clockWord}>
-                {remaining < 0 ? "since the typed expiry" : "until the typed expiry"}
+                {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
+                {standingSuffix(typedStanding)}
               </span>
-              <span className={cx(styles.mono, styles.clockAt)}>{formatInstantWithDay(dueAt!, now)}</span>
             </>
           ) : (
             <>
@@ -209,16 +187,6 @@ export function FocusPanel({
             </>
           )}
         </div>
-        {remaining !== undefined ? (
-          <>
-            <span className={styles.progress} data-tone={STANDING_TONE[standing]} aria-hidden="true">
-              <span style={{ width: `${Math.round(elapsed * 100)}%` }} />
-            </span>
-            <span className={styles.srOnly}>
-              {remaining < 0 ? "Expired" : "Expires"} {formatInstantWithDay(dueAt!, now)}, typed from the form
-            </span>
-          </>
-        ) : null}
       </div>
 
       <Segmented<FocusTab>
@@ -306,17 +274,20 @@ export function FocusPanel({
             >
               <h4 className={styles.subHead}>Record the time written</h4>
               <div className={styles.fieldPair}>
-                <Field label="Date written" id={`legal-forms-written-date-${movement.id}`}>
-                  <TextInput
+                <Field label="Date written" id={`legal-forms-written-date-${movement.id}`} hint="DD/MM/YYYY">
+                  <DateField
                     ref={dateRef}
-                    type="date"
                     value={draft.date}
-                    onChange={(event) => setDraft((current) => ({ ...current, date: event.target.value }))}
+                    onValueChange={(date) => setDraft((current) => ({ ...current, date }))}
                   />
                 </Field>
                 <Field label="Time" id={`legal-forms-written-time-${movement.id}`}>
+                  {/* Bug list row 24: typed 24-hour HH:MM, as Record a form does, never the browser's
+                      12-hour picker. The same parser reads it (HH:MM or HHMM). */}
                   <TextInput
-                    type="time"
+                    placeholder="HH:MM"
+                    inputMode="numeric"
+                    autoComplete="off"
                     icon={Clock}
                     value={draft.time}
                     onChange={(event) => setDraft((current) => ({ ...current, time: event.target.value }))}

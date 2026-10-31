@@ -24,10 +24,9 @@
 
 .selected {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
-/* Act now: an inset coral marker and subtle tint (v9 section 5 and 9). */
+/* Act now: the act tint; the row's glyph carries the tone. No coloured side edge (Josh, 31 Oct 2026). */
 .actNow {
   box-shadow: none;
 
@@ -36,8 +35,6 @@
 }
 
 .selected.actNow {
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
-
   background: var(--wf-selected);
   position: relative;
 }
@@ -161,18 +158,8 @@
   background: var(--wf-selected);
 }
 
-.table tr.selected > td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
-}
-
 .table tr.actNow {
   background: var(--wf-act-tint);
-}
-
-.table tr.selected.actNow > td:first-child {
-  box-shadow:
-    inset 3px 0 0 var(--wf-accent-strong),
-    inset 5px 0 0 var(--wf-act-edge);
 }
 
 /* Focus paints its ring inside the row, clear of the act now edge. */
@@ -208,9 +195,10 @@
     outline-offset: -4px;
   }
   .selected,
-  .table tr.selected > td:first-child {
+  .table tr.selected > td {
     box-shadow: none;
-    border-left: 3px solid Highlight;
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
   }
   .sq {
     border-color: CanvasText;

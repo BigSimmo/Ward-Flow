@@ -1,0 +1,13 @@
+/*
+ * The mock-ups' rail fixes, over `ward-rail.module.css`, which is unchanged. Each class is doubled
+ * so it outranks the single-class rule it corrects, whatever order the two sheets load in.
+ */
+
+/* Names and roles wrap in full (owner rule): the shift card's "name · role" line cut a long role
+   ("Triage liaison nu…") at 1440. It now takes a second line instead. */
+.shiftSubWrap.shiftSubWrap {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: break-word;
+}

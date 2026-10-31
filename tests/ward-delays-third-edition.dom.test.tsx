@@ -149,7 +149,8 @@ describe("Delays — the drawing's panel names (task D1)", () => {
     renderScreen();
     expect(screen.getByRole("tab", { name: /Attention/u })).toBeInTheDocument();
     // October 2026 board: the provenance box is the rail's System tab, reachable with its count shown.
-    fireEvent.click(screen.getByRole("tab", { name: /^System/u }));
+    // Round 8 (31 Oct 2026): the register tabs are icon tabs whose name reads count first ("0 System").
+    fireEvent.click(screen.getByRole("tab", { name: /^\d+\s*System$/u }));
     expect(screen.getByRole("region", { name: "Delays with no named person" })).toBeInTheDocument();
   });
 
@@ -215,13 +216,13 @@ describe("Delays — the dangling-originEdId sentence names the record, not the 
       `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
     );
 
-    // Site 2 — the "From" line in the panel facts, identical wording, no drift between the two.
+    // Site 2 — the person's row in the table, identical wording, no drift between the two.
+    // Round 8 (31 Oct 2026) removed the panel's "From" fact ("From is already in the header"), so
+    // the second site is now the row the person was chosen from, which names their department.
     const bodyText = document.body.textContent ?? "";
-    expect(
-      within(screen.getByTestId("delays-panel-from")).getByText(
-        `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId(`delays-select-${DANGLING_MOVEMENT.id}`)).toHaveTextContent(
+      `This movement names a department we cannot find: "${DANGLING_ED_ID}"`,
+    );
 
     // Neither site may still carry the old, network-blaming wording.
     expect(bodyText).not.toContain("No department matches");

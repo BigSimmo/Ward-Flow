@@ -7,6 +7,7 @@ import {
   arrivalGaps,
   collectionGaps,
   holdEndsBeforeEta,
+  instantFromEstimatedTimeInputs,
   instantFromEtaText,
   legalNowTransportStatus,
   packRequirement,
@@ -250,6 +251,23 @@ describe("transport booking answers still missing", () => {
     expect(transportAnswersBlockedReason(blank, NOW_ANCHOR)).toBe(
       "Before booking, choose who is collecting the patient, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
+  });
+
+  // Josh, 31 Oct 2026 (yes): the form starts with neither Today nor Tomorrow, so the day is its own
+  // missing answer, between the time and the escort question.
+  it("asks for the day when neither Today nor Tomorrow is chosen", () => {
+    const noDay = { ...blank, estimatedDay: undefined };
+    expect(transportAnswersMissing(noDay, NOW_ANCHOR)).toEqual(["provider", "time", "day", "escort", "legalStatus"]);
+    expect(transportAnswersBlockedReason(noDay, NOW_ANCHOR)).toBe(
+      "Before booking, choose who is collecting the patient, enter the estimated time, choose today or tomorrow, answer the escort question, state whether the transport is voluntary or involuntary.",
+    );
+    expect(transportAnswersMissing({ ...noDay, estimatedTime: "13:30" }, NOW_ANCHOR)).toEqual([
+      "provider",
+      "day",
+      "escort",
+      "legalStatus",
+    ]);
+    expect(instantFromEstimatedTimeInputs("13:30", undefined, NOW_ANCHOR)).toBeUndefined();
   });
 
   it("books a blank CAD number as CAD to follow, and still refuses a typed placeholder", () => {

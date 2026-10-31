@@ -3,6 +3,7 @@
 
 import type { PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import {
   daysInBed as admissionStayDays,
@@ -188,7 +189,7 @@ export function wardBedRoster({
       status === "ready" || status === "closed" || recordedSubject === undefined
         ? undefined
         : resolvePatientIdentity(recordedSubject);
-    const patientAlias = status === "ready" || status === "closed" ? undefined : patientInfo?.displayName;
+    const patientAlias = status === "ready" || status === "closed" ? undefined : patientInfo?.formalName;
     const stayDays = admission && status !== "incoming" ? admissionStayDays(admission, now) : null;
     const daysInBed = stayDays === null ? undefined : `${stayDays}d`;
     const isSpecialling = admission ? isConstantObservation(admission.observation) : false;
@@ -325,7 +326,7 @@ export function wardBedRoster({
         ? [
             {
               bed: entry.heldBedNumber,
-              name: resolvePatientIdentity(entry).displayName,
+              name: resolvePatientIdentity(entry).formalName,
             },
           ]
         : [],
@@ -336,7 +337,7 @@ export function wardBedRoster({
         ? [
             {
               bed: movement.heldBedNumber,
-              name: resolvePatientIdentity(movement).displayName,
+              name: resolvePatientIdentity(movement).formalName,
             },
           ]
         : [],
@@ -435,7 +436,7 @@ export function wardLiveFormAlerts({
       title: "Referral awaiting this ward's answer",
       countdown: stageCopy[movement.stage].label,
       // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-      text: `${resolvePatientIdentity(movement).displayName} from ${originPlaceLabel(movement)}.`,
+      text: `${resolvePatientIdentity(movement).formalName} from ${originPlaceLabel(movement)}.`,
       actionLabel: "Answer",
       actionTarget: "answer" as const,
     })),
@@ -450,7 +451,7 @@ export function wardLiveFormAlerts({
         actionTarget: "arrival";
         movementId: string;
       }> = [];
-      const patientName = resolvePatientIdentity(movement).displayName;
+      const patientName = resolvePatientIdentity(movement).formalName;
       const dueAt = currentLegalDueAt(movement);
       if (dueAt !== undefined) {
         const remaining = minutesUntil(dueAt, now);
@@ -458,7 +459,8 @@ export function wardLiveFormAlerts({
           key: `form-${movement.id}`,
           tone: remaining <= thresholds.urgentMinutes ? "critical" : "warning",
           title: movement.legalForm ? `Form ${movement.legalForm.code} recorded due time` : "Legal form due",
-          countdown: remaining < 0 ? "Due time has passed" : formatRemaining(remaining),
+          // Legal times only as typed (31 Oct 2026): "Ends 15:42 as typed", never "1h 15m left".
+          countdown: typedTimeLine(dueAt, now),
           // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
           text: `${patientName}: recorded due ${formatInstantWithDay(dueAt, now)}.`,
           actionLabel: "Open arrival",

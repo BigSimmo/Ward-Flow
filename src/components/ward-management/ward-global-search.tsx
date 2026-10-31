@@ -35,7 +35,7 @@ import { GlobalSearchPreview } from "@/components/ward-management/search/global-
 import { buildCensus } from "@/components/ward-management/search/patient-census";
 import { answerQuestion } from "@/components/ward-management/search/search-answers";
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, useIsPhone } from "@/components/wf";
+import { useIsPhone } from "@/components/wf";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -51,25 +51,24 @@ import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-prov
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { formatDateOfBirth, type Patient } from "@/components/ward-management/ward-patients";
-import { ChevronRight, CornerDownLeft, Search, X } from "lucide-react";
+import { type Patient } from "@/components/ward-management/ward-patients";
+import { ChevronRight, Search, X } from "lucide-react";
 
 import styles from "./ward-global-search.module.css";
 import {
   needsYouMeta,
   censusRowItem,
-  patientResultTitle,
   smartSearchGroups,
+  type HelpSearchRows,
   type SearchResultGroup,
   type SearchResultItem,
 } from "./ward-global-search-groups";
-import { SearchResultIcon } from "./ward-global-search-icon";
+import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 
 export {
-  needsYouMeta,
   patientResultTitle,
   smartSearchGroups,
   type SearchResultGroup,
@@ -189,7 +188,13 @@ export type WardGlobalSearchProps = {
   /** Caller-owned navigation permissions; the shared matcher and public place catalogue stay role-blind. */
   canOpenHref?: (href: string) => boolean;
   canRunAction?: (action: "new-referral" | "add-patient" | "advance-clock") => boolean;
+  /** Help's answers for the typed words, from the caller (`ward-global-search-help.tsx`). */
+  findHelp?: (query: string) => HelpSearchRows;
+  /** Runs a chosen Help row; false means follow its link as usual. */
+  onHelpResult?: (id: string) => boolean;
 };
+
+const NO_HELP: HelpSearchRows = { items: [] };
 
 const allowSearchChoice = () => true;
 
@@ -208,6 +213,8 @@ export function permittedSearchResult(
         : item.kind === "team"
           ? communityStatisticsHref(item.id)
           : null;
+  // A Help answer with nowhere to go opens Help itself, which every desk may open.
+  if (item.kind === "help" && item.href === "") return [item];
   if (!href || !canOpenHref(href)) return [];
   if (item.kind === "action" && !canRunAction(item.id as "new-referral" | "add-patient")) return [];
   return [href === item.href ? item : { ...item, href }];
@@ -230,7 +237,18 @@ const PATIENT_SEARCH_HREF = "/ward-flow/search";
  * more than six of one thing without leaving the page. Places folds wards, EDs and teams together,
  * the same three groups the engine leads with for a place query.
  */
-type KindFilter = "all" | "answers" | "people" | "movements" | "referrals" | "places" | "forms" | "views" | "tasks";
+type KindFilter =
+  | "all"
+  | "answers"
+  | "people"
+  | "movements"
+  | "referrals"
+  | "places"
+  | "forms"
+  | "views"
+  | "tasks"
+  | "contacts"
+  | "help";
 
 const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly string[] }[] = [
   { key: "all", label: "All", groups: [] },
@@ -239,10 +257,12 @@ const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly 
   { key: "people", label: "People", groups: ["people", "similar"] },
   { key: "movements", label: "Movements", groups: ["movements"] },
   { key: "referrals", label: "Referrals", groups: ["referrals"] },
-  { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams"] },
+  { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams", "suburbs"] },
   { key: "forms", label: "Forms", groups: ["forms"] },
   { key: "views", label: "Views", groups: ["views"] },
   { key: "tasks", label: "Tasks", groups: ["tasks"] },
+  { key: "contacts", label: "Contacts", groups: ["contacts"] },
+  { key: "help", label: "Help", groups: ["help"] },
 ];
 
 const FULL_RESULTS_PER_GROUP = 40;
@@ -316,8 +336,11 @@ function useSessionRecents(lifetime: string | null) {
   return recents;
 }
 
+/** Kinds that are not records, so they never join Recent. */
+const NOT_RECENT = new Set(["action", "help", "contact", "suburb"]);
+
 function rememberRecent(item: SearchResultItem, lifetime: string | null) {
-  if (item.kind === "action" || lifetime === null || recentsLifetime !== lifetime) return;
+  if (NOT_RECENT.has(item.kind) || lifetime === null || recentsLifetime !== lifetime) return;
   const { kind, id } = item;
   setSessionRecents(
     [{ kind, id }, ...sessionRecents.filter((recent) => recent.kind !== kind || recent.id !== id)].slice(
@@ -388,6 +411,8 @@ export function WardGlobalSearch({
   accessLifetime = "standalone",
   canOpenHref = allowSearchChoice,
   canRunAction = allowSearchChoice,
+  findHelp,
+  onHelpResult,
 }: WardGlobalSearchProps) {
   const id = useId();
   const tasksWord = useMemo(
@@ -447,6 +472,10 @@ export function WardGlobalSearch({
   );
 
   const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
+  const help = useMemo(
+    () => (!findHelp || refusal || trimmed.length === 0 ? NO_HELP : findHelp(trimmed)),
+    [findHelp, refusal, trimmed],
+  );
 
   /*
    * The Patients page's census, built only while the palette is open: it answers the common
@@ -571,13 +600,13 @@ export function WardGlobalSearch({
   /** Every matched group in full (up to the full limit), in the engine's intent order. */
   const allGroups = useMemo(
     () =>
-      (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer))
+      (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer, help.items))
         .map((group) => ({
           ...group,
           items: group.items.flatMap(permittedResult),
         }))
         .filter((group) => group.items.length > 0),
-    [smartResults, refusal, trimmed, units, lookup, answer, permittedResult],
+    [smartResults, refusal, trimmed, units, lookup, answer, help, permittedResult],
   );
 
   const kindCounts = useMemo(() => {
@@ -686,7 +715,7 @@ export function WardGlobalSearch({
    * list is painted with a stale row still marked active, and on a control whose Enter key
    * navigates, that frame is the one where Enter would go to a record nobody is looking at.
    */
-  const optionsKey = useMemo(() => options.map((option) => option.href).join("|"), [options]);
+  const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
   if (optionsKey !== seenOptionsKey) {
     setSeenOptionsKey(optionsKey);
@@ -852,6 +881,13 @@ export function WardGlobalSearch({
   }
 
   /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
+  /** A Help row runs Show me or opens Help instead of a page, when its caller says so. */
+  function openedAsHelp(item: SearchResultItem | undefined): boolean {
+    if (item?.kind !== "help" || !onHelpResult || !onHelpResult(item.id)) return false;
+    clearAfterOpen();
+    return true;
+  }
+
   function select(href: string, confirmed = false) {
     if (accessLifetime === null || recentsLifetime !== accessLifetime) return;
     if (!confirmed && !confirmLeave()) return;
@@ -911,6 +947,9 @@ export function WardGlobalSearch({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    // Enter/Escape/arrows may still belong to an input method's candidate chooser (including Safari's 229).
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "Escape") {
       event.preventDefault();
       setQuery("");
@@ -933,11 +972,11 @@ export function WardGlobalSearch({
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex((current) => (current <= 0 ? options.length - 1 : current - 1));
-    } else if (event.key === "Home") {
+    } else if (event.key === "Home" && activeIndex >= 0) {
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(0);
-    } else if (event.key === "End") {
+    } else if (event.key === "End" && activeIndex >= 0) {
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(options.length - 1);
@@ -946,7 +985,9 @@ export function WardGlobalSearch({
       // want it (a surrounding form), and must never be turned into a navigation nobody chose.
       if (activeIndex >= 0) {
         event.preventDefault();
-        select(options[activeIndex].href);
+        const active = options[activeIndex];
+        // A Help row with nowhere to go never navigates.
+        if (!openedAsHelp(active) && active.href !== "") select(active.href);
       }
     } else if (event.key === "Tab" && !event.shiftKey && !isStart && groups.length > 1) {
       // Tab jumps to the next group's first row, the way the palette's footer says it does. From the
@@ -993,6 +1034,7 @@ export function WardGlobalSearch({
           } as CSSProperties
         }
         data-testid="ward-global-search-popup"
+        aria-busy={!resultsCurrent || undefined}
         data-start={isStart || undefined}
         // Clicking inside keeps focus in the header field, so the keyboard contract never breaks
         // and a link's click still lands after the press.
@@ -1035,6 +1077,11 @@ export function WardGlobalSearch({
                 {smartResults ? searchIntentLabel(smartResults.intent, trimmed) : ""}
               </p>
             )}
+            {help.note && !refusal ? (
+              <p className={styles.refusal} data-testid="ward-global-search-help-note">
+                {help.note}
+              </p>
+            ) : null}
             {refusal ? (
               <p className={styles.refusal} data-testid="ward-global-search-refusal">
                 {refusal.sentence}
@@ -1125,75 +1172,79 @@ export function WardGlobalSearch({
                     >
                       {group.items.map((item) => {
                         const index = options.indexOf(item);
+                        const optionBody = <SearchOptionBody item={item} nameFor={nameFor} taskWord={tasksWord.one} />;
                         return (
                           <li
                             key={`${group.key}-${item.kind}-${item.id}`}
                             role="presentation"
                             className={styles.optionItem}
                           >
-                            <Link
-                              id={`${id}-opt-${index}`}
-                              href={item.href}
-                              role="option"
-                              aria-selected={resultsCurrent && activeIndex === index}
-                              aria-disabled={!resultsCurrent || undefined}
-                              tabIndex={-1}
-                              // Stale rows stay mounted to avoid the popup flash, but never open a
-                              // result for text that is no longer in the field. The footer link is
-                              // not a result, so it keeps working.
-                              onClick={(event) => {
-                                if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
-                                  onOptionClick(event, item.href);
-                                  return;
-                                }
-                                event.preventDefault();
-                                event.stopPropagation();
-                              }}
-                              onAuxClick={(event) => {
-                                if (!resultsCurrent || accessLifetime === null || recentsLifetime !== accessLifetime) {
+                            {item.href === "" ? (
+                              // A Help answer with nowhere to go opens in Help itself, so it is a
+                              // button, never a link to this same page.
+                              <button
+                                type="button"
+                                id={`${id}-opt-${index}`}
+                                role="option"
+                                aria-selected={resultsCurrent && activeIndex === index}
+                                aria-disabled={!resultsCurrent || undefined}
+                                tabIndex={-1}
+                                onClick={() => {
+                                  if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                    openedAsHelp(item);
+                                  }
+                                }}
+                                onMouseEnter={() => setHoverIndex(index)}
+                                className={styles.option}
+                                data-active={(resultsCurrent && activeIndex === index) || undefined}
+                                data-previewed={previewIndex === index || undefined}
+                                data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
+                              >
+                                {optionBody}
+                              </button>
+                            ) : (
+                              <Link
+                                id={`${id}-opt-${index}`}
+                                href={item.href}
+                                role="option"
+                                aria-selected={resultsCurrent && activeIndex === index}
+                                aria-disabled={!resultsCurrent || undefined}
+                                tabIndex={-1}
+                                // Stale rows stay mounted to avoid the popup flash, but never open a
+                                // result for text that is no longer in the field. The footer link is
+                                // not a result, so it keeps working.
+                                onClick={(event) => {
+                                  if (resultsCurrent && accessLifetime !== null && recentsLifetime === accessLifetime) {
+                                    const plain = !(event.metaKey || event.ctrlKey || event.shiftKey || event.altKey);
+                                    if (event.button === 0 && plain && openedAsHelp(item)) {
+                                      event.preventDefault();
+                                      return;
+                                    }
+                                    onOptionClick(event, item.href);
+                                    return;
+                                  }
                                   event.preventDefault();
                                   event.stopPropagation();
-                                }
-                              }}
-                              onMouseEnter={() => setHoverIndex(index)}
-                              className={styles.option}
-                              data-active={(resultsCurrent && activeIndex === index) || undefined}
-                              data-previewed={previewIndex === index || undefined}
-                              data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
-                            >
-                              <span className={styles.itemIconBox} aria-hidden="true">
-                                {item.tone ? (
-                                  <StatusGlyph tone={item.tone} />
-                                ) : (
-                                  <SearchResultIcon kind={item.kind} id={item.id} />
-                                )}
-                              </span>
-                              <span className={styles.resultContent}>
-                                <span className={styles.resultTitle}>{patientResultTitle(item, nameFor)}</span>
-                                <span className={styles.resultMeta}>
-                                  {item.umrn ? (
-                                    <>
-                                      <span className={styles.umrn}>{item.umrn}</span>
-                                      {item.dateOfBirth ? (
-                                        <span>born {formatDateOfBirth(item.dateOfBirth)}</span>
-                                      ) : null}
-                                    </>
-                                  ) : item.readyBeds !== undefined && !item.meta ? (
-                                    <span>
-                                      {item.siteName} · {item.readyBeds} ready
-                                    </span>
-                                  ) : item.meta ? (
-                                    <span>{item.meta}</span>
-                                  ) : null}
-                                </span>
-                              </span>
-                              <span className={styles.resultKind}>
-                                {item.kind === "task" ? tasksWord.one : item.kindLabel}
-                              </span>
-                              <span className={styles.actionHint} aria-hidden="true">
-                                <CornerDownLeft className={styles.actionHintIcon} aria-hidden="true" />
-                              </span>
-                            </Link>
+                                }}
+                                onAuxClick={(event) => {
+                                  if (
+                                    !resultsCurrent ||
+                                    accessLifetime === null ||
+                                    recentsLifetime !== accessLifetime
+                                  ) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                  }
+                                }}
+                                onMouseEnter={() => setHoverIndex(index)}
+                                className={styles.option}
+                                data-active={(resultsCurrent && activeIndex === index) || undefined}
+                                data-previewed={previewIndex === index || undefined}
+                                data-testid={`ward-global-search-result-${item.kind}-${item.id}`}
+                              >
+                                {optionBody}
+                              </Link>
+                            )}
                           </li>
                         );
                       })}
@@ -1422,13 +1473,15 @@ export function WardGlobalSearch({
       <p className="sr-only" role="status" aria-live="polite">
         {preparing
           ? "Preparing workspace. Search will be available shortly."
-          : refusal
-            ? refusal.sentence
-            : trimmed.length === 0
-              ? ""
-              : resultCount === 0
-                ? "No matches."
-                : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
+          : !resultsCurrent
+            ? "Updating search…"
+            : refusal
+              ? refusal.sentence
+              : trimmed.length === 0
+                ? ""
+                : resultCount === 0
+                  ? (help.note ?? "No matches.")
+                  : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
       </p>
       {palette && typeof document !== "undefined" ? createPortal(palette, document.body) : null}
     </div>

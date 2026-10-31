@@ -1,14 +1,13 @@
 import { readFileSync } from "node:fs";
 
-import { render, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { bedReleases } from "@/components/ward-management/ward-movements";
-import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
-import { showWardTable } from "./helpers/capacity-ward-table";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * 🔴 ZERO SPELLED TWO WAYS ON ONE LINE — owner ruling 2026-09-06, census §8.
@@ -26,54 +25,80 @@ import { showWardTable } from "./helpers/capacity-ward-table";
  * to compare, and a ROW was not a thing any of them looked at. It was found by rendering the page
  * and reading a row the way a reader meets it: across.
  *
- * So every assertion here reads all three cells of ONE row together. An assertion that reads a
- * single column, however carefully, reproduces the blindness that let this ship.
+ * So every assertion here reads all of ONE ward's counts together. An assertion that reads a
+ * single figure, however carefully, reproduces the blindness that let this ship.
+ *
+ * Capacity redesign (Josh, 31 Oct 2026): the network table is gone. A ward's counts are now read in
+ * two places, and each is checked as one line: its bed map card (ready, and occupied of its beds)
+ * and its ward drawer (ready of its beds, occupied, and freeing today). The locked-ready column went
+ * with the table; no single ward's locked figure is drawn any more.
  */
 const NOW = NOW_ANCHOR;
-const units = allUnits();
-const rows = networkWardRows(units, NOW, bedReleases);
-
-/** The three count columns whose spelling must agree. `Mental Health Act` and `Confirmed` are not counts. */
-const COUNT_CELLS = [
-  "ward-capacity-network-ready",
-  "ward-capacity-network-locked",
-  "ward-capacity-network-freeing",
-] as const;
+const seed = seedWardFlowState();
+// Same arguments `useCapacityModel` passes to `networkWardRows`.
+const rows = networkWardRows(seed.units, NOW, seed.bedReleases, seed.admissions, seed.leaveBeds);
 
 /**
  * The word this screen uses for a reported zero. Kept as one constant so a rewording moves in one
  * place — but note that nothing below asserts the word itself is "none": what is asserted is that
- * the three cells AGREE, which survives any rewording. Cf. the standing rule that a guard pinning
+ * the counts AGREE, which survives any rewording. Cf. the standing rule that a guard pinning
  * today's copy goes red on an honest rephrasing and teaches people to delete it.
  */
 const ZERO_WORD = /^\s*none\s*$/iu;
 
-/** A cell that is exactly the digit zero, with nothing else in it. */
+/** A figure that is exactly the digit zero, with nothing else in it. */
 const BARE_ZERO = /^\s*0\s*$/u;
 
 function renderScreen() {
-  const view = render(
+  return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <CapacityScreen />
     </WardFlowProvider>,
   );
-  showWardTable();
-  return view;
 }
 
-/**
- * The text of a count cell with any second fact stripped off. `Ready` can carry a cleaning count
- * ("2 still being made ready") and a mid-update caution in the same `<td>`; neither is the figure,
- * and including them would make the digit test match the "2" in the cleaning line rather than the
- * figure itself. Reads the direct figure content only.
- */
-function figureText(cell: HTMLElement): string {
-  const clone = cell.cloneNode(true) as HTMLElement;
-  for (const extra of clone.querySelectorAll("small")) extra.remove();
-  return clone.textContent ?? "";
+/** A ward card's visible name: its text without the spelled-out code a screen reader hears. */
+function visibleName(element: Element | null): string {
+  if (!element) return "";
+  const clone = element.cloneNode(true) as Element;
+  clone.querySelectorAll("abbr + span").forEach((node) => node.remove());
+  return (clone.textContent ?? "").trim();
 }
 
-describe("the capacity network table spells zero one way per row", () => {
+function cardOf(unit: { id: string; name: string }): HTMLElement {
+  const map = document.getElementById("capacity-bed-map");
+  if (!map) throw new Error("no bed map on the Capacity screen");
+  const card = Array.from(map.querySelectorAll<HTMLElement>('button[aria-haspopup="dialog"]')).find(
+    (button) => visibleName(button.firstElementChild) === unit.name,
+  );
+  if (!card) throw new Error(`no bed map card for ${unit.id}`);
+  return card;
+}
+
+/** A card's two counts: its ready figure and its occupied figure ("3 of 12 occupied"). */
+function cardFigures(card: HTMLElement): string[] {
+  const ready = card.querySelector("b")?.textContent ?? "";
+  const occupied = /^(\S+) of \d+ occupied$/u.exec(
+    Array.from(card.querySelectorAll("span")).find((span) => / of \d+ occupied$/u.test(span.textContent ?? ""))
+      ?.textContent ?? "",
+  )?.[1];
+  return [ready, occupied ?? ""];
+}
+
+/** The drawer's three counts for its ward: ready, occupied, and freeing today. */
+function drawerFigures(unit: { id: string; name: string }): string[] {
+  fireEvent.click(cardOf(unit));
+  const drawer = screen.getByTestId("ward-capacity-ward-drawer");
+  expect(drawer).toHaveAccessibleName(unit.name);
+  const beds = within(drawer).getByRole("region", { name: "Beds now" });
+  const ready = beds.querySelector("p span")?.textContent ?? "";
+  const notes = Array.from(beds.querySelectorAll("p")).at(-1)?.textContent ?? "";
+  const occupied = /^(\S+) occupied/u.exec(notes)?.[1] ?? "";
+  const freeing = within(drawer).getByText("Freeing today").nextElementSibling?.textContent ?? "";
+  return [ready, occupied, freeing];
+}
+
+describe("Capacity spells zero one way per ward", () => {
   it("has rows, and rows where a zero actually occurs, or every assertion below is vacuous", () => {
     // 🔴 FLOOR THE POPULATION WALKED AND THE POPULATION THAT CAN DISCRIMINATE — never the findings.
     // A table with no zero in it passes the row assertion trivially, and would go on passing if the
@@ -84,8 +109,8 @@ describe("the capacity network table spells zero one way per row", () => {
     // zero on 15, positive on 8; `ready === 0` on 3 rows and `lockedReady === 0` on 16. Floors are
     // set well below those so ordinary fixture movement does not go red, but a fixture that lost
     // its zeros entirely — which would make every assertion below vacuous — does.
-    expect(rows.length, "the network table rendered no rows at all").toBeGreaterThan(10);
-    const withAZero = rows.filter((row) => row.ready === 0 || row.lockedReady === 0 || row.freeing === 0);
+    expect(rows.length, "the network has hardly any wards").toBeGreaterThan(10);
+    const withAZero = rows.filter((row) => row.ready === 0 || row.occupied === 0 || row.freeing === 0);
     expect(
       withAZero.length,
       "no row in the fixture has a zero in any count column, so nothing here can detect a spelling " +
@@ -93,27 +118,37 @@ describe("the capacity network table spells zero one way per row", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("never renders a word-zero and a digit-zero in the same row", () => {
-    // 🔴 THE ASSERTION THE OLD TESTS COULD NOT MAKE. One row at a time, all three cells together.
+  it("never renders a word-zero and a digit-zero for the same ward, on its card or in its drawer", () => {
+    // 🔴 THE ASSERTION THE OLD TESTS COULD NOT MAKE. One ward at a time, all its counts together.
     renderScreen();
     const mixed: string[] = [];
+    let sawAZero = 0;
     for (const row of rows) {
-      const tableRow = document.querySelector(`[data-testid="ward-capacity-network-row-${row.unit.id}"]`);
-      expect(tableRow, `no rendered row for ${row.unit.name}`).not.toBeNull();
-      const texts = COUNT_CELLS.map((id) => figureText(within(tableRow as HTMLElement).getByTestId(id)));
-      const spelledAsWord = texts.filter((text) => ZERO_WORD.test(text));
-      const spelledAsDigit = texts.filter((text) => BARE_ZERO.test(text));
-      if (spelledAsWord.length > 0 && spelledAsDigit.length > 0) {
-        mixed.push(`  ${row.unit.name}: ${texts.map((text) => `"${text.trim()}"`).join(" · ")}`);
+      for (const [where, texts] of [
+        ["card", cardFigures(cardOf(row.unit))],
+        ["drawer", drawerFigures(row.unit)],
+      ] as const) {
+        expect(
+          texts.every((text) => text.trim() !== ""),
+          `${row.unit.name}'s ${where} is missing a count: ${texts.join(" · ")}`,
+        ).toBe(true);
+        const spelledAsWord = texts.filter((text) => ZERO_WORD.test(text));
+        const spelledAsDigit = texts.filter((text) => BARE_ZERO.test(text));
+        if (spelledAsWord.length + spelledAsDigit.length > 0) sawAZero += 1;
+        if (spelledAsWord.length > 0 && spelledAsDigit.length > 0) {
+          mixed.push(`  ${row.unit.name} (${where}): ${texts.map((text) => `"${text.trim()}"`).join(" · ")}`);
+        }
       }
     }
+    expect(sawAZero, "no card or drawer showed a zero at all — nothing was checked").toBeGreaterThan(0);
     expect(
       mixed,
       "these rows spell zero two ways on one line, so a reader meets a word and a digit side by " +
         "side with nothing telling them they mean the same thing:\n" +
         mixed.join("\n") +
-        "\n\n  Spell every count column the same way. The three columns are Ready, Locked and " +
-        "Freeing; 'Not tracked here' is NOT a zero and is correctly different from both.",
+        "\n\n  Spell every count for one ward the same way: on the card Ready and Occupied, in the " +
+        "drawer Ready, Occupied and Freeing today; 'Not tracked here' is NOT a zero and is correctly " +
+        "different from both.",
     ).toEqual([]);
   });
 
@@ -124,8 +159,7 @@ describe("the capacity network table spells zero one way per row", () => {
     renderScreen();
     for (const row of rows) {
       if (row.freeing !== undefined) continue;
-      const tableRow = document.querySelector(`[data-testid="ward-capacity-network-row-${row.unit.id}"]`);
-      const text = figureText(within(tableRow as HTMLElement).getByTestId("ward-capacity-network-freeing"));
+      const text = drawerFigures(row.unit)[2]!;
       expect(
         ZERO_WORD.test(text),
         `${row.unit.name} does not report a freeing figure, but its cell reads "${text.trim()}" — ` +
@@ -157,10 +191,12 @@ describe("the capacity network table spells zero one way per row", () => {
    * edit and exactly the moment to re-read which cells still defer. Update the strings; do not
    * delete the case.
    */
-  it("keeps all three count columns routed through the shared count spelling", () => {
+  it("keeps the drawer's three counts routed through the shared count spelling", () => {
+    // Capacity redesign (31 Oct 2026): the counts that read "none" for a zero are now in the ward
+    // drawer (`capacity-ward-drawer.tsx`); `freeingCellText` defers to `countCellText` in
+    // `capacity-derivations.ts`. The network table file (`capacity-network-rows.tsx`) is deleted.
     const source =
-      readFileSync("src/components/ward-management/capacity/capacity-screen.tsx", "utf8") +
-      readFileSync("src/components/ward-management/capacity/capacity-network-rows.tsx", "utf8") +
+      readFileSync("src/components/ward-management/capacity/capacity-ward-drawer.tsx", "utf8") +
       readFileSync("src/components/ward-management/capacity/capacity-derivations.ts", "utf8");
     const stripped = source
       .replace(/\/\*[\s\S]*?\*\//gu, (block) => block.replace(/[^\n]/gu, " "))
@@ -169,11 +205,16 @@ describe("the capacity network table spells zero one way per row", () => {
     expect(stripped.length, "the comment strip removed nearly the whole file").toBeGreaterThan(source.length / 3);
     expect(stripped, "the screen source no longer mentions the shared decision at all").toContain("countCellText");
 
-    for (const call of ["countCellText(row.ready)", "countCellText(row.lockedReady)", "countCellText(freeing)"]) {
+    for (const call of [
+      "countCellText(row.ready)",
+      "countCellText(row.occupied)",
+      "freeingCellText(row.freeing)",
+      "countCellText(freeing)",
+    ]) {
       expect(
         stripped.includes(call),
-        `${call} is not in capacity-screen.tsx outside comments — that cell has stopped deferring ` +
-          "to the shared count spelling, so the three columns can drift apart again. It produces " +
+        `${call} is not in the drawer or the derivations outside comments — that count has stopped deferring ` +
+          "to the shared count spelling, so the counts can drift apart again. It produces " +
           "identical output today, which is why nothing else can catch it.",
       ).toBe(true);
     }
@@ -185,7 +226,7 @@ describe("the capacity network table spells zero one way per row", () => {
   });
 
   it("detects a mixed row when one is constructed, so the assertion above is not decoration", () => {
-    // 🔴 WITHOUT THIS THE ROW ASSERTION PASSES OVER AN EMPTY LIST, which is exactly what a detector
+    // 🔴 WITHOUT THIS THE PER-WARD ASSERTION PASSES OVER AN EMPTY LIST, which is exactly what a detector
     // that matches nothing produces. Builds the defect by hand — the `none · 0 · 0` the census
     // measured — and requires the same predicate to find it.
     const detect = (texts: string[]): boolean =>

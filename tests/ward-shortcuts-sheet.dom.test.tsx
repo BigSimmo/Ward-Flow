@@ -21,6 +21,15 @@ describe("keyboard shortcuts sheet", () => {
     for (const item of KEYBOARD_SHORTCUTS) expect(list.textContent).toContain(item.action);
   });
 
+  it("shows each key's short label in its column, keeping Help's sentence as the hover title (round 2, #1118)", async () => {
+    render(<WardHelpHost />);
+    fireEvent.keyDown(window, { key: "?" });
+    const list = await screen.findByTestId("ward-shortcuts-list", {}, { timeout: 3000 });
+    for (const group of ["Find", "Open", "Move around"]) expect(list.textContent).toContain(group);
+    const search = Array.from(list.querySelectorAll("dd")).find((cell) => cell.title.startsWith("Search, from"));
+    expect(search?.firstChild?.textContent).toBe("Search");
+  });
+
   it("lets the keyboard reach and scroll the list, named by the sheet title", async () => {
     render(<WardHelpHost />);
     fireEvent.keyDown(window, { key: "?" });

@@ -38,3 +38,12 @@
     overflow: hidden;
   }
 }
+
+/* The ED board's hero (redesign, 31 Oct 2026): an empty slot leaves the flow at every width. */
+.slot[data-empty="true"][data-collapse="true"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  min-block-size: 0;
+  overflow: hidden;
+}

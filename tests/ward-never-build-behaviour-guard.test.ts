@@ -10,7 +10,6 @@ import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { legalFormReadinessLine } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
-import { elapsedFraction } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { queueOrder, waitFactors } from "@/components/ward-management/ward-priority";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -113,10 +112,11 @@ describe("never-build: nothing happens because time passes", () => {
 describe("never-build: the ED queue is never re-sorted by need", () => {
   it("the ED board's Sort offers only current order, longest in ED and patient name", () => {
     const board = readFileSync(`${WARD}/ed/ed-screen-board.tsx`, "utf8");
-    const start = board.indexOf("<select value={patientSort}");
+    // ED board redesign (31 Oct 2026): the Sort is the kit's Segmented, its orders listed as items.
+    const start = board.indexOf('label="Sort patients"');
     expect(start, "the ED board Sort control must still exist").toBeGreaterThanOrEqual(0);
-    const select = board.slice(start, board.indexOf("</select>", start));
-    const options = [...select.matchAll(/<option value="([^"]*)"/gu)].map((match) => match[1]);
+    const control = board.slice(start, board.indexOf("/>", board.indexOf("items={[", start)));
+    const options = [...control.matchAll(/\{ id: "([^"]*)"/gu)].map((match) => match[1]);
     expect(options).toEqual(["current", "longest", "name"]);
   });
 
@@ -189,7 +189,6 @@ describe("never-build: no computed Mental Health Act time, including the under-1
         const read = (subject: Movement) => ({
           timeLeft: formTimeLeft(subject, now, DEFAULT_DUE_SOON_THRESHOLDS),
           readiness: legalFormReadinessLine(subject.legalForm!, now),
-          elapsed: elapsedFraction(subject, now),
           reasons: waitFactors(subject, now, DEFAULT_DUE_SOON_THRESHOLDS),
         });
         const adult = read(band(movement, "adult"));

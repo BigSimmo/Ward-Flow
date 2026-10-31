@@ -457,9 +457,9 @@ describe("ReferralBoard", () => {
     ]);
   });
 
-  it("offers the search on the Queue tab only, since it narrows queue rows", async () => {
+  it("offers no Filter queue box on either tab; the header search finds referrals (30 Oct 2026)", async () => {
     renderBoard();
-    expect(screen.getByRole("searchbox", { name: "Filter referrals" })).toBeInTheDocument();
+    expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
     await openHistory();
     expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
   });
@@ -1321,7 +1321,8 @@ describe("ReferralBoard — an acceptance does not erase a refusal", () => {
     const declineReason = declinedAddressings(referrals.find((candidate) => candidate.id === "RF-004")!)[0]!
       .declineReason!;
     expect(screen.getByTestId("ward-referral-board-decided-detail-RF-004").textContent).toBe(
-      `Ward · fsh-older-adult: ${declineReasonLabelForTest(declineReason)}`,
+      // Referrals redesign (31 Oct 2026): History names the ward that declined, not its internal code.
+      `FSH Older Adult: ${declineReasonLabelForTest(declineReason)}`,
     );
   });
 });
@@ -1827,6 +1828,52 @@ function bandsAcrossNetwork(homeRegion: Referral["homeRegion"]): (TravelBand | u
 function regionWhere(predicate: (bands: (TravelBand | undefined)[]) => boolean): Referral["homeRegion"] | null {
   return HOME_REGIONS.find((homeRegion) => predicate(bandsAcrossNetwork(homeRegion))) ?? null;
 }
+
+describe("ReferralMatchView — keyboard candidate selection", () => {
+  it("moves the selected candidate without recording a placement decision", () => {
+    const dispatch = vi.fn();
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <ReferralMatchView
+          referral={bandReferral()}
+          units={allUnits()}
+          now={NOW_ANCHOR}
+          dispatch={dispatch}
+          rejections={[]}
+        />
+      </WardFlowProvider>,
+    );
+    const groups = screen
+      .getAllByRole("radiogroup")
+      .filter((group) => group.querySelector('[data-testid^="ward-referral-match-phone-cand-"]'));
+    expect(groups.length).toBeGreaterThan(1);
+    for (const group of groups) {
+      expect(
+        within(group)
+          .getAllByRole("radio")
+          .filter((radio) => radio.tabIndex === 0),
+      ).toHaveLength(1);
+    }
+    const group = groups.find((entry) => within(entry).getAllByRole("radio").length > 1)!;
+    expect(group).toBeDefined();
+    const radios = within(group).getAllByRole("radio");
+    const current = radios.find((radio) => radio.getAttribute("aria-checked") === "true") ?? radios[0]!;
+    const next = radios[(radios.indexOf(current) + 1) % radios.length]!;
+    current.focus();
+    fireEvent.keyDown(current, { key: "ArrowDown" });
+    expect(next).toHaveFocus();
+    expect(next).toHaveAttribute("aria-checked", "true");
+    for (const entry of groups) {
+      expect(
+        within(entry)
+          .getAllByRole("radio")
+          .filter((radio) => radio.tabIndex === 0),
+      ).toHaveLength(1);
+    }
+    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.queryByTestId("ward-referral-match-decided")).not.toBeInTheDocument();
+  });
+});
 
 describe("ReferralMatchView — every ward names its travel band, and every ward is on the screen", () => {
   it("names an unrecorded band in words on the row itself, never as a blank", () => {

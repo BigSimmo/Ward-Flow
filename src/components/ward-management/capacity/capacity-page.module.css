@@ -1,0 +1,1764 @@
+/*
+ * Capacity (built from the October 2026 redesign, approved by Josh 31 Oct 2026). Tokens only;
+ * nothing under 12 px. Layout follows the width of the page column (the `page` container on
+ * `.main` below), not the window:
+ *   wide   1100 px and up  — forecast in three columns, bed map with the side column beside it
+ *   middle  700–1099 px    — forecast figures across the top, side column under the map in two
+ *   narrow  under 700 px   — one column
+ */
+
+/* ── The page: the Ward canvas and one column of panels. The column is a size container, so a
+   panel lays itself out by the room it has, beside the rail at 1280 px or alone at 1440 px. ── */
+.screen {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  display: block;
+  min-width: 0;
+  --wf-page-canvas: var(--wf-canvas);
+  background: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.main {
+  container: page / inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+@media (max-width: 48rem) {
+  .main {
+    padding: var(--wf-s-3);
+    padding-bottom: calc(var(--wf-s-8) + var(--wf-s-8));
+  }
+}
+
+/* ── Shared text ── */
+.small {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
+.mutedXs {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.muted {
+  color: var(--wf-ink-3);
+}
+.strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+}
+.warnInk {
+  color: var(--wf-warning-ink);
+}
+.okInk {
+  color: var(--wf-success-ink);
+}
+.kickerInline {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.tag {
+  flex: none;
+  padding: 1px var(--wf-s-2);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.tagGood {
+  border-color: var(--wf-success);
+  color: var(--wf-success-ink);
+}
+
+/* A card's quiet foot line: one sentence on the left, one link or disclosure on the right. */
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.cardFoot > :first-child {
+  flex: 1 1 260px;
+}
+.footLink {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.footLink:hover {
+  text-decoration: underline;
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.heroStats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+/* Final polish (31 Oct 2026): the Demo pill takes the hero buttons' height (the kit pill reads
+   its height from --wf-h-chip), so the aside is one row of equal controls. Phone keeps the chip. */
+.heroLive {
+  display: inline-flex;
+  align-items: center;
+}
+@media (min-width: 48.0625rem) {
+  .heroLive {
+    --wf-h-chip: var(--wf-h-md);
+  }
+}
+
+/* ── Where the mismatch is ── */
+.mismatch {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.mmCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+}
+.mmCard:first-child {
+  border-inline-start: 0;
+}
+.mmTitle {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+}
+.mmNow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-1);
+  margin: 0;
+  font-size: var(--wf-fs-14);
+}
+.mmFigure {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+.mmSub {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mmTomorrow {
+  margin-top: var(--wf-s-2);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+.mmTomorrowHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+}
+
+/* ── Bed forecast ── */
+.fcBody {
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr) 272px;
+  border-top: 1px solid var(--wf-line);
+}
+.fcKpis {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  border-inline-end: 1px solid var(--wf-line);
+}
+.fcKpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.fcKpi:first-child {
+  border-top: 0;
+}
+.fcKpi dd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+.fcKpiValue {
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+/* 48 hours rests on later dates: muted, led by its range, with the chart's "may move" swatch. */
+.fcKpiSoft {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  color: var(--wf-ink-3);
+}
+.fcKpiSoftLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+.fcSoftSwatch {
+  display: inline-block;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--wf-r-xs);
+}
+
+/* The phone sheet: the sheet is the surface, so no card edge, and the parts stack. */
+.fcStacked {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: none;
+}
+.fcToolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-3);
+}
+.fcStacked .fcBody {
+  grid-template-columns: minmax(0, 1fr);
+}
+.fcStacked .fcKpis {
+  flex-direction: column;
+  border-inline-end: 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+.fcStacked .fcKpi {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding-inline: 0;
+  border-inline-start: 0;
+}
+.fcStacked .fcKpi:first-child {
+  border-top: 0;
+}
+.fcStacked .fcKpi dd {
+  align-items: flex-end;
+  text-align: right;
+}
+.fcStacked .fcChart,
+.fcStacked .fcSide,
+.fcStacked .cardFoot {
+  padding-inline: 0;
+}
+.fcStacked .fcSide {
+  border-inline-start: 0;
+  border-top: 1px solid var(--wf-line);
+}
+.fcChart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.fcChartHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+/* Doubled with the parent so the legend's own swatch colour (same weight, loaded in any order)
+   cannot win: the key must match the bars. */
+.swHatch,
+.fcChartHead .swHatch {
+  background: repeating-linear-gradient(45deg, var(--wf-data-3) 0 3px, var(--wf-data-2) 3px 5px);
+}
+.swSecond,
+.fcChartHead .swSecond {
+  background: var(--wf-data-2);
+}
+.fcSide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+}
+.levers {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lever {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+}
+.leverN {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.leverMain {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-1);
+  min-width: 0;
+}
+.leverHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+  font-size: var(--wf-fs-13);
+}
+.leverAction {
+  margin-top: var(--wf-s-1);
+}
+/* Polish (31 Oct 2026): "What would help tomorrow" as one quiet row per action, the whole row
+   the link, with the likely gain as a tag and a chevron. */
+.helpList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.helpLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-2));
+  padding: var(--wf-s-2);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+}
+.helpList li + li .helpLink {
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-sm) var(--wf-r-sm);
+}
+.helpLink:hover {
+  background: var(--wf-hover);
+}
+.helpLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.helpStatic.helpStatic {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.helpStatic:hover {
+  background: none;
+}
+.helpTitle {
+  font-weight: 600;
+}
+.helpChevron {
+  color: var(--wf-ink-3);
+}
+
+.fcSources {
+  margin-top: auto;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+.fcSources p {
+  margin: 0 0 var(--wf-s-1);
+}
+
+/* By ward: the ward-by-day grid as a quiet heat table. */
+.heat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.heatTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 3px;
+  font-size: var(--wf-fs-12);
+}
+.heatTable th {
+  padding: var(--wf-s-1) var(--wf-s-2);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+.heatTable tbody th {
+  max-width: 220px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+  white-space: normal;
+}
+.heatCell {
+  min-width: 56px;
+  height: 34px;
+  padding: 0 var(--wf-s-2);
+  border-radius: var(--wf-r-xs);
+  font-family: var(--wf-mono);
+  text-align: center;
+  background: var(--wf-surface-2);
+}
+.heatCell em {
+  display: block;
+  font-style: normal;
+  color: var(--wf-accent-ink);
+}
+.heat1 {
+  background: color-mix(in srgb, var(--wf-data-1) 22%, var(--wf-surface));
+}
+.heat2 {
+  background: color-mix(in srgb, var(--wf-data-1) 42%, var(--wf-surface));
+}
+.heatLater {
+  font-style: italic;
+}
+
+/* ── Bed map ── */
+.mapRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+.mapCard {
+  min-width: 0;
+}
+.mapBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.highlights {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+/* Polish (31 Oct 2026): highlight chips and the Grid/Rows switch share the title row. */
+.mapControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+.mapGroup {
+  border-top: 1px solid var(--wf-line);
+}
+.mapGroupHead {
+  margin: 0;
+}
+.mapGroupToggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-lg);
+  padding: var(--wf-s-2) 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+  text-align: start;
+  cursor: pointer;
+}
+.mapGroupToggle:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+.mapGroupName {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-1);
+}
+.mapGroupFigures {
+  margin-inline-start: auto;
+}
+.mapGroupFigures b {
+  color: var(--wf-ink-1);
+}
+.mapGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-3);
+}
+.mapRows {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: var(--wf-s-3);
+}
+.mapGrid[hidden],
+.mapRows[hidden] {
+  display: none;
+}
+
+.wardCard,
+.wardRow {
+  display: grid;
+  min-width: 0;
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color var(--wf-m-fast) var(--wf-ease),
+    box-shadow var(--wf-m-fast) var(--wf-ease),
+    opacity var(--wf-m-fast) var(--wf-ease);
+}
+.wardCard {
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name ready"
+    "occupied ready"
+    "cells cells"
+    "note note";
+  align-content: start;
+  gap: 2px var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+}
+.wardRow {
+  grid-template-columns: minmax(160px, 1.5fr) 72px 120px minmax(140px, 2fr) minmax(140px, 1.4fr);
+  grid-template-areas: "name ready occupied cells note";
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 44px;
+  padding: var(--wf-s-2) var(--wf-s-2);
+  border-width: 0 0 1px;
+  border-radius: 0;
+}
+.wardCard:hover,
+.wardRow:hover {
+  border-color: var(--wf-line-3);
+  box-shadow: var(--wf-e1-hover);
+}
+.wardCard:focus-visible,
+.wardRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.wardCard[data-selected],
+.wardRow[data-selected] {
+  border-color: var(--wf-accent);
+  box-shadow: 0 0 0 1px var(--wf-accent);
+}
+.dimmed {
+  opacity: 0.38;
+}
+.wardName {
+  grid-area: name;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.wardReady {
+  grid-area: ready;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mapEmpty {
+  margin: 0;
+  padding: var(--wf-s-2) 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+.wardRow .wardReady {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 4px;
+}
+.wardReadyN {
+  font-size: var(--wf-fs-20);
+  line-height: 1;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-success-ink);
+}
+.wardReadyNone .wardReadyN {
+  color: var(--wf-ink-3);
+  font-weight: 500;
+}
+.wardOccupied {
+  grid-area: occupied;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.wardNote {
+  grid-area: note;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.wardCard .wardNote {
+  margin-top: 4px;
+}
+.wardNoteItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.cells {
+  grid-area: cells;
+  display: grid;
+  gap: 2px;
+  max-width: 100%;
+}
+.wardCard .cells {
+  margin-top: var(--wf-s-2);
+}
+.cells i {
+  display: block;
+  height: 8px;
+  border-radius: 2px;
+}
+/* Doubled with the card so the bed map key's swatches match the squares (the shared legend swatch
+   has the same weight and could otherwise win). */
+.cellReady,
+.mapCard .cellReady {
+  background: var(--wf-data-ready);
+}
+.cellUsed,
+.mapCard .cellUsed {
+  background: var(--wf-data-1);
+}
+.cellClosed,
+.mapCard .cellClosed {
+  background: var(--wf-data-closed);
+}
+@media (forced-colors: active) {
+  .cellReady,
+  .mapCard .cellReady {
+    background: Highlight;
+  }
+  .cellUsed,
+  .mapCard .cellUsed {
+    background: CanvasText;
+  }
+  .cellClosed,
+  .mapCard .cellClosed {
+    background: GrayText;
+  }
+}
+
+/* ── Side column ── */
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+.sideBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.sideBody p {
+  margin: 0;
+}
+.blockers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+}
+.kvList {
+  margin: var(--wf-s-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+.kvList li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.kvList b {
+  font-family: var(--wf-mono);
+}
+
+.footRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+
+/* ── Scenario dialog ── */
+.scenarioAnswer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.scenarioFigure {
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+  font-weight: 600;
+}
+.scenarioSet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-3);
+  padding: 0;
+  border: 0;
+}
+.scenarioSet legend {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+}
+.scenarioRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: var(--wf-s-2);
+}
+
+/* ── Bed meeting sheet ── */
+.sheetFigures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0 0 var(--wf-s-4);
+}
+.sheetFigures > div {
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.sheetFigures dd {
+  margin: 0;
+}
+.sheetFigure {
+  display: block;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-28);
+  line-height: var(--wf-lh-28);
+  font-weight: 600;
+}
+.sheetCols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+  margin-bottom: var(--wf-s-3);
+}
+.sheetHead {
+  margin: var(--wf-s-3) 0 var(--wf-s-1);
+}
+.sheetHead:first-child {
+  margin-top: 0;
+}
+.sheetList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sheetList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  min-height: 34px;
+  padding: var(--wf-s-1) 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.sheetList li:has(> :nth-child(2):last-child) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+}
+.sheetList b {
+  font-family: var(--wf-mono);
+  text-align: end;
+}
+
+/* Final check (30 Oct 2026): the scenario and bed meeting dialogs open in the overlay layer, outside
+   the page container, so the container rules above never reach them. On a phone they stack. */
+@media (max-width: 48rem) {
+  .sheetCols,
+  .scenarioRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sheetFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ── Phone ── */
+.phoneTabs {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 3;
+  width: 100%;
+}
+.phoneRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.phoneRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: var(--wf-row-touch);
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+}
+.phoneRow:last-child {
+  border-bottom: 0;
+}
+.phoneRow > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.phoneRow > span {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-weight: 600;
+}
+/* ── Middle width: tablet, and a laptop with the rail open ── */
+@container page (max-width: 1099px) {
+  .mismatch {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .mmCard {
+    border-top: 1px solid var(--wf-line);
+  }
+  .mmCard:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .mmCard:nth-child(odd) {
+    border-inline-start: 0;
+  }
+  .fcBody {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fcKpis {
+    flex-direction: row;
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--wf-line);
+  }
+  .fcKpi {
+    flex: 1 1 0;
+    border-top: 0;
+    border-inline-start: 1px solid var(--wf-line);
+  }
+  .fcKpi:first-child {
+    border-inline-start: 0;
+  }
+  .fcSide {
+    border-inline-start: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+  .mapRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sideColumn {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .sideColumn > :first-child {
+    grid-row: span 2;
+  }
+  .wardRow {
+    grid-template-columns: minmax(140px, 1.4fr) 72px 110px minmax(100px, 2fr);
+    grid-template-areas: "name ready occupied cells";
+  }
+  .wardRow .wardNote {
+    display: none;
+  }
+}
+
+@container page (max-width: 699px) {
+  .mismatch,
+  .footRow,
+  .sideColumn,
+  .sheetCols {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mmCard {
+    border-inline-start: 0;
+  }
+  .fcKpis {
+    flex-direction: column;
+  }
+  .fcKpi {
+    border-inline-start: 0;
+    border-top: 1px solid var(--wf-line);
+  }
+  .sheetFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .scenarioRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .mapGroupFigures {
+    flex-basis: 100%;
+    margin-inline-start: calc(14px + var(--wf-s-2));
+  }
+}
+
+@media (max-width: 48rem) {
+  .mapGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .wardCard {
+    min-height: var(--wf-row-touch);
+  }
+  .mapGroupToggle {
+    min-height: var(--wf-row-touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wardCard,
+  .wardRow {
+    transition: none;
+  }
+}
+
+/* The oldest-count jump sits at the right end of the hero's figures. */
+.heroJump {
+  margin-inline-start: auto;
+}
+
+/* Planned admissions, reused unchanged: Book keeps its icon beside the word in the narrow column,
+   and each booking's facts wrap instead of ending in "…". */
+.footRow [data-testid="ward-planned-book"] {
+  flex: none;
+  flex-direction: row;
+  white-space: nowrap;
+}
+.plannedFacts.plannedFacts.plannedFacts {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* The ward panel's Ask the ward: the kit's small secondary button at its own width. */
+.askWard {
+  align-self: flex-start;
+}
+
+/* Planned admissions and the Step down board: the card title of every other card (sentence case,
+   600, ink-1), not the Board panel's small capitals. */
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 56px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--wf-line);
+}
+.panelTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* ── Polish (31 Oct 2026): the row under the full-width bed map ── */
+.lowerRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+@media (max-width: 80rem) {
+  .lowerRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lowerRow > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 48rem) {
+  .lowerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.shiftSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.shiftSection p {
+  margin: 0;
+}
+.shiftTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+}
+.shiftFigure {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+}
+.shiftNoun {
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+.shiftTags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 2px;
+}
+.shiftTagsLabel {
+  min-width: 76px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+.shiftTagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shiftTagList .tag {
+  font-family: var(--wf-font);
+}
+/* A ward name wraps in full rather than running off the card. */
+.shiftTagList .tagWrap {
+  flex: initial;
+  white-space: normal;
+}
+
+/* Nearest ready beds (road-time-card.tsx). */
+.rtPicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.rtPicker:hover {
+  background: var(--wf-hover);
+}
+.rtPicker[aria-expanded="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+}
+.rtPicker:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.rtPicker > svg {
+  color: var(--wf-ink-3);
+}
+.rtPickerFrom {
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.rtList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.rtList li + li .rtRow {
+  border-top: 1px solid var(--wf-line);
+}
+.rtRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.rtRow:hover {
+  background: var(--wf-hover);
+}
+.rtRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.rtRowSelected {
+  background: var(--wf-selected);
+}
+.rtText {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.rtName {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+}
+.rtMeta {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.rtTime {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rtEmpty,
+.rtFoot {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.plannedLate {
+  display: block;
+  width: fit-content;
+  margin-top: 4px;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-tag);
+  background: color-mix(in srgb, var(--wf-warning) 12%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+/* Planned admissions in the Capacity card: time and name, facts under them, Arrived and More on
+   the right, so each booking is two lines. */
+.plannedItem.plannedItem.plannedItem {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "when who actions"
+    "facts facts actions";
+}
+
+/* ── Polish 2 (31 Oct 2026): Mismatch as one compact strip ── */
+.mmStrip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(208px, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.mmTile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+  scroll-snap-align: start;
+}
+.mmTile:first-child {
+  border-inline-start: 0;
+}
+.mmTileHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+.mmTileTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.mmTileNow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.mmTileTomorrow {
+  display: grid;
+  grid-template-columns: auto minmax(40px, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+}
+.mmTileLabel {
+  color: var(--wf-ink-3);
+}
+.mmTileRange {
+  grid-column: 2 / -1;
+  justify-self: start;
+  text-align: start;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mmEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+/* ── Polish 2: the forecast's three figures ── */
+.fcFigs.fcFigs {
+  justify-content: flex-start;
+}
+.fcFig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.fcFig:first-child {
+  border-top: 0;
+}
+.fcFigLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.fcFigLabel .fcSoftSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.fcFigBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+}
+.fcFigValue {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.fcFigSoft {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-2);
+}
+.fcFigSub {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+/* ── Polish 4 (31 Oct 2026): the ward panel (capacity-ward-sidebar.tsx) ── */
+.wdIdentity {
+  margin: 0 0 var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+.wdTabs {
+  align-self: flex-start;
+}
+.wdHeadTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline-start: var(--wf-s-2);
+  padding: 2px 8px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.wdBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding-block: var(--wf-s-4);
+}
+.wdBeds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+}
+.wdBeds p {
+  margin: 0;
+}
+.wdBedsHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-2);
+}
+.wdKind {
+  margin-inline-start: auto;
+  font-family: var(--wf-font);
+}
+.wdBedsFigure {
+  font-size: var(--wf-fs-20);
+  line-height: 1;
+  font-weight: 650;
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+.wdBeds .cells {
+  --cell-max: 14px;
+}
+.wdBeds .cells i {
+  height: 10px;
+  border-radius: 3px;
+}
+.wdConfirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+.wdConfirmMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+}
+.wdNotices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+}
+.wdNotices li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+}
+.wdGroups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4);
+}
+@media (max-width: 30rem) {
+  .wdGroups {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.wdGroup {
+  min-width: 0;
+}
+.wdGroupTitle {
+  margin: 0 0 var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+.wdFacts {
+  margin: 0;
+}
+.wdFacts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-bottom: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+}
+.wdFacts dt {
+  color: var(--wf-ink-3);
+}
+.wdFacts dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: end;
+}
+.wdClosure {
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+.wdClosure > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  cursor: pointer;
+  list-style: none;
+}
+.wdClosure > summary::-webkit-details-marker {
+  display: none;
+}
+.wdClosure > summary > svg {
+  color: var(--wf-ink-3);
+  transition: transform 0.15s;
+}
+.wdClosure[open] > summary > svg {
+  transform: rotate(90deg);
+}
+.wdClosure > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--wf-r-md);
+}
+.wdClosureBody {
+  padding: 0 var(--wf-s-4) var(--wf-s-3);
+}
+.wdSummary {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+.wdList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+}
+.wdList > li {
+  border-bottom: 1px solid var(--wf-line);
+}
+.wdListRow,
+.wdListStatic {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  padding: var(--wf-s-2) var(--wf-s-1);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+.wdListRow {
+  cursor: pointer;
+}
+.wdListRow:hover {
+  background: var(--wf-hover);
+}
+.wdListRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.wdListStatic {
+  grid-template-columns: minmax(0, 1fr);
+}
+.wdListMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.wdListName {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.wdTagWarn {
+  background: color-mix(in srgb, var(--wf-warning) 12%, var(--wf-surface));
+  color: var(--wf-warning-ink);
+}
+.wdRecord {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+.wdBack {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent);
+  font: 600 var(--wf-fs-13) / 1.4 var(--wf-font);
+  cursor: pointer;
+}
+.wdRecordName {
+  margin: 0;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+}
+.wdRecordName:focus {
+  outline: none;
+}
+.wdFoot {
+  display: flex;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+/* ── Polish 5 (31 Oct 2026): the By ward grid as a heat map ── */
+.hm {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 4px 3px;
+  font-variant-numeric: tabular-nums;
+}
+.hmWardHead {
+  padding: 0 var(--wf-s-2) var(--wf-s-1) 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  text-align: start;
+  color: var(--wf-ink-3);
+}
+.hmDay {
+  padding: 0 0 var(--wf-s-1);
+  text-align: center;
+  white-space: nowrap;
+}
+.hmWeekday {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+.hmDate {
+  display: block;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.hmToday .hmWeekday,
+.hmToday .hmDate {
+  color: var(--wf-accent-ink);
+}
+.hmWard {
+  max-width: 220px;
+  padding: 0 var(--wf-s-3) 0 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  text-align: start;
+  color: var(--wf-ink-1);
+}
+.hmCellWrap {
+  padding: 0;
+}
+.hmCell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  /* Tall enough that the 12px "+N in" tag sits clear of the centred count. */
+  height: 40px;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.hm1 {
+  background: color-mix(in srgb, var(--wf-data-1) 14%, var(--wf-surface));
+}
+.hm2 {
+  background: color-mix(in srgb, var(--wf-data-1) 30%, var(--wf-surface));
+}
+.hm3 {
+  background: color-mix(in srgb, var(--wf-data-1) 46%, var(--wf-surface));
+}
+/* Later days may move: the same tint under the chart's fine hatch. */
+.hmLater {
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--wf-surface) 38%, transparent) 0 1.5px,
+    transparent 1.5px 6px
+  );
+}
+.hmNone {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--wf-line-2);
+}
+.hmIn {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-12);
+  line-height: 14px;
+  font-weight: 600;
+}
+.hmTotal {
+  padding: 0 0 0 var(--wf-s-2);
+  font-size: var(--wf-fs-14);
+  font-weight: 650;
+  text-align: center;
+  color: var(--wf-ink-1);
+  border-left: 1px solid var(--wf-line);
+}
+@media (forced-colors: active) {
+  .hmCell {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* The printed A4 bed meeting sheet (`bed-meeting-sheet.tsx`) is mounted while the dialog is open,
+   hidden on screen; print shows it alone. */
+@media screen {
+  .screenHidden {
+    display: none !important;
+  }
+}

@@ -33,6 +33,7 @@ import { requestToolsTool } from "../tools/ward-tools-open";
 import { usePhoneCreateOptions, type PhoneCreateId } from "./ward-phone-create-options";
 import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import { WardMyWards } from "./ward-my-wards";
+import { PhoneMenuTop } from "./ward-phone-menu-top";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import { useDeskRoleLabel } from "./ward-access-store";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "./ward-phone-menu";
@@ -615,6 +616,8 @@ export function PhoneMenuSheets({
         bodyClassName={styles.body}
       >
         <MenuSearch query={query} onQuery={onQuery} />
+        {/* The new frame (Josh, 31 Oct 2026): the Menu starts with the desk's capacity card. */}
+        {query.trim() ? null : <PhoneMenuTop onGo={onClose} />}
         <MenuPages
           query={query}
           entries={entries}

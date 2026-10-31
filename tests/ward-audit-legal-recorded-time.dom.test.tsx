@@ -60,7 +60,8 @@ describe("Legal Forms current paper facts", () => {
     fireEvent.click(screen.getByRole("button", { name: inspectButtonName }));
     // The written time is already recorded on this fixture, so the form opens from "Change".
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
-    fireEvent.change(screen.getByLabelText("Date written"), { target: { value: "2026-09-23" } });
+    // The kit's DD/MM/YYYY box (bug list row 25).
+    fireEvent.change(screen.getByLabelText("Date written"), { target: { value: "23/09/2026" } });
     fireEvent.change(screen.getByLabelText("Time"), { target: { value: "09:30" } });
     expect(screen.getByTestId("ward-legal-forms-clock-preview-WF-AUDIT-LEGAL")).toHaveTextContent(
       "No expiry is calculated.",

@@ -1,0 +1,120 @@
+/* Accept referral in principle: the ward's accept dialog on the kit Dialog (Josh, 31 Oct 2026). Tokens only. */
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+
+.facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.fact + .fact {
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.factLabel {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.factValue {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.name {
+  font-weight: 600;
+}
+
+.factSub {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.note {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.options {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: var(--wf-s-2);
+  padding: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+/* The kit radio at its own height, one answer per line. */
+.option {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+}
+
+/* Cancel at the left; the reason sits beside Confirm at the right, on one row while it fits. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+.actions > :last-child {
+  margin-left: auto;
+}
+
+/* On a laptop the kit's choice row is 28px; a little room keeps a wrapped reason clear of the next.
+   On a phone the kit's own row is already 44px. */
+@media (min-width: 48.0625rem) {
+  .option {
+    padding: 4px 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  .fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .actions > span:has(> button) {
+    display: contents;
+  }
+
+  .actions > span:has(> button) > span {
+    order: -1;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+  }
+
+  .actions > span:has(> button) > button {
+    margin-left: auto;
+  }
+}

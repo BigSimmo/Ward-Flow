@@ -1,0 +1,22 @@
+/* Fork-only styles for the legal-copies ED parts. A legal form's typed time, with its
+   not-legally-checked tag, wraps in full rather than ending in "…" (a phone has no hover). The class
+   is doubled to outrank the sheet's one-line `dd` rule without an attribute selector. */
+.legalValue.legalValue {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.legalGlyph {
+  display: inline-block;
+  margin-right: var(--wf-s-1);
+  vertical-align: 0.05em;
+}
+
+/* The ED Lists "why" line clips to one line on a phone (`.lstWrap .lstRow .lstWhy`); a legal form's
+   line wraps in full instead. Repeated to outrank that three-class rule. */
+.legalLine.legalLine.legalLine.legalLine {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}

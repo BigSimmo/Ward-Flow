@@ -1080,12 +1080,14 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // Finding 7: the breach line must still exist in the shortlist renderer. Before this, the only
     // test mentioning the string was a whole-page ABSENCE assertion, which deleting the string
     // makes MORE likely to pass. (Its counterpart in ward-priority.ts is pinned behaviourally in
-    // tests/ward-priority.test.ts, which is the stronger proof of the two.)
+    // tests/ward-priority.test.ts, which is the stronger proof of the two.) D-93 (31 Oct 2026): the
+    // line now reads the typed time ("Form 4C (Transfer order) · ended 10:02 as typed") through the
+    // shared helper, never "passed its deadline … ago" (tests/ward-legal-as-typed-guard.test.ts).
     expect(
-      literalsIn(`${WARD_DIR}/coordinator/shortlist-panel.tsx`).some((literal) =>
-        literal.includes("passed its deadline"),
+      readFileSync(`${WARD_DIR}/coordinator/shortlist-panel.tsx`, "utf8").includes(
+        "formTimeAsTyped(movement.legalForm, now)",
       ),
-      "the shortlist breach line was deleted or renamed",
+      "the shortlist breach line was deleted or no longer reads the typed time",
     ).toBe(true);
   }, 120_000);
 

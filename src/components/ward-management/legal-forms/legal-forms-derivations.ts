@@ -13,6 +13,7 @@ import type { LegalForm, Movement } from "@/components/ward-management/ward-mode
 import type { WardRecordTone } from "@/components/ward-management/ward-record-row";
 import { currentLegalDueAt, formProgression } from "./legal-form-progression";
 export { currentLegalDueAt } from "./legal-form-progression";
+import { typedTimePhrase } from "./legal-time-as-typed";
 
 /**
  * LEGAL FORMS AND DEADLINES — pure derivations for `LegalFormsScreen`.
@@ -183,10 +184,8 @@ export function legalDeadlineText(movement: Movement, now: Instant): string {
   if (progression)
     return `Form ${progression.endedCode} ended ${progression.endedWhen}; Form ${progression.nextCode} to record`;
   if (legalForm.dueAt !== undefined) {
-    const remaining = minutesUntil(legalForm.dueAt, now);
-    return remaining < 0
-      ? `Form expiry passed ${splitDuration(Math.abs(remaining))} ago`
-      : `Form expires in ${splitDuration(remaining)}`;
+    // Legal times only as typed (31 Oct 2026): "Form expiry ends 15:42 as typed", never a count.
+    return `Form expiry ${typedTimePhrase(legalForm.dueAt, now)}`;
   }
   /*
    * 🔴 ONE WORDING FOR AN ABSENT DEADLINE, NOT TWO — Ward Lead's ruling, 2026-09-12.

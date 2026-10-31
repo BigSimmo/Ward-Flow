@@ -55,9 +55,10 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 
   it("keeps working tools only on a desktop, as change 8 mocked (D-77)", () => {
     renderSheet();
-    // Each has its own place already, and the demo controls open from the Synthetic pill.
-    expect(screen.queryByRole("region", { name: "Demo" })).toBeNull();
-    expect(screen.queryByTestId("ward-tools-toggle-demo")).toBeNull();
+    // Each has its own place already. The new frame (Josh, 31 Oct 2026) drops the header's Synthetic
+    // pill, so the Demo controls sit at the foot of Tools on a desktop too (the board clock opens them).
+    expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
+    expect(screen.getByTestId("ward-tools-toggle-demo")).toBeTruthy();
     for (const gone of [/New referral/u, /Handover sheet/u, /Bed meeting TV/u, /Out of area/u]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
       expect(screen.queryByRole("link", { name: gone })).toBeNull();
@@ -164,15 +165,15 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     renderSheet(true);
     fireEvent.click(screen.getByTestId("ward-tools-toggle-demo"));
     const panel = screen.getByTestId("ward-tools-demo-panel");
-    expect(within(panel).getByRole("radiogroup", { name: "Demo scenario" })).toBeTruthy();
+    expect(within(panel).getByRole("group", { name: "Demo scenario" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "+15 min" })).toBeTruthy();
     expect(within(panel).getByRole("button", { name: "Reset demo" })).toBeTruthy();
     // The one tap Demo reset (#298) lives in the same panel, behind its own flag.
     expect(within(panel).getByTestId("ward-demo-reset-winter-surge")).toBeTruthy();
     // Its three scenarios load from the reset, after a confirm, so the picker does not repeat them.
-    const picker = within(panel).getByRole("radiogroup", { name: "Demo scenario" });
-    expect(within(picker).queryByRole("radio", { name: /Winter surge/u })).toBeNull();
-    expect(within(picker).getByRole("radio", { name: /Standard day/u })).toBeTruthy();
+    const picker = within(panel).getByRole("group", { name: "Demo scenario" });
+    expect(within(picker).queryByRole("button", { name: /Winter surge/u })).toBeNull();
+    expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
   });
 
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {

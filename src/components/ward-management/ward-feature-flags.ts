@@ -84,8 +84,8 @@ export const WARD_FEATURE_FLAGS = {
   },
   "help-ask": {
     label: "Ask help and Show me",
-    // Josh, 26 Oct 2026: interactive help. New screen, so it stays off on deployed builds until Josh
-    // approves the screenshots (D-74); on for local builds so it can be reviewed.
+    // Josh, 26 Oct 2026: interactive help. D-90 (30 Oct) put it on everywhere; D-91 (31 Oct) keeps
+    // Show me off on the demo and live sites until Josh has seen it in the mock-ups. Development only.
     defaults: { development: true, demo: false, production: false },
   },
 } as const satisfies Record<string, WardFeatureFlagDefinition>;

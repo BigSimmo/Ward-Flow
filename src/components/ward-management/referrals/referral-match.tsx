@@ -1,4 +1,6 @@
 "use client";
+// Copied from src/components/ward-management/referrals/referral-match.tsx (Referrals redesign).
+// Final round (31 Oct 2026): reason and recipient choices use the kit Select, same options, nothing pre-chosen (D-71).
 
 import {
   acceptedReferralIdsAt,
@@ -15,7 +17,7 @@ import {
   type OverrideReason,
   type WardRequestWithdrawalReason,
 } from "@/components/ward-management/ward-change-reasons";
-import { formatInstant, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { NOT_RECORDED_LABEL, SYNTHETIC_TRAVEL_TIMES_NOTICE } from "@/components/ward-management/ward-distance";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import {
@@ -53,7 +55,11 @@ import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./ref
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
-import { Button, StatusGlyph } from "@/components/wf";
+// Final round: the kit Select box sizing for this panel (see the file).
+import rs from "./referral-match.module.css";
+import tabs from "./referral-tabs.module.css";
+import { Check, X } from "lucide-react";
+import { Button, RadioGroup, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
   GATE_LABELS,
@@ -64,12 +70,16 @@ import {
   REJECTED_DECISION_LABELS,
 } from "./referral-match-model";
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
-import { AskMoreWardsCard, AskMoreWardsFoot, useAskMoreWards } from "./referral-ask-more-wards";
+import { AskMoreWardsFoot, useAskMoreWards } from "./referral-ask-more-wards";
+// D-91: the card's open list is the one Find a ward list, shared with the patient record.
+import { AskMoreWardsCard } from "./ask-more-wards-card";
 import { MatchRow } from "./referral-match-rows";
 import { useReferralMatchState } from "./use-referral-match-state";
 import { renderNotABedPhoneReview, renderNotABedPanel } from "./referral-match-not-a-bed";
+import { Disclosure, FoldedHistory } from "./folded-history";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import {
   movementHasOpenTurnaroundRequest,
   referralHasOpenTurnaroundRequest,
@@ -78,7 +88,8 @@ import {
 } from "@/components/ward-management/ward-turnaround-priority";
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
-import { outcomeDetail, outcomeLabel } from "./referral-board-model";
+import { outcomeLabel } from "./referral-board-model";
+import { outcomeDetail } from "./referral-ward-names";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";
 
 type ReferralMatchViewProps = {
@@ -132,6 +143,9 @@ export function ReferralMatchView({
   // #794: only the coordinator or the desk a destination belongs to may answer it.
   const deskRole = useRouteRole();
   const answers = (desk: string) => deskRole === "coordinator" || deskRole === desk;
+  // Josh, 31 Oct 2026 (answer 33): the community desk does not see the community arm's Accept and
+  // Decline, because they record the answer as the coordinator's. Its own team page is unchanged.
+  const communityDeskView = useEffectiveWardAccess().role === "community";
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
   const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
@@ -188,8 +202,10 @@ export function ReferralMatchView({
     gpSourceNotice,
     edAddressing,
     communityAddressing,
-    wholeWithdrawControl,
+    wholeWithdrawControl: withdrawDetails,
   } = s;
+  // Redesign (Josh, 30 Oct 2026): the pane's three show-more controls are one chevron row.
+  const wholeWithdrawControl = <Disclosure>{withdrawDetails}</Disclosure>;
   if (s.senderSummary !== undefined) {
     return (
       <section className={styles.matchSummary} data-testid="ward-referral-sender-progress">
@@ -203,7 +219,9 @@ export function ReferralMatchView({
       </section>
     );
   }
-  if (!ward && phone !== undefined && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
+  // Round 4 (Josh, 31 Oct 2026): the desktop panel uses the same ED review, so Decline and Accept
+  // presentation are anchored at the bottom there too rather than sitting mid-pane.
+  if (!ward && edAddressing?.state === "queued" && communityAddressing?.state !== "queued") {
     /* v10 phone, ED review: one scrolling sheet with Decline and Accept presentation pinned in the
        foot, as the ward sheet does. Decline opens the reasons as radio rows; Accept asks once. */
     return (
@@ -224,6 +242,7 @@ export function ReferralMatchView({
       handleEdAccept,
       handleCommunityDecline,
       handleCommunityAccept,
+      hideCommunityDecision: communityDeskView,
     });
     return (
       <DecidedBy allowed={answers("ed") || answers("community")} who="the receiving team">
@@ -529,12 +548,14 @@ export function ReferralMatchView({
     const communityArmLive = communityAddressing?.state === "queued" && communityAddressing.withdrawnAt === undefined;
     return (
       <section className={styles.matchPanel} data-testid="ward-referral-match-panel">
-        <ReferralIntakeSummary intake={referral.intake} />
+        <Disclosure>
+          <ReferralIntakeSummary intake={referral.intake} />
+        </Disclosure>
         {wardArms.length > 1 && (
           <label className={styles.fieldLabel}>
             Review recipient ward
-            <select
-              className={styles.select}
+            <Select
+              boxClassName={rs.reasonSelect}
               value={ward?.destination.unitId ?? ""}
               onChange={(event) => setReviewUnitId(event.target.value)}
             >
@@ -547,7 +568,7 @@ export function ReferralMatchView({
                     </option>
                   ),
               )}
-            </select>
+            </Select>
           </label>
         )}
         {/*
@@ -561,27 +582,31 @@ export function ReferralMatchView({
          * The paragraph below carries the proper wording, from the one home. Do not reintroduce a
          * short state word here: a second, shorter spelling is how the first one got in.
          */}
-        <h2 className={styles.matchHeading}>
-          {patientInfo ? (
-            <>
-              <span className={styles.matchHeadingUmrn}>{formatUmrn(patientInfo.umrn)}</span>
-              <span className={styles.matchHeadingName}>{patientInfo.displayName}</span>
-            </>
-          ) : (
-            "This referral"
-          )}
+        {/* Round 5 (Josh, 31 Oct 2026): the panel header already names the person, so the
+            heading is for screen readers only and the outcome reads as one card. */}
+        <h2 className="sr-only">
+          {patientInfo ? `${formatUmrn(patientInfo.umrn)} ${patientInfo.displayName}` : "This referral"}
         </h2>
-        <p data-testid="ward-referral-match-decided">
-          {ward.state === "accepted"
-            ? acceptedUnit
-              ? `Accepted at ${acceptedUnit.name}.`
-              : // The board's own spelling of this identical gap (`outcomeDetail`, "Unit not
-                // recorded") rather than a second one. The previous text — `Accepted, but no
-                // synthetic unit matches "<id>"` — was developer prose on a clinical screen: it
-                // named an internal id and the word "synthetic" to somebody deciding about a bed.
-                "Accepted — unit not recorded."
-            : referralAddressingStateLabel(ward)}
-        </p>
+        <div className={tabs.outcome} data-tone={ward.state === "accepted" ? "success" : "closed"}>
+          <span className={tabs.outcomeIcon} aria-hidden="true">
+            {ward.state === "accepted" ? <Check size={16} aria-hidden="true" /> : <X size={16} aria-hidden="true" />}
+          </span>
+          <div className={tabs.outcomeText}>
+            <b data-testid="ward-referral-match-decided">
+              {" "}
+              {ward.state === "accepted"
+                ? acceptedUnit
+                  ? `Accepted at ${acceptedUnit.name}.`
+                  : // The board's own spelling of this identical gap (`outcomeDetail`, "Unit not
+                    // recorded") rather than a second one. The previous text — `Accepted, but no
+                    // synthetic unit matches "<id>"` — was developer prose on a clinical screen: it
+                    // named an internal id and the word "synthetic" to somebody deciding about a bed.
+                    "Accepted — unit not recorded."
+                : referralAddressingStateLabel(ward)}
+            </b>
+            {ward.decidedAt !== undefined ? <span>Recorded {formatInstantWithDay(ward.decidedAt, now)}</span> : null}
+          </div>
+        </div>
         {/* Every ward declining leaves a community referral open, so the coordinator can still ask more (D-76). */}
         <AskMoreWardsCard ask={askMore} />
         {askMore.open ? (
@@ -595,10 +620,10 @@ export function ReferralMatchView({
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-reason-community_team">
               Withdraw reason (community team)
             </label>
-            <select
+            <Select
               id="ward-referral-match-withdraw-reason-community_team"
               data-testid="ward-referral-match-withdraw-reason-community_team"
-              className={styles.select}
+              boxClassName={rs.reasonSelect}
               value={communityWithdrawReason ?? ""}
               onChange={(event) => {
                 const chosen = event.target.value;
@@ -615,7 +640,7 @@ export function ReferralMatchView({
                   {wardRequestWithdrawalReasonLabels[reason]}
                 </option>
               ))}
-            </select>
+            </Select>
             <button
               type="button"
               className={styles.declineButton}
@@ -649,7 +674,7 @@ export function ReferralMatchView({
             recorded: {lastRejection.reason}
           </p>
         ) : null}
-        <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
+        <FoldedHistory referral={referral} now={now} dispatch={dispatch} />
         {phone}
       </section>
     );
@@ -674,10 +699,10 @@ export function ReferralMatchView({
           <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
             Decline reason (community team)
           </label>
-          <select
+          <Select
             id="ward-referral-match-decline-reason-community_team"
             data-testid="ward-referral-match-decline-reason-community_team"
-            className={styles.select}
+            boxClassName={rs.reasonSelect}
             value={communityDeclineReason ?? ""}
             onChange={(event) => {
               const chosen = event.target.value;
@@ -694,7 +719,7 @@ export function ReferralMatchView({
                 {COMMUNITY_DECLINE_REASON_LABELS[reason]}
               </option>
             ))}
-          </select>
+          </Select>
           <Button
             variant="sec"
             size="md"
@@ -771,10 +796,10 @@ export function ReferralMatchView({
             Decline reason (emergency department)
           </label>
           <div className={styles.selectWithActionRow}>
-            <select
+            <Select
               id="ward-referral-match-decline-reason-emergency_department"
               data-testid="ward-referral-match-decline-reason-emergency_department"
-              className={styles.select}
+              boxClassName={rs.reasonSelect}
               value={edDeclineReason ?? ""}
               onChange={(event) => {
                 const chosen = event.target.value;
@@ -791,7 +816,7 @@ export function ReferralMatchView({
                   {DECLINE_REASON_LABELS[reason] ?? reason}
                 </option>
               ))}
-            </select>
+            </Select>
             <Button
               variant="sec"
               size="md"
@@ -910,13 +935,13 @@ export function ReferralMatchView({
         <p className={ph.ch}>
           {title} <span className={ph.k}>{list.length}</span>
         </p>
-        <div className={ph.cands} role="radiogroup" aria-label={title}>
+        <RadioGroup className={ph.cands} aria-label={title}>
           {(kind === "yes" ? fitsShown : list).map((c) => candRow(c, kind))}
-        </div>
+        </RadioGroup>
         {kind === "yes" && fitsHidden > 0 ? (
-          <button type="button" className={ph.more} onClick={() => setPhoneAllFits(true)}>
+          <ShowMoreRow onClick={() => setPhoneAllFits(true)} expanded={false}>
             Show {fitsHidden} more with a bed ready
-          </button>
+          </ShowMoreRow>
         ) : null}
       </>
     ) : null;
@@ -939,8 +964,8 @@ export function ReferralMatchView({
     wardArms.length > 1 ? (
       <label className={styles.fieldLabel}>
         Review recipient ward
-        <select
-          className={styles.select}
+        <Select
+          boxClassName={rs.reasonSelect}
           value={ward?.destination.unitId ?? ""}
           onChange={(event) => setReviewUnitId(event.target.value)}
         >
@@ -953,7 +978,7 @@ export function ReferralMatchView({
                 </option>
               ),
           )}
-        </select>
+        </Select>
       </label>
     ) : null;
 
@@ -965,7 +990,9 @@ export function ReferralMatchView({
     >
       {phone === undefined ? (
         <>
-          <ReferralIntakeSummary intake={referral.intake} />
+          <Disclosure>
+            <ReferralIntakeSummary intake={referral.intake} />
+          </Disclosure>
           {recipientSelect}
           {!hideDossierHeader ? (
             <div className={styles.matchDossierHeader}>
@@ -1063,7 +1090,7 @@ export function ReferralMatchView({
       {phoneDeclining ? (
         <>
           <p className={ph.ch}>Why decline?</p>
-          <div className={ph.cands} role="radiogroup" aria-label="Why decline?">
+          <RadioGroup className={ph.cands} aria-label="Why decline?">
             {REFERRAL_DECLINE_REASONS.map((reason) => (
               <button
                 key={reason}
@@ -1078,7 +1105,7 @@ export function ReferralMatchView({
                 <span className={ph.nm}>{DECLINE_REASON_LABELS[reason] ?? reason}</span>
               </button>
             ))}
-          </div>
+          </RadioGroup>
           <p className={ph.matchHint} id="ward-referral-match-decline-blocked">
             {declineReason === undefined ? "Choose a reason to decline." : "Decline records this reason."}
           </p>
@@ -1176,9 +1203,11 @@ export function ReferralMatchView({
               )}
             </div>
           </DecidedBy>
-          <DecidedBy allowed={answers("community")} who="the community team">
-            {communityControls}
-          </DecidedBy>
+          {communityDeskView ? null : (
+            <DecidedBy allowed={answers("community")} who="the community team">
+              {communityControls}
+            </DecidedBy>
+          )}
           <DecidedBy allowed={answers("ed")} who="the emergency department">
             {edControls}
           </DecidedBy>

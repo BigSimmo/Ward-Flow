@@ -16,7 +16,6 @@ import {
   MapPin,
   Phone,
   Scale,
-  Search,
   Users,
 } from "lucide-react";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, cx, tableClasses, type WfTone } from "@/components/wf";
@@ -167,8 +166,9 @@ export function PatientHistoryTab({
   open: boolean;
   onBackToNow: () => void;
 }) {
+  // The free-text box over this short list went in the search and forms review (Josh, 30 Oct
+  // 2026): a person's history is a handful of episodes, and the kind chips and order do the job.
   const [filter, setFilter] = useState<"all" | "emergency" | "inpatient">("all");
-  const [query, setQuery] = useState("");
   const [recent, setRecent] = useState(true);
   const items = record.presentations
     .filter((p) => {
@@ -178,10 +178,7 @@ export function PatientHistoryTab({
         p.where.includes("Emergency") ||
         p.los.includes("h") ||
         p.to.toLowerCase().includes("discharged from ed");
-      return (
-        (filter === "all" || (filter === "emergency" ? emergency : !emergency)) &&
-        `${p.date} ${p.where} ${p.to} ${p.outcome} ${p.story ?? ""}`.toLowerCase().includes(query.toLowerCase().trim())
-      );
+      return filter === "all" || (filter === "emergency" ? emergency : !emergency);
     })
     .slice()
     .sort((a, b) => (recent ? b.year - a.year : a.year - b.year));
@@ -275,15 +272,6 @@ export function PatientHistoryTab({
           />
           <div className={styles.bodyPad}>
             <div className={legacy.toolbar}>
-              <label className={legacy.search}>
-                <Search size={16} aria-hidden="true" />
-                <input
-                  aria-label="Search presentation history"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search place, outcome or episode"
-                />
-              </label>
               <Button
                 size="sm"
                 onClick={() => {
@@ -359,22 +347,15 @@ export function PatientHistoryTab({
                 <div className={legacy.empty}>
                   <History size={24} aria-hidden="true" />
                   <strong>
-                    {query || filter !== "all" ? "No matching presentations" : "No presentation history available"}
+                    {filter !== "all" ? "No matching presentations" : "No presentation history available"}
                   </strong>
                   <p>
-                    {query || filter !== "all"
-                      ? "Change the search or filter to review other episodes."
+                    {filter !== "all"
+                      ? "Change the filter to review other episodes."
                       : (record.presentationsAbsent ?? "Earlier clinical history is not recorded here.")}
                   </p>
-                  {(query || filter !== "all") && (
-                    <button
-                      className={legacy.resetButton}
-                      type="button"
-                      onClick={() => {
-                        setQuery("");
-                        setFilter("all");
-                      }}
-                    >
+                  {filter !== "all" && (
+                    <button className={legacy.resetButton} type="button" onClick={() => setFilter("all")}>
                       Clear filters
                     </button>
                   )}
@@ -792,9 +773,9 @@ export function PatientDocumentsTab({
   /** WT-06: the charts the referrer attached, named and sized only. */
   referralCharts?: readonly ReferralChart[];
 }) {
-  const [query, setQuery] = useState("");
+  // No free-text box over a person's few documents (search and forms review, 30 Oct 2026).
   const [filter, setFilter] = useState("all");
-  // Top 25 item 19: the typed paper expiry reads its time left through the
+  // Top 25 item 19: the typed paper expiry reads as typed through the
   // one shared rule (`formTimeLeft`, Settings due soon warnings), as on the Forms and Patient pages.
   const thresholds = useDueSoonThresholds();
   const paperTimeLeft = movementInForce ? formTimeLeft(movement, now, thresholds) : undefined;
@@ -834,11 +815,7 @@ export function PatientDocumentsTab({
       status: "Attached",
       file: chart.name,
     })),
-  ].filter(
-    (d) =>
-      (filter === "all" || d.kind === filter) &&
-      `${d.title} ${d.code} ${d.from} ${d.file ?? ""}`.toLowerCase().includes(query.toLowerCase().trim()),
-  );
+  ].filter((d) => filter === "all" || d.kind === filter);
 
   // The forms register: forms in force, as recorded. No lapse column (D5); a person-typed paper
   // expiry, where one exists, is shown beside its form as typed and marked not legally checked.
@@ -919,8 +896,8 @@ export function PatientDocumentsTab({
                       <span className={styles.cellSub} data-testid="dossier-paper-expiry-time-left">
                         {" "}
                         <StatusGlyph tone={paperTimeLeft.tone} size={9} />
-                        Paper expiry typed {paperTimeLeft.at}, {paperTimeLeft.text},{" "}
-                        {standingWord(paperTimeLeft.standing, thresholds)} <LegalLimitsNotChecked variant="tag" />
+                        Paper expiry: {paperTimeLeft.text}, {standingWord(paperTimeLeft.standing, thresholds)}{" "}
+                        <LegalLimitsNotChecked variant="tag" />
                       </span>
                     ) : f.due !== undefined ? (
                       <span className={styles.cellSub}>
@@ -961,17 +938,6 @@ export function PatientDocumentsTab({
           }
         />
         <div className={styles.bodyPad}>
-          <div className={legacy.toolbar}>
-            <label className={legacy.search}>
-              <Search size={16} aria-hidden="true" />
-              <input
-                aria-label="Search patient documents"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search document, form or source"
-              />
-            </label>
-          </div>
           <div className={cx(legacy.filters, styles.filterRow)} role="group" aria-label="Document filter">
             {[
               ["all", "All documents"],
@@ -1023,16 +989,10 @@ export function PatientDocumentsTab({
             {rows.length === 0 && (
               <div className={legacy.empty}>
                 <FileText size={24} aria-hidden="true" />
-                <strong>{query || filter !== "all" ? "No matching document records" : "No documents recorded"}</strong>
-                <p>{query || filter !== "all" ? "Change the search or document filter." : record.documentsAbsent}</p>
-                {(query || filter !== "all") && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuery("");
-                      setFilter("all");
-                    }}
-                  >
+                <strong>{filter !== "all" ? "No matching document records" : "No documents recorded"}</strong>
+                <p>{filter !== "all" ? "Change the document filter." : record.documentsAbsent}</p>
+                {filter !== "all" && (
+                  <button type="button" onClick={() => setFilter("all")}>
                     Clear filters
                   </button>
                 )}

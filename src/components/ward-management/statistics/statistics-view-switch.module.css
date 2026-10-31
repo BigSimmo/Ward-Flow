@@ -1,0 +1,81 @@
+/* Statistics summary: the compact view switch, "Open a unit" and the one unit finder it opens. */
+.switchBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+.switchRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+.finder {
+  max-width: 40rem;
+}
+
+.finder:focus {
+  outline: none;
+}
+
+/* D-91: "Open a unit" on the statistics tab row, the one way into the one unit finder. It keeps its
+   name at every desktop width. A phone draws no tab row, and shows the finder only when a link
+   arrives at its anchor (PhoneUnitFinder). */
+.findTool {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  height: var(--wf-h-sm);
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-ctl);
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+  color: var(--wf-hero-ink);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.findTool:hover,
+.findTool[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+}
+
+.findTool:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .findTool {
+    display: none;
+  }
+}
+
+/* The phone Summary's finder, below the summary and before This session, on the page canvas. */
+.phoneFinder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  background: var(--wf-canvas);
+  scroll-margin-top: var(--wf-s-3);
+}
+
+.phoneFinder:focus {
+  outline: none;
+}
+
+.phoneFinderHead {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 40px on a phone, the floor for its controls. */
+.phoneClose {
+  min-height: 40px;
+}

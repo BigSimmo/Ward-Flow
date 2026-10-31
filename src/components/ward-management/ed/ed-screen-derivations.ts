@@ -5,7 +5,8 @@
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { stageCopy, deriveNextWardsAfterRefusal } from "@/components/ward-management/ward-derivations";
-import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import { type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import type { WardFlowContextValue } from "@/components/ward-management/ward-flow-provider";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -396,8 +397,9 @@ export function deriveEdScreen({
         recordId: m.id,
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
-        why: `Form ${m.legalForm.code} passed its deadline at ${formatInstantWithDay(m.legalForm.dueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
-        when: `passed ${splitDuration(Math.max(now - m.legalForm.dueAt, 0))} ago`,
+        // Legal times only as typed (31 Oct 2026): the typed time in words, never "passed 1h 05m ago".
+        why: `Form ${m.legalForm.code} ${typedTimePhrase(m.legalForm.dueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
+        when: typedTimePhrase(m.legalForm.dueAt, now),
         actionLabel: "Renew or discharge the form",
         onAction: () => setSelectedPatientId(m.id),
       });

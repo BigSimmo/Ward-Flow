@@ -240,9 +240,94 @@ input.planInput {
   color: var(--wf-accent) !important;
   font-weight: 600;
 }
-.actionItems button[class*="primaryActionButton"]:not([aria-disabled="true"]) {
-  color: var(--accent) !important;
+/* Redesign (pop-ed-actions, Josh 31 Oct 2026): the row's next step is the menu's one filled item,
+   the kit's primary button lined up with the rows' labels, at the rows' height. */
+.actionItems button[data-next-step]:not([aria-disabled="true"]) {
+  margin: 2px 0;
+  border: 1px solid var(--wf-pri-edge) !important;
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2)) !important;
+  color: var(--wf-on-accent) !important;
   font-weight: 600;
+}
+.actionItems button[data-next-step]:not([aria-disabled="true"]):is(:hover, :focus) {
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover)) !important;
+}
+.actionItems button[data-next-step]:not([aria-disabled="true"]):focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+/* The record items open the menu, so their group needs no rule above it. */
+.menuGroup[data-first-group] {
+  border-top: 0;
+}
+/* The header names the person surname first with the UMRN; a long name wraps in full. */
+.actionsHeading {
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px 10px;
+  color: var(--ink);
+}
+.actionsHeading > b {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.actionsHeading > span {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+/* Greyed actions fold into "Not available yet (n)", each with its reason, why, Next and one fix. */
+.fold {
+  padding: 3px 0;
+  border-top: 1px solid var(--line);
+}
+.actionItems button.foldToggle {
+  min-height: 36px !important;
+  color: var(--ink-soft) !important;
+  font-weight: 600;
+}
+.foldChevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+.foldToggle[aria-expanded="true"] .foldChevron {
+  transform: rotate(180deg);
+}
+.blockedItem {
+  display: grid;
+  margin: 2px 0;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+.actionItems .blockedItem > button[aria-disabled="true"] {
+  padding-bottom: 2px !important;
+  color: var(--ink-soft) !important;
+  font-weight: 600;
+}
+.actionItems .blockedItem > button[aria-disabled="true"]:is(:hover, :focus) {
+  background: none !important;
+}
+.actionItems .blockedItem [data-unavailable-note] {
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+}
+.actionItems [data-unavailable-expanded] [data-testid$="-detail"] {
+  display: grid;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.actionItems [data-unavailable-expanded] button[data-unavailable-fix] {
+  margin-top: 4px;
 }
 .reason {
   font-size: 12px;
@@ -416,6 +501,32 @@ input.planInput {
     scroll-behavior: auto !important;
     transition: none !important;
   }
+}
+
+/* The examination outcome popup (pop-record-exam): the kit radios one per line, then Cancel and Save. */
+.examOptions {
+  display: grid;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.examActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-4);
+}
+.examActions > :last-child {
+  margin-left: auto;
+}
+.examMessage {
+  margin: var(--wf-s-3) 0 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
 /* Phone (≤48rem): the row's Actions menu keeps a 44px target. */

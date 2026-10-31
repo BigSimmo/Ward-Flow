@@ -93,15 +93,44 @@ function sharedSettings(api: SharedAccessApi, reauthenticate: (password: string)
   );
 }
 
+/**
+ * Audit (31 Oct 2026): the Give a role and Give cover forms start empty, so a role or cover is never
+ * given to whoever was first in a list. Choose each field, in order, as a person would: a set value
+ * (role "ward", the old default) or else the first real option. Each later list depends on the one
+ * before, so the selects are read again after every choice.
+ */
+function choose(container: HTMLElement, picks: Readonly<Record<string, string>> = {}) {
+  for (let index = 0; ; index++) {
+    const select = within(container).queryAllByRole("combobox")[index] as HTMLSelectElement | undefined;
+    if (!select) return;
+    if (select.value !== "") continue;
+    const label = select.closest("label")?.textContent ?? select.getAttribute("aria-label") ?? "";
+    const wanted = Object.entries(picks).find(([field]) => label.startsWith(field))?.[1];
+    const options = [...select.options].filter((option) => !option.disabled && option.value !== "");
+    const option = wanted ? options.find((candidate) => candidate.value === wanted) : options[0];
+    if (!option) return;
+    fireEvent.change(select, { target: { value: option.value } });
+  }
+}
+const chooseGrant = () => choose(screen.getByTestId("ward-access-grant"), { Role: "ward" });
+
 function confirmStepUp() {
   const dialog = screen.getByTestId("ward-step-up");
   fireEvent.click(within(dialog).getByRole("button", { name: "Confirm and carry on" }));
 }
 
 describe("the Access tab", () => {
+  // Settings by login (31 Oct 2026): one page of sections, so Access is a section and a jump button.
   it("is not offered with the role-access flag off", () => {
     settings();
-    expect(screen.queryByRole("radio", { name: /^Access/ })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
+    expect(document.querySelector('[data-pane="access"]')).toBeNull();
+    expect(screen.queryByTestId("ward-access-cover")).not.toBeInTheDocument();
+    // Anti-vacuity: the same desk with the flag on has it.
+    cleanup();
+    act(() => setWardFeatureFlagOnDevice("role-access", true));
+    settings();
+    expect(screen.getByTestId("ward-settings-jump-access")).toBeInTheDocument();
   });
 
   it("gives a statewide coordinator both cover and the roles lists", () => {
@@ -110,7 +139,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
     });
     settings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
     expect(screen.getByTestId("ward-access-cover")).toBeInTheDocument();
     expect(screen.getByTestId("ward-access-roles")).toBeInTheDocument();
     expect(screen.getByText(/As a statewide coordinator you also give and remove roles/u)).toBeInTheDocument();
@@ -122,15 +151,26 @@ describe("the Access tab", () => {
       setWardAccess({ role: "admin", scope: { kind: "statewide" } });
     });
     settings();
-    expect(screen.getByRole("radio", { name: /^Access/ })).toBeChecked();
+    // The access admin's page opens on Access: it is the first section and the first jump.
+    expect(document.querySelector("[data-pane]")).toHaveAttribute("data-pane", "access");
+    expect(screen.getAllByTestId(/^ward-settings-jump-/)[0]).toHaveAttribute(
+      "data-testid",
+      "ward-settings-jump-access",
+    );
     expect(screen.getByTestId("ward-access-requests")).toHaveTextContent("2 open requests");
     expect(screen.queryByTestId("ward-access-waiting")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Approve$/u })).not.toBeInTheDocument();
     const formerPending = screen
       .getAllByTestId("ward-access-role-row")
       .find((row) => row.textContent?.includes("Demo staff D"));
-    expect(formerPending).toHaveTextContent("Active");
+    // Polish r2: an active role carries no status chip; only an exception (inactive, ended) does.
+    expect(formerPending).toHaveTextContent("never used");
+    expect(formerPending).not.toHaveTextContent(/Inactive|Ended|Waiting/u);
 
+    // Nothing is chosen for the admin, so Give role waits until every field is set.
+    expect(screen.getByTestId("ward-access-grant-submit")).toHaveAttribute("aria-disabled", "true");
+    chooseGrant();
+    expect(screen.getByTestId("ward-access-grant-submit")).not.toHaveAttribute("aria-disabled");
     fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
     await act(async () => confirmStepUp());
     expect(await screen.findByTestId("ward-access-result")).toHaveTextContent("Given: Demo access admin 2");
@@ -173,6 +213,7 @@ describe("the Access tab", () => {
     });
     settings();
     const rows = screen.getAllByTestId("ward-access-role-row").length;
+    chooseGrant();
     fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
     await act(async () =>
       fireEvent.click(within(screen.getByTestId("ward-step-up")).getByRole("button", { name: "Cancel" })),
@@ -187,7 +228,10 @@ describe("the Access tab", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
     });
     settings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    // Nothing is chosen for the nurse in charge: the place, the colleague and the length start empty.
+    expect(screen.getByTestId("ward-access-cover-submit")).toHaveAttribute("aria-disabled", "true");
+    choose(screen.getByTestId("ward-access-cover"));
     fireEvent.click(screen.getByTestId("ward-access-cover-submit"));
     await act(async () => confirmStepUp());
     expect(screen.getByTestId("ward-access-result")).toHaveTextContent("Cover given");
@@ -241,14 +285,16 @@ describe("the Access tab", () => {
     sharedSettings(api, reauthenticate);
     const roles = await screen.findByTestId("ward-access-role-row");
     expect(roles).toHaveTextContent("Account 1a2b3c4d");
-    expect(roles).toHaveTextContent("Ends in 1 day. Last used 5 minutes ago.");
+    // Polish r2: the app's " · " meta line.
+    expect(roles).toHaveTextContent("ends in 1 day · used 5 minutes ago");
     // The server's times are placed once, when the list arrives, so they age with the demo clock.
     act(() => fireEvent.click(screen.getByTestId("test-advance-clock")));
-    expect(screen.getByTestId("ward-access-role-row")).not.toHaveTextContent("Last used 5 minutes ago.");
+    expect(screen.getByTestId("ward-access-role-row")).not.toHaveTextContent("used 5 minutes ago");
     const grant = screen.getByTestId("ward-access-grant");
     fireEvent.change(within(grant).getByLabelText("Account id"), {
       target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
     });
+    chooseGrant();
     fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
     const dialog = await screen.findByTestId("ward-step-up");
     // Form-friction 258: the password box takes focus, and Enter signs in.
@@ -287,6 +333,7 @@ describe("the Access tab", () => {
     fireEvent.change(within(grant).getByLabelText("Account id"), {
       target: { value: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d" },
     });
+    chooseGrant();
     fireEvent.click(screen.getByTestId("ward-access-grant-submit"));
     const dialog = await screen.findByTestId("ward-step-up");
     fireEvent.change(within(dialog).getByLabelText("Password"), { target: { value: "synthetic-password" } });
@@ -324,7 +371,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
     });
     settings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Access/ }));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
     expect(screen.queryByTestId("ward-access-log")).not.toBeInTheDocument();
   });
 

@@ -1,24 +1,34 @@
 "use client";
 
-// The Delays table's row cells: origin wording, the legal and last-update cells, the phone row
+// The Waiting table's row cells: origin wording, the legal and last-update cells, the phone row
 // lines, the wait bar and the open row's timeline. Split out of delays-board.tsx to keep that file
 // under the line cap.
+//
+// Legal times only as typed (Josh, 30 and 31 Oct 2026; D-93): the legal cell, the phone prefix and
+// the timeline show the recorded form time as typed, never a countdown, "left" or "overdue". Its
+// colour compares the typed time with the user's warning settings and always carries its words
+// ("within 1h", "within 3h", "passed").
 import { type ReactNode } from "react";
 import {
   type DueSoonThresholds,
   formatInstantWithDay,
   type Instant,
+  isClockBreached,
   splitDuration,
 } from "@/components/ward-management/ward-clock";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { legalStatusFull, legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { movementOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 import { type WfTone } from "@/components/wf";
 import { Tooltip } from "@/components/wf/tooltip";
 import { Glyph } from "./delays-board-parts";
-import { OVER_24H, OVER_8H, dueTone, rowEvents, type BoardRow } from "./delays-board-model";
+import { OVER_24H, OVER_8H, rowEvents, type BoardRow } from "./delays-board-model";
+import { standingSuffix, typedTimeStanding } from "@/components/ward-management/legal-forms/legal-forms-view";
+import { typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import styles from "./delays-board.module.css";
+import redesign from "./waiting.module.css";
 
 /** The origin department by name, or a sentence that names the record as the fault (task D1). */
 export function originLabel(movement: Movement): string {
@@ -36,18 +46,23 @@ export function ago(minutes: number): string {
  * titles from the form register only) opens on keyboard focus and on a tap, not only on hover. A tap
  * on the chip shows the tip and does not open the row.
  */
-export function legalCell(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
-  const form = row.movement.legalForm;
+export function legalCell(row: BoardRow, now: Instant, thresholds: DueSoonThresholds): ReactNode {
   const short = legalStatusShort(row.movement);
   const full = legalStatusFull(row.movement);
-  if (row.dueIn === undefined || form === undefined) return legalTip(full, <>{short}</>);
-  const tone = row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds);
-  const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
+  const typed = row.movement.legalForm === undefined ? undefined : currentLegalDueAt(row.movement);
+  if (typed === undefined) return legalTip(full, <>{short}</>);
+  const ends = `${isClockBreached(typed, now) ? "Ended" : "Ends"} ${formatInstantWithDay(typed, now)}`;
+  const standing = typedTimeStanding(row.movement, now, thresholds);
   return (
-    <span className={styles.lg}>
-      <Glyph tone={tone} />
-      {legalTip(`${full}, ${left}`, <>{short}</>)}
-      <span className={styles.legalLeft}>{left}</span>
+    <span className={redesign.legalTyped}>
+      {legalTip(`${full}, ${ends} as typed${standingSuffix(standing)}`, <>{short}</>)}
+      <span className={redesign.legalTypedTime}>
+        <span className={redesign.legalTypedEnds}>
+          {standing.word ? <Glyph tone={standing.tone} /> : null}
+          {ends}
+        </span>{" "}
+        <span className={redesign.legalTypedWord}>as typed{standingSuffix(standing)}</span>
+      </span>
     </span>
   );
 }
@@ -93,21 +108,22 @@ export function updateCell(row: BoardRow, now: Instant): ReactNode {
   );
 }
 
-/** v10 phone: the second line leads with the recorded legal time left, or that it was escalated. */
-export function phonePrefix(row: BoardRow, thresholds: DueSoonThresholds): ReactNode {
+/** Phone: the second line leads with the form and its typed end time, or that it was escalated. */
+export function phonePrefix(row: BoardRow, now: Instant, thresholds: DueSoonThresholds): ReactNode {
   const form = row.movement.legalForm;
-  if (form !== undefined && row.dueIn !== undefined) {
-    const left = row.dueIn < 0 ? `${splitDuration(-row.dueIn)} overdue` : `${splitDuration(row.dueIn)} left`;
+  const typed = form === undefined ? undefined : currentLegalDueAt(row.movement);
+  if (form !== undefined && typed !== undefined) {
+    const standing = typedTimeStanding(row.movement, now, thresholds);
+    // Phone: the typed time and its warning words take their own line, so the ellipsis that ends
+    // the record line never cuts them off ("… as typed · within 1h").
     return (
-      <>
-        <Glyph tone={row.dueIn < 0 ? "danger" : dueTone(row.dueIn, thresholds)} />
-        <b className={styles.phPre}>{`Form ${form.code} ${left}`}</b>
-        {" · "}
-      </>
+      <span className={redesign.phLegalLine}>
+        {standing.word ? <Glyph tone={standing.tone} /> : null}
+        <b className={styles.phPre}>{`Form ${form.code} ${typedTimePhrase(typed, now)}${standingSuffix(standing)}`}</b>
+      </span>
     );
   }
-  // Audit A3-15 (13 Oct 2026): a person on an order always shows their form, before the UMRN,
-  // even with no typed expiry. Voluntary rows stay short.
+  // A person on an order always shows their form, before the UMRN, even with no typed time.
   const onOrderForm = form !== undefined && row.movement.legalStatus !== "Voluntary" ? form : undefined;
   if (row.movement.escalation !== undefined)
     return (
@@ -117,12 +133,12 @@ export function phonePrefix(row: BoardRow, thresholds: DueSoonThresholds): React
         {" · "}
       </>
     );
+  // Josh, 30 Oct 2026: this form line takes its own line too, so the ED after it is never cut off.
   if (onOrderForm)
     return (
-      <>
+      <span className={redesign.phLegalLine}>
         <b className={styles.phPre}>{`Form ${onOrderForm.code}, time not written`}</b>
-        {" · "}
-      </>
+      </span>
     );
   return null;
 }
@@ -164,6 +180,7 @@ export function WaitBar({ row }: { row: BoardRow }) {
 /** The open row's own journey: arrival to now, then the recorded legal time if there is one. */
 export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[]; now: Instant }) {
   const thresholds = useDueSoonThresholds();
+  const standing = typedTimeStanding(row.movement, now, thresholds);
   const all = rowEvents(row, units, now);
   const keep = all.length <= 3 ? all : [all[0], ...all.slice(-2)];
   // Only a time still ahead is drawn as due; one already passed is marked once by the block below.
@@ -190,8 +207,8 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: dueP,
       time: formatInstantWithDay(now + due, now),
-      text: `Form ${row.movement.legalForm.code} due as written, ${splitDuration(due)} left`,
-      tone: dueTone(due, thresholds) ?? "warning",
+      text: `Form ${row.movement.legalForm.code} ends as typed${standingSuffix(standing)}`,
+      tone: standing.word ? standing.tone : undefined,
     });
   // A recorded legal time that has already passed stays on the journey, marked where it fell.
   const passed = row.dueIn !== undefined && row.dueIn < 0 && row.movement.legalForm ? -row.dueIn : undefined;
@@ -200,7 +217,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
     labels.push({
       p: passedP,
       time: formatInstantWithDay(now - passed, now),
-      text: `Form ${row.movement.legalForm.code} time passed, ${splitDuration(passed)} ago`,
+      text: `Form ${row.movement.legalForm.code} ended as typed`,
       tone: "danger",
     });
   labels.sort((a, b) => a.p - b.p);
@@ -236,7 +253,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
           <>
             <span className={styles.sxAhead} style={{ left: `${nowP}%`, width: `${dueP - nowP}%` }} />
             <span
-              className={`${styles.sxDue} ${dueTone(due, thresholds) === "danger" ? styles.sxDueHot : ""}`}
+              className={`${styles.sxDue} ${standing.urgent ? styles.sxDueHot : ""}`}
               style={{ left: `${dueP}%` }}
             />
           </>
@@ -245,7 +262,7 @@ export function RowTimeline({ row, units, now }: { row: BoardRow; units: Unit[];
           <span className={`${styles.sxDue} ${styles.sxDueHot}`} style={{ left: `${passedP}%` }} />
         ) : null}
       </div>
-      <ol className={styles.sxLabs} aria-label="This person's recorded journey">
+      <ol className={`${styles.sxLabs} ${redesign.sxWrap}`} aria-label="This person's recorded journey">
         {labels.map((label, index) => (
           <li key={`${label.time}-${label.text}`} className={styles.sxL} style={{ left: `${pos[index]}%` }}>
             <b className={styles.num}>

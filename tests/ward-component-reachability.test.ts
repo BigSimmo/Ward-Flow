@@ -143,6 +143,18 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/search/patient-typeahead.tsx",
+    why: "the Patients redesign (31 Oct 2026, 091fed75e) replaced it in patient-search.tsx with the page's own search, and the New referral drawer (#1175) keeps its keys in its own list (audit A-4). Kept with its tests until Josh decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/board/ward-board-toast.tsx",
+    why: "notices part A (Phase 2, 31 Oct 2026) moved every screen to the shared action-toast hooks; the wrapper is kept, with its own test, until notices part B (#1124) decides whether to delete it",
+  },
+  {
+    module: "src/components/ward-management/ward/ward-page-action-toast.tsx",
+    why: "notices part A (Phase 2, 31 Oct 2026) moved every screen to the shared action-toast hooks; the wrapper is kept, with its own test, until notices part B (#1124) decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/statistics/statistics-overview-screen.tsx",
     why: "its route became a redirect on 21 Oct 2026 (D-77, change 9): Summary and Overview are one Network page, and Overview's unique cards moved to statistics-network-cards.tsx. Deleting the screen and its tests needs Josh's yes on the dead-code check",
   },
@@ -231,6 +243,18 @@ const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
     module: "src/components/ward-management/shell/ward-reconciliation-line.tsx",
     why: "unmounted from the rail by the v6 restyle — its helpers stay for hub-provenance",
+  },
+  {
+    module: "src/components/ward-management/forecast/forecast-week-panel.tsx",
+    why: "the Capacity redesign (77fc85319, 31 Oct 2026) drew the seven days inside the Bed forecast card, so the old week panel lost its last route use; kept with its own tests until Josh decides on deletion through the dead-code check",
+  },
+  {
+    module: "src/components/ward-management/forecast/forecast-network-extras.tsx",
+    why: "the Capacity redesign (77fc85319, 31 Oct 2026) folded these extras into the Bed forecast card and How this is worked out; kept with its own tests until Josh decides on deletion through the dead-code check",
+  },
+  {
+    module: "src/components/ward-management/ward-controls.tsx",
+    why: "the Capacity redesign (77fc85319, 31 Oct 2026) removed its last import (the old Capacity controls row); kept with tests/ward-controls.dom.test.tsx until Josh decides on deletion through the dead-code check",
   },
 ];
 

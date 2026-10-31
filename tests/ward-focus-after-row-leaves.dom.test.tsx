@@ -125,6 +125,8 @@ describe("focus after a row's own button closes it", () => {
         <WardScreen unitId={unit.id} presentation="answer" />
       </WardFlowProvider>,
     );
+    // Nothing pre-selected (Josh, 31 Oct 2026): the ward picks a pull time limit before it accepts.
+    fireEvent.change(screen.getByRole("combobox", { name: "Pull time limit" }), { target: { value: "standard" } });
     press(screen.getByTestId(`ward-accept-${movement.id}`));
     expect(screen.queryByTestId(`ward-accept-${movement.id}`)).toBeNull();
     expect(document.activeElement).not.toBe(document.body);

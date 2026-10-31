@@ -1,24 +1,45 @@
 "use client";
 
-// What Placement shows on desktop before anyone is chosen (approved Home mock-up v7, 22 Oct 2026):
-// no patient is pre-selected, so nothing can be acted on until the coordinator picks one.
-
 import { MousePointerClick } from "lucide-react";
 
-import { Card, CardHead } from "@/components/wf";
+import { Button, Card, CardHead } from "@/components/wf";
+import type { QueueEntry } from "@/components/ward-management/alerts/alerts-queue";
+import styles from "./home-cards.module.css";
 
-import styles from "./home-list.module.css";
-
-export function PlacementPrompt() {
+/**
+ * Placement before anyone is chosen (Home and Activity design, approved by Josh 31 Oct 2026). Josh's Home v7 rule stands (22 Oct 2026): nothing is pre-selected, so Placement opens only
+ * for the person the coordinator chooses; the box names the oldest alert to place, with one button.
+ */
+export function PlacementPrompt({
+  next,
+  onOpen,
+}: {
+  next: QueueEntry | undefined;
+  onOpen: (entry: QueueEntry) => void;
+}) {
   return (
-    <Card className={styles.promptCard} data-testid="home-placement-prompt" aria-label="Placement">
-      <CardHead title="Placement" />
+    <Card data-testid="home-placement-prompt" aria-labelledby="home-placement-title">
+      <CardHead id="home-placement-title" title="Placement" meta="opens for the person you choose" />
       <div className={styles.promptBody}>
-        <MousePointerClick size={20} aria-hidden="true" className={styles.promptIcon} />
-        <p className={styles.promptText}>
-          Choose a patient, alert or referral from the list. Placement opens for that person only, so the name is
-          checked before anything is done.
-        </p>
+        <MousePointerClick size={20} aria-hidden="true" />
+        <div>
+          <p>Choose someone from the list to place them.</p>
+          {next ? (
+            <div className={styles.nextUp}>
+              {/* Final check: the words stack in one column so Open keeps its full name, not "Open …". */}
+              <span className={styles.nextText}>
+                <span className={styles.kicker}>Oldest alert to place</span>
+                <b>{next.subject.displayName}</b>
+                <span className={styles.muted}>
+                  {next.item.title} · {next.subject.from}
+                </span>
+              </span>
+              <Button size="sm" variant="sec" className={styles.nextOpen} onClick={() => onOpen(next)}>
+                Open {next.subject.displayName}
+              </Button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </Card>
   );

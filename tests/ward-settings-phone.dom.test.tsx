@@ -68,6 +68,8 @@ describe("Settings: rule save answers with Undo in the wf toast", () => {
     const before = screen.getByTestId("probe-ed-target").textContent;
     fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
     fireEvent.click(screen.getByRole("button", { name: "Save 1 change" }));
+    // Save opens a review first (Settings round 3); its Save change button saves.
+    fireEvent.click(screen.getByRole("button", { name: "Save change" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
 
     const region = screen.getByTestId("toast-region");
@@ -96,17 +98,21 @@ describe("Settings on a phone", () => {
     renderSettings();
     const page = screen.getByTestId("ward-settings-screen");
     expect(page).toHaveAttribute("data-ward-design", "v10-phone");
-    expect(within(page).getByRole("heading", { level: 1 })).toHaveTextContent("Dr S. Chen");
-    expect(within(page).getByRole("button", { name: /Go to a desk/ })).toBeInTheDocument();
+    // Settings audit (31 Oct 2026): the demo name reads surname first.
+    expect(within(page).getByRole("heading", { level: 1 })).toHaveTextContent("Chen, Dr S.");
+    // D-91 (Josh, 31 Oct 2026): the Menu's who-you-are row opens Go to a desk, so the hero has none.
+    expect(within(page).queryByRole("button", { name: /Go to a desk/ })).toBeNull();
     expect(within(page).getByRole("combobox", { name: "Find a setting" })).toBeInTheDocument();
 
     const quick = within(page).getByRole("region", { name: /On this phone/ });
     expect(within(quick).getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
-    expect(within(quick).getByRole("radio", { name: "Glare" })).toBeInTheDocument();
+    // Josh, 31 Oct 2026: the bright-room theme is "Bright light".
+    expect(within(quick).getByRole("radio", { name: "Bright light" })).toBeInTheDocument();
     expect(within(quick).getByRole("radiogroup", { name: "Row density" })).toBeInTheDocument();
     expect(within(quick).getByRole("switch", { name: "Buzz sound" })).toBeInTheDocument();
 
-    for (const area of ["rules", "alerts", "display", "profile", "data"]) {
+    // Settings by login (31 Oct 2026): the coordinator's sections, Alerts and Display as This device.
+    for (const area of ["rules", "device", "you", "help", "demo"]) {
       expect(screen.getByTestId(`ward-settings-phone-area-${area}`)).toBeInTheDocument();
     }
     // The desktop band's tab track is not on the phone.
@@ -126,15 +132,17 @@ describe("Settings on a phone", () => {
 
     const bar = screen.getByRole("region", { name: "Unsaved rule changes" });
     fireEvent.click(within(bar).getByRole("button", { name: "Save 1 change" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save change" }));
     expect(screen.getByTestId("probe-ed-target")).toHaveTextContent(String(ED_ACCESS_TARGET_RANGE_MINUTES.min));
     expect(screen.getByTestId("toast-region")).toHaveTextContent(/ED target 24h to \d+h, saved and recorded\./);
   });
 
   // Audit settings-24: the five-column thresholds table is a desk job; the phone says so.
-  it("shows Fixed defaults in the Data sheet and points to a computer for the thresholds table", () => {
+  // Settings by login (31 Oct 2026): the Reference card is in Demo tools.
+  it("shows Fixed defaults in the Demo tools sheet and points to a computer for the thresholds table", () => {
     asPhone();
     renderSettings();
-    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-data")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-demo")).getByRole("button"));
     expect(screen.getByTestId("ward-settings-thresholds-phone")).toHaveTextContent("tablet or computer");
     expect(screen.queryByRole("region", { name: "Published thresholds" })).toBeNull();
     const defaults = document.querySelector('[data-setting="fixed-defaults"]');
@@ -146,7 +154,7 @@ describe("Settings on a phone", () => {
   it("switches the Reference card between Fixed defaults and the clinical values on a phone", () => {
     asPhone();
     renderSettings();
-    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-data")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-demo")).getByRole("button"));
     const list = screen.getByRole("radiogroup", { name: "Reference list" });
     expect(within(list).getByRole("radio", { name: /Fixed defaults/ })).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByTestId("ward-settings-clinical-values-phone")).toBeNull();

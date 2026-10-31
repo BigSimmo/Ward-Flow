@@ -246,9 +246,26 @@ export type RoleMenu = {
  * More. Nothing else is dropped: an entry is in exactly one of the two, except Alerts on the desk
  * whose header bell is the Alerts button (P116, Josh, 27 Oct 2026: Alerts lives in the header bell
  * only). Each More group puts the role's
- * `moreFirst` ids first, then the rest in their `RAIL_GROUPS` order.
+ * `moreFirst` ids first, then the rest in their `RAIL_GROUPS` order. `accessAdmin` puts Governance
+ * first in the access admin's own menu.
  */
-export function roleMenu(entries: readonly RailEntry[], role: WardChromeRole): RoleMenu {
+export function roleMenu(entries: readonly RailEntry[], role: WardChromeRole, accessAdmin = false): RoleMenu {
+  const menu = deskRoleMenu(entries, role);
+  if (!accessAdmin) return menu;
+  // The access admin borrows the executive's chrome, whose own menu (Statistics, Capacity) it may
+  // not open, so its rail was an empty list with Governance waiting under More (Josh, 30 Oct 2026).
+  // Governance, which it may open, now leads its own menu. Everything else stays where it was.
+  const governance = entries.find((entry) => entry.id === "governance");
+  if (!governance || menu.main.some((item) => item.id === governance.id)) return menu;
+  return {
+    main: [governance, ...menu.main],
+    more: menu.more
+      .map((group) => ({ ...group, entries: group.entries.filter((entry) => entry.id !== governance.id) }))
+      .filter((group) => group.entries.length > 0),
+  };
+}
+
+function deskRoleMenu(entries: readonly RailEntry[], role: WardChromeRole): RoleMenu {
   const { main: mainItems, moreFirst } = ROLE_MENU_DEFINITIONS[role];
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const main: RoleMenuItemEntry[] = mainItems.flatMap(([id, label]): RoleMenuItemEntry[] => {

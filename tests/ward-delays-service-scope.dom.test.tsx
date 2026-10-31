@@ -1,4 +1,4 @@
-import { renderAllDelays, showEveryDelayRow } from "./helpers/delays-interactions";
+import { renderAllDelays as renderAndShowGroups, showEveryDelayRow } from "./helpers/delays-interactions";
 import { fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -72,6 +72,25 @@ function ownerPeopleUnderService(ownerId: string): number {
 // somebody under it once the population is narrowed to South Metro, not merely over the whole
 // network.
 const MARKABLE_OWNER = DELAY_OWNERS.find((owner) => ownerPeopleUnderService(owner.id) > 0);
+
+/**
+ * The redesign opens on Longest wait, grouped in wait bands, with Under 8 hours folded. A user opens
+ * each folded band, then every blocker group and "Show N more", so every live row is listed.
+ */
+function showEveryRow(): void {
+  const waiting = screen.queryByRole("region", { name: "Waiting" });
+  if (waiting === null) return;
+  for (const band of within(waiting).queryAllByTestId(/^delays-band-/u)) {
+    if (band.getAttribute("aria-expanded") === "false") fireEvent.click(band);
+  }
+  showEveryDelayRow();
+}
+
+function renderAllDelays(...args: Parameters<typeof renderAndShowGroups>): ReturnType<typeof renderAndShowGroups> {
+  const result = renderAndShowGroups(...args);
+  showEveryRow();
+  return result;
+}
 
 /** The people the Waiting table lists, by movement id. */
 function listedIds(): string[] {
@@ -184,7 +203,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     const ownerId = MARKABLE_OWNER!.id;
     const ownerTile = screen.getByTestId(`delays-owner-${ownerId}`);
     fireEvent.click(ownerTile);
-    showEveryDelayRow();
+    showEveryRow();
     expect(ownerTile).toHaveAttribute("aria-pressed", "true");
 
     const memberIdsForOwner = new Set<string>(
@@ -217,7 +236,7 @@ describe("the Delays screen narrows to a chosen service (item 44, task D1)", () 
     expect(locked.length, "no South Metro movement is Secure, so the locked chip proves nothing").toBeGreaterThan(0);
     const lockedChip = screen.getByRole("button", { name: `Locked bed ${locked.length}` });
     fireEvent.click(lockedChip);
-    showEveryDelayRow();
+    showEveryRow();
     expect(lockedChip).toHaveAttribute("aria-pressed", "true");
     expect(listedIds().sort()).toEqual(locked.map((movement) => movement.id).sort());
   });
@@ -360,14 +379,15 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
 
     // D-b: the escalations register is whole-network and unaffected by narrowing — its own absence
     // sentence stays exactly as it was, per D-c's "whole-network sentences stay as they are." Read
-    // before switching tabs below, since only one register pane is ever in the document at once.
+    // before switching tabs below, since only one register pane is shown at once.
     expect(screen.getByText("Nobody has been escalated today.")).toBeInTheDocument();
 
     // D-c: "Nobody who was on this screen this morning has left it yet" — narrowed (`closedToday`
     // is built off the already-scoped `movements`), so it names the service too. On the "Resolved
-    // today" tab, since that sentence only exists in that pane.
-    fireEvent.click(screen.getByRole("tab", { name: /^Resolved/u }));
-    expect(screen.getByRole("tabpanel", { name: /^Resolved/u }).textContent ?? "").toContain(
+    // today" tab, since that sentence only exists in that pane. Each register tab reads its count,
+    // then its name.
+    fireEvent.click(screen.getByRole("tab", { name: /Resolved$/u }));
+    expect(screen.getByRole("tabpanel", { name: /Resolved$/u }).textContent ?? "").toContain(
       `Nobody who was on this screen this morning has left it yet, in ${SERVICE}.`,
     );
   });

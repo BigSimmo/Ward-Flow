@@ -498,8 +498,7 @@
 }
 .pane[data-layout="clinical"] > .tinted {
   padding: 14px 16px;
-  border-left: 3px solid var(--good);
-  border-radius: 0 12px 12px 0;
+  border-radius: 12px;
 }
 .pane[data-layout="clinical"] > .surface:last-child {
   border-top: 1px solid var(--line);
@@ -730,12 +729,10 @@
   background: var(--wf-surface);
 }
 
-/* A form past its paper expiry: the card says so with a warning edge, not a wash. */
+/* A form past its paper expiry: a soft warning tint over the card (no side edges, Josh, 31 Oct 2026). */
 [data-ward-design="v6"] .surface[data-attention="true"] {
-  background: var(--wf-surface);
-  box-shadow:
-    inset 3px 0 0 var(--wf-warning),
-    var(--wf-e1);
+  background: color-mix(in srgb, var(--wf-warning) 6%, var(--wf-surface));
+  box-shadow: var(--wf-e1);
 }
 
 [data-ward-design="v6"] .episode,
@@ -943,7 +940,6 @@
   background: var(--wf-surface-2);
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
-  box-shadow: inset 3px 0 0 var(--wf-warning);
 }
 
 [data-ward-design="v6"] .serviceRow {

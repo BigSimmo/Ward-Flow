@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type RefObject } from "react";
-import { Clock, Info, Phone, Plus, Search, Shapes, Users, type LucideIcon } from "lucide-react";
+import { Info, Phone, Plus, Shapes, Users, type LucideIcon } from "lucide-react";
 
 import {
   Button,
@@ -12,7 +12,11 @@ import {
   PhoneSheet,
   ScrollRow,
   Segmented,
+  ShowMoreRow,
+  SrOnly,
   StatusGlyph,
+  buttonClass,
+  foldHidden,
   type PhoneRowAction,
   type WfTone,
   useWfBandBleed,
@@ -86,7 +90,47 @@ export type CommunityPhoneTool = {
   onPress: () => void;
 };
 
-type InfoSheet = "reach" | "duty" | "search" | "samples";
+type InfoSheet = "reach" | "duty" | "samples";
+
+/** A long phone list shows its first eight rows, then Show more (redesign, approved 31 Oct 2026). */
+const LIST_ROWS_SHOWN = 8;
+
+/**
+ * One list group's rows: the first eight, then Show more for the rest, so a long list stays short. The
+ * kit's `foldHidden` folds only when two or more rows would be hidden (Josh, answer 21), so nine
+ * rows show in full and there is never "Show 1 more".
+ */
+function PhoneGroupRows({ rows, label }: { rows: CommunityPhoneRow[]; label: string }) {
+  const [open, setOpen] = useState(false);
+  const hidden = foldHidden(rows.length, LIST_ROWS_SHOWN);
+  const shown = open || hidden === 0 ? rows : rows.slice(0, LIST_ROWS_SHOWN);
+  return (
+    <div className={css.card}>
+      <ul className={css.attention}>
+        {shown.map((row) => (
+          <li key={row.id} className={css.rowItem} data-testid={row.testId}>
+            <PhoneListRow
+              name={row.name}
+              meta={row.meta}
+              value={row.value}
+              time={row.time}
+              actNow={row.actNow}
+              onSelect={row.onSelect}
+              action={row.action}
+            />
+            {row.note ? <p className={css.rowNote}>{row.note}</p> : null}
+            {row.controls ? <div className={css.rowControls}>{row.controls}</div> : null}
+          </li>
+        ))}
+      </ul>
+      {hidden > 0 ? (
+        <ShowMoreRow expanded={open} onClick={() => setOpen((value) => !value)}>
+          {open ? "Show fewer" : `Show ${hidden} more`} <SrOnly>in {label}</SrOnly>
+        </ShowMoreRow>
+      ) : null}
+    </div>
+  );
+}
 
 const ATTENTION_SHOWN = 2;
 
@@ -101,12 +145,12 @@ export function CommunityTeamPhone({
   onIntake,
   onSwitchTeam,
   switchTriggerRef,
+  ownTeamOnly = false,
   since,
   notices,
   howToReach,
   onDuty,
   coverage,
-  search,
   samples,
   actions,
   attention,
@@ -121,6 +165,8 @@ export function CommunityTeamPhone({
   onIntake: () => void;
   onSwitchTeam: () => void;
   switchTriggerRef: RefObject<HTMLButtonElement | null>;
+  /** A community team desk opens its own team only, so its hero has no Switch team. */
+  ownTeamOnly?: boolean;
   /** The shared SinceYouLooked, which folds to one row on a phone. */
   since: ReactNode;
   /** The team's notices with Mark as read, when there are any. Inside About this data. */
@@ -129,8 +175,6 @@ export function CommunityTeamPhone({
   onDuty: ReactNode;
   /** Provenance, coverage limits and team facts. Inside About this data. */
   coverage: ReactNode;
-  /** The sample patient search, given a close callback for when a hit is chosen. */
-  search: (close: () => void) => ReactNode;
   samples: { id: string; label: string; onPress: () => void }[];
   /** The team's own actions, as chips after the two sheets (Record contact, CTO register, MDT). */
   actions: CommunityPhoneTool[];
@@ -151,7 +195,6 @@ export function CommunityTeamPhone({
   ];
   const intakeChip: CommunityPhoneTool = { id: "intake", label: "Refer from team", icon: Plus, onPress: onIntake };
   const tailChips: CommunityPhoneTool[] = [
-    { id: "search", label: "Find a person", icon: Search, onPress: () => setSheet("search") },
     { id: "samples", label: "Samples", icon: Shapes, onPress: () => setSheet("samples") },
   ];
 
@@ -168,19 +211,22 @@ export function CommunityTeamPhone({
           title={`${caseload} on the caseload`}
           sub={sub}
           actions={
-            <>
-              <Button
-                ref={switchTriggerRef}
-                variant="onHero"
-                iconOnly
-                icon={Users}
-                aria-label="Switch team"
-                title="Switch community team"
-                className={css.heroRound}
-                onClick={onSwitchTeam}
-                data-testid="ward-community-switch-team"
-              />
-            </>
+            // A community team desk opens its own team only, so it has no Switch team.
+            ownTeamOnly ? undefined : (
+              <>
+                <Button
+                  ref={switchTriggerRef}
+                  variant="onHero"
+                  iconOnly
+                  icon={Users}
+                  aria-label="Switch team"
+                  title="Switch community team"
+                  className={css.heroRound}
+                  onClick={onSwitchTeam}
+                  data-testid="ward-community-switch-team"
+                />
+              </>
+            )
           }
         />
       </div>
@@ -193,7 +239,7 @@ export function CommunityTeamPhone({
             <button
               key={chip.id}
               type="button"
-              className={css.chip}
+              className={buttonClass({ variant: "sec", className: css.chip })}
               onClick={chip.onPress}
               aria-haspopup={sheetChips.includes(chip) || tailChips.includes(chip) ? "dialog" : undefined}
               data-testid={`ward-community-phone-chip-${chip.id}`}
@@ -208,7 +254,7 @@ export function CommunityTeamPhone({
           <Segmented<CommunityPhoneListId>
             label="Team lists"
             size="md"
-            className={`${css.segmented} ${wardPin.pinnedSwitch}`}
+            className={`${css.segmented} ${wardPin.pinnedSwitch} ${css.oneRow}`}
             value={list}
             onChange={onList}
             items={lists.map((entry) => ({ id: entry.id, label: entry.label, count: countOf(entry.id) }))}
@@ -223,23 +269,11 @@ export function CommunityTeamPhone({
                     <p className={css.empty}>{group.empty}</p>
                   ) : null
                 ) : (
-                  <ul className={css.card}>
-                    {group.rows.map((row) => (
-                      <li key={row.id} className={css.rowItem} data-testid={row.testId}>
-                        <PhoneListRow
-                          name={row.name}
-                          meta={row.meta}
-                          value={row.value}
-                          time={row.time}
-                          actNow={row.actNow}
-                          onSelect={row.onSelect}
-                          action={row.action}
-                        />
-                        {row.note ? <p className={css.rowNote}>{row.note}</p> : null}
-                        {row.controls ? <div className={css.rowControls}>{row.controls}</div> : null}
-                      </li>
-                    ))}
-                  </ul>
+                  <PhoneGroupRows
+                    key={`${current.id}:${group.id}`}
+                    rows={group.rows}
+                    label={group.title ?? current.label}
+                  />
                 )}
                 {group.after}
               </section>
@@ -261,9 +295,6 @@ export function CommunityTeamPhone({
       <PhoneSheet open={sheet === "duty"} onClose={close} title="On duty today" description="Sample roster">
         <div className={css.sheetBody}>{onDuty}</div>
       </PhoneSheet>
-      <PhoneSheet open={sheet === "search"} onClose={close} title="Find a person" description="Sample patients">
-        <div className={css.sheetBody}>{search(close)}</div>
-      </PhoneSheet>
       <PhoneSheet open={sheet === "samples"} onClose={close} title="Samples" description="Illustrative only">
         <div className={css.sheetBody}>
           <ul className={css.card}>
@@ -271,7 +302,7 @@ export function CommunityTeamPhone({
               <li key={sample.id} className={css.rowItem}>
                 <PhoneListRow
                   name={sample.label}
-                  leading={<Clock size={16} aria-hidden="true" />}
+                  leading={<Shapes size={16} aria-hidden="true" />}
                   onSelect={() => {
                     close();
                     sample.onPress();
@@ -295,7 +326,8 @@ export function CommunityWorthAttention({
   "data-testid"?: string;
 }) {
   const [open, setOpen] = useState(false);
-  const shown = open ? items : items.slice(0, ATTENTION_SHOWN);
+  const hidden = foldHidden(items.length, ATTENTION_SHOWN);
+  const shown = open || hidden === 0 ? items : items.slice(0, ATTENTION_SHOWN);
   return (
     <section className={css.section} aria-label="Worth attention" data-testid={testId}>
       <GroupHead title="Worth attention" count={items.length} className={css.plainHead} />
@@ -313,10 +345,10 @@ export function CommunityWorthAttention({
               </li>
             ))}
           </ul>
-          {items.length > ATTENTION_SHOWN ? (
-            <button type="button" className={css.more} aria-expanded={open} onClick={() => setOpen((value) => !value)}>
-              {open ? "Show fewer" : `Show ${items.length - ATTENTION_SHOWN} more`}
-            </button>
+          {hidden > 0 ? (
+            <ShowMoreRow expanded={open} onClick={() => setOpen((value) => !value)}>
+              {open ? "Show fewer" : `Show ${hidden} more`}
+            </ShowMoreRow>
           ) : null}
         </div>
       )}

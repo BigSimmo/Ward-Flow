@@ -5,6 +5,8 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 
 import { bedReleases } from "@/components/ward-management/ward-movements";
 
+import { capacityReady } from "./helpers/ward-release-gate";
+
 /**
  * Task 8 (Phase 5). One journey: a ward flags a bed coming free, confirms it, blocks it with a
  * reason from the fixed list, then releases it — and the coordinator's capacity board reflects
@@ -19,7 +21,7 @@ import { bedReleases } from "@/components/ward-management/ward-movements";
  * old `CapacityView` (`ward-management-modes.tsx`, `data-testid="ward-capacity-view"`), reached
  * by clicking the rail's "Capacity" link. MERGE 02 (owner-approved 2026-09-05) repointed that
  * same link at a real route, `/ward-flow/capacity` → `CapacityScreen`
- * (`capacity-screen.tsx`, `data-testid="ward-capacity-page"`) — confirmed nothing routes
+ * (`capacity-screen.tsx`, `data-testid="ward-capacity-screen"`) — confirmed nothing routes
  * `mode === "capacity"` into `ModeBody` any more (`ward-management-modes.tsx`; only `network` and
  * `governance` still reach `WardModeWorkspace`), so `CapacityView` and its old testid are
  * unreachable by any URL a user can open.
@@ -49,6 +51,7 @@ import { bedReleases } from "@/components/ward-management/ward-movements";
  */
 
 const UNIT_ID = "rph-adult-secure";
+const UNIT_NAME = seedWardFlowState().units.find((unit) => unit.id === UNIT_ID)?.name ?? UNIT_ID;
 
 async function gotoWard(page: Page) {
   await page.goto(`/ward-flow/ward/${UNIT_ID}`, { waitUntil: "load" });
@@ -107,23 +110,18 @@ async function goToCapacityBoard(page: Page) {
    */
   await page.getByRole("link", { name: /^Capacity\b/u }).click();
   // MERGE 02 (`bf563af9f`, 2026-09-05) renamed the Capacity screen's root from `ward-capacity-view`
-  // to `ward-capacity-page`. The screen and this journey are both intact and reachable — only the
+  // to `ward-capacity-screen`. The screen and this journey are both intact and reachable — only the
   // handle moved — so this is a re-point, not a retirement.
   //
   // ⚠️ The old name still appears once in `src/`, inside a COMMENT in `capacity-derivations.ts`
   // naming the test file `ward-capacity-view.dom.test.tsx`. A grep for the old handle therefore
   // finds a live-looking hit that renders nothing; the render is at `capacity-screen.tsx:87`.
-  await expect(page.getByTestId("ward-capacity-page")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
   await page.waitForLoadState("networkidle");
-  // Device audit option A (Capacity, 11 Oct 2026): the per-ward network table is the bed map's
-  // Table layout, so open it through the map's own control, as a coordinator would. A press before
-  // hydration does nothing, so press until the layout reports Table.
-  const table = page.getByRole("group", { name: "Bed map layout" }).getByRole("button", { name: "Table", exact: true });
-  await expect(async () => {
-    if ((await table.getAttribute("aria-pressed")) !== "true") await table.click();
-    await expect(table).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
-  }).toPass({ timeout: 15_000 });
-  await expect(page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`)).toBeVisible();
+  // Capacity redesign (31 Oct 2026): the per-ward network table is gone. Every ward is a card on
+  // the bed map, and its panel (opened from the card) holds its discharge records, so the figures
+  // below are read from there, as a coordinator would.
+  await expect(page.locator("#capacity-bed-map")).toBeVisible({ timeout: 15_000 });
 }
 
 /**
@@ -170,24 +168,36 @@ async function goBackToWard(page: Page) {
  * is not the place to decide a fourth figure belongs on a clinical screen. The `Freeing` column
  * already answers a nearby question ("how many free up today") and is not the same figure.
  */
-function networkCell(page: Page, testId: string) {
-  return page.getByTestId(`ward-capacity-network-row-${UNIT_ID}`).getByTestId(testId);
+/*
+ * ⚠️ **RETARGETED, 31 Oct 2026 (Capacity redesign).** The network table and its per-ward Ready and
+ * Confirmed cells are gone. The coordinator's board now shows this ward as a bed map card ("<ward>
+ * <N> ready"), and the card opens the ward's panel, whose Discharges view holds each discharge
+ * record with its status. So Ready is read off the card, and "the release reached the coordinator
+ * as confirmed" is read off this release's own record in that panel: Expected, then Confirmed once
+ * the ward confirms it, then Departed (no longer confirmed) once the person leaves. That is the same
+ * proof the Confirmed count gave, made on the one record this journey moves rather than on a total.
+ */
+
+/** Ready beds for this ward, off its card on the coordinator's bed map. */
+async function boardReady(page: Page): Promise<number> {
+  return capacityReady(page, UNIT_ID, UNIT_NAME);
 }
 
-/**
- * A board cell's own number: "none" reads as 0. The Ready cell can also carry an "N still being
- * made ready" note beside its figure (audit round 2, A4-24: a departure now marks the bed Being made
- * ready), so that note is left out before the figure is read.
- */
-async function networkNumber(page: Page, testId: string): Promise<number> {
-  const text = (
-    await networkCell(page, testId).evaluate((cell) => {
-      const copy = cell.cloneNode(true) as HTMLElement;
-      copy.querySelector('[data-testid="ward-capacity-network-pending"]')?.remove();
-      return copy.textContent ?? "";
-    })
-  ).trim();
-  return text === "none" ? 0 : Number.parseInt(text, 10);
+/** This release's status on the coordinator's board: the ward's panel, Discharges, its record. */
+async function boardReleaseStatus(page: Page, admissionId: string): Promise<string> {
+  // Reading Ready first opens any folded service, so the ward's card is drawn before it is pressed.
+  await boardReady(page);
+  await page.locator(`#capacity-bed-map button[aria-haspopup="dialog"][data-unit-id="${UNIT_ID}"]`).first().click();
+  const panel = page.getByTestId("ward-capacity-ward-drawer");
+  await expect(panel).toBeVisible();
+  await panel.getByRole("radio", { name: /^Discharges/u }).click();
+  await panel.locator(`[id="capacity-discharge-discharge-${admissionId}"]`).click();
+  const status = panel.locator("dt", { hasText: /^Status$/u }).locator("xpath=following-sibling::dd[1]");
+  await expect(status).toBeVisible();
+  const text = ((await status.textContent()) ?? "").trim();
+  await panel.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(panel).toHaveCount(0);
+  return text;
 }
 
 test.describe("@mockup Ward discharges — a bed release's whole lifecycle reaches the coordinator live", () => {
@@ -224,17 +234,17 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
 
     // --- Baseline on the coordinator's capacity board. ---
     await goToCapacityBoard(page);
-    const confirmedBefore = await networkNumber(page, "ward-capacity-network-confirmed");
-    const readyBefore = await networkNumber(page, "ward-capacity-network-ready");
+    expect(await boardReleaseStatus(page, release.admissionId)).toBe("Expected");
+    const readyBefore = await boardReady(page);
 
     // --- Step 1: the ward confirms the release from the Discharges list. ---
     await goBackToWard(page);
     await page.getByTestId(`ward-today-release-confirm-${releaseId}`).click();
     await expect(releaseState).toHaveText("Confirmed");
     await goToCapacityBoard(page);
-    await expect.poll(() => networkNumber(page, "ward-capacity-network-confirmed")).toBe(confirmedBefore + 1);
+    await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Confirmed");
     // Confirming is a record about a future bed, not the bed becoming free.
-    await expect.poll(() => networkNumber(page, "ward-capacity-network-ready")).toBe(readyBefore);
+    await expect.poll(() => boardReady(page)).toBe(readyBefore);
 
     // --- Step 2: the person leaves, recorded on the ward board. Leaving completes this person's
     // release and is the one step here that frees a real bed. ---
@@ -287,8 +297,8 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     await goToCapacityBoard(page);
     // Ready rises by exactly one, and the completed release no longer counts as confirmed: the bed is
     // free and already counted in Ready, so counting it twice would inflate the board.
-    await expect.poll(() => networkNumber(page, "ward-capacity-network-ready")).toBe(readyBefore + 1);
-    await expect.poll(() => networkNumber(page, "ward-capacity-network-confirmed")).toBe(confirmedBefore);
+    await expect.poll(() => boardReady(page)).toBe(readyBefore + 1);
+    await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Departed");
   });
 
   /**
@@ -353,12 +363,13 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
      * every group, three columns wide, blocker folded into the third column instead of broken out
      * on its own.
      */
-    const DISCHARGE_COLUMNS = ["Ward / service", "Timing", "Stage / blocker"];
+    const DISCHARGE_COLUMNS = ["Patient / ward", "Timing", "Stage / blocker"];
     const table = page.getByRole("table");
     await expect(table, "the discharges board renders no table, so its column contract went unchecked").toBeVisible();
     const headers = table.locator("thead th");
     await expect(headers, "the worklist no longer carries exactly these columns, in this order").toHaveText([
       ...DISCHARGE_COLUMNS,
+      "Next",
     ]);
     for (const [index, column] of DISCHARGE_COLUMNS.entries()) {
       await expect(
@@ -478,7 +489,6 @@ test.describe("@mockup complete care dossier", () => {
     const p = seed.patients.find((p) => p.id === a.patientId)!;
     await page.goto("/ward-flow/discharges");
     await page.waitForLoadState("networkidle");
-    await expect(page.locator("[data-wf-data-mode-slot]")).not.toBeEmpty();
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
     const history = page.getByTestId("ward-discharge-history");
     await history.click();

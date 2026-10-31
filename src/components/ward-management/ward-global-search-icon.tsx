@@ -10,12 +10,14 @@ import {
   BedSingle,
   Building2,
   CheckSquare,
+  CircleHelp,
   ClipboardList,
   Clock,
   FileText,
   Hospital,
   Inbox,
   LayoutDashboard,
+  MapPin,
   PhoneCall,
   Plus,
   Route,
@@ -57,6 +59,12 @@ export function SearchResultIcon({
       return <FileText className={className} aria-hidden="true" />;
     case "task":
       return <CheckSquare className={className} aria-hidden="true" />;
+    case "contact":
+      return <PhoneCall className={className} aria-hidden="true" />;
+    case "suburb":
+      return <MapPin className={className} aria-hidden="true" />;
+    case "help":
+      return <CircleHelp className={className} aria-hidden="true" />;
     case "action":
       return id === "add-patient" ? (
         <UserPlus className={className} aria-hidden="true" />

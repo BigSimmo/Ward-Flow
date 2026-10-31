@@ -1,6 +1,6 @@
 /**
  * Find a setting: one entry per row on the Settings workspaces. Typing in the band's search lists
- * the matches; choosing one opens its tab and highlights the row carrying `data-setting="<id>"`.
+ * the matches; choosing one scrolls to its section and highlights the row carrying `data-setting="<id>"`.
  * The query lives in React state only and is never written to browser storage.
  */
 
@@ -8,10 +8,11 @@ export type SettingsTab = "rules" | "alerts" | "display" | "profile" | "data" | 
 
 export const SETTINGS_TABS: readonly { readonly id: SettingsTab; readonly label: string }[] = [
   { id: "rules", label: "Rules" },
-  { id: "alerts", label: "Alerts" },
-  { id: "display", label: "Display" },
-  { id: "profile", label: "Profile and shift" },
-  { id: "data", label: "Data and about" },
+  // Settings by login (31 Oct 2026): one page of sections; the old tabs name the section a row is in.
+  { id: "alerts", label: "This device" },
+  { id: "display", label: "This device" },
+  { id: "profile", label: "You" },
+  { id: "data", label: "Help" },
   // Shown only with the role-access flag on, to the desks that give access or cover.
   { id: "access", label: "Access" },
 ];
@@ -39,8 +40,8 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
     keywords: "rollup morning count ward count deadline",
   },
   { id: "surge", label: "Standard or Surge timings", tab: "rules", keywords: "busy day preset surge" },
-  { id: "second-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
-  { id: "first-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },
+  { id: "early-warning", label: "Early warning", tab: "rules", keywords: "legal due time form due soon first" },
+  { id: "final-warning", label: "Final warning", tab: "rules", keywords: "legal due time form urgent last" },
   {
     id: "decision-targets",
     label: "Decision targets",

@@ -120,6 +120,37 @@ describe("owned child lifecycle", () => {
     expect(result.status).toBeNull();
     expect(result.error?.message).toMatch(/invalid run lease/);
   });
+  it.skipIf(process.platform === "win32")(
+    "releases a dead guardian's record only once no process carries its marker",
+    async () => {
+      const root = mkdtempSync(path.join(os.tmpdir(), "ward-child-abandoned-"));
+      roots.push(root);
+      mkdirSync(path.join(root, "children"));
+      const marker = `test-${process.pid}-${Date.now()}`;
+      const record = { token: "owner", guardianPid: 2147483647, childPid: 2147483646, state: "running" };
+      writeFileSync(path.join(root, "owner.json"), JSON.stringify({ pid: 2147483647, token: "owner" }));
+      writeFileSync(path.join(root, "children", "work.json"), JSON.stringify({ ...record, ownerMarker: marker }));
+      const survivor = spawn(process.execPath, ["-e", "setInterval(()=>{},1000)"], {
+        env: { ...process.env, WARD_OWNED_CHILD_MARKER: marker },
+        stdio: "ignore",
+      });
+      const exited = new Promise<void>((resolve) => survivor.once("exit", () => resolve()));
+      try {
+        await until(() => Boolean(survivor.pid) && alive(survivor.pid as number));
+        expect(registeredWorkIsActive(root, "owner")).toBe(true);
+        expect(testRunLockInternals.ownerDirectoryIsStale(root)).toBe(false);
+      } finally {
+        survivor.kill("SIGKILL");
+        await exited;
+      }
+      expect(registeredWorkIsActive(root, "owner")).toBe(false);
+      expect(testRunLockInternals.ownerDirectoryIsStale(root)).toBe(true);
+      // Without a marker the record cannot prove its work ended, so it still holds the lease.
+      writeFileSync(path.join(root, "children", "work.json"), JSON.stringify(record));
+      expect(registeredWorkIsActive(root, "owner")).toBe(true);
+    },
+    15000,
+  );
   it("preserves quoted arguments and captures output without blocking", async () => {
     const values = ["with spaces", 'quote"inside', "backslash\\", "", "& $(literal)"];
     const result = await runOwnedChild(
@@ -212,7 +243,12 @@ describe("owned child lifecycle", () => {
       const records = readdirSync(path.join(requireLeasePath(lease), "children"))
         .filter((name) => name.endsWith(".json"))
         .map((name) => JSON.parse(readFileSync(path.join(requireLeasePath(lease), "children", name), "utf8")));
-      if (records.some((record) => record.state !== "complete" && !alive(record.guardianPid))) {
+      // POSIX records carry the descendant marker, so a dead guardian whose work is provably gone
+      // releases admission on its own. Windows keeps the conservative retention.
+      const unprovable = records.some(
+        (record) => record.state !== "complete" && !alive(record.guardianPid) && !record.ownerMarker,
+      );
+      if (unprovable) {
         expect(registeredWorkIsActive(requireLeasePath(lease), lease.owner.token)).toBe(true);
       } else await until(() => !registeredWorkIsActive(requireLeasePath(lease), lease.owner.token));
     } finally {

@@ -25,6 +25,7 @@ vi.mock("next/link", () => ({
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { getBedStep } from "./helpers/ward-bed-steps";
 
 /**
  * The bed drawer's URL and history contract (PR #262 review):
@@ -89,7 +90,7 @@ describe("ward bed drawer history", () => {
     window.sessionStorage.setItem("wardflow:census-bed-opener", "synthetic-census-row");
     window.sessionStorage.setItem("wardflow:census-bed-opener-target", `${UNIT.id}:${actionBed}`);
     openViaUrl(String(actionBed));
-    fireEvent.click(screen.getByRole("button", { name: action }));
+    fireEvent.click(getBedStep(action));
     expect(routing.back).not.toHaveBeenCalled();
     expect(drawer()).toBeNull();
     expect(screen.getByTestId("ward-bed-board-plan")).toBeInTheDocument();

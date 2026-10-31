@@ -94,7 +94,7 @@ describe("Community team on a phone", () => {
       within(lists)
         .getAllByRole("radio")
         .map((radio) => radio.textContent?.replace(/\d+$/u, "").trim()),
-    ).toEqual(["Sent", "Waiting", "In bed", "Back", "CTOs"]);
+    ).toEqual(["Sent", "Waiting", "In bed", "Back", "Caseload"]);
     expect(screen.queryByTestId("wf-phone-hero-figure-back")).not.toBeInTheDocument();
   });
 

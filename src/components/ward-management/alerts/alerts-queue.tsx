@@ -11,8 +11,19 @@ import type { InboxSnoozeEntry } from "@/components/ward-management/ward-inbox-s
 import { snoozedLine } from "@/components/ward-management/inbox-snooze-control";
 import { Button, Count, StatusGlyph, buttonClass, type WfTone } from "@/components/wf";
 
-import { extractOverdue, minutesText, type AlertAction, type AlertGroup, type AlertSubject } from "./alerts-model";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import {
+  extractOverdue,
+  legalTypedEnd,
+  minutesText,
+  shownAgeFrom,
+  type AlertAction,
+  type AlertGroup,
+  type AlertSubject,
+} from "./alerts-model";
+import { UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import styles from "./alerts.module.css";
+import parts from "./alerts-screen-parts.module.css";
 
 /** One row of the queue, everything the row, the card and the panel read, computed once. */
 export type QueueEntry = {
@@ -76,6 +87,9 @@ function stateLine(entry: QueueEntry, now: Instant): string | undefined {
 }
 
 function Age({ entry, now, maxAge }: { entry: QueueEntry; now: Instant; maxAge: number }) {
+  // A passed legal form shows its typed time, never an age since it (legal times only as typed).
+  const ended = legalTypedEnd(entry.item);
+  if (ended !== undefined) return <span className={styles.quiet}>{typedTimeLine(ended, now)}</span>;
   if (entry.raised === undefined) return <span className={styles.quiet}>Time not recorded</span>;
   const age = Math.max(0, now - entry.raised);
   return (
@@ -165,7 +179,12 @@ function Who({ entry }: { entry: QueueEntry }) {
   return (
     <span className={styles.who}>
       <strong className={styles.name}>{entry.subject.displayName}</strong>{" "}
-      <strong className={styles.umrn}>{entry.subject.umrn}</strong>
+      {/* Alerts redesign: a missing UMRN reads as plain words, not in bold mono as if it were a number. */}
+      {entry.subject.umrn === UMRN_NOT_RECORDED ? (
+        <span className={parts.umrnMissing}>{entry.subject.umrn}</span>
+      ) : (
+        <strong className={styles.umrn}>{entry.subject.umrn}</strong>
+      )}
     </span>
   );
 }
@@ -192,13 +211,14 @@ export function AlertRow({
         <OpenButton entry={entry} handlers={handlers} />
         <Who entry={entry} />
       </span>
-      <span className={`${styles.cell} ${styles.cellWhere}`}>
+      {/* Alerts redesign: place and owner names wrap in full rather than ending in "…". */}
+      <span className={`${styles.cell} ${styles.cellWhere} ${parts.cellWrap}`}>
         <span className={styles.cellMain}>{entry.subject.to ?? entry.subject.from}</span>
         <span className={styles.quiet}>
           {entry.subject.to ? `from ${entry.subject.from}` : (entry.subject.legalStatus ?? "Status not recorded")}
         </span>
       </span>
-      <span className={styles.cell}>
+      <span className={`${styles.cell} ${parts.cellWrap}`}>
         <span className={styles.cellMain}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
         <span className={styles.quiet}>{state ?? entry.owner}</span>
       </span>
@@ -224,23 +244,27 @@ export function AlertCard({
 }) {
   const state = stateLine(entry, now);
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
+  const ageFrom = shownAgeFrom(entry.item, entry.raised);
+  const ended = legalTypedEnd(entry.item);
   return (
     <li className={styles.card} {...rowData(entry, handlers)}>
       <span className={styles.cardTop}>
         {entry.snooze ? <AlarmClock size={14} aria-hidden="true" className={styles.snoozeIcon} /> : null}
         <StatusGlyph tone={glyphTone(entry)} />
         <OpenButton entry={entry} handlers={handlers} />
-        {entry.raised !== undefined ? (
-          <span className={`${styles.mono} ${styles.quiet}`}>{minutesText(Math.max(0, now - entry.raised))}</span>
+        {ageFrom !== undefined ? (
+          <span className={`${styles.mono} ${styles.quiet}`}>{minutesText(Math.max(0, now - ageFrom))}</span>
+        ) : ended !== undefined ? (
+          <span className={styles.quiet}>{typedTimeLine(ended, now)}</span>
         ) : null}
       </span>
       <span className={styles.cardLine}>
         <Who entry={entry} />
-        {entry.raised !== undefined ? (
+        {ageFrom !== undefined ? (
           <span className={styles.ageBar} aria-hidden="true">
             <span
               style={{
-                width: `${Math.max(6, Math.round((100 * Math.max(0, now - entry.raised)) / Math.max(1, maxAge)))}%`,
+                width: `${Math.max(6, Math.round((100 * Math.max(0, now - ageFrom)) / Math.max(1, maxAge)))}%`,
               }}
             />
           </span>
@@ -284,6 +308,8 @@ export function GroupHead({
  */
 export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
+  const ageFrom = shownAgeFrom(entry.item, entry.raised);
+  const ended = legalTypedEnd(entry.item);
   return (
     <li className={styles.phoneRow} {...rowData(entry, handlers)}>
       <span className={styles.phoneRowGlyph}>
@@ -298,7 +324,11 @@ export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now
       </span>
       <span className={styles.phoneRowEnd}>
         <span className={styles.phoneRowAge}>
-          {entry.raised !== undefined ? minutesText(Math.max(0, now - entry.raised)) : ""}
+          {ageFrom !== undefined
+            ? minutesText(Math.max(0, now - ageFrom))
+            : ended !== undefined
+              ? typedTimeLine(ended, now)
+              : ""}
         </span>
         <span className={styles.phoneRowOwner}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
       </span>

@@ -100,6 +100,7 @@ import {
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
+import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   attentionItems,
   legalFormReadinessLine,
@@ -718,9 +719,9 @@ export function MovementWorkspaceCockpit({
             {deadline !== undefined && patient.legalForm ? (
               <WardFigure
                 label={`Deadline on the ${legalFormNameLabelFirst(patient.legalForm)}`}
-                value={formatRemaining(minutesUntil(deadline, now))}
+                value={typedClock(deadline, now)}
                 flagged={flagged.has("deadline")}
-                sub={`Due ${formatInstantWithDay(deadline, now)} — the deadline this record holds, not a claim about what the Act requires`}
+                sub={`${isClockBreached(deadline, now) ? "Ended" : "Ends"} as typed — the time this record holds, not a claim about what the Act requires`}
               />
             ) : null}
             {patient.pullExpiresAt !== undefined ? (

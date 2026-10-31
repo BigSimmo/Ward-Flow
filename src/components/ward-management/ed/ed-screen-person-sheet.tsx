@@ -3,9 +3,10 @@
 // A board row's person sheet: the bottom sheet on a phone and the side sheet on wider screens,
 // where every edit to the row happens. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and
 // 9.6, 15 Oct 2026).
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
-import { minutesUntil, splitDuration } from "@/components/ward-management/ward-clock";
+import { splitDuration } from "@/components/ward-management/ward-clock";
+import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
@@ -15,6 +16,22 @@ import type { EdScreenContext } from "./ed-screen-context";
 import { movementMedicalClearance } from "./ed-screen-model";
 import type { renderEdRowControls } from "./ed-screen-row-facts";
 import styles from "./ed.module.css";
+
+/**
+ * Holds a row's open form back for one commit after the person's sheet opens. Log transport booking
+ * and Examination outcome are the kit's Dialog, which portals into the same modal layer as this
+ * sheet. Opened from the row, the sheet and the popup used to mount in the same commit: React
+ * places a nested portal first and runs its effects first, so the popup sat under the sheet's scrim
+ * and the sheet took the top of the modal stack and made the popup inert (hosted run, 31 Oct 2026).
+ * One commit later the popup opens over a sheet that is already open, which is the path the sheet's
+ * own actions take and the stacking the popups were built for.
+ */
+export function AfterSheetOpens({ children }: { children: ReactNode }) {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- the one re-render this exists to cause, after the sheet's own effects joined the stack
+  useEffect(() => setSheetOpen(true), []);
+  return sheetOpen ? children : null;
+}
 
 export function renderEdPersonSheet(
   row: EdBoardRowModel,
@@ -46,7 +63,7 @@ export function renderEdPersonSheet(
     <PhoneSheet
       open
       onClose={closeSheet}
-      title={patientInfo.displayName}
+      title={patientInfo.formalName}
       description={
         <>
           <span className={styles.phoneSheetUmrn}>{patientInfo.umrn}</span> · {department.siteCode} ED ·{" "}
@@ -179,16 +196,17 @@ export function renderEdPersonSheet(
           <div>
             <dt>Form due (as written)</dt>
             <dd className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}>
-              {movement.legalForm.dueAt === undefined
-                ? "Not written"
-                : minutesUntil(movement.legalForm.dueAt, now) >= 0
-                  ? `in ${splitDuration(minutesUntil(movement.legalForm.dueAt, now))}`
-                  : `passed ${splitDuration(Math.abs(minutesUntil(movement.legalForm.dueAt, now)))} ago`}
+              {/* Legal times only as typed (31 Oct 2026): never "in 3h 20m" or "passed … ago". */}
+              {movement.legalForm.dueAt === undefined ? "Not written" : typedTimeLine(movement.legalForm.dueAt, now)}
             </dd>
           </div>
         ) : null}
       </dl>
-      {subFormOpen ? <div className={styles.phoneSheetForm}>{subFormContent}</div> : null}
+      {subFormOpen ? (
+        <div className={styles.phoneSheetForm}>
+          <AfterSheetOpens>{subFormContent}</AfterSheetOpens>
+        </div>
+      ) : null}
       <section className={styles.phoneSheetSection} aria-label="Actions">
         <h3 className={styles.phoneSheetHeading}>Actions</h3>
         <div className={styles.nextGroup}>{nextGroupBody}</div>

@@ -72,6 +72,33 @@ async function typeUntilClearShows(page: Page): Promise<void> {
   }).toPass({ timeout: 15_000 });
 }
 
+/**
+ * Where a tap 23.5px from a control's centre lands, so a 48px tap area passes whatever the control's
+ * painted size (an invisible pseudo-element counts, as it is part of the control). Returns the
+ * directions that missed; `vertical` checks only above and below.
+ */
+async function tapAreaMisses(control: Locator, axes: "both" | "vertical"): Promise<string[]> {
+  return control.evaluate((element, checkSides) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const reach = 23.5;
+    const probes: Array<[number, number, string]> = [
+      [x, y, "at its centre"],
+      [x, y - reach, "23.5px above its centre"],
+      [x, y + reach, "23.5px below its centre"],
+    ];
+    if (checkSides)
+      probes.push([x - reach, y, "23.5px left of its centre"], [x + reach, y, "23.5px right of its centre"]);
+    return probes
+      .filter(([px, py]) => {
+        const hit = document.elementFromPoint(px, py);
+        return !(hit && (hit === element || element.contains(hit)));
+      })
+      .map(([, , where]) => where);
+  }, axes === "both");
+}
+
 test.describe("@mockup Ward patient search", () => {
   test.describe.configure({ timeout: 60_000 });
 
@@ -309,6 +336,11 @@ test.describe("@mockup Ward patient search", () => {
    * old filter selects are gone from the screen (they sit in a visually hidden block), so the
    * census's own controls are what this now measures. Written against the 9 Oct census, it failed
    * first on a real defect: the phone input was 18px tall and Clear 36px.
+   *
+   * Josh (31 Oct 2026): a control keeps its look (the kit's 44px phone field, 34px highlight chips,
+   * a 24px Clear) and takes taps across an invisible 48px area. So this measures where a tap lands,
+   * not the painted box: a tap 23.5px above, below, left and right of the control's centre (a 47px
+   * cross inside the 48px square) must land on the control itself.
    */
   test("every interactive control in the search composer and census header meets the 48px tap-target floor at 375px", async ({
     page,
@@ -333,29 +365,30 @@ test.describe("@mockup Ward patient search", () => {
     const chipCount = await chips.count();
     expect(chipCount, "the phone census shows its highlight chips").toBeGreaterThan(0);
     for (let i = 0; i < chipCount; i += 1) controls.push([chips.nth(i), `highlight chip ${i + 1}`]);
-    const groups = console_.getByRole("radiogroup", { name: "Where patients are now" }).getByRole("radio");
+    const groups = console_.getByRole("group", { name: "Where patients are now" }).getByRole("button");
     await expect(groups, "the phone census shows six group pills").toHaveCount(6);
     for (let i = 0; i < 6; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);
 
     const failures: string[] = [];
     for (const [control, label] of controls) {
       await expect(control, `${label} is not visible`).toBeVisible();
-      const box = await control.boundingBox();
-      expect(box, `${label} has no measurable box`).not.toBeNull();
-      const smallerDimension = Math.min(box!.width, box!.height);
-      if (smallerDimension < 48) {
-        failures.push(`${label}: ${Math.round(box!.width)}x${Math.round(box!.height)}px`);
-      }
+      // A chip in the sliding row can sit past its edge; a coordinator slides it into view first.
+      await control.scrollIntoViewIfNeeded();
+      const misses = await tapAreaMisses(control, "both");
+      if (misses.length > 0) failures.push(`${label}: a tap ${misses.join(", ")} misses it`);
     }
 
-    expect(failures, "control(s) under the 48px production tap-target floor at 375px (width x height)").toEqual([]);
+    expect(failures, "control(s) whose tap area is under the 48px production floor at 375px").toEqual([]);
   });
 
   /**
-   * 6. THE 48PX HIT AREA ON DESKTOP. The compact desktop pills keep their 26px/28px look, but an
-   * invisible pseudo-element grows each hit area to 48px tall. A click 8px above or below the
-   * visible pill must still land on the control (the visible box alone would miss it). The same
-   * rule covers the record's 28px Watch and flow pills, which share the stylesheet block.
+   * 6. THE 48PX HIT AREA ON DESKTOP. The compact desktop controls keep their look (the DOB switch at
+   * the kit's 36px field height, the kit's 24px Clear), but an invisible pseudo-element grows each
+   * hit area to 48px tall. A click 23.5px above or below the control's centre must still land on the
+   * control (the visible box alone would miss it). This used to probe 8px past the painted edge,
+   * which matched the old 28px pills (44px) but asks a 36px control for 52px; measuring from the
+   * centre asks every control for the same 48px. The same rule covers the record's 28px Watch and
+   * flow pills, which share the stylesheet block.
    */
   test("the compact desktop DOB and Clear controls keep a 48px-tall hit area at 1440px", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -370,18 +403,9 @@ test.describe("@mockup Ward patient search", () => {
     const failures: string[] = [];
     for (const [control, label] of controls) {
       await expect(control, `${label} is not visible`).toBeVisible();
-      const misses = await control.evaluate((element) => {
-        const rect = element.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const probes = [rect.top - 8, rect.bottom + 8, rect.top + rect.height / 2];
-        return probes
-          .filter((y) => {
-            const hit = document.elementFromPoint(x, y);
-            return !(hit && (hit === element || element.contains(hit)));
-          })
-          .map((y) => Math.round(y - rect.top));
-      });
-      if (misses.length > 0) failures.push(`${label}: missed at y offsets ${misses.join(", ")}`);
+      // Width is left alone on a desk so neighbouring controls never overlap; only height grows.
+      const misses = await tapAreaMisses(control, "vertical");
+      if (misses.length > 0) failures.push(`${label}: a click ${misses.join(", ")} misses it`);
     }
     expect(failures, "desktop control(s) whose hit area is under 48px tall").toEqual([]);
   });

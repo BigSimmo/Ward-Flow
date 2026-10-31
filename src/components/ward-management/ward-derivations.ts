@@ -6,6 +6,7 @@
  * consumer at once rather than needing three coordinated edits.
  */
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+import { formTimeAsTyped, typedTimePhrase } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
   INBOX_CATEGORIES,
   type InboxItemKind,
@@ -63,6 +64,7 @@ import { REFERRABLE_MOVEMENT_STAGES } from "@/components/ward-management/ward-fl
 /** UI-only role concept; not part of the domain model. */
 export type WardRole = "flow" | "ed" | "ward";
 
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { supportNotificationInboxItems } from "@/components/ward-management/ward-support-notifications";
 import { INFORMATIONAL_GATES, eligibleCandidatesAmong } from "./ward-derivations-shortlist";
@@ -628,7 +630,9 @@ export function buildActionInbox(
       tone: "danger",
       icon: CircleAlert,
       title: "Legal due time passed",
-      detail: `${movement.id} · ${formatRemaining(minutesUntil(dueAt, now))}`,
+      // Legal times only as typed (31 Oct 2026): "WF-001 · Form 4C (Transfer order) · ended 10:02 as
+      // typed", never "1h 15m overdue".
+      detail: `${movement.id} · ${movement.legalForm ? formTimeAsTyped(movement.legalForm, now) : `Legal form · ${typedTimePhrase(dueAt, now)}`}`,
       owner: movement.owner,
       movementId: movement.id,
       dueAt,
@@ -1083,7 +1087,7 @@ export type MovementSearchQuery = {
 };
 
 export function searchMovements(movements: Movement[], units: Unit[], query: MovementSearchQuery): Movement[] {
-  const needle = query.text.trim().toLowerCase();
+  const needle = query.text.trim();
 
   return movements
     .filter(isOpen)
@@ -1102,7 +1106,8 @@ export function searchMovements(movements: Movement[], units: Unit[], query: Mov
         movement.owner,
         patientName,
       ].filter((value): value is string => value !== undefined && value.length > 0);
-      return haystack.some((value) => value.toLowerCase().includes(needle));
+      // Every typed word, in any order, folded as people are (search and forms review, 31 Oct).
+      return fieldsMatchEveryWord(needle, haystack);
     });
 }
 

@@ -51,7 +51,6 @@
     "tests/ward-board-selection.dom.test.tsx",
     "tests/ward-browser-build-css.test.ts",
     "tests/ward-browser-data.test.ts",
-    "tests/ward-capacity-bed-map.dom.test.tsx",
     "tests/ward-capacity-derivations.test.ts",
     "tests/ward-capacity-figure-one-word.test.ts",
     "tests/ward-capacity-screen.dom.test.tsx",
@@ -118,6 +117,7 @@
     "tests/ward-inp-responsiveness-and-deferred-rendering.dom.test.tsx",
     "tests/ward-instant-display.test.ts",
     "tests/ward-leave-is-not-a-community-order.test.ts",
+    "tests/ward-legal-as-typed-guard.test.ts",
     "tests/ward-legal-figure-guard.test.ts",
     "tests/ward-links-never-point-at-redirect-stubs.test.ts",
     "tests/ward-load-no-flash-no-shift.dom.test.tsx",
@@ -185,6 +185,7 @@
     "tests/ward-segmented-overlaps.test.ts",
     "tests/ward-settings-stepper-targets.test.ts",
     "tests/ward-shared-clock.test.ts",
+    "tests/ward-shell-eager-imports.test.ts",
     "tests/ward-shell-tablet.dom.test.tsx",
     "tests/ward-shell-third-edition.dom.test.tsx",
     "tests/ward-shell.dom.test.tsx",
@@ -217,8 +218,11 @@
     "tests/ward-word-list.test.ts",
     "tests/ward-workstation-desks.test.ts",
     "tests/ward-zero-gap-capacity-copy.test.ts",
+    "tests/wf-button-reason-wrap.test.ts",
+    "tests/wf-no-side-stripes.test.ts",
     "tests/wf-phone-parts.dom.test.tsx",
     "tests/wf-primitives.dom.test.tsx",
-    "tests/wf-segmented-text-spacing.dom.test.tsx"
+    "tests/wf-segmented-text-spacing.dom.test.tsx",
+    "tests/wf-title-wrap.test.ts"
   ]
 }

@@ -52,15 +52,54 @@ function markedProcesses(marker) {
   return null;
 }
 
-// Unfinished guardian records are deliberately retained even if their PID died.
-// Descendant ownership is then unknown; automatic reclamation would be unsafe.
+function processIsAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === "EPERM";
+  }
+}
+
+function processGroupIsAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(-pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code !== "ESRCH";
+  }
+}
+
+/**
+ * An unfinished record whose guardian died (a killed terminal, a tool timeout, a stopped container)
+ * used to hold the run lease forever, so every later lint, build or test waited on a dead run until
+ * someone deleted the lock by hand. On Linux and macOS the record now carries the marker every
+ * descendant inherits, so its work is provably finished when the guardian, the child's process group
+ * and every marked process are all gone. Anything less than that proof keeps the lease: older records
+ * without a marker, Windows jobs, and a platform that cannot list processes.
+ */
+function abandonedRecordIsFinished(record) {
+  if (process.platform === "win32") return false;
+  if (typeof record?.ownerMarker !== "string" || !record.ownerMarker) return false;
+  if (processIsAlive(record.guardianPid)) return false;
+  if (processGroupIsAlive(record.childPid)) return false;
+  const marked = markedProcesses(record.ownerMarker);
+  return Array.isArray(marked) && marked.length === 0;
+}
+
+// Unfinished guardian records are retained unless abandonedRecordIsFinished proves the work ended.
+// Without that proof descendant ownership is unknown, and automatic reclamation would be unsafe.
 export function registeredWorkIsActive(leasePath, token) {
   const directory = path.join(leasePath, "children");
   if (!existsSync(directory)) return false;
   return readdirSync(directory).some((name) => {
     if (!name.endsWith(".json")) return false;
     const record = json(path.join(directory, name));
-    return !record || ((!token || record.token === token) && record.state !== "complete");
+    if (!record) return true;
+    if (token && record.token !== token) return false;
+    return record.state !== "complete" && !abandonedRecordIsFinished(record);
   });
 }
 
@@ -149,6 +188,9 @@ async function supervise(message) {
     token,
     guardianPid: process.pid,
     childPid: null,
+    // Every POSIX descendant inherits this marker, so a later reader can prove the work finished
+    // even if this guardian is killed before it records completion.
+    ...(process.platform === "win32" ? {} : { ownerMarker }),
     startedAt: new Date().toISOString(),
     state: "running",
   };

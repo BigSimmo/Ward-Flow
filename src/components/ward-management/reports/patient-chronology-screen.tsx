@@ -12,10 +12,10 @@ import {
   ChevronRight,
   Copy,
   Download,
+  FileText,
   ListOrdered,
   MoreHorizontal,
   Printer,
-  Search,
   X,
 } from "lucide-react";
 
@@ -31,9 +31,10 @@ import {
   PhoneSheet,
   PillTabs,
   Segmented,
+  SearchField,
   Select,
+  ShowMoreRow,
   StatusGlyph,
-  TextInput,
   cx,
   tableClasses,
   useIsPhone,
@@ -44,7 +45,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { formatInstant, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { patientDisplayName, type Patient } from "@/components/ward-management/ward-patients";
+import { patientListName, type Patient } from "@/components/ward-management/ward-patients";
 
 import {
   chronologyCsv,
@@ -60,7 +61,12 @@ import styles from "./reports.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
 
+import start from "./patient-chronology-start.module.css";
+import { PatientChronologySearch } from "./patient-chronology-search";
+
 const NOT_RECORDED = "Not recorded";
+/** How many people the start list shows before "Show more", and how many each press adds. */
+const START_ROWS = 6;
 
 type SourceTab = "all" | "records" | "audit" | "session";
 type ViewRole = "coordinator" | "nurse";
@@ -145,6 +151,10 @@ const pickerName = (patient: Patient) => `${patient.familyName}, ${patient.given
  * v10: the event table groups by day; a side panel rests on a summary by source and record kind
  * and opens the clicked event with Previous, Next and Copy row. This page filters rows (it is a
  * record view) and the count line always equals the rows shown. Phone is its own layout.
+ *
+ * Redesign (approved by Josh, 31 Oct 2026): one large patient search in the header replaces the
+ * dropdown and the second "Choose a patient" button. With nobody chosen, the page lists people on this demo night (Ward
+ * Flow keeps no record of who was opened) and says what a chronology holds.
  */
 export function PatientChronologyScreen({ initialPatientId }: { initialPatientId?: string }) {
   const { patients, movements, referrals, admissions, units, eventLog, readAuditEvents, dayZero } = useWardFlowSelect(
@@ -179,6 +189,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const [tab, setTab] = useState<SourceTab>("all");
   const [kind, setKind] = useState<string>("all");
   const [query, setQuery] = useState("");
+  const [shownPeople, setShownPeople] = useState(START_ROWS);
   const [viewRole, setViewRole] = useState<ViewRole>("coordinator");
   const [openKey, setOpenKey] = useState<string | null>(null);
   // Phone only: the sheet that holds record kind and the role view, one tap from the list.
@@ -192,7 +203,6 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     if (initialPatientId && patients.some((patient) => patient.id === initialPatientId)) setPatientId(initialPatientId);
   }
   const tableScroll = useRef<HTMLDivElement>(null);
-  const patientSelect = useRef<HTMLSelectElement>(null);
 
   // Read once per world (the read returns a fresh copy each call), and only for the coordinator.
   const auditEvents = useMemo(() => {
@@ -239,7 +249,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     tab === "all" ? "All sources" : `${SOURCE_OF_TAB[tab]} only`,
     kind === "all" ? "Every record kind" : `${kind} only`,
     needle ? "Search applied" : "No search",
-    ...(nurseView ? ["Ward nurse view"] : []),
+    ...(nurseView ? ["Ward manager view"] : []),
   ].join(" · ");
   const clearFilters = () => {
     setTab("all");
@@ -250,7 +260,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   const count = (source: ChronologySource) => rows.filter((row) => row.source === source).length;
   // Source tab counts read every event of that source, so an empty source shows 0 without a tap.
   const sourceCount = (source: ChronologySource) => sourceRows.filter((row) => row.source === source).length;
-  const name = chronology?.patient ? patientDisplayName(chronology.patient) : null;
+  // Owner rule D-83: surname first, as the resolver's formalName reads ("Family, Given").
+  const name = chronology?.patient ? nameFor(pickerName(chronology.patient), chronology.patient.umrn) : null;
   const umrn = chronology?.patient?.umrn || "UMRN not recorded";
   const recordCount = chronology
     ? chronology.recordIds.movements.length +
@@ -277,7 +288,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
       rows,
       dayZero,
       now,
-      chronology.patient ? `${patientDisplayName(chronology.patient)} · ${chronology.patient.umrn}` : undefined,
+      // Surname first in the file (D-83, bug list row 17).
+      chronology.patient ? `${patientListName(chronology.patient)} · ${chronology.patient.umrn}` : undefined,
     ).split("\r\n");
     // Audit 24-7 (CT-12): a filter row sits under Scope so the file says which rows it holds.
     const scopeAt = lines.findIndex((line) => line.startsWith(`${csvCell("Scope")},`));
@@ -316,22 +328,86 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     </span>
   );
 
-  const patientPicker = (
-    <Select
-      ref={patientSelect}
-      aria-label="Patient"
-      value={patientId}
-      onChange={(event) => choosePatient(event.target.value)}
-      data-testid="ward-chronology-patient"
-      boxClassName={styles.patientPick}
-    >
-      <option value="">Choose a patient</option>
-      {people.map((patient) => (
-        <option key={patient.id} value={patient.id}>
-          {pickerName(patient)} · {patient.umrn || "UMRN not recorded"}
-        </option>
-      ))}
-    </Select>
+  const patientSearch = (size: "hero" | "phone") => (
+    <PatientChronologySearch
+      people={people}
+      chosenId={patientId}
+      onChoose={choosePatient}
+      nameOf={(patient) => nameFor(pickerName(patient), patient.umrn)}
+      size={size}
+      label={chronology ? "Find another patient" : "Find a patient"}
+    />
+  );
+
+  // The start page, used with nobody chosen. No recently-opened store exists, so the list is
+  // named for what it is: people with records on this demo night, by surname.
+  const startPage = (
+    <div className={start.start}>
+      <Card aria-labelledby={`${baseId}-night`}>
+        <CardHead
+          id={`${baseId}-night`}
+          icon={ListOrdered}
+          title="Patients on this demo night"
+          // Round 2: a short label instead of the sentence. Ward Flow keeps no list of who you opened,
+          // so this lists people with at least one record, by surname.
+          aside={<span className={styles.headMeta}>With records, A to Z</span>}
+        />
+        <ul className={start.people} aria-label="Patients on this demo night">
+          {people.slice(0, shownPeople).map((patient) => (
+            <li key={patient.id}>
+              <button
+                type="button"
+                className={start.person}
+                onClick={() => choosePatient(patient.id)}
+                data-testid="ward-chronology-start-patient"
+              >
+                <span className={start.personName}>{nameFor(pickerName(patient), patient.umrn)}</span>
+                <span className={start.personUmrn}>{patient.umrn || "UMRN not recorded"}</span>
+                <ChevronRight size={16} aria-hidden="true" className={start.personGo} />
+              </button>
+            </li>
+          ))}
+        </ul>
+        {/* Round 2: one Show more, then the search finds anyone else, rather than about 30 presses. */}
+        {shownPeople < people.length ? (
+          shownPeople === START_ROWS ? (
+            // Final check: the shared Show more row (one size everywhere), with the count once.
+            <ShowMoreRow onClick={() => setShownPeople(START_ROWS * 3)} expanded={false}>
+              Show {Math.min(START_ROWS * 2, people.length - START_ROWS)} more of {people.length}
+            </ShowMoreRow>
+          ) : (
+            <div className={start.more}>
+              <span className={start.moreNote}>
+                {Math.min(shownPeople, people.length)} of {people.length} · search for anyone else
+              </span>
+            </div>
+          )
+        ) : null}
+      </Card>
+      <Card aria-labelledby={`${baseId}-holds`}>
+        <CardHead id={`${baseId}-holds`} icon={FileText} title="What a chronology holds" />
+        <ul className={start.holdsList}>
+          <li>
+            <b>Records.</b> The person&rsquo;s referrals, movements and admissions, each change as it was saved.
+          </li>
+          <li>
+            <b>Audit trail.</b>{" "}
+            {coordinator
+              ? "Coordinator changes and overrides, with the reason given."
+              : "Coordinator changes and overrides. Not shown for this role."}
+          </li>
+          <li>
+            <b>Session log.</b> What was done in this browser session.
+          </li>
+          <li>
+            <b>Times.</b> When each event occurred and when it was recorded, as typed. Nothing is calculated.
+          </li>
+          <li>
+            <b>Output.</b> Print it or download a CSV once a patient is chosen.
+          </li>
+        </ul>
+      </Card>
+    </div>
   );
 
   const sourceTabs = (size: "sm" | "md") => (
@@ -359,7 +435,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
     </p>
   ) : nurseView ? (
     <p className={styles.cardNote} data-testid="ward-chronology-nurse-view">
-      Ward nurse view: records and session log only. The coordinator audit is left out.
+      Ward manager view: records and session log only. The coordinator audit is left out.
     </p>
   ) : null;
 
@@ -384,7 +460,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   /* ---------------------------------------------------------------- phone */
   if (isPhone) {
     const kindSummary = `${kind === "all" ? "Every record kind" : `${kind} only`}${
-      coordinator ? ` · ${nurseView ? "Ward nurse" : "Bed coordinator"}` : ""
+      coordinator ? ` · ${nurseView ? "Ward manager" : "Bed coordinator"}` : ""
     }`;
     return (
       <div
@@ -397,8 +473,13 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             level={1}
             eyebrow={
               <span data-testid="ward-chronology-generated">
-                PIR chronology · generated {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}
-                <span className={phone.srOnly}> · Synthetic demo data</span>
+                {/* Round 2: the app bar and title name the page, so the eyebrow is only the time. */}
+                Generated {formatInstant(now)}
+                <span className={phone.srOnly}>
+                  {" "}
+                  · PIR chronology, {formatSheetMoment(now, dayZero, { includeYearAndZone: true })} · Synthetic demo
+                  data
+                </span>
                 <span className={styles.printOnlyInline} data-testid="ward-chronology-print-filter">
                   {" "}
                   · Filter: {filterScope}
@@ -421,7 +502,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   <ChevronDown size={18} aria-hidden="true" />
                 </button>
               ) : (
-                "No patient chosen"
+                "Patient chronology"
               )
             }
             sub={
@@ -430,7 +511,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   <b className={phone.mono}>{umrn}</b> · synthetic demo data, not a clinical record
                 </>
               ) : (
-                "Synthetic demo data · choose a patient to read their events"
+                "Synthetic demo data"
               )
             }
             // Ops-19 (13 Oct 2026): the counts sit once, in the source tabs below.
@@ -535,10 +616,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
               </div>
             </>
           ) : (
-            <div className={phone.choose}>
-              <Button variant="pri" className={phone.barPrimary} onClick={() => setPickerOpen(true)}>
-                Choose a patient
-              </Button>
+            <div className={start.phoneStart}>
+              {patientSearch("phone")}
+              {startPage}
             </div>
           )}
           <PhoneSheet
@@ -613,7 +693,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   }}
                   items={[
                     { id: "coordinator", label: "Bed coordinator" },
-                    { id: "nurse", label: "Ward nurse" },
+                    { id: "nurse", label: "Ward manager" },
                   ]}
                 />
               ) : null}
@@ -718,60 +798,55 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             ) : undefined
           }
           // The counts live once, in the Summary rail beside the table (device audit 11 Oct 2026).
-          bar={<span className={styles.heroLine}>{generated}</span>}
+          // The patient search is the header's main control; the generated line sits beside it.
+          bar={<div className={start.heroSearch}>{patientSearch("hero")}</div>}
+          barAside={<span className={cx(styles.heroLine, start.heroGenerated)}>{generated}</span>}
         />
 
-        <div className={styles.filterBar} data-print-hide>
-          <span className={styles.patientField}>
-            <span className={styles.fieldWord}>Patient</span>
-            {patientPicker}
-          </span>
-          {chronology ? (
-            <>
-              <TextInput
-                type="search"
-                icon={Search}
-                boxClassName={styles.findBox}
-                aria-label="Find in events"
-                placeholder="Find in events"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-              />
-              {sourceTabs("sm")}
-              <Select
-                aria-label="Record kind"
-                value={kind}
-                onChange={(event) => setKind(event.target.value)}
-                boxClassName={styles.kindPick}
-              >
-                <option value="all">Every record kind</option>
-                {kinds.map((entry) => (
-                  <option key={entry} value={entry}>
-                    {entry} only
-                  </option>
-                ))}
-              </Select>
-              {coordinator ? (
-                <span className={styles.roleSwitch}>
-                  <span className={styles.fieldWord}>View as</span>
-                  <Segmented<ViewRole>
-                    label="View as"
-                    value={viewRole}
-                    onChange={(next) => {
-                      setViewRole(next);
-                      if (next === "nurse" && tab === "audit") setTab("all");
-                      setOpenKey(null);
-                    }}
-                    items={[
-                      { id: "coordinator", label: "Bed coordinator" },
-                      { id: "nurse", label: "Ward nurse" },
-                    ]}
-                  />
-                </span>
-              ) : null}
-            </>
-          ) : null}
-        </div>
+        {chronology ? (
+          <div className={styles.filterBar} data-print-hide>
+            {/* D-91: the one page search field; the events card head keeps the "of … shown" count. */}
+            <SearchField
+              className={styles.findBox}
+              label="Find in events"
+              placeholder="Find in events"
+              value={query}
+              onValueChange={setQuery}
+            />
+            {sourceTabs("sm")}
+            <Select
+              aria-label="Record kind"
+              value={kind}
+              onChange={(event) => setKind(event.target.value)}
+              boxClassName={styles.kindPick}
+            >
+              <option value="all">Every record kind</option>
+              {kinds.map((entry) => (
+                <option key={entry} value={entry}>
+                  {entry} only
+                </option>
+              ))}
+            </Select>
+            {coordinator ? (
+              <span className={styles.roleSwitch}>
+                <span className={styles.fieldWord}>View as</span>
+                <Segmented<ViewRole>
+                  label="View as"
+                  value={viewRole}
+                  onChange={(next) => {
+                    setViewRole(next);
+                    if (next === "nurse" && tab === "audit") setTab("all");
+                    setOpenKey(null);
+                  }}
+                  items={[
+                    { id: "coordinator", label: "Bed coordinator" },
+                    { id: "nurse", label: "Ward manager" },
+                  ]}
+                />
+              </span>
+            ) : null}
+          </div>
+        ) : null}
 
         {chronology ? (
           <div className={styles.chronoSplit}>
@@ -836,7 +911,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                           return (
                             <tr
                               key={row.key}
-                              className={cx(styles.eventRow, selected && styles.eventSelected)}
+                              className={cx(styles.eventRow, selected && start.eventSelected)}
                               aria-selected={selected}
                             >
                               <td className={styles.time}>{chronologyTime(row.occurredAt, dayZero)}</td>
@@ -969,15 +1044,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             </Drawer>
           </div>
         ) : (
-          <Card aria-labelledby={`${baseId}-none`}>
-            <CardHead id={`${baseId}-none`} icon={ListOrdered} title="No patient chosen" />
-            <div className={styles.chronologyStart}>
-              <p>Choose a patient to read every recorded event for them, in order.</p>
-              <Button variant="sec" icon={Search} onClick={() => patientSelect.current?.focus()}>
-                Choose a patient
-              </Button>
-            </div>
-          </Card>
+          startPage
         )}
 
         <p className={styles.disclosure}>

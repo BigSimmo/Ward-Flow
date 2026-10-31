@@ -115,14 +115,26 @@ function visibleText(path: string): string[] {
   return texts;
 }
 
+/**
+ * Each banned pattern compiled once, with the global flag for counting. Building a fresh RegExp for
+ * every text of every file made this walk the slowest part of the file and timed it out on hosted
+ * CI at 30 s once the redesign mock-ups doubled the text it reads. The same patterns, the same
+ * texts, the same counts: only the compiling moved out of the loop.
+ */
+const BANNED_COUNTERS = BANNED.map((banned) => ({
+  banned,
+  counter: new RegExp(banned.pattern.source, `${banned.pattern.flags}g`),
+}));
+
 function bannedCounts(): Map<string, Map<string, number>> {
   const found = new Map<string, Map<string, number>>();
   for (const path of sourceFiles(SOURCE_ROOT)) {
     const file = path.split("\\").join("/");
     for (const text of visibleText(path)) {
       const words = text.replace(/\s+/g, " ");
-      for (const banned of BANNED) {
-        const hits = words.match(new RegExp(banned.pattern.source, `${banned.pattern.flags}g`))?.length ?? 0;
+      for (const { banned, counter } of BANNED_COUNTERS) {
+        // `match` with a global pattern resets `lastIndex` itself, so reusing one is safe.
+        const hits = words.match(counter)?.length ?? 0;
         if (hits === 0) continue;
         const perFile = found.get(file) ?? new Map<string, number>();
         perFile.set(banned.id, (perFile.get(banned.id) ?? 0) + hits);
@@ -151,7 +163,10 @@ describe("one word per idea on screen (docs/ward-flow/word-list.md)", () => {
     expect(texts).toContain("Pull expired");
   });
 
-  it("shows no banned phrase in visible text, except the exact known leftovers", () => {
+  // Parses every source file under src/, about 1,700 since the redesign mock-up copies arrived
+  // (D-89, D-91). About 5 s alone, but it timed out at the 30 s default on hosted CI under load, so
+  // it gets the same explicit allowance as the other whole-tree walks (architecture-boundaries).
+  it("shows no banned phrase in visible text, except the exact known leftovers", { timeout: 90_000 }, () => {
     const found = bannedCounts();
     const actual: Record<string, Record<string, number>> = {};
     for (const [file, perFile] of [...found].toSorted(([a], [b]) => a.localeCompare(b))) {

@@ -1,38 +1,21 @@
 "use client";
 
-import { ArrowRight, ChevronDown, ChevronRight, MousePointerClick, Search } from "lucide-react";
+import { ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 
-import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
 import { findSettings, SETTINGS_TABS } from "@/components/ward-management/settings/settings-search-index";
-import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 import { filterGlossary, glossaryForSites } from "./ward-help-content";
-import { showWardHowTo } from "./ward-help-events";
-import { askHelp, closestHowTos, HOW_TO_IDS, questionWords, type HowTo } from "./ward-help-howto";
+import { askHelp, closestHowTos, questionWords, type HowTo } from "./ward-help-howto";
 import { CLINICAL_REPLY, isClinicalQuestion } from "./ward-help-search-index";
-import { recordHowToUsed } from "./ward-help-usage";
+import { HowToRow } from "./ward-help-task-list";
 import type { WardTourRole } from "./ward-help-store";
 import { useWardNetwork } from "../ward-flow-provider";
 import styles from "./ward-help-sheet.module.css";
 
 const EXAMPLES = ["Pull the bed", "Book transport", "Dark mode", "Sign off handover"];
-
-/**
- * Where a how-to is done, as a link this desk may follow: its own home, a Settings tab, or a rail
- * page whose screen the desk can open. Anything else gets no link, so Help never offers a door the
- * guard would shut.
- */
-export function howToHref(go: string | undefined, role: WardTourRole, home: string | undefined): string | undefined {
-  if (!go) return undefined;
-  if (go === "home") return home;
-  if (go.startsWith("settings#")) return `/ward-flow/settings#${go.slice("settings#".length)}`;
-  const entry = railEntries().find((candidate) => candidate.id === go);
-  const screen = entry ? screenForPath(entry.href)?.screen : undefined;
-  if (!entry || !screen || !ROLE_SCREENS[role][screen]) return undefined;
-  return entry.href;
-}
 
 function settingsTabLabel(tab: string): string {
   return SETTINGS_TABS.find((item) => item.id === tab)?.label ?? "Settings";
@@ -75,6 +58,7 @@ function HelpAskView({
   termsSource: ReturnType<typeof glossaryForSites>;
 }) {
   const id = useId();
+  const pathname = usePathname() ?? "";
   const [query, setQuery] = useState(initialQuery);
   const asked = questionWords(query).length > 0;
   const clinical = isClinicalQuestion(query);
@@ -93,64 +77,21 @@ function HelpAskView({
   const [openId, setOpenId] = useState<string | undefined>(undefined);
   const shownId = openId ?? answers[0]?.howTo.id;
 
-  function answer(howTo: HowTo, forThisDesk: boolean) {
-    const href = forThisDesk ? howToHref(howTo.go, role, home) : undefined;
-    const expanded = shownId === howTo.id;
-    return (
-      <li key={howTo.id} data-testid={`ward-help-ask-answer-${howTo.id}`}>
-        <button
-          type="button"
-          className={styles.answerTitle}
-          aria-expanded={expanded}
-          aria-controls={`${id}-${howTo.id}`}
-          onClick={() => {
-            if (!expanded) recordHowToUsed(howTo.id, HOW_TO_IDS);
-            setOpenId(expanded ? "" : howTo.id);
-          }}
-        >
-          {howTo.title}
-          <ChevronDown aria-hidden="true" className={styles.caret} strokeWidth={1.75} />
-        </button>
-        {expanded ? (
-          <div id={`${id}-${howTo.id}`} className={styles.answerBody}>
-            <p className={styles.text}>{howTo.answer}</p>
-            {forThisDesk && (howTo.showMe?.length || href) ? (
-              <div className={styles.actions}>
-                {howTo.showMe?.length ? (
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => {
-                      recordHowToUsed(howTo.id, HOW_TO_IDS);
-                      showWardHowTo(howTo.id);
-                    }}
-                    data-testid="ward-help-ask-show-me"
-                  >
-                    <MousePointerClick aria-hidden="true" strokeWidth={2} />
-                    Show me
-                  </button>
-                ) : null}
-                {href ? (
-                  <Link
-                    href={href}
-                    className={styles.secondaryButton}
-                    onClick={() => {
-                      recordHowToUsed(howTo.id, HOW_TO_IDS);
-                      onClose();
-                    }}
-                    data-testid="ward-help-ask-go"
-                  >
-                    Go there
-                    <ArrowRight aria-hidden="true" strokeWidth={2} />
-                  </Link>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </li>
-    );
-  }
+  const answer = (howTo: HowTo, forThisDesk: boolean) => (
+    <HowToRow
+      key={howTo.id}
+      howTo={howTo}
+      role={role}
+      home={home}
+      pathname={pathname}
+      expanded={shownId === howTo.id}
+      onToggle={() => setOpenId(shownId === howTo.id ? "" : howTo.id)}
+      onClose={onClose}
+      showMeOn
+      actions={forThisDesk}
+      testPrefix="ward-help-ask"
+    />
+  );
 
   const displayed = nothing ? closest : answers;
   const mine = displayed.filter((match) => match.forThisDesk);

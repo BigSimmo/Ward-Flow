@@ -34,7 +34,9 @@ import "./search/global-search-preview.module.css";
  * with the same markup, and the search loads straight after the page is ready and takes its place,
  * keeping anything already typed and the focus.
  */
-const loadSearch = () => import("./ward-global-search");
+// The search arrives with its Help wrapper (`ward-global-search-help.tsx`), which supplies the
+// desk's Help answers; neither loads on a phone before the page is ready.
+const loadSearch = () => import("./ward-global-search-help");
 const SearchLoaded = dynamic(() => loadSearch().then((m) => m.WardGlobalSearch));
 
 /**

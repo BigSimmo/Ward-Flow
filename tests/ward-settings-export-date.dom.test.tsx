@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -33,8 +33,9 @@ it("names the rules export for the Perth date during the first eight hours", () 
       <SettingsScreen />
     </WardFlowProvider>,
   );
-  fireEvent.click(screen.getByRole("radio", { name: /^Data and about/ }));
-  fireEvent.click(screen.getByRole("button", { name: "Export" }));
+  // Settings by login (31 Oct 2026): the rules file lives in the closed Demo tools section.
+  fireEvent.click(within(screen.getByTestId("ward-settings-demo-tools")).getByText("Demo tools"));
+  fireEvent.click(screen.getByRole("button", { name: "Download" }));
   expect(click).toHaveBeenCalledTimes(1);
   expect(filename).toBe("ward-flow-rules-2026-10-16.json");
 });

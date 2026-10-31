@@ -85,6 +85,8 @@ describe("conservative demo recovery", () => {
         confirmedAt: current.now,
         revision: (unit.allocatable.revision ?? 0) + 1,
         confirmations: (unit.allocatable.confirmations ?? 0) + 1,
+        // CONFIRM_CAPACITY also counts the unchanged-shift run; the seed records none, so it is 0.
+        unchangedShifts: 0,
       });
       expect(accepted.empty).toEqual(unit.empty);
       expect(accepted.allocatableLocked).toBe(unit.allocatableLocked);

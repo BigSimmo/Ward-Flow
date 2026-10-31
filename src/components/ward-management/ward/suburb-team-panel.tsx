@@ -2,11 +2,8 @@
 
 import { useId, useState } from "react";
 
-import {
-  type CatchmentAnswer,
-  type CatchmentLookup,
-  lookupCatchment,
-} from "@/components/ward-management/ward-catchment";
+import { catchmentLookupsFor } from "@/components/ward-management/tools/ward-catchment-query";
+import { type CatchmentAnswer, type CatchmentLookup } from "@/components/ward-management/ward-catchment";
 
 import styles from "./ward.module.css";
 
@@ -187,7 +184,8 @@ export function SuburbTeamPanel() {
   const [query, setQuery] = useState("");
   const [submitted, setSubmitted] = useState<string | null>(null);
 
-  const found = submitted === null || submitted.trim().length === 0 ? null : lookupCatchment(submitted);
+  // A 4-digit postcode reads each suburb filed under it, as the Tools sheet's lookup does.
+  const found = submitted === null || submitted.trim().length === 0 ? null : catchmentLookupsFor(submitted);
 
   const handleQuickLookup = (suburbName: string) => {
     setQuery(suburbName);
@@ -254,7 +252,7 @@ export function SuburbTeamPanel() {
               className={styles.suburbSearchInput}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search suburb (e.g. Albany, Belmont, Calista, Joondalup)..."
+              placeholder="Suburb or postcode (e.g. Albany, Belmont, Calista, 6062)"
               autoComplete="off"
             />
           </div>
@@ -286,8 +284,12 @@ export function SuburbTeamPanel() {
         <p className={styles.placeholder} data-testid="ward-suburb-team-empty">
           No suburb has been looked up yet. Absence here means none was asked for, not that no team exists.
         </p>
+      ) : found.length === 0 ? (
+        <p className={styles.placeholder} data-testid="ward-suburb-team-empty">
+          No suburb is filed under postcode {submitted?.trim()} in the catchment documents.
+        </p>
       ) : (
-        <Answer found={found} />
+        found.map((lookup, index) => <Answer key={`${lookup.suburb ?? lookup.query}-${index}`} found={lookup} />)
       )}
     </section>
   );

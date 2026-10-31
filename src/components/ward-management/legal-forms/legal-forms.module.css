@@ -190,12 +190,11 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* Names wrap in full, never cut short (owner rule). */
 .nextName {
   grid-column: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font-weight: 600;
 }
 
@@ -210,11 +209,13 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
+/* D-93: "Ends 11:42 as typed" breaks after the clock so the name keeps its room. */
 .nextTime {
   grid-column: 2;
   grid-row: 1 / span 2;
+  max-width: 10.5ch;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-mono);
-  white-space: nowrap;
+  text-align: end;
 }
 
 /* Device sweep R3-05/L17 (24 Oct 2026): the pills wrap rather than squeeze into each other. */
@@ -272,6 +273,20 @@
 .heroCopy[aria-disabled="true"] {
   color: var(--wf-hero-ink-3);
   cursor: default;
+}
+
+/* Redesign (Josh, 31 Oct 2026): the hero's two actions read as buttons, pushed to the end of the
+   figures' row, at the app's 40px control height. */
+.heroCopy.heroAction {
+  height: auto;
+  min-height: 40px;
+  border-color: var(--wf-hero-edge);
+  background: transparent;
+  font-weight: 600;
+}
+
+.firstHeroAction {
+  margin-inline-start: auto;
 }
 
 .heroCopyCount {
@@ -548,10 +563,6 @@ button.taskLabel[aria-pressed="true"] {
   border-color: var(--wf-line);
 }
 
-.row[data-dim="true"] .progress > span {
-  background: var(--wf-glyph-dim);
-}
-
 .rowButton {
   position: absolute;
   inset: 0;
@@ -619,30 +630,6 @@ button.taskLabel[aria-pressed="true"] {
 
 .leftValue {
   font: 700 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
-}
-
-.progress {
-  display: block;
-  width: min(100%, 120px);
-  height: 4px;
-  border-radius: var(--wf-r-pill);
-  background: var(--wf-track);
-  overflow: hidden;
-}
-
-.progress > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--wf-ink-2);
-}
-
-.progress[data-tone="danger"] > span {
-  background: var(--wf-danger);
-}
-
-.progress[data-tone="warning"] > span {
-  background: var(--wf-warning);
 }
 
 .rowLink {
@@ -809,16 +796,6 @@ button.taskLabel[aria-pressed="true"] {
 
 .focusClockLine > :first-child {
   align-self: center;
-}
-
-.focusClock .progress {
-  width: 100%;
-}
-
-.clockAt {
-  margin-left: auto;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
 }
 
 .clockBig {
@@ -1045,6 +1022,31 @@ button.taskLabel[aria-pressed="true"] {
   white-space: normal;
 }
 
+/* Record a form (redesign, Josh 31 Oct 2026): Clear at the left, the reason beside Save at the right.
+   It wraps only when the reason and Save no longer fit beside Clear (a phone). */
+.recordFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+.recordFoot > :last-child {
+  margin-left: auto;
+}
+
+.recordFoot button {
+  flex-shrink: 0;
+}
+
+.draftNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
 .recordForm,
 .extendBody,
 .tellBody {
@@ -1224,10 +1226,6 @@ button.taskLabel[aria-pressed="true"] {
     grid-row: 1 / span 2;
     align-self: center;
     align-items: flex-end;
-  }
-
-  .row:not(.checkRow) > :nth-child(5) > .progress {
-    width: 88px;
   }
 
   /* Checklist rows: name and form on top, the three facts below, each with its own label. */
@@ -1415,13 +1413,6 @@ button.taskLabel[aria-pressed="true"] {
 
 /* Device sweep R1-05/B6-17 (24 Oct 2026): the action keeps its whole label ("Copy for handover 6"); the shared phone hero
  * actions row already wraps. */
-.phoneHeroAction {
-  flex: 1 1 0;
-  justify-content: center;
-  min-width: 0;
-  min-width: fit-content;
-}
-
 .phoneViews {
   position: sticky;
   top: calc(var(--wf-header-height, 3.5rem) + var(--wf-s-2));

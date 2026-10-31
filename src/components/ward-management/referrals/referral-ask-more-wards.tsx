@@ -1,8 +1,7 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import { Search } from "lucide-react";
-import { Button, StatusGlyph } from "@/components/wf";
+import { useRef, useState } from "react";
+import { Button } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { candidateReason, referralEligibility } from "@/components/ward-management/ward-eligibility";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -16,12 +15,10 @@ import {
 } from "@/components/ward-management/ward-model";
 import { isAwaitingAnswer, referralWithdrawn } from "@/components/ward-management/ward-referrals";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { referralClosedForFollowUp } from "./referral-owner-and-calls-model";
 import ph from "./referral-match-phone.module.css";
-import styles from "./referral-ask-more-wards.module.css";
 
 /**
  * Fix plan item 16 (D-76, mock-up version 2 locked in by Josh on 22 Oct 2026): the coordinator asks
@@ -164,175 +161,7 @@ export function useAskMoreWards({
   };
 }
 
-function answerOf(addressing: ReferralAddressing): string {
-  if (addressing.withdrawnAt !== undefined) return "Withdrawn";
-  if (addressing.state === "accepted") return "Accepted";
-  if (addressing.state === "declined") return "Declined";
-  if (addressing.state === "cancelled") return "Cancelled";
-  return addressing.waitlistedAt !== undefined ? "On waiting list" : "Waiting";
-}
-
 const plural = (n: number) => (n === 1 ? "" : "s");
-
-export function AskMoreWardsCard({ ask }: { ask: AskMoreWards }) {
-  const baseId = useId();
-  if (!ask.applies) return null;
-  const full = ask.slots === 0;
-  return (
-    <section className={styles.card} aria-labelledby={`${baseId}-title`} data-testid="ward-referral-ask-more-wards">
-      <div className={styles.head}>
-        <h3 id={`${baseId}-title`}>Wards asked</h3>
-        <span className={styles.pill} data-full={full ? "true" : undefined} data-testid="ward-referral-ask-waiting">
-          {ask.waiting} of {ask.cap} waiting
-        </span>
-      </div>
-      <ul className={styles.asked}>
-        {ask.asked.map(({ addressing, unit }) => {
-          const site = unit ? siteByCode(unit.siteCode)?.name : undefined;
-          return (
-            <li key={addressing.destination.unitId}>
-              <b>{unit?.name ?? "Ward not in this network"}</b>
-              <small>
-                {[site, addressing.addedBy ? `asked by ${addressing.addedBy.toLowerCase()}` : undefined]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </small>
-              <em>{answerOf(addressing)}</em>
-            </li>
-          );
-        })}
-      </ul>
-      {ask.rejection ? (
-        <p className={styles.hint} role="alert" data-testid="ward-referral-ask-rejection">
-          Not asked: {ask.rejection.reason}
-        </p>
-      ) : null}
-      {ask.failure ? (
-        <p className={styles.hint} role="alert" data-testid="ward-referral-ask-failure">
-          {ask.failure}
-        </p>
-      ) : null}
-      {ask.open ? (
-        <div className={styles.list} data-testid="ward-referral-ask-list">
-          <label className={styles.search}>
-            <Search size={15} aria-hidden="true" />
-            <input
-              type="search"
-              aria-label="Find a ward"
-              placeholder="Find a ward"
-              value={ask.query}
-              onChange={(event) => ask.setQuery(event.target.value)}
-            />
-          </label>
-          {ask.fits.length + ask.review.length === 0 ? (
-            <p className={styles.hint}>No ward matches that search.</p>
-          ) : null}
-          {ask.fits.length > 0 ? (
-            <>
-              <p className={ph.ch}>
-                Fits, bed ready <span className={ph.k}>{ask.fits.length}</span>
-              </p>
-              <div className={ph.cands} role="group" aria-label="Fits, bed ready">
-                {ask.fits.map(({ unit }) => {
-                  const checked = ask.chosen.includes(unit.id);
-                  const site = siteByCode(unit.siteCode)?.name;
-                  return (
-                    <label
-                      key={unit.id}
-                      className={`${ph.cand} ${styles.row}`}
-                      data-kind="yes"
-                      data-testid={`ward-referral-ask-ward-${unit.id}`}
-                    >
-                      <input
-                        type="checkbox"
-                        className={styles.box}
-                        aria-label={unit.name}
-                        aria-describedby={`${baseId}-sub-${unit.id}`}
-                        checked={checked}
-                        disabled={!checked && ask.chosen.length >= ask.slots}
-                        onChange={(event) => ask.toggle(unit.id, event.target.checked)}
-                      />
-                      <span className={ph.who}>
-                        <span className={`${ph.nm} ${styles.wrap}`}>{unit.name}</span>
-                        <span className={`${ph.sub} ${styles.wrap}`} id={`${baseId}-sub-${unit.id}`}>
-                          {[site, `${unit.allocatable.value} ready`].filter(Boolean).join(" · ")}
-                        </span>
-                      </span>
-                      <span className={ph.lab}>
-                        <StatusGlyph tone="success" size={9} />
-                        Fits
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </>
-          ) : null}
-          {ask.review.length > 0 ? (
-            <>
-              <p className={ph.ch}>
-                Needs review <span className={ph.k}>{ask.review.length}</span>
-              </p>
-              {ask.showReview || ask.query.trim() ? (
-                <div className={ph.cands} role="group" aria-label="Needs review">
-                  {ask.review.map(({ unit, reason }) => (
-                    <label key={unit.id} className={`${ph.cand} ${styles.row}`} data-kind="review">
-                      <input
-                        type="checkbox"
-                        className={styles.box}
-                        aria-label={unit.name}
-                        aria-describedby={`${baseId}-sub-${unit.id}`}
-                        checked={false}
-                        disabled
-                      />
-                      <span className={ph.who}>
-                        <span className={`${ph.nm} ${styles.wrap}`}>{unit.name}</span>
-                        <span className={`${ph.sub} ${styles.wrap}`} id={`${baseId}-sub-${unit.id}`}>
-                          {[siteByCode(unit.siteCode)?.name, reason].filter(Boolean).join(" · ")}
-                        </span>
-                      </span>
-                      <span className={ph.lab}>
-                        <StatusGlyph tone="neutral" size={9} />
-                        Review
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <button type="button" className={ph.more} onClick={() => ask.setShowReview(true)}>
-                  Show {ask.review.length} more to review
-                </button>
-              )}
-            </>
-          ) : null}
-          <p className={styles.hint}>
-            Listed A to Z, never ranked. Each ward asked gets the same referral and bed details, with its own clock.
-          </p>
-        </div>
-      ) : (
-        <>
-          <p className={styles.hint}>
-            {full
-              ? `${ask.waiting} wards are waiting, the most at once. You can ask another when one of them answers.`
-              : `Up to ${ask.cap} wards can be waiting at once. A ward that declines frees its place.`}
-          </p>
-          <Button
-            variant="sec"
-            size="md"
-            type="button"
-            className={styles.open}
-            data-testid="ward-referral-ask-open"
-            disabledReason={full ? `${ask.cap} wards are already waiting.` : undefined}
-            reasonDisplay="tooltip"
-            onClick={full ? undefined : ask.start}
-          >
-            Ask more wards
-          </Button>
-        </>
-      )}
-    </section>
-  );
-}
 
 /** The pane footer while the list is open: Cancel first and Ask second, as `.foot` expects. */
 export function AskMoreWardsFoot({ ask }: { ask: AskMoreWards }) {

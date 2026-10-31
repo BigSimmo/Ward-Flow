@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowRight, ShieldCheck, UsersRound } from "lucide-react";
+import Link from "next/link";
 
 import { useTheme } from "@/components/clinical-dashboard/use-theme";
-import { Badge, Icon, IconTile, Kbd, Segmented, StatusGlyph, TabPanel, Tabs } from "@/components/wf";
+import { Badge, buttonClass, Icon, IconTile, Segmented, StatusGlyph, TabPanel, Tabs } from "@/components/wf";
 import type { ThemePreference } from "@/lib/theme";
 
 import {
@@ -71,14 +72,14 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * account, session or person-who-logs-in is introduced by this build) and Q-8 (a reload wiping the
  * demonstration is the ruled default for this whole build).
  *
- * ⚠️ **NO "GO IN" BUTTON.** The drawing's own `#signIn` handler does not navigate; it only
- * announces what pressing it *would* open. The preview button that copied it was removed on
- * 23 Oct 2026 (unfinished features cleanup), so this screen names the destination and offers no
- * control. Contract §5 states wiring this to a real destination is "a decision, not a
- * given" this contract does not make, because four of the drawing's seven roles (Coordinator on
- * call, Duty consultant, Governance lead, Service lead) have no distinct route the live app
- * recognises as a separate role home — see `ward-role-switcher.tsx`'s own comment on the same gap.
- * Left inert rather than guessed at.
+ * ⚠️ **"OPEN AS" ONLY OPENS A SCREEN.** The drawing's own `#signIn` handler did not navigate, and
+ * the old inert preview button was removed on 23 Oct 2026. The redesign Josh approved on 31 Oct 2026
+ * brings back one primary button, "Open as <role>", that opens the screen the chosen role names. It
+ * is a plain link: no click handler, no storage, cookie or session write, no provider call, and the
+ * chosen role is not passed on. Four of the seven roles have no distinct role home in the live app
+ * (see `ward-role-switcher.tsx`), so the button opens the nearest named screen and changes nothing
+ * else. Whether it should navigate at all is an open question for the owner, not this file.
+ * `tests/ward-flow-sign-in-screen.dom.test.tsx` pins that the button writes nothing.
  *
  * ⚠️ **STRUCTURALLY OUTSIDE `src/components/ward-management` AND
  * `src/app/ward-flow`, DELIBERATELY.** The drawing's own header comment says this screen is
@@ -99,6 +100,26 @@ import styles from "./ward-flow-sign-in-screen.module.css";
  * (`@/lib/theme-client`), which sets `data-theme`, `.dark` and `theme-color` together, so a choice
  * made here is the same choice the ward screens show after sign-in.
  */
+
+/**
+ * Redesign (approved by Josh, 31 Oct 2026): the role numbers 1 to 7 no longer sit in key boxes (the
+ * number keys still pick a role while the list has focus), and the chooser ends with one primary
+ * button, "Open as <role>". It opens the screen the role names ("Opens ...") and nothing else: it
+ * signs nobody in, stores no role and grants no permission, so the honesty boundary above still holds.
+ *
+ * The addresses are written here, not imported from `ward-nav.ts`, because this screen imports no
+ * ward-management code (`tests/ward-flow-seam.test.ts` names this file as the one allowed to write
+ * Ward Flow routes). The test checks each one is a real route under `src/app/ward-flow`.
+ */
+const ROLE_OPENS_HREF: Readonly<Record<SignInRoleId, string>> = {
+  bed: "/ward-flow",
+  oncall: "/ward-flow",
+  ed: "/ward-flow/ed",
+  duty: "/ward-flow/referrals",
+  gov: "/ward-flow/governance",
+  lead: "/ward-flow/statistics",
+  ward: "/ward-flow/wards",
+};
 
 export function WardFlowSignInScreen() {
   const [chosen, setChosen] = useState<SignInRoleId>(SIGN_IN_ROLES[0].id);
@@ -267,7 +288,7 @@ export function WardFlowSignInScreen() {
               label="Shift"
               size="md"
               className={styles.fullSegmented}
-              items={SHIFT_ROSTER_OPTIONS.map((option) => ({ id: option.id, label: option.id }))}
+              items={SHIFT_ROSTER_OPTIONS.map((option) => ({ id: option.id, label: option.word }))}
               value={selectedShift}
               onChange={(id) => {
                 setSelectedShift(id);
@@ -281,10 +302,9 @@ export function WardFlowSignInScreen() {
               <h2 id="sec-role" className={styles.label}>
                 Your role
               </h2>
-              <span className={styles.labelMeta}>Actions named, of {SIGN_IN_ACTIONS.length}</span>
             </div>
             <div className={styles.roleList} id={roleGroupId} role="group" aria-labelledby="sec-role">
-              {SIGN_IN_ROLES.map((candidate, index) => {
+              {SIGN_IN_ROLES.map((candidate) => {
                 const n = actionsForRole(candidate.id).length;
                 const isSelected = candidate.id === chosen;
                 return (
@@ -308,7 +328,6 @@ export function WardFlowSignInScreen() {
                     >
                       {n} of {SIGN_IN_ACTIONS.length}
                     </span>
-                    <Kbd className={styles.roleKey}>{index + 1}</Kbd>
                   </button>
                 );
               })}
@@ -320,8 +339,16 @@ export function WardFlowSignInScreen() {
               Go in
             </h2>
             <span className={styles.goContext}>
-              {catchment.id} · {shift.id} · {role.name}
+              {catchment.id} · {shift.word} shift
             </span>
+            <Link
+              className={buttonClass({ variant: "pri", className: styles.goButton })}
+              href={ROLE_OPENS_HREF[role.id]}
+              data-testid="ward-sign-in-open-as"
+            >
+              Open as {role.name}
+              <Icon icon={ArrowRight} size={16} />
+            </Link>
           </section>
         </section>
 
@@ -334,9 +361,6 @@ export function WardFlowSignInScreen() {
               </h2>
               <p className={styles.subtitle}>Opens {role.opens}</p>
             </div>
-            <span className={styles.labelMeta}>
-              {catchment.id} · {shift.id} shift
-            </span>
           </div>
 
           <Tabs

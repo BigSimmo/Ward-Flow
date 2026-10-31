@@ -21,6 +21,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+const VIEW_LABELS = { board: "Bed board", journey: "Journey", map: "Map" } as const;
+
+/** The Summary view switch (one radio group since the 31 Oct 2026 build). */
+const viewSwitch = (view: keyof typeof VIEW_LABELS) =>
+  within(screen.getByTestId("ward-statistics-view-bar")).getByRole("radio", { name: VIEW_LABELS[view] });
+
 function page() {
   return (
     <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -39,7 +45,7 @@ describe("Statistics lazy view loading", () => {
       const holder = screen.getByTestId(`ward-statistics-${view}-loading`);
       expect(holder).toHaveAttribute("id", view);
       expect(document.querySelectorAll(`#${view}`)).toHaveLength(1);
-      expect(screen.getByTestId(`ward-statistics-view-${view}`)).toHaveAttribute("aria-current", "page");
+      expect(viewSwitch(view)).toHaveAttribute("aria-checked", "true");
       expect(within(holder).getAllByRole("status")).toHaveLength(1);
       expect(within(holder).getByRole("status")).toHaveTextContent(`Loading ${view} view…`);
       expect(holder.querySelector('[aria-label="Spinner"]')).toBeNull();
@@ -56,14 +62,14 @@ describe("Statistics lazy view loading", () => {
   it("can switch Journey to Map to Bed board while both optional panels are pending", () => {
     setForceDynamicLoading(true);
     render(page());
-    fireEvent.click(screen.getByTestId("ward-statistics-view-journey"));
+    fireEvent.click(viewSwitch("journey"));
     expect(screen.getByTestId("ward-statistics-journey-loading")).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("ward-statistics-view-map"));
+    fireEvent.click(viewSwitch("map"));
     expect(screen.queryByTestId("ward-statistics-journey-loading")).toBeNull();
     expect(screen.getByTestId("ward-statistics-map-loading")).toBeInTheDocument();
-    fireEvent.click(screen.getByTestId("ward-statistics-view-board"));
+    fireEvent.click(viewSwitch("board"));
     expect(screen.queryByTestId("ward-statistics-map-loading")).toBeNull();
-    expect(screen.getByTestId("ward-statistics-view-board")).toHaveAttribute("aria-current", "page");
+    expect(viewSwitch("board")).toHaveAttribute("aria-checked", "true");
     expect(document.getElementById("board")).not.toHaveAttribute("hidden");
   });
 });
