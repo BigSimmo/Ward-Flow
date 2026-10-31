@@ -1,4 +1,4 @@
-/* Statistics, redesigned: the compact view switch and the finder it opens. */
+/* Statistics summary: the compact view switch, "Open a unit" and the one unit finder it opens. */
 .switchBlock {
   display: flex;
   flex-direction: column;
@@ -52,21 +52,4 @@
   .findTool {
     display: none;
   }
-}
-
-/* Redesign (phone rows): a count's noun on the same line as the count, quieter than the figure. */
-.rowUnit {
-  font: 400 var(--wf-fs-12) / 1 var(--wf-font);
-  color: var(--wf-ink-2);
-}
-
-/* The phone list's Show more row draws its own line above, so its item drops the list's divider. */
-.showMoreItem.showMoreItem {
-  border-top: 0;
-}
-
-/* Final check (30 Oct 2026): the ward table's site-code key keeps the card's side inset. */
-.siteKey.siteKey {
-  margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4) 0;
 }

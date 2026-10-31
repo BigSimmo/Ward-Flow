@@ -166,6 +166,7 @@ export type { ModelClaim } from "./statistics-claims-shared";
 /** The surfaces this register claims to have swept. Repository-relative paths. */
 export const REGISTERED_SURFACES: readonly string[] = [
   "src/components/ward-management/statistics/statistics-screen.tsx",
+  "src/components/ward-management/statistics/statistics-referrals-today-card.tsx",
   "src/components/ward-management/statistics/statistics-compare-screen.tsx",
   "src/components/ward-management/statistics/statistics-ward-screen.tsx",
   "src/components/ward-management/statistics/statistics-ed-screen.tsx",

@@ -1,9 +1,11 @@
-// Source: src/components/ward-redesign/statistics/statistics-redesign.tsx (moved unchanged, so the fork stays under 1,500 lines)
+// The Statistics summary's small helpers: wait formats, the sortable column head and the site-code
+// key, shared by the summary screen and its Open ED journeys card.
 import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Icon, durMinutes } from "@/components/wf";
-import { hoursText } from "@/components/ward-management/statistics/statistics-occupancy";
-import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
+import { siteByCode } from "../ward-sites";
+import { hoursText } from "./statistics-occupancy";
+import styles from "./statistics-v6.module.css";
 
 /** Minutes as a duration, or "none" when nothing is waiting. */
 export const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
@@ -26,7 +28,6 @@ export const median = (values: number[]): number | null => {
 
 export const PRESSURE_ROWS = 10;
 
-/** Whole hours, as a short label ("4h"). */
 export type WardSortKey = "name" | "beds" | "ready" | "occ" | "ref";
 export type EdSortKey = "name" | "waiting" | "longest" | "median" | "over8" | "over24";
 
@@ -67,8 +68,23 @@ export function SiteCodeKey({ sites }: { sites: readonly { code: string; name: s
   );
   if (named.length === 0) return null;
   return (
-    <p className={`${styles.sub} ${styles.muted}`} data-testid="ward-statistics-site-key">
+    <p className={`${styles.sub} ${styles.muted} ${styles.siteKey}`} data-testid="ward-statistics-site-key">
       Site codes: {named.map(([code, name]) => `${code} ${name}`).join(" · ")}
     </p>
   );
+}
+
+/**
+ * One ward in the unit finder. A ward whose site code resolves to nothing is still listed, and says
+ * so: the finder is the way into a ward's statistics page, so a ward dropped from it would be
+ * unreachable and unreported, which is worse than a ward whose hospital cannot be named.
+ */
+export function wardFinderEntry(ward: { id: string; name: string; site: string; ready: number }) {
+  return {
+    id: ward.id,
+    name: ward.name,
+    code: ward.site,
+    meta: siteByCode(ward.site) ? `${ward.ready} ready` : `${ward.ready} ready · site code matches no site`,
+    ready: ward.ready,
+  };
 }

@@ -4,24 +4,24 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 
+import { Segmented } from "@/components/wf";
 import {
   STATISTICS_COMMUNITY_CHOOSER_ID,
   STATISTICS_HOME_HREF,
   STATISTICS_SERVICE_CHOOSER_ID,
   STATISTICS_UNIT_CHOOSER_ID,
-} from "@/components/ward-management/statistics/statistics-sections";
-import type { StatisticsView } from "@/components/ward-management/statistics/statistics-view-bar";
-import { Segmented } from "@/components/wf";
+} from "./statistics-sections";
+import type { StatisticsView } from "./statistics-view-bar";
 
-import styles from "./statistics-redesign.module.css";
+import styles from "./statistics-view-switch.module.css";
 
 /**
  * D-91 (Josh, 31 Oct 2026): Statistics had two "Open a unit" finders, the Summary's (wards, EDs,
  * services and teams) and Compare's (wards and EDs only). They are one now: the Summary's finder,
  * opened from "Open a unit" on the statistics tab row. Compare and the unit pages link here.
  *
- * Build note: `STATISTICS_UNIT_CHOOSER_HREF` (statistics-sections.ts) points at Compare today; it
- * becomes this address, so every "choose a ward" link lands on the one finder, already open.
+ * `STATISTICS_UNIT_CHOOSER_HREF` (statistics-sections.ts) still points at Compare's own chooser until
+ * the Compare page is rebuilt; this is the address of the one finder, already open.
  */
 export const STATISTICS_UNIT_FINDER_HREF = `${STATISTICS_HOME_HREF}#${STATISTICS_UNIT_CHOOSER_ID}`;
 
@@ -83,8 +83,8 @@ export function FindUnitLink({ testId }: { testId?: string }) {
 }
 
 /**
- * Statistics, redesigned: Bed board, Journey and Map as one switch, not three large cards across a
- * full row. The one unit finder, when open from the tab row, sits above it.
+ * Bed board, Journey and Map as one switch, not three large cards across a full row. The one unit
+ * finder, when open from the tab row, sits above it.
  */
 export function StatisticsViewSwitch({
   view,

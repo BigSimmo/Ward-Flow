@@ -141,20 +141,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** with an empty queue, zero chips, the empty Waiting band and sort notes go; they return when a referral waits. The title reads 'Nothing awaiting a decision', as on the phone. The side pane says 'Read only' and who answers each referral.",
     "**Review round (30 October):** the coordinator's Referrals fixes, from its own components; the hero reads 'median time to decide … (… decided)' and the phone hero Decision overdue. The desk stays read-only.",
   ],
-  "as-bed-manager-statistics": [
-    "**As the site bed manager**, Statistics leads with Royal Perth's wards and its own ED; the hero figures are the site's.",
-    "**Removed:** sections and links this desk cannot open, other EDs' false zeros, and the network placement figures.",
-    "**Still open:** the shared counts hook treats this desk as full detail although its grant is counts; the copy applies counts only.",
-    "**Round 2:** with one ED, Open ED journeys is one row of five figures. The one-site 'Site codes' key, the ward filter (two wards) and the title's meta are gone. The first tab reads 'Site', not 'Network'.",
-    "**Still open:** the rail's 'Capacity 26' is the network figure on a site desk (shared chrome).",
-  ],
-  "as-executive-home": [
-    "**As the executive**, one line under the hero explains the small-number rule once, instead of unexplained 'not shown' values in every card.",
-    "**Removed:** hero chips that only said 'not shown'; withheld charts become plain label and value lists.",
-    "**Kept:** beds, occupancy and the ward and ED tables, exact as released.",
-    "**Round 2:** Empty to ready and Occupancy by health service match Statistics. When every Admission stages count is held back, the card is one line. The phone adds a 304 Beds figure beside Beds in use.",
-    "**Still open:** the rail's 'Handover in 4h 18m' shows on a desk that hands nothing over (shared chrome).",
-  ],
   "as-executive-capacity": [
     "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
     "**Replaced:** Planned admissions listed people with legal status under 'Name not shown'; it is now one card of counts.",
@@ -574,14 +560,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Review round (30 October):** one word, 'Held up', for a release with a blocker. The barrier panel and the day chart count bed releases, the list's own rows, so they match the hero, and a click on either highlights within Now instead of jumping to History.",
     "**Review round (30 October):** Chase opens the release on its barriers and Confirm date on its 'New expected out' control. Before the weekend or public holiday is a short notice above the list, person first. Each group shows its first 6 rows then Show more; on a wide screen the day chart sits under the barrier panel. Phone rows are three lines with the button beside the stage.",
     "**Agrees with Capacity:** the day chart leaves closed wards out, as Capacity's forecast does (Josh, 30 October).",
-  ],
-  statistics: [
-    "**Built from a copy of today's Statistics page**, so the Network, Compare, Services, Wards, EDs, Teams and Weekly tabs, the 85% alert line, Samples and Export all work as now.",
-    "**New:** Bed board, Journey and Map are one switch instead of three large cards, and Open a unit is one button beside it that shows today's unit finder in place, instead of a panel repeating the menu.",
-    "**New:** summary first. Occupancy by service (with Empty to ready and Admission stages, which come with it) sits at the top, and the hospital chart lists its first 7 hospitals with Show all.",
-    "**Round 2:** Empty to ready's key is one plain line ('26 ready · 19 closed · 1 being made ready'), because the old coloured key described bars that are not drawn. 'Allocatable' reads 'Confirmed by ward'. The '85% line' aside is gone; each service tile already says it.",
-    "**Round 2, phone:** 'Stays ended today'; the switch reads 'By hospital / By ward' without counts; the ED row uses the ED icon, because a clock is for time.",
-    "**For the build:** the statistics tab chips are cut off at the phone's right edge. That is the shared statistics menu on all four phone statistics pages.",
   ],
   alerts: [
     "**Built from a copy of today's Alerts page**, so Now, Broadcast, Notices and History, the Urgency, Lanes and Owner views, Notify me, Copy for handover and every row action work as now.",

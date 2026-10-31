@@ -32,7 +32,7 @@
 }
 
 /* The small number sentence on the phone, under the hero: the desktop notice's box, so the two
-   look the same (Redesign). */
+   look the same. */
 .note {
   margin: var(--wf-s-3) var(--wf-s-3) 0;
   padding: var(--wf-s-2) var(--wf-s-3);

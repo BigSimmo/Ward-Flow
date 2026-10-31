@@ -54,9 +54,6 @@ const DischargesPage = dynamic<MockupPageProps>(() =>
 const WardsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/wards/wards-page").then((module) => module.WardsPage),
 );
-const StatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/statistics/statistics-page").then((module) => module.StatisticsPage),
-);
 const AlertsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/alerts/alerts-redesign").then((module) => module.AlertsRedesign),
 );
@@ -244,19 +241,9 @@ const AsBedManagerReferralsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsBedManagerReferralsPage,
   ),
 );
-const AsBedManagerStatisticsPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-statistics/as-bed-manager-statistics-page").then(
-    (module) => module.AsBedManagerStatisticsPage,
-  ),
-);
 const AsBedManagerSeclusionPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-bed-manager-seclusion/as-bed-manager-seclusion-page").then(
     (module) => module.AsBedManagerSeclusionPage,
-  ),
-);
-const AsExecutiveHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-executive-home/as-executive-home-page").then(
-    (module) => module.AsExecutiveHomePage,
   ),
 );
 const AsExecutiveCapacityPage = dynamic<MockupPageProps>(() =>
@@ -293,7 +280,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   patients: PatientsRedesign,
   discharges: DischargesPage,
   wards: WardsPage,
-  statistics: StatisticsPage,
   alerts: AlertsRedesign,
   "legal-forms": LegalFormsPage,
   "out-of-area": OutOfAreaPage,
@@ -341,9 +327,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-bed-manager-ward": AsBedManagerWardPage,
   "as-bed-manager-discharges": AsBedManagerDischargesPage,
   "as-bed-manager-referrals": AsBedManagerReferralsPage,
-  "as-bed-manager-statistics": AsBedManagerStatisticsPage,
   "as-bed-manager-seclusion": AsBedManagerSeclusionPage,
-  "as-executive-home": AsExecutiveHomePage,
   "as-executive-capacity": AsExecutiveCapacityPage,
   "as-executive-settings": AsExecutiveSettingsPage,
   "as-admin-home": AsAdminHomePage,

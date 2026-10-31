@@ -64,7 +64,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "ed-board", label: "ED board", group: "Desks", appPath: "/ward-flow/ed/peel-ed" },
   { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
   { slug: "discharges", label: "Discharges", group: "Work and reports", appPath: "/ward-flow/discharges" },
-  { slug: "statistics", label: "Statistics", group: "Work and reports", appPath: "/ward-flow/statistics" },
   { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
@@ -265,20 +264,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     group: "As site bed manager",
     appPath: "/ward-flow/referrals",
     role: ROLE_DESKS["bed-manager"],
-  },
-  {
-    slug: "as-bed-manager-statistics",
-    label: "Statistics",
-    group: "As site bed manager",
-    appPath: "/ward-flow/statistics",
-    role: ROLE_DESKS["bed-manager"],
-  },
-  {
-    slug: "as-executive-home",
-    label: "Statistics",
-    group: "As executive",
-    appPath: "/ward-flow/statistics",
-    role: ROLE_DESKS["executive"],
   },
   {
     slug: "as-executive-capacity",

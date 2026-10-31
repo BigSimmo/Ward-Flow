@@ -75,6 +75,8 @@ export const WARD_REFERRALS = "src/components/ward-management/ward-referrals.ts"
 export const WARD_SITES = "src/components/ward-management/ward-sites.ts";
 export const WARD_TEAMS = "src/components/ward-management/ward-teams.ts";
 export const STATISTICS_SCREEN = "src/components/ward-management/statistics/statistics-screen.tsx";
+export const STATISTICS_REFERRALS_TODAY_CARD =
+  "src/components/ward-management/statistics/statistics-referrals-today-card.tsx";
 export const OVERVIEW_SCREEN = "src/components/ward-management/statistics/statistics-overview-screen.tsx";
 export const COMPARE_SCREEN = "src/components/ward-management/statistics/statistics-compare-screen.tsx";
 export const WARD_STATS_SCREEN = "src/components/ward-management/statistics/statistics-ward-screen.tsx";

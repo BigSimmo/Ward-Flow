@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { Activity, Building2, ChevronRight, Clock, Layers } from "lucide-react";
+import { Activity, Building2, ChevronRight, Layers, Siren } from "lucide-react";
 
 import {
   GroupHead,
@@ -15,6 +15,7 @@ import {
   StatusGlyph,
   cx,
   durMinutes,
+  ShowMoreRow,
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
@@ -26,6 +27,8 @@ import { StatisticsNav } from "./statistics-nav";
 import { PhoneDotKey } from "./statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "./statistics-sections";
 import styles from "./statistics-phone.module.css";
+import { SmallNumberNote } from "./statistics-count-list";
+import note from "./statistics-count-list.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import {
   ExecutiveStatisticsUnavailable,
@@ -81,7 +84,7 @@ function InUse({ percent, where }: { percent: number; where: string }) {
   return (
     <span className={styles.inUse}>
       {overLine(percent) ? <StatusGlyph tone="warning" size={9} /> : null}
-      {percent}% in use · {where}
+      {percent}% in use{where ? ` · ${where}` : ""}
     </span>
   );
 }
@@ -196,6 +199,8 @@ function StatisticsSummaryPhoneView({
   paused,
   onTogglePause,
   now,
+  eyebrow = "Statistics · Network now",
+  totalBeds,
 }: {
   ready: number;
   beingMadeReady: number;
@@ -212,8 +217,22 @@ function StatisticsSummaryPhoneView({
   paused: boolean;
   onTogglePause?: () => void;
   now: number;
+  /** Role view (site bed manager): its site's name in place of "Network now". */
+  eyebrow?: string;
+  /** Role view (executive): every bed, shown when the people counts are held back. */
+  totalBeds?: number;
 }) {
-  const [group, setGroup] = useState<"hospital" | "ward">("hospital");
+  const access = useEffectiveWardAccess();
+  // Role view (site bed manager, D-80): one hospital, which the hero names, so its wards are listed
+  // straight away with no Hospitals and Wards switch, and the closed Services page is not linked.
+  const siteDesk = access.role === "bed_manager";
+  // Role view (executive): a withheld count reads "not shown", which says nothing at a glance, so the
+  // hero leaves it out and one sentence under the hero explains the small number rule instead.
+  const executive = access.role === "executive";
+  const held = (count: StatisticsCount) => executive && typeof count !== "number" && count.kind === "withheld";
+  const referralsHeld = [referrals.raised, referrals.accepted, referrals.declined, referrals.open].every(held);
+  const [chosenGroup, setGroup] = useState<"hospital" | "ward">("hospital");
+  const group = siteDesk ? "ward" : chosenGroup;
   const [sheet, setSheet] = useState<Sheet>(null);
   const [showAll, setShowAll] = useState(false);
 
@@ -246,9 +265,13 @@ function StatisticsSummaryPhoneView({
       key={ward.id}
       as="li"
       name={ward.name}
-      meta={<InUse percent={ward.percent} where={ward.hospital} />}
-      value={ward.ready}
-      time="ready"
+      meta={<InUse percent={ward.percent} where={siteDesk ? "" : ward.hospital} />}
+      // The count and its noun on one line, not "4" over "ready".
+      value={
+        <>
+          {ward.ready} <small className={styles.rowUnit}>ready</small>
+        </>
+      }
       href={wardStatisticsHref(ward.id)}
     />
   );
@@ -263,10 +286,20 @@ function StatisticsSummaryPhoneView({
           figures={[
             // Phone review F-26: the big figure says what it counts, with its share beside it.
             { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
-            { id: "ed", value: statisticsCountText(waitingInEd), label: "Open ED journeys" },
-            { id: "ended", value: statisticsCountText(endedToday), label: "Ended today" },
+            // Role view (executive): with both people counts held back, one figure stood alone in a
+            // row of three; every bed (exact, like all bed counts) sits beside it.
+            ...(totalBeds !== undefined && held(waitingInEd) && held(endedToday)
+              ? [{ id: "beds", value: totalBeds, label: "Beds" }]
+              : []),
+            ...(held(waitingInEd)
+              ? []
+              : [{ id: "ed", value: statisticsCountText(waitingInEd), label: "Open ED journeys" }]),
+            // The figure names its noun, as the desktop's "Admissions ended today" does.
+            ...(held(endedToday)
+              ? []
+              : [{ id: "ended", value: statisticsCountText(endedToday), label: "Stays ended today" }]),
           ]}
-          eyebrow="Statistics · Network now"
+          eyebrow={eyebrow}
           chip={
             <LiveChip
               state={paused ? "paused" : "live"}
@@ -277,21 +310,26 @@ function StatisticsSummaryPhoneView({
           }
         />
 
+        {executive ? <SmallNumberNote className={note.note} /> : null}
+
         <StatisticsNav currentSection="hub" withSamples={false} wardCount={wardCount} variant="chips" />
 
         {/* v10: the switch stays pinned under the bar while its list scrolls, and lets go after it. */}
         <div className={styles.segGroup}>
-          <Segmented<"hospital" | "ward">
-            className={cx(styles.seg, styles.segPinned)}
-            size="md"
-            label="List beds by"
-            value={group}
-            onChange={setGroup}
-            items={[
-              { id: "hospital", label: "Hospitals", count: hospitals.length },
-              { id: "ward", label: "Wards", count: wards.length },
-            ]}
-          />
+          {siteDesk ? null : (
+            <Segmented<"hospital" | "ward">
+              className={cx(styles.seg, styles.segPinned)}
+              size="md"
+              label="List beds by"
+              value={group}
+              onChange={setGroup}
+              // No counts, so the switch does not look like the Wards chip above it.
+              items={[
+                { id: "hospital", label: "By hospital" },
+                { id: "ward", label: "By ward" },
+              ]}
+            />
+          )}
 
           <ul
             className={styles.list}
@@ -304,8 +342,11 @@ function StatisticsSummaryPhoneView({
                     as="li"
                     name={hospital.name}
                     meta={<InUse percent={hospital.percent} where={shortService(hospital.service)} />}
-                    value={hospital.ready}
-                    time="ready"
+                    value={
+                      <>
+                        {hospital.ready} <small className={styles.rowUnit}>ready</small>
+                      </>
+                    }
                     onSelect={() =>
                       setSheet({
                         title: hospital.name,
@@ -316,15 +357,10 @@ function StatisticsSummaryPhoneView({
                 ))
               : byReady.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
             {listLength > LIST_SHOWN ? (
-              <li className={styles.showAllItem}>
-                <button
-                  type="button"
-                  className={styles.showAll}
-                  aria-expanded={showAll}
-                  onClick={() => setShowAll((value) => !value)}
-                >
+              <li className={styles.showMoreItem}>
+                <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
                   {showAll ? "Show fewer" : `Show all ${listLength}`}
-                </button>
+                </ShowMoreRow>
               </li>
             ) : null}
           </ul>
@@ -334,74 +370,83 @@ function StatisticsSummaryPhoneView({
         </div>
 
         <section className={styles.group} aria-label="Referrals today">
+          {/* The Raised tile carries the total, so the heading does not repeat it. Role view
+              (executive): when all four counts are withheld, four "not shown" tiles say nothing the
+              heading cannot, so the heading alone says it and the tiles go. */}
           <GroupHead
             title="Referrals today"
             variant="letter"
-            aside={`${statisticsCountText(referrals.raised)} raised`}
+            aside={referralsHeld ? "not shown" : undefined}
             className={styles.groupHead}
           />
-          <dl className={styles.tiles}>
-            <div className={styles.tile}>
-              <dt>
-                <StatusGlyph tone="success" size={9} /> Accepted
-              </dt>
-              <dd>{statisticsCountText(referrals.accepted)}</dd>
-            </div>
-            <div className={styles.tile}>
-              <dt>
-                <StatusGlyph tone="closed" size={9} /> Declined
-              </dt>
-              <dd>{statisticsCountText(referrals.declined)}</dd>
-            </div>
-            <div className={styles.tile}>
-              <dt>
-                <StatusGlyph tone="neutral" size={9} /> Still open
-              </dt>
-              <dd>{statisticsCountText(referrals.open)}</dd>
-            </div>
-            <div className={styles.tile}>
-              <dt>Raised</dt>
-              <dd>{statisticsCountText(referrals.raised)}</dd>
-            </div>
-          </dl>
+          {referralsHeld ? null : (
+            <dl className={styles.tiles}>
+              <div className={styles.tile}>
+                <dt>
+                  <StatusGlyph tone="success" size={9} /> Accepted
+                </dt>
+                <dd>{statisticsCountText(referrals.accepted)}</dd>
+              </div>
+              <div className={styles.tile}>
+                <dt>
+                  <StatusGlyph tone="closed" size={9} /> Declined
+                </dt>
+                <dd>{statisticsCountText(referrals.declined)}</dd>
+              </div>
+              <div className={styles.tile}>
+                <dt>
+                  <StatusGlyph tone="neutral" size={9} /> Still open
+                </dt>
+                <dd>{statisticsCountText(referrals.open)}</dd>
+              </div>
+              <div className={styles.tile}>
+                <dt>Raised</dt>
+                <dd>{statisticsCountText(referrals.raised)}</dd>
+              </div>
+            </dl>
+          )}
         </section>
 
         <nav className={styles.navRows} aria-label="More figures">
           {/* Audit stats-18 sent this row to Overview's fullest-first ward list. Overview folded into
               this page (D-77, change 9), so the row opens that list here: every ward at or over the
               line, fullest first. */}
-          <button
-            type="button"
-            className={styles.navRow}
-            data-testid="ward-statistics-pressure-link"
-            onClick={() =>
-              setSheet({
-                title: "Where the pressure is",
-                description: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}% of beds in use, fullest first.`,
-                body:
-                  overCount === 0 ? (
-                    <p className={styles.note}>{`No ward is at or over ${BED_ALERT_THRESHOLD_PERCENT}%.`}</p>
-                  ) : (
-                    <ul className={styles.list}>
-                      {[...wards]
-                        .filter((ward) => overLine(ward.percent))
-                        .sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name))
-                        .map(wardRow)}
-                    </ul>
-                  ),
-              })
-            }
-          >
-            <IconTile icon={Activity} />
-            <span className={styles.navText}>
-              <b>Where the pressure is</b>
-              <span>
-                <b className={styles.num}>{overCount}</b> {overCount === 1 ? "ward" : "wards"} at or over{" "}
-                {BED_ALERT_THRESHOLD_PERCENT}%, fullest first
+          {/* Role view (site bed manager): its few wards are listed above already, fullest marked, so
+              no second list. */}
+          {siteDesk ? null : (
+            <button
+              type="button"
+              className={styles.navRow}
+              data-testid="ward-statistics-pressure-link"
+              onClick={() =>
+                setSheet({
+                  title: "Where the pressure is",
+                  description: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}% of beds in use, fullest first.`,
+                  body:
+                    overCount === 0 ? (
+                      <p className={styles.note}>{`No ward is at or over ${BED_ALERT_THRESHOLD_PERCENT}%.`}</p>
+                    ) : (
+                      <ul className={styles.list}>
+                        {[...wards]
+                          .filter((ward) => overLine(ward.percent))
+                          .sort((a, b) => b.percent - a.percent || a.name.localeCompare(b.name))
+                          .map(wardRow)}
+                      </ul>
+                    ),
+                })
+              }
+            >
+              <IconTile icon={Activity} />
+              <span className={styles.navText}>
+                <b>Where the pressure is</b>
+                <span>
+                  <b className={styles.num}>{overCount}</b> {overCount === 1 ? "ward" : "wards"} at or over{" "}
+                  {BED_ALERT_THRESHOLD_PERCENT}%, fullest first
+                </span>
               </span>
-            </span>
-            <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
-          </button>
+              <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
+            </button>
+          )}
           <button
             type="button"
             className={styles.navRow}
@@ -432,12 +477,18 @@ function StatisticsSummaryPhoneView({
               })
             }
           >
-            <IconTile icon={Clock} />
+            {/* The menu's ED icon; a clock is for time only. */}
+            <IconTile icon={Siren} />
             <span className={styles.navText}>
               <b>Open ED journeys</b>
               <span>
                 {!edPresenceKnown ? (
-                  <>{statisticsCountText(waitingInEd)} open ED journeys · department totals protected</>
+                  // Role view (executive): "not shown open ED journeys" read badly and was cut off.
+                  held(waitingInEd) ? (
+                    "Counts not shown"
+                  ) : (
+                    <>{statisticsCountText(waitingInEd)} open ED journeys · department totals protected</>
+                  )
                 ) : longestEd === null ? (
                   `${edsWaiting.length} of ${eds.length} departments with open ED journeys`
                 ) : (
@@ -466,14 +517,16 @@ function StatisticsSummaryPhoneView({
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </button>
           {/* Each health service's figures, also the Services chip above (phone review F-12). */}
-          <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
-            <IconTile icon={Building2} />
-            <span className={styles.navText}>
-              <b>Services</b>
-              <span>Beds, referrals and waits for each health service</span>
-            </span>
-            <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
-          </Link>
+          {siteDesk ? null : (
+            <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
+              <IconTile icon={Building2} />
+              <span className={styles.navText}>
+                <b>Services</b>
+                <span>Beds, referrals and waits for each health service</span>
+              </span>
+              <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
+            </Link>
+          )}
         </nav>
       </main>
       <PhoneSheet

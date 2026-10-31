@@ -1,65 +1,20 @@
 "use client";
 
-// Moved out of bed-manager-statistics-redesign.tsx so that fork stays under the 1,500-line cap: the
-// sortable column head, the wait formats and the Open ED journeys card.
+// The summary's Open ED journeys card: every ED as a sortable table, or, for a site bed manager with
+// one ED, that ED's five figures as one row of tiles.
 
-import { ChevronDown, ChevronUp, Siren } from "lucide-react";
+import { Siren } from "lucide-react";
 
-import { Badge, CardBody, Icon, StatusGlyph, durMinutes, tableClasses } from "@/components/wf";
-import {
-  ED_ELEVATED_PRESSURE_WAIT_MINUTES,
-  ED_SEVERE_PRESSURE_WAIT_MINUTES,
-} from "@/components/ward-management/ward-operational-defaults";
-import { hoursText } from "@/components/ward-management/statistics/statistics-occupancy";
-import type { SummaryEd } from "@/components/ward-management/statistics/statistics-network-cards";
-import {
-  exactStatisticsCount,
-  statisticsCountText,
-  type StatisticsCount,
-} from "@/components/ward-management/statistics/statistics-small-numbers";
-import { StatCard } from "@/components/ward-management/statistics/statistics-hero";
-import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
-import { hoursLabel } from "@/components/ward-redesign/statistics/statistics-bands";
+import { Badge, CardBody, StatusGlyph, durMinutes, tableClasses } from "@/components/wf";
+import { ED_ELEVATED_PRESSURE_WAIT_MINUTES, ED_SEVERE_PRESSURE_WAIT_MINUTES } from "../ward-operational-defaults";
+import type { SummaryEd } from "./statistics-network-cards";
+import { exactStatisticsCount, statisticsCountText, type StatisticsCount } from "./statistics-small-numbers";
+import { StatCard } from "./statistics-hero";
+import { hoursLabel } from "./statistics-bands";
+import { SortTh, medianText, waitText, type EdSortKey } from "./statistics-screen-parts";
+import styles from "./statistics-v6.module.css";
 
-export type EdSortKey = "name" | "waiting" | "longest" | "median" | "over8" | "over24";
-
-/** Minutes as a duration, or "none" when nothing is waiting. */
-const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
-
-/** A median wait to the nearest hour ("6h", "1d 4h"), or "none" when nothing is waiting. */
-const medianText = (minutes: number | null) => (minutes === null ? "none" : hoursText(Math.round(minutes / 60)));
-
-export function SortTh<K extends string>({
-  id,
-  label,
-  sort,
-  asc,
-  onSort,
-  numeric = false,
-}: {
-  id: K;
-  label: string;
-  sort: K;
-  asc: boolean;
-  onSort: (id: K) => void;
-  numeric?: boolean;
-}) {
-  const active = sort === id;
-  return (
-    <th
-      scope="col"
-      className={`${styles.sortTh} ${numeric ? styles.num : ""}`}
-      aria-sort={active ? (asc ? "ascending" : "descending") : "none"}
-    >
-      <button type="button" onClick={() => onSort(id)}>
-        {label}
-        {active ? <Icon icon={asc ? ChevronUp : ChevronDown} size={14} /> : null}
-      </button>
-    </th>
-  );
-}
-
-export function BedManagerEdCard({
+export function StatisticsEdJourneysCard({
   siteName,
   longestEd,
   edSortCol,
@@ -73,6 +28,7 @@ export function BedManagerEdCard({
   totalEdOver8,
   totalEdOver24,
 }: {
+  /** Set for a site bed manager: its own site's ED only. */
   siteName: string | undefined;
   longestEd: SummaryEd | null;
   edSortCol: EdSortKey;
@@ -126,7 +82,7 @@ export function BedManagerEdCard({
   }
   return (
     <StatCard
-      // Redesign: the menu's ED icon; a clock is for time only.
+      // The menu's ED icon; a clock is for time only.
       icon={Siren}
       title="Open ED journeys"
       data-testid="ward-statistics-emergency-departments"
@@ -147,7 +103,8 @@ export function BedManagerEdCard({
       }
     >
       <div className={styles.toolbar}>
-        {/* The ED table's typed filter went in the search and forms review (D-91): 15 EDs need none. */}
+        {/* The ED table's typed filter went in the search and forms review (D-91, Josh, 30 Oct 2026):
+            15 EDs need none, and the header search finds one by name. */}
         <span className={styles.toolbarEnd} id="edFilterCount">
           {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
         </span>

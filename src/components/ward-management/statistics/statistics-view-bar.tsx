@@ -2,18 +2,14 @@
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { useCallback, useEffect, useState } from "react";
-import { BedDouble, Map as MapIcon, Route, type LucideIcon } from "lucide-react";
-
-import { cx } from "@/components/wf";
-
-import styles from "./statistics-view-bar.module.css";
 
 export type StatisticsView = "board" | "journey" | "map";
 
-const VIEWS: ReadonlyArray<{ id: StatisticsView; icon: LucideIcon; label: string; caption: string; key: string }> = [
-  { id: "board", icon: BedDouble, label: "Bed board", caption: "Where beds are, by hospital", key: "1" },
-  { id: "journey", icon: Route, label: "Journey", caption: "ED to discharge, by stage", key: "2" },
-  { id: "map", icon: MapIcon, label: "Map", caption: "Every site across WA", key: "3" },
+/** The Summary's views and the keys that switch to them (the switch itself: `statistics-view-switch.tsx`). */
+const VIEWS: ReadonlyArray<{ id: StatisticsView; key: string }> = [
+  { id: "board", key: "1" },
+  { id: "journey", key: "2" },
+  { id: "map", key: "3" },
 ];
 
 function viewFromHash(hash: string): StatisticsView {
@@ -139,48 +135,4 @@ export function useStatisticsView() {
   }, [choose]);
 
   return { view, choose };
-}
-
-/** Three large switches under the Summary hero: the bed board, the patient journey and the WA map. */
-export function StatisticsViewBar({
-  view,
-  onChoose,
-}: {
-  view: StatisticsView;
-  onChoose: (view: StatisticsView) => void;
-}) {
-  return (
-    <nav className={styles.bar} aria-label="Summary view" data-testid="ward-statistics-view-bar">
-      {VIEWS.map((item) => {
-        const Icon = item.icon;
-        const on = item.id === view;
-        return (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            className={cx(styles.item, on && styles.on)}
-            aria-current={on ? "page" : undefined}
-            aria-keyshortcuts={item.key}
-            data-testid={`ward-statistics-view-${item.id}`}
-            onClick={(event) => {
-              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-              event.preventDefault();
-              onChoose(item.id);
-            }}
-          >
-            <span className={styles.icon} aria-hidden="true">
-              <Icon size={16} aria-hidden="true" />
-            </span>
-            <span className={styles.text}>
-              <span className={styles.label}>{item.label}</span>
-              <span className={styles.caption}>{item.caption}</span>
-            </span>
-            <kbd className={styles.kbd} aria-hidden="true">
-              {item.key}
-            </kbd>
-          </a>
-        );
-      })}
-    </nav>
-  );
 }

@@ -1,4 +1,4 @@
-// Moved out of the Statistics fork to keep it under the line cap; unchanged from statistics-screen.tsx.
+/** Whole hours, as a short label ("4h"). */
 export const hoursLabel = (minutes: number) => `${Math.round(minutes / 60)}h`;
 
 /**

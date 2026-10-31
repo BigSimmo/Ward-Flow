@@ -917,3 +917,9 @@
     justify-content: flex-end;
   }
 }
+
+/* The ward table's site-code key keeps the card's side inset (final check, 30 Oct 2026). */
+.siteKey.siteKey {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-4) 0;
+}

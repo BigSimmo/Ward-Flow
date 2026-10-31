@@ -3,7 +3,7 @@
 // Forked from src/components/ward-redesign/statistics/statistics-page.tsx (role view: nurse in charge).
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { StatisticsRedesign } from "@/components/ward-redesign/statistics/statistics-redesign";
+import { StatisticsScreen as StatisticsRedesign } from "@/components/ward-management/statistics/statistics-screen";
 import { StatisticsUnitRedesign } from "@/components/ward-redesign/as-ward-statistics/statistics-unit-redesign";
 
 /** Network statistics, as the app's `/ward-flow/statistics` opens. */
