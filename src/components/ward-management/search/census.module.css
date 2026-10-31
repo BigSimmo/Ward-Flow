@@ -1243,11 +1243,10 @@ tr:has(+ .moreRow) > td {
     min-height: 0;
   }
 
-  /* The kit's chip row pulls the next block up 7px (margin-block: -7px). Here the next block is the
-   * sticky Now/History bar (z-index 3), which then paints over the lower half of each chip's 48px
-   * tap band. Keep the row's own bottom space so the bar starts below the tap bands. */
-  .phoneChips.phoneChips {
-    margin-block-end: 0;
+  /* The kit's tap band (inset -7px) starts inside the chip's 1px border, so it reaches 47px, not
+   * 48px. Reach 8px past the border so a tap 23.5px from the centre still lands on the chip. */
+  .phoneChips .phoneChip.phoneChip.phoneChip::before {
+    inset: -8px 0;
   }
 }
 
