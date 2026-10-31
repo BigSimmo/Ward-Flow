@@ -8,9 +8,14 @@ export type RoleReferenceEntry = {
   readonly summary: string;
 };
 
-/** Help names: the menu label, and "Access admin" for admin. Summaries reuse each desk guide. */
-function helpRoleName(role: WardAccessRole): string {
-  return role === "admin" ? ACCESS_ROLE_LABELS.admin : CHROME_ROLE_LABELS[role];
+/** Help keeps the short "Bed manager" while the menu says "Site bed manager" (the printed guides and their tests use it). */
+export const HELP_BED_MANAGER_NAME = "Bed manager";
+
+/** Help names: the menu label, "Access admin" for admin and "Bed manager" for the bed manager. Summaries reuse each desk guide. */
+export function helpRoleName(role: WardAccessRole): string {
+  if (role === "admin") return ACCESS_ROLE_LABELS.admin;
+  if (role === "bed_manager") return HELP_BED_MANAGER_NAME;
+  return CHROME_ROLE_LABELS[role];
 }
 
 const TV_BOARD_SUMMARY =

@@ -651,7 +651,6 @@ export function AddPatientForm() {
     <section
       className={styles.dupInline}
       aria-label="Possible existing records"
-      aria-live="polite"
       data-testid="ward-add-patient-duplicate-check"
     >
       <div className={styles.dupHead}>
@@ -664,7 +663,8 @@ export function AddPatientForm() {
         ) : null}
         <span className={styles.dupCovers}>Checks all {patients.length} patient records</span>
       </div>
-      <div>
+      {/* Only the result is announced as the person types; the counts above stay visible. */}
+      <div aria-live="polite">
         {!hasCheckedAnything ? (
           <p className={styles.dupState} data-testid="ward-add-patient-duplicate-unchecked">
             Runs as you type: a UMRN, or a name of {NEAR_MATCH_MINIMUM_TERM_LENGTH} letters or more.

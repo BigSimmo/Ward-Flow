@@ -17,7 +17,7 @@ export async function openEdLists(page: Page) {
     timeout: 15_000,
   });
   if ((await fold.count()) > 0) {
-    if ((await fold.getAttribute("open")) === null) await fold.locator("summary").click();
+    if ((await fold.getAttribute("open")) === null) await fold.locator(":scope > summary").click();
     await expect(fold).toHaveAttribute("open", "");
     return;
   }

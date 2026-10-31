@@ -1242,6 +1242,13 @@ tr:has(+ .moreRow) > td {
   .phoneChips .phoneChip.phoneChip.phoneChip {
     min-height: 0;
   }
+
+  /* The kit's chip row pulls the next block up 7px (margin-block: -7px), which then paints over the
+   * lower half of each chip's 48px tap band. Lift the row so its tap bands stay on top. */
+  .phoneChips.phoneChips {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 .phoneChip.phoneChip {

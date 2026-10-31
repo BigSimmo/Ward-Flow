@@ -19,6 +19,7 @@ import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 
 /** How-tos whose controls a phone screen does not draw: on a phone they open, not Show me. */
 const COMPUTER_ONLY = new Set(HOW_TOS.filter((howTo) => howTo.computerOnly).map((howTo) => howTo.id));
+import { HELP_BED_MANAGER_NAME } from "./ward-help-roles";
 import styles from "./ward-help-search.module.css";
 
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
@@ -27,7 +28,9 @@ function openHelpTab(tab: string) {
 }
 
 function roleLabel(role: WardTourRole): string {
-  return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
+  if (role === "admin") return "Access admin";
+  if (role === "bed_manager") return HELP_BED_MANAGER_NAME;
+  return CHROME_ROLE_LABELS[role];
 }
 
 /**
