@@ -97,7 +97,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
-  webpack(config, { webpack }) {
+  webpack(config, { dev, webpack }) {
     // Avoid a Next/webpack WasmHash worker crash observed on Node 24 during local production builds.
     config.output = {
       ...config.output,
@@ -110,6 +110,17 @@ const nextConfig: NextConfig = {
         new webpack.NormalModuleReplacementPlugin(
           LIVE_BUILD_DEMO_DATA,
           path.join(projectRoot, "src/components/ward-management/live-build/ward-no-demo-data.ts"),
+        ),
+      );
+    // A production build never serves the redesign mock-ups (their layout 404s there), yet their
+    // ~170 lazy pages and popups would add their chunk names to the one webpack runtime every Ward
+    // Flow page loads (about 5.6 KB gzipped). Production builds draw a stub; `next dev` and the
+    // esbuild preview (scripts/ward-flow/build-redesign-preview.mjs) keep the real screens.
+    if (!dev)
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /[\\/]mockups[\\/]ward-flow-redesign[\\/]_preview[\\/]preview-screen\.tsx$/,
+          path.join(projectRoot, "src/app/mockups/ward-flow-redesign/_preview/preview-screen-production.tsx"),
         ),
       );
     return config;
