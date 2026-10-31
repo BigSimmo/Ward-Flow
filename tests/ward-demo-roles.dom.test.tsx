@@ -265,7 +265,7 @@ it("returns to a valid coordinator desk when a scenario change removes the start
   });
   renderPanel();
   choose("Bed coordinator");
-  fireEvent.click(screen.getByRole("radio", { name: /Winter surge/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Winter surge/ }));
   fireEvent.click(
     within(screen.getByRole("dialog", { name: "Load Winter surge?" })).getByRole("button", {
       name: "Load Winter surge",
