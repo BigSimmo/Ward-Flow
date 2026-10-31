@@ -94,3 +94,11 @@ export {
   type PhoneRowAction,
 } from "./phone";
 export { PortraitList, PortraitRail, type PortraitGroup } from "./portrait";
+
+// Kit standard (lane C, from the #1118 mock-ups; Josh, 30-31 October 2026).
+export { ShowMoreRow } from "./show-more-row";
+export { SearchField, type SearchFieldProps } from "./search-field";
+export { TimePresets, timePresetClockText } from "./time-presets";
+export { phoneRows } from "./phone-rows";
+export { ConfirmHost, hasConfirmHost, requestConfirm, type ConfirmRequest } from "./confirm-dialog";
+export { DateField, isoDateAsTyped, parseTypedDate, type DateFieldProps } from "./date-field";

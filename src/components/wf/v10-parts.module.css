@@ -240,7 +240,6 @@ button.capRow:focus-visible {
 
 .capRow[data-selected="true"] {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
 /* A free or fit place: the one tinted fill allowed. */
