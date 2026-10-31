@@ -25,6 +25,7 @@ import {
   Icon,
   Kbd,
   Segmented,
+  ShowMoreRow,
   SrOnly,
   StatusGlyph,
   StatusLine,
@@ -33,6 +34,7 @@ import {
   TextInput,
   cx,
   durMinutes,
+  phoneRows,
   tableClasses,
   useModalFocus,
   type WfTone,
@@ -89,7 +91,6 @@ import {
 } from "./officer-screen-helpers";
 import { renderArrivalsCard } from "./officer-arrivals-card";
 import { OfficerOrderNote } from "./officer-order-note";
-import { OfficerShowAllRow } from "./officer-show-all-row";
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
@@ -726,9 +727,9 @@ export function OfficerScreen() {
 
   // Hero tools: beside the title on the larger screen, under the figures on phone (v10).
   // Phone (Josh, 31 Oct 2026): Copy handover and Arrivals are Home's 40px hero pills, side by side
-  // (kit stand-in `heroToolPills` / `heroToolPill` in officer.module.css).
+  // (the kit's `phoneRows.heroPills` / `phoneRows.heroPill`).
   const heroTools = (
-    <div className={isPhone ? styles.heroToolPills : styles.heroTools}>
+    <div className={isPhone ? phoneRows.heroPills : styles.heroTools}>
       {nextArrival ? (
         <span className={styles.nextArrival} title="Next expected arrival">
           <Icon icon={Clock} size={14} />
@@ -743,7 +744,7 @@ export function OfficerScreen() {
           variant="onHero"
           size="sm"
           icon={Copy}
-          className={isPhone ? styles.heroToolPill : styles.copyButton}
+          className={isPhone ? phoneRows.heroPill : styles.copyButton}
           onClick={copyHandover}
           aria-label="Copy handover"
           title="Copy a plain text summary of open jobs"
@@ -757,7 +758,7 @@ export function OfficerScreen() {
           variant="onHero"
           size="sm"
           icon={Clock}
-          className={cx(styles.phArrivalsButton, styles.heroToolPill)}
+          className={cx(styles.phArrivalsButton, phoneRows.heroPill)}
           onClick={() =>
             document
               .getElementById("ward-officer-arrivals-heading")
@@ -1214,9 +1215,7 @@ export function OfficerScreen() {
                       </tbody>
                     </table>
                     {listedJobs.length < sortedJobs.length ? (
-                      <OfficerShowAllRow onClick={() => setShowAllJobs(true)}>
-                        Show all {sortedJobs.length} jobs
-                      </OfficerShowAllRow>
+                      <ShowMoreRow onClick={() => setShowAllJobs(true)}>Show all {sortedJobs.length} jobs</ShowMoreRow>
                     ) : null}
                   </div>
                 )}

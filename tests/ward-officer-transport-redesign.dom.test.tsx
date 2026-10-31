@@ -119,7 +119,7 @@ describe("Transport desk redesign", () => {
   it("lists every job and the Providers row on the coordinator's view", () => {
     renderDesk();
     expect(screen.getByTestId("ward-officer-joblist").querySelectorAll("tr")).toHaveLength(jobs.length);
-    expect(screen.queryByTestId("ward-officer-show-all")).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Show all \d+ jobs$/ })).toBeNull();
     expect(screen.getByText("Choose a patient to open their job")).toBeInTheDocument();
   });
 });

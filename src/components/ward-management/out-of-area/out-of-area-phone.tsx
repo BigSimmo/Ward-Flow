@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Route, Search } from "lucide-react";
+import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Route } from "lucide-react";
 
 import {
   Button,
@@ -13,7 +13,8 @@ import {
   SrOnly,
   Segmented,
   StatusGlyph,
-  TextInput,
+  SearchField,
+  ShowMoreRow,
   cx,
   type WfTone,
 } from "@/components/wf";
@@ -429,28 +430,20 @@ export function OutOfAreaPhone({
             </section>
           ) : null}
           {/* A plain link to the rest: the grey cross it used to carry means "No plan" in the hero. */}
-          <button
-            type="button"
-            className={styles.phoneMore}
-            onClick={() => setTab("all")}
-            aria-label={`${more} more away from home, show Everyone`}
-          >
-            <span>{more} more in Everyone</span>
-            <Icon icon={ChevronRight} size={14} className={styles.moreChevron} />
-          </button>
+          <ShowMoreRow onClick={() => setTab("all")} controls="ward-out-of-area-phone-panel-all">
+            <span aria-hidden="true">{more} more in Everyone</span>
+            <SrOnly>{`${more} more away from home, show Everyone`}</SrOnly>
+          </ShowMoreRow>
         </div>
       ) : null}
 
       <div hidden={tab !== "all"}>
         <div className={styles.phonePanel} role="region" id="ward-out-of-area-phone-panel-all" aria-label="Everyone">
-          <TextInput
-            icon={Search}
-            boxClassName={styles.phoneSearch}
+          <SearchField
             placeholder="Name, UMRN or ward"
-            aria-label="Highlight people by name, UMRN or ward"
+            label="Highlight people by name, UMRN or ward"
             value={query}
-            onChange={(event) => onQuery(event.target.value)}
-            onClear={() => onQuery("")}
+            onValueChange={onQuery}
           />
           {anyHighlight ? (
             <p className={styles.hlLine}>

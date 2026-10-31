@@ -491,7 +491,7 @@ describe("Out of area redesign", () => {
     expect(screen.getAllByText(/^Date passed \d+ days? ago · .+ days? away$/).length).toBeGreaterThan(0);
     expect(screen.queryByText(/^Due \d+ days? ago/)).not.toBeInTheDocument();
     const more = screen.getByRole("button", { name: /^\d+ more away from home, show Everyone$/ });
-    expect(more).toHaveTextContent(/^\d+ more in Everyone$/);
+    expect(within(more).getByText(/^\d+ more in Everyone$/)).toBeInTheDocument();
     fireEvent.click(more);
     expect(screen.getByRole("radio", { name: /Everyone/ })).toBeChecked();
     expect(screen.getByRole("button", { name: /with no return plan, highlight them$/ })).toBeInTheDocument();
