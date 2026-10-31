@@ -26,8 +26,13 @@ const MovementsRedesign = dynamic<MockupPageProps>(() =>
 const WaitingRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/waiting/waiting-redesign").then((module) => module.WaitingRedesign),
 );
-const WardRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/ward/ward-redesign").then((module) => module.WardRedesign),
+// My ward is built (31 Oct 2026); its preview draws the real screen, kept as the page the Shift brief
+// pop-up opens over.
+const RealWardScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/ward/ward-screen").then((module) => {
+    const RealWard = () => <module.WardScreen unitId="rph-adult-secure" />;
+    return RealWard;
+  }),
 );
 const EdBoardPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/ed-board/ed-board-page").then((module) => module.EdBoardPage),
@@ -113,9 +118,6 @@ const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
 );
 const AgendaRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/agenda/agenda-redesign").then((module) => module.AgendaRedesign),
-);
-const AsWardHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-ward-home/as-ward-home-page").then((module) => module.AsWardHomePage),
 );
 const AsWardReferralsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-referrals/as-ward-referrals-page").then(
@@ -215,11 +217,6 @@ const AsBedManagerPlacesPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsBedManagerPlacesPage,
   ),
 );
-const AsBedManagerWardPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-bed-manager-ward/as-bed-manager-ward-page").then(
-    (module) => module.AsBedManagerWardPage,
-  ),
-);
 const AsBedManagerReferralsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-bed-manager-referrals/as-bed-manager-referrals-page").then(
     (module) => module.AsBedManagerReferralsPage,
@@ -272,7 +269,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   eds: EdIndexRedesign,
   referrals: ReferralsRedesign,
   "new-referral": NewReferralRedesign,
-  ward: WardRedesign,
+  ward: RealWardScreen,
   "ed-board": EdBoardPage,
   transport: TransportRedesign,
   patients: PatientsRedesign,
@@ -300,7 +297,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "statistics-unit": StatisticsUnitPage,
   "statistics-weekly": StatisticsWeeklyPage,
   agenda: AgendaRedesign,
-  "as-ward-home": AsWardHomePage,
   "as-ward-referrals": AsWardReferralsPage,
   "as-ward-waiting": AsWardWaitingPage,
   "as-ward-legal-forms": AsWardLegalFormsPage,
@@ -323,7 +319,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-bed-manager-home": AsBedManagerHomePage,
   "as-bed-manager-wards": AsBedManagerWardsPage,
   "as-bed-manager-places": AsBedManagerPlacesPage,
-  "as-bed-manager-ward": AsBedManagerWardPage,
   "as-bed-manager-referrals": AsBedManagerReferralsPage,
   "as-bed-manager-statistics": AsBedManagerStatisticsPage,
   "as-bed-manager-seclusion": AsBedManagerSeclusionPage,

@@ -1192,39 +1192,6 @@
     ],
     "keep": "Open full record."
   },
-  "pop-bed-record": {
-    "role": "One bed's record from the ward page.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Six or more action buttons** (Record that they have left, Update blocker, Mark at an ED, Move to another bed, Raise ward referral…)."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**One main action** plus one secondary, with the rest under More."
-      },
-      {
-        "text": "A notice says why the person has not left."
-      }
-    ],
-    "keep": "The four headline facts, the tabs and Patient page."
-  },
-  "pop-confirm-beds": {
-    "role": "Confirm the ward's capacity figures.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**The number to confirm comes before the facts**, which are a monospace capital-letter list."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**Facts first** as four tiles, then the free-bed control, then Confirm."
-      }
-    ],
-    "keep": "Writes to this ward only; Confirm with morning numbers."
-  },
   "pop-ed-actions": {
     "role": "The actions menu on an ED board row.",
     "issues": [

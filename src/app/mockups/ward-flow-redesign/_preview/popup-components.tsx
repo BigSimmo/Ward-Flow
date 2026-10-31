@@ -32,9 +32,6 @@ const PopMenu = dynamic<{ page: ReactNode }>(() =>
 const PopCreate = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-create/pop-create").then((module) => module.PopCreate),
 );
-const PopWardSwitcher = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-ward-switcher/pop-ward-switcher").then((module) => module.PopWardSwitcher),
-);
 const PopDesk = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-desk/pop-desk").then((module) => module.PopDesk),
 );
@@ -47,17 +44,8 @@ const PopMorePages = dynamic<{ page: ReactNode }>(() =>
 const PopTour = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-tour/pop-tour").then((module) => module.PopTour),
 );
-const PopBedRecord = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-bed-record/pop-bed-record").then((module) => module.PopBedRecord),
-);
-const PopConfirmBeds = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-confirm-beds/pop-confirm-beds").then((module) => module.PopConfirmBeds),
-);
 const PopBroadcast = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-broadcast/pop-broadcast").then((module) => module.PopBroadcast),
-);
-const PopWardNotices = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-ward-notices/pop-ward-notices").then((module) => module.PopWardNotices),
 );
 const PopReferWard = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-refer-ward/pop-refer-ward").then((module) => module.PopReferWard),
@@ -189,15 +177,11 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   demo: PopDemo,
   menu: PopMenuForFrame,
   create: PopCreate,
-  "ward-switcher": PopWardSwitcher,
   desk: PopDesk,
   "service-picker": PopServicePicker,
   "more-pages": PopMorePages,
   tour: PopTour,
-  "bed-record": PopBedRecord,
-  "confirm-beds": PopConfirmBeds,
   broadcast: PopBroadcast,
-  "ward-notices": PopWardNotices,
   "refer-ward": PopReferWard,
   "ed-actions": PopEdActions,
   "log-transport": PopLogTransport,

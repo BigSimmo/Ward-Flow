@@ -16,6 +16,7 @@ import { ReferralMatchView } from "@/components/ward-management/referrals/referr
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import type { Referral } from "@/components/ward-management/ward-model";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardBedDossierDrawer } from "@/components/ward-management/ward/ward-bed-dossier-drawer";
@@ -135,8 +136,8 @@ describe("bed dossier inbound bed", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.queryByRole("button", { name: /Record blocker/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /Mark at an ED/ })).toBeNull();
+    expect(queryBedStep(/Record blocker/)).toBeNull();
+    expect(queryBedStep(/Mark at an ED/)).toBeNull();
   });
 
   it("still offers the blocker and ED actions on a bed with an admission", () => {
@@ -164,8 +165,9 @@ describe("bed dossier inbound bed", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getByRole("button", { name: /Record blocker/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Mark at an ED/ })).toBeInTheDocument();
+    // Redesign (31 Oct 2026): steps past the first two sit under More, so they are found wherever they are.
+    expect(getBedStep(/Record blocker/)).toBeInTheDocument();
+    expect(getBedStep(/Mark at an ED/)).toBeInTheDocument();
   });
 });
 
