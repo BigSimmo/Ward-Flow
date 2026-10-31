@@ -47,9 +47,13 @@ import { allEmergencyDepartments, allUnits } from "@/components/ward-management/
  * different hat. A reader cannot tell "not measured here" from "measured, and it was none".
  */
 
-/** v6: each comparison card opens on its chart; its Data view is the exact table these tests read. */
+/**
+ * v6: each comparison card opens on its chart; its Data view is the exact table these tests read.
+ * Each table opens on its first eight rows, so Show all is pressed to read every unit.
+ */
 function showData() {
   for (const radio of screen.getAllByRole("radio", { name: "Data" })) fireEvent.click(radio);
+  for (const more of screen.queryAllByRole("button", { name: /^Show all/ })) fireEvent.click(more);
 }
 
 function renderCompare() {
@@ -212,7 +216,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
    * facts about those units, and they were rendering as "we have nothing for you".
    */
   it.each([
-    { table: WARD_TABLE, name: "Blockers" },
+    { table: WARD_TABLE, name: "Held up" },
     { table: WARD_TABLE, name: "Long stays" },
     { table: ED_TABLE, name: "On the list" },
     { table: ED_TABLE, name: "Marked urgent" },
@@ -306,7 +310,7 @@ describe("the comparisons page sets wards beside wards and departments beside de
       renderEmpty();
       const cell = (header: string) => cellsUnder(WARD_TABLE, header)[0].toLowerCase();
       const unmeasurable = [cell("Average stay"), cell("Dates met")];
-      const noughts = [cell("Blockers"), cell("Long stays")];
+      const noughts = [cell("Held up"), cell("Long stays")];
       for (const absent of unmeasurable) {
         for (const nought of noughts) {
           expect(absent, `an unmeasurable average and a true nought render identically: "${absent}"`).not.toBe(nought);

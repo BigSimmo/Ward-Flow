@@ -155,7 +155,7 @@ describe("the ward and ED comparison exports (issue #618)", () => {
 
   it.each([
     ["statistics-compare-ed-chart", ["On the list", "Marked urgent", "No ward yet"]],
-    ["statistics-compare-ward-chart", ["Blockers", "Long stays"]],
+    ["statistics-compare-ward-chart", ["Held up", "Long stays"]],
   ] as const)("words every small count of people in %s for the executive", async (card, columns) => {
     asDesk("coordinator");
     const exact = await comparison(card);
