@@ -75,13 +75,13 @@ import {
   countScopeNote,
   countTitle,
   deskCapacityRows,
+  CLOSE_MENUS_EVENT,
   capacityRowsSpoken,
   cardScopeNote,
   overLineLabel,
   usePinnedPages,
 } from "@/components/ward-redesign/shell-next/next-rail-parts";
 import railParts from "@/components/ward-redesign/shell-next/next-rail.module.css";
-import { CLOSE_MENUS_EVENT } from "@/components/ward-redesign/shell-next/next-bar-parts";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
