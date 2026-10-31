@@ -97,10 +97,13 @@
  * pin sits just above its table's own content (592px and 520px) and is never inert. The browser
  * threshold sweep then measured the departments table's min-content at 528px in CI, above the
  * 520px pin, so that pin moved to 560px (35rem). CI then measured the wards table's min-content at
-597px, above its 592px pin, so that pin moved to 640px (40rem).
+597px, above its 592px pin, so that pin moved to 640px (40rem). 31 Oct 2026: the redesign added an
+Occupancy column (6 columns). Re-measured in Playwright chromium on the dev server, 1440x900, min-width
+cleared to 0px and read back: min-content 583.14px, max-content 692.33px. The pin sits clear of
+max-content at 704px (44rem).
  */
 .wardTable {
-  min-width: 46rem; /* one more column, Occupancy. */
+  min-width: 44rem;
 }
 
 .edTable {
