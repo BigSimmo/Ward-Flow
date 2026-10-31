@@ -451,26 +451,6 @@ export function WaitCell({ referral, now }: { referral: Referral; now: Instant }
   );
 }
 
-export function ReferralAlerts({ referral, readmission }: { referral: Referral; readmission: ReactNode }) {
-  const intake = referral.intake;
-  const risks = intake?.riskFlags ?? [];
-  const legal = intake?.legalStatus?.trim();
-  const showLegal = legal !== undefined && legal !== "" && !/^voluntary/i.test(legal);
-  if (risks.length === 0 && !readmission && !showLegal) return null;
-  return (
-    <div className={styles.alerts} aria-label="Alerts" role="group">
-      {risks.map((risk) => (
-        <span key={risk} className={styles.alert}>
-          <StatusGlyph tone="warning" size={9} />
-          {risk.charAt(0).toUpperCase() + risk.slice(1)} risk
-        </span>
-      ))}
-      {readmission}
-      {showLegal ? <span className={cx(styles.alert, styles.alertQuiet)}>{legal}</span> : null}
-    </div>
-  );
-}
-
 export function DecisionClock({ referral, now }: { referral: Referral; now: Instant }) {
   const sender = useSenderPresentation();
   const clocks = presentationClocks(referral, now, sender.referralFor(referral));

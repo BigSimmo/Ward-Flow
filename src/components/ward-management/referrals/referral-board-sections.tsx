@@ -1,14 +1,18 @@
 "use client";
 
+// Referrals redesign: copied from src/components/ward-management/referrals/referral-board-sections.tsx
+// (30 October 2026). Changed: Needs reads as short words (Locked, Transport), Fit counts wards
+// ("11 wards"), and a refused or cancelled ward is named instead of shown by its internal id.
+//
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "./referral-information-needs";
+import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
 import { useMemo } from "react";
-import { useSenderPresentation } from "../ward-sender-presentation";
-import { referralPresentation } from "../ward-partial-view-presenters";
-import { Lock, Scale, Truck, Users } from "lucide-react";
+import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
+import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WardTable } from "@/components/ward-management/ward-table/ward-table";
 import { ReferralQueueCards, ReferralQueueTable } from "./referral-queue-layouts";
@@ -23,7 +27,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   referralPersonFactsStatingSex,
   acceptedAddressing,
-  referralDestinationLabel,
+  SEX_NOT_HELD,
 } from "@/components/ward-management/ward-referrals";
 import { Button, CardHead, Count, EmptyState, StatusGlyph, TierTile, Timer, cx } from "@/components/wf";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
@@ -46,13 +50,12 @@ import {
   QUEUED_REFUSED_LEAD,
   decidedWaitLabel,
   presentationDecidedAt,
-  demographicLabel,
-  outcomeDetail,
   outcomeLabel,
   referralDueAt,
   referralNeedsGenderReview,
-  refusalLines,
 } from "./referral-board-model";
+import { destinationWords, outcomeDetail, refusalLines } from "./referral-ward-names";
+import redesign from "./referral-page.module.css";
 
 /**
  * The detail cell's parts, rendered so a coordinator cannot mistake one for another: the outcome
@@ -178,7 +181,7 @@ export function QueuedSection({
               <col className={a.colWait} />
               <col className={a.colFrom} />
               <col className={a.colAsk} />
-              <col className={a.colNeeds} />
+              <col className={cx(a.colNeeds, redesign.colNeeds)} />
               <col className={a.colFit} />
             </colgroup>
             <thead>
@@ -196,18 +199,21 @@ export function QueuedSection({
               {queued.map((referral) => {
                 const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
                 const summary = sender.referralFor(referral);
-                const refusals = summary === undefined ? refusalLines(referral) : [];
+                const refusals = summary === undefined ? refusalLines(referral, units) : [];
                 const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
                 const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
                 const ward = wardArm(referral)?.destination;
+                // Redesign (Josh, 30 Oct 2026): short words, not icons alone; "Locked" is the app's word (F-24).
                 const needs = [
-                  ward?.secureBedNeeded ? { icon: Lock, label: "Secure bed requested" } : undefined,
-                  ward?.involuntaryBedNeeded ? { icon: Scale, label: "Involuntary bed requested" } : undefined,
-                  ward?.highAcuityNursingNeeded ? { icon: Users, label: "High acuity nursing requested" } : undefined,
-                  referral.transportNeeded ? { icon: Truck, label: "Transport requested" } : undefined,
-                ].filter((need): need is { icon: typeof Lock; label: string } => need !== undefined);
+                  ward?.secureBedNeeded ? { word: "Locked", label: "Locked bed requested" } : undefined,
+                  ward?.involuntaryBedNeeded ? { word: "Involuntary", label: "Involuntary bed requested" } : undefined,
+                  ward?.highAcuityNursingNeeded
+                    ? { word: "High acuity", label: "High acuity nursing requested" }
+                    : undefined,
+                  referral.transportNeeded ? { word: "Transport", label: "Transport requested" } : undefined,
+                ].filter((need): need is { word: string; label: string } => need !== undefined);
 
                 return (
                   <tr
@@ -250,7 +256,7 @@ export function QueuedSection({
                           {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
-                          <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
+                          <span className={a.mono}>{patientInfo.umrn}</span> · {personLine(referral)}
                         </span>
                       </span>
                       <ReadmissionFlag
@@ -297,7 +303,7 @@ export function QueuedSection({
                     <td>
                       <span className={a.arms}>
                         {(summary === undefined
-                          ? armChips(referral)
+                          ? armChips(referral, units)
                           : [{ words: "Awaiting answer", refused: false, titles: [] }]
                         ).map(({ words, refused, titles }) => (
                           <span key={words} className={cx(a.arm, refused && a.armNo)} title={titles.join("\n")}>
@@ -314,10 +320,10 @@ export function QueuedSection({
                     </td>
                     <td>
                       {needs.length > 0 ? (
-                        <span className={a.needs}>
+                        <span className={cx(a.needs, redesign.needWords)}>
                           {needs.map((need) => (
                             <span key={need.label} title={need.label}>
-                              <need.icon size={14} aria-hidden="true" />
+                              <span aria-hidden="true">{need.word}</span>
                               <span className="sr-only">{need.label}</span>
                             </span>
                           ))}
@@ -340,7 +346,8 @@ export function QueuedSection({
                         </span>
                       ) : (
                         <span className={a.fit}>
-                          <b>{ready}</b> ready
+                          {/* Redesign (Josh, 30 Oct 2026): the figure counts wards, so it says so. */}
+                          <b>{ready}</b> {ready === 1 ? "ward" : "wards"}
                         </span>
                       )}
                     </td>
@@ -354,7 +361,7 @@ export function QueuedSection({
             {queued.map((referral) => {
               const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
               const summary = sender.referralFor(referral);
-              const refusals = summary === undefined ? refusalLines(referral) : [];
+              const refusals = summary === undefined ? refusalLines(referral, units) : [];
               const accepted =
                 summary === undefined || summary?.state === "accepted" ? acceptedAddressing(referral) : undefined;
               const linkedMovement = summary === undefined ? openMovementByReferral.get(referral.id) : undefined;
@@ -410,7 +417,9 @@ export function QueuedSection({
                       {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
                         {[
-                          ...referralPersonFactsStatingSex(referral).slice(0, 2),
+                          ...referralPersonFactsStatingSex(referral)
+                            .slice(0, 2)
+                            .filter((fact) => fact !== SEX_NOT_HELD),
                           ...(cardNeeds > 0 ? [`${cardNeeds} ${cardNeeds === 1 ? "need" : "needs"}`] : []),
                         ].join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
@@ -468,7 +477,7 @@ const SHORT_KIND: Record<Referral["destinations"][number]["destination"]["kind"]
 };
 
 /** One chip per distinct need, so three wards asked read "Ward bed" once, with each ward in the title. */
-function armChips(referral: Referral) {
+function armChips(referral: Referral, units: readonly Unit[]) {
   const chips = new Map<string, { words: string; refused: boolean; titles: string[] }>();
   for (const arm of referral.destinations) {
     const open = arm.state === "queued" && arm.withdrawnAt === undefined;
@@ -479,8 +488,8 @@ function armChips(referral: Referral) {
       open && arm.waitlistedAt !== undefined ? ", on the waiting list" : refused ? " refused" : ""
     }${asked > 0 ? `, needs ${asked} item${asked === 1 ? "" : "s"}` : open && arm.openedAt !== undefined ? ", opened" : ""}`;
     const title = refused
-      ? `${referralDestinationLabel(arm.destination)} refused: ${declineReasonWords(arm.declineReason)}`
-      : referralDestinationLabel(arm.destination);
+      ? `${destinationWords(arm.destination, units)} refused: ${declineReasonWords(arm.declineReason)}`
+      : destinationWords(arm.destination, units);
     const chip = chips.get(words) ?? { words, refused, titles: [] };
     chip.titles.push(title);
     chips.set(words, chip);

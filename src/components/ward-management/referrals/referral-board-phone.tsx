@@ -1,11 +1,16 @@
 "use client";
+// Referrals redesign (30 October 2026): the figure reads "Decision overdue", as the desktop chip does, and the
+// median names what it covers. 31 October: Next overdue and Bed meeting list are Home's hero pills,
+// side by side.
 
 import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 
-import { Button, LiveChip, ScrollRow, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
+import { Button, LiveChip, StatusGlyph, cx, useWfBandBleed } from "@/components/wf";
 
 import styles from "./referral-board-phone.module.css";
+import rows from "@/components/wf/phone-rows.module.css";
+import local from "./referral-page.module.css";
 
 /**
  * Referrals on the phone (v10 build guide, Referrals > Phone). Its own design at 390 wide: the hero
@@ -32,7 +37,8 @@ export function ReferralPhoneHero({
 }: {
   count: number;
   oldest: string | undefined;
-  median: string | undefined;
+  /** The median and what it covers, already worded by the page. */
+  median: ReactNode;
   overdue: number;
   tier1: number;
   bedsReady: number;
@@ -76,17 +82,12 @@ export function ReferralPhoneHero({
         ) : (
           "No referral waiting"
         )}
-        {median ? (
-          <>
-            {" "}
-            · median decision <span className={styles.num}>{median}</span>
-          </>
-        ) : null}
+        {median ? <> · {median}</> : null}
       </p>
-      <div className={styles.figures} role="group" aria-label="Highlight referrals">
+      <div className={cx(styles.figures, local.figures)} role="group" aria-label="Highlight referrals">
         <Figure
           value={overdue}
-          label="Overdue"
+          label="Decision overdue"
           tone={overdue > 0 ? "danger" : "neutral"}
           pressed={highlight === "overdue"}
           onPress={() => onHighlight("overdue")}
@@ -106,18 +107,18 @@ export function ReferralPhoneHero({
           </span>
         </button>
       </div>
-      <div className={styles.actions}>
+      <div className={cx(styles.actions, rows.heroPills)}>
         <Button
           variant="onHero"
           icon={TriangleAlert}
-          className={styles.action}
+          className={rows.heroPill}
           disabledReason={overdue > 0 ? undefined : "Nothing is overdue."}
           reasonDisplay="tooltip"
           onClick={onNextOverdue}
         >
           Next overdue
         </Button>
-        <Button variant="onHero" icon={ListOrdered} className={styles.action} onClick={onMeeting}>
+        <Button variant="onHero" icon={ListOrdered} className={rows.heroPill} onClick={onMeeting}>
           Bed meeting list
         </Button>
       </div>
@@ -150,40 +151,6 @@ function Figure({
 }
 
 export type PhoneChip = { key: string; label: string; count: number };
-
-/** The rest of the highlight chips, one sideways row of compact chips with 48px targets. They never wrap. */
-export function ReferralPhoneChips({
-  chips,
-  highlight,
-  onHighlight,
-}: {
-  chips: PhoneChip[];
-  highlight: string | null;
-  onHighlight: (key: string) => void;
-}) {
-  return (
-    <ScrollRow
-      className={styles.chipsFrame}
-      rowClassName={styles.chips}
-      role="group"
-      aria-label="Highlight by what is asked"
-    >
-      {chips.map((chip) => (
-        <button
-          key={chip.key}
-          type="button"
-          className={styles.chip}
-          aria-pressed={highlight === chip.key}
-          onClick={() => onHighlight(chip.key)}
-          data-testid={`ward-referral-phone-chip-${chip.key}`}
-        >
-          <b>{chip.count}</b>
-          {chip.label}
-        </button>
-      ))}
-    </ScrollRow>
-  );
-}
 
 /** The waiting time axis, one tap away as a card that opens a sheet. */
 export function ReferralPhoneCard({

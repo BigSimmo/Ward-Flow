@@ -457,9 +457,9 @@ describe("ReferralBoard", () => {
     ]);
   });
 
-  it("offers the search on the Queue tab only, since it narrows queue rows", async () => {
+  it("offers no Filter queue box on either tab; the header search finds referrals (30 Oct 2026)", async () => {
     renderBoard();
-    expect(screen.getByRole("searchbox", { name: "Filter referrals" })).toBeInTheDocument();
+    expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
     await openHistory();
     expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
   });
@@ -1321,7 +1321,8 @@ describe("ReferralBoard — an acceptance does not erase a refusal", () => {
     const declineReason = declinedAddressings(referrals.find((candidate) => candidate.id === "RF-004")!)[0]!
       .declineReason!;
     expect(screen.getByTestId("ward-referral-board-decided-detail-RF-004").textContent).toBe(
-      `Ward · fsh-older-adult: ${declineReasonLabelForTest(declineReason)}`,
+      // Referrals redesign (31 Oct 2026): History names the ward that declined, not its internal code.
+      `FSH Older Adult: ${declineReasonLabelForTest(declineReason)}`,
     );
   });
 });
