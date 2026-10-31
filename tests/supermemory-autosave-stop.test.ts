@@ -12,6 +12,8 @@ import {
   claimSessionEvent,
   hasSessionEvent,
   memoryToolsSeen,
+  MAX_TRANSCRIPT_BYTES,
+  transcriptHeadShowsMemoryTools,
   sessionStart,
   SPACE,
 } from "../scripts/supermemory-autosave-stop.mjs";
@@ -331,6 +333,29 @@ describe("quiet when Supermemory is not connected (Josh, 31 Oct 2026)", () => {
     expect(s.toolsSeen()).toBe(true);
     expect(runWith([decision], s)).not.toBeNull();
     expect(runWith([decision], s)).not.toBeNull();
+  });
+
+  it("finds a Supermemory listing at the start of a transcript longer than the tail window", () => {
+    const directory = mkdtempSync(join(tmpdir(), "memory-head-fixture-"));
+    const filler = JSON.stringify(assistantText("x".repeat(1000)));
+    const padding = Array.from({ length: Math.ceil(MAX_TRANSCRIPT_BYTES / filler.length) + 2 }, () => filler);
+    const listed = join(directory, "listed.jsonl");
+    writeFileSync(listed, [JSON.stringify(toolsListed), ...padding].join("\n"));
+    expect(
+      memoryToolsSeen(
+        readBoundedTranscript(listed)
+          .split("\n")
+          .map((line) => JSON.parse(line)),
+      ),
+    ).toBe(false);
+    expect(transcriptHeadShowsMemoryTools(listed)).toBe(true);
+    const unlisted = join(directory, "unlisted.jsonl");
+    writeFileSync(unlisted, [JSON.stringify(otherTools), ...padding].join("\n"));
+    expect(transcriptHeadShowsMemoryTools(unlisted)).toBe(false);
+    const short = join(directory, "short.jsonl");
+    writeFileSync(short, JSON.stringify(toolsListed));
+    // A short transcript fits the tail window, which already covers it.
+    expect(transcriptHeadShowsMemoryTools(short)).toBe(false);
   });
 
   it("latches the Supermemory sighting per native session", () => {

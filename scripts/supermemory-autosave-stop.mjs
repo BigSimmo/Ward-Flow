@@ -279,6 +279,42 @@ export function readBoundedTranscript(path) {
   }
 }
 
+/**
+ * True when the start of a transcript longer than the tail window lists or uses a Supermemory tool.
+ * Tool listings arrive at session start, so a first turn that writes past the tail window would
+ * otherwise hide them before any Stop could latch the sighting. Reads at most the bounded window.
+ */
+export function transcriptHeadShowsMemoryTools(path) {
+  const fd = openSync(path, "r");
+  try {
+    const stat = fstatSync(fd);
+    if (!stat.isFile() || stat.size <= MAX_TRANSCRIPT_BYTES) return false;
+    const buffer = Buffer.alloc(MAX_TRANSCRIPT_BYTES);
+    let count = 0;
+    while (count < buffer.length) {
+      const read = readSync(fd, buffer, count, buffer.length - count, count);
+      if (!read) break;
+      count += read;
+    }
+    const head = buffer.subarray(0, count);
+    // Drop the partial last record (and any split UTF-8 sequence) before decoding.
+    const end = head.lastIndexOf(10);
+    const entries = (end < 0 ? "" : head.subarray(0, end).toString("utf8"))
+      .split("\n")
+      .map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
+    return memoryToolsSeen(entries);
+  } finally {
+    closeSync(fd);
+  }
+}
+
 const LATCH_KINDS = ["recall", "stop", "tools"];
 
 function latchPath(input, kind, directory) {
@@ -314,7 +350,10 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
     const out = process.argv.includes("--session-start")
       ? sessionStart(process.env, input)
       : decide(input, process.env, readBoundedTranscript, {
-          toolsSeen: () => hasSessionEvent(input, "tools"),
+          // No latch yet: the listing may already have left the tail, so check the transcript's start once.
+          toolsSeen: () =>
+            hasSessionEvent(input, "tools") ||
+            (transcriptHeadShowsMemoryTools(input.transcript_path) && (claimSessionEvent(input, "tools"), true)),
           markToolsSeen: () => claimSessionEvent(input, "tools"),
           claimQuietNudge: () => claimSessionEvent(input, "stop"),
         });
