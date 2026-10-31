@@ -80,7 +80,8 @@ describe("unified Patient Now clinical flight deck", () => {
     // A34: the one transport booking form. Escort opens unanswered.
     expect(screen.getByRole("radio", { name: "Escort required" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "No escort required" })).not.toBeChecked();
-    fireEvent.change(screen.getByLabelText(/^Who is collecting /), { target: { value: "Ambulance (St John)" } });
+    // Redesign (Josh, 31 Oct 2026): the label no longer repeats the person's name.
+    fireEvent.change(screen.getByLabelText("Who is collecting"), { target: { value: "Ambulance (St John)" } });
     fireEvent.change(screen.getByLabelText("CAD transport number"), { target: { value: "CAD-SYNTHETIC-42" } });
     fireEvent.click(within(screen.getByRole("group", { name: "Quick times" })).getByRole("button", { name: "+30m" }));
     fireEvent.click(screen.getByRole("radio", { name: "Involuntary" }));

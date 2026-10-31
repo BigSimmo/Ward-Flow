@@ -196,6 +196,8 @@ export function renderEdBoardTableRow(
         {movement.closure ? null : (
           <EdActionsMenu
             patientName={patientInfo.displayName}
+            formalName={patientInfo.formalName}
+            umrn={patientInfo.umrn}
             testId={`ward-ed-actions-menu-${movement.id}`}
             triggerTestId={`ward-ed-unfold-${movement.id}`}
             onViewRecord={openSheet}

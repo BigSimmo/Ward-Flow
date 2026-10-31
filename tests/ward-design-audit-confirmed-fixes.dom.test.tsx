@@ -74,7 +74,7 @@ function fillModal(kind: ModalKind) {
     fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "hospital_transfer" } });
     fireEvent.change(screen.getByLabelText("CAD or tracking number"), { target: { value: "SYNTHETIC-TRACKING" } });
     // The ETA opens blank when nothing is recorded or booked, so a preset is chosen.
-    fireEvent.click(screen.getByRole("button", { name: "+2 hours" }));
+    fireEvent.click(screen.getByRole("button", { name: /^\+1h/u }));
   } else {
     fireEvent.change(screen.getByLabelText("Document / Statutory Form Type"), {
       target: { value: "Form 4A Transport order" },
