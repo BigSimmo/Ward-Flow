@@ -71,9 +71,6 @@ const PopEdActions = dynamic<{ page: ReactNode }>(() =>
 const PopLogTransport = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-log-transport/pop-log-transport").then((module) => module.PopLogTransport),
 );
-const PopOfficerJob = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-officer-job/pop-officer-job").then((module) => module.PopOfficerJob),
-);
 const PopRecordForm = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-record-form/pop-record-form").then((module) => module.PopRecordForm),
 );
@@ -208,7 +205,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   "refer-ward": PopReferWard,
   "ed-actions": PopEdActions,
   "log-transport": PopLogTransport,
-  "officer-job": PopOfficerJob,
   "record-form": PopRecordForm,
   "record-exam": PopRecordExam,
   "add-time": PopAddTime,

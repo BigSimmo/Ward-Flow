@@ -35,9 +35,6 @@ const StaysPage = dynamic<MockupPageProps>(() =>
 const EdBoardPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/ed-board/ed-board-page").then((module) => module.EdBoardPage),
 );
-const TransportRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/transport/transport-redesign").then((module) => module.TransportRedesign),
-);
 const PatientsRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/patients/patients-redesign").then((module) => module.PatientsRedesign),
 );
@@ -211,9 +208,6 @@ const AsCommunityStatisticsPage = dynamic<MockupPageProps>(() =>
     (module) => module.AsCommunityStatisticsPage,
   ),
 );
-const AsOfficerHomePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/as-officer-home/as-officer-home-page").then((module) => module.AsOfficerHomePage),
-);
 const AsOfficerAlertsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-officer-alerts/as-officer-alerts-page").then(
     (module) => module.AsOfficerAlertsPage,
@@ -299,7 +293,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   ward: WardRedesign,
   stays: StaysPage,
   "ed-board": EdBoardPage,
-  transport: TransportRedesign,
   patients: PatientsRedesign,
   discharges: DischargesPage,
   wards: WardsPage,
@@ -347,7 +340,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "as-community-movements": AsCommunityMovementsPage,
   "as-community-patient": AsCommunityPatientPage,
   "as-community-statistics": AsCommunityStatisticsPage,
-  "as-officer-home": AsOfficerHomePage,
   "as-officer-alerts": AsOfficerAlertsPage,
   "as-bed-manager-home": AsBedManagerHomePage,
   "as-bed-manager-wards": AsBedManagerWardsPage,

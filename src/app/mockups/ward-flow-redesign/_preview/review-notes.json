@@ -316,35 +316,6 @@
     ],
     "keep": "The ED peer strip, the access-target notice, the Record exam and Log transport actions, and On TV."
   },
-  "transport": {
-    "role": "The transport officer's job list: who to collect, where to, and what each job still needs.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**The Next button is clipped at the right edge** (\"Arrived at ward\")."
-      },
-      {
-        "devices": ["All"],
-        "text": "**Names are written first name first** (\"Noor Tremalow\"), unlike every other page."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The heading repeats the page name: \"Transport dispatch / Transport\"."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Columns sized so Next always fits."
-      },
-      {
-        "text": "**Surname first**, as everywhere else."
-      },
-      {
-        "text": "The heading states the work: \"13 jobs open · 8 moving, 5 waiting\". Routes read \"PEEL ED → Maali (Ward 4.2)\", and missing forms are marked."
-      }
-    ],
-    "keep": "Jobs and History, the escort and involuntary filters, and both sort orders."
-  },
   "patients": {
     "role": "Statewide census of everyone in the system, searchable, grouped by where their journey stands.",
     "issues": [

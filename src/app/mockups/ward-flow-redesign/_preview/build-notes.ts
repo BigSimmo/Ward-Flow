@@ -129,12 +129,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the hero keeps In a bed and With a discharge date; the follow-up figures move into the card as six tiles (2 × 3 on the phone). 'Counts only' sits in the eyebrow, as on the ED desk.",
     "**Still open:** the app bar says 'Statewide' on Midland's own page (shared chrome).",
   ],
-  "as-officer-home": [
-    "**As the transport officer**, the phone opens on the next job (Open, then the one filled En route), then the job list; a long list shows its first 8 jobs, then Show all.",
-    "**Moved:** Copy handover goes under the list on the phone, as an end-of-shift step.",
-    "**Removed:** the Providers row while there is one provider (it repeated the jobs line).",
-    "**Round 2:** 'Collected' is the one word for that stage; on the phone 'Past ETA' and 'Need forms'. The job panel uses the Transport mock-up's fixed copy, so 'Arrived at ward' is never cut off.",
-  ],
   "as-officer-alerts": [
     "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
     "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
@@ -229,12 +223,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** phone answer buttons keep the kit's size with a larger tap area, and the pinned Save row matches the popup background in dark.",
     "**Kept:** all fields, and Save greyed until every answer is in. **Changed (Josh, 31 Oct 2026):** no legal-status prefill and no day chosen when the form opens; Legal now shows under the legal question as plain text.",
     "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
-  ],
-  "pop-officer-job": [
-    "**Built on today's job panel itself**, opened by choosing the first job on the desk, so steps, forms pack, copy and close are real.",
-    "**New:** on wider screens the four leg steps sit two by two, so 'Arrived at ward' is no longer cut off.",
-    "**Kept:** the phone panel (steps list, Mark en route pinned at the foot) is unchanged.",
-    "**Round 2:** the attribute-selector override is gone; the panel's fixes now live in the Transport mock-up's own copy of the job panel.",
   ],
   "pop-record-form": [
     "**Built from a copy of today's Record a form sheet**: validation, error summary, draft keeping, save and Undo work as now.",
@@ -646,15 +634,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**Found while building:** the Lists write names first name first ("Noor Tremalow"). The board and D-83 put the surname first.',
     "**Round 2:** the phone hero buttons and the Lists row are back to today's sizes (your ruling, 30 October). The Lists row reads 'Lists by step' with each list's count, and the risk table header reads 'Earliest release on record', so it stays on one line.",
     "**Proposals for you:** move 'May pass the access target' under the board, and drop the repeated Find a bed buttons (an ED desk does not find beds itself), making the name the link.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  transport: [
-    "**Built from a copy of today's Transport desk**, so Jobs and History, the escort and involuntary filters, both sort orders, the job panel, the forms pack and Copy handover all work as now.",
-    '**New:** names are surname first at every width (D-83). The title stays "Transport" (your ruling of 27 October), with "13 jobs open · 8 moving, 5 waiting" beside it instead of a repeated eyebrow.',
-    '**New:** routes read from first, then the ward ("PEEL → Maali (Ward 4.2)"), missing forms are marked under the count, and the Next column is wide enough that "Arrived at ward" is never cut off.',
-    "**Round 2:** the Forms cell says one thing ('3 forms missing' or 'All forms'), the title line drops '8 moving, 5 waiting' (the stage chips split it), and 'Jobs need forms' is amber at every width.",
-    "**Behaviour change:** cancelled transport now shows at every width. Today it uses the phone-only card, so wider screens never show it.",
-    "**Round 2, job panel:** a copy of the real panel lays the four leg steps two by two, so 'Arrived at ward' is never cut to 'Arrived at w…'. Each fact is said once: no 'Accepted' chip in the header, the forms count as '3 to upload', unrecorded booking facts on one 'Not recorded:' line, and 'Legal status not recorded'. Routes wrap when the panel narrows the table.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
   patients: [
