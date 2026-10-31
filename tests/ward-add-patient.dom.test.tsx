@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -92,7 +92,7 @@ function fillDraft() {
   fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999999" } });
   fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
   fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Newcomer" } });
-  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1990-01-01" } });
+  fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "01/01/1990" } });
 }
 
 describe("AddPatientForm", () => {
@@ -362,7 +362,7 @@ describe("AddPatientForm — the creation-time duplicate check", () => {
       notice.textContent,
       "the prefilled misspelling is on screen with nothing saying an almost identical person " +
         "already exists — which is how a second record for Marcus Hallowin gets created",
-    ).toContain("Marcus Hallowin");
+    ).toContain("Hallowin, Marcus");
     // The identifier, because by construction the NAME cannot distinguish these two people.
     expect(notice.textContent).toContain("UM100002");
     expect(notice.textContent).toContain("1961-11-02");
@@ -379,7 +379,7 @@ describe("AddPatientForm — the creation-time duplicate check", () => {
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Halowin" } });
 
     expect(checkState()).toBe("matches");
-    expect(screen.getByTestId("ward-add-patient-duplicate-check").textContent).toContain("Marcus Hallowin");
+    expect(screen.getByTestId("ward-add-patient-duplicate-check").textContent).toContain("Hallowin, Marcus");
   });
 
   it("⚠️ says the check has NOT RUN rather than reporting a clear result, below the matcher's floor", () => {
@@ -412,7 +412,7 @@ describe("AddPatientForm — the creation-time duplicate check", () => {
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM100099" } });
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Marcus" } });
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Halowin" } });
-    fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "1961-11-02" } });
+    fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "02/11/1961" } });
 
     expect(checkState(), "the warning is not even showing, so the assertion below proves nothing").toBe("matches");
     const submit = screen.getByRole("button", { name: "Add patient" });
@@ -442,7 +442,9 @@ describe("AddPatientForm — the exact-duplicate tiers", () => {
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: umrn } });
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: given } });
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: family } });
-    fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: born } });
+    fireEvent.change(screen.getByLabelText("Date of birth"), {
+      target: { value: born.split("-").reverse().join("/") },
+    });
   }
 
   it("⚠️ states a record-number collision FLATLY, because it is not a resemblance", () => {
@@ -588,7 +590,7 @@ describe("AddPatientForm — Q004 registration workspace", () => {
     expect(screen.getByLabelText(/Record number|UMRN/i)).toHaveValue("UM100002");
     expect(screen.getByLabelText("Given name")).toHaveValue("");
     expect(screen.getByLabelText("Family name")).toHaveValue("");
-    expect(screen.getByTestId("ward-add-patient-duplicate-umrn")).toHaveTextContent("Marcus Hallowin");
+    expect(screen.getByTestId("ward-add-patient-duplicate-umrn")).toHaveTextContent("Hallowin, Marcus");
     expect(screen.getByTestId("ward-add-patient-submit")).toHaveAttribute("aria-disabled", "true");
   });
 
@@ -612,8 +614,9 @@ describe("AddPatientForm — Q004 registration workspace", () => {
     renderForm();
     const count = Number(screen.getByTestId("patient-count").textContent);
     expect(count).toBeGreaterThan(0);
+    // Redesign (30 Oct 2026): the check sits under the identity fields and its head names what it covers.
     expect(screen.getByTestId("ward-add-patient-duplicate-check")).toHaveTextContent(
-      `Duplicate check covers all ${count} patient records.`,
+      `Checks all ${count} patient records`,
     );
     expect(screen.getByTestId("ward-add-patient-duplicate-unchecked")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Back to patient search" })).toHaveAttribute("href", "/ward-flow/search");
@@ -624,12 +627,14 @@ describe("AddPatientForm — Q004 registration workspace", () => {
 // v6 (AddPatient.png): Gender, triage category and legal status are segmented controls (radios),
 // and the Indigenous status, health service and presenting complaint fields carry the mockup labels.
 describe("AddPatientForm — third-edition upgrade, the Gender control", () => {
-  it("defaults to 'Not yet recorded' and omits the gender key entirely on submit", async () => {
+  it("opens with no gender chosen and omits the gender key entirely on submit", async () => {
     renderForm();
-    // The literal sentinel `add-patient.tsx`'s own `GENDER_NOT_RECORDED` uses — not exported, so
-    // named here rather than imported, matching this file's existing style of pinning values
-    // rather than reaching into the component's private constants.
-    expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "true");
+    // Josh's rule: nothing is pre-selected. Every option, "Not recorded" included, starts unchosen.
+    const genderRadios = within(screen.getByRole("radiogroup", { name: "Gender" })).getAllByRole("radio");
+    expect(genderRadios.length).toBeGreaterThan(1);
+    for (const radio of genderRadios) {
+      expect(radio).toHaveAttribute("aria-checked", "false");
+    }
 
     fillDraft();
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
@@ -762,7 +767,8 @@ describe("AddPatientForm safety regressions", () => {
     for (const label of [/Record number|UMRN/i, "Given name", "Family name", "Date of birth"]) {
       expect(screen.getByLabelText(label)).toHaveValue("");
     }
-    expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByRole("radio", { name: "Female" })).toHaveAttribute("aria-checked", "false");
     expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -842,7 +848,7 @@ describe("AddPatientForm — errors mark and move to the field at fault (DA-12)"
     }
 
     // A filled field drops its mark straight away.
-    fireEvent.change(dateOfBirth, { target: { value: "1990-01-01" } });
+    fireEvent.change(dateOfBirth, { target: { value: "01/01/1990" } });
     expect(dateOfBirth).not.toHaveAttribute("aria-invalid");
   });
 

@@ -42,12 +42,11 @@ import {
   buttonClass,
   Card,
   CardBody,
-  CardFoot,
   CardHead,
   type ChoiceItem,
   cx,
+  DateField,
   Field,
-  Frac,
   Hero,
   Icon,
   LiveChip,
@@ -60,7 +59,6 @@ import {
   StatusGlyph,
   TextInput,
   useIsPhone,
-  useIsTabletPortrait,
   useOptionalToast,
 } from "@/components/wf";
 import { useDirtyStateGuard } from "../use-dirty-state-guard";
@@ -77,13 +75,19 @@ import {
 /**
  * ADD A PATIENT (v6, AddPatient.png). No hero: a slim bar with the way back and the synthetic-record
  * marker, then the Identity card only (D-77 change 6: address, facility and intake belong to the referral
- * or the movement, not the person), and one foot with Reset and the single primary, Add patient. The right
- * column carries the live duplicate check and the latest records. Adding opens the new patient's page.
+ * or the movement, not the person), and one foot with Reset and the single primary, Add patient. The live
+ * duplicate check runs inside the Identity card; the right column carries the latest records. Adding
+ * opens the new patient's page.
  *
  * Owner Rule D4: an unconnected control says exactly "Not wired in this prototype." Print and Save
  * draft only ever said that, so they are hidden until they work (overall review, 20 Oct 2026).
  * Owner Rule D5: legal status shows form names only, never Mental Health Act section numbers, and
  * no legal time limit is computed here.
+ *
+ * REDESIGN (mock-up, 30 Oct 2026): the duplicate check sits under the identity fields, inside the
+ * Identity card, and runs as you type; before anything is typed it is one quiet line, not a panel.
+ * Unavailable finish buttons are greyed, not dashed, with "Needed: ..." beside them. The right
+ * column keeps Recently added. Names in the duplicate check read surname first (D-83).
  */
 
 type PatientDraft = {
@@ -150,10 +154,29 @@ const UNAVAILABLE_REASON_ID = "ward-add-patient-unavailable-reason";
 /** The phone's "On a larger screen" sheet: what the short phone form leaves out. */
 const LARGER_SCREEN_ROWS: readonly (readonly [string, string])[] = [
   ["Gender, Aboriginal or Torres Strait Islander", "Optional · bed matching"],
-  ["Duplicate check beside the form", "The phone runs the same check below the form"],
 ];
+
+/** The words for each blank required field, in the order the fields appear. */
+const NEEDED_WORDS: Record<keyof PatientDraft, string> = {
+  umrn: "UMRN",
+  dateOfBirth: "date of birth",
+  givenName: "given name",
+  familyName: "family name",
+};
+
+/** "UMRN, date of birth, given and family name": what is still blank, in field order. */
+function neededLine(draft: PatientDraft): string {
+  const blank = REQUIRED_CONTROLS.filter((control) => draft[control.key].trim() === "").map((control) => control.key);
+  const bothNames = blank.includes("givenName") && blank.includes("familyName");
+  return blank
+    .filter((key) => !(bothNames && key === "familyName"))
+    .map((key) => (bothNames && key === "givenName" ? "given and family name" : NEEDED_WORDS[key]))
+    .join(", ");
+}
 const GENDER_NOT_RECORDED = "not-recorded" as const;
-type GenderChoice = Gender | typeof GENDER_NOT_RECORDED;
+/** Nothing chosen yet: no option is selected when the form opens (Josh's rule, nothing pre-selected). */
+const GENDER_UNCHOSEN = "" as const;
+type GenderChoice = Gender | typeof GENDER_NOT_RECORDED | typeof GENDER_UNCHOSEN;
 
 const GENDER_ITEMS: ChoiceItem<GenderChoice>[] = [
   ...GENDERS.map((gender) => ({ id: gender, label: gender })),
@@ -205,8 +228,10 @@ export function AddPatientForm() {
     initialDraft(handoff?.assignTo === "given-name" ? handoff.text : ""),
   );
 
-  const [genderChoice, setGenderChoice] = useState<GenderChoice>(GENDER_NOT_RECORDED);
+  const [genderChoice, setGenderChoice] = useState<GenderChoice>(GENDER_UNCHOSEN);
   const [indigenousStatus, setIndigenousStatus] = useState<IndigenousStatusChoice>(INDIGENOUS_STATUS_UNANSWERED);
+  // A reset also clears a half-typed birth date, which the draft (YYYY-MM-DD or "") cannot see.
+  const [dateBoxGeneration, setDateBoxGeneration] = useState(0);
 
   const [lastRejection, setLastRejection] = useState<string | undefined>(undefined);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
@@ -246,7 +271,6 @@ export function AddPatientForm() {
    * says gender and Aboriginal status are on a larger screen. Desktop never reads any of this.
    */
   const isPhone = useIsPhone();
-  const isTabletPortrait = useIsTabletPortrait();
   const [phoneSheet, setPhoneSheet] = useState<"larger" | null>(null);
   /*
    * Search and forms review (31 Oct 2026): on a larger screen the cursor starts in the first empty
@@ -299,7 +323,7 @@ export function AddPatientForm() {
     draft.givenName.trim().length > 0 ||
     draft.familyName.trim().length > 0 ||
     draft.dateOfBirth.trim().length > 0 ||
-    genderChoice !== GENDER_NOT_RECORDED ||
+    genderChoice !== GENDER_UNCHOSEN ||
     indigenousStatus !== INDIGENOUS_STATUS_UNANSWERED;
   const isDirty = identityChanged;
 
@@ -359,7 +383,8 @@ export function AddPatientForm() {
     setSavedOutsideView(null);
     lateSubmissionRef.current = null;
     setDraft(initialDraft());
-    setGenderChoice(GENDER_NOT_RECORDED);
+    setGenderChoice(GENDER_UNCHOSEN);
+    setDateBoxGeneration((generation) => generation + 1);
     setIndigenousStatus(INDIGENOUS_STATUS_UNANSWERED);
     setAssignedSearch(null);
     finishSubmission();
@@ -549,7 +574,7 @@ export function AddPatientForm() {
         familyName: answered.familyName,
         dateOfBirth: answered.dateOfBirth,
         demoToday,
-        ...(genderChoice === GENDER_NOT_RECORDED ? {} : { gender: genderChoice }),
+        ...(genderChoice === GENDER_NOT_RECORDED || genderChoice === GENDER_UNCHOSEN ? {} : { gender: genderChoice }),
         ...(indigenousStatus === INDIGENOUS_STATUS_UNANSWERED
           ? {}
           : { aboriginalOrTorresStraitIslanderStatus: indigenousStatus }),
@@ -623,23 +648,26 @@ export function AddPatientForm() {
   ];
 
   const duplicateCheck = (
-    <Card aria-label="Possible existing records" data-testid="ward-add-patient-duplicate-check">
-      <CardHead
-        icon={UsersRound}
-        title="Duplicate check"
-        aside={
-          foundSomething ? (
-            <Badge size="sm" tone="warning">
-              {matches.length} to check
-            </Badge>
-          ) : null
-        }
-      />
-      <CardBody flush>
+    <section
+      className={styles.dupInline}
+      aria-label="Possible existing records"
+      aria-live="polite"
+      data-testid="ward-add-patient-duplicate-check"
+    >
+      <div className={styles.dupHead}>
+        <Icon icon={UsersRound} size={14} />
+        <h3 className={styles.dupTitle}>Duplicate check</h3>
+        {foundSomething ? (
+          <Badge size="sm" tone="warning">
+            {matches.length} to check
+          </Badge>
+        ) : null}
+        <span className={styles.dupCovers}>Checks all {patients.length} patient records</span>
+      </div>
+      <div>
         {!hasCheckedAnything ? (
           <p className={styles.dupState} data-testid="ward-add-patient-duplicate-unchecked">
-            Enter a record number or a name of at least {NEAR_MATCH_MINIMUM_TERM_LENGTH} letters to check for
-            duplicates.
+            Runs as you type: a UMRN, or a name of {NEAR_MATCH_MINIMUM_TERM_LENGTH} letters or more.
           </p>
         ) : !foundSomething ? (
           <p className={styles.dupState} data-testid="ward-add-patient-duplicate-none">
@@ -653,7 +681,7 @@ export function AddPatientForm() {
                 <p className={styles.dupLead} data-testid="ward-add-patient-duplicate-umrn">
                   {draft.umrn.trim()} already belongs to{" "}
                   {candidates.recordNumberCollision
-                    .map((patient) => `${patient.givenName} ${patient.familyName} (born ${patient.dateOfBirth})`)
+                    .map((patient) => `${patient.familyName}, ${patient.givenName} (born ${patient.dateOfBirth})`)
                     .join(", ")}
                   .
                 </p>
@@ -687,7 +715,7 @@ export function AddPatientForm() {
                   <div className={styles.dupMain}>
                     <span className={styles.dupNameRow}>
                       <strong className={styles.dupName}>
-                        {patient.givenName} {patient.familyName}
+                        {patient.familyName}, {patient.givenName}
                       </strong>
                       <span className={styles.dupKind}>
                         <StatusGlyph tone={kind === "near" ? "neutral" : "warning"} size={9} />
@@ -716,9 +744,8 @@ export function AddPatientForm() {
             </ul>
           </>
         )}
-      </CardBody>
-      <CardFoot meta={`Duplicate check covers all ${patients.length} patient records.`} />
-    </Card>
+      </div>
+    </section>
   );
 
   return (
@@ -738,15 +765,8 @@ export function AddPatientForm() {
             title="Add a patient"
             sub="Identity only · same duplicate check"
             data-testid="ward-add-patient-phone-hero"
-            // Device audit 11 Oct 2026: the landing shows no figures (a "0/4 Required" for a form that is
-            // not shown read as a result); the short form shows only its own required count.
-            figures={[
-              {
-                id: "required",
-                value: `${answeredCount}/${REQUIRED_FIELDS.length}`,
-                label: "Required",
-              },
-            ]}
+            // Redesign: the Identity card's head says "0 of 4 required" just below, so the hero shows
+            // no figure of its own and the form starts higher.
           />
         ) : null}
         <PhoneSheet
@@ -794,30 +814,9 @@ export function AddPatientForm() {
                   <Icon icon={ShieldCheck} size={14} />
                   Identity is saved to the record. Check for an existing record before adding.
                 </p>
-                <div className={styles.heroChips} data-testid="ward-add-patient-hero-chips">
-                  <span className={styles.heroChip}>
-                    <Frac
-                      done={answeredCount}
-                      total={REQUIRED_FIELDS.length}
-                      label="required fields"
-                      tone={answeredCount === REQUIRED_FIELDS.length ? "success" : undefined}
-                    />
-                    <span aria-hidden="true">required fields</span>
-                  </span>
-                  {/* Before anything is typed these read as a result; the duplicate count waits for
-                      input and the record count says what the check covers (device audit 11 Oct 2026). */}
-                  {hasCheckedAnything ? (
-                    <span className={styles.heroChip}>
-                      <b>{matches.length}</b> possible {matches.length === 1 ? "duplicate" : "duplicates"}
-                    </span>
-                  ) : null}
-                  <span className={styles.heroChip}>
-                    Checks <b>{patients.length}</b> records
-                  </span>
-                  <span className={styles.heroChip} data-testid="ward-add-patient-added-today">
-                    <b>{addedToday}</b> added today
-                  </span>
-                </div>
+                {/* Redesign: the chips repeated the page. The required count is the Identity card's,
+                    the record count and any possible duplicates are the duplicate check's, and the
+                    added-today count moves to Recently added, so the band keeps the one line. */}
               </div>
             }
           />
@@ -908,14 +907,15 @@ export function AddPatientForm() {
                   id="ward-add-patient-date-of-birth"
                   error={fieldError("dateOfBirth")}
                 >
-                  <TextInput
+                  {/* Typed as DD/MM/YYYY in the kit's date box, not the browser's picker (bug list row 25).
+                      The draft still holds YYYY-MM-DD; a day after the demo day is refused below. */}
+                  <DateField
+                    key={dateBoxGeneration}
                     data-testid="ward-add-patient-date-of-birth"
-                    type="date"
                     aria-required="true"
-                    max={demoToday}
                     className={styles.mono}
                     value={draft.dateOfBirth}
-                    onChange={(event) => setDraftField("dateOfBirth")(event.target.value)}
+                    onValueChange={setDraftField("dateOfBirth")}
                   />
                 </Field>
                 <Field
@@ -993,11 +993,9 @@ export function AddPatientForm() {
                   </Select>
                 </Field>
               </CardBody>
+              {/* Redesign: the duplicate check runs under the identity fields as they are typed. */}
+              {duplicateCheck}
             </Card>
-
-            {/* Tablet portrait: the duplicate check sits under Identity, where it is needed while
-                typing, not under the Add patient footer (device audit 11 Oct 2026). */}
-            {isTabletPortrait ? duplicateCheck : null}
 
             <Card className={styles.submitBar}>
               <div className={styles.submitLead}>
@@ -1025,7 +1023,7 @@ export function AddPatientForm() {
                     role={attemptedSubmit ? "alert" : undefined}
                   >
                     <Icon icon={Lock} size={14} />
-                    <span>Required: {outstanding.join(", ")}.</span>
+                    <span>Needed: {neededLine(draft)}</span>
                   </p>
                 )}
               </div>
@@ -1084,15 +1082,18 @@ export function AddPatientForm() {
             </Card>
           </form>
 
-          <aside className={styles.side} aria-label="Duplicate checking and records">
-            {isTabletPortrait ? null : duplicateCheck}
-
+          <aside className={styles.side} aria-label="Recently added records">
             <Card className={styles.phHide}>
               <CardHead
                 icon={History}
                 title="Recently added"
-                aside={<span className={styles.countPill}>{recentRecords.length}</span>}
-                action={<span className={styles.muted}>recent</span>}
+                // Redesign: the list shows its own rows, so the head names the one new figure, a count
+                // with its noun, in place of a bare "7" pill beside "recent".
+                action={
+                  <span className={styles.muted} data-testid="ward-add-patient-added-today">
+                    {addedToday} added today
+                  </span>
+                }
               />
               <CardBody flush>
                 <ul className={styles.recentList}>
