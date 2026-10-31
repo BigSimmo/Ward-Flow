@@ -114,8 +114,8 @@ export function PatientChronologySearch({
           {matches.length === 0
             ? "No patient with records matches"
             : matches.length > shown.length
-              ? `${shown.length} of ${matches.length} shown · keep typing to narrow`
-              : `${matches.length} ${matches.length === 1 ? "match" : "matches"}`}
+              ? `${shown.length} of ${matches.length} synthetic patients shown · keep typing to narrow`
+              : `${matches.length} ${matches.length === 1 ? "synthetic patient matches" : "synthetic patients match"}`}
         </p>
       </div>
     </div>
