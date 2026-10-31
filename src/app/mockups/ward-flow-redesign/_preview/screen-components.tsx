@@ -49,9 +49,6 @@ const AlertsRedesign = dynamic<MockupPageProps>(() =>
 const LegalFormsPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/legal-forms/legal-forms-page").then((module) => module.LegalFormsPage),
 );
-const OnCallRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/on-call/on-call-redesign").then((module) => module.OnCallRedesign),
-);
 const PatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/patient/patient-page").then((module) => module.PatientPage),
 );
@@ -153,7 +150,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   patients: PatientsRedesign,
   alerts: AlertsRedesign,
   "legal-forms": LegalFormsPage,
-  "on-call": OnCallRedesign,
   patient: PatientPage,
   "add-patient": AddPatientPage,
   settings: SettingsPage,

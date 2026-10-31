@@ -3,7 +3,7 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
   useOptionalWardFlowSelect,
@@ -22,15 +22,14 @@ import {
   HeroChips,
   HeroTrack,
   Icon,
-  Kbd,
   LiveChip,
   Menu,
   PillTabs,
+  SearchField,
   Sheet,
   SrOnly,
   StatusGlyph,
   Tabs,
-  TextInput,
   cx,
   Drawer,
   tableClasses,
@@ -79,7 +78,7 @@ const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, 
   { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
   {
     id: "soon",
-    label: "Ends within the hour",
+    label: "Ending soon",
     test: (entry, minute) => {
       const now = availability(entry, minute);
       return now.kind === "on" && !now.allDay && now.soon;
@@ -331,7 +330,8 @@ export function OnCallScreen() {
       />
       <HeroChip
         value={endingSoon.length}
-        label="end within the hour"
+        // Redesign: one wording for this state at every width, the phone's "ending soon" (within the hour).
+        label="ending soon"
         tone="warning"
         pressed={highlight === "soon"}
         onPress={() => toggleHighlight("soon")}
@@ -507,22 +507,18 @@ export function OnCallScreen() {
     { id: "mine" as const, label: "Mine", count: tabCounts.mine },
   ];
 
+  // D-91: the one page search field. Its spoken name is the full hint; the placeholder names what
+  // is searched in words that never cut off. The Matches panel and the hit count say how many match.
   const search = (
-    <>
-      <label className={styles.srOnlyLabel} htmlFor={searchId}>
-        Search contacts
-      </label>
-      <TextInput
-        id={searchId}
-        type="search"
-        icon={Search}
-        trailing={isPhone ? undefined : <Kbd>/</Kbd>}
-        placeholder="Role, hospital, ward, team or number"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        boxClassName={styles.search}
-      />
-    </>
+    <SearchField
+      id={searchId}
+      label="Search by role, hospital, ward, team or number"
+      placeholder="Role, place or number"
+      value={query}
+      onValueChange={setQuery}
+      shortcut={!isPhone}
+      className={styles.search}
+    />
   );
 
   const highlightChips = HIGHLIGHTS.map((item) => (
@@ -683,7 +679,8 @@ export function OnCallScreen() {
               {groupByChip}
               {groupByChip ? <span className={styles.divider} aria-hidden="true" /> : null}
               {/* The chip counts are this tab's rows, so they name it: the hero counts the whole page. */}
-              <span className={styles.chipScope}>In {tabItems.find((item) => item.id === tab)?.label}</span>
+              {/* Redesign: says what the counts are, so they are not read against the hero's whole-page figures. */}
+              <span className={styles.chipScope}>Highlight in {tabItems.find((item) => item.id === tab)?.label}</span>
               {highlightChips}
               {highlight || query ? (
                 <Button

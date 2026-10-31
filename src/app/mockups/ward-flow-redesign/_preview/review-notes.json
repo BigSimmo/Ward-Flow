@@ -405,35 +405,6 @@
     ],
     "keep": "The \"Not legally checked\" notice stays word for word, as D-77 requires until you decide on it. Clocks, Checklist and History are kept."
   },
-  "on-call": {
-    "role": "Who to call right now, for every hospital, team and state line, with the fallback if nobody answers.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Seven service-line cards fill a third of the header**, each repeating \"Until 20:00\"."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The filter chips wrap onto two lines, and the service legend sits separately in the table."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The page is the right shape. Its problems are mostly density."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Service lines become a compact strip that shrinks to the most-used lines on laptop and phone."
-      },
-      {
-        "text": "Filters sit on one row, and the service colours become a switch at its end."
-      },
-      {
-        "text": "The detail pane shows the line's status, both numbers, the email and the escalation order, with Copy buttons."
-      }
-    ],
-    "keep": "Cover at Now, 22:00, 03:00 and so on, My list, Copy who is on, the downtime card and every mock number."
-  },
   "seclusion": {
     "role": "An operational view of seclusion rooms, restraint in use and recent incidents, by ward.",
     "issues": [

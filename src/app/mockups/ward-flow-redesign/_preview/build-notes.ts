@@ -383,14 +383,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     '**New:** the form number stays in its tag and Form 1A\'s name is shortened to "Referral for examination" (the full title is in the record and the tooltip). Time not written shows its first 6 rows with Show more. Copy for handover and Record and tell are drawn as buttons, apart from the figures.',
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
-  "on-call": [
-    "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
-    "**Today's On-call page, with a redesign stylesheet on top.** The review found it the right shape, so cover at Now, 22:00 and later, My list, Copy who is on, the downtime card, the directory and the detail pane (status, both numbers, email and escalation order, with Copy buttons) all work as now.",
-    '**New:** the seven service lines are a compact two-line strip (line and number). "Until 20:00" shows on the chosen line and in its detail, rather than repeated on every card. On a laptop or phone the strip scrolls sideways instead of squeezing.',
-    "**Not done here:** the filters still take two rows at 1440 px; one row needs the filter labels shortened in the real file.",
-    "**Round 2:** 'Ending soon' is the one wording in the hero, filters and phone. The filter row starts 'Highlight in Hospitals', so its counts are not read against the whole page. Phone place lines, hospital names and chips wrap.",
-    "**Proposals for you:** an accent-tint pressed state for the selected line in dark, and two rows of four for the strip below 1280 px so no line is hidden.",
-  ],
   home: [
     "**31 October (Josh, D-92):** clicking a referral row in My list now opens that referral in the right-hand panel, as Act now rows and the Waiting tab already do. Only its Decide button goes to the Referrals board (WS-04 kept). Build: in `coordinator/my-list-card.tsx`, the referral row gets `onOpen` (select the referral) in place of `href`, and the coordinator screen passes `onSelectReferral`.",
     "**One Home (Josh, 30 October):** this is the Home and Activity design; the earlier Home redesign and its separate Activity popup retired, so every review of Home sees one design.",

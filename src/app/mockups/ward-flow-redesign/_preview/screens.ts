@@ -62,7 +62,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "patients", label: "Patients", group: "Work and reports", appPath: "/ward-flow/search" },
   { slug: "alerts", label: "Alerts", group: "Reference", appPath: "/ward-flow/alerts" },
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
-  { slug: "on-call", label: "On-call", group: "Reference", appPath: "/ward-flow/on-call" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
   { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },

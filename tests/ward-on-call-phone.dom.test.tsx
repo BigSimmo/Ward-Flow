@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { PhoneDirectory, PhoneFocal, PhoneSheet } from "@/components/ward-management/on-call/on-call-phone";
+import { OnCallScreen } from "@/components/ward-management/on-call/on-call-screen";
 import {
   buildOnCallDirectory,
   numberAt,
@@ -9,6 +10,7 @@ import {
   type DirectoryTab,
 } from "@/components/ward-management/on-call/on-call-directory";
 import type { ContactActions } from "@/components/ward-management/on-call/on-call-parts";
+import { WardFlowClockContext } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -138,6 +140,8 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     render(<PhoneFocal entries={[first, crisis]} actions={actions} onOpen={vi.fn()} />);
 
     expect(screen.getByText("08 0000 9001")).toBeInTheDocument();
+    // The crisis row with no number says so rather than leaving a blank.
+    expect(within(screen.getByRole("button", { name: /^MHERL crisis line/u })).getByText("Not recorded")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Copy email for Crisis inbox" }));
     expect(actions.onCopy).toHaveBeenCalledWith("crisis@example.invalid", "Email copied");
   });
@@ -180,7 +184,11 @@ describe("PhoneDirectory, the inset grouped list", () => {
     expect(expanded[0]).toHaveTextContent("Service wide");
     expect(screen.getAllByRole("button", { expanded: false }).length).toBeGreaterThan(5);
     expect(screen.getByText("North Metro")).toBeInTheDocument();
-    expect(screen.getAllByText(/^\d+\/\d+$/u).length).toBeGreaterThan(1);
+    // Redesign: "4 of 4", as the wider screen reads, with "answering" spoken after it.
+    const counts = screen.getAllByText(/^\d+ of \d+$/u);
+    expect(counts.length).toBeGreaterThan(1);
+    for (const count of counts) expect(count).toHaveTextContent(/^\d+ of \d+ answering$/u);
+    expect(screen.queryByText(/^\d+\/\d+$/u)).not.toBeInTheDocument();
     expect(screen.queryByText(/Star any line to keep it here/u)).not.toBeInTheDocument();
   });
 
@@ -293,6 +301,16 @@ describe("PhoneDirectory, the inset grouped list", () => {
     expect(actions.onCopy).toHaveBeenCalledWith(inbox.email, "Email copied");
   });
 
+  it("reads 'Not recorded' on a row whose line has no number, never 'Email'", () => {
+    const ward = hospitals.find((item) => item.kind === "nurseInCharge")!;
+    const blank: DirectoryEntry = { ...ward, lines: ward.lines.map((line) => ({ ...line, number: null })) };
+    renderDirectory({ tab: "hospitals", rows: [blank] });
+
+    const blankRow = screen.getByText(`· ${blank.place}`).closest("li")!;
+    expect(within(blankRow).getByText("Not recorded")).toBeInTheDocument();
+    expect(within(blankRow).queryByText("Email")).not.toBeInTheDocument();
+  });
+
   it("dims a shut line and shows when it opens", () => {
     const closed = entry("sw-gov");
     renderDirectory({ tab: "statewide", rows: [closed] });
@@ -382,5 +400,34 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     expect(onClose).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("the On-call phone screen's synthetic-data wording", () => {
+  it("keeps the hero's prototype line and the foot's mock-number line (Josh, 31 Oct 2026)", () => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn((query: string) => ({
+        matches: query === "(max-width: 48rem)",
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+    try {
+      render(
+        <WardFlowClockContext.Provider value={NOW_ANCHOR}>
+          <OnCallScreen />
+        </WardFlowClockContext.Provider>,
+      );
+      const hero = within(screen.getByTestId("ward-on-call-hud-island"));
+      expect(hero.getByText("Prototype data, invented numbers")).toBeInTheDocument();
+      expect(
+        screen.getByText("Synthetic records. Every number is a mock from an unassigned range."),
+      ).toBeInTheDocument();
+      expect(screen.getByTestId("ward-on-call-phone-more")).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

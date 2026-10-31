@@ -41,15 +41,6 @@
   white-space: nowrap;
 }
 
-.srOnlyLabel {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* ---------- service tag: colour as a dot, the name carries the meaning ---------- */
 .svc {
   --svc: var(--wf-svc-statewide);
@@ -209,7 +200,7 @@
 .keys {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--wf-s-1);
   flex: 1 1 auto;
   min-width: 0;
   white-space: normal;
@@ -220,7 +211,8 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  padding: 7px 10px 6px;
+  /* Redesign: each service line is two lines (line, number), so the strip is compact. */
+  padding: var(--wf-s-1) var(--wf-s-2);
   box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
   border-radius: var(--wf-r-md);
@@ -275,8 +267,10 @@
   text-overflow: ellipsis;
 }
 
+/* Redesign: "Until 20:00" repeated on every card shows only on the chosen line; the directory rows
+   already give every line's time. */
 .keyUntil {
-  display: flex;
+  display: none;
   align-items: center;
   gap: 5px;
   min-width: 0;
@@ -284,6 +278,10 @@
   line-height: var(--wf-lh-12);
   color: var(--wf-hero-ink-2);
   white-space: nowrap;
+}
+
+.key[aria-pressed="true"] .keyUntil {
+  display: flex;
 }
 
 /* ---------- layout ---------- */
@@ -347,6 +345,11 @@
 
 .chip {
   flex: 0 0 auto;
+}
+
+/* Redesign: the directory filters sit closer together. */
+.dirHead2 .chip {
+  padding-inline: var(--wf-s-2);
 }
 
 .chip > span {
@@ -1497,8 +1500,9 @@
   display: inline-grid;
   flex: none;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  /* D-91: the kit's 44px phone control height, level with the one page search field beside it. */
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-ctl);
@@ -1514,8 +1518,6 @@
 
 .phoneTools .search {
   width: 100%;
-  min-height: 48px;
-  border-radius: var(--wf-r-ctl);
 }
 
 .phoneChips {
@@ -1524,10 +1526,9 @@
   gap: 8px;
   /* Bleeds by the phone page's own 12px gutter (main), not 16px, so the row never runs 4px past
      the screen and scrolls the page sideways (header audit, 27 Oct 2026). */
-  margin: 0 calc(-1 * var(--wf-s-3));
-  padding: 2px var(--wf-s-3);
-  overflow-x: auto;
-  scrollbar-width: none;
+  /* Redesign: the chips wrap onto a second row instead of running off under the call button. */
+  flex-wrap: wrap;
+  padding: 2px 0;
 }
 
 .phoneChips > * {
@@ -1617,12 +1618,14 @@
   cursor: pointer;
 }
 
+/* Redesign: a hospital name wraps to a second line rather than ending in "…". */
 .phoneGroupHead b {
   min-width: 0;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: var(--wf-lh-14);
+  overflow: visible;
+  white-space: normal;
+  text-align: left;
 }
 
 .phoneGroupCount {
@@ -1719,6 +1722,13 @@
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Redesign: the place wraps inside its own span beside the time, so nobody to call is cut off
+   with "…" and no line starts with a stray "·". */
+.phoneRowSubWrap {
+  overflow: visible;
+  white-space: normal;
 }
 
 .phoneRowEnd {
@@ -1864,15 +1874,24 @@
 }
 
 /* ---------- responsive ---------- */
+/* Redesign: on a laptop or tablet the strip scrolls sideways rather than squeezing seven cards
+   (it replaces the four-column wrap below 1001px). */
+@media (max-width: 80rem) {
+  .keys {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(9.5rem, 1fr);
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+}
+
 @media (max-width: 62.5625rem) {
   .grid {
     grid-template-columns: minmax(0, 1fr);
   }
   .panel {
     position: static;
-  }
-  .keys {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
