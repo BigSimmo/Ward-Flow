@@ -50,7 +50,11 @@ import {
   type WardFlowContextValue,
 } from "@/components/ward-management/ward-flow-provider";
 import type { Rejection } from "@/components/ward-management/ward-model";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import {
+  markRecordsWithheld,
+  resolveSubjectPatient,
+  withheldRecordIds,
+} from "@/components/ward-management/ward-patient-resolver";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import {
   ACCESS_ROLE_LABELS,
@@ -337,6 +341,12 @@ export function WardAccessScope({ children }: { children: ReactNode }) {
       patients: collection.patients === baseScoped.patients ? baseScoped.patients : [...collection.patients],
       breakGlassPatientIds: collection.breakGlassPatientIds,
     };
+    // Bug list row 28 (Q29): a link to a person, referral or movement this desk is not sent reads
+    // "Name not shown on this desk", never "Name not recorded". Ids only: no name is added.
+    const withheldIds = withheldRecordIds(context, scoped);
+    // Never mark the whole workspace's own array, which unscoped screens read too.
+    if (withheldIds.size > 0 && scoped.patients === context.patients) scoped.patients = [...scoped.patients];
+    markRecordsWithheld(scoped.patients, withheldIds);
     const coordinator = access.role === "coordinator";
     const wholeNetwork = accessIsWholeNetwork(access);
     const unitIn = (unitId: string) => unitInScope(access.scope, unitId, places);
