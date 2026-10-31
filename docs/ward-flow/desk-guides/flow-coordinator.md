@@ -2,16 +2,18 @@
 
 <!-- last-checked: 2026-10-26 -->
 
+_Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
+
 You see the whole network (statewide) or your own health service. You decide referrals and keep
 patients moving from referral to arrival.
 
 ## What you see first
 
-**My list** (the Home page). It shows **Act now**, **Since you last looked** and **Referrals to
+**Home** opens the **My list** section. It shows **Act now**, **Since you last looked** and **Referrals to
 decide**. Waiting lists stay in wait order. Flags highlight a row but never move it. Nothing is
 pre-selected for you.
 
-Your main menu: **My list, Capacity, Movements, Referrals, Handover**. Other pages are under
+Your main menu: **Home, Capacity, Movements, Waiting, All EDs, Referrals, Handover**. Other pages are under
 **More** (desktop) or **Menu** (phone).
 
 On a phone, the bar at the bottom has **Home, Referrals, Create, Alerts, Activity**. **Create**

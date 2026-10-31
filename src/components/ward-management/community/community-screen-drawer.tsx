@@ -12,7 +12,7 @@ import { referralWaitLine } from "@/components/ward-management/referrals/referra
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
-import { patientDisplayName } from "@/components/ward-management/ward-patients";
+import { patientListName } from "@/components/ward-management/ward-patients";
 import styles from "./community.module.css";
 import { NOT_RECORDED_IN_WARD_FLOW, unitName } from "./community-screen-helpers";
 import type { CommunityScreenView } from "./community-screen";
@@ -107,7 +107,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
             {(activeDrawer === "px" || activeDrawer === "pxDrawer") && (
               <span id="pxDrawerHeading">
                 {selectedPatient
-                  ? `Patient record: ${patientDisplayName(selectedPatient)} · ${selectedPatient.umrn}`
+                  ? `Patient record: ${patientListName(selectedPatient)} · ${selectedPatient.umrn}`
                   : `Patient record: ${patientIdentityLine({ formalName: "", umrn: demoUmrnOf(selectedPatientId || "PT-4409") })}`}
               </span>
             )}
@@ -163,7 +163,7 @@ export function CommunityScreenDrawer({ view }: { view: CommunityScreenView }) {
                   <div className={`${styles.panelBody} ${styles.bodyText}`}>
                     <div className={styles.factGrid}>
                       <div>
-                        <b>Name:</b> <span>{patientDisplayName(selectedPatient)}</span>
+                        <b>Name:</b> <span>{patientListName(selectedPatient)}</span>
                       </div>
                       <div>
                         <b>UMRN:</b>{" "}
