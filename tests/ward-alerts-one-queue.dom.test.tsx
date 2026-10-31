@@ -174,11 +174,15 @@ describe("the phone dock with one Alerts queue", () => {
     expect(railHrefs).not.toContain(WARD_ALERTS_HREF);
   });
 
-  it("keeps the Tasks drawer button for a role that may not open the Alerts screen", () => {
+  // The new frame's phone dock per desk (Josh, 31 Oct 2026): the executive's Alerts list is the bed
+  // coordinator's and so empty, so its slot goes to Capacity.
+  it("gives a role that may not open the Alerts screen Capacity in the Alerts slot", () => {
     asExecutive();
     renderDock();
     expect(screen.queryByTestId("ward-phone-menu-alerts")).toBeNull();
-    expect(screen.getByTestId("ward-phone-menu-tasks")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-phone-menu-tasks")).toBeNull();
+    const labels = screen.getAllByTestId("ward-phone-dock-link").map((link) => link.textContent ?? "");
+    expect(labels.some((label) => label.includes("Capacity"))).toBe(true);
   });
 });
 
@@ -219,23 +223,26 @@ describe("the bar's Alerts button", () => {
     expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
   });
 
-  it("stays Tasks, with no link to Alerts, for a role that may not open the Alerts screen", async () => {
+  // The new frame (Josh, 31 Oct 2026): one name and one icon on every desk, the bell and "Alerts".
+  it("says Alerts, with no link to the Alerts screen, for a role that may not open it", async () => {
     asExecutive();
     installMatchMediaStub(true);
     const trigger = renderBar();
-    expect(trigger).toHaveTextContent(/^Tasks/u);
+    expect(trigger).toHaveTextContent(/^Alerts/u);
     fireEvent.click(trigger);
     expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(await screen.findByRole("dialog", { name: "Alerts" })).toBeInTheDocument();
+    // The list inside is still this desk's task list (`ward-tasks-drawer.tsx`).
     const drawer = await screen.findByRole("complementary", { name: "Tasks" });
     expect(within(drawer).queryByTestId("ward-tasks-open-alerts")).toBeNull();
     expect(within(drawer).queryByTestId("ward-tasks-jump-alerts")).toBeNull();
   });
 
-  it("stays Tasks for a ward desk, whose task list is the bed coordinator's and so empty", () => {
+  it("says Alerts for a ward desk too, opening its own panel as before", () => {
     setWardFeatureFlagOnDevice("role-access", true);
     setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [seed.units[0].id] } });
     const trigger = renderBar();
-    expect(trigger).toHaveTextContent(/^Tasks/u);
+    expect(trigger).toHaveTextContent(/^Alerts/u);
     expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
   });
 

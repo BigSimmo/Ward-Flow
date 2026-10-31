@@ -372,14 +372,16 @@ function renderDock() {
 }
 
 describe("the phone bar follows the desk (C2)", () => {
-  it("gives the ward nurse My ward, Referrals, +, Alerts and Handover", () => {
+  // A phone dock per desk (Josh, 31 Oct 2026): who is arriving and leaving all shift beats Handover,
+  // which stays on My ward and in the Menu.
+  it("gives the ward nurse My ward, Referrals, +, Alerts and Coming and going", () => {
     atDesk(WARD_DESK);
     expect(renderDock().map((name) => name.replace(/^\d+\s*/u, ""))).toEqual([
       expect.stringMatching(/^My ward/u),
       expect.stringMatching(/Referrals/u),
       "+",
       "Alerts",
-      expect.stringMatching(/Handover/u),
+      expect.stringMatching(/Coming and going/u),
     ]);
   });
 
