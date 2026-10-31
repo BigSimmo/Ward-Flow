@@ -51,7 +51,9 @@ function sheet(shared: boolean, onSelectRole = vi.fn()) {
 }
 
 describe("Go to a desk in the shared workspace", () => {
-  it("opens the desk's screens without changing the role the server gave", () => {
+  // Desk switcher (31 Oct 2026, from the pop-desk mock-up): in the shared workspace a desk the
+  // signed-in role cannot open is not listed at all, and the sheet says how to work as another role.
+  it("lists only the desks the server's role can open, and never changes that role", () => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
       setWardAccess(ward);
@@ -59,10 +61,10 @@ describe("Go to a desk in the shared workspace", () => {
     const onSelectRole = vi.fn();
     sheet(true, onSelectRole);
     expect(screen.getByTestId("workstation-shared-role-note")).toHaveTextContent("use Switch role");
-    fireEvent.click(screen.getByTestId("workstation-open-coordinator"));
+    expect(screen.queryByTestId("workstation-open-coordinator")).toBeNull();
+    expect(screen.queryAllByTestId(/^workstation-open-service-/u)).toHaveLength(0);
+    expect(screen.queryAllByTestId(/^workstation-open-bed-manager-/u)).toHaveLength(0);
     expect(readWardAccessSnapshot().desk).toEqual(ward);
-    // A desk the signed-in role cannot open stays shut, says why, and the rail keeps its persona.
-    expect(screen.getByText(/That desk is not part of your role/u)).toBeInTheDocument();
     expect(onSelectRole).not.toHaveBeenCalled();
   });
 
@@ -97,10 +99,11 @@ describe("Go to a desk in the shared workspace", () => {
 
     sheet(false);
 
-    expect(screen.getByTestId("workstation-open-coordinator")).toHaveTextContent(`${physicalTotal} awaiting bed in ED`);
+    // The rail's words for the same count (31 Oct 2026): "waiting in ED".
+    expect(screen.getByTestId("workstation-open-coordinator")).toHaveTextContent(`${physicalTotal} waiting in ED`);
     const site = screen.getByRole("button", { name: new RegExp(department.siteName) });
     expect(within(site).getByText(String(department.waiting), { exact: true })).toBeInTheDocument();
-    expect(site).toHaveTextContent(`${department.waiting} awaiting bed in ED`);
+    expect(site).toHaveTextContent(`${department.waiting} waiting in ED`);
     expect(screen.queryAllByText(/open ED journeys/u)).toHaveLength(0);
   });
 });

@@ -62,10 +62,16 @@ function renderSettings(extra?: ReactNode) {
     </ToastProvider>,
   );
 }
-// Settings is one page of sections (31 Oct 2026): Demo tools are always in the page.
-const selectData = () => undefined;
+// Settings is one page of sections (31 Oct 2026): the rules file, reset and About sit in the closed
+// Demo tools section, so open it first.
+const selectData = () =>
+  fireEvent.click(within(screen.getByTestId("ward-settings-demo-tools")).getByText("Demo tools"));
 const edit = () => fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
-const save = () => fireEvent.click(screen.getByRole("button", { name: /^Save \d+ change/ }));
+// Save opens a review first (Settings round 3); its own Save change button saves.
+const save = () => {
+  fireEvent.click(screen.getByRole("button", { name: /^Save \d+ change/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
+};
 const undo = (title: RegExp) =>
   fireEvent.click(
     within(screen.getByText(title).closest<HTMLElement>('[data-testid="toast"]')!).getByRole("button", {
@@ -186,17 +192,23 @@ describe("settings audited journey recovery", () => {
       edit();
       save();
       external({ pullHoldMinutes: 120 });
-      const pendingSave = screen.getByRole("button", { name: "Saving…" });
+      // The save bar's Save and the review's Save both say Saving… and neither saves twice.
+      const pendingSave = screen.getByTestId("btn-save-draft");
+      expect(pendingSave).toHaveTextContent("Saving…");
       expect(pendingSave).toHaveAttribute("aria-disabled", "true");
       pendingSave.focus();
       expect(pendingSave).toHaveFocus();
       fireEvent.click(pendingSave);
+      const reviewSave = within(screen.getByRole("dialog")).getByRole("button", { name: "Saving…" });
+      expect(reviewSave).toHaveAttribute("aria-busy", "true");
+      fireEvent.click(reviewSave);
       expect(interception.raise).toHaveBeenCalledTimes(1);
       expect(screen.queryByText(/saved and recorded\./)).not.toBeInTheDocument();
       await act(async () =>
         finish({ commandId: "synthetic-settings-command", status, message: "Synthetic command did not complete." }),
       );
-      expect(screen.getByRole("button", { name: "Save 1 change" })).toBeEnabled();
+      expect(screen.getByTestId("btn-save-draft")).toHaveTextContent("Save 1 change");
+      expect(screen.getByTestId("btn-save-draft")).not.toHaveAttribute("aria-disabled");
       expect(screen.getByTestId("ward-settings-configuration-refused")).toHaveTextContent(
         "Synthetic command did not complete.",
       );
@@ -213,17 +225,21 @@ describe("settings audited journey recovery", () => {
         }),
     ) as WardRaise;
     renderSettings();
-    selectData();
+    // Restore defaults moved to This device (31 Oct 2026), where every desk has it.
     fireEvent.click(screen.getByTestId("btn-restore-baseline"));
     fireEvent.click(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ }));
-    expect(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ })).toBeDisabled();
+    // The kit's loading button ignores presses while the restore is pending.
+    const pendingRestore = screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ });
+    expect(pendingRestore).toHaveAttribute("aria-busy", "true");
+    fireEvent.click(pendingRestore);
+    expect(interception.raise).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("Rules restored and recorded.")).not.toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     await act(async () =>
       finish({ commandId: "synthetic-settings-restore", status: "refused", message: "Synthetic refusal." }),
     );
     expect(screen.getByTestId("ward-reset-baseline-modal")).toBeVisible();
-    expect(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /^(Restore defaults|Restoring…)$/ })).not.toHaveAttribute("aria-busy");
     expect(screen.queryByText("Rules restored and recorded.")).not.toBeInTheDocument();
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
   });
@@ -249,7 +265,8 @@ describe("settings audited journey recovery", () => {
     window.sessionStorage.setItem("unrelated-application-preference", "kept");
     const page = renderSettings(<PendingDraft />);
     selectData();
-    fireEvent.click(screen.getByRole("button", { name: "Clear session" }));
+    // "Reset the demo in this tab" (31 Oct 2026) is the old Clear session.
+    fireEvent.click(screen.getByTestId("btn-clear-cache"));
     act(() => vi.advanceTimersByTime(600));
     expect(readKeptReferralDraft(key)).toBeNull();
     expect(writeSessionDraft(key, "synthetic stale callback", owner)).toBe(false);
@@ -272,8 +289,14 @@ describe("settings audited journey recovery", () => {
     vi.stubEnv("NODE_ENV", "production");
     renderSettings();
     selectData();
+    // Demo tools (31 Oct 2026): the design reference line shows only where the link works.
     expect(screen.queryByRole("link", { name: "Ward Flow Digest" })).not.toBeInTheDocument();
-    expect(screen.getByText("Ward Flow Digest is available in the local development preview.")).toBeVisible();
+    expect(screen.queryByText("Product design reference")).not.toBeInTheDocument();
+    cleanup();
+    vi.unstubAllEnvs();
+    renderSettings();
+    selectData();
+    expect(screen.getByRole("link", { name: "Ward Flow Digest" })).toBeInTheDocument();
   });
 
   it("explains coordinator-only rules while retaining personal settings for a ward desk", () => {
@@ -293,16 +316,20 @@ describe("settings audited journey recovery", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    const target = screen.getByRole("spinbutton", { name: "ED access target" });
-    const original = target.getAttribute("aria-valuenow");
-    expect(target).toHaveAttribute("aria-disabled", "true");
-    fireEvent.keyDown(target, { key: "Home" });
-    expect(target).toHaveAttribute("aria-valuenow", original);
-    selectData();
-    const restore = screen.getByTestId("btn-restore-baseline");
-    expect(restore).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(restore);
-    expect(screen.queryByRole("dialog", { name: /Restore/i })).toBeNull();
+    // Settings by login (31 Oct 2026): a ward desk reads "Rules that affect you", with no rule control,
+    // and has no Demo tools.
+    const summary = screen.getByTestId("ward-settings-rules-summary");
+    expect(summary).toHaveTextContent("Rules that affect you");
+    expect(summary).toHaveTextContent("Set by the bed coordinator");
+    expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: /^(Increase|Decrease) / })).toBeNull();
+    expect(screen.queryByTestId("ward-settings-demo-tools")).toBeNull();
+    // Its own settings stay: Restore puts back only this browser and never saves a rule.
+    fireEvent.click(screen.getByTestId("btn-restore-baseline"));
+    const dialog = screen.getByRole("dialog", { name: "Restore this browser's settings?" });
+    expect(dialog).toHaveTextContent("The rules are set by the statewide coordinator.");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Restore this browser" }));
+    expect(screen.getByText("This browser's settings restored.")).toBeInTheDocument();
     expect(raised).not.toHaveBeenCalled();
   });
   it("replays the tour from the first step, not the step it was left at", () => {

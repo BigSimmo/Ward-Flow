@@ -86,6 +86,11 @@ describe("a service coordinator desk resets the person (PR #489 review)", () => 
         </WardFlowProvider>,
       );
       expect(screen.getByTestId("persona")).toHaveTextContent("ed");
+      // Each health service folds to one summary row (31 Oct 2026); open the first to reach its desk.
+      const service = screen
+        .getAllByRole("button", { expanded: false })
+        .find((head) => head.parentElement?.tagName === "SECTION")!;
+      fireEvent.click(service);
       fireEvent.click(screen.getAllByTestId(/^workstation-open-service-/u)[0]);
       expect(screen.getByTestId("persona")).toHaveTextContent("coordinator");
     } finally {

@@ -312,7 +312,8 @@ describe("settings screen configuration draft", () => {
     renderSettings();
     setEdToMinimum();
     const row = screen.getByTestId("ward-settings-screen").querySelector<HTMLElement>('[data-setting="ed-target"]')!;
-    expect(row).toHaveTextContent(/over if saved/);
+    // Final round: the ED count reads "past target", as the referral, transfer and booking counts do.
+    expect(row).toHaveTextContent(/past target if saved/);
     expect(row).toHaveTextContent("saved value 24h");
     expect(row).not.toHaveTextContent("saved value 1440");
   });
@@ -330,7 +331,7 @@ describe("settings screen configuration draft", () => {
     fireEvent.click(screen.getByTestId("btn-restore-baseline"));
     const modal = screen.getByTestId("ward-reset-baseline-modal");
     // Bug list row 1: a restore saves twelve rules, the three forecast alerts among them.
-    expect(modal).toHaveTextContent("all twelve rules");
+    expect(modal).toHaveTextContent("Saves all 12 rules");
     for (const name of [
       "Referral decision",
       "Transfer acceptance",
@@ -338,11 +339,28 @@ describe("settings screen configuration draft", () => {
       "Bed type short tomorrow",
       "Access target forecast",
       "Forecast got worse",
-      "Glare",
     ]) {
       expect(modal, name).toHaveTextContent(name);
     }
     expect(modal).not.toHaveTextContent("six coordination rules");
+    // Restore dialog (31 Oct 2026): this browser's settings come back only when chosen, and then each
+    // is named with the value it returns to. Bright light (once "Glare") is a Theme choice, so Theme
+    // returning to Auto covers it.
+    fireEvent.click(within(modal).getByRole("radio", { name: "Rules and this browser" }));
+    const browser = within(modal).getByRole("region", { name: "This browser" });
+    for (const name of [
+      "Theme",
+      "Sidebar",
+      "Row density",
+      "Single-key shortcuts",
+      "Reduce motion",
+      "High contrast",
+      "Buzz sound",
+    ]) {
+      expect(browser, name).toHaveTextContent(name);
+    }
+    expect(browser).toHaveTextContent("Theme Auto");
+    fireEvent.click(within(modal).getByRole("radio", { name: "Rules only" }));
     fireEvent.click(screen.getByRole("button", { name: "Restore defaults" }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(
       String(defaultWardConfiguration().edAccessTargetMinutes),

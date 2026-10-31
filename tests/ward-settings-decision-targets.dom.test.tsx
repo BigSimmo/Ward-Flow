@@ -45,7 +45,10 @@ afterEach(() => {
 describe("settings: decision targets", () => {
   it("shows three labelled default targets as durations", () => {
     renderSettings();
-    const card = screen.getByText("Decision targets").closest("[data-setting='decision-targets']") as HTMLElement;
+    // Settings by login (31 Oct 2026): the card is "Deadlines and reply targets".
+    const card = screen
+      .getByText("Deadlines and reply targets")
+      .closest("[data-setting='decision-targets']") as HTMLElement;
     expect(within(card).getByText("Your defaults, not clinical standards")).toBeVisible();
     expect(within(card).getByText("Referral decision")).toBeVisible();
     expect(within(card).getByText("Transfer acceptance")).toBeVisible();

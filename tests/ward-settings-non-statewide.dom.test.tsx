@@ -1,5 +1,5 @@
 // tests/ward-settings-non-statewide.dom.test.tsx
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -64,34 +64,41 @@ function renderRules(access: typeof SERVICE_COORDINATOR | typeof STATEWIDE_COORD
 const edStepper = () => screen.getByRole("spinbutton", { name: "ED access target" });
 
 describe("the Rules page for a coordinator who is not the statewide one", () => {
-  it("greys out the steppers and the timing set, and says why in the save check's own words", () => {
+  // Redesign (Josh, 30 Oct 2026): a desk that cannot change a rule reads its value in words, not a
+  // greyed stepper; the band's "Read only" line gives the save check's reason once.
+  it("shows the rules as words, not controls, and says why in the save check's own words", () => {
     renderRules(SERVICE_COORDINATOR);
     const sentence = saveCheckSentence();
     expect(sentence).toBe("Only the statewide coordinator may change global settings.");
 
-    expect(screen.getAllByRole("status").some((node) => node.textContent === sentence)).toBe(true);
-    expect(edStepper()).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Increase ED access target" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("button", { name: "Decrease ED access target" })).toHaveAttribute("aria-disabled", "true");
-    expect(screen.getByRole("radio", { name: "Surge" })).toHaveAttribute("aria-disabled", "true");
+    const readOnlyLine = screen.getAllByText("Read only")[0].closest("p") as HTMLElement;
+    expect(readOnlyLine).toHaveTextContent(`Read only${sentence}`);
+    expect(screen.queryByRole("spinbutton", { name: "ED access target" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Increase ED access target" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Decrease ED access target" })).toBeNull();
+    expect(screen.queryByRole("radio", { name: "Surge" })).toBeNull();
+    expect(screen.getByText(/^(Standard|Surge) timings$/)).toBeInTheDocument();
+    // The reason also travels with each value for a screen reader.
+    const edValue = document.querySelector<HTMLElement>('[data-setting="ed-target"]');
+    expect(edValue?.textContent ?? "").toContain(sentence);
   });
 
-  it("is never told Save to apply, and the statewide coordinator still is (bug list row 4)", () => {
+  it("is never told to save, and the statewide coordinator still is (bug list row 4)", () => {
     renderRules(SERVICE_COORDINATOR);
     expect(screen.queryByText(/Save to apply/)).toBeNull();
+    expect(screen.queryByText(/Changes wait for Save/)).toBeNull();
     expect(screen.getAllByText("Read only").length).toBeGreaterThan(0);
     cleanup();
     renderRules(STATEWIDE_COORDINATOR);
-    expect(screen.getByText("Save to apply")).toBeInTheDocument();
+    expect(screen.getByText("Changes wait for Save.")).toBeInTheDocument();
   });
 
-  it("does not let a press, a key or a click change a rule", () => {
+  it("offers no press, key or click that could change a rule", () => {
     renderRules(SERVICE_COORDINATOR);
-    const before = edStepper().getAttribute("aria-valuenow");
-    fireEvent.click(screen.getByRole("button", { name: "Increase ED access target" }));
-    fireEvent.keyDown(edStepper(), { key: "Home" });
-    fireEvent.click(screen.getByRole("radio", { name: "Surge" }));
-    expect(edStepper()).toHaveAttribute("aria-valuenow", before);
+    const rules = document.getElementById("settings-section-rules") as HTMLElement;
+    expect(within(rules).queryAllByRole("spinbutton")).toHaveLength(0);
+    expect(within(rules).queryAllByRole("button", { name: /^(Increase|Decrease) / })).toHaveLength(0);
+    expect(within(rules).queryAllByRole("slider")).toHaveLength(0);
     expect(screen.queryByRole("region", { name: "Unsaved rule changes" })).not.toBeInTheDocument();
   });
 
