@@ -43,7 +43,7 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 
 import { FlushRow, Follow } from "./statistics-layout";
 import { useStatisticsView } from "./statistics-view-bar";
-import { FindUnitTool, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
+import { FindUnitTool, PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
 import { StatisticsEdJourneysCard } from "./statistics-ed-journeys-card";
 import { StatisticsReferralsTodayCard } from "./statistics-referrals-today-card";
 import { StatisticsWardsCard, useWardTable } from "./statistics-wards-card";
@@ -601,10 +601,12 @@ function StatisticsSummaryView({
     return list;
   }, [isPhone, emergencyDepts, edSortCol, edSortAsc]);
 
-  // The finder is desktop only, so the phone skips building and sorting its lists.
+  // A phone shows the finder only when a link arrives at its anchor, so it skips building and
+  // sorting the lists until then. A bed manager's desk never shows it.
+  const phoneSkipsFinder = isPhone && (siteName !== undefined || !unitFinder.open);
   const finderLists = useMemo<Record<FinderKind, FinderEntry[]>>(
     () =>
-      isPhone
+      phoneSkipsFinder
         ? { ward: [], ed: [], service: [], team: [] }
         : {
             ward: allPressureWards
@@ -624,7 +626,7 @@ function StatisticsSummaryView({
             }),
             team: directory?.teams ?? COMMUNITY_TEAM_PAGES.map((team) => ({ id: team.id, name: team.name })),
           },
-    [isPhone, allPressureWards, emergencyDepts, directory, operationalSmall],
+    [phoneSkipsFinder, allPressureWards, emergencyDepts, directory, operationalSmall],
   );
   usePrintableDisclosures();
   const { view, choose: chooseView } = useStatisticsView();
@@ -714,6 +716,14 @@ function StatisticsSummaryView({
           paused={paused}
           onTogglePause={togglePause ?? undefined}
         />
+        {/* Bed manager: no finder, as on the desktop. */}
+        {siteName ? null : (
+          <PhoneUnitFinder
+            open={unitFinder.open}
+            onClose={unitFinder.toggle}
+            finder={<StatisticsUnitFinder lists={finderLists} />}
+          />
+        )}
         {/* The phone summary closes the page's main landmark, so this card is its own landmark. Three
             hours and no total fit a phone's width without a sideways scroll. */}
         <aside className={trendStyles.phoneSlot} aria-label="This session">

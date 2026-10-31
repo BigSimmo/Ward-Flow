@@ -20,7 +20,8 @@
 }
 
 /* D-91: "Open a unit" on the statistics tab row, the one way into the one unit finder. It keeps its
-   name at every desktop width; the finder is desktop only, so a phone draws neither. */
+   name at every desktop width. A phone draws no tab row, and shows the finder only when a link
+   arrives at its anchor (PhoneUnitFinder). */
 .findTool {
   display: inline-flex;
   align-items: center;
@@ -52,4 +53,29 @@
   .findTool {
     display: none;
   }
+}
+
+/* The phone Summary's finder, below the summary and before This session, on the page canvas. */
+.phoneFinder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3);
+  background: var(--wf-canvas);
+  scroll-margin-top: var(--wf-s-3);
+}
+
+.phoneFinder:focus {
+  outline: none;
+}
+
+.phoneFinderHead {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 40px on a phone, the floor for its controls. */
+.phoneClose {
+  min-height: 40px;
 }

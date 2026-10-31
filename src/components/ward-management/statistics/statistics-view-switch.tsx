@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Search, X } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
-import { Segmented } from "@/components/wf";
+import { Button, Segmented } from "@/components/wf";
 import {
   STATISTICS_COMMUNITY_CHOOSER_ID,
   STATISTICS_HOME_HREF,
@@ -79,6 +79,37 @@ export function FindUnitLink({ testId }: { testId?: string }) {
       <Search size={14} aria-hidden="true" />
       Open a unit
     </Link>
+  );
+}
+
+/**
+ * The phone Summary has no tab row, so the one finder shows there only on arrival at one of its
+ * anchors, from "Open a unit" on another Statistics page (Codex review on #1145, 31 Oct 2026).
+ * Close shuts it, as the desktop's "Open a unit" does; with no anchor the phone draws nothing here.
+ */
+export function PhoneUnitFinder({ open, onClose, finder }: { open: boolean; onClose: () => void; finder: ReactNode }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    // The finder mounts after hydration, so the browser's own jump to the anchor has missed it.
+    if (open) ref.current?.scrollIntoView?.({ block: "start" });
+  }, [open]);
+  if (!open) return null;
+  return (
+    <section
+      ref={ref}
+      id={STATISTICS_UNIT_CHOOSER_ID}
+      className={styles.phoneFinder}
+      tabIndex={-1}
+      aria-label="Open a unit"
+      data-testid="ward-statistics-phone-unit-finder"
+    >
+      <div className={styles.phoneFinderHead}>
+        <Button variant="sec" icon={X} className={styles.phoneClose} onClick={onClose}>
+          Close
+        </Button>
+      </div>
+      {finder}
+    </section>
   );
 }
 
