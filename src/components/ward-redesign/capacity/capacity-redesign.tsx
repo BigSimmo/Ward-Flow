@@ -37,15 +37,15 @@ import { isConfirmationFresh } from "@/components/ward-management/capacity/capac
 import { CapacityWardSidebar } from "./capacity-ward-sidebar";
 import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
 import { ReadyByRoadTime } from "@/components/ward-management/capacity/capacity-road-time";
-import { StepDownBoard } from "./step-down-board";
 
 import { RedesignPage } from "../parts/redesign-page";
 import { gapWords } from "../parts/range-line";
 import { BedForecast } from "./bed-forecast";
 import { BedMapCards, type Highlight } from "./bed-map-cards";
 import { BedMeetingSheetDialog } from "./bed-meeting-sheet-dialog";
-import { CapacitySide } from "./capacity-side";
-import { MismatchBand } from "./mismatch-band";
+import { ShiftChecks } from "./capacity-side";
+import { ComingIn } from "./coming-in";
+import { MismatchBand, shortNeed } from "./mismatch-band";
 import { ScenarioDialog } from "./scenario-dialog";
 import { useCapacityModel, type CapacityModel } from "./use-capacity-model";
 import styles from "./capacity-redesign.module.css";
@@ -158,24 +158,25 @@ export function CapacityRedesign({ openOnLoad }: { openOnLoad?: string }) {
         <>
           <MismatchBand model={model} />
           <BedForecast model={model} onTryScenario={() => setPopup({ kind: "scenario" })} />
-          <div className={styles.mapRow}>
-            <BedMapCards
-              model={model}
-              onSelectWard={openWard}
+          {/* Polish (Josh, 31 Oct 2026): the bed map takes the full width; the old side column and the
+              two lists under the map become one row of three: what is coming in, the nearest ready
+              beds, and this shift's checks. */}
+          <BedMapCards
+            model={model}
+            onSelectWard={openWard}
+            selectedUnitId={selectedRow?.unit.id}
+            highlight={highlight}
+            onHighlight={setHighlight}
+          />
+          <div className={styles.lowerRow}>
+            <ComingIn now={now} plannedBooked={model.plannedBooked} />
+            <ReadyByRoadTime
+              rows={model.networkRows}
+              defaultEdId={model.roadTimeFromEdId}
               selectedUnitId={selectedRow?.unit.id}
-              highlight={highlight}
-              onHighlight={setHighlight}
+              onSelectUnit={openWard}
             />
-            <CapacitySide
-              model={model}
-              selectedUnitId={selectedRow?.unit.id}
-              onSelectWard={openWard}
-              onAskWard={askWard}
-            />
-          </div>
-          <div className={styles.footRow}>
-            <PlannedAdmissionsPanel now={now} />
-            <StepDownBoard now={now} />
+            <ShiftChecks model={model} onAskWard={askWard} />
           </div>
         </>
       )}
@@ -352,14 +353,14 @@ function PhoneOverview({ model, onForecast }: { model: CapacityModel; onForecast
   return (
     <>
       <Card aria-labelledby="phone-mismatch">
-        <CardHead id="phone-mismatch" title="Where the mismatch is" />
+        <CardHead id="phone-mismatch" title="Mismatch" />
         <ul className={styles.phoneRows}>
           {gapRows.map((row) => {
             const likely = byId.get(row.id)?.likely;
             return (
               <li key={row.id} className={styles.phoneRow}>
                 <div>
-                  <b className={styles.small}>{row.need}</b>
+                  <b className={styles.small}>{shortNeed(row.need)}</b>
                   <span className={styles.mutedXs}>
                     {row.waiting} waiting · {row.bedsThatFit} fit
                     {likely !== undefined ? ` · tomorrow ${gapWords(likely)}` : ""}

@@ -11,9 +11,12 @@ export function CapacityPanel({
   count,
   testId,
   headerAction,
+  titleSlot,
   children,
 }: {
   title: string;
+  /** Shown in place of the visible title (the section keeps `title` as its name), such as a switch. */
+  titleSlot?: ReactNode;
   count?: string;
   testId?: string;
   /** Optional control rendered in the header corner, after the count. */
@@ -28,7 +31,7 @@ export function CapacityPanel({
   return (
     <section className={wardPanel.panel} aria-label={title} data-testid={testId} data-ward-primitive="panel">
       <header className={styles.panelHead} data-ward-primitive="panel-header">
-        <h2 className={styles.panelTitle}>{title}</h2>
+        {titleSlot ?? <h2 className={styles.panelTitle}>{title}</h2>}
         {headerAction ? (
           <div className={wardPanel.panelHeaderEnd}>
             {countNode}
