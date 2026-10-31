@@ -55,6 +55,7 @@ import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
 import { WardAccountActions } from "@/components/ward-management/shell/ward-account-actions";
 import { WardHelpLink } from "@/components/ward-management/help/ward-help-link";
 import styles from "@/components/ward-management/shell/ward-rail.module.css";
+import railFix from "@/components/ward-redesign/shell/preview-rail.module.css";
 import { readWardRailEarlyShape } from "@/components/ward-management/shell/ward-rail-early";
 import {
   isTypingTarget,
@@ -786,7 +787,7 @@ export function PreviewRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               {shiftProgress.shiftName}
               <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
             </span>
-            <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
+            <span className={`${styles.shiftSub} ${railFix.shiftSubWrap}`}>
               {currentPersona.name} · {currentPersona.role}
             </span>
             {viewing ? (

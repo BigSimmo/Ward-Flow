@@ -2,8 +2,11 @@
 
 // Each page and popup loads on its own, so a frame compiles and downloads only what it draws.
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 
-import type { ComponentType, ReactNode } from "react";
+import { useEffect, type ComponentType, type ReactNode } from "react";
+
+import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 
 const PopAlerts = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-alerts/pop-alerts").then((module) => module.PopAlerts),
@@ -102,6 +105,35 @@ const PopStateNotWired = dynamic<{ page: ReactNode }>(() =>
 );
 
 /**
+ * shell-next (Josh, 31 Oct 2026): with `?shell=next` the Menu popup is the new frame's own phone Menu
+ * (`shell-next/next-phone-menu.tsx`, which opens with the desk's capacity card), opened on load from
+ * the header's Menu button as a tap would. Today's frame keeps the `pop-menu` mock-up.
+ */
+function PopMenuNext({ page }: { page: ReactNode }) {
+  useEffect(() => {
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      const menu = document.querySelector<HTMLButtonElement>('[data-testid="ward-bar-phone-menu"]');
+      if (!menu && tries < 100) return;
+      window.clearInterval(timer);
+      if (menu) openWardMenu(menu);
+    }, 100);
+    return () => window.clearInterval(timer);
+  }, []);
+  return <>{page}</>;
+}
+
+function PopMenuForFrame({ page }: { page: ReactNode }) {
+  // As `preview-shell.tsx` reads it: the router's copy, else the browser's (the static preview).
+  const shellParam =
+    useSearchParams()?.get("shell") ??
+    (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("shell"));
+  const nextShell = shellParam === "next";
+  return nextShell ? <PopMenuNext page={page} /> : <PopMenu page={page} />;
+}
+
+/**
  * Preview only: popups and states drawn by the preview itself rather than by their page. Keyed by
  * the `pop` name in `MOCKUP_POPUPS`. Each is given the page it opens over and returns what to draw:
  * usually the page with its overlay on top (shell overlays, page popups), or a state in its place.
@@ -115,7 +147,7 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   help: PopHelp,
   shortcuts: PopShortcuts,
   demo: PopDemo,
-  menu: PopMenu,
+  menu: PopMenuForFrame,
   create: PopCreate,
   "ward-switcher": PopWardSwitcher,
   "shift-brief": PopShiftBrief,

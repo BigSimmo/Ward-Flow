@@ -1,6 +1,7 @@
 "use client";
 
 import { AsExecutiveStatisticsRedesign } from "./statistics-redesign";
+import chipFade from "@/components/ward-redesign/statistics/statistics-chip-fade.module.css";
 
 /**
  * As executive: the Statistics mock-up as this role sees it. The preview takes the role's desk
@@ -9,5 +10,11 @@ import { AsExecutiveStatisticsRedesign } from "./statistics-redesign";
  * `executive` branches: the small number rule explained once, and no "not shown" chips or charts.
  */
 export function AsExecutiveHomePage() {
-  return <AsExecutiveStatisticsRedesign />;
+  // Josh, 31 Oct 2026: the phone chip row fades at an edge with more chips past it
+  // (`statistics-chip-fade.module.css`).
+  return (
+    <div className={chipFade.scope}>
+      <AsExecutiveStatisticsRedesign />
+    </div>
+  );
 }

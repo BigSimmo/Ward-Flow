@@ -823,7 +823,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 {shiftProgress.shiftName}
                 <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
               </span>
-              <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
+              <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
                 {currentPersona.name} · {currentPersona.role}
               </span>
               {viewing ? (
