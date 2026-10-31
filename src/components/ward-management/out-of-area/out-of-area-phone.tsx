@@ -64,10 +64,15 @@ const STATUS_TONE: Record<ReturnStatus, WfTone> = {
   agreed: "neutral",
 };
 
-/** v10 phone: the discharge date leads the card ("Due 4 days ago", "Due in 2 days", "Due today"). */
+/**
+ * v10 phone: the discharge date leads the card ("Due in 2 days", "Due today"). A passed date reads
+ * "Date passed 4 days ago", the hero's own words, since "Due 4 days ago" named no noun (31 Oct 2026).
+ */
 function dueWords(offset: number | null): string {
   const short = dischargeShort(offset);
-  return offset === null ? short : `Due ${short.charAt(0).toLowerCase()}${short.slice(1)}`;
+  if (offset === null) return short;
+  const lower = `${short.charAt(0).toLowerCase()}${short.slice(1)}`;
+  return offset < 0 ? `Date passed ${lower}` : `Due ${lower}`;
 }
 
 function PersonCard({
@@ -113,8 +118,7 @@ function PersonCard({
           // carries both the discharge date and the days away.
           <span className={cx(styles.pcDue, !overdue && styles.pcDays)}>
             {overdue ? <StatusGlyph tone="warning" size={9} /> : null}
-            {dueWords(person.offset)} · {person.daysLabel}
-            <SrOnly> away</SrOnly>
+            {dueWords(person.offset)} · {person.daysLabel} away
           </span>
         ) : overdue ? (
           <span className={styles.pcDue}>
@@ -226,7 +230,7 @@ export function OutOfAreaPhone({
   renderPlan: (entry: OutOfAreaEntry) => ReactNode;
   shift: ReactNode;
   beds: ReactNode;
-  /** "+1 since the 08:30 bed meeting · 42 bed days", under the three figures. */
+  /** "42 bed days", under the three figures. */
   since?: ReactNode;
 }) {
   const [tab, setTab] = useState<PhoneTab>("needs");
@@ -329,7 +333,9 @@ export function OutOfAreaPhone({
           {
             id: "no-plan",
             value: noPlanCount,
+            // "No plan" stays on one line; the spoken label names the noun, as the desktop's "No return plan" does.
             label: "No plan",
+            actionLabel: `${noPlanCount} with no return plan, highlight them`,
             tone: "closed",
             onPress: () => onHighlight("noplan"),
             pressed: highlight === "noplan",
@@ -422,11 +428,15 @@ export function OutOfAreaPhone({
               </ul>
             </section>
           ) : null}
-          <button type="button" className={styles.phoneMore} onClick={() => setTab("all")}>
-            <StatusGlyph tone="closed" size={9} />
-            <span>{more} more away from home</span>
-            <span className={styles.sub}>Everyone</span>
-            <Icon icon={ChevronRight} size={14} />
+          {/* A plain link to the rest: the grey cross it used to carry means "No plan" in the hero. */}
+          <button
+            type="button"
+            className={styles.phoneMore}
+            onClick={() => setTab("all")}
+            aria-label={`${more} more away from home, show Everyone`}
+          >
+            <span>{more} more in Everyone</span>
+            <Icon icon={ChevronRight} size={14} className={styles.moreChevron} />
           </button>
         </div>
       ) : null}
