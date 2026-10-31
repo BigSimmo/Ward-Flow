@@ -10,6 +10,7 @@ import { useContext, useEffect, useMemo, useState } from "react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { refusedActionText } from "@/components/ward-management/ward-refusal-words";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { SharedActivityAuditEvent, SharedWorkspaceClient } from "@/components/ward-management/ward-shared-client";
 
 import type { CommandActivity, WardActivityEventTone } from "./ward-command-activity";
@@ -35,16 +36,22 @@ type DeskAuditState =
 export function auditActivity(
   events: readonly SharedActivityAuditEvent[],
   now: Instant,
+  dayZero: Date,
 ): Pick<CommandActivity, "lastEventAt" | "tones"> & { changes: CommandActivity["content"]["changes"] } {
   const rows = events
-    .map((event) => ({ event, at: Date.parse(event.committed_at) }))
-    .filter(({ event, at }) => Number.isFinite(at) && typeof event.action === "string")
+    .map((event) => ({ event, at: Math.floor((Date.parse(event.committed_at) - dayZero.getTime()) / 60_000) }))
+    .filter(
+      ({ event, at }) =>
+        Number.isFinite(at) &&
+        typeof event.action === "string" &&
+        ["accepted", "rejected", "stale", "denied"].includes(event.outcome),
+    )
     .sort((left, right) => right.at - left.at);
   const shown = rows.slice(0, SHOWN);
   const tones: Record<string, WardActivityEventTone> = {};
   const changes = shown.map(({ event, at }) => {
     const id = `audit:${event.sequence}`;
-    const refused = event.outcome === "rejected";
+    const refused = event.outcome !== "accepted";
     tones[id] = refused ? "danger" : "info";
     const action = refusedActionText(event.action);
     return {
@@ -83,9 +90,10 @@ function useWardDeskAudit(): DeskAuditState {
 /** The Command feed with its events from the audit once read; this tab's own events otherwise. */
 export function useActivityFromAudit(derived: CommandActivity, now: Instant): CommandActivity {
   const audit = useWardDeskAudit();
+  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
   return useMemo(() => {
-    if (audit.status !== "ready") return derived;
-    const { changes, tones, lastEventAt } = auditActivity(audit.events, now);
+    if (audit.status !== "ready" || !dayZero) return derived;
+    const { changes, tones, lastEventAt } = auditActivity(audit.events, now, dayZero);
     return { ...derived, content: { ...derived.content, changes }, tones, lastEventAt };
-  }, [audit, derived, now]);
+  }, [audit, derived, now, dayZero]);
 }

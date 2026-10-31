@@ -1,5 +1,22 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Regression repair notes — 28 October 2026
+
+The local repair branch based on `aca285b8` guards the closure conflict's read-only recovery
+while another shared save is unconfirmed. Shared Activity converts server timestamps to minutes
+from the provider's calendar anchor and labels rejected, stale and denied outcomes as refusals.
+Demo-role exit validates the saved ward, ED, site or service against the current scenario and
+uses the existing coordinator fallback if that place is absent, preserving the selected scenario.
+Alert Release waits for definitive command acceptance, including uncertain-save recovery;
+Undo observes the command's lifetime and reports a refused retake.
+Help search closes its parent sheet before opening a destination, and the introduction describes
+the optional tour offer. Bulk acknowledgements capture their provider, world and access lifetime
+when confirmation opens, retain the eight-second Undo window, and discard stale batches after
+reset or access changes. Queued local commands check that lifetime again after reducer slices load.
+
+Focused DOM and pure-function checks cover these repairs. Local commits and passing focused
+checks do not establish merge, deployment or physical-browser acceptance.
+
 ## Current-tree check — 24 October 2026
 
 Checked against `main` at `899b232e`. The `src/components/ward-management/governance/` folder no
