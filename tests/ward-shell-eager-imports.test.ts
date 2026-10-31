@@ -3,6 +3,8 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import loadNextConfig from "../next.config";
+
 /**
  * The header (ward-bar.tsx) is on every page's first load, which the phone script budget measures
  * (script-budget.json). On 31 October 2026 one constant imported from the rail's parts pulled the
@@ -58,5 +60,31 @@ describe("the header's first load", () => {
       .map((statement) => statement.trim())
       .filter(Boolean);
     for (const statement of statements) expect(statement, statement).toMatch(/^export\s/u);
+  });
+
+  it("packs the kit's shared overlay core once, in the browser production build only", async () => {
+    const config = await loadNextConfig();
+    type Groups = Record<string, { test: RegExp; name: string; enforce: boolean }>;
+    const groupsFor = (dev: boolean, isServer: boolean) => {
+      const result = config.webpack!({ output: {}, plugins: [], optimization: { splitChunks: { cacheGroups: {} } } }, {
+        dev,
+        isServer,
+        webpack: { NormalModuleReplacementPlugin: class {} },
+      } as never) as { optimization: { splitChunks: { cacheGroups: Groups } } };
+      return result.optimization.splitChunks.cacheGroups;
+    };
+    const browser = groupsFor(false, false);
+    expect(browser.wfOverlayRoot.name).toBe("wf-overlay-root");
+    expect(browser.wfOverlay.name).toBe("wf-overlay");
+    expect(browser.wfOverlay.enforce).toBe(true);
+    for (const file of ["sheet-focus.ts", "overlay-root.tsx"])
+      expect(browser.wfOverlayRoot.test.test(`/app/src/components/wf/${file}`), file).toBe(true);
+    for (const file of ["sheet.tsx", "use-modal-focus.ts", "focus-targets.ts", "band.ts"])
+      expect(browser.wfOverlay.test.test(`/app/src/components/wf/${file}`), file).toBe(true);
+    // Only those files: the kit's other parts keep their normal packing.
+    expect(browser.wfOverlay.test.test("/app/src/components/wf/sheet.module.css")).toBe(false);
+    expect(browser.wfOverlay.test.test("/app/src/components/wf/dialog.tsx")).toBe(false);
+    expect(groupsFor(true, false)).toEqual({});
+    expect(groupsFor(false, true)).toEqual({});
   });
 });
