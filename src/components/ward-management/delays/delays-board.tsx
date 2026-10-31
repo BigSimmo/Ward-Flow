@@ -5,6 +5,8 @@
  * the table by blocker, a registers rail that becomes the person's panel, and graphs under it.
  * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
+import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
@@ -160,6 +162,8 @@ export function DelaysBoard({
   const patientOf = usePatientOf();
   // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
   const desk = useWaitingDeskWords(units);
+  // Q84 (Josh, 31 Oct 2026): a desk with one place (a site, a ward) names it, not "Statewide".
+  const deskPlace = deskPlaceLabel(useEffectiveWardAccess(), units);
   const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
   const {
@@ -985,7 +989,7 @@ export function DelaysBoard({
               ? `Waiting · coming to ${desk.ownWardName}`
               : "Waiting"
             : isPhone
-              ? `Waiting · ${desk.place ?? service ?? "Statewide"}`
+              ? `Waiting · ${desk.place ?? deskPlace ?? service ?? "Statewide"}`
               : "Waiting"
         }
         title={heroTitle}
