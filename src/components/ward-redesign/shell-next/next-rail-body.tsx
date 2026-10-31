@@ -75,10 +75,13 @@ import {
   countScopeNote,
   countTitle,
   deskCapacityRows,
+  capacityRowsSpoken,
+  cardScopeNote,
   overLineLabel,
   usePinnedPages,
 } from "@/components/ward-redesign/shell-next/next-rail-parts";
 import railParts from "@/components/ward-redesign/shell-next/next-rail.module.css";
+import { CLOSE_MENUS_EVENT } from "@/components/ward-redesign/shell-next/next-bar-parts";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlagCheck } from "@/components/ward-management/shell/ward-feature-flag-store";
 import {
@@ -375,10 +378,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
   const overLine = overLineLabel(capacityRows);
   const firstRow = capacityRows[0];
+  const capacityRowsLabel = capacityRowsSpoken(capacityRows);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
   const pinnedIds = usePinnedPages();
-  // The executive and access admin desks hold no shift, so they show no handover countdown.
-  const showHandover = role !== "executive" && deskAccess.role !== "admin";
+  const showHandover = role !== "executive" && deskAccess.role !== "admin"; // no shift on those desks
   // The tablet Menu (no rail on screen) shows the capacity card; the rail's own More does not need it.
   const sheetAlertsClass = sheetShowsMain ? `${styles.sheetAlerts} ${railParts.sheetAlertsShow}` : styles.sheetAlerts;
   const boardMinute = minuteOfDay(now);
@@ -387,11 +390,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const appearanceRef = useRef<HTMLDivElement>(null);
   const alertsRef = useRef<HTMLDivElement>(null);
 
-  // Every figure below comes from the derivation; nothing is typed here.
+  // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
-  // shell-next: the over-the-line words come from the desk's own rows (`overLineLabel`), which still
-  // count places over the bed alert line, never the Alerts page's list (#793).
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -401,6 +402,13 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     // Standard §7.7: "moves focus to the new control". The toggle stays the same element in both
     // shapes, so this keeps it focused rather than handing off to a different node.
     toggleRef.current?.focus();
+  }, []);
+
+  // shell-next: a header action that opens its own sheet (New referral from this menu) closes it.
+  useEffect(() => {
+    const close = () => setMoreOpen(false);
+    window.addEventListener(CLOSE_MENUS_EVENT, close);
+    return () => window.removeEventListener(CLOSE_MENUS_EVENT, close);
   }, []);
 
   // Phone bar (8 Oct 2026): the rail row is hidden under 48rem and the bar's own Menu button opens
@@ -712,6 +720,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
       aria-label="Ward Flow sections"
       data-testid="ward-rail"
     >
+      <a href="#main-content" className={railParts.skipLink}>
+        Skip to the page
+      </a>
       <div className={styles.brand}>
         {/* Closed desktop strip (Josh, 8 October 2026): the mark opens the full rail. Everywhere
             else it stays the home link. */}
@@ -867,7 +878,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               className={styles.compactAlertPip}
               data-alert={overLine.over > 0 ? "true" : undefined}
               data-testid="ward-rail-compact-alert-pip"
-              aria-label={`${firstRow?.name ?? "Metro"} ${firstRow?.percent === null || !firstRow ? "not recorded" : formatOccupancyPercent(firstRow.percent)} full. Bed alerts: ${overLine.label}.`}
+              aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
               aria-expanded={alertsOpen}
               aria-haspopup="dialog"
               onClick={(event) => {
@@ -894,12 +905,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             data-open={alertsOpen ? "true" : undefined}
             data-alert={overLine.over > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            aria-label={`Bed alerts: ${overLine.label}. ${capacityRows
-              .map(
-                (row) =>
-                  `${row.counts} ${row.percent === null ? "not recorded" : formatOccupancyPercent(row.percent)} full`,
-              )
-              .join(". ")}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${countNote}.`}
+            aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={(event) => {
@@ -935,7 +941,23 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           </button>
 
           {alertsOpen ? (
-            <div className={styles.capacityAlertsDropdown} role="dialog" aria-label="Bed alerts">
+            <div
+              className={styles.capacityAlertsDropdown}
+              role="dialog"
+              aria-label="Bed alerts"
+              tabIndex={-1}
+              ref={(node) => {
+                // shell-next: focus moves into the list when it opens (its first row, or the list).
+                if (node && !node.contains(document.activeElement)) {
+                  (node.querySelector<HTMLElement>("a[href]") ?? node).focus({ preventScroll: true });
+                }
+              }}
+              onBlur={(event) => {
+                // Leaving the list by Tab closes it, as Escape does.
+                const next = event.relatedTarget as Node | null;
+                if (next && !alertsRef.current?.contains(next)) setOpenOverlay(null);
+              }}
+            >
               <div className={styles.alertsDropdownHeader}>
                 <div>
                   <strong className={styles.alertsDropdownTitle}>Bed alerts</strong>
@@ -961,6 +983,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                         <span className={styles.alertPercent}>
                           <Dot tone={atRisk ? "warning" : "neutral"} />
                           {formatOccupancyPercent(svc.occupancyPercent)}
+                          {atRisk ? <SrOnly>{`, over ${BED_ALERT_THRESHOLD_PERCENT}%`}</SrOnly> : null}
                         </span>
                       </span>
                       <span className={styles.alertFacts}>
@@ -1148,6 +1171,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             className={styles.utilityLink}
             aria-label="Settings"
             title="Settings"
+            aria-current={pathname.replace(/\/+$/u, "") === settingsHref() ? "page" : undefined}
             data-testid="ward-rail-settings-link"
           >
             <Settings aria-hidden="true" strokeWidth={1.75} />

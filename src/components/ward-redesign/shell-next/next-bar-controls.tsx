@@ -363,15 +363,13 @@ export function WardBarDrawerTriggers({
         aria-haspopup="dialog"
         aria-expanded={openPanel === "activity"}
         aria-controls="ward-bar-activity-drawer"
+        // One name, without the stray space the visible label and a hidden tail gave it.
+        aria-label={`Activity${activityHasUnread ? `, ${unreadNoticeCount} unread ${unreadNoticeCount === 1 ? "notice" : "notices"}` : ""}${shownActivity ? "" : ", not available for this page"}`}
         onClick={() => (openPanel === "activity" ? closePopover("activity", false) : openPopover("activity"))}
       >
         <RotateCcwClock className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
         <span className={styles.triggerLabel}>Activity</span>
         {activityHasUnread ? <span className={styles.unread} aria-hidden="true" /> : null}
-        <span className="sr-only">
-          {shownActivity ? ", synthetic activity" : ", activity not available for this page"}
-          {activityHasUnread ? `, ${unreadNoticeCount} unread` : ""}
-        </span>
       </button>
 
       <button

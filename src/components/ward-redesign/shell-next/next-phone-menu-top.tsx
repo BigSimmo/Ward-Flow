@@ -19,7 +19,7 @@ import {
 } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import railStyles from "@/components/ward-management/shell/ward-rail.module.css";
 import { useNextNavCounts } from "@/components/ward-redesign/shell-next/next-nav-counts";
-import { countScopeNote, deskCapacityRows, overLineLabel } from "@/components/ward-redesign/shell-next/next-rail-parts";
+import { cardScopeNote, deskCapacityRows, overLineLabel } from "@/components/ward-redesign/shell-next/next-rail-parts";
 
 import parts from "@/components/ward-redesign/shell-next/next-rail.module.css";
 
@@ -54,7 +54,7 @@ export function NextPhoneMenuTop({
   const rows = deskCapacityRows(access, units, admissions ?? [], bedReleases, bedAlerts);
   const overLine = overLineLabel(rows);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
-  const note = countScopeNote(access, service);
+  const note = cardScopeNote(rows, access, service);
   const body = (
     <>
       <span className={railStyles.alertsHead}>

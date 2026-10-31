@@ -132,3 +132,37 @@
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
 }
+
+/* Skip to the page (before the rail): hidden until it has keyboard focus, for keyboard users. */
+.skipLink {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 50;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-font);
+  box-shadow: var(--wf-e3);
+  transform: translateY(-200%);
+}
+
+.skipLink:focus-visible {
+  transform: none;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* A dock label longer than its tab ("Coming and going", the page's one name) wraps to two lines
+   instead of being cut off; one-word labels are unchanged. */
+.dockLabels [class*="dockLabel"] {
+  display: -webkit-box;
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
+  line-height: 12px;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
