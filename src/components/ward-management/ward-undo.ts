@@ -102,7 +102,7 @@ export function undoStepTypeFor(action: string): UndoStepType | undefined {
   return UNDO_STEP_TYPES.find((type) => (UNDO_STEP_ACTIONS[type] as readonly string[]).includes(action));
 }
 
-/** One subject id from an event's own fields: movement, then referral, then stay; else the network. */
+/** One subject id from an event's own fields: movement, then referral, then stay; a sign-off's ward; else the network. */
 export function undoStepSubjectId(event: object): string {
   const fields = event as {
     movementId?: unknown;
@@ -110,7 +110,17 @@ export function undoStepSubjectId(event: object): string {
     admissionId?: unknown;
     subject?: { id?: unknown };
     action?: unknown;
+    type?: unknown;
+    unitId?: unknown;
   };
+  // Decision 41 (31 Oct 2026): a handover sign-off naming a ward is filed against that ward, so one
+  // ward's Undo never takes back another ward's sign-off. One naming none stays the network's.
+  if (
+    (fields.type === "RECORD_HANDOVER_SIGN_OFF" || fields.type === "UNDO_HANDOVER_SIGN_OFF") &&
+    typeof fields.unitId === "string" &&
+    fields.unitId.length > 0
+  )
+    return `handover:${fields.unitId}`;
   // A bed meeting action is filed per record and kind, so marking two actions done on one person
   // keeps an Undo for each (H-0150).
   if (typeof fields.subject?.id === "string" && typeof fields.action === "string")
@@ -298,6 +308,21 @@ function diffRows(slice: string, oldRows: { id: string }[], newRows: { id: strin
   });
 }
 
+/**
+ * Where a step's appended rows stand now: at their recorded start, or, when an earlier row has
+ * since been taken back by another subject's Undo (one ward's sign-off before another's), at the
+ * nearest place before it holding the same rows. -1 when they are not there.
+ */
+function appendedRowsAt(list: readonly unknown[], change: { start: number; rows: unknown[] }): number {
+  const holdsRows = (at: number) => {
+    const rows = list.slice(at, at + change.rows.length);
+    return rows.length === change.rows.length && sameRecord(rows, change.rows);
+  };
+  for (let at = Math.min(change.start, list.length - change.rows.length); at >= 0; at -= 1)
+    if (holdsRows(at)) return at;
+  return -1;
+}
+
 /** Rule 2 for a step: whether any record it changed reads differently now. */
 export function stepChangedSince(state: object, record: StepUndo): boolean {
   const current = state as Record<string, unknown>;
@@ -305,10 +330,7 @@ export function stepChangedSince(state: object, record: StepUndo): boolean {
     const value = current[change.slice];
     if (change.mode === "whole") return !sameRecord(value ?? null, change.after);
     const list = Array.isArray(value) ? (value as unknown[]) : [];
-    if (change.mode === "append") {
-      const rows = list.slice(change.start, change.start + change.rows.length);
-      return rows.length !== change.rows.length || !sameRecord(rows, change.rows);
-    }
+    if (change.mode === "append") return appendedRowsAt(list, change) < 0;
     // A notice the step raised may since have been read; the undo withdraws it all the same.
     if (change.slice === "notices" && change.before === null) return false;
     const row = list.find((candidate) => isRow(candidate) && candidate.id === change.id);
@@ -333,7 +355,8 @@ export function applyStepUndo<S extends object>(state: S, record: StepUndo): S {
     }
     const list = Array.isArray(value) ? [...(value as unknown[])] : [];
     if (change.mode === "append") {
-      list.splice(change.start, change.rows.length);
+      const at = appendedRowsAt(list, change);
+      list.splice(at < 0 ? change.start : at, change.rows.length);
       next[change.slice] = list;
       continue;
     }

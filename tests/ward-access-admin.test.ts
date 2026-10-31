@@ -115,6 +115,40 @@ describe("granting a role", () => {
     expect(scopeWithinScope({ kind: "ed", edId: "fsh-ed" }, south, places)).toBe(true);
     expect(scopeWithinScope({ kind: "team", teamName: "Any team" }, south, places)).toBe(false);
   });
+
+  // Decision 42 (Josh, 31 Oct 2026): a service's access admin gives transport officer and community
+  // team roles inside its own service. A service coordinator still gives no role at all.
+  it("lets a service admin give its own service's community team and transport officer roles", () => {
+    const south = { kind: "service", service: "South Metro" } as const;
+    expect(scopeWithinScope({ kind: "team", teamName: "Rockingham" }, south, places)).toBe(true);
+    expect(scopeWithinScope({ kind: "team", teamName: "Joondalup" }, south, places)).toBe(false);
+    expect(scopeWithinScope({ kind: "jobs", service: "South Metro" }, south, places)).toBe(true);
+    expect(scopeWithinScope({ kind: "jobs", service: "North Metro" }, south, places)).toBe(false);
+    expect(scopeWithinScope({ kind: "jobs" }, south, places)).toBe(false);
+    const give = (granter: WardAccess, access: WardAccess) =>
+      grantRefusal({
+        granter,
+        granterId: "admin-1",
+        actorId: "person-2",
+        access,
+        expiresAt: now + 60,
+        now,
+        places,
+      });
+    const team: WardAccess = { role: "community", scope: { kind: "team", teamName: "Rockingham" } };
+    const officer: WardAccess = { role: "officer", scope: { kind: "jobs", service: "South Metro" } };
+    expect(give(southAdmin, team)).toBeNull();
+    expect(give(southAdmin, officer)).toBeNull();
+    expect(give(southAdmin, { role: "community", scope: { kind: "team", teamName: "Joondalup" } })).toBe(
+      "That role is wider than your own.",
+    );
+    expect(give(southAdmin, { role: "officer", scope: { kind: "jobs", service: "North Metro" } })).toBe(
+      "That role is wider than your own.",
+    );
+    const southCoordinator: WardAccess = { role: "coordinator", scope: south };
+    expect(give(southCoordinator, team)).toBe("Granting and removing roles is not part of your role.");
+    expect(give(southCoordinator, officer)).toBe("Granting and removing roles is not part of your role.");
+  });
 });
 
 describe("approving and removing", () => {
