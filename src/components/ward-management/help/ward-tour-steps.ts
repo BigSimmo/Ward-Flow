@@ -325,9 +325,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Finding your way",
           "brief",
-          { sel: '[data-testid="ward-open-daily-sheet-btn"]' },
+          { sel: '[aria-label="More ward actions"]' },
           "Shift brief",
-          "Shift brief sums up the ward for the start of a shift. Handover beside it is the sheet you pass to the next nurse in charge.",
+          "Shift brief, under More, sums up the ward for the start of a shift. Handover beside More is the sheet you pass to the next nurse in charge.",
         ),
         step(
           "Finding your way",

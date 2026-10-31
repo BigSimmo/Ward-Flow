@@ -72,7 +72,8 @@ function leaveBedsInProviderFor(unitId: string): number {
 
 function renderedOnLeaveFigure(): number {
   const figure = screen.getByTestId("ward-board-figure-onLeave");
-  const value = figure.querySelector("dd")?.textContent ?? "";
+  // Redesign (31 Oct 2026): the figure is a phrase in the "Also on this ward" line, its count in bold.
+  const value = figure.querySelector("b")?.textContent ?? "";
   return Number.parseInt(value, 10);
 }
 

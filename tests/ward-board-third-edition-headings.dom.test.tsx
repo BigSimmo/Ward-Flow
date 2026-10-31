@@ -48,7 +48,8 @@ const GRID_HEADING = "Every bed, and who is in it";
  *  absent: the drawing's own footnote folds it into `Going out`, because both panels listed the
  *  same beds — the ones with a discharge date. */
 const PANEL_HEADINGS = [
-  "Today on this ward",
+  // Redesign (Josh, 31 Oct 2026): the ten figure boxes are one "Also on this ward" line.
+  "Also on this ward",
   "Before handover",
   "Coming in",
   "Going out today and tomorrow",
@@ -105,7 +106,9 @@ describe("the bed board's third-edition headings", () => {
     for (const unit of WALKED) {
       const { unmount } = renderBoard(unit.id);
       expect(
-        screen.getByRole("heading", { name: unit.name }),
+        // Redesign (31 Oct 2026): the hero's heading names the screen, with the ward's name after it
+        // for a screen reader, so the ward is still a heading on every board.
+        screen.getByRole("heading", { name: `${SCREEN_NAME}, ${unit.name}` }),
         `${unit.name}'s own name is no longer a heading on its board`,
       ).toBeInTheDocument();
       unmount();
@@ -129,7 +132,7 @@ describe("the bed board's third-edition headings", () => {
           "which every test-id assertion in this suite would survive",
       ).toBeInTheDocument();
     }
-    for (const heading of ["Today on this ward", "Before handover", "Going out today and tomorrow"]) {
+    for (const heading of ["Also on this ward", "Before handover", "Going out today and tomorrow"]) {
       expect(screen.getByRole("heading", { name: heading })).toBeVisible();
     }
   });

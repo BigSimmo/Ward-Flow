@@ -3,7 +3,10 @@
 // The ward screen's ward card and top action bar. Split out of `ward-screen.tsx` (18 October 2026)
 // to keep that file under the line cap.
 
-import { Bell, FileText, Printer, Search, Send, Tv } from "lucide-react";
+import { Bell, Printer, Search, Send, Tv } from "lucide-react";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { designationSummary } from "@/components/ward-management/ward-bed-designation";
+import { plural } from "@/components/ward-management/ward-plural";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -12,6 +15,7 @@ import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput } from "@/com
 import styles from "./ward.module.css";
 import noticesSheet from "./ward-notices-sheet.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
+import { phoneRows as rows } from "@/components/wf";
 import { WardNotificationCenter } from "./ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { CapacityRefreshRequest, Movement, Notice, Unit } from "@/components/ward-management/ward-model";
@@ -125,7 +129,6 @@ export function WardScreenTopBar({
   setBedQuery,
   activeTab,
   unreadAlertsCount,
-  setDailySheetOpen,
   tvViewsOn,
   handoverHref,
   handleRaiseWardReferral,
@@ -138,6 +141,12 @@ export function WardScreenTopBar({
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
+  // Handing over is the nurse in charge's own job, so on the ward desk Handover stays beside More.
+  const isWardDesk = useEffectiveWardAccess().role === "ward";
+  // Approved 31 Oct 2026: the heading states the ward's position; the ward and its facts sit in the
+  // eyebrow, and the ward name is kept in the heading for screen readers.
+  const position = `${plural(states.ready, "bed", "beds")} ready, ${states.occupied} occupied`;
+  const service = unitHealthService(unit);
   const closePhoneNotices = () => {
     setNotificationCenterOpen(false);
   };
@@ -160,25 +169,39 @@ export function WardScreenTopBar({
         className={styles.wardHero}
         eyebrow={
           isPhone
-            ? `${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
-            : `Ward · ${site ? site.name : unit.siteCode}${unitHealthService(unit) ? ` · ${unitHealthService(unit)}` : ""}`
+            ? `${unit.name} · ${site ? site.name.replace(/\s+(Public Hospital|Hospital|Health Campus|Health Service)$/u, "") : unit.siteCode}`
+            : [
+                unit.name,
+                site ? site.name : unit.siteCode,
+                service,
+                unit.cohort,
+                designationSummary(unit).toLowerCase(),
+              ]
+                .filter(Boolean)
+                .join(" · ")
         }
         title={
           isPhone ? (
-            // Option B (20 Oct 2026): the ward name is the Switch ward button when there is a ward to
-            // switch to, so the name shows once with no separate chevron box.
+            // On a phone the Switch ward chip sits beside the heading.
             <span className={styles.phoneHeroTitle}>
-              {wardSwitchMenu ?? <span className={styles.phoneHeroName}>{unit.name}</span>}
+              <span className={styles.phoneHeroName}>
+                {position}
+                <span className="sr-only">{`, ${unit.name}`}</span>
+              </span>
+              {wardSwitchMenu}
             </span>
           ) : (
-            unit.name
+            <>
+              {position}
+              <span className="sr-only">{`, ${unit.name}`}</span>
+            </>
           )
         }
-        titleMeta={isPhone ? `${unit.beds} beds · ${states.occupied} occupied` : wardSwitchMenu}
+        titleMeta={isPhone ? undefined : wardSwitchMenu}
         aside={
           isPhone ? (
             <>
-              <SinceLastLookPill scopeKey={`ward:${unit.id}`} />
+              <SinceLastLookPill scopeKey={`ward:${unit.id}`} pillClassName={rows.heroPill} />
               <LiveChip state={online ? "live" : "offline"} onHero age={formatInstant(now)} />
             </>
           ) : (
@@ -230,7 +253,8 @@ export function WardScreenTopBar({
 
       {isPhone ? (
         <>
-          {raiseReferralGate.note}
+          {/* No Raise referral button on the phone (the More menu names the lock on its own row), so its
+              lock note is not shown above the tabs. */}
           {wardRoleLockNote}
           {/* Phone notices (20 Oct 2026): the bell opens a pop-up sheet rather than a panel pushed
               into the page, so the page stays put behind it and Close returns to the bell. */}
@@ -296,26 +320,10 @@ export function WardScreenTopBar({
                 }}
                 data-testid="ward-find-input"
               />
+              {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu at every
+                  desktop width, leaving three actions and More. The Notices drawer stays here; the More
+                  menu's Notices item opens it. */}
               <div className={styles.notificationTriggerWrap}>
-                <button
-                  ref={notificationTriggerRef}
-                  type="button"
-                  className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
-                  onClick={() => {
-                    setNotificationCenterOpen((prev) => !prev);
-                  }}
-                  aria-expanded={notificationCenterOpen}
-                  data-testid="ward-notifications-toggle-btn"
-                  title="Buzzes, urgent tasks and notices"
-                >
-                  <Bell size={16} aria-hidden="true" />
-                  <span>Notices</span>
-                  {unreadAlertsCount > 0 ? (
-                    <span className={styles.notificationCountBadge} data-testid="ward-notification-count-badge">
-                      {unreadAlertsCount}
-                    </span>
-                  ) : null}
-                </button>
                 {/* Notices option A (22 Oct 2026): the desktop Notices open as the same right-hand drawer as
                     Alerts, rather than a popover over the bed board. The Sheet closes itself. */}
                 <Sheet
@@ -351,18 +359,6 @@ export function WardScreenTopBar({
                   ) : null}
                 </Sheet>
               </div>
-              <button
-                type="button"
-                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
-                onClick={() => {
-                  setDailySheetOpen(true);
-                }}
-                title="Open this shift's brief."
-                data-testid="ward-open-daily-sheet-btn"
-              >
-                <FileText size={16} aria-hidden="true" />
-                Shift brief
-              </button>
               {/* This ward's own TV screen, behind the `bed-meeting-tv` flag. Desktop only. */}
               {tvViewsOn && !isPhone ? (
                 <Link
@@ -374,16 +370,17 @@ export function WardScreenTopBar({
                   On TV
                 </Link>
               ) : null}
-              <Link
-                className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolWide} ${styles.toolSolo}`}
-                href={handoverHref}
-              >
-                <Printer size={16} aria-hidden="true" />
-                Handover
-              </Link>
-              <span className={styles.toolMore}>
-                {wardMoreMenu(buttonClass({ variant: "ghost", size: "sm" }), true)}
-              </span>
+              {isWardDesk ? (
+                <Link
+                  className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
+                  href={handoverHref}
+                  data-testid="ward-open-handover"
+                >
+                  <Printer size={16} aria-hidden="true" />
+                  Handover
+                </Link>
+              ) : null}
+              {wardMoreMenu(buttonClass({ variant: "ghost", size: "sm" }), true)}
               <button
                 type="button"
                 className={buttonClass({ variant: "sec", size: "sm" })}

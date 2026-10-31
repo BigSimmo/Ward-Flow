@@ -4,7 +4,6 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import Link from "next/link";
 import { PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
@@ -30,7 +29,6 @@ import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { derivedBedReleases } from "@/components/ward-management/ward-discharge-dates";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { confirmedHeldUpNote } from "@/components/ward-management/capacity/capacity-derivations";
-import { unitHref, wardBoardHref } from "@/components/ward-management/shell/ward-facade";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 
@@ -60,7 +58,9 @@ import {
   type ShiftTileItem,
   type Tile,
 } from "./ward-board-model";
-import { WardBoardHeader } from "./ward-board-header";
+import { WardBoardAlsoOnWard, WardBoardHero, WardBoardScreenNav, WardBoardTools } from "./ward-board-hero";
+import hero from "./ward-board-hero.module.css";
+import panels from "./ward-board-panels.module.css";
 import { WardBoardFlowColumn } from "./ward-board-flow-column";
 import { WardBoardGridColumn } from "./ward-board-grid-column";
 import { LeavingDestinationField, WardBoardDetailPanel } from "./ward-board-detail-panel";
@@ -234,6 +234,8 @@ export function WardBoard({
    * person, and so nothing in this component ever has an ordinal to print.
    */
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [autoPicked, setAutoPicked] = useState(false);
+  const [autoPickedKey, setAutoPickedKey] = useState<string | null>(null);
   const isPhone = useIsPhone();
   const [dateEdit, setDateEdit] = useState<{
     admissionId: string;
@@ -498,7 +500,15 @@ export function WardBoard({
     const resolved = resolvePatientIdentity
       ? resolvePatientIdentity(subject)
       : resolveSubjectPatient(subject, { patients, movements });
-    return resolved.patient ? resolved.displayName : "the patient (name not recorded)";
+    return resolved.patient ? resolved.formalName : "the patient (name not recorded)";
+  };
+  /** D-83: a list names the person surname first, with its own fallback for no name. */
+  const listNameFor = (admissionId: string | undefined): string => {
+    const subject = admissions.find((a) => a.id === admissionId) ?? { id: admissionId };
+    const resolved = resolvePatientIdentity
+      ? resolvePatientIdentity(subject)
+      : resolveSubjectPatient(subject, { patients, movements });
+    return resolved.patient ? resolved.formalName : "Name not recorded";
   };
   /** Design audit DA-08: a departure is confirmed against a second identifier, not the name alone. */
   const identityFor = (admissionId: string | undefined): string | undefined => {
@@ -586,6 +596,23 @@ export function WardBoard({
         return true;
     }
   };
+
+  // Redesign (point 16): the record column opens on the first bed that needs a look rather than
+  // sitting empty. Once only, so closing it is respected; never on a phone, where it is a sheet.
+  if (!autoPicked && !isPhone && selectedKey === null) {
+    const firstLook = tiles.find((tile) => tileMatchesFilter(tile, "look"));
+    setAutoPicked(true);
+    if (firstLook) {
+      setSelectedKey(firstLook.key);
+      setAutoPickedKey(firstLook.key);
+    }
+  }
+  // The first render reads the server's phone guess, so a phone that guessed desktop can pick a bed
+  // here. Once the browser says phone, an untouched pick is put back, so no sheet opens unasked.
+  if (isPhone && autoPickedKey !== null) {
+    setAutoPickedKey(null);
+    if (selectedKey === autoPickedKey) setSelectedKey(null);
+  }
 
   let lookCount = 0;
   let readyCount = 0;
@@ -775,7 +802,8 @@ export function WardBoard({
         tone: "warn",
         when: `${occupant.awayAtEdHours}h ago`,
         chip: `${occupant.awayAtEdHours}h away`,
-        text: "Their patient is away at an emergency department. The bed is still held for them.",
+        // The row already says "Away at an ED", so the line keeps only what it adds, uncut.
+        text: "Their bed is still held for them.",
         acts: [{ word: "Mark them back", say: "would record that the person in this bed is back on the ward" }],
       });
     }
@@ -1061,109 +1089,28 @@ export function WardBoard({
       <main id="main-content" className={styles.main}>
         <h1 className={styles.screenName}>Stays and discharges</h1>
 
-        {/*
-         * A `<div>`, NOT a `<header>` — found by printing the page and looking, not by a test.
-         * The global print reset in `globals.css` carries `header, nav, button { display: none
-         * !important }` to strip workspace chrome from a printed sheet. This block is a page
-         * header, not workspace chrome, so as a `<header>` it vanished in print and a printed ward
-         * board carried no ward name, no hospital and no headline figure at all — a sheet of
-         * anonymous numbered boxes that could have come from any ward in the state. Other pages
-         * fight that rule back with a `display: block !important` override; not using the element
-         * is simpler and cannot be undone by a later reset. Nothing here is a landmark: the page's
-         * one landmark is the `<main>` above.
-         */}
-        <WardBoardHeader
+        <WardBoardHero
           available={available}
           constraint={constraint}
-          incoming={incoming}
-          outgoing={outgoing}
+          incoming={incoming.length}
+          outgoing={outgoing.length}
           pendingPreparation={pendingPreparation}
-          pulledIn={pulledIn}
+          pulledIn={pulledIn.length}
           service={service}
           site={site}
           stamp={stamp}
           states={states}
           unit={unit}
+          nav={<WardBoardScreenNav unit={unit} />}
+          tools={
+            <WardBoardTools
+              sheetOpen={sheetOpen}
+              onToggleSheet={() => setSheetOpen((open) => !open)}
+              units={liveUnits}
+              currentUnitId={unit.id}
+            />
+          }
         />
-
-        <div className={styles.wardTools}>
-          <div className={styles.wardToolsLeft}>
-            <nav className={styles.wardScreenNav} aria-label={`${unit.name} screens`}>
-              <Link href={unitHref(unit.id)}>Ward home</Link>
-              <span aria-current="page">Stays and discharges</span>
-            </nav>
-          </div>
-          <div className={styles.wardToolsRight}>
-            <button
-              type="button"
-              className={`${styles.topDailySheetButton}${sheetOpen ? ` ${styles.topDailySheetButtonOpen}` : ""}`}
-              onClick={() => setSheetOpen((open) => !open)}
-              aria-expanded={sheetOpen}
-              aria-controls="ward-board-sheet-body"
-              data-testid="ward-board-top-sheet-toggle"
-            >
-              <svg
-                className={styles.topDailySheetIcon}
-                viewBox="0 0 16 16"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M5.5 2.5h5M6 1.5h4a1 1 0 0 1 1 1v1H5v-1a1 1 0 0 1 1-1z" />
-                <rect x="3" y="3.5" width="10" height="11" rx="1.5" />
-                <path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" />
-              </svg>
-              <span>{sheetOpen ? "Hide shift brief" : "Show shift brief"}</span>
-              <span
-                className={`${styles.topDailySheetChevron}${sheetOpen ? ` ${styles.topDailySheetChevronOpen}` : ""}`}
-                aria-hidden="true"
-              >
-                ▾
-              </span>
-            </button>
-            <details className={styles.wardSwitch}>
-              <summary>
-                <svg
-                  className={styles.wardSwitchIcon}
-                  viewBox="0 0 24 24"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4 8h14l-3-3M20 16H6l3 3" />
-                </svg>
-                <span className={styles.wardSwitchLabel}>Change ward</span>{" "}
-                <span className={styles.wardSwitchCount}>{liveUnits.length} wards</span>
-              </summary>
-              <div className={styles.wardSwitchBody}>
-                <p className={styles.wardSwitchHeading}>Choose a ward</p>
-                <ul className={styles.wardSwitchList}>
-                  {liveUnits.map((candidate) => (
-                    <li key={candidate.id}>
-                      <Link
-                        href={wardBoardHref(candidate.id)}
-                        aria-current={candidate.id === unit.id ? "page" : undefined}
-                      >
-                        <span>{candidate.name}</span>
-                        {candidate.id === unit.id && <small>You are here</small>}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </details>
-          </div>
-        </div>
 
         {/*
          * THE WARD BAND — ten current figures for this one ward. Six retain the home page's exact
@@ -1191,40 +1138,20 @@ export function WardBoard({
             {gridColumn}
           </div>
         )}
-        <section className={styles.triage} aria-labelledby="ward-board-triage-heading" data-testid="ward-board-triage">
-          <h2 id="ward-board-triage-heading" className={styles.triageHeading}>
-            Today on this ward
-          </h2>
-          <dl className={styles.triageFigures}>
-            {figures.map(({ key, label, value, led = false, note }) => {
-              return (
-                <div
-                  key={key}
-                  className={`${styles.triageFigure}${led ? ` ${styles.triageFigureLed}` : ""}`}
-                  data-testid={`ward-board-figure-${key}`}
-                  data-figure-key={key}
-                  data-figure-led={led ? "true" : "false"}
-                >
-                  <dt className={styles.triageLabel}>{label}</dt>
-                  <dd className={styles.triageValue}>{value}</dd>
-                  {note && <dd className={styles.triageLedNote}>{note}</dd>}
-                  {led && <dd className={styles.triageLedNote}>shown in Going out</dd>}
-                </div>
-              );
-            })}
-          </dl>
-        </section>
+        <WardBoardAlsoOnWard figures={figures} />
 
         {/* Stranded-patient prompts (smart feature 12): long stays with no expected date, and people
             ready to leave but waiting on something outside the ward. Scoped to this ward. */}
-        <StrandedPrompts
-          admissions={admissionsForUnit(admissions, unit.id)}
-          now={now}
-          nameFor={nameFor}
-          onOpen={setSelectedKey}
-          bedReleases={liveBedReleases}
-        />
-        <WardForecastShare unit={unit} now={now} nameFor={nameFor} onOpen={setSelectedKey} />
+        <div className={hero.oneNotice}>
+          <StrandedPrompts
+            admissions={admissionsForUnit(admissions, unit.id)}
+            now={now}
+            nameFor={listNameFor}
+            onOpen={setSelectedKey}
+            bedReleases={liveBedReleases}
+          />
+          <WardForecastShare unit={unit} now={now} nameFor={nameFor} onOpen={setSelectedKey} />
+        </div>
 
         {/*
          * NEEDS A LOOK THIS SHIFT — the owner asked for the board's exceptions condensed into one
@@ -1266,7 +1193,7 @@ export function WardBoard({
          */}
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
         <div
-          className={`${styles.zones}${selectedTile !== null ? ` ${styles.zonesOpen}` : ""}`}
+          className={`${styles.zones}${selectedTile !== null ? ` ${styles.zonesOpen}` : ""} ${panels.zones}`}
           onKeyDown={onZoneKeyDown}
         >
           <WardBoardFlowColumn

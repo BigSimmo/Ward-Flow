@@ -336,7 +336,12 @@ describe("the as-at stamp — DB-10's safeguard, and DB-12's rule that it cannot
      * spelling.
      */
     renderWardBoard(UNIT_ID);
-    const stamp = screen.getByTestId("ward-board-as-at").textContent ?? "";
+    // Redesign (Josh, 31 Oct 2026): the As at time sits in the hero's heading area and its day note
+    // (the synthetic notice) in the hero's foot line. Both are the stamp, so both are read here.
+    const stamp = [
+      screen.getByTestId("ward-board-as-at").textContent ?? "",
+      screen.getByTestId("ward-board-as-at-note").textContent ?? "",
+    ].join(" ");
 
     expect(stamp).toMatch(/synthetic/i);
     expect(stamp, `a year reached the stamp: ${stamp}`).not.toMatch(/\b(19|20)\d{2}\b/);

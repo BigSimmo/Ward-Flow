@@ -1,177 +1,25 @@
 "use client";
 
-// The ward screen's bed drawer and capacity confirmation dialog. Split out of `ward-screen.tsx`
-// (18 October 2026) to keep that file under the line cap.
+// The ward screen's bed drawer. Split out of `ward-screen.tsx` (18 October 2026) to keep that file under
+// the line cap. Confirm capacity figures is `ward-confirm-beds-dialog.tsx` (31 October 2026).
 
 import type { LeavingDestination } from "@/components/ward-management/ward-admissions";
-import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { admissionCriteriaEligibility } from "@/components/ward-management/ward-flow-reducer";
-import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
-import styles from "./ward.module.css";
 import { useWardCommandCompletion, wardCommandFailure } from "./use-ward-command-completion";
 import { WardBedDossierDrawer } from "./ward-screen-lazy";
 import type { Dispatch, KeyboardEvent, ReactElement, RefObject, SetStateAction } from "react";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
-import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
-import type { OccupancyFigure } from "@/components/ward-management/ward-occupancy";
 import type { WardScreenBed } from "./ward-screen-derivations";
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import type { ActionToast } from "@/components/ward-management/ward-action-toast";
-
-/** The Confirm capacity figures dialog, drawn from the ward screen's own state. */
-type WardScreenCapacityModalProps = {
-  confirmNumbersOpen: boolean;
-  closeCapacityModal: () => void;
-  capacityModalRef: RefObject<HTMLDivElement | null>;
-  unit: Unit;
-  occupancy: OccupancyFigure;
-  capacity: ReturnType<typeof unitCapacity>;
-  states: BedStateCounts;
-  capacityValue: string;
-  capacityConfirmationForm: () => ReactElement;
-};
-
-export function WardScreenCapacityModal({
-  confirmNumbersOpen,
-  closeCapacityModal,
-  capacityModalRef,
-  unit,
-  occupancy,
-  capacity,
-  states,
-  capacityValue,
-  capacityConfirmationForm,
-}: WardScreenCapacityModalProps) {
-  // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
-  // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
-  // several KB to the phone download (script-budget.json).
-  "use no memo";
-  return confirmNumbersOpen ? (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and Escape closes it from the keyboard
-    <div
-      className={`${styles.modalOverlay} ${styles.show}`}
-      onClick={closeCapacityModal}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-capacity-title"
-      aria-describedby="modal-capacity-desc"
-    >
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
-      <div
-        ref={capacityModalRef}
-        className={styles.modalBox}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        <div className={styles.modalHead}>
-          <h2 id="modal-capacity-title" className={styles.modalTitle}>
-            Confirm capacity figures — {unit.name}
-          </h2>
-          <button
-            type="button"
-            className={`${styles.drawerCloseBtn} ${styles.tapTarget}`}
-            onClick={closeCapacityModal}
-            aria-label="Close capacity confirmation modal"
-          >
-            &times; Close
-          </button>
-        </div>
-        <div className={styles.modalBody}>
-          <p id="modal-capacity-desc" className={styles.blurb}>
-            Confirm or update the live operational figures for {unit.name}.
-          </p>
-
-          <div className={styles.unitCard}>
-            <div className={styles.unitCardHeader}>
-              <h3 className={styles.sectionHeading}>Bed roster &amp; census overview</h3>
-              <span className={`${styles.statusPillBadge} ${styles.unitNamePill}`}>{unit.name}</span>
-            </div>
-            <div className={styles.unitCardBody}>
-              <dl className={styles.unitFacts}>
-                <div>
-                  <dt>Total Staffed Beds</dt>
-                  <dd className={styles.factValue}>
-                    {unit.beds} {unit.beds === 1 ? "bed" : "beds"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Beds in use</dt>
-                  <dd className={styles.factValue}>
-                    {occupancy.inUse} / {unit.beds} {unit.beds === 1 ? "bed" : "beds"} ({formatWardOccupancy(occupancy)}
-                    )
-                  </dd>
-                </div>
-                <div>
-                  <dt>Confirmed free</dt>
-                  <dd className={styles.factValue}>
-                    {unit.allocatable.value} {unit.allocatable.value === 1 ? "bed" : "beds"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Ready</dt>
-                  <dd className={styles.factValue}>
-                    {capacity.available} {capacity.available === 1 ? "bed" : "beds"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{BED_STATE_LABELS.pulled}, not arrived</dt>
-                  <dd className={styles.factValue}>
-                    {states.pulled} {states.pulled === 1 ? "bed" : "beds"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>{BED_STATE_LABELS.closed}, not offered</dt>
-                  <dd className={styles.factValue}>
-                    {states.closed} {states.closed === 1 ? "bed" : "beds"}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Unoccupied change</dt>
-                  <dd className={styles.factValue}>
-                    {(() => {
-                      const parsed = parseInt(capacityValue, 10);
-                      if (isNaN(parsed)) return "Not recorded";
-                      const delta = parsed - unit.allocatable.value;
-                      const abs = Math.abs(delta);
-                      const word = abs === 1 ? "bed" : "beds";
-                      return delta > 0 ? `+${delta} ${word}` : delta < 0 ? `${delta} ${word}` : "0 beds (No change)";
-                    })()}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Physical Vacancy Delta</dt>
-                  <dd className={styles.factValue}>
-                    {(() => {
-                      const openVacant = Math.max(0, unit.beds - capacity.occupied - states.closed);
-                      return `${openVacant} ${openVacant === 1 ? "bed" : "beds"} vacant${states.closed > 0 ? ` (${states.closed} closed)` : ""}`;
-                    })()}
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-
-          {capacityConfirmationForm()}
-        </div>
-        <div className={styles.modalFoot}>
-          <button type="button" className={`${styles.btnActionSec} ${styles.tapTarget}`} onClick={closeCapacityModal}>
-            Done
-          </button>
-        </div>
-      </div>
-    </div>
-  ) : null;
-}
 
 /** The selected bed's dossier drawer, drawn from the ward screen's own state. */
 type WardScreenBedDrawerProps = {

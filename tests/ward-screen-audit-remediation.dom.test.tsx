@@ -106,9 +106,11 @@ describe("WardScreen & WardIndex audit remediation", () => {
       </WardFlowProvider>,
     );
 
-    const noticesBtn = screen.getByTestId("ward-notifications-toggle-btn");
-    noticesBtn.focus();
-    fireEvent.click(noticesBtn);
+    // Redesign (31 Oct 2026): on a desktop, Notices is an item in the More menu.
+    const moreBtn = screen.getByTestId("ward-tools-more");
+    moreBtn.focus();
+    fireEvent.click(moreBtn);
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Notices/ }));
 
     const center = await screen.findByTestId("ward-notification-center");
     // Notices option A (22 Oct 2026): a pressed-button filter, as in the shared Alerts drawer.
@@ -127,7 +129,7 @@ describe("WardScreen & WardIndex audit remediation", () => {
     });
     expect(screen.queryByTestId("ward-notification-center")).not.toBeInTheDocument();
     // The desktop drawer is the shared Sheet, which hands focus back after a frame.
-    await waitFor(() => expect(document.activeElement).toBe(noticesBtn));
+    await waitFor(() => expect(document.activeElement).toBe(moreBtn));
 
     // Open Confirm capacity figures modal
     const confirmBtns = screen.getAllByRole("button", { name: /Confirm (today's )?numbers/i });
@@ -137,9 +139,10 @@ describe("WardScreen & WardIndex audit remediation", () => {
     expect(hasOpenSheet()).toBe(true);
     // Dabakarn has 1 Confirmed free, 1 Ready Vacant, 1 Pulled, 1 Closed — none should say "1 beds"
     expect(dialog.textContent).not.toMatch(/\b1 beds\b/);
-    expect(dialog).toHaveTextContent(/1 bed vacant/i);
+    // Redesign (31 Oct 2026): the dialog reads "Open and vacant: 1 bed", and Cancel closes it.
+    expect(dialog).toHaveTextContent(/Open and vacant: 1 bed(?!s)/i);
 
-    fireEvent.click(within(dialog).getByRole("button", { name: "Done" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(hasOpenSheet()).toBe(false);
   });
 

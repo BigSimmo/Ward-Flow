@@ -210,9 +210,11 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   await expect(confirmDialog).toBeVisible();
   await wardScreen.getByTestId("ward-capacity-input").fill("0");
   await expectAccessible(page, testInfo, "confirm capacity figures dialog");
-  await wardScreen.getByTestId("ward-capacity-submit").click();
+  // Redesign (31 Oct 2026): the beds alone are confirmed by "Confirm beds only" while the morning
+  // numbers are due, or by "Confirm beds" once they are in; Cancel closes the dialog.
+  await confirmDialog.getByRole("button", { name: /^Confirm beds( only)?$/u }).click();
   await expect(wardScreen.getByText(/Currently confirmed 0 at/u)).toBeVisible();
-  await confirmDialog.getByRole("button", { name: "Done" }).click();
+  await confirmDialog.getByRole("button", { name: "Cancel" }).click();
   await expect.poll(() => wardFigure(page, "ready")).toBe(0);
   await expectNoReloadSince(page, "confirming the ward's numbers");
 
