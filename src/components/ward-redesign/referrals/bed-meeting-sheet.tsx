@@ -156,7 +156,7 @@ export function BedMeetingSheet({
         <p className={s.empty}>No referrals waiting in {scopeLabel}.</p>
       ) : (
         <WardTable
-          className={styles.meetingTable}
+          className={cx(styles.meetingTable, s.table)}
           wrapperClassName={styles.meetingScroll}
           testId="ward-referral-meeting-table"
           ariaLabel="Bed meeting list"

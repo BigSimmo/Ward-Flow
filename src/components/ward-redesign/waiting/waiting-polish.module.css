@@ -1,81 +1,92 @@
 /* Waiting redesign, round 4 (Josh, 31 Oct 2026): a fuller header, a calmer "By blocker" table, a
    lined-up search, clearer register tabs and the rebuilt graphs. Tokens only, so dark mode follows. */
 
-/* ---------- Header: one row of high-yield tiles on the dark band ---------- */
+/* ---------- Header (round 5): one slim line in the dark band, no boxes ---------- */
 .heroBar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--wf-s-2);
-  width: 100%;
-  padding-top: var(--wf-s-1);
-}
-.heroTile {
-  --tone: var(--wf-hero-info);
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 4px;
   align-items: center;
-  gap: var(--wf-s-3);
+  gap: 4px 0;
+  width: 100%;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-on-hero-div);
+}
+.strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-width: 0;
-  padding: 10px 12px;
+  min-height: 28px;
+  padding: 2px 14px 2px 0;
+  border: 0;
+  background: none;
+  color: var(--wf-hero-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+}
+.strip + .strip {
+  padding-left: 14px;
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+button.strip {
+  border-radius: 0;
+  cursor: pointer;
+}
+button.strip:hover:not(:disabled) .stripValue {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+button.strip:disabled {
+  cursor: default;
+}
+.stripIcon {
+  flex: none;
+  color: var(--wf-hero-info);
+}
+.stripIcon[data-tone="warning"] {
+  color: var(--wf-hero-warning);
+}
+.stripIcon[data-tone="danger"] {
+  color: var(--wf-hero-danger);
+}
+.stripIcon[data-tone="success"] {
+  color: var(--wf-hero-success);
+}
+.stripLabel {
+  color: var(--wf-hero-ink-2);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.stripValue {
+  color: var(--wf-hero-ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.stripSub {
+  color: var(--wf-hero-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.stripAct {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  margin-left: 4px;
+  padding: 0 10px;
   border: 1px solid var(--wf-on-hero-line);
-  border-radius: var(--wf-r-lg);
+  border-radius: var(--wf-r-ctl);
   background: var(--wf-on-hero-fill);
   color: var(--wf-hero-ink);
   font: inherit;
-  text-align: left;
-}
-button.heroTile {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
   cursor: pointer;
 }
-button.heroTile:hover:not(:disabled) {
+.stripAct:hover {
   background: var(--wf-on-hero-hl);
-}
-button.heroTile:disabled {
-  cursor: default;
-}
-.heroTile[data-tone="warning"] {
-  --tone: var(--wf-hero-warning);
-}
-.heroTile[data-tone="danger"] {
-  --tone: var(--wf-hero-danger);
-}
-.heroTile[data-tone="success"] {
-  --tone: var(--wf-hero-success);
-}
-.heroIcon {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--wf-r-md);
-  background: color-mix(in srgb, var(--tone) 22%, transparent);
-  color: var(--tone);
-}
-.heroTileText {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.heroTileLabel {
-  color: var(--wf-hero-ink-2);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.heroTileValue {
-  color: var(--wf-hero-ink);
-  font-size: var(--wf-fs-14);
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-.heroTileSub {
-  color: var(--wf-hero-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
 }
 .heroNum {
   font-family: var(--wf-mono);
@@ -90,8 +101,80 @@ button.heroTile:disabled {
   color: var(--wf-hero-ink-3);
 }
 
-.heroBtn {
-  flex: none;
+/* ---------- Whose move tiles (round 5) ---------- */
+.owners {
+  overflow: hidden;
+}
+.ownGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.own.own {
+  gap: 8px;
+}
+.own.own[aria-pressed="true"] {
+  box-shadow: none;
+}
+.ownTop.ownTop {
+  align-items: baseline;
+}
+.ownLongest {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.ownLongest.ownLongest b {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: inherit;
+  font-weight: 600;
+}
+.ownFacts.ownFacts {
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  color: var(--wf-ink-2);
+  white-space: normal;
+}
+.ownFacts > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ownKey {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px var(--wf-s-4);
+  margin: 0;
+  padding: 7px 14px;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.ownKeyBands {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.ownKeyBands > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ownKeyBands i {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* Josh, 31 Oct 2026: no coloured side edges anywhere. The phone act-now row keeps its tint and
+   glyph without the coral edge. */
+.noEdge tr[data-act="true"]::before {
+  display: none;
 }
 
 /* The daily check's opened list, under the header. */
@@ -138,22 +221,9 @@ button.heroTile:disabled {
 }
 
 /* ---------- "By blocker": quieter group headers with a coloured edge ---------- */
-.groupRow {
-  --tone: transparent;
-}
-.groupRow[data-tone="danger"] {
-  --tone: var(--wf-danger);
-}
-.groupRow[data-tone="warning"] {
-  --tone: var(--wf-warning);
-}
-.groupRow[data-tone="accent"] {
-  --tone: var(--wf-accent);
-}
 .groupRow > td {
   height: 44px;
   border-top: 1px solid var(--wf-line);
-  box-shadow: inset 3px 0 0 var(--tone);
 }
 .groupRow > td > button {
   height: 44px;
@@ -247,9 +317,8 @@ button.heroTile:disabled {
   background: var(--wf-surface-2);
 }
 .regTab[aria-selected="true"] {
-  border-color: color-mix(in srgb, var(--tone) 50%, var(--wf-line));
-  background: color-mix(in srgb, var(--tone) 9%, var(--wf-surface));
-  box-shadow: inset 0 -2px 0 var(--tone);
+  border-color: var(--wf-line-2);
+  background: var(--wf-accent-tint);
   color: var(--wf-ink-1);
 }
 .regTabTop {
@@ -301,44 +370,51 @@ button.heroTile:disabled {
 .nxSum {
   display: flex;
   flex-wrap: wrap;
-  align-items: stretch;
-  gap: var(--wf-s-2);
-  margin: 0;
-}
-.nxSum > div {
-  --tone: var(--wf-info);
-  min-width: 8.5rem;
-  padding: 8px 12px;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0;
+  padding: 4px;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  box-shadow: inset 3px 0 0 var(--tone);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
 }
-.nxSum > div[data-tone="warning"] {
+.nxStat {
+  --tone: var(--wf-info);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 8px;
+}
+.nxStat + .nxStat {
+  border-left: 1px solid var(--wf-line);
+  padding-left: 14px;
+}
+.nxStat[data-tone="warning"] {
   --tone: var(--wf-warning);
 }
-.nxSum > div[data-tone="danger"] {
+.nxStat[data-tone="danger"] {
   --tone: var(--wf-danger);
 }
-.nxSum dt {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-.nxSum dd {
-  margin: 0;
+.nxStatIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tone) 13%, var(--wf-surface));
+  color: var(--tone);
 }
 .nxSumN {
   color: var(--wf-ink-1);
   font-family: var(--wf-mono);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
 }
-.nxSumNote {
-  flex: 1 1 14rem;
-  align-self: center;
-  margin: 0;
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
+.nxSumL {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
 }
 .nxList {
   display: flex;
@@ -413,16 +489,13 @@ button.heroTile:disabled {
   width: 1px;
   background: var(--wf-line);
 }
-.nxRun,
-.nxWhat {
+.nxRun {
   --tone: var(--wf-info);
 }
-.nxRun[data-tone="warning"],
-.nxWhat[data-tone="warning"] {
+.nxRun[data-tone="warning"] {
   --tone: var(--wf-warning);
 }
-.nxRun[data-tone="danger"],
-.nxWhat[data-tone="danger"] {
+.nxRun[data-tone="danger"] {
   --tone: var(--wf-danger);
 }
 .nxRun {
@@ -444,8 +517,9 @@ button.heroTile:disabled {
   transform: translate(-50%, -50%);
 }
 .nxWhat {
-  padding-left: 8px;
-  border-left: 2px solid var(--tone);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-12);
   font-weight: 500;
@@ -456,22 +530,71 @@ button.heroTile:disabled {
   font-size: var(--wf-fs-13);
 }
 
-/* ---------- Graph: where and whose move, as a plain heat map ---------- */
+/* ---------- Graph card (round 6): tabs with icons, quieter chrome ---------- */
+.tabIcon {
+  flex: none;
+  margin-right: 6px;
+  opacity: 0.75;
+}
+.graphs [role="tab"] {
+  align-items: center;
+}
+.graphs [role="tab"][aria-selected="true"] .tabIcon {
+  opacity: 1;
+  color: var(--wf-accent);
+}
+.subLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.lgNote {
+  margin-left: auto;
+  color: var(--wf-ink-3);
+}
+
+/* ---------- Graph: where and whose move, a calm heat map ---------- */
+.mx.mx {
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+.mx > div {
+  gap: 3px;
+}
+.mx > div > span:not([class*="mxR"]):not([class*="mxT"]) {
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
 .mx button {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 56px;
-  border-color: transparent;
+  gap: 3px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  transition: box-shadow 120ms ease;
+}
+.mx button:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px var(--wf-line-3) inset;
 }
 .mx button:disabled {
-  background: var(--wf-surface-2);
+  background: transparent;
+  box-shadow: 0 0 0 1px var(--wf-line) inset;
+}
+.mx button:disabled .mxN {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  font-weight: 400;
 }
 .mxN.mxN {
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.1;
 }
 .mxO {
   display: inline-flex;
@@ -480,26 +603,68 @@ button.heroTile:disabled {
   color: var(--wf-ink-2);
   font-size: 11px;
 }
-.mxKey {
+.mxKey.mxKey {
   display: inline-block;
-  width: 28px;
-  height: 10px;
-  border-radius: 3px;
+  width: 44px;
+  height: 8px;
+  border-radius: 999px;
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--wf-accent) 8%, var(--wf-surface)),
-    color-mix(in srgb, var(--wf-accent) 48%, var(--wf-surface))
+    color-mix(in srgb, var(--wf-accent) 6%, var(--wf-surface)),
+    color-mix(in srgb, var(--wf-accent) 42%, var(--wf-surface))
   );
 }
 
 /* ---------- Graph: wait spread, a pile over "+n" ---------- */
 .spreadMore {
   position: absolute;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  box-shadow: 0 0 0 1px var(--wf-line) inset;
   color: var(--wf-ink-2);
   font-family: var(--wf-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 16px;
   transform: translateX(-50%);
+}
+/* Round 6: the spread's lanes. Lighter grid, alternate lanes faintly shaded, the past-24h zone
+   quieter, the 8h mark labelled. */
+.spread > div:nth-child(even):not(:last-child) {
+  background: color-mix(in srgb, var(--wf-surface-2) 60%, transparent);
+}
+.spread > div > button,
+.spread > div > div:first-child {
+  padding-left: 10px;
+}
+.spread [class*="gGrid"] {
+  opacity: 0.55;
+}
+.spread [class*="gBeyond"] {
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 6px,
+    color-mix(in srgb, var(--wf-line) 70%, transparent) 6px 7px
+  );
+}
+.spread [class*="gTicks"] {
+  font-size: 11px;
+}
+.mark8 {
+  position: absolute;
+  top: 2px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wf-surface);
+  box-shadow: 0 0 0 1px var(--wf-line-2) inset;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  transform: translateX(-50%);
+  pointer-events: none;
 }
 
 @media (max-width: 64rem) {
@@ -514,4 +679,126 @@ button.heroTile:disabled {
     grid-column: 1 / -1;
     margin-top: 4px;
   }
+}
+
+/* ---------- Person panel and rail (round 7, Josh 31 Oct 2026) ---------- */
+/* About 10% wider beside the list on a laptop, so names, places and ward lists wrap less. */
+@media (min-width: 64.0625rem) {
+  .split.split {
+    grid-template-columns: minmax(0, 2.4fr) minmax(19rem, 1fr);
+  }
+}
+.pHead {
+  align-items: flex-start;
+  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
+}
+.pName.pName {
+  margin: 0;
+  font-size: var(--wf-fs-16, 16px);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.pSub.pSub {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+.pBody.pBody {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
+}
+.pCause.pCause {
+  align-items: flex-start;
+  background: var(--wf-surface);
+}
+.pCause > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.pCause > span:last-child {
+  margin-left: auto;
+  white-space: nowrap;
+}
+/* Laptop and tablet only; the phone sheet keeps its own fact table. */
+@media (min-width: 48.0625rem) {
+  .pFacts.pFacts {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 8px 12px;
+    padding: var(--wf-s-1) 0;
+    font-size: var(--wf-fs-13);
+  }
+  .pFacts dt {
+    color: var(--wf-ink-3);
+    font-size: var(--wf-fs-12);
+  }
+  .pFacts dd {
+    margin: 0;
+    color: var(--wf-ink-1);
+    overflow-wrap: anywhere;
+  }
+}
+
+.pNote.pNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.pNoteIcon {
+  flex: none;
+  margin-top: 1px;
+  color: var(--wf-ink-3);
+}
+.pSec.pSec {
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+.pSec h4 {
+  margin: 0 0 var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.pWards.pWards {
+  gap: 2px;
+}
+.pWards.pWards > li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: var(--wf-r-md);
+}
+.pWards > li:hover {
+  background: var(--wf-surface-2);
+}
+.pWards span,
+.pWards small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+.pWards.pWards small {
+  align-self: stretch;
+  max-width: none;
+  padding-left: 15px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.pFoot.pFoot {
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  background: var(--wf-surface-2);
+}
+.pFoot p {
+  color: var(--wf-ink-3);
+  font-size: 11px;
+  line-height: 1.45;
 }

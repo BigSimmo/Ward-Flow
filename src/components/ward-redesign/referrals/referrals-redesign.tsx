@@ -1132,19 +1132,6 @@ function ReferralBoardRedesign({
                     />
                   </div>
 
-                  {!isPhone ? (
-                    <PanelNav
-                      position={(() => {
-                        const index = queued.findIndex((referral) => referral.id === selectedReferral.id);
-                        return index === -1 ? undefined : index + 1;
-                      })()}
-                      total={queued.length}
-                      onPrevious={() => selectAt(-1)}
-                      onNext={() => selectAt(1)}
-                      onSummary={() => setSheet("summary")}
-                      patientHref={selectedReferral.patientId ? patientHref(selectedReferral.patientId) : undefined}
-                    />
-                  ) : null}
                   {readOnly ? (
                     <p className={a.panelMeta} data-testid="ward-referral-read-only">
                       Read only. The coordinator and the receiving ward answer this referral.
@@ -1340,6 +1327,43 @@ function ReferralBoardRedesign({
                   </TabPanel>
                 )}
 
+                {/* Round 4 (Josh, 31 Oct 2026): the panel's useful buttons sit in a quiet bar
+                    anchored at the bottom, under the decision. */}
+                {!isPhone ? (
+                  <div className={panel.bottomBar}>
+                    {/* Round 4: what can be done here, on every tab. The Place tab pins its own
+                        Decline and Accept; the other tabs offer the way back to them, and a
+                        read-only desk says so. */}
+                    {readOnly ? (
+                      <p className={panel.bottomNote} data-testid="ward-referral-read-only-foot">
+                        Read only at this desk
+                      </p>
+                    ) : inspectorTab !== "place" &&
+                      outcomeLabel(selectedReferral, sender.referralFor(selectedReferral)) === "Queued" ? (
+                      <div className={panel.bottomActions}>
+                        <Button
+                          variant="pri"
+                          size="sm"
+                          onClick={() => setInspectorTab("place")}
+                          data-testid="ward-referral-foot-decide"
+                        >
+                          {wardArm(selectedReferral) ? "Accept or decline" : "Decide"}
+                        </Button>
+                      </div>
+                    ) : null}
+                    <PanelNav
+                      position={(() => {
+                        const index = queued.findIndex((referral) => referral.id === selectedReferral.id);
+                        return index === -1 ? undefined : index + 1;
+                      })()}
+                      total={queued.length}
+                      onPrevious={() => selectAt(-1)}
+                      onNext={() => selectAt(1)}
+                      onSummary={() => setSheet("summary")}
+                      patientHref={selectedReferral.patientId ? patientHref(selectedReferral.patientId) : undefined}
+                    />
+                  </div>
+                ) : null}
                 <IsbarSheet
                   open={sheet === "summary"}
                   onClose={() => setSheet(null)}

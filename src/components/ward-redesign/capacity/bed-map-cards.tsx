@@ -244,7 +244,7 @@ function WardCard({
 }
 
 /** One square per bed: ready, then occupied or pulled, then closed. Decorative; the card says it in words. */
-function BedCells({ beds, ready, used }: { beds: number; ready: number; used: number }) {
+export function BedCells({ beds, ready, used }: { beds: number; ready: number; used: number }) {
   return (
     <span className={styles.cells} aria-hidden="true">
       {Array.from({ length: beds }, (_, index) => (
