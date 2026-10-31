@@ -2,6 +2,8 @@
 
 import { useEffect, useCallback, useRef, useState } from "react";
 
+import { hasConfirmHost, requestConfirm } from "@/components/wf";
+
 import {
   clearWardFlowDraftCaches,
   draftSessionVersion,
@@ -129,12 +131,68 @@ function hasAnyDirtyGuard(approved?: ReadonlySet<NavigationGuardEntry>): boolean
   return false;
 }
 
-/** One confirmation for the shell's task navigation: it asks once if ANY mounted guard is dirty. */
-function confirmNavigationAcrossGuards(approved?: ReadonlySet<NavigationGuardEntry>): boolean {
+/** The styled confirm's words for leaving a form; the guard's own question stays word for word. */
+function leaveRequest(message: string) {
+  return { title: "Leave this page?", message, confirmLabel: "Leave without saving", cancelLabel: "Keep editing" };
+}
+
+function firstDirtyGuard(approved?: ReadonlySet<NavigationGuardEntry>): NavigationGuardEntry | null {
   for (const entry of navigationGuards) {
-    if (entry.isDirty && !approved?.has(entry)) return window.confirm(entry.message);
+    if (entry.isDirty && !approved?.has(entry)) return entry;
   }
-  return true;
+  return null;
+}
+
+/**
+ * Set only while a navigation the person has just confirmed in the styled dialog runs again, so its
+ * own guard check passes once instead of asking twice.
+ */
+let navigationApprovedOnce = false;
+/** The link a confirmed click is replaying, so every guard lets that one click through. */
+let replayingLinkClick: HTMLAnchorElement | null = null;
+
+/**
+ * One confirmation for the shell's task navigation: it asks once if ANY mounted guard is dirty.
+ * With `proceed` and the kit's styled confirm mounted, it returns false at once, asks in the styled
+ * dialog, and calls `proceed` only if the person chooses Leave without saving. Without `proceed` (or without the
+ * dialog host) it asks with the browser's confirm box, as before.
+ */
+function confirmNavigationAcrossGuards(approved?: ReadonlySet<NavigationGuardEntry>, proceed?: () => void): boolean {
+  if (navigationApprovedOnce) return true;
+  const entry = firstDirtyGuard(approved);
+  if (!entry) return true;
+  if (proceed && hasConfirmHost()) {
+    void requestConfirm(leaveRequest(entry.message)).then((confirmed) => {
+      if (!confirmed) return;
+      navigationApprovedOnce = true;
+      try {
+        proceed();
+      } finally {
+        navigationApprovedOnce = false;
+      }
+    });
+    return false;
+  }
+  return window.confirm(entry.message);
+}
+
+/**
+ * After a cancelled Back or Forward, asks in the styled dialog; on Leave without saving, approves every dirty guard
+ * for one traversal and makes the same step again (or, when the step cannot be reversed exactly,
+ * opens the address the person was going to).
+ */
+function askThenRepeatTraversal(message: string, delta: number | null, targetHref: string): void {
+  void requestConfirm(leaveRequest(message)).then((confirmed) => {
+    if (!confirmed) return;
+    const repeat = () => {
+      for (const entry of navigationGuards) if (entry.isDirty) entry.approvedForHistory = true;
+      if (delta !== null && delta !== 0) window.history.go(delta);
+      else window.location.assign(targetHref);
+    };
+    // Wait for the compensating traversal to settle before stepping again.
+    if (suppressNextPopState) window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, repeat, { once: true });
+    else repeat();
+  });
 }
 
 function handleGuardedPopState(event: PopStateEvent): void {
@@ -183,7 +241,10 @@ function handleGuardedPopState(event: PopStateEvent): void {
     rememberEntry();
     return;
   }
-  if (confirmNavigationAcrossGuards(approved)) {
+  // With the kit's styled confirm mounted the traversal is undone first and the question asked after
+  // (a dialog cannot hold popstate); without it the browser's confirm box asks, as before.
+  const askAfter = hasConfirmHost() ? firstDirtyGuard(approved) : null;
+  if (!askAfter && confirmNavigationAcrossGuards(approved)) {
     lastHistoryIndex = targetIndex ?? lastHistoryIndex;
     lastNavigationIndex = targetNavigationIndex;
     rememberEntry();
@@ -208,14 +269,22 @@ function handleGuardedPopState(event: PopStateEvent): void {
     restoreSourceEntry(true);
     window.dispatchEvent(new Event(WARD_HISTORY_TRAVERSAL_CANCELLED));
   }
+  if (askAfter) askThenRepeatTraversal(askAfter.message, reverseDelta === null ? null : -reverseDelta, targetUrl.href);
   event.stopImmediatePropagation();
+}
+
+/** The shell's entry point: `proceed` re-runs its navigation after a styled confirm. */
+function confirmNavigationShellEntry(proceed?: () => void): boolean {
+  return confirmNavigationAcrossGuards(undefined, proceed);
 }
 
 function syncNavigationConfirm(): void {
   if (typeof window === "undefined") return;
-  const globalWindow = window as typeof window & { __wardFlowConfirmNavigation?: () => boolean };
+  const globalWindow = window as typeof window & {
+    __wardFlowConfirmNavigation?: (proceed?: () => void) => boolean;
+  };
   if (navigationGuards.size > 0) {
-    globalWindow.__wardFlowConfirmNavigation = confirmNavigationAcrossGuards;
+    globalWindow.__wardFlowConfirmNavigation = confirmNavigationShellEntry;
   } else {
     delete globalWindow.__wardFlowConfirmNavigation;
     suppressNextPopState = false;
@@ -337,6 +406,10 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       const target = event.target as HTMLElement | null;
       const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!anchor) return;
+      if (anchor === replayingLinkClick) {
+        confirmedLinkClicks.add(event);
+        return;
+      }
       if (skipAnchor?.(anchor)) return;
       if (anchor.target && anchor.target !== "_self") return;
       if (anchor.hasAttribute("download")) return;
@@ -369,6 +442,25 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
         return;
       }
 
+      if (hasConfirmHost()) {
+        // The styled confirm cannot hold the click: stop it, ask, and replay it once on Leave without saving.
+        event.preventDefault();
+        event.stopPropagation();
+        void requestConfirm(leaveRequest(message)).then((confirmed) => {
+          if (!confirmed) return;
+          if (!anchor.isConnected) {
+            window.location.assign(anchor.href);
+            return;
+          }
+          replayingLinkClick = anchor;
+          try {
+            anchor.click();
+          } finally {
+            replayingLinkClick = null;
+          }
+        });
+        return;
+      }
       const confirmed = window.confirm(message);
       if (!confirmed) {
         event.preventDefault();
