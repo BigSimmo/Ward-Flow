@@ -9,7 +9,7 @@
  */
 
 /** How many self-closing notices it takes before the older ones fold behind the newest. */
-export const TOAST_STACK_FROM = 3;
+const TOAST_STACK_FROM = 3;
 
 /** Cards this far behind the newest are drawn fully transparent. */
 const TOAST_STACK_VISIBLE_DEPTH = 3;
