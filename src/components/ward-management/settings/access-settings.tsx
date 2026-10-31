@@ -93,7 +93,8 @@ type AccessAdminSource = {
 const READING = "Reading from the server.";
 
 const GRANT_DAYS = [30, 90, 180, 365] as const;
-const COVER_HOURS = [4, 8, 12].filter((hours) => hours * 60 <= COVER_MAX_MINUTES);
+/** The lengths of cover on offer; Who can change what reads them too. */
+export const COVER_HOURS = [4, 8, 12].filter((hours) => hours * 60 <= COVER_MAX_MINUTES);
 
 function plural(n: number, word: string): string {
   return `${n} ${word}${n === 1 ? "" : "s"}`;

@@ -13,7 +13,11 @@ import { Card, CardHead } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
+import { COVER_HOURS } from "./access-settings";
 import { RULES } from "./settings-rule-catalogue";
+
+/** "4, 8 or 12 hours", read from the cover form's own choices so the two cannot drift. */
+const coverLengths = `${COVER_HOURS.slice(0, -1).join(", ")}${COVER_HOURS.length > 1 ? " or " : ""}${COVER_HOURS.at(-1)} hours`;
 
 const ruleSetters = EVENT_ROLE.SET_CONFIGURATION.map((role) => WARD_FLOW_ROLE_LABELS[role]).join(", ");
 
@@ -26,7 +30,7 @@ const ROWS: readonly { readonly what: string; readonly who: string; readonly how
   {
     what: "Cover for a second ward or ED",
     who: `${WARD_FLOW_ROLE_LABELS.ward}, ${WARD_FLOW_ROLE_LABELS.ed}, ${WARD_FLOW_ROLE_LABELS.coordinator}`,
-    how: "4, 8 or 12 hours, to someone who already holds a ward or ED role",
+    how: `${coverLengths}, to someone who already holds a ward or ED role`,
   },
   {
     what: "Give and remove roles",
