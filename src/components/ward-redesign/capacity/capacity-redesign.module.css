@@ -180,7 +180,7 @@
 /* ── Bed forecast ── */
 .fcBody {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr) 300px;
+  grid-template-columns: 184px minmax(0, 1fr) 272px;
   border-top: 1px solid var(--wf-line);
 }
 .fcKpis {
@@ -348,6 +348,45 @@
 .leverAction {
   margin-top: var(--wf-s-1);
 }
+/* Polish (31 Oct 2026): "What would help tomorrow" as one quiet row per action, the whole row
+   the link, with the likely gain as a tag and a chevron. */
+.helpList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.helpLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 14px;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-2));
+  padding: var(--wf-s-2);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+}
+.helpList li + li .helpLink {
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-sm) var(--wf-r-sm);
+}
+.helpLink:hover {
+  background: var(--wf-hover);
+}
+.helpLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.helpTitle {
+  font-weight: 600;
+}
+.helpChevron {
+  color: var(--wf-ink-3);
+}
+
 .fcSources {
   margin-top: auto;
   padding-top: var(--wf-s-2);
@@ -432,7 +471,14 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--wf-s-2);
-  padding-bottom: var(--wf-s-2);
+}
+/* Polish (31 Oct 2026): highlight chips and the Grid/Rows switch share the title row. */
+.mapControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--wf-s-2) var(--wf-s-3);
 }
 .mapGroup {
   border-top: 1px solid var(--wf-line);
@@ -935,7 +981,7 @@
   flex-direction: row;
   white-space: nowrap;
 }
-.plannedFacts.plannedFacts {
+.plannedFacts.plannedFacts.plannedFacts {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
@@ -962,4 +1008,63 @@
   margin: 0;
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   color: var(--wf-ink-1);
+}
+
+/* ── Polish (31 Oct 2026): the row under the full-width bed map ── */
+.lowerRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.1fr) minmax(0, 0.9fr);
+  align-items: start;
+  gap: var(--wf-s-3);
+}
+@media (max-width: 80rem) {
+  .lowerRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .lowerRow > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 48rem) {
+  .lowerRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.shiftRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.shiftMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.shiftLabel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.shiftLabel > span {
+  font-weight: 500;
+}
+.shiftFlush.shiftFlush {
+  padding-top: 0;
+  border-top: 0;
+}
+/* Planned admissions in the Capacity card: time and name, facts under them, Arrived and More on
+   the right, so each booking is two lines. */
+.plannedItem.plannedItem.plannedItem {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "when who actions"
+    "facts facts actions";
 }
