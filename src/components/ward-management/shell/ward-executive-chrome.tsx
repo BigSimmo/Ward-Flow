@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { Dot, Sheet, useIsPhone, useMediaQuery, useWfBandActive } from "@/components/wf";
 import { formatInstantWithDay } from "../ward-clock";
-import { useExecutiveStatistics } from "../statistics/executive-statistics-context";
+import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statistics/executive-statistics-context";
 import { releasedCountText, ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
 import { WardHelpHost } from "../help/ward-help-host";
 import { WARD_CAPACITY_HREF } from "../ward-nav";
@@ -358,6 +358,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
  * elements, classes and sheet conventions, fed only by the public reporting contract. */
 export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   const report = useExecutiveStatistics();
+  const reportLoading = useExecutiveStatisticsControl().loading;
   const shell = useWardShellPublic();
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -435,18 +436,24 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     publishLiveClock(clock || undefined);
     return () => publishLiveClock(undefined);
   }, [clock]);
-  if (!report || !shell) return <ExecutiveStatisticsUnavailable />;
+  // Only while the first report is on its way does the calm loading line stand in for the desk. A
+  // report that cannot be made still draws the frame, so Settings, the closed "Not part of your role"
+  // page and the way home work, and report pages say "unavailable" inside it (round 4, 31 Oct 2026).
+  if (!shell || (!report && reportLoading)) return <ExecutiveStatisticsUnavailable />;
   const entries = accessNav(railEntries(flagOn));
   const resolvedMenu = roleMenu(entries, "executive", accessAdmin);
   const menu = { ...resolvedMenu, main: resolvedMenu.main.filter((entry): entry is RailEntry => "href" in entry) };
-  const scope = report.network.scope;
-  const services = report.services.filter((service) => scope.kind === "statewide" || service.service === scope.service);
+  const scope = report?.network.scope;
+  const services =
+    report?.services.filter((service) => scope?.kind === "statewide" || service.service === scope?.service) ?? [];
   const activeService =
-    scope.kind === "service" ? scope.service : services.find((service) => service.service === selectedService)?.service;
+    scope?.kind === "service"
+      ? scope.service
+      : services.find((service) => service.service === selectedService)?.service;
   const displayedScope = activeService ?? "Statewide";
   const displayedWaiting = activeService
-    ? report.services.find((service) => service.service === activeService)!.waiting
-    : report.network.people.waitingInEd;
+    ? report?.services.find((service) => service.service === activeService)!.waiting
+    : report?.network.people.waitingInEd;
   // The phone dock (the new frame): Statistics, then Capacity and Activity. Each page shows only
   // where this desk may open it.
   const dockPages = ["statistics", "capacity"]
@@ -564,7 +571,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               </button>
             </div>
             {/* Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card. */}
-            <ExecutiveBedAlerts report={report} />
+            {report ? <ExecutiveBedAlerts report={report} /> : null}
             <div className={rail.railScroll}>
               <nav className={rail.railNav} aria-label="Ward Flow views">
                 <section className={rail.railGroup} aria-label="Executive menu" data-testid="ward-rail-role-menu">
@@ -657,28 +664,30 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   {title}
                 </span>
               </div>
-              <div className={bar.scopeBadgeContainer}>
-                <button
-                  type="button"
-                  ref={scopeTrigger}
-                  className={bar.scopeBadgeBtn}
-                  data-testid="ward-bar-service-trigger"
-                  data-service={activeService ? SERVICE_SWATCH_KEY[activeService] : "statewide"}
-                  data-band={isPhone ? bandState : undefined}
-                  aria-haspopup="dialog"
-                  aria-expanded={panel === "scope"}
-                  onClick={() => setPanel("scope")}
-                >
-                  <span className={bar.scopeDot} aria-hidden="true" />
-                  <span className={bar.scopeBadgeLabel}>{displayedScope}</span>
-                  <ChevronDown className={bar.scopeCaret} aria-hidden="true" />
-                </button>
-                {isPhone && (
-                  <span className={bar.scopeLive}>
-                    {releasedCountText(displayedWaiting)} waiting · {displayedScope}
-                  </span>
-                )}
-              </div>
+              {report && displayedWaiting ? (
+                <div className={bar.scopeBadgeContainer}>
+                  <button
+                    type="button"
+                    ref={scopeTrigger}
+                    className={bar.scopeBadgeBtn}
+                    data-testid="ward-bar-service-trigger"
+                    data-service={activeService ? SERVICE_SWATCH_KEY[activeService] : "statewide"}
+                    data-band={isPhone ? bandState : undefined}
+                    aria-haspopup="dialog"
+                    aria-expanded={panel === "scope"}
+                    onClick={() => setPanel("scope")}
+                  >
+                    <span className={bar.scopeDot} aria-hidden="true" />
+                    <span className={bar.scopeBadgeLabel}>{displayedScope}</span>
+                    <ChevronDown className={bar.scopeCaret} aria-hidden="true" />
+                  </button>
+                  {isPhone && (
+                    <span className={bar.scopeLive}>
+                      {releasedCountText(displayedWaiting)} waiting · {displayedScope}
+                    </span>
+                  )}
+                </div>
+              ) : null}
               <div id={WARD_BAR_PAGE_TOOLS_ID} className={bar.pageTools} data-testid="ward-bar-page-tools" />
               {/* Josh, 30-31 Oct 2026: no "Synthetic prototype" pill in the header. The footer's
                   synthetic-data notice stays, and the board clock and Tools open the Demo menu. */}
@@ -701,14 +710,16 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               </span>
             </div>
             <div className={bar.centerGroup}>
-              <div className={bar.searchWrap}>
-                <WardPublicSearch
-                  catalogue={report}
-                  accessLifetime={shell.accessLifetime ?? ""}
-                  canOpenHref={canOpen}
-                  placeholder="Search Ward Flow"
-                />
-              </div>
+              {report ? (
+                <div className={bar.searchWrap}>
+                  <WardPublicSearch
+                    catalogue={report}
+                    accessLifetime={shell.accessLifetime ?? ""}
+                    canOpenHref={canOpen}
+                    placeholder="Search Ward Flow"
+                  />
+                </div>
+              ) : null}
             </div>
             <div className={bar.drawerTriggers}>
               <button
@@ -843,16 +854,20 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         </button>
         {/* One search: it already finds every page below, so the separate "Filter pages" box went in the
             search and forms review (Josh, 30 Oct 2026). */}
-        <WardPublicSearch
-          catalogue={report}
-          accessLifetime={shell.accessLifetime ?? ""}
-          canOpenHref={canOpen}
-          onNavigate={(href) => {
-            close();
-            router.push(href);
-          }}
-        />
-        {menuShowsCapacity ? <ExecutiveMenuCapacityCard report={report} canOpen={canOpen} onGo={close} /> : null}
+        {report ? (
+          <WardPublicSearch
+            catalogue={report}
+            accessLifetime={shell.accessLifetime ?? ""}
+            canOpenHref={canOpen}
+            onNavigate={(href) => {
+              close();
+              router.push(href);
+            }}
+          />
+        ) : null}
+        {menuShowsCapacity && report ? (
+          <ExecutiveMenuCapacityCard report={report} canOpen={canOpen} onGo={close} />
+        ) : null}
         {[{ label: "Executive", entries: menu.main }, ...menu.more].map((group) => (
           <section key={group.label}>
             <h2 className={phone.heading}>{group.label}</h2>
@@ -937,7 +952,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         returnFocusRef={scopeTrigger}
       >
         <p className={bar.serviceSheetNote}>Reports show only the places this desk covers.</p>
-        {scope.kind === "statewide" && (
+        {report && scope?.kind === "statewide" && (
           <button
             type="button"
             className={bar.serviceOption}
@@ -957,7 +972,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             className={bar.serviceOption}
             aria-pressed={activeService === service.service}
             onClick={() => {
-              if (scope.kind === "statewide") setServiceScope(service.service);
+              if (scope?.kind === "statewide") setServiceScope(service.service);
               close();
             }}
           >
@@ -994,7 +1009,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             aria-pressed={preferences.glare}
             onClick={() => applyGlare(true)}
           >
-            Glare
+            Bright light
           </button>
         </div>
       </Sheet>

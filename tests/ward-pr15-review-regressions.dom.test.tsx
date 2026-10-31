@@ -239,8 +239,9 @@ it("counts accepted and rejected session events rather than rejections alone", (
       <EventControls />
     </>,
   );
+  // Settings by login (31 Oct 2026): the count is in Demo tools' card meta, "N movements held · N events this session".
   const count = () =>
-    screen.getByText("Events recorded this session").parentElement!.querySelector("strong")!.textContent;
+    /(\d+) events? this session/u.exec(screen.getByTestId("ward-settings-storage-telemetry").textContent ?? "")?.[1];
   expect(count()).toBe("0");
   fireEvent.click(screen.getByRole("button", { name: "Accepted event" }));
   expect(count()).toBe("1");

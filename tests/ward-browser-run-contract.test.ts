@@ -57,7 +57,17 @@ describe("complete release gate and shared-build browser selection", () => {
     expect(releaseGatePartFor(" checks ")).toBe("checks");
     expect(() => releaseGatePartFor("smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
     for (const project of RELEASE_GATE_PROJECTS) {
-      expect(releaseGateCases(true, project, "journeys")).toEqual(releaseGateCases(true, project));
+      const journeys = releaseGateCases(true, project, "journeys");
+      const referrals = releaseGateCases(true, project, "referrals");
+      expect(journeys.map((entry) => entry.title.split(":")[0])).toEqual([
+        "ED referral to bed offer",
+        "Morning bed meeting",
+        "Transfer with transport",
+        "Discharge with bed release",
+      ]);
+      expect(referrals.map((entry) => entry.title.split(":")[0])).toEqual(["Inpatient transfer", "Community referral"]);
+      // Together the parts still require all six journeys on each device, each exactly once.
+      expect([...journeys, ...referrals]).toEqual(releaseGateCases(true, project));
       expect(releaseGateCases(true, project, "checks")).toEqual([]);
     }
     expect(() => releaseGateCases(true, "release-gate-phone", "smoke")).toThrow(/WARD_RELEASE_GATE_PART/);

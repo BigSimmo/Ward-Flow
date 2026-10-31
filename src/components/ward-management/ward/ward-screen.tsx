@@ -1972,7 +1972,9 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           type="button"
           {...props}
           className={triggerClassName}
-          aria-label={tablet ? undefined : "More ward actions"}
+          // One name on every layout, so the ward tour's Shift brief step lights this trigger on a
+          // desk too; it starts with the visible word "More".
+          aria-label="More ward actions"
           data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
         >
           <MoreHorizontal size={tablet ? 16 : 20} aria-hidden="true" />

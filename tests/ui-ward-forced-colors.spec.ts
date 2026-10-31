@@ -226,8 +226,12 @@ test("@mockup printing the patient search keeps every census row on the sheet", 
   await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
 
   // A broad query, so the census rows are a search result rather than the idle board. Scoped to
-  // this screen's own field: unscoped, this typed into the page-level search box instead.
-  await page.getByTestId("ward-patient-search").locator("input[type=text]").first().fill("a");
+  // this screen's own field: unscoped, this typed into the page-level search box instead. D-91: the
+  // field is the kit's SearchField, a searchbox named for what it finds.
+  await page
+    .getByTestId("ward-patient-search")
+    .getByRole("searchbox", { name: "Find a person by name, UMRN or place" })
+    .fill("a");
   await page.keyboard.press("Escape");
 
   /*

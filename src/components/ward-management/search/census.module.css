@@ -79,6 +79,30 @@
   color: var(--wf-hero-ink-2);
 }
 
+/* Tap areas (Josh, 31 Oct 2026: controls keep their look with an invisible 48px tap area). The
+   field's only button is its Clear. It keeps its 24px width rather than shrinking beside a long
+   query, so the kit's phone hit area (24px plus 12px each side) stays 48px wide. */
+.searchMain button {
+  flex: none;
+}
+
+/* On a laptop the kit gives Clear no hit area, so its 24px face takes presses across 48px. */
+@media not all and (max-width: 48rem) {
+  .searchMain button {
+    position: relative;
+  }
+
+  .searchMain button::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: max(100%, var(--ward-tap, var(--spacing-tap, 3rem)));
+    transform: translateY(-50%);
+  }
+}
+
 .dobField {
   flex: 0 0 9.5rem;
 }
@@ -89,6 +113,7 @@
 
 /* The switch beside the field: a quiet hero button at the field's height. */
 .dobToggle {
+  position: relative;
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -116,6 +141,17 @@
 .dobToggle:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;
+}
+
+/* The switch keeps the field's height; an invisible band takes presses across 48px. */
+.dobToggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: max(100%, var(--ward-tap, var(--spacing-tap, 3rem)));
+  transform: translateY(-50%);
 }
 
 /* "Today ✓ 6 arrived ✕ 2 left – 1 did not proceed" */
@@ -974,6 +1010,13 @@ tr:has(+ .moreRow) > td {
   height: 44px;
 }
 
+/* The field's box keeps the kit's phone height; the input inside it, which has no face of its own,
+   runs 48px tall and centred, so a tap just above or below the box still lands in the field. */
+.searchFormPhone .searchMain input[type="search"] {
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  margin-block: 0;
+}
+
 .phoneDobField {
   margin-top: var(--wf-s-2);
 }
@@ -1198,6 +1241,12 @@ tr:has(+ .moreRow) > td {
 
   .phoneChips .phoneChip.phoneChip.phoneChip {
     min-height: 0;
+  }
+
+  /* The kit's tap band (inset -7px) starts inside the chip's 1px border, so it reaches 47px, not
+   * 48px. Reach 8px past the border so a tap 23.5px from the centre still lands on the chip. */
+  .phoneChips .phoneChip.phoneChip.phoneChip::before {
+    inset: -8px 0;
   }
 }
 

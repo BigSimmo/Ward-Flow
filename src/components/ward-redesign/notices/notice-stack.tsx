@@ -39,7 +39,7 @@ const EXIT_MS = 160;
  *   (never between a warning and the folded cards). Folded cards are not drawn behind the newest.
  * - No hover-open. With the control beside the cards, opening on hover moved the control as the
  *   pointer went to it, and the stack folded again under the pointer. Click or focus opens it.
- * - No Recent chip: missed notices go into Activity's "Recent activity" tab (missed-notices.tsx).
+ * - No Recent chip: missed notices go into Activity's "Recent activity" tab.
  * - Desktop cards share one width, so the folded cards line up behind the newest.
  * - On a phone the stack rests clear of the dock and its + (notices.module.css `.region`).
  */

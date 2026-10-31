@@ -49,7 +49,15 @@ const NOT_WIRED = "Not wired in this prototype.";
 // false operational claim the retired controls carried before D4/D5.
 const FORBIDDEN_CLAIM = /dispatch|escalat|enforc|block|statutory|section \d/i;
 
-const TABS = [/^Rules/, /^Alerts/, /^Display/, /^Profile and shift/, /^Data and about/];
+// Settings by login (Josh, 31 Oct 2026): one page of sections, each a [data-pane]. The coordinator's
+// page has these five; Demo tools is a closed fold, and its controls are checked as they stand.
+const SECTIONS = ["rules", "device", "you", "help", "demo"] as const;
+
+function sectionPane(name: (typeof SECTIONS)[number]): HTMLElement {
+  const pane = screen.getByRole("main").querySelector<HTMLElement>(`[data-pane="${name}"]`);
+  expect(pane, `the ${name} section did not show`).not.toBeNull();
+  return pane!;
+}
 
 function renderSettings() {
   render(
@@ -66,12 +74,10 @@ describe("settings screen: every Preview control says it is not wired", () => {
   // control works like any other (D-16): it is not aria-disabled, and pressing it says
   // "<name> is not wired in this prototype." The only aria-disabled controls left are a wired
   // stepper at its bound and Phone alerts, whose row says why (tests/ward-phone-push.dom.test.tsx).
-  it.each(TABS.map((name) => ({ name })))("$name: no Preview control is greyed", ({ name }) => {
+  it.each(SECTIONS.map((name) => ({ name })))("$name: no Preview control is greyed", ({ name }) => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name }));
-    const pane = screen.getByRole("main").querySelector<HTMLElement>("[data-pane]:not([hidden])");
-    expect(pane, "the chosen tab's pane did not show").not.toBeNull();
-    const greyed = Array.from(pane!.querySelectorAll<HTMLElement>('[aria-disabled="true"], [disabled]')).filter(
+    const pane = sectionPane(name);
+    const greyed = Array.from(pane.querySelectorAll<HTMLElement>('[aria-disabled="true"], [disabled]')).filter(
       (control) =>
         !/^(Increase|Decrease) /.test(control.getAttribute("aria-label") ?? "") &&
         !control.closest("[data-setting='phone-alerts']") &&
@@ -82,12 +88,11 @@ describe("settings screen: every Preview control says it is not wired", () => {
   });
 
   // D-72 (build or delete each unfinished control, defaulting to delete): every Preview setting was
-  // deleted, so no tab carries a Preview tag or the D4 sentence, and the cases above check wired
+  // deleted, so no section carries a Preview tag or the D4 sentence, and the cases above check wired
   // controls only.
-  it.each(TABS.map((name) => ({ name })))("$name: shows no Preview control and no D4 sentence", ({ name }) => {
+  it.each(SECTIONS.map((name) => ({ name })))("$name: shows no Preview control and no D4 sentence", ({ name }) => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name }));
-    const pane = screen.getByRole("main").querySelector<HTMLElement>("[data-pane]:not([hidden])")!;
+    const pane = sectionPane(name);
     expect(pane.textContent).not.toContain(NOT_WIRED);
     expect(pane.textContent).not.toMatch(/\bPreview\b/u);
   });
@@ -95,7 +100,6 @@ describe("settings screen: every Preview control says it is not wired", () => {
   // Audit settings-17 (Josh, 13 Oct 2026): one hold length, the Pull time limit (D-81, was Pull hold). No second Preview timer.
   it("keeps one bed hold rule: Pull time limit, with no separate Bed hold expires row", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     expect(screen.getByText("Pull time limit")).toBeInTheDocument();
     expect(screen.queryByText("Bed hold expires")).not.toBeInTheDocument();
     expect(SETTINGS_SEARCH_ENTRIES.some((entry) => entry.label === "Bed hold expires")).toBe(false);
@@ -103,7 +107,6 @@ describe("settings screen: every Preview control says it is not wired", () => {
 
   it("wires Row density: Compact sets dense rows on the page and Comfortable clears them", () => {
     renderSettings();
-    fireEvent.click(screen.getByRole("radio", { name: /^Display/ }));
     const row = screen.getByTestId("ward-settings-density");
     fireEvent.click(within(row).getByRole("radio", { name: "Compact" }));
     expect(within(row).getByRole("radio", { name: "Compact" })).toHaveAttribute("aria-checked", "true");
@@ -138,7 +141,6 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
   it("are not aria-disabled", () => {
     renderSettings();
     // An earlier case leaves another tab in the address; the rules live on Rules.
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     for (const name of WIRED_STEPPERS) {
       const control = screen.getByRole("spinbutton", { name });
       expect(control).not.toHaveAttribute("aria-disabled");
@@ -160,11 +162,14 @@ describe("settings screen — the three controls Task 9 actually wired", () => {
     );
 
     const before = screen.getByTestId("probe-ed-target").textContent;
-    fireEvent.click(screen.getByRole("radio", { name: /^Rules/ }));
     fireEvent.keyDown(screen.getByRole("spinbutton", { name: "ED access target" }), { key: "Home" });
     expect(screen.getByTestId("probe-ed-target").textContent).toBe(before);
 
     fireEvent.click(screen.getByRole("button", { name: /^Save \d+ changes?$/ }));
+
+    // Save opens a review first (Settings round 3); its Save change button saves.
+
+    fireEvent.click(screen.getByRole("button", { name: /^Save changes?$/ }));
     expect(screen.getByTestId("probe-ed-target").textContent).toBe("720");
   });
 });
@@ -260,7 +265,8 @@ describe("settings screen: deleted Preview controls stay out of every build", ()
       fireEvent.change(screen.getByRole("combobox", { name: "Find a setting" }), {
         target: { value: "workstation" },
       });
-      fireEvent.click(screen.getByRole("option", { name: /Go to a desk/ }));
+      // Settings by login (31 Oct 2026): the row reads "Switch login (demo)"; the drawer keeps its name.
+      fireEvent.click(screen.getByRole("option", { name: /Switch login \(demo\)/ }));
       const drawer = screen.getByRole("dialog", { name: "Go to a desk" });
       expect(within(drawer).queryByRole("button", { name: /Bed manager/ })).toBeNull();
       expect(within(drawer).queryByRole("button", { name: /Executive/ })).toBeNull();

@@ -14,8 +14,8 @@ import { SettingsInstallHint } from "@/components/ward-management/settings/setti
 import { Button, Card, CardHead, SrOnly, StatusGlyph, Switch, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
-import rx from "./settings-redesign.module.css";
-import { ScopeLine, SettingRow } from "./settings-rows";
+import rx from "./settings-layout.module.css";
+import { SettingRow } from "./settings-rows";
 
 export function SettingsAlertsPane({
   notifications,
@@ -27,6 +27,7 @@ export function SettingsAlertsPane({
   onBuzzChange,
   onTestBuzz,
   showToast,
+  phoneQuick = false,
 }: {
   notifications: boolean;
   permission: NotificationSupport;
@@ -37,6 +38,8 @@ export function SettingsAlertsPane({
   onBuzzChange: (next: boolean) => void;
   onTestBuzz: () => void;
   showToast: (message: string, tone?: "info" | "warning") => void;
+  /** On a phone Buzz sound is on the page itself, so the sheet leaves it out. */
+  phoneQuick?: boolean;
 }) {
   // Whether this was opened from the Home Screen is only readable after mount.
   const [installed, setInstalled] = useState(false);
@@ -74,84 +77,69 @@ export function SettingsAlertsPane({
 
   return (
     <>
-      <ScopeLine kind="live" />
-      <div className={styles.columns}>
-        <div className={styles.column}>
-          <Card aria-labelledby="alerts-title">
-            <CardHead iconPlain id="alerts-title" icon={BellRing} title="Alerts" />
-            <SettingRow
-              setting="browser-notifications"
-              title="Browser notifications"
-              sub={
-                permission === "unsupported"
-                  ? "Not available in this browser"
-                  : permission === "denied"
-                    ? "Blocked for this site in the browser"
-                    : "New act-now alerts, while this tab is open"
-              }
-              testId="setting-browser-notifications-row"
+      <Card aria-labelledby="alerts-title">
+        <CardHead iconPlain id="alerts-title" icon={BellRing} title="Alerts" />
+        <SettingRow
+          setting="browser-notifications"
+          title="Browser notifications"
+          sub={
+            permission === "unsupported"
+              ? "Not available in this browser"
+              : permission === "denied"
+                ? "Blocked for this site in the browser"
+                : "New act-now alerts, while this tab is open"
+          }
+          testId="setting-browser-notifications-row"
+        >
+          <Switch
+            checked={browserOn}
+            onCheckedChange={onNotificationsChange}
+            label={<SrOnly>Browser notifications</SrOnly>}
+          />
+        </SettingRow>
+        <SettingRow setting="phone-alerts" title="Phone alerts" sub={phoneRow.sub} testId="setting-phone-alerts-row">
+          <Switch
+            checked={phoneRow.checked}
+            unavailable={phoneRow.unavailable}
+            onCheckedChange={(on) => {
+              if (!phoneRow.unavailable) onPhonePushChange(on);
+            }}
+            label={<SrOnly>Phone alerts</SrOnly>}
+          />
+        </SettingRow>
+        <SettingsInstallHint />
+        {phoneQuick ? null : (
+          <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
+            <button
+              type="button"
+              className={buttonClass({ variant: "sec", className: styles.pill })}
+              onClick={onTestBuzz}
             >
-              <Switch
-                checked={browserOn}
-                onCheckedChange={onNotificationsChange}
-                label={<SrOnly>Browser notifications</SrOnly>}
-              />
-            </SettingRow>
-            <SettingRow
-              setting="phone-alerts"
-              title="Phone alerts"
-              sub={phoneRow.sub}
-              testId="setting-phone-alerts-row"
-            >
-              <Switch
-                checked={phoneRow.checked}
-                unavailable={phoneRow.unavailable}
-                onCheckedChange={(on) => {
-                  if (!phoneRow.unavailable) onPhonePushChange(on);
-                }}
-                label={<SrOnly>Phone alerts</SrOnly>}
-              />
-            </SettingRow>
-            <SettingsInstallHint />
-            <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
-              <button
-                type="button"
-                className={buttonClass({ variant: "sec", size: "sm", className: styles.pill })}
-                onClick={onTestBuzz}
-              >
-                <Play size={14} aria-hidden="true" />
-                Test
-              </button>
-              <Switch checked={buzz} onCheckedChange={onBuzzChange} label={<SrOnly>Buzz sound</SrOnly>} />
-            </SettingRow>
-          </Card>
+              <Play size={14} aria-hidden="true" />
+              Test
+            </button>
+            <Switch checked={buzz} onCheckedChange={onBuzzChange} label={<SrOnly>Buzz sound</SrOnly>} />
+          </SettingRow>
+        )}
+      </Card>
+      <Card aria-labelledby="alerts-check-title" data-setting="alerts-check" data-testid="ward-settings-alerts-check">
+        <CardHead
+          iconPlain
+          id="alerts-check-title"
+          icon={Radar}
+          title="Will alerts reach you here?"
+          meta={`${ready} of 4 ways ready`}
+        />
+        <p className={rx.checkNext}>
+          <StatusGlyph tone={browserOn && buzz ? "success" : "warning"} size={9} />
+          {next}
+        </p>
+        <div className={rx.checkFoot}>
+          <Button variant="sec" onClick={sendTest} data-setting="test-alert">
+            Send a test alert
+          </Button>
         </div>
-
-        <div className={styles.column}>
-          <Card
-            aria-labelledby="alerts-check-title"
-            data-setting="alerts-check"
-            data-testid="ward-settings-alerts-check"
-          >
-            <CardHead
-              iconPlain
-              id="alerts-check-title"
-              icon={Radar}
-              title="Will alerts reach you here?"
-              meta={`${ready} of 4 ways ready`}
-            />
-            <p className={rx.checkNext}>
-              <StatusGlyph tone={browserOn && buzz ? "success" : "warning"} size={9} />
-              {next}
-            </p>
-            <div className={rx.checkFoot}>
-              <Button variant="sec" size="sm" onClick={sendTest} data-setting="test-alert">
-                Send a test alert
-              </Button>
-            </div>
-          </Card>
-        </div>
-      </div>
+      </Card>
     </>
   );
 }

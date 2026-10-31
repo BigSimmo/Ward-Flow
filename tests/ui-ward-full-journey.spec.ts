@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
+import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
@@ -329,6 +330,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
         .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-testid") ?? "")),
     );
 
+    // The inbox sits under the board's Lists, folded shut on a desktop (ED board redesign, 31 Oct 2026).
+    await openEdLists(page);
     await page
       .getByTestId("ward-ed-inbox-row-RF-009")
       .getByRole("button", { name: /View referral/u })
@@ -493,6 +496,11 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
 
     const officerScreen = page.getByTestId("ward-officer-screen");
     const jobCard = officerScreen.getByTestId(`ward-officer-job-${movementId}`);
+    // The officer's desk opens on its first 8 jobs, then "Show all" (Josh, 31 Oct 2026); the new
+    // booking can sit past the cut on a busy synthetic board, so the officer opens the full list.
+    const showAllJobs = officerScreen.getByRole("button", { name: /^Show all \d+ jobs$/ });
+    await expect(officerScreen.locator('[data-testid^="ward-officer-job-"]').first()).toBeVisible();
+    if ((await jobCard.count()) === 0 && (await showAllJobs.count()) > 0) await showAllJobs.click();
     await expect(jobCard, "the booked job must appear in the officer's own list").toBeVisible();
     await officerScreen.getByTestId(`ward-officer-select-${movementId}`).click();
 

@@ -525,7 +525,8 @@ function WardFlowConnection({ shared, ...props }: WardFlowProviderProps & { shar
   if (shared.enabled && (!shared.signedIn || !shared.snapshot || !access || access.role === "executive")) {
     return (
       <WardSharedAccess connection={shared}>
-        {access?.role === "executive" ? <ExecutiveStatisticsUnavailable /> : null}
+        {/* Signed in and the first read not settled: say it is loading, not unavailable (31 Oct 2026). */}
+        {access?.role === "executive" ? <ExecutiveStatisticsUnavailable loading={shared.connecting === true} /> : null}
       </WardSharedAccess>
     );
   }

@@ -54,7 +54,7 @@ export const RULES: readonly RuleEntry[] = [
   },
   {
     key: "soon",
-    setting: "second-warning",
+    setting: "early-warning",
     label: "Early warning",
     group: "Form warnings",
     shownOn: "Home, every legal due time",
@@ -62,7 +62,7 @@ export const RULES: readonly RuleEntry[] = [
   },
   {
     key: "urgent",
-    setting: "first-warning",
+    setting: "final-warning",
     label: "Final warning",
     group: "Form warnings",
     shownOn: "Home, every legal due time",

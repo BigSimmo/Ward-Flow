@@ -19,6 +19,7 @@ import {
   wardFigure,
 } from "./helpers/ward-release-gate";
 import { escapeForRegExp } from "./helpers/ward-place-names";
+import { openEdLists } from "./helpers/ward-ed-lists";
 import { showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
@@ -77,8 +78,9 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
       .locator('[data-testid^="ward-ed-patient-"]')
       .evaluateAll((rows) => rows.map((row) => row.getAttribute("data-testid") ?? "")),
   );
-  // The phone ED page shows its board first; the referral inbox sits under Lists.
-  if (isPhoneLayout(page)) await page.getByRole("radio", { name: /^Lists/u }).click();
+  // The referral inbox sits under the board's Lists: a pane on the phone, and folded shut under the
+  // board on a desktop (ED board redesign, 31 Oct 2026).
+  await openEdLists(page);
   await page
     .getByTestId("ward-ed-inbox-row-RF-009")
     .getByRole("button", { name: /View referral/u })
@@ -206,15 +208,18 @@ test("Morning bed meeting: a ward confirms its numbers and the coordinator's cap
   const wardScreen = page.getByTestId("ward-unit-screen");
   await expectAccessible(page, testInfo, "ward Home");
   await wardScreen.getByRole("button", { name: /Confirm (today.s )?numbers/ }).click();
-  const confirmDialog = wardScreen.getByRole("dialog", { name: /Confirm capacity figures/ });
+  // Redesign (31 Oct 2026): the shared dialog opens over the page from <body>, outside the ward
+  // screen, so it is found on the page.
+  const confirmDialog = page.getByRole("dialog", { name: /Confirm capacity figures/ });
   await expect(confirmDialog).toBeVisible();
-  await wardScreen.getByTestId("ward-capacity-input").fill("0");
+  await confirmDialog.getByTestId("ward-capacity-input").fill("0");
   await expectAccessible(page, testInfo, "confirm capacity figures dialog");
-  // Redesign (31 Oct 2026): the beds alone are confirmed by "Confirm beds only" while the morning
-  // numbers are due, or by "Confirm beds" once they are in; Cancel closes the dialog.
+  // The beds alone are confirmed by "Confirm beds only" while the morning numbers are due, or by
+  // "Confirm beds" once they are in; Cancel closes the dialog.
   await confirmDialog.getByRole("button", { name: /^Confirm beds( only)?$/u }).click();
-  await expect(wardScreen.getByText(/Currently confirmed 0 at/u)).toBeVisible();
+  await expect(confirmDialog.getByText(/Currently confirmed 0 at/u)).toBeVisible();
   await confirmDialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(confirmDialog).toHaveCount(0);
   await expect.poll(() => wardFigure(page, "ready")).toBe(0);
   await expectNoReloadSince(page, "confirming the ward's numbers");
 

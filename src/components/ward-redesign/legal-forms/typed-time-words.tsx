@@ -10,9 +10,6 @@ import type { Movement } from "@/components/ward-management/ward-model";
 import { STANDING_TONE, clockStanding, standingWord } from "@/components/ward-management/legal-forms/legal-forms-view";
 import type { WfTone } from "@/components/wf";
 
-/** The one key line a page carries near its list, word for word on every page. */
-export const TYPED_TIME_KEY = "Colours compare the time as typed with the clock. Not legally checked.";
-
 export type TypedTimeStanding = {
   /** The glyph tone: danger, warning, or neutral when the typed time is not inside a warning. */
   tone: WfTone;
@@ -31,9 +28,4 @@ export function typedTimeStanding(movement: Movement, now: Instant, thresholds: 
     word: coloured ? standingWord(standing, thresholds).toLowerCase() : undefined,
     urgent: standing === "passed" || standing === "urgent",
   };
-}
-
-/** " · within 1h" after a typed time, or nothing when the time carries no colour. */
-export function standingSuffix(standing: TypedTimeStanding): string {
-  return standing.word ? ` · ${standing.word}` : "";
 }

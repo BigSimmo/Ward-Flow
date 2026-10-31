@@ -32,9 +32,6 @@ const PopMenu = dynamic<{ page: ReactNode }>(() =>
 const PopCreate = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-create/pop-create").then((module) => module.PopCreate),
 );
-const PopDesk = dynamic<{ page: ReactNode }>(() =>
-  import("@/components/ward-redesign/pop-desk/pop-desk").then((module) => module.PopDesk),
-);
 const PopServicePicker = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-service-picker/pop-service-picker").then((module) => module.PopServicePicker),
 );
@@ -125,7 +122,6 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   demo: PopDemo,
   menu: PopMenuForFrame,
   create: PopCreate,
-  desk: PopDesk,
   "service-picker": PopServicePicker,
   "more-pages": PopMorePages,
   tour: PopTour,

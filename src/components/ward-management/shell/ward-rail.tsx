@@ -26,6 +26,7 @@ import { Tooltip } from "@/components/wf/tooltip";
 import { OperatorSwitcherModal } from "@/components/ward-management/settings/operator-switcher-modal-lazy";
 import { communityTeamById } from "@/components/ward-management/community/community-derivations";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
+import { surnameFirst } from "@/components/ward-management/settings/settings-profile";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
@@ -207,7 +208,7 @@ const APPEARANCE_CHOICES = [
   { id: "auto", label: "Auto" },
   { id: "light", label: "Light" },
   { id: "dark", label: "Dark" },
-  { id: "glare", label: "Glare" },
+  { id: "glare", label: "Bright light" },
 ] as const;
 
 type AppearanceChoice = (typeof APPEARANCE_CHOICES)[number]["id"];
@@ -351,6 +352,9 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
   const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  // Q58 (Josh, 31 Oct 2026): the person card names the person surname first ("Okafor, A."), as
+  // Settings does; a desk named by its role keeps its name.
+  const personaName = surnameFirst(currentPersona.name);
   // The access admin is named for itself, not the executive chrome it borrows (as the phone menu does).
   const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
@@ -807,7 +811,7 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
               </span>
               <span className={styles.shiftSub}>
-                {currentPersona.name} · {currentPersona.role}
+                {personaName} · {currentPersona.role}
               </span>
               {viewing ? (
                 <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
@@ -1186,14 +1190,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             }}
             aria-expanded={deskModalOpen}
             aria-haspopup="dialog"
-            aria-label={`${currentPersona.name}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
-            title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+            aria-label={`${personaName}, ${currentPersona.role}.${viewing ? ` ${viewing}.` : ""} Go to a desk.`}
+            title={`${personaName} · ${currentPersona.role}. Go to a desk`}
           >
             <span className={styles.userAvatar} aria-hidden="true">
               {currentPersona.initials}
             </span>
             <span className={styles.userMeta}>
-              <span className={styles.userName}>{currentPersona.name}</span>
+              <span className={styles.userName}>{personaName}</span>
               <span className={styles.userRole}>{currentPersona.role}</span>
             </span>
             <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />
@@ -1248,14 +1252,14 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
                 setDeskModalOpen(true);
               }}
               aria-haspopup="dialog"
-              aria-label={`${currentPersona.name}, ${currentPersona.role}. Go to a desk.`}
-              title={`${currentPersona.name} · ${currentPersona.role}. Go to a desk`}
+              aria-label={`${personaName}, ${currentPersona.role}. Go to a desk.`}
+              title={`${personaName} · ${currentPersona.role}. Go to a desk`}
             >
               <span className={styles.userAvatar} aria-hidden="true">
                 {currentPersona.initials}
               </span>
               <span className={styles.userMeta}>
-                <span className={styles.userName}>{currentPersona.name}</span>
+                <span className={styles.userName}>{personaName}</span>
                 <span className={styles.userRole}>{currentPersona.role}</span>
               </span>
               <ArrowLeftRight aria-hidden="true" className={styles.userChevron} strokeWidth={1.75} />

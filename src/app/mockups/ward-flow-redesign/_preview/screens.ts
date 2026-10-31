@@ -34,17 +34,6 @@ export type MockupPopup = {
 
 export const MOCKUP_BASE = "/mockups/ward-flow-redesign";
 
-/** The desk each role's views are drawn as: the same ward, ED and team the coordinator's mock-ups show. */
-const ROLE_DESKS = {
-  ward: { role: "ward", scope: { kind: "ward", unitIds: ["rph-adult-secure"] } },
-  ed: { role: "ed", scope: { kind: "ed", edId: "peel-ed" } },
-  community: { role: "community", scope: { kind: "team", teamName: "Midland" } },
-  officer: { role: "officer", scope: { kind: "jobs" } },
-  "bed-manager": { role: "bed_manager", scope: { kind: "site", siteCode: "RPH" } },
-  executive: { role: "executive", scope: { kind: "statewide" } },
-  admin: { role: "admin", scope: { kind: "statewide" } },
-} satisfies Record<string, WardAccess>;
-
 export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "home", label: "Home", group: "Coordinator", appPath: "/ward-flow" },
   { slug: "capacity", label: "Capacity", group: "Coordinator", appPath: "/ward-flow/capacity" },
@@ -61,28 +50,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add a patient", group: "Places and records", appPath: "/ward-flow/people/new" },
-  { slug: "settings", label: "Settings", group: "Places and records", appPath: "/ward-flow/settings" },
-  {
-    slug: "as-ward-settings",
-    label: "Settings",
-    group: "As nurse in charge",
-    appPath: "/ward-flow/settings",
-    role: ROLE_DESKS["ward"],
-  },
-  {
-    slug: "as-executive-settings",
-    label: "Settings",
-    group: "As executive",
-    appPath: "/ward-flow/settings",
-    role: ROLE_DESKS["executive"],
-  },
-  {
-    slug: "as-admin-home",
-    label: "Settings",
-    group: "As access admin",
-    appPath: "/ward-flow/settings",
-    role: ROLE_DESKS["admin"],
-  },
 ];
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */
@@ -96,7 +63,6 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-demo", label: "Demo menu", group: "Shell popups", over: "home", pop: "demo" },
   { slug: "pop-menu", label: "Phone menu", group: "Shell popups", over: "home", pop: "menu" },
   { slug: "pop-create", label: "Create", group: "Shell popups", over: "home", pop: "create" },
-  { slug: "pop-desk", label: "Go to a desk", group: "Shell popups", over: "home", pop: "desk" },
   { slug: "pop-service-picker", label: "Service picker", group: "Shell popups", over: "home", pop: "service-picker" },
   { slug: "pop-more-pages", label: "More pages", group: "Shell popups", over: "home", pop: "more-pages" },
   { slug: "pop-tour", label: "Tour", group: "Shell popups", over: "home", pop: "tour" },

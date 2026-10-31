@@ -31,10 +31,10 @@ import styles from "./discharge-weekend-prep.module.css";
  * ranks nobody and does nothing by itself: each row only opens that discharge. The hours are
  * synthetic reference data (`discharge-service-hours.ts`).
  */
-export type WeekendPrepRow = { release: BedRelease; item: DischargeDependency };
+type WeekendPrepRow = { release: BedRelease; item: DischargeDependency };
 export type WeekendPrepGroup = { closure: ServiceClosure; rows: WeekendPrepRow[] };
 
-export function weekendPrepGroups(releases: readonly BedRelease[], now: Instant, dayZero: Date): WeekendPrepGroup[] {
+function weekendPrepGroups(releases: readonly BedRelease[], now: Instant, dayZero: Date): WeekendPrepGroup[] {
   const groups: WeekendPrepGroup[] = [];
   for (const owner of DISCHARGE_DEPENDENCY_OWNERS) {
     const rows = releases.flatMap((release) =>
@@ -59,7 +59,7 @@ function shortMoment(instant: Instant, dayZero: Date): string {
   return `${day} ${formatInstant(instant)}`;
 }
 
-export function closureFact(closure: ServiceClosure, dayZero: Date): string {
+function closureFact(closure: ServiceClosure, dayZero: Date): string {
   const service = DISCHARGE_DEPENDENCY_OWNER_LABELS[closure.owner];
   const closes =
     closure.closesAt === null

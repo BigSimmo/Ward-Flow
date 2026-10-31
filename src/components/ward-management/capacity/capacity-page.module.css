@@ -888,6 +888,9 @@
 
 /* ── Phone ── */
 .phoneTabs {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 3;
   width: 100%;
 }
 .phoneRows {

@@ -27,7 +27,7 @@ import type { HealthService } from "@/components/ward-management/ward-model";
 import { WARD_ALERTS_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { wardPlaceFor } from "@/components/ward-management/ward-place";
 import { WardDemoClockPopover } from "@/components/ward-management/ward-demo-controls";
-import { WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
+import { WardBarActivityBody, WardReferralDrawer, WardTasksDrawer } from "./ward-bar-lazy-panels";
 import { withLoadRetry } from "@/components/ward-management/load-retry";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
 import {
@@ -66,7 +66,7 @@ import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "./ward-acce
 import { useNavigationPendingRef, useWardBarActivity, useWardBarTasks } from "./ward-bar-state";
 import { useEffectiveWardAccess } from "./ward-access-store";
 import { deskHomeRouteTitle, deskPlaceLabel } from "./ward-bar-desk-place";
-import { CLOSE_MENUS_EVENT } from "./ward-rail-parts";
+import { CLOSE_MENUS_EVENT } from "./ward-menu-events";
 import { noteWardRoute, wardBackParent } from "./ward-back";
 import {
   ALERTS_ACCESS_ENTRY,
@@ -95,7 +95,6 @@ import {
   WardBarPrimaryAction,
   WardBarServiceSelector,
 } from "./ward-bar-controls";
-import { WardBarActivityBody } from "./ward-bar-activity";
 import { usePhoneActivitySheet } from "./ward-phone-menu";
 import styles from "./ward-bar.module.css";
 

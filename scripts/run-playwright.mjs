@@ -100,8 +100,8 @@ if (releaseGateProject) {
   );
 }
 // WARD_RELEASE_GATE_PART (public CI): run one part of that device leg, so each device's gate runs
-// as two parallel jobs. The parts partition the release-gate spec files (browser-run-contract.mjs),
-// and the journeys part still requires all six named journeys on its project.
+// as parallel jobs. The parts partition the release-gate spec files (browser-run-contract.mjs), and
+// each part still requires every named journey in its own files on its project.
 const releaseGatePart = releaseGatePartFor(process.env.WARD_RELEASE_GATE_PART);
 if (releaseGatePart) {
   if (!releaseGateProject) throw new Error("WARD_RELEASE_GATE_PART needs WARD_RELEASE_GATE_PROJECT");

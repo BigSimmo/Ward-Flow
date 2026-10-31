@@ -151,6 +151,22 @@ describe("booking transport from the sending emergency department", () => {
     expect(offered).toHaveLength(2);
   });
 
+  it("opens the popup over the patient's sheet, not under it, when it is opened from the row", () => {
+    // Hosted browser run, 31 Oct 2026: opened from the row, the patient's sheet and the popup mounted
+    // in one commit, so the popup landed under the sheet in the modal layer and the sheet's scrim
+    // took every click meant for the form, while the sheet, top of the stack, made the popup inert.
+    const movement = heldBedMovement();
+    renderEdFor(movement);
+    fireEvent.click(screen.getByTestId(`ward-ed-book-transport-toggle-${movement.id}`));
+
+    const popup = screen.getByTestId(`ward-ed-book-transport-${movement.id}`);
+    const sheet = screen.getByTestId(`ward-ed-phone-sheet-${movement.id}`);
+    const layerOf = (element: HTMLElement) => element.closest('[data-overlay-layer="modal"]')!;
+    expect(layerOf(sheet).compareDocumentPosition(layerOf(popup)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(popup.closest("[inert]")).toBeNull();
+    expect(sheet.closest("[inert]")).not.toBeNull();
+  });
+
   it("offers every declared provider and none of them chosen", () => {
     const movement = heldBedMovement();
     renderEdFor(movement);

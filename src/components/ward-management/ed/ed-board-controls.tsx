@@ -481,7 +481,7 @@ function flatten(children: ReactNode): ReactNode[] {
 }
 
 /** The menu's three groups. Redesign (Josh, 31 Oct 2026): "and" in plain words, not "&". */
-export const ED_ACTION_GROUPS = ["Review and disposition", "Transfer and handover", "Legal and referral"] as const;
+const ED_ACTION_GROUPS = ["Review and disposition", "Transfer and handover", "Legal and referral"] as const;
 
 type ItemProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   "data-testid"?: string;

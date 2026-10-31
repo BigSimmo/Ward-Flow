@@ -1772,10 +1772,10 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
   });
 
   it("Integration Screen 4: Settings component preserves operational settings contracts", () => {
-    const source = readFileSync(
-      resolve(process.cwd(), "src/components/ward-management/settings/settings-screen.tsx"),
-      "utf8",
-    );
+    // Settings by login (31 Oct 2026): the rule editor lives in its own pane beside the screen.
+    const source = ["settings-screen.tsx", "settings-rules-pane.tsx"]
+      .map((file) => readFileSync(resolve(process.cwd(), "src/components/ward-management/settings", file), "utf8"))
+      .join("\n");
     expect(source).toContain(`raise("SET_CONFIGURATION"`);
     expect(source).toContain("edAccessTargetMinutes");
     expect(source).toContain("morningRollupDeadlineMinutes");

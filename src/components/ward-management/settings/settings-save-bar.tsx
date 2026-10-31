@@ -5,7 +5,7 @@ import { Check } from "lucide-react";
 import { Button, CountCircle, StatusGlyph, cx } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
-import rx from "./settings-redesign.module.css";
+import rx from "./settings-layout.module.css";
 
 /**
  * The redesign's sticky save bar: what is unsaved, Discard and Save rules. Round 3: Full audit moved to

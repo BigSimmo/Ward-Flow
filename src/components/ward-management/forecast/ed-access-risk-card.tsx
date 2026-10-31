@@ -15,13 +15,13 @@ import { useMemo } from "react";
 
 import { buttonClass, Card, useIsPhone } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { RELEASE_LOOKAHEAD_DAYS, targetText, type EdAccessRiskRow } from "./ed-access-risk";
 import { BED_KIND_LABEL } from "./forecast-by-kind";
 import { shortBlocker } from "./forecast-levers";
-import { forecastEdName, useForecastModel } from "./use-forecast-model";
+import { useForecastModel } from "./use-forecast-model";
 import styles from "./forecast.module.css";
 
 export function releaseText(row: EdAccessRiskRow, now: Instant, showWards: boolean): string {
@@ -126,30 +126,5 @@ export function EdAccessRiskCard({ edId, now }: { edId?: string; now: Instant })
         )}
       </div>
     </Card>
-  );
-}
-
-/** Home's one line under the ED strip: the department with the most people at risk. */
-export function HomeEdAccessLine({ now }: { now: Instant }) {
-  const { risk } = useForecastModel(now);
-  const first = [...risk.byEd].sort(
-    (a, b) => b.atRisk - a.atRisk || (a.firstMinutesLeft ?? 0) - (b.firstMinutesLeft ?? 0),
-  )[0];
-  if (!first || first.atRisk === 0) return null;
-  const others = risk.atRisk.length - first.atRisk;
-  return (
-    <p className={styles.edLine} data-testid="home-ed-access-risk">
-      <span className={styles.edLineText}>
-        <b>
-          {first.atRisk} {first.atRisk === 1 ? "person" : "people"} at {forecastEdName(first.edId)}
-        </b>{" "}
-        {first.atRisk === 1 ? "passes" : "pass"} the {targetText(risk.targetMinutes)} access target before a suitable
-        bed is due, first in {splitDuration(first.firstMinutesLeft ?? 0)}.
-        {others > 0 ? ` ${others} more at other departments.` : ""}
-      </span>
-      <Link href={edHref(first.edId)} className={buttonClass({ variant: "ghost", size: "sm" })}>
-        See who
-      </Link>
-    </p>
   );
 }

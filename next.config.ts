@@ -97,7 +97,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
-  webpack(config, { dev, webpack }) {
+  webpack(config, { dev, isServer, webpack }) {
     // Avoid a Next/webpack WasmHash worker crash observed on Node 24 during local production builds.
     config.output = {
       ...config.output,
@@ -123,6 +123,42 @@ const nextConfig: NextConfig = {
           path.join(projectRoot, "src/app/mockups/ward-flow-redesign/_preview/preview-screen-production.tsx"),
         ),
       );
+    // Phone size trim (31 Oct 2026): the kit barrel (src/components/wf/index.ts) only re-exports.
+    // Marking it free of side effects lets webpack link each import straight to the kit file that
+    // defines it, so a kit part used only by a lazy panel (the confirm dialog, for one) stays in
+    // that panel's chunk instead of riding in the shared chunk every page downloads first.
+    config.module = {
+      ...config.module,
+      rules: [
+        ...(config.module?.rules ?? []),
+        { test: /[\\/]src[\\/]components[\\/]wf[\\/]index\.ts$/, sideEffects: false },
+      ],
+    };
+    // Phone size trim 2 (31 Oct 2026): the kit's overlay core (Sheet, its focus stack, the overlay
+    // root and the modal focus helpers) is used by the root layout, the Ward Flow frame and most pages.
+    // Each shared piece is under Next's 20 KB split minimum, so webpack copied it into two or three
+    // first-load chunks (about 11 KB on Home and Ward). Two named chunks hold one copy each. Same
+    // code, same behaviour; only where it is packed changes. The root layout needs only the first.
+    const splitChunks = config.optimization?.splitChunks;
+    if (!dev && !isServer && splitChunks && typeof splitChunks === "object") {
+      splitChunks.cacheGroups = {
+        ...splitChunks.cacheGroups,
+        wfOverlayRoot: {
+          test: /[\\/]src[\\/]components[\\/]wf[\\/](sheet-focus|overlay-root)\.tsx?$/,
+          name: "wf-overlay-root",
+          chunks: "all",
+          enforce: true,
+          priority: 25,
+        },
+        wfOverlay: {
+          test: /[\\/]src[\\/]components[\\/]wf[\\/](sheet|use-modal-focus|focus-targets|band)\.tsx?$/,
+          name: "wf-overlay",
+          chunks: "all",
+          enforce: true,
+          priority: 25,
+        },
+      };
+    }
     return config;
   },
   async headers() {

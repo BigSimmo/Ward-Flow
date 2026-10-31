@@ -265,17 +265,30 @@ test("@mockup approved overdue queue treatment fits phone, tablet and desktop", 
         .toBeLessThanOrEqual(1);
       const row = overdueRows.first();
       await row.scrollIntoViewIfNeeded();
+      // Keep the pointer off the row so the hover fill cannot stand in for the overdue tint.
+      await page.mouse.move(0, 0);
+      // No side edges (Josh, 31 Oct 2026; `home.module.css`): the overdue row is the act-now tint
+      // with the danger glyph and the spoken word "overdue" beside the wait. The old inset coral
+      // marker (`::before`, 3px) is gone, and nothing draws a coloured edge on one side.
       const treatment = await row.evaluate((element) => {
         const style = getComputedStyle(element);
         const marker = getComputedStyle(element, "::before");
         const wait = element.querySelector('[role="timer"]')!.parentElement!.parentElement!;
         const bounds = element.getBoundingClientRect();
         const waitBounds = wait.getBoundingClientRect();
+        // The act-now tint as this row's own custom properties resolve it, in this colour scheme.
+        const probe = document.createElement("span");
+        probe.style.position = "absolute";
+        probe.style.backgroundColor = "var(--wf-act-tint)";
+        element.appendChild(probe);
+        const actTint = getComputedStyle(probe).backgroundColor;
+        probe.remove();
         return {
-          markerWidth: marker.width,
-          markerRadius: marker.borderRadius,
-          markerHeight: parseFloat(marker.height),
-          height: bounds.height,
+          markerContent: marker.content,
+          background: style.backgroundColor,
+          actTint,
+          borderStart: style.borderLeftWidth,
+          borderEnd: style.borderRightWidth,
           shadow: style.boxShadow,
           outline: style.outlineStyle,
           waitFits: waitBounds.right <= bounds.right && waitBounds.left >= bounds.left,
@@ -283,11 +296,11 @@ test("@mockup approved overdue queue treatment fits phone, tablet and desktop", 
           glyphs: wait.querySelectorAll("svg").length,
         };
       });
-      expect(treatment.markerWidth).toBe("3px");
-      expect(treatment.markerRadius).toBe("9999px");
-      expect(treatment.markerHeight).toBeGreaterThan(0);
-      expect(treatment.markerHeight).toBeLessThan(treatment.height);
-      expect(treatment.shadow).not.toMatch(/0px 0px 0px 1px/);
+      expect(treatment.markerContent).toBe("none");
+      expect(treatment.actTint).not.toBe("rgba(0, 0, 0, 0)");
+      expect(treatment.background).toBe(treatment.actTint);
+      expect(treatment.borderStart).toBe(treatment.borderEnd);
+      expect(treatment.shadow).toBe("none");
       expect(treatment.waitFits).toBe(true);
       expect(treatment.label).toContain("overdue");
       expect(treatment.glyphs).toBe(1);
@@ -309,10 +322,23 @@ test("@mockup approved overdue queue treatment fits phone, tablet and desktop", 
   await expect
     .poll(() => row.evaluate((element) => parseFloat(getComputedStyle(element).outlineWidth)))
     .toBeGreaterThanOrEqual(2);
+  // Forced colours drop the tint, so the cue that must survive is the glyph and its spoken word,
+  // never a stripe; selection keeps its Highlight outline.
   await page.emulateMedia({ forcedColors: "active" });
-  await expect
-    .poll(() => row.evaluate((element) => getComputedStyle(element, "::before").forcedColorAdjust))
-    .toBe("none");
+  await expect.poll(() => row.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe("solid");
+  const forcedCue = await row.evaluate((element) => {
+    const wait = element.querySelector('[role="timer"]')!.parentElement!.parentElement!;
+    const glyph = wait.querySelector("svg");
+    const glyphBounds = glyph?.getBoundingClientRect();
+    return {
+      label: wait.textContent,
+      glyphVisible: glyphBounds !== undefined && glyphBounds.width > 0 && glyphBounds.height > 0,
+      markerContent: getComputedStyle(element, "::before").content,
+    };
+  });
+  expect(forcedCue.label).toContain("overdue");
+  expect(forcedCue.glyphVisible).toBe(true);
+  expect(forcedCue.markerContent).toBe("none");
 });
 
 test("@mockup movement status stays inside phone, tablet and desktop viewports", async ({ page }) => {

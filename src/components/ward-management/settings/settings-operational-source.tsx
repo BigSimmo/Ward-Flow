@@ -33,7 +33,13 @@ export function copyExecutiveSettingsDiagnostics(configuration: WardConfiguratio
 type OperationalSource = Pick<
   WardFlowContextValue,
   "movements" | "configuration" | "patients" | "eventLog" | "shared" | "resetDemoState"
-> & { kind: "operational"; now: number; raise: WardRaise; ruleChanges: ConfigurationAuditEvent[] };
+> & {
+  kind: "operational";
+  now: number;
+  raise: WardRaise;
+  /** Recent rule saves, or null when this desk may not read the audit (so it never reads as "no saves"). */
+  ruleChanges: ConfigurationAuditEvent[] | null;
+};
 type ExecutiveSource = {
   kind: "executive";
   configuration: WardConfiguration;
@@ -51,7 +57,7 @@ function OperationalSettingsSource({ children }: { children: (source: SettingsSo
   const raise = useWardRaise(useRouteRole());
   const [actor] = useWardRecordActors();
   const audit = readAuditEvents(actor ?? { role: "demo" });
-  const ruleChanges = audit.status === "allowed" ? audit.value.filter(isConfigurationEvent).slice(-5).reverse() : [];
+  const ruleChanges = audit.status === "allowed" ? audit.value.filter(isConfigurationEvent).slice(-5).reverse() : null;
   return children({ ...source, kind: "operational", now, raise, ruleChanges });
 }
 

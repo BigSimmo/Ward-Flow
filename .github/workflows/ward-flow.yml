@@ -68,6 +68,11 @@ jobs:
           WARD_PLAN_FRONTEND_STATIC: ${{ steps.plan.outputs.frontend_static }}
           WARD_PLAN_LEGAL_SWEEP: ${{ steps.plan.outputs.legal_sweep }}
         run: node scripts/ward-ci-public/verify-plan.mjs
+      # Evidence for the main reuse check: the tree this pull request run tests (its merge ref), so
+      # a merge that lands exactly this tree need not run the reusable jobs again on main.
+      - name: Record the tested tree
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "::notice title=Ward tested tree::$(git rev-parse 'HEAD^{tree}')"
   reuse:
     name: Ward Flow main reuse check
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -77,6 +82,7 @@ jobs:
       contents: read
       pull-requests: read
       actions: read
+      checks: read
     outputs:
       verified: ${{ steps.check.outputs.verified }}
     steps:
@@ -525,14 +531,15 @@ jobs:
     name: Ward Flow release gate ${{ matrix.project }} ${{ matrix.part }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Desktop Chromium and phone WebKit each run as two parallel jobs: the journeys part must pass
-    # every required journey on its own project, the checks part runs the accessibility sweep, and
-    # Ward Flow required needs all four. The parts split the release-gate files without overlap.
+    # Desktop Chromium and phone WebKit each run as three parallel jobs: the journeys and referrals
+    # parts must pass their required journeys on their own project (six in all), the checks part
+    # runs the accessibility sweep, and Ward Flow required needs all six jobs. The parts split the
+    # release-gate files without overlap (scripts/ward-flow/browser-run-contract.mjs).
     strategy:
       fail-fast: false
       matrix:
         project: [release-gate-desktop, release-gate-phone]
-        part: [journeys, checks]
+        part: [journeys, referrals, checks]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
