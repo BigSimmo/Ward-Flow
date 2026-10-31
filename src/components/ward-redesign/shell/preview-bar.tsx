@@ -46,7 +46,7 @@ import type { ToolsSheetToolId } from "@/components/ward-management/tools/ward-t
 
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WARD_BAR_PAGE_TOOLS_ID } from "@/components/ward-management/shell/ward-bar-page-tools";
-import { WardHelpHost, WardHelpScreenButton } from "@/components/ward-management/help/ward-help-host";
+import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { subscribeWardDrawer, subscribeWardDrawerClose } from "@/components/ward-management/shell/ward-drawer-bus";
 import { dischargeHref, movementHref, patientSearchHref } from "@/components/ward-management/shell/ward-facade";
 import type { WardActivityContent, WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
@@ -1011,7 +1011,6 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
           >
             {routeTitle}
           </span>
-          {isPhone ? null : <WardHelpScreenButton title={routeTitle} className={styles.screenHelp} />}
         </div>
 
         <WardBarServiceSelector
