@@ -53,15 +53,18 @@ const PatientNowBackdrop = dynamic<MockupPageProps>(() =>
   Promise.all([
     import("@/components/ward-management/patients/patient-now-screen"),
     import("@/components/ward-management/shell/ward-record-address"),
-  ]).then(([screen, address]) => function PatientNowBackdropScreen() {
-    const id = address.decodeRecordAddress("196zcp24w5t0") ?? "196zcp24w5t0";
-    return (
-      <screen.PatientNowScreen
-        patientId={id.startsWith("PT-") ? id : undefined}
-        movementId={id.startsWith("WF-") ? id : undefined}
-      />
-    );
-  }),
+  ]).then(
+    ([screen, address]) =>
+      function PatientNowBackdropScreen() {
+        const id = address.decodeRecordAddress("196zcp24w5t0") ?? "196zcp24w5t0";
+        return (
+          <screen.PatientNowScreen
+            patientId={id.startsWith("PT-") ? id : undefined}
+            movementId={id.startsWith("WF-") ? id : undefined}
+          />
+        );
+      },
+  ),
 );
 const AddPatientPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/add-patient/add-patient-page").then((module) => module.AddPatientPage),
