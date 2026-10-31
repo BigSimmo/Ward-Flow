@@ -30,7 +30,11 @@ vi.mock("next/link", () => ({
 
 import { WardDynamicIsland, type WardDynamicIslandProps } from "@/components/ward-management/shell/ward-dynamic-island";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
+import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import { wardMovements } from "@/components/ward-management/ward-movements";
+import { bedKindGaps } from "@/components/ward-management/capacity/capacity-derivations";
+import { shortNeed } from "@/components/ward-management/capacity/capacity-mismatch-band";
 import { DischargeBoard } from "@/components/ward-management/discharges/discharge-board";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -1785,17 +1789,21 @@ describe("Track B: Integration Readiness & Non-Degradation Guardrails", () => {
     expect(source).toContain("ward-unit-screen");
   });
 
-  it("Integration Screen 6: CapacityScreen mounts with WardFlowProvider and preserves ward-capacity-gap-table", () => {
+  it("Integration Screen 6: CapacityScreen mounts with WardFlowProvider and preserves the Mismatch band", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
 
-    // CRITICAL: Mismatch table must NEVER be removed or broken by HUD rollout
-    const gapTable = screen.getByTestId("ward-capacity-gap-table");
-    expect(gapTable).toBeDefined();
-    expect(screen.getByTestId("ward-capacity-gap-total")).toBeDefined();
+    // CRITICAL: the mismatch by bed type must NEVER be removed or broken by HUD rollout. Since the
+    // Capacity redesign (31 Oct 2026) it is the Mismatch band, one tile per bed type.
+    const mismatch = within(screen.getByRole("region", { name: "Mismatch" }));
+    const tiles = within(mismatch.getByRole("list", { name: "Bed types, now and tomorrow" })).getAllByRole("listitem");
+    const gapRows = bedKindGaps(wardMovements, allUnits(), NOW_ANCHOR, wardAdmissions);
+    expect(tiles.map((tile) => within(tile).getByRole("heading").textContent)).toEqual(
+      gapRows.map((row) => shortNeed(row.need)),
+    );
   });
 
   it("Integration Screen 7: Emergency Department component preserves ED access target contracts", () => {

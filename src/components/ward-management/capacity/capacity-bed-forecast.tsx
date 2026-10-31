@@ -81,7 +81,8 @@ export function BedForecast({
     <Card
       aria-labelledby={stacked ? undefined : "capacity-forecast-title"}
       aria-label={stacked ? "Bed forecast" : undefined}
-      id={stacked ? undefined : "forecast"}
+      // Home's "Bed forecast" link (HOME_FORECAST_HREF) lands here.
+      id={stacked ? undefined : "capacity-forecast"}
       className={stacked ? styles.fcStacked : undefined}
     >
       {/* Polish (Josh, 31 Oct 2026): the title alone, no grey line; the sources sentence moved into

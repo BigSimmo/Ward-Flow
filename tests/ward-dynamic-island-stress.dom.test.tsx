@@ -488,18 +488,20 @@ describe("Adversarial Stress Testing: WardDynamicIsland", () => {
       expect(actNow.getAttribute("aria-pressed")).toBe("true");
     });
 
-    it("Mounts CapacityScreen with WardFlowProvider and verifies co-existence of HUD and Gap Table", () => {
+    it("Mounts CapacityScreen with WardFlowProvider and verifies co-existence of HUD and Mismatch band", () => {
       render(
         <WardFlowProvider initialNow={NOW_ANCHOR}>
           <CapacityScreen />
         </WardFlowProvider>,
       );
 
-      const hud = screen.getByLabelText("Modelled network Bed Telemetry");
-      const gapTable = screen.getByTestId("ward-capacity-gap-table");
+      // Capacity redesign (31 Oct 2026): the hero's chip row is the HUD and the Mismatch band
+      // replaces the gap table.
+      const hud = screen.getByRole("group", { name: "Network beds" });
+      const mismatch = screen.getByRole("region", { name: "Mismatch" });
 
       expect(hud).toBeDefined();
-      expect(gapTable).toBeDefined();
+      expect(mismatch).toBeDefined();
       // v6: the hero carries the Live chip with its pause control, and the counts are hero stats.
       expect(screen.getByRole("button", { name: /pause demo updates$/ })).toBeDefined();
       expect(within(hud).getByRole("button", { name: /^\d+\s*locked (?:beds )?ready$/iu })).toBeDefined();

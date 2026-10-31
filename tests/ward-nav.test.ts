@@ -776,7 +776,11 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
     // The ward answer's own "Ward overview" back link went on 20 Oct 2026: the header Back
     // (`shell/ward-back.ts`) returns there, taking `unitHref` from the facade.
     expect([...(ward?.builtSites ?? [])].sort()).toEqual([
-      "src/components/ward-management/capacity/capacity-ward-sidebar.tsx",
+      // Capacity redesign (31 Oct 2026): the ward drawer's Open ward link, the phone Overview's ward
+      // rows and This shift's Confirm link each build the ward href (the old side panel is gone).
+      "src/components/ward-management/capacity/capacity-phone-overview.tsx",
+      "src/components/ward-management/capacity/capacity-shift-checks.tsx",
+      "src/components/ward-management/capacity/capacity-ward-drawer.tsx",
       "src/components/ward-management/discharges/discharge-board.tsx",
       "src/components/ward-management/hub/hub-derivations.ts",
       "src/components/ward-management/patients/patient-now-screen.tsx",

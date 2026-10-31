@@ -117,7 +117,15 @@ export function BedMapCards({
       />
       <div className={styles.mapBody}>
         {mapGroups.map((group) => {
-          if (group.wards.length === 0) return null;
+          // An empty service is said in words, never dropped: a missing service reads as no such
+          // beds exist (census §8 and the old network table's sentence).
+          if (group.wards.length === 0) {
+            return (
+              <p key={group.service} className={styles.mapEmpty}>
+                <SpelledCodes text={`${group.service} has no inpatient unit reporting to this board.`} />
+              </p>
+            );
+          }
           const groupRows = group.wards.map((ward) => rowOf.get(ward.unit.id)).filter((row) => row !== undefined);
           const ready = groupRows.reduce((sum, row) => sum + row.ready, 0);
           const closed = group.wards.reduce((sum, ward) => sum + ward.closed, 0);
@@ -140,10 +148,13 @@ export function BedMapCards({
                   ) : (
                     <ChevronRight size={14} aria-hidden="true" />
                   )}
-                  <span className={styles.mapGroupName}>{group.service}</span>
+                  <span className={styles.mapGroupName}>
+                    <SpelledCodes text={group.service} />
+                  </span>
                   <span className={styles.muted}>{group.wards.length} wards</span>
                   <span className={styles.mapGroupFigures}>
-                    <b>{ready} ready</b> · {closed} closed · {beds ? Math.round((inUse / beds) * 100) : 0}% in use
+                    <b>{ready || "None"} ready</b> · {closed || "none"} closed ·{" "}
+                    {beds ? Math.round((inUse / beds) * 100) : 0}% in use
                   </span>
                 </button>
               </h3>
@@ -225,11 +236,11 @@ function WardCard({
     >
       <span className={styles.wardName}>
         <SpelledCodes text={ward.unit.name} />
-      </span>
+      </span>{" "}
       <span className={`${styles.wardReady}${ward.ready ? "" : ` ${styles.wardReadyNone}`}`}>
-        <b className={styles.wardReadyN}>{ward.ready}</b>
-        ready
-      </span>
+        {/* Zero is spelt "None" (owner ruling, 6 Sep 2026); the space keeps the card's name readable. */}
+        <b className={styles.wardReadyN}>{ward.ready || "None"}</b> ready
+      </span>{" "}
       <span className={styles.wardOccupied}>
         {occupied} of {ward.unit.beds} occupied
       </span>

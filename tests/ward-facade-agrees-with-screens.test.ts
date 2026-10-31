@@ -354,7 +354,7 @@ type ScreenReader = {
  *
  * ⚠️ **NOT "EXACTLY ONE MATCH", AND THE DIFFERENCE MATTERS BOTH WAYS.** A component legitimately
  * renders the same figure twice: `WardBar` prints its caption for the eye and again for a screen
- * reader, so Capacity's ready-bed total appears twice in the markup from one value. Demanding a
+ * reader, so one value can appear twice in the markup. Demanding a
  * single occurrence would have failed on correct markup. Demanding that every occurrence AGREES is
  * the property actually worth holding — two different totals beside one rail is a real defect on a
  * screen whose whole subject is how many beds there are, and this catches it. Zero matches still
@@ -385,7 +385,8 @@ const READERS: Record<ShellFigureId, ScreenReader> = {
     screen: "Capacity",
     component: CapacityScreen,
     read: (markup) =>
-      Number(oneNumber(markup, /(\d+) beds ready across the network/gu, "Capacity's ready-bed bar caption")),
+      // Capacity redesign (31 Oct 2026): the hero title, "N beds ready of M", is the network total.
+      Number(oneNumber(markup, /(\d+)(?:<!-- -->| )*beds ready(?:<!-- -->| )*of\b/gu, "Capacity's hero title")),
   },
   /** The Movements day panel states the complete open-movement count, independently of transport. */
   openMovements: {

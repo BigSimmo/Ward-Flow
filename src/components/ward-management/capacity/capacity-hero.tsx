@@ -89,7 +89,11 @@ export function CapacityHero({
               onToggle={() => onHighlight("locked")}
             />
             <HeroStat value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroStat value={formatWardOccupancy(occupancy, "Not known")} label="Of beds in use" />
+            <HeroStat
+              value={formatWardOccupancy(occupancy, "Not known")}
+              // Occupancy counts pulled beds as in use (audit P100, D-81), so the label says so.
+              label={model.pulled > 0 ? `Of beds in use, including ${model.pulled} pulled` : "Of beds in use"}
+            />
           </>
         ) : undefined
       }

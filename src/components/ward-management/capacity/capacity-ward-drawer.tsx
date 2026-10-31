@@ -176,6 +176,8 @@ export function CapacityWardSidebar({
                 <Button
                   size="sm"
                   variant="sec"
+                  // One open request at a time, as before the redesign: the status above says it is sent.
+                  disabled={request !== undefined}
                   onClick={() =>
                     dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
                   }

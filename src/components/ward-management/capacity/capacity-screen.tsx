@@ -68,7 +68,10 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const executive = access.role === "executive";
   const siteDesk = model.site !== undefined;
   const service = useServiceScope();
-  const [popup, setPopup] = useState<Popup>(() => initialPopup(openOnLoad, model));
+  const [openPopup, setOpenPopup] = useState<{ popup: Popup; generation: number | null }>(() => ({
+    popup: initialPopup(openOnLoad, model),
+    generation: null,
+  }));
   const [phoneTab, setPhoneTab] = useState<PhoneTab>("overview");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   // Site bed manager: another site's ward has no drawer here (its ward page and Discharge board are
@@ -86,6 +89,11 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       "configuration",
       "worldGeneration",
     );
+  // A demo reset closes whatever was open (the old side panel did the same), so no drawer shows a
+  // ward from the world before; the drawer then hands focus back to its opener.
+  const [firstGeneration] = useState(worldGeneration);
+  const popup = (openPopup.generation ?? firstGeneration) === worldGeneration ? openPopup.popup : null;
+  const setPopup = (next: Popup) => setOpenPopup({ popup: next, generation: worldGeneration });
   const thresholds = useDueSoonThresholds();
   const patientOf = usePatientOf();
   const toast = useOptionalToast();
@@ -136,10 +144,11 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const selectedRow =
     popup?.kind === "ward" ? model.networkRows.find((row) => row.unit.id === popup.unitId) : undefined;
 
-  // Asking a ward to confirm its beds is the coordinator's step (REQUEST_CAPACITY_REFRESH). A site
-  // bed manager confirms on the ward's own page instead, and the executive changes nothing.
+  // Asking a ward to confirm its beds is the coordinator's step (REQUEST_CAPACITY_REFRESH), as in the
+  // ward drawer. A site bed manager confirms on the ward's own page instead, and every other desk,
+  // the executive included, changes nothing here.
   const askWard =
-    executive || siteDesk
+    access.role !== "coordinator" || siteDesk
       ? undefined
       : (unitId: string) => {
           const unit = units.find((candidate) => candidate.id === unitId);

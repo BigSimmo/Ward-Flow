@@ -1,57 +1,79 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 import "@testing-library/jest-dom/vitest";
 
-import { BedMap, bedMapWards } from "@/components/ward-management/capacity/bed-map";
-import { bedReleases } from "@/components/ward-management/ward-movements";
-import { allUnits } from "@/components/ward-management/ward-sites";
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { bedMapCards, bedMapRegion } from "./helpers/capacity-ward-table";
 
 /**
- * v10 Capacity (pass 3): the bed map's Table view is one shared `WardCapacityRow` per ward. A ward
- * with a ready bed takes the one fit tint, a highlight dims the other wards by colour in every
- * layout and hides none, and pressing a row opens that ward.
+ * The Capacity bed map, one line per ward. The October 2026 redesign (Josh, 31 Oct 2026) removed
+ * the bed map's Table layout and its shared `WardCapacityRow` (every ward as a table lives on All
+ * wards now). Its Rows layout is the same map one line per ward, so this file pins what the Table
+ * view used to promise, on Rows: every ward appears once, a highlight dims the other wards and
+ * hides none, and pressing a ward opens that ward.
+ *
+ * Expected figures come from `networkWardRows` over the seeded state the provider starts from.
  */
-const units = allUnits();
+const seeded = seedWardFlowState();
+const rows = networkWardRows(seeded.units, NOW_ANCHOR, seeded.bedReleases, seeded.admissions, seeded.leaveBeds);
 
-describe("Capacity bed map, Table view", () => {
-  it("draws one shared capacity row per ward, tinting only wards with a ready bed", () => {
-    render(<BedMap units={units} bedReleases={bedReleases} initialLayout="table" />);
-    const rows = screen.getAllByTestId("wf-ward-capacity-row");
-    expect(rows).toHaveLength(units.length);
+function renderScreen() {
+  return render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <CapacityScreen />
+    </WardFlowProvider>,
+  );
+}
 
-    const wards = bedMapWards(units, bedReleases);
-    const withReady = wards.filter((ward) => ward.ready > 0).length;
-    expect(withReady).toBeGreaterThan(0);
-    expect(rows.filter((row) => row.getAttribute("data-fit") === "true")).toHaveLength(withReady);
+function showRows() {
+  const layouts = within(bedMapRegion()).getByRole("radiogroup", { name: "Bed map layout" });
+  fireEvent.click(within(layouts).getByRole("radio", { name: "Rows" }));
+  return layouts;
+}
+
+afterEach(() => {
+  window.sessionStorage.clear();
+});
+
+describe("Capacity bed map, Rows layout", () => {
+  it("switches to Rows from the layout control and keeps exactly one entry per ward", () => {
+    renderScreen();
+    expect(bedMapCards()).toHaveLength(rows.length);
+    const layouts = showRows();
+    expect(within(layouts).getByRole("radio", { name: "Rows" })).toHaveAttribute("aria-checked", "true");
+    expect(within(layouts).getByRole("radio", { name: "Grid" })).toHaveAttribute("aria-checked", "false");
+    const cards = bedMapCards();
+    expect(cards).toHaveLength(rows.length);
+    for (const card of cards) expect(card.className).toMatch(/wardRow/u);
   });
 
-  it("switches to Table from the layout control and opens a ward from its row", () => {
-    const onSelectWard = vi.fn();
-    render(<BedMap units={units} bedReleases={bedReleases} onSelectWard={onSelectWard} />);
-    fireEvent.click(screen.getByRole("button", { name: "Table" }));
-    expect(screen.getByRole("button", { name: "Table" })).toHaveAttribute("aria-pressed", "true");
-
-    const first = units[0]!;
-    fireEvent.click(screen.getByRole("button", { name: `Open ${first.name}` }));
-    expect(onSelectWard).toHaveBeenCalledWith(first.id);
-  });
-
-  it("dims every ward outside a highlight, by attribute, and keeps them all on screen", () => {
-    const keep = new Set([units[0]!.id, units[1]!.id]);
-    const { unmount } = render(
-      <BedMap units={units} bedReleases={bedReleases} initialLayout="table" highlightUnitIds={keep} />,
+  it("dims every ward outside a highlight in Rows, and keeps them all on screen", () => {
+    renderScreen();
+    showRows();
+    const withReady = rows.filter((row) => row.ready > 0).length;
+    expect(withReady, "no ward has a ready bed — the highlight proves nothing").toBeGreaterThan(0);
+    expect(withReady, "every ward has a ready bed — nothing would be dimmed").toBeLessThan(rows.length);
+    fireEvent.click(
+      within(bedMapRegion()).getByRole("button", {
+        name: `Any ready · ${withReady} ${withReady === 1 ? "ward" : "wards"}`,
+      }),
     );
-    const rows = screen.getAllByTestId("wf-ward-capacity-row");
-    expect(rows).toHaveLength(units.length);
-    expect(rows.filter((row) => row.getAttribute("data-dim") === "true")).toHaveLength(units.length - keep.size);
-    unmount();
+    const cards = bedMapCards();
+    expect(cards).toHaveLength(rows.length);
+    expect(cards.filter((card) => /dimmed/u.test(card.className))).toHaveLength(rows.length - withReady);
+  });
 
-    // The card layouts dim the same wards.
-    render(<BedMap units={units} bedReleases={bedReleases} initialLayout="grid" highlightUnitIds={keep} />);
-    for (const unit of units) {
-      const card = screen.getByTestId(`ward-bed-map-ward-${unit.id}`);
-      if (keep.has(unit.id)) expect(card).not.toHaveAttribute("data-dim");
-      else expect(card).toHaveAttribute("data-dim", "true");
-    }
+  it("opens a ward's drawer from its row", () => {
+    renderScreen();
+    showRows();
+    const [first] = bedMapCards();
+    expect(first, "the bed map drew no ward").toBeDefined();
+    fireEvent.click(first!);
+    expect(screen.getByTestId("ward-capacity-ward-drawer")).toBeInTheDocument();
+    expect(first).toHaveAttribute("data-selected");
   });
 });
