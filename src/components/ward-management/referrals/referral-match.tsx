@@ -80,6 +80,7 @@ import { Disclosure, FoldedHistory } from "./folded-history";
 import { ShowMoreRow } from "@/components/wf/show-more-row";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import {
   movementHasOpenTurnaroundRequest,
   referralHasOpenTurnaroundRequest,
@@ -143,6 +144,9 @@ export function ReferralMatchView({
   // #794: only the coordinator or the desk a destination belongs to may answer it.
   const deskRole = useRouteRole();
   const answers = (desk: string) => deskRole === "coordinator" || deskRole === desk;
+  // Josh, 31 Oct 2026 (answer 33): the community desk does not see the community arm's Accept and
+  // Decline, because they record the answer as the coordinator's. Its own team page is unchanged.
+  const communityDeskView = useEffectiveWardAccess().role === "community";
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
   const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
@@ -239,6 +243,7 @@ export function ReferralMatchView({
       handleEdAccept,
       handleCommunityDecline,
       handleCommunityAccept,
+      hideCommunityDecision: communityDeskView,
     });
     return (
       <DecidedBy allowed={answers("ed") || answers("community")} who="the receiving team">
@@ -1199,9 +1204,11 @@ export function ReferralMatchView({
               )}
             </div>
           </DecidedBy>
-          <DecidedBy allowed={answers("community")} who="the community team">
-            {communityControls}
-          </DecidedBy>
+          {communityDeskView ? null : (
+            <DecidedBy allowed={answers("community")} who="the community team">
+              {communityControls}
+            </DecidedBy>
+          )}
           <DecidedBy allowed={answers("ed")} who="the emergency department">
             {edControls}
           </DecidedBy>

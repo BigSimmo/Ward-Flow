@@ -136,6 +136,18 @@ describe("the community clinician's Referrals board", () => {
     expect(within(detail).getAllByText("Log a call").length).toBeGreaterThan(0);
   });
 
+  it("does not offer the community arm's Accept and Decline, which would record the coordinator's answer", async () => {
+    // Josh, 31 Oct 2026 (answer 33).
+    deskAs(teamDesk(BUSY_TEAM));
+    renderBoard({ refer: true });
+    const rows = await screen.findAllByTestId(/^ward-referral-board-select-(?!decided)/);
+    fireEvent.click(rows[0]!);
+    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    expect(await within(detail).findByTestId("ward-referral-match-not-a-bed-question")).toBeInTheDocument();
+    expect(within(detail).queryByTestId("ward-referral-match-accept-community_team")).not.toBeInTheDocument();
+    expect(within(detail).queryByTestId("ward-referral-match-decline-controls-community_team")).not.toBeInTheDocument();
+  });
+
   it("opens on History when nothing is waiting on the team", () => {
     expect(QUIET_TEAM).toBeDefined();
     deskAs(teamDesk(QUIET_TEAM!));

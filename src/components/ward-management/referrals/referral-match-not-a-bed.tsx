@@ -212,6 +212,7 @@ export function renderNotABedPanel({
   handleEdAccept,
   handleCommunityDecline,
   handleCommunityAccept,
+  hideCommunityDecision = false,
 }: {
   s: ReferralMatchState;
   referral: Referral;
@@ -223,6 +224,9 @@ export function renderNotABedPanel({
   handleEdAccept: () => void;
   handleCommunityDecline: () => void;
   handleCommunityAccept: () => void;
+  /** Josh, 31 Oct 2026 (answer 33): the community desk does not answer the community arm here,
+      because the answer would be recorded as the coordinator's. */
+  hideCommunityDecision?: boolean;
 }) {
   const {
     edDeclineReason,
@@ -374,7 +378,7 @@ export function renderNotABedPanel({
           </div>
         ) : null}
 
-        {communityAddressing && communityAddressing.state === "queued" ? (
+        {communityAddressing && communityAddressing.state === "queued" && !hideCommunityDecision ? (
           <div className={styles.declineControls} data-testid="ward-referral-match-decline-controls-community_team">
             <label className={styles.fieldLegend} htmlFor="ward-referral-match-decline-reason-community_team">
               Decline reason (community team)
@@ -426,7 +430,7 @@ export function renderNotABedPanel({
           </div>
         ) : null}
 
-        {communityAddressing && communityAddressing.state === "queued" ? (
+        {communityAddressing && communityAddressing.state === "queued" && !hideCommunityDecision ? (
           <div className={styles.matchRowTop} data-testid="ward-referral-match-accept-controls-community_team">
             {/*
              * RB5 (item 16, 2026-09-17) — "a community team may accept, for follow-up only". Same

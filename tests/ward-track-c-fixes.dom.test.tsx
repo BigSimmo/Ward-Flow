@@ -119,12 +119,14 @@ describe("Track C Referral Matching fixes", () => {
       </WardFlowProvider>,
     );
 
-    const select = screen.getByTestId("ward-referral-match-decline-reason-emergency_department");
+    // Referrals redesign (Josh, 31 Oct 2026): the ED review's Decline opens its reasons as radio rows.
+    fireEvent.click(screen.getByTestId("ward-referral-match-decline-open"));
+    const reasons = screen.getByRole("radiogroup", { name: "Why decline?" });
     for (const reason of ED_DECLINE_REASONS) {
-      expect(within(select).getByRole("option", { name: DECLINE_REASON_LABELS[reason] })).toBeInTheDocument();
+      expect(within(reasons).getByRole("radio", { name: DECLINE_REASON_LABELS[reason] })).toBeInTheDocument();
     }
     for (const bedReason of BED_SHAPED_DECLINE_REASONS) {
-      expect(within(select).queryByRole("option", { name: DECLINE_REASON_LABELS[bedReason] })).not.toBeInTheDocument();
+      expect(within(reasons).queryByRole("radio", { name: DECLINE_REASON_LABELS[bedReason] })).not.toBeInTheDocument();
     }
   });
 

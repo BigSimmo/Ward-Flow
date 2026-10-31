@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 /*
@@ -99,6 +99,16 @@ describe("Referrals, ED desk", () => {
     expect(screen.getByRole("region", { name: "Selected referral detail" }).hidden).toBe(false);
   });
 
+  it("leaves M, the bed meeting key, off on the ED desk", () => {
+    // Josh, 31 Oct 2026 (answer 35).
+    renderBoard(oneQueued);
+    fireEvent.keyDown(window, { key: "m" });
+    expect(screen.queryByRole("dialog", { name: "Bed meeting list" })).toBeNull();
+    fireEvent.keyDown(window, { key: "?" });
+    const keys = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+    expect(within(keys).queryByText("Bed meeting list")).toBeNull();
+  });
+
   it("says its own department on the phone, with where its journeys stand and no bed meeting list", () => {
     desk.phone = true;
     renderBoard([]);
@@ -123,5 +133,7 @@ describe("Referrals, coordinator desk is unchanged by the ED branches", () => {
     expect(within(hero).getByText("1 awaiting decision")).toBeTruthy();
     expect(screen.getByTestId("ward-referral-meeting")).toBeTruthy();
     expect(screen.queryByTestId("ward-referral-ed-raised")).toBeNull();
+    fireEvent.keyDown(window, { key: "m" });
+    expect(screen.getByRole("dialog", { name: "Bed meeting list" })).toBeTruthy();
   });
 });

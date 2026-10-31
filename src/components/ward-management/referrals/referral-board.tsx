@@ -615,7 +615,8 @@ export function ReferralBoard({
     } else if (key === "s" && selectedReferralId) {
       e.preventDefault();
       setSheet("summary");
-    } else if (key === "m") {
+    } else if (key === "m" && !edDesk) {
+      // Josh, 31 Oct 2026 (answer 35): the ED desk has no bed meeting list, so M does nothing there.
       e.preventDefault();
       setSheet("meeting");
     } else if (e.key === "?") {

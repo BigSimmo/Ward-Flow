@@ -203,7 +203,10 @@ export function PatientTab({
               <Phone size={13} aria-hidden="true" />
               <span className={s.mono}>{intake.referrer.phone}</span>
             </a>
-          ) : null}
+          ) : (
+            // PR15: an absent number is said to be absent, never left blank or invented.
+            <span>Direct contact not recorded</span>
+          )}
         </div>
         <p className={s.subhead}>Documents</p>
         <ReferralDocuments charts={intake?.charts ?? []} toFollow={intake?.chartsToFollow} personName={personName} />
