@@ -1068,3 +1068,126 @@
     "when who actions"
     "facts facts actions";
 }
+
+/* ── Polish 2 (31 Oct 2026): Mismatch as one compact strip ── */
+.mmStrip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(208px, 1fr);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--wf-line);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+}
+.mmTile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-inline-start: 1px solid var(--wf-line);
+  scroll-snap-align: start;
+}
+.mmTile:first-child {
+  border-inline-start: 0;
+}
+.mmTileHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+.mmTileTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.mmTileNow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: none;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+.mmTileTomorrow {
+  display: grid;
+  grid-template-columns: auto minmax(40px, 1fr) auto;
+  align-items: center;
+  gap: 2px var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+}
+.mmTileLabel {
+  color: var(--wf-ink-3);
+}
+.mmTileRange {
+  grid-column: 2 / -1;
+  justify-self: start;
+  text-align: start;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.mmEmpty {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+/* ── Polish 2: the forecast's three figures ── */
+.fcFigs.fcFigs {
+  justify-content: flex-start;
+}
+.fcFig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+.fcFig:first-child {
+  border-top: 0;
+}
+.fcFigLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+.fcFigLabel .fcSoftSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.fcFigBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+}
+.fcFigValue {
+  font-size: var(--wf-fs-16);
+  line-height: var(--wf-lh-16);
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.fcFigSoft {
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  color: var(--wf-ink-2);
+}
+.fcFigSub {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}

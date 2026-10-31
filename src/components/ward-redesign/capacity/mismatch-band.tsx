@@ -1,14 +1,18 @@
-import { Card, CardHead, StatusGlyph } from "@/components/wf";
+"use client";
+
+import { useState } from "react";
+
+import { Card, CardHead, Segmented, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { BedKindGap } from "@/components/ward-management/capacity/capacity-derivations";
 import type { ForecastByKind, KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 
 import { gapWords, RangeLine } from "../parts/range-line";
-import { Kicker } from "../parts/how-worked-out";
 import type { CapacityModel } from "./use-capacity-model";
 import styles from "./capacity-redesign.module.css";
 
 type Range = Pick<KindForecast, "low" | "likely" | "high">;
+type Show = "all" | "short" | "enough";
 
 /**
  * Where the mismatch is: each bed type, now and likely by this time tomorrow. One card per type,
@@ -18,31 +22,56 @@ type Range = Pick<KindForecast, "low" | "likely" | "high">;
  */
 export function MismatchBand({ model }: { model: CapacityModel }) {
   const { gapRows, tomorrowByKind, now } = model;
+  const [show, setShow] = useState<Show>("all");
   const span = rangeSpan(tomorrowByKind);
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
   const until = formatInstantWithDay(tomorrowByKind.until, now);
+  const shortRows = gapRows.filter((row) => row.gap < 0);
+  const rows = show === "all" ? gapRows : show === "short" ? shortRows : gapRows.filter((row) => row.gap >= 0);
   return (
     <Card aria-labelledby="capacity-mismatch-title">
-      {/* Polish (Josh, 31 Oct 2026): a short title and no grey line beside it. Each card's own
-          "waiting · ready that fit" line already says what is counted. */}
-      <CardHead id="capacity-mismatch-title" title="Mismatch" />
-      <ul className={styles.mismatch}>
-        {gapRows.map((row) => (
-          <MismatchCard
-            key={row.id}
-            title={shortNeed(row.need)}
-            row={row}
-            tomorrow={byId.get(row.id)}
-            span={span}
-            until={until}
+      {/* Polish (Josh, 31 Oct 2026): the title row carries a Short / Enough filter, and the bed
+          types are one compact strip that scrolls sideways when the page is narrow, so the band
+          never grows taller. */}
+      <CardHead
+        id="capacity-mismatch-title"
+        title="Mismatch"
+        action={
+          <Segmented
+            label="Show bed types"
+            items={[
+              { id: "all" as const, label: "All", count: gapRows.length },
+              { id: "short" as const, label: "Short", count: shortRows.length },
+              { id: "enough" as const, label: "Enough", count: gapRows.length - shortRows.length },
+            ]}
+            value={show}
+            onChange={setShow}
           />
-        ))}
-      </ul>
+        }
+      />
+      {rows.length === 0 ? (
+        <p className={styles.mmEmpty}>
+          {show === "short" ? "No bed type is short now." : "Every bed type is short now."}
+        </p>
+      ) : (
+        <ul className={styles.mmStrip} aria-label="Bed types, now and tomorrow">
+          {rows.map((row) => (
+            <MismatchTile
+              key={row.id}
+              title={shortNeed(row.need)}
+              row={row}
+              tomorrow={byId.get(row.id)}
+              span={span}
+              until={until}
+            />
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
 
-function MismatchCard({
+function MismatchTile({
   title,
   row,
   tomorrow,
@@ -57,28 +86,28 @@ function MismatchCard({
 }) {
   const short = row.gap < 0;
   return (
-    <li className={styles.mmCard}>
-      <h3 className={styles.mmTitle}>{title}</h3>
-      <p className={styles.mmNow}>
-        <StatusGlyph tone={short ? "warning" : "success"} size={10} />
-        <b className={styles.mmFigure}>{Math.abs(row.gap)}</b>
-        {row.gap === 0 ? "exactly enough" : short ? "short" : "spare"}
-      </p>
+    <li className={styles.mmTile}>
+      <div className={styles.mmTileHead}>
+        <h3 className={styles.mmTileTitle}>{title}</h3>
+        <span className={`${styles.mmTileNow} ${short ? styles.warnInk : styles.okInk}`}>
+          <StatusGlyph tone={short ? "warning" : "success"} size={9} />
+          {gapWords(row.gap)}
+        </span>
+      </div>
       <p className={styles.mmSub}>
         {row.waiting} waiting · {row.bedsThatFit} ready that fit
       </p>
       {tomorrow ? (
-        <div className={styles.mmTomorrow}>
-          <div className={styles.mmTomorrowHead}>
-            <Kicker>
-              Tomorrow<span className={styles.srOnly}>, by {until}</span>
-            </Kicker>
-            <b className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</b>
-          </div>
+        <div className={styles.mmTileTomorrow}>
+          <span className={styles.mmTileLabel}>
+            Tomorrow<span className={styles.srOnly}>, likely by {until}:</span>
+          </span>
           <RangeLine low={tomorrow.low} likely={tomorrow.likely} high={tomorrow.high} span={span} />
-          <p className={styles.mmSub}>
+          <b className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</b>
+          <span className={styles.mmTileRange}>
+            <span className={styles.srOnly}>Range </span>
             {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
-          </p>
+          </span>
         </div>
       ) : null}
     </li>
