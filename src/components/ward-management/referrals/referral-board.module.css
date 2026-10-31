@@ -1409,6 +1409,15 @@
 
 .isbar dd {
   margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.isbar dd p {
+  margin: 0;
+}
+
+.isbar dd p + p {
+  margin-top: var(--wf-s-2);
 }
 
 .keys {
