@@ -76,6 +76,8 @@ describe("Capacity for the executive", () => {
     expect(screen.getByTestId("as-executive-planned-counts")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-planned-book")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Ask / })).not.toBeInTheDocument();
+    // The executive desk may not open the wards list, so the bed map offers no link to it.
+    expect(screen.queryByRole("link", { name: "Every ward as a table" })).not.toBeInTheDocument();
   });
 });
 
@@ -92,5 +94,21 @@ describe("Capacity for a site bed manager", () => {
     expect(screen.getByRole("heading", { name: "Other sites" })).toBeInTheDocument();
     expect(screen.getByText(/Other sites show beds, never the people in them\./)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Ask / })).not.toBeInTheDocument();
+  });
+
+  it("offers only its own site's wards in Try a scenario", () => {
+    const seed = seedWardFlowState();
+    const siteCode = seed.units[0].siteCode;
+    asDesk({ role: "bed_manager", scope: { kind: "site", siteCode } });
+    renderCapacity();
+    fireEvent.click(screen.getByRole("button", { name: "Try a scenario" }));
+    const dialog = within(screen.getByRole("dialog"));
+    const offered = dialog
+      .getAllByRole("option")
+      .map((option) => option.getAttribute("value"))
+      .filter((value) => value);
+    const own = seed.units.filter((unit) => unit.siteCode === siteCode && !unit.isClosed).map((unit) => unit.id);
+    expect(offered.length).toBeGreaterThan(0);
+    expect([...offered].sort()).toEqual([...own].sort());
   });
 });

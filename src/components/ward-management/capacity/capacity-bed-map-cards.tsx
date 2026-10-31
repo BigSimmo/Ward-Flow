@@ -11,6 +11,7 @@ import type { NetworkWardRow } from "./capacity-derivations";
 import type { BedMapWard } from "./bed-map";
 
 import { Legend } from "./capacity-how-worked-out";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import type { CapacityModel } from "./capacity-model";
 import styles from "./capacity-page.module.css";
 
@@ -32,6 +33,8 @@ const OPEN_FIRST = 2;
  * the same map one line per ward. The ward table that used to repeat it lives on All wards, so the
  * page holds each ward once (design review finding 2).
  */
+const WARDS_HREF = "/ward-flow/wards";
+
 export function BedMapCards({
   model,
   onSelectWard,
@@ -47,6 +50,7 @@ export function BedMapCards({
   onHighlight: (highlight: Highlight | null) => void;
 }) {
   const { mapGroups, networkRows, now } = model;
+  const canOpen = useCanOpenHref();
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
   const lit = (unitId: string, id: Highlight | null) => {
@@ -190,9 +194,12 @@ export function BedMapCards({
             { label: "Closed", swatchClassName: styles.cellClosed },
           ]}
         />
-        <Link href="/ward-flow/wards" className={styles.footLink}>
-          Every ward as a table
-        </Link>
+        {/* Only for a desk that may open the wards list (the executive may not). */}
+        {canOpen(WARDS_HREF) ? (
+          <Link href={WARDS_HREF} className={styles.footLink}>
+            Every ward as a table
+          </Link>
+        ) : null}
       </div>
     </Card>
   );

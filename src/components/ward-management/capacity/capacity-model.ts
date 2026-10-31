@@ -127,7 +127,14 @@ export function useCapacityModel() {
     [units, bedReleases, admissions, leaveBeds],
   );
 
-  const forecastModel = useForecastModel(now);
+  const networkForecastModel = useForecastModel(now);
+  // Site bed manager: "Try a scenario" starts from the site's own tomorrow and offers only the
+  // site's wards, the same scope as the Bed forecast it sits beside.
+  const forecastModel = useMemo(
+    () =>
+      siteCode === undefined ? networkForecastModel : { ...networkForecastModel, units, tomorrow: tomorrowByKind },
+    [siteCode, networkForecastModel, units, tomorrowByKind],
+  );
   const days = useMemo(() => horizonDays(now, forecastModel.dayZero), [now, forecastModel.dayZero]);
   // Site bed manager: the seven days are the site's wards, not a row for every ward.
   const weekUnits = useMemo(
