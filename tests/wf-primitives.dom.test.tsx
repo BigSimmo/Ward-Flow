@@ -589,7 +589,7 @@ describe("Kit CSS", () => {
     expect(block(phone(button), ".b:not([data-placement-action])::after")).toContain("inset: -4px 0");
     expect(block(phone(button), ".sm:not([data-placement-action])")).toContain("height: 32px");
     expect(block(phone(button), ".sm:not([data-placement-action])::after")).toContain("inset: -8px 0");
-    // Placement decisions keep their full-size button.
+    // Placement decisions keep their full-size button, 48px on phones: the one exception (Josh, 31 Oct, 10:34).
     expect(block(button, ".b[data-placement-action]")).toContain("min-height: var(--wf-h-md)");
     expect(phone(choice)).toMatch(/\.segItem,\s*\.trk \.segItem \{\s*min-height: var\(--spacing-tap, 3rem\)/);
   });
