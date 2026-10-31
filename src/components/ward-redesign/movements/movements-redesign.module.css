@@ -1,0 +1,156 @@
+/* Movements, redesigned: the stage pipeline, Tier 1 in the side column, full timeline names. */
+.pipeline {
+  margin-top: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+.pipeline ol {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0;
+  padding: var(--wf-s-1);
+  list-style: none;
+}
+.pipeline li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  min-height: var(--wf-row-touch);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid transparent;
+  border-radius: var(--wf-r-md);
+  background: none;
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+}
+.stage:hover {
+  background: var(--wf-hover);
+}
+.stage[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+}
+.stage:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.stageName {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+.stageCount {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-20);
+  line-height: var(--wf-lh-20);
+  font-weight: 600;
+}
+.stageWait {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.stageArrow {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+/* Tier 1 now, moved into the side column: heading above the list, one row per person instead of
+   a band of columns. Doubled classes beat the source module's own rules, as that file does. */
+.sideNeeds.sideNeeds {
+  flex-direction: column;
+  align-items: stretch;
+  align-self: start;
+  width: 100%;
+  overflow: hidden;
+}
+.sideNeedsHead.sideNeedsHead {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-right: 0;
+  border-bottom: 1px solid var(--wf-line);
+  text-align: start;
+}
+.sideNeedsList.sideNeedsList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+.sideNeedsCell.sideNeedsCell {
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+}
+.sideNeedsCell.sideNeedsCell:first-child {
+  border-top: 0;
+}
+
+/* The 48 hour timeline: each bar is at least as wide as its full name, so no name is cut off. */
+.fullNames [data-mid] {
+  min-width: max-content;
+}
+.fullNames [data-mid] > span {
+  overflow: visible;
+  text-overflow: clip;
+}
+
+@media (max-width: 75rem) {
+  .pipeline ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .stageArrow {
+    display: none;
+  }
+}
+
+/* Worklist rows wrap rather than end in "…": every two- or three-line clamp inside the list is
+   lifted, so a barrier or a legal form reads in full. Rows grow taller instead. */
+.wrapRows.wrapRows [class] {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+/* The side column now holds Tier 1 above Transport now: Tier 1 takes its own height, Transport
+   keeps the rest of the sticky column. */
+.secondaryWithTier.secondaryWithTier {
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--wf-s-3);
+}
+
+/* Phone: the hero's queue button is Home's hero pill (parts/phone-rows.module.css). The shared
+   stylesheet's pill size beats the old full-width, 48px-tall last-child rule here. */
+@media (max-width: 48rem) {
+  .phHeroPills.phHeroPills > :last-child {
+    flex: 0 1 auto;
+    min-height: 40px;
+  }
+}
+
+/* Final polish (31 Oct 2026): a corridor's or a journey's place names wrap to a second line rather
+   than ending in "…" (names, places and roles wrap in full; a phone has no hover). */
+.wrapRoute.wrapRoute {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}

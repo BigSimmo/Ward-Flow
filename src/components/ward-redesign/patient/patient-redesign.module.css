@@ -1,0 +1,107 @@
+/* Redesign mock-up: the patient page's "Journey so far" timeline. Tokens only. */
+
+.journey {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.journeyHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  width: 100%;
+}
+
+.journeyTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-15, var(--wf-fs-14)) / 1.3 var(--wf-font);
+}
+
+.journeyMeta {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.journeyLink {
+  margin-left: auto;
+}
+
+.timeline {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timelineItem {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) 0;
+  border-bottom: 1px solid var(--wf-line-2);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.timelineItem:last-child {
+  border-bottom: 0;
+}
+
+/* The thread joining the events. */
+.timelineItem::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(0.625rem - 0.5px);
+  width: 1px;
+  background: var(--wf-line-2);
+}
+
+.timelineItem:first-child::before {
+  top: 50%;
+}
+
+.timelineItem:last-child::before {
+  bottom: 50%;
+}
+
+.timelineNode {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  justify-content: center;
+  align-self: center;
+  padding: 2px 0;
+  background: var(--wf-surface);
+}
+
+.timelineText {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.timelineTime {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* A layout-neutral wrapper, so phone-only fixes can be scoped to this page. */
+.scope {
+  display: contents;
+}
+
+/* Redesign (Josh, 30 Oct): controls keep today's sizes, so nothing here enlarges them to 48px. */
