@@ -208,7 +208,7 @@ export function BroadcastComposer({
           </Field>
 
           <div className={styles.previewBlock}>
-            <span className={styles.drawerSectionTitle}>Preview on every desk</span>
+            <span className={styles.drawerSectionTitle}>Preview for the chosen scope</span>
             <div className={styles.previewCard}>
               <StatusGlyph
                 tone={
