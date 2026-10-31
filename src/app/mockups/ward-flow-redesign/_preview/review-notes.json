@@ -162,35 +162,6 @@
     ],
     "keep": "The By blocker and Longest wait views, the quick filters, and the Escalations and Longest quiet panels."
   },
-  "eds": {
-    "role": "All ten emergency departments side by side, to see where people are stuck.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**Hospital names are cut off** on cards (\"Rockingham General Hospi…\", \"King Edward Memorial Hos…\")."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "**Empty departments take full cards** (\"0 waiting · 0 no bed · 0 accepted · 0 form\"), and PCH sits alone on the last row."
-      },
-      {
-        "devices": ["All"],
-        "text": "The header says \"62 waiting in 8 EDs\" while the eyebrow says 10 departments."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Full hospital names wrap on the cards."
-      },
-      {
-        "text": "**Departments with no one waiting share one line** with an Enter button for each."
-      },
-      {
-        "text": "The header reads \"62 waiting across 10 EDs · 8 have someone waiting\"."
-      }
-    ],
-    "keep": "Cards, Table and Lanes, the service filters and order, and Waiting by service."
-  },
   "referrals": {
     "role": "Referrals waiting for the coordinator's decision, with the decision pane beside the queue.",
     "issues": [
@@ -344,35 +315,6 @@
       }
     ],
     "keep": "The ED peer strip, the access-target notice, the Record exam and Log transport actions, and On TV."
-  },
-  "transport": {
-    "role": "The transport officer's job list: who to collect, where to, and what each job still needs.",
-    "issues": [
-      {
-        "devices": ["Desktop"],
-        "text": "**The Next button is clipped at the right edge** (\"Arrived at ward\")."
-      },
-      {
-        "devices": ["All"],
-        "text": "**Names are written first name first** (\"Noor Tremalow\"), unlike every other page."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The heading repeats the page name: \"Transport dispatch / Transport\"."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "Columns sized so Next always fits."
-      },
-      {
-        "text": "**Surname first**, as everywhere else."
-      },
-      {
-        "text": "The heading states the work: \"13 jobs open · 8 moving, 5 waiting\". Routes read \"PEEL ED → Maali (Ward 4.2)\", and missing forms are marked."
-      }
-    ],
-    "keep": "Jobs and History, the escort and involuntary filters, and both sort orders."
   },
   "patients": {
     "role": "Statewide census of everyone in the system, searchable, grouped by where their journey stands.",
@@ -548,42 +490,6 @@
       }
     ],
     "keep": "The \"Not legally checked\" notice stays word for word, as D-77 requires until you decide on it. Clocks, Checklist and History are kept."
-  },
-  "out-of-area": {
-    "role": "People placed away from their home region, how long they have been away, and their plan to return.",
-    "issues": [
-      {
-        "devices": ["All"],
-        "text": "**Names are written first name first** (\"Alaric Ferrowmoor\"), unlike every other page."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The header strip \"▮ no change away ▮ no change date passed\" is hard to read."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The checking strip says \"Other records without home area or travel time 200\", which is not about this list."
-      },
-      {
-        "devices": ["Desktop"],
-        "text": "The Home regions panel repeats each region's ward rows from the table."
-      }
-    ],
-    "fixes": [
-      {
-        "text": "**Surname first**, as everywhere else."
-      },
-      {
-        "text": "\"Since the 08:30 bed meeting\" becomes a small panel: returned, left, due soon."
-      },
-      {
-        "text": "The header shows the day bands as chips, plus \"Discharge date passed\" and \"No return plan\" as checks."
-      },
-      {
-        "text": "Home regions becomes a bar chart that highlights its rows when chosen."
-      }
-    ],
-    "keep": "Away now and History, the Days away, Region and Name orders, and Plan next return."
   },
   "on-call": {
     "role": "Who to call right now, for every hospital, team and state line, with the fallback if nobody answers.",

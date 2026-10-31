@@ -1,7 +1,0 @@
-/* Out of area, redesigned: Home regions as bars, and only the chosen region shows its nearby beds
-   (forked out-of-area-side.tsx, no page-level overrides). */
-
-/* My list's foot link: the chevron sits at the end, as on every other list link. */
-.moreChevron {
-  margin-left: auto;
-}

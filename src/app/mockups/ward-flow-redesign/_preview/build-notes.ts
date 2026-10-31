@@ -129,12 +129,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the hero keeps In a bed and With a discharge date; the follow-up figures move into the card as six tiles (2 × 3 on the phone). 'Counts only' sits in the eyebrow, as on the ED desk.",
     "**Still open:** the app bar says 'Statewide' on Midland's own page (shared chrome).",
   ],
-  "as-officer-home": [
-    "**As the transport officer**, the phone opens on the next job (Open, then the one filled En route), then the job list; a long list shows its first 8 jobs, then Show all.",
-    "**Moved:** Copy handover goes under the list on the phone, as an end-of-shift step.",
-    "**Removed:** the Providers row while there is one provider (it repeated the jobs line).",
-    "**Round 2:** 'Collected' is the one word for that stage; on the phone 'Past ETA' and 'Need forms'. The job panel uses the Transport mock-up's fixed copy, so 'Arrived at ward' is never cut off.",
-  ],
   "as-officer-alerts": [
     "**As the transport officer**, each alert's one filled button is 'Open my jobs', because the movement page it used to open is not part of this desk.",
     "**Removed:** Take, Acknowledge, Snooze and Escalate (the coordinator's), with the app's own 'Only the coordinator can change alerts.' once in their place; the always-0 Yours, Broadcast and the owner parts.",
@@ -231,12 +225,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New:** phone answer buttons keep the kit's size with a larger tap area, and the pinned Save row matches the popup background in dark.",
     "**Kept:** all fields, and Save greyed until every answer is in. **Changed (Josh, 31 Oct 2026):** no legal-status prefill and no day chosen when the form opens; Legal now shows under the legal question as plain text.",
     "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
-  ],
-  "pop-officer-job": [
-    "**Built on today's job panel itself**, opened by choosing the first job on the desk, so steps, forms pack, copy and close are real.",
-    "**New:** on wider screens the four leg steps sit two by two, so 'Arrived at ward' is no longer cut off.",
-    "**Kept:** the phone panel (steps list, Mark en route pinned at the foot) is unchanged.",
-    "**Round 2:** the attribute-selector override is gone; the panel's fixes now live in the Transport mock-up's own copy of the job panel.",
   ],
   "pop-record-form": [
     "**Built from a copy of today's Record a form sheet**: validation, error summary, draft keeping, save and Undo work as now.",
@@ -596,11 +584,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
     "**Round 3:** on a phone the owner chips read count first ('41 Waiting on you'), and rows wrap the name and place line in full.",
   ],
-  eds: [
-    "**Built from a copy of today's All EDs page**, so Cards, Table, Lanes, the filters and the preview drawer work as now.",
-    '**New:** the title counts every department ("62 waiting across 10 EDs", with "8 with someone waiting" beside it), hospital names wrap on the cards, and departments with nobody waiting share one line with an Enter button each.',
-    "**Round 2:** cards say '3 under a form' (the chip's own words) and figures wrap instead of ending in '…'. 'No one waiting' is one wording at every width and dims with the filters. The standing highlight hint is gone.",
-  ],
   referrals: [
     "**Built from a copy of today's Referrals board**, so the queue, History, highlights, the keyboard shortcuts, the decline-reason rule and Accept presentation all work as now.",
     "**New:** queue rows wrap instead of cutting the patient line off, and Offered to wards is a table (patient, ward offered to, waiting time and what the wards have answered so far).",
@@ -655,15 +638,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Proposals for you:** move 'May pass the access target' under the board, and drop the repeated Find a bed buttons (an ED desk does not find beds itself), making the name the link.",
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
   ],
-  transport: [
-    "**Built from a copy of today's Transport desk**, so Jobs and History, the escort and involuntary filters, both sort orders, the job panel, the forms pack and Copy handover all work as now.",
-    '**New:** names are surname first at every width (D-83). The title stays "Transport" (your ruling of 27 October), with "13 jobs open · 8 moving, 5 waiting" beside it instead of a repeated eyebrow.',
-    '**New:** routes read from first, then the ward ("PEEL → Maali (Ward 4.2)"), missing forms are marked under the count, and the Next column is wide enough that "Arrived at ward" is never cut off.',
-    "**Round 2:** the Forms cell says one thing ('3 forms missing' or 'All forms'), the title line drops '8 moving, 5 waiting' (the stage chips split it), and 'Jobs need forms' is amber at every width.",
-    "**Behaviour change:** cancelled transport now shows at every width. Today it uses the phone-only card, so wider screens never show it.",
-    "**Round 2, job panel:** a copy of the real panel lays the four leg steps two by two, so 'Arrived at ward' is never cut to 'Arrived at w…'. Each fact is said once: no 'Accepted' chip in the header, the forms count as '3 to upload', unrecorded booking facts on one 'Not recorded:' line, and 'Legal status not recorded'. Routes wrap when the panel narrows the table.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
   patients: [
     "**Now a proper copy of today's screen files** (30 October), not the real screen under an override stylesheet: it looks the same, and a diff against today's files shows the change.",
     "**Today's Patients page, with a redesign stylesheet on top.** The review kept almost all of it, so the search with date of birth, the stage chips, highlights, the groups with Show all, and This shift all work as now.",
@@ -716,13 +690,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**New (point 18, D5, D-70):** times show only as typed: \"Ends 11:42, as typed on the form\". The countdown, the band word and the progress bar that were worked out from the typed time are gone, here and on the phone. The rows' warning glyph and the Act now edge are today's own rules and stay.",
     '**New:** the form number stays in its tag and Form 1A\'s name is shortened to "Referral for examination" (the full title is in the record and the tooltip). Time not written shows its first 6 rows with Show more. Copy for handover and Record and tell are drawn as buttons, apart from the figures.',
     "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
-  "out-of-area": [
-    "**Built from a copy of today's Out of area page**, so Away now and History, the Days away, Region and Name orders, the filters, Plan next return, This shift and Ready to go home all work as now.",
-    "**New (D-83):** every list and notice names the person surname first; the Name order now sorts by surname.",
-    '**New:** the hero drops the hard-to-read "since the 08:30 bed meeting" strip (This shift carries the shift\'s changes) and the Checking line drops "Other records without home area or travel time 200", which was not about this list.',
-    "**New:** Home regions is a column of bars that highlight their rows; a region's nearby confirmed beds open when you choose it, instead of every region listing its wards at once.",
-    "**Round 2:** the phone hero matches the wide screen. Phone cards read 'Date passed 3 days ago · 6 days away'. Names use the record's formal name (surname first) directly.",
   ],
   agenda: [
     "**Built from a copy of today's meeting agenda**, so the four lists, Actions from earlier meetings, Done with its Undo, and recording an action (pick-list, owner, due time) all work as now.",
