@@ -454,16 +454,6 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
 
     "**New frame (D-91):** Settings drops its own Go to a desk (hero and Profile card); the sidebar's or Menu's who-you-are row opens it. The review is 'Save 3 rule changes?' / 'Save changes'; zero counts name their noun ('No one past target').",
   ],
-  community: [
-    "**Built from a copy of today's Community directory**, so search, service filters, Reads alike, the letter jump, Catchment guide, Raise referral and the phone tabs work as now.",
-    '**New:** the heading reads "64 community teams" (a live count), with one line under it: "Names from referral catchment documents, not verified services".',
-    '**New:** the suburb lookup is a full-width bar above the list. Its warning ("2 teams name Barragup. Check the right one.") comes first, and each team has its own Open button plus Show in list.',
-    "**New:** the A to Z list uses the page scroll; the letter rail and column heading stick under the bar, and the shorter side column stays pinned.",
-    "**Kept:** Names that read alike, Teams by service, Catchment guide, Raise referral and the footer wording.",
-    "**Round 2:** the hero drops its Referrals link (the menu opens the board). 'Shared suburbs' and 'Read alike' are the one label each. Phone suburb chips wrap instead of running off the edge.",
-    "**Phone (Josh, 31 October):** the chip row slides sideways in one line with Home's soft fade at the right edge (chips at 0 muted at the end), instead of wrapping.",
-    "**Phone (Josh, 31 October):** the hero buttons are Home's 40px hero pills side by side, instead of tall full-width buttons.",
-  ],
   "community-team": [
     "**Built from a copy of today's community team screen**, so the tabs, Record contact, CTO register, Refer from team, the record drawer and transport booking work as now.",
     "**New:** one table instead of two. Each person's row shows unit, legal status, days in bed, time with the team before the bed and time since acceptance.",

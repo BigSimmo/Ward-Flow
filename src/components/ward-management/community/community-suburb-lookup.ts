@@ -2,8 +2,8 @@
  * The one suburb lookup's engine (D-91): a whole suburb, an alias or a 4-digit postcode, read
  * through `lookupCatchment()`, so a contested or unreviewed suburb keeps its own state and note.
  *
- * Build note: this is a copy of #1123's `catchmentLookupsFor` (`tools/ward-catchment-query.ts`),
- * which is not on this branch yet. The real build imports #1123's function and deletes this file.
+ * Build note: this matches #1123's `catchmentLookupsFor` (`tools/ward-catchment-query.ts`), which
+ * is not on this branch yet. Once #1123 lands, import its function and delete this file.
  */
 import {
   S2015_CATCHMENT_ROWS,

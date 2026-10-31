@@ -96,7 +96,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     appPath: "/ward-flow/reports/chronology",
   },
   { slug: "places", label: "Places", group: "Places and records", appPath: "/ward-flow/hub" },
-  { slug: "community", label: "Community", group: "Places and records", appPath: "/ward-flow/community" },
   {
     slug: "community-team",
     label: "Community team",
