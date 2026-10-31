@@ -2237,12 +2237,24 @@ export type WardFlowEvent =
     }
   | {
       /**
-       * Shift handover sign-off. Stores the caller's role and the time only — never a note, a
-       * name, or a claim that the sheet was transmitted.
+       * Shift handover sign-off. Stores the caller's role, the time and the ward whose sheet it is —
+       * never a note, a name, or a claim that the sheet was transmitted.
        */
       type: "RECORD_HANDOVER_SIGN_OFF";
       role: WardFlowRole;
       now: Instant;
+      /**
+       * Decision 41 (Josh, 31 Oct 2026): the ward whose handover this signs off, so one ward's
+       * sign-off never marks another ward's sheet. A ward desk's sign-off always names its ward (the
+       * shared server fills it from a one-ward desk). A whole-network sign-off names none.
+       */
+      unitId?: string;
+      /**
+       * Q67 (Josh, 31 Oct 2026): set only on a whole-network desk's sign-off that names no ward, so
+       * History reads "Whole network". The shared server sets it from the desk's membership and
+       * refuses it from any other desk. Never set together with `unitId`.
+       */
+      network?: true;
     }
   | {
       /** Record that a team was contacted: the contact itself, not a sent message. Stores team, time and role. */
@@ -2547,10 +2559,12 @@ export type WardFlowEvent =
       admissionId: string;
     }
   | {
-      /** Takes back the newest handover sign-off. */
+      /** Takes back the newest handover sign-off, of this ward's sheet when `unitId` names one. */
       type: "UNDO_HANDOVER_SIGN_OFF";
       role: WardFlowRole;
       now: Instant;
+      /** Decision 41: the ward whose sign-off this takes back, as `RECORD_HANDOVER_SIGN_OFF` named it. */
+      unitId?: string;
       /** The record number of the step this Undo is for; a newer step on the same subject refuses it. */
       recordSeq?: number;
     }
