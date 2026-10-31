@@ -11,6 +11,20 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// Lets a test hold an assign command open while the dialog changes; every other call runs as normal.
+const commandGate = vi.hoisted(() => ({ next: undefined as Promise<unknown> | undefined }));
+vi.mock("@/components/ward-management/ward-command-completion", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/ward-management/ward-command-completion")>();
+  return {
+    ...actual,
+    confirmedWardCommand: (...args: Parameters<typeof actual.confirmedWardCommand>) => {
+      const held = commandGate.next;
+      commandGate.next = undefined;
+      return held ?? actual.confirmedWardCommand(...args);
+    },
+  };
+});
+
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import {
@@ -196,6 +210,42 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
     expect(within(dialog).getByTestId("community-assign-take-RF-T1")).toHaveTextContent("Take for this team");
     fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
     expect(view.setActiveModal).toHaveBeenCalledWith(null);
+  });
+
+  it("Assign referral: an answer still on its way for one referral never shows under the next", async () => {
+    const referralA = { id: "RF-TA", urgency: 2, homeRegion: "Perth Metropolitan", source: "community" };
+    const referralB = { id: "RF-TB", urgency: 3, homeRegion: "Perth Metropolitan", source: "community" };
+    const viewFor = (referral: typeof referralA | null) => ({
+      identityOf: (r: { id: string }) => `Testperson, ${r.id}`,
+      activeModal: referral ? { referral } : null,
+      setActiveModal: vi.fn(),
+      referralModalRef: createRef<HTMLDivElement>(),
+      referralModalBackdropRef: createRef<HTMLDivElement>(),
+    });
+    const shown = (referral: typeof referralA | null) => (
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CommunityScreenReferralModal view={viewFor(referral) as never} />
+      </WardFlowProvider>
+    );
+    for (const closeFirst of [true, false]) {
+      let answer: (outcome: { status: "accepted" }) => void = () => {};
+      commandGate.next = new Promise((resolve) => {
+        answer = resolve;
+      });
+      const { rerender, unmount } = render(shown(referralA));
+      fireEvent.click(screen.getByTestId("community-assign-take-RF-TA"));
+      if (closeFirst) rerender(shown(null));
+      rerender(shown(referralB));
+      await act(async () => {
+        answer({ status: "accepted" });
+        await Promise.resolve();
+      });
+      const dialog = screen.getByRole("dialog", { name: "Assign referral" });
+      expect(dialog).toHaveTextContent("Testperson, RF-TB");
+      expect(within(dialog).queryByRole("status")).toBeNull();
+      expect(dialog).not.toHaveTextContent("Assigned to this team's desk.");
+      unmount();
+    }
   });
 
   function noteView(type: "contact" | "handover" | "crisis") {

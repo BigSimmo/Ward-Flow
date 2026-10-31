@@ -24,17 +24,23 @@ function assignRef<T>(ref: ((value: T) => void) | { current: T } | null | undefi
   else if (ref) ref.current = value;
 }
 
-/** Assign a referral to the team's desk. */
+type AssignReferral = NonNullable<CommunityScreenView["activeModal"]>["referral"];
+
+/**
+ * Assign a referral to the team's desk. The dialog is keyed by the referral, so closing it or opening
+ * another referral unmounts the old one: an answer still on its way for referral A can never show
+ * under referral B.
+ */
 export function CommunityScreenReferralModal({ view }: { view: CommunityScreenView }) {
-  const { identityOf, activeModal, setActiveModal, referralModalRef, referralModalBackdropRef } = view;
+  if (view.activeModal === null) return null;
+  const { referral } = view.activeModal;
+  return <AssignReferralDialog key={referral.id} view={view} referral={referral} />;
+}
+
+function AssignReferralDialog({ view, referral }: { view: CommunityScreenView; referral: AssignReferral }) {
+  const { identityOf, setActiveModal, referralModalRef, referralModalBackdropRef } = view;
   const raise = useWardRaise("community");
   const [result, setResult] = useState<string | undefined>(undefined);
-  const [resultFor, setResultFor] = useState(activeModal?.referral.id);
-  // A new referral starts with no answer showing.
-  if (resultFor !== activeModal?.referral.id) {
-    setResultFor(activeModal?.referral.id);
-    setResult(undefined);
-  }
   // The page's own modal-focus hook (inert page, Tab wrap, Escape, focus return) holds these two
   // refs; they point at the kit Dialog's panel and scrim, so that hook keeps working round the frame.
   const bindPage = useCallback(
@@ -45,8 +51,6 @@ export function CommunityScreenReferralModal({ view }: { view: CommunityScreenVi
     },
     [referralModalRef, referralModalBackdropRef],
   );
-  if (activeModal === null) return null;
-  const { referral } = activeModal;
   const close = () => setActiveModal(null);
 
   /**
