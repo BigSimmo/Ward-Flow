@@ -12,7 +12,7 @@ import { describe, expect, it } from "vitest";
  * so this count may only fall. Lower BASELINE when a build removes some. Mock-up copies are left out
  * (each page build deletes its copy).
  */
-const BASELINE = 91;
+const BASELINE = 71;
 
 const SIDE_STRIPE = [
   // A thick coloured border on one side: border-left: 3px solid …, border-inline-start: 4px solid …

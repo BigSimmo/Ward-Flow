@@ -7,8 +7,7 @@
 import { useState } from "react";
 
 import type { CriteriaLedChip } from "@/components/ward-management/ward-discharge-criteria";
-import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
-import { StatusGlyph, type WfTone } from "@/components/wf";
+import { ShowMoreRow, StatusGlyph, type WfTone } from "@/components/wf";
 
 import type { BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
