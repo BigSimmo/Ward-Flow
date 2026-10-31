@@ -103,7 +103,7 @@ import styles from "./patient-now.module.css";
 import { PatientArchivePanel } from "./patient-archive-panel";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
-import { useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { Dialog, type JourneyStage, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { patientJourneyStages } from "./patient-journey";
@@ -211,6 +211,9 @@ export function PatientNowScreen({
   const gate = useRoleGate();
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
+  // Access audit (31 Oct 2026): a link this desk cannot open is left off, never a dead end.
+  const canOpenHref = useCanOpenHref();
+  const openable = (href: string | undefined) => (href !== undefined && canOpenHref(href) ? href : undefined);
   const pathname = usePathname() ?? "";
   const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
   // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
@@ -753,18 +756,20 @@ export function PatientNowScreen({
     acceptedUnitName: acceptingUnit?.name ?? stayUnit?.name,
     // Decision 2 (site review, 12 Oct 2026): the Bed value opens the ward, the Transport value the
     // movement's own page with its transport job (not linked when that is this page already).
-    bedHref:
+    bedHref: openable(
       (acceptingUnit ?? stayUnit) !== undefined
         ? `/ward-flow/ward/${encodeURIComponent((acceptingUnit ?? stayUnit)!.id)}`
         : undefined,
+    ),
     acceptedReferral: acceptedWardFor
       ? {
           unitName: acceptedWardFor.unitName,
-          boardHref: `/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`,
+          boardHref: openable(`/ward-flow/ward/${encodeURIComponent(acceptedWardFor.unitId)}?tab=board`),
         }
       : undefined,
-    transportHref:
+    transportHref: openable(
       liveMovement && !pathname.includes(movementHref(liveMovement.id)) ? movementHref(liveMovement.id) : undefined,
+    ),
     hasBedHold: liveMovement ? movementHasBedHold(liveMovement, admissions) : false,
     now,
     dayZero,
@@ -1125,7 +1130,7 @@ export function PatientNowScreen({
                 stays={resolved.stays}
                 absence={stayLeaveBed?.absentWithoutLeave}
                 absenceVoluntary={voluntaryNow}
-                chronologyHref={livePatient ? patientChronologyHref(livePatient.id) : undefined}
+                chronologyHref={openable(livePatient ? patientChronologyHref(livePatient.id) : undefined)}
                 open={!modeMeta.quiet}
                 onBackToNow={() => {
                   setActiveTab("now");

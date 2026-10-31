@@ -39,6 +39,7 @@ import {
   phoneRows,
 } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PhoneClearFact, getStageBedflowDetail } from "./patient-now-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
@@ -108,6 +109,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
   // script-budget.json after the 18 Oct 2026 file split. Before the split this code was memoised as
   // part of PatientNowScreen; nothing it renders runs an effect, so plain re-rendering looks the same.
   "use no memo";
+  // Access audit (31 Oct 2026): New referral shows only where this desk can open the referral form.
+  const canOpenHref = useCanOpenHref();
   const {
     awaySince,
     copied,
@@ -150,6 +153,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     waitedStr,
     where,
   } = props;
+  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   return (
     <section className={styles.v6Summary} id="pnSubject" aria-label="Patient summary">
       <PatientFlightHeader
@@ -543,9 +547,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                       : "Copy summary"}
               </Button>
             )}
-            {(mode === "idle" || mode === "cto") && !isPhone ? (
+            {(mode === "idle" || mode === "cto") && !isPhone && canOpenHref(newReferralHref) ? (
               <Link
-                href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
+                href={newReferralHref}
                 className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}
                 data-testid="ward-person-refer-outpatient"
               >

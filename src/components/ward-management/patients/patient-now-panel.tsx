@@ -19,6 +19,7 @@ import { type PatientNowRecord, clock } from "./patient-now-records";
 import { PatientJourneyTimeline } from "./patient-journey-timeline";
 import { Button, buttonClass } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { type TabKey } from "./patient-now-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
 import type { LeaveBed, Movement, TransportProvider, Unit } from "@/components/ward-management/ward-model";
@@ -77,6 +78,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // script-budget.json after the 18 Oct 2026 file split. Before the split this code was memoised as
   // part of PatientNowScreen; nothing it renders runs an effect, so plain re-rendering looks the same.
   "use no memo";
+  // Access audit (31 Oct 2026): New referral shows only where this desk can open the referral form.
+  const canOpenHref = useCanOpenHref();
   const {
     acceptingUnit,
     callTargets,
@@ -119,6 +122,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     wardForm,
     wardRefusal,
   } = props;
+  const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
   // none of the ward's changes (leave, gone to ED, discharge date are ward or coordinator only), so the
   // Record a change card of greyed buttons and its "Switch to Ward desk" link are left out for this desk.
@@ -148,7 +152,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // the page has no empty column beside the rail.
   const whyMovesLeft = ownTeamDesk && mode === "ward" && !wardChangeOpen && !isPhone;
   const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
-  const referralMain = isPhone && (mode === "idle" || mode === "cto");
+  const referralMain = isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
   // Community clinician: with no ward change to record, the phone bar held only the copy icon in an
   // otherwise empty band. Copy takes the bar as its labelled main action instead, as Ask more wards
   // does on the coordinator's patient page.
@@ -165,7 +169,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         // Phone keeps the patient's own New referral (preselected) when there is no stay to act on.
         barMain: referralMain ? (
           <Link
-            href={livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new"}
+            href={newReferralHref}
             className={buttonClass({ variant: "pri" })}
             data-testid="ward-person-refer-outpatient"
           >
