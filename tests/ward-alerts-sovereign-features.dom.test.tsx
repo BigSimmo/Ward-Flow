@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { openAlertKindGroups } from "./helpers/alerts-kind-groups";
 
 const NOW = NOW_ANCHOR;
 
