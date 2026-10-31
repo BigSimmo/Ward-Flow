@@ -299,10 +299,6 @@
   background: var(--wf-accent-tint);
 }
 
-.workTable tr[data-highlighted="true"] td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent);
-}
-
 .barrierShare {
   flex: 0 1 8rem;
   height: 6px;
@@ -469,10 +465,6 @@
 
 .workTable tr[data-selected="true"] td {
   background: var(--wf-selected);
-}
-
-.workTable tr[data-selected="true"] td:first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent-strong);
 }
 
 .interactiveRow {
@@ -1449,17 +1441,6 @@
     padding: var(--wf-s-2) var(--wf-s-3);
   }
 
-  /* R1-24 / R2-11 / R3-20 / B6-26 (device sweep, 24 Oct 2026): the act-now row keeps its first
-     cell where every other row has it; its red edge moves into the row's own left padding below. */
-  .workTable tr[data-act="true"] > td:first-child {
-    padding-inline-start: 0;
-  }
-
-  /* Doubled class: outranks the every-breakpoint marker rule further down this file. */
-  .workTable.workTable tr[data-act="true"] > td:first-child::before {
-    inset-inline-start: calc(-1 * var(--wf-s-3) + 4px);
-  }
-
   /* R3-20 / B6-26: rows are cards here, so the column head (which split over two rows with broken
      rules at 768) is kept for screen readers only, as it already is under 40rem. */
   .workTable thead {
@@ -1635,7 +1616,8 @@
   background: var(--wf-act-tint);
 }
 
-/* A4-23 (audit round 2): on the phone the act-now row keeps its thin edge without the tint. */
+/* A4-23 (audit round 2): on the phone the act-now row has no tint. Owner ruling (31 Oct 2026): no side
+   edges either; the Held up badge's glyph carries the tone. */
 @media screen and (max-width: 48rem) {
   .workTable tr[data-act="true"] {
     background: none;
@@ -2218,28 +2200,8 @@
   }
 }
 
-/* Rounded attention markers apply at every responsive breakpoint. */
-.workTable tr[data-act="true"] > td:first-child {
-  position: relative;
-}
-
-.workTable tr[data-act="true"] > td:first-child::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
-}
-
-@media (forced-colors: active) {
-  .workTable tr[data-act="true"] > td:first-child::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-}
+/* Owner ruling (Josh, 31 Oct 2026): rows carry no coloured side edges. The act-now row keeps only its
+   tint (the page's one most urgent row), and highlighted and selected rows their background. */
 
 /* Phone (Josh, 12 Oct 2026): Now and History pin under the phone header with the filter button,
  * through the shared `pinnedSwitch` (ward-pinned-switch.module.css), as Home's queue switch does.

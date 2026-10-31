@@ -98,17 +98,16 @@ describe("list order lines", () => {
     );
   });
 
-  it("Discharges says its order and follows the Sort and the Barriers view", () => {
+  it("Discharges keeps its order without the order line (Josh, 30 Oct; approved 31 Oct 2026)", () => {
     inProvider(<DischargeBoard />);
-    expect(screen.getByTestId("ward-discharge-order-note")).toHaveTextContent(
-      "Blocked first, then by stage. Soonest time band first in each.",
-    );
+    // The order line is cut; the order itself (held up first, then by stage) stays, and the table's
+    // caption still says it for screen readers.
+    expect(screen.queryByTestId("ward-discharge-order-note")).not.toBeInTheDocument();
+    expect(screen.getByText(/^Bed releases, held up first\./u)).toBeInTheDocument();
+    // The Sort still offers Due first, and the Barriers view is gone (one barrier panel).
     fireEvent.change(screen.getByTestId("ward-discharges-sort"), { target: { value: "due-first" } });
-    expect(screen.getByTestId("ward-discharge-order-note")).toHaveTextContent(
-      "Blocked first, then by stage. Earliest expected time first in each.",
-    );
-    fireEvent.click(screen.getByTestId("ward-discharge-view-barriers"));
-    expect(screen.getByTestId("ward-discharge-order-note")).toHaveTextContent("Largest barrier group first");
+    expect(screen.getByTestId("ward-discharges-sort")).toHaveValue("due-first");
+    expect(screen.queryByTestId("ward-discharge-view-barriers")).not.toBeInTheDocument();
   });
 
   it("the ED board table is named for the Sort it is in", () => {

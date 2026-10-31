@@ -1,0 +1,137 @@
+/* Before the weekend or public holiday: a compact notice above the list (approved 31 Oct 2026). */
+.weekend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin-bottom: var(--wf-s-4);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+.weekendHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  min-width: 0;
+}
+.weekendTitle {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+.weekendNote {
+  margin: 0 0 0 auto;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.weekendFoldHeading {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin: 0;
+}
+.weekendFold {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: calc(100% + 2 * var(--wf-s-3));
+  min-height: var(--spacing-tap, 3rem);
+  margin: calc(-1 * var(--wf-s-3));
+  padding: 0 var(--wf-s-3);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.weekendFold:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.weekendFold .weekendTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.weekendCount {
+  flex: 0 0 auto;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.weekendChevron {
+  flex: 0 0 auto;
+  color: var(--wf-ink-3);
+}
+.weekendNote[hidden],
+.weekendGroups[hidden] {
+  display: none;
+}
+.weekendGroups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--wf-s-2) var(--wf-s-4);
+  min-width: 0;
+}
+.weekendGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.weekendGroupTitle {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.weekendList {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.weekendRow {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  width: calc(100% + 2 * var(--wf-s-2));
+  min-height: 2.5rem;
+  padding: 2px var(--wf-s-2);
+  margin-inline: calc(-1 * var(--wf-s-2));
+  border: 0;
+  border-radius: var(--wf-r-seg-item);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-align: start;
+  cursor: pointer;
+}
+.weekendRow:hover {
+  background: var(--wf-hover);
+}
+.weekendRow:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+.weekendWho strong {
+  font-weight: 600;
+}
+.weekendWho span {
+  color: var(--wf-ink-2);
+}
+.weekendMeta {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+@media screen and (max-width: 48rem) {
+  .weekend {
+    margin-bottom: var(--wf-s-3);
+    padding: var(--wf-s-3);
+  }
+  .weekendNote {
+    margin-left: 0;
+  }
+  .weekendRow {
+    min-height: var(--spacing-tap, 3rem);
+  }
+}

@@ -83,7 +83,10 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     // "Confirmed"/"Expected" also label per-row badges elsewhere on the board, so each assertion
     // is scoped to its own KPI card (by the testid added alongside this fix) rather than matched
     // against the whole document.
-    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Releases held up")).toBeInTheDocument();
+    // Discharges redesign (approved 31 Oct 2026): the card shows the one word "Held up" at every width;
+    // its accessible name still says what it counts.
+    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Held up")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^\d+ Held up \(Releases held up\)$/);
     // "Confirmed today"/"Discharged today"/"Expected on round" are gone — none of the three
     // buckets is scoped to a calendar day or an invented "round" workflow.
     expect(screen.queryByText("Confirmed today")).not.toBeInTheDocument();
@@ -103,7 +106,8 @@ describe("the discharge board's KPI captions no longer assert what the count doe
 
     // Before this fix these two cards still read "Blocked releases" / "Discharged · 24h"
     // while counting admission records, not releases.
-    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Records held up")).toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Held up")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^\d+ Held up \(Records held up\)$/);
     expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).queryByText("Blocked releases")).toBeNull();
     expect(within(screen.getByTestId("ward-discharge-kpi-departed")).getByText("Departed")).toBeInTheDocument();
     expect(within(screen.getByTestId("ward-discharge-kpi-departed")).queryByText("Discharged · 24h")).toBeNull();
