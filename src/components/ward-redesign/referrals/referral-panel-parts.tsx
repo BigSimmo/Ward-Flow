@@ -7,7 +7,17 @@
 // with one compact row under the header: previous and next with "n of N", then Summary and Patient.
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, FileText, ListOrdered, TriangleAlert, UserRound } from "lucide-react";
+import {
+  BedDouble,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  FileText,
+  ListOrdered,
+  Lock,
+  TriangleAlert,
+  UserRound,
+} from "lucide-react";
 
 import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
@@ -16,7 +26,8 @@ import {
   OVERDUE_AFTER_ANY_TIER_MINUTES,
   OVERDUE_AFTER_MINUTES_BY_TIER,
 } from "@/components/ward-management/ward-operational-defaults";
-import { isOverdue } from "@/components/ward-management/referrals/referral-board-parts";
+import { isOverdue, wardArm, type BedsReadySummary } from "@/components/ward-management/referrals/referral-board-parts";
+import { demographicLabel } from "@/components/ward-management/referrals/referral-board-model";
 import { ReferralWorkedOn } from "@/components/ward-management/referrals/referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -27,6 +38,13 @@ import s from "./referral-panel.module.css";
 /** The tier's own window, or the any-tier one if that is shorter (Josh's defaults, not legal limits). */
 function decisionWindow(referral: Referral): number {
   return Math.min(OVERDUE_AFTER_MINUTES_BY_TIER[referral.urgency], OVERDUE_AFTER_ANY_TIER_MINUTES);
+}
+
+/** Review fix 8: "3 days ago" rather than "07:42, 3 days ago"; today keeps its clock time. */
+function shortWhen(at: Instant, now: Instant): string {
+  const words = formatInstantWithDay(at, now);
+  const comma = words.indexOf(", ");
+  return comma === -1 ? words : words.slice(comma + 2);
 }
 
 function clockTime(now: Instant): string {
@@ -97,7 +115,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
       </div>
       <div className={s.clockFoot}>
         <span>
-          Sent <span className={s.mono}>{formatInstantWithDay(referral.raisedAt, now)}</span>
+          Sent <span className={s.mono}>{shortWhen(referral.raisedAt, now)}</span>
         </span>
         <span>
           {running ? (
@@ -107,7 +125,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
           ) : null}
         </span>
         <span>
-          Due <span className={s.mono}>{formatInstantWithDay(dueAt, now)}</span>
+          Due <span className={s.mono}>{shortWhen(dueAt, now)}</span>
         </span>
       </div>
       {/* Smart features idea 3: who has this in hand. A courtesy note; the clock keeps running. */}
@@ -221,6 +239,56 @@ export function HeroTools({
       >
         Bed meeting list
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Review fix 6 (31 Oct 2026): the line under a name. A referral that asks for no ward bed has no
+ * recorded sex cell, which printed "not a ward referral" beside the age; Asking for already says it.
+ */
+export function personLine(referral: Referral): string {
+  return wardArm(referral) ? demographicLabel(referral) : referral.ageBand;
+}
+
+/**
+ * Review fix 1 and 2 (Josh, 31 Oct 2026): beds ready as one slim "at a glance" line under the
+ * runway, the approved Waiting header strip, in place of the tall two-row block. Cohorts add up to
+ * the total; locked is a part of them, so it sits after a divider with its own icon.
+ */
+export function BedsStrip({ summary }: { summary: BedsReadySummary }) {
+  const cohorts = summary.cells.filter((cell) => cell.label !== "Locked");
+  const locked = summary.cells.find((cell) => cell.label === "Locked")?.value ?? 0;
+  return (
+    <div className={s.bedsStrip} data-testid="ward-referral-beds-ready">
+      <Link
+        href="/ward-flow/hub"
+        className={s.bedsLead}
+        title="Beds ready statewide for your desk's admissions. Open Places"
+      >
+        <BedDouble size={14} aria-hidden="true" />
+        <b>{summary.total}</b> beds ready
+      </Link>
+      {cohorts.map((cell) => (
+        <span key={cell.label} className={s.bedsItem}>
+          {cell.label} <b>{cell.value}</b>
+        </span>
+      ))}
+      <span className={s.bedsItem} aria-label={`${locked} of these beds are locked`}>
+        <Lock size={13} aria-hidden="true" />
+        <b>{locked}</b> locked
+      </span>
+      {summary.preparing > 0 ? (
+        <span className={s.bedsItem} data-tone="warning" data-testid="ward-referral-beds-preparing">
+          <b>{summary.preparing}</b> being made ready
+        </span>
+      ) : null}
+      {summary.oldestUpdateMinutes !== undefined ? (
+        <span className={s.bedsItem} title="Oldest ward bed confirmation">
+          <Clock3 size={13} aria-hidden="true" />
+          updated <b>{durMinutes(summary.oldestUpdateMinutes)}</b> ago
+        </span>
+      ) : null}
     </div>
   );
 }

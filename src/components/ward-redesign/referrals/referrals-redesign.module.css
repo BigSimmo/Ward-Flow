@@ -242,3 +242,7 @@
 .wrapRows.wrapRows tr > td:first-child::before {
   display: none;
 }
+/* Review fix 9: the phone card's red left bar goes as well; its "overdue" tag carries it. */
+.wrapRows.wrapRows [data-overdue="true"]::before {
+  display: none;
+}
