@@ -5,17 +5,7 @@
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  Bell,
-  Plus,
-  Check,
-  ChevronDown,
-  ClipboardCheck,
-  ListChecks,
-  Menu as MenuIcon,
-  Wrench,
-} from "lucide-react";
+import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, Wrench } from "lucide-react";
 import type { RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
@@ -391,20 +381,10 @@ export function WardBarDrawerTriggers({
               : openPopover("tasks")
         }
       >
-        {oneAlertsQueue ? (
-          <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
-        ) : (
-          <>
-            <ListChecks className={`${styles.triggerIcon} ${styles.tasksWide}`} aria-hidden="true" strokeWidth={1.75} />
-            {/* Phone (v10 lean bar): the clipboard. CSS shows one of the two, so desktop is unchanged. */}
-            <ClipboardCheck
-              className={`${styles.triggerIcon} ${styles.tasksPhone}`}
-              aria-hidden="true"
-              strokeWidth={1.75}
-            />
-          </>
-        )}
-        <span className={styles.triggerLabel}>{oneAlertsQueue ? "Alerts" : "Tasks"}</span>
+        {/* Josh, 31 Oct 2026: one name and one icon on every desk, the bell and "Alerts". A desk whose
+            list is the bed coordinator's opens the same panel, under the same name. */}
+        <Bell className={styles.triggerIcon} aria-hidden="true" strokeWidth={1.75} />
+        <span className={styles.triggerLabel}>Alerts</span>
         <span className={styles.badge} data-zero={tasksActiveCount === 0 || undefined}>
           {tasksActiveCount}
         </span>

@@ -379,6 +379,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const pinnedIds = usePinnedPages();
   // The executive and access admin desks hold no shift, so they show no handover countdown.
   const showHandover = role !== "executive" && deskAccess.role !== "admin";
+  // The tablet Menu (no rail on screen) shows the capacity card; the rail's own More does not need it.
+  const sheetAlertsClass = sheetShowsMain ? `${styles.sheetAlerts} ${railParts.sheetAlertsShow}` : styles.sheetAlerts;
   const boardMinute = minuteOfDay(now);
   const boardClock = formatInstant(now);
   const shiftProgress = computeShiftProgress(boardMinute);
@@ -794,52 +796,55 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         </p>
       ) : null}
 
-      <div className={styles.shiftCockpit}>
-        <div
-          className={styles.shiftCockpitTop}
-          title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
-        >
-          {/* Josh, 31 Oct 2026: the person's name stays on the shift card, as today. */}
-          <span className={styles.shiftAvatar} aria-hidden="true">
-            {currentPersona.initials}
-          </span>
-          <span className={styles.shiftMeta}>
-            <span className={styles.shiftTitle}>
-              {shiftProgress.shiftName}
-              <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
-            </span>
-            <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
-              {currentPersona.name} · {currentPersona.role}
-            </span>
-            {viewing ? (
-              <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
-                {viewing}
-              </span>
-            ) : null}
-          </span>
-        </div>
-        {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
-            (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
-        {!showHandover ? null : handoverCardLinks ? (
-          <Link
-            href={handoverHref()}
-            className={styles.shiftTimerLink}
-            title="Open shift handover board"
-            aria-label={
-              handoverText === null
-                ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-                : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
-            }
+      {/* Josh, 31 Oct 2026: the executive and access admin desks hold no shift, so no shift card. */}
+      {showHandover ? (
+        <div className={styles.shiftCockpit}>
+          <div
+            className={styles.shiftCockpitTop}
+            title={`Board time ${boardClock} AWST. Shift ${shiftProgress.percent}% through. Shift times are ${OPERATIONAL_DEFAULT_LABEL}`}
           >
-            {handoverCountdown}
-          </Link>
-        ) : (
-          // DA-09: a desk without the handover board still sees the countdown, as plain text.
-          <span className={styles.shiftTimerLink} data-static="true" data-testid="ward-rail-handover-countdown">
-            {handoverCountdown}
-          </span>
-        )}
-      </div>
+            {/* Josh, 31 Oct 2026: the person's name stays on the shift card, as today. */}
+            <span className={styles.shiftAvatar} aria-hidden="true">
+              {currentPersona.initials}
+            </span>
+            <span className={styles.shiftMeta}>
+              <span className={styles.shiftTitle}>
+                {shiftProgress.shiftName}
+                <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
+              </span>
+              <span className={styles.shiftSub} title={`${currentPersona.name} · ${currentPersona.role}`}>
+                {currentPersona.name} · {currentPersona.role}
+              </span>
+              {viewing ? (
+                <span className={styles.shiftViewing} data-testid="ward-rail-viewing-desk">
+                  {viewing}
+                </span>
+              ) : null}
+            </span>
+          </div>
+          {/* A7 (overall review, 20 Oct 2026): the demo clock shows in the top bar only
+            (`ward-bar.tsx`), which opens the demo controls; the rail no longer repeats it. */}
+          {!showHandover ? null : handoverCardLinks ? (
+            <Link
+              href={handoverHref()}
+              className={styles.shiftTimerLink}
+              title="Open shift handover board"
+              aria-label={
+                handoverText === null
+                  ? `Handover due now. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+                  : `Handover in ${handoverText}. Handover countdown: ${shiftProgress.countdownStr}. Open shift handover board.`
+              }
+            >
+              {handoverCountdown}
+            </Link>
+          ) : (
+            // DA-09: a desk without the handover board still sees the countdown, as plain text.
+            <span className={styles.shiftTimerLink} data-static="true" data-testid="ward-rail-handover-countdown">
+              {handoverCountdown}
+            </span>
+          )}
+        </div>
+      ) : null}
 
       {hottest ? (
         <div className={styles.alertsContainer} ref={alertsRef}>
@@ -1325,7 +1330,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         </div>
         {hottest ? (
           capacityOpen ? (
-            <Link href={WARD_CAPACITY_HREF} className={styles.sheetAlerts} onClick={() => setMoreOpen(false)}>
+            <Link href={WARD_CAPACITY_HREF} className={sheetAlertsClass} onClick={() => setMoreOpen(false)}>
               <span className={styles.alertsHead}>
                 <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
                 <span className={styles.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
@@ -1334,9 +1339,12 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
+              <span className={railParts.capacityReady}>
+                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              </span>
             </Link>
           ) : (
-            <div className={styles.sheetAlerts}>
+            <div className={sheetAlertsClass}>
               <span className={styles.alertsHead}>
                 <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
                 <span className={styles.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
@@ -1345,6 +1353,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
+              <span className={railParts.capacityReady}>
+                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              </span>
             </div>
           )
         ) : null}
@@ -1352,6 +1363,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           group.entries.length ? (
             <section key={group.label} aria-label={group.label}>
               <p className={styles.eyebrow}>{group.label}</p>
+              {/* Touch screens have no hover, so the menu says once whose figures these are. */}
+              {sheetShowsMain && group.label === menuLabel ? (
+                <p className={railParts.countNote}>Counts {countNote}</p>
+              ) : null}
               <ul className={styles.moreList}>
                 {group.entries.map((item) =>
                   renderItem(item, {

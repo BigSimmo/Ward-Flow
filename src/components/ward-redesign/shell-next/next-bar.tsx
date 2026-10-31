@@ -991,7 +991,8 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       deskPlace={deskPlace}
     />
   );
-  const alertsLabel = oneAlertsQueue ? "Alerts" : "Tasks";
+  // Josh, 31 Oct 2026: the panel is "Alerts" on every desk.
+  const alertsLabel = "Alerts";
   const placeIsTitle = deskPlace !== undefined && routeTitle.trim() === deskPlace.trim();
   // One Alerts panel with two tabs. Activity on a page that draws its own Activity panel (Home)
   // opens that panel, as the old Activity button did there.
@@ -1260,7 +1261,7 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
         id="ward-bar-tasks-drawer"
         open={openPanel === "tasks"}
         onClose={() => closePopover("tasks")}
-        ariaLabel={oneAlertsQueue ? "Alerts" : "Tasks"}
+        ariaLabel="Alerts"
         headerHidden
         placement="right"
         testId="ward-bar-tasks-sheet"
