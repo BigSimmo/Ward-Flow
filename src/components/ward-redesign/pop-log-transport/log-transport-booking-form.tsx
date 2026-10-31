@@ -11,8 +11,10 @@
  * Rules carried over from the forms it replaces:
  * - Provider, escort, CAD number and time are read off the phone call and never filled in
  *   (owner's third ruling, 17 Sep 2026). Escort is never derived from legal status or the last booking.
- * - Legal status is filled in from Legal now when the record holds one (`LEGAL_STATUS_FROM_LEGAL_NOW`).
- *   An answer that differs from Legal now asks for a reason, recorded as the booking's exception.
+ * - Nothing starts chosen (Josh, 31 Oct 2026): neither Today nor Tomorrow, and neither legal answer.
+ *   Legal now is shown under the legal question as plain text to check against
+ *   (`LEGAL_STATUS_FROM_LEGAL_NOW` is off). An answer that differs from Legal now asks for a
+ *   reason, recorded as the booking's exception.
  * - The answers still missing are named, and one button moves to the first (blocker mock-up, 26 Oct).
  *   Pressing Save early also moves to the first missing answer, rather than doing nothing.
  * - A ward escort or a family member has no dispatch service, so no CAD number is asked for
@@ -24,7 +26,7 @@
  * - Deliberately not a `<form>`: Enter inside a field must not submit a half-answered booking.
  * - The host keeps the answers until its save is accepted, and passes `pending` and `error` back.
  */
-import { useEffect, useRef, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useEffect, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { Button, Field, Select, StatusGlyph, TextInput } from "@/components/wf";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -58,7 +60,17 @@ import styles from "./log-transport-booking-form.module.css";
  * Whether the legal status answer starts from Legal now. One switch for every screen, so Josh's
  * answer to the A34 question changes one line. `false` leaves both answers unticked.
  */
-const LEGAL_STATUS_FROM_LEGAL_NOW = true;
+const LEGAL_STATUS_FROM_LEGAL_NOW = false;
+
+/** The day is asked as its own answer while the shared draft type still opens on "today". */
+const DAY_ASK = "choose today or tomorrow";
+
+/** A day the person has not chosen added to the shared "Before booking, ..." sentence. */
+function withDayAsk(reason: string | undefined): string {
+  if (reason === undefined) return `Before booking, ${DAY_ASK}.`;
+  if (!reason.includes("Before booking, ")) return `${reason} Before booking, ${DAY_ASK}.`;
+  return `${reason.replace(/\.$/, "")}, ${DAY_ASK}.`;
+}
 
 /** Answers before anything is chosen. Re-applied on every open, so one patient's answers never reach the next. */
 export const BLANK_TRANSPORT_BOOKING: TransportBookingAnswers = {
@@ -128,9 +140,13 @@ function transportBookingTestId(ids: TransportBookingTestIds, part: TransportBoo
   return [ids.prefix, name, option, ids.suffix].filter(Boolean).join("-");
 }
 
+/** An answer the form asks for: the shared ones, plus the day while nothing is chosen. */
+type FormAnswer = TransportAnswer | "day";
+
 /** Each unanswered question's short name and the part that asks it. */
-const ANSWER_PARTS: Record<TransportAnswer, [name: string, part: TransportBookingPart]> = {
+const ANSWER_PARTS: Record<FormAnswer, [name: string, part: TransportBookingPart]> = {
   provider: ["provider", "provider"],
+  day: ["today or tomorrow", "day"],
   escort: ["escort answer", "escort"],
   legalStatus: ["legal status", "legal"],
   time: ["estimated time", "time"],
@@ -278,29 +294,44 @@ export function LogTransportBookingForm({
     );
   }, [legalNow, onAnswers]);
 
-  const set = (patch: Partial<TransportBookingAnswers>) => onAnswers((current) => ({ ...current, ...patch }));
+  // Build note: the real form makes `estimatedDay` optional in the shared draft. The mock-up keeps
+  // the shared type and tracks the choice here, so every opening starts with no day chosen.
+  const [dayChosen, setDayChosen] = useState(false);
+  const set = (patch: Partial<TransportBookingAnswers>) => {
+    if (patch.estimatedDay !== undefined) setDayChosen(true);
+    onAnswers((current) => ({ ...current, ...patch }));
+  };
   const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
-  const missing = transportAnswersMissing(answers, now);
+  const sharedMissing = transportAnswersMissing(answers, now);
+  const missing: FormAnswer[] = dayChosen
+    ? sharedMissing
+    : (["provider", "time", "day", "escort", "legalStatus"] as const).filter(
+        (answer) => answer === "day" || sharedMissing.includes(answer),
+      );
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
   const clash = record !== undefined && transportStatusClashes(record, answers.transportLegalStatus);
   const reasonMissing = clash && legalReason === "";
-  const estimatedAt = instantFromEstimatedTimeInputs(answers.estimatedTime, answers.estimatedDay, now);
+  const estimatedAt = dayChosen
+    ? instantFromEstimatedTimeInputs(answers.estimatedTime, answers.estimatedDay, now)
+    : undefined;
   const holdEnd =
     record?.pullExpiresAt === undefined
       ? undefined
       : holdEndsBeforeEta(record as Pick<Movement, "pullExpiresAt">, estimatedAt);
   const blocked =
     blockedReason ??
-    transportAnswersBlockedReason(answers, now) ??
+    (dayChosen
+      ? transportAnswersBlockedReason(answers, now)
+      : withDayAsk(transportAnswersBlockedReason(answers, now))) ??
     (reasonMissing ? "Before booking, choose why the transport status differs from Legal now." : undefined);
-  const submission = transportBookingSubmission(answers, legalReason, record, now);
+  const submission = dayChosen ? transportBookingSubmission(answers, legalReason, record, now) : undefined;
   const unavailable = blocked !== undefined || submission === undefined || pending;
 
   const goToPart = (part: TransportBookingPart) => {
     const field = document.querySelector<HTMLElement>(`[data-testid="${tid(part)}"]`);
     (field?.matches("fieldset") ? field.querySelector<HTMLElement>("input") : field)?.focus();
   };
-  const goToAnswer = (answer: TransportAnswer) => goToPart(ANSWER_PARTS[answer][1]);
+  const goToAnswer = (answer: FormAnswer) => goToPart(ANSWER_PARTS[answer][1]);
   // The answers still to give, with the reason it differs last: one list, beside Save.
   const leftNames = reasonMissing ? [...missingNames, "reason it differs"] : missingNames;
   const goToFirstLeft = () => (missing.length > 0 ? goToAnswer(missing[0]!) : goToPart("legal-reason"));
@@ -394,7 +425,9 @@ export function LogTransportBookingForm({
             {ETA_PRESETS.map((preset) => {
               const value = etaPresetAnswers(now, preset.offset);
               const active =
-                answers.estimatedTime.trim() === value.estimatedTime && answers.estimatedDay === value.estimatedDay;
+                dayChosen &&
+                answers.estimatedTime.trim() === value.estimatedTime &&
+                answers.estimatedDay === value.estimatedDay;
               return (
                 <Button
                   key={preset.label}
@@ -420,7 +453,8 @@ export function LogTransportBookingForm({
                   name={did("day")}
                   data-testid={tid("day", day)}
                   value={day}
-                  checked={answers.estimatedDay === day}
+                  // Neither is checked until the person picks one (nothing pre-selected, Josh, 31 Oct 2026).
+                  checked={dayChosen && answers.estimatedDay === day}
                   onChange={() => set({ estimatedDay: day })}
                 />
                 <span>{day === "today" ? "Today" : "Tomorrow"}</span>

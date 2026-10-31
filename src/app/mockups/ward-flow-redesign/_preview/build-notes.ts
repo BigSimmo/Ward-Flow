@@ -227,7 +227,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's transport booking form**: every field, the check and the save work as now.",
     "**New:** '3 answers left' moves to the top with a link to the first one; with nothing left it reads 'Every answer given. Check them, then save.'",
     "**New:** phone answer buttons keep the kit's size with a larger tap area, and the pinned Save row matches the popup background in dark.",
-    "**Kept:** all fields, the legal-status prefill from Legal now, and Save greyed until every answer is in.",
+    "**Kept:** all fields, and Save greyed until every answer is in. **Changed (Josh, 31 Oct 2026):** no legal-status prefill and no day chosen when the form opens; Legal now shows under the legal question as plain text.",
     "**Round 2:** the title fits one line and the patient is named once below it. Repeated names and help sentences go. The footer follows the app's order, Cancel then Save, with '3 answers left' beside Save.",
   ],
   "pop-officer-job": [
@@ -838,7 +838,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Built from a copy of today's community Log transport booking dialog** (`community/community-screen-transport-dialogs.tsx`), so the draft and the save work as now.",
     "**New:** it uses the same redesigned booking form as the ED board's Log transport mock-up (shared, not copied), with the person surname first under a one-line title.",
     "**Still open:** no community person has a pulled bed in the sample, so it is drawn on its own as Midland for the first pulled, unbooked movement (Cadwaller, Rhys).",
-    "**Question for Josh:** the shared booking form starts on 'Today' and fills legal status from the record ('Involuntary'), as the ED Log transport mock-up already does. Under 'nothing pre-selected', should both forms start empty?",
+    "**Josh, 31 Oct 2026 (yes):** the shared booking form now starts with nothing chosen: neither Today nor Tomorrow, and neither legal answer. The recorded legal status shows under the legal question as plain text ('Legal now: ...') to check against. Build: make `estimatedDay` optional in the shared transport draft (`ward-transport-checks.ts`), with 'choose today or tomorrow' as a missing answer, and set `LEGAL_STATUS_FROM_LEGAL_NOW` to false.",
     "Base: copied from main b6aa5cde (31 October); refresh against main after Phase 3.",
   ],
   "pop-community-transport-cancel": [
