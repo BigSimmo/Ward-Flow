@@ -36,9 +36,7 @@ describe("a ward's own stays keep their names when the admitting referral is out
       const admissions = withStayReferralsInView(scoped.admissions, ids(scoped.referrals), ids(state.referrals));
       const after = admissions.find(({ id }) => id === stay.id)!;
       expect(after.referralId).toBeNull();
-      expect(resolveSubjectPatient(after, scoped).formalName).toBe(
-        resolveSubjectPatient(stay, state).formalName,
-      );
+      expect(resolveSubjectPatient(after, scoped).formalName).toBe(resolveSubjectPatient(stay, state).formalName);
     }
   });
 
