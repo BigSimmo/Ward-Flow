@@ -8,7 +8,8 @@ import styles from "./ward-help.module.css";
 
 /**
  * The rail's Help button. Until this desk's tour has been seen or dismissed on this device it says
- * "New" and opens the tour; after that it opens help for the current screen. The tour itself starts
+ * "New" and opens the tour; after that it opens How do I…, the desk's common tasks, with this
+ * screen's first (Josh, 30 Oct 2026). The tour itself starts
  * on its own only once, on a signed-in desk's home screen (`ward-tour-auto-start.tsx`).
  */
 export function WardHelpLink({
@@ -28,7 +29,7 @@ export function WardHelpLink({
       className={classes.button}
       aria-label={seen ? "Help" : "Help, new: take the tour"}
       title={showTitle ? "Help" : undefined}
-      onClick={() => openWardHelp(seen ? "screen" : "tour")}
+      onClick={() => openWardHelp(seen ? "tasks" : "tour")}
       data-testid="ward-rail-help"
     >
       <CircleHelp aria-hidden="true" className={classes.glyph} strokeWidth={1.75} />
@@ -53,6 +54,6 @@ export function useWardHelpRow(): { label: string; isNew: boolean; open: () => v
   return {
     label: seen ? "Help" : "Help, new: take the tour",
     isNew: !seen,
-    open: () => openWardHelp(seen ? "screen" : "tour"),
+    open: () => openWardHelp(seen ? "tasks" : "tour"),
   };
 }

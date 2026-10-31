@@ -1,16 +1,14 @@
 "use client";
 
-// src/components/ward-management/capacity/planned-admissions-panel.tsx
-//
 // Planned admissions on the Capacity screen (stream D, 9 October 2026): the next fourteen days as
 // a count per day per health service, the bookings still waiting, and the forms that book,
 // change, cancel and record the arrival of one. Every write is a reducer event; this component
 // holds only the open form's draft, never in browser storage.
-import { useId, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { CalendarPlus } from "lucide-react";
+import { CalendarPlus, MoreHorizontal } from "lucide-react";
 
-import { Button, Field, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
+import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
   PLANNED_ADMISSION_CANCEL_REASON_LABELS,
@@ -56,12 +54,12 @@ import { ArrivalIdentityDialog } from "@/components/ward-management/arrival-iden
 import {
   cohortFitsAge,
   patientCohort,
-  patientDisplayName,
+  patientListName,
   type Patient,
   type PatientId,
 } from "@/components/ward-management/ward-patients";
 import { healthServiceAcronym, unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { WardPanel } from "@/components/ward-management/ward-panel";
+import { CapacityPanel } from "./capacity-panel";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { dispatchPermission } from "@/components/ward-management/ward-role-permissions";
 import { plannedAdmissionAgenda } from "./planned-admissions";
@@ -73,7 +71,8 @@ import {
   plannedDayOffsets,
   type PlannedAdmissionDraft,
 } from "./planned-admissions-draft";
-import styles from "./planned-admissions.module.css";
+import styles from "@/components/ward-management/capacity/planned-admissions.module.css";
+import redesign from "./capacity-page.module.css";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 type Draft = PlannedAdmissionDraft;
@@ -113,7 +112,7 @@ function bookablePatientsFor(
     if (planned.patientId && planned.state === "booked") busy.add(planned.patientId);
   const available = patients
     .filter((patient) => !busy.has(patient.id))
-    .sort((a, b) => patientDisplayName(a).localeCompare(patientDisplayName(b)));
+    .sort((a, b) => patientListName(a).localeCompare(patientListName(b)));
   bookablePatientLists.set(patients, { admissions, movements, plannedAdmissions, available });
   return available;
 }
@@ -127,7 +126,17 @@ function recordedSexOf(sex: string | undefined): RecordedSex {
  * Device audit option A (Josh, 11 Oct 2026): the bookings as a short list, without the 14-day
  * grid, and Book as a secondary button so the page keeps one primary.
  */
-export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
+export function PlannedAdmissionsPanel({
+  now,
+  titleSlot,
+  compactActions = false,
+}: {
+  now: Instant;
+  /** Replaces the panel title and count, such as the Capacity page's Planned / Step down switch. */
+  titleSlot?: ReactNode;
+  /** Arrived stays a button; Change and Cancel move into a More menu, so each booking is two lines. */
+  compactActions?: boolean;
+}) {
   const {
     units,
     patients,
@@ -225,7 +234,8 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
 
   function whoText(planned: PlannedAdmission): string {
     if (role === "executive") return "Name not shown to this desk";
-    if (planned.patientId) return patientOf({ patientId: planned.patientId }).displayName;
+    // Redesign (D-83): the booked person surname first, as every list writes a name.
+    if (planned.patientId) return patientOf({ patientId: planned.patientId }).formalName;
     return planned.initials === null ? "Initials not recorded" : plannedInitialsLabel(planned.initials);
   }
 
@@ -479,14 +489,15 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
   }
 
   return (
-    <WardPanel
+    <CapacityPanel
       title="Planned admissions"
-      count={`${booked} booked`}
+      titleSlot={titleSlot}
+      count={titleSlot ? undefined : `${booked} booked`}
       testId="ward-capacity-planned-admissions"
       headerAction={
         canBook ? (
-          <Button variant="sec" size="sm" onClick={openBook} data-testid="ward-planned-book">
-            <CalendarPlus size={16} aria-hidden="true" />
+          // Redesign: the kit's icon slot, so the icon sits beside "Book" instead of stacked over it.
+          <Button variant="sec" size="sm" icon={CalendarPlus} onClick={openBook} data-testid="ward-planned-book">
             Book
           </Button>
         ) : undefined
@@ -502,16 +513,20 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
               const unit = units.find((candidate) => candidate.id === planned.unitId);
               const service = unit ? unitHealthService(unit) : undefined;
               return (
-                <li key={planned.id} className={styles.item} data-testid={`ward-planned-${planned.id}`}>
+                <li
+                  key={planned.id}
+                  className={`${styles.item}${compactActions ? ` ${redesign.plannedItem}` : ""}`}
+                  data-testid={`ward-planned-${planned.id}`}
+                >
                   <span className={styles.when}>
                     {overdue ? <StatusGlyph tone="warning" size={8} /> : null}
                     <span className={styles.time}>{formatInstantWithDay(planned.expectedArrivalAt, now)}</span>
                   </span>
                   <span className={styles.who}>{whoText(planned)}</span>
-                  <span className={styles.facts}>
+                  <span className={`${styles.facts} ${redesign.plannedFacts}`}>
                     <SpelledCodes text={PLANNED_ADMISSION_REASON_LABELS[planned.reason]} /> ·{" "}
                     <SpelledCodes text={unitName(planned.unitId)} />
-                    {service ? (
+                    {service && !compactActions ? (
                       <>
                         {" ("}
                         <SpelledCodes text={healthServiceAcronym(service)} />
@@ -519,14 +534,62 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
                       </>
                     ) : null}{" "}
                     · {planned.expectedStayDays}d · {planned.legalStatus}
-                    {overdue ? (
+                    {overdue && !compactActions ? (
                       <span className={styles.overdue}>
                         {" "}
                         · arrival not recorded, {formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}
                       </span>
                     ) : null}
+                    {/* Polish (Josh, 31 Oct 2026): on Capacity the facts are reason, ward, stay and
+                        legal status; a late arrival is a small tag under them. */}
+                    {overdue && compactActions ? (
+                      <span className={redesign.plannedLate}>
+                        Not arrived · {formatRemaining(minutesUntil(planned.expectedArrivalAt, now))}
+                      </span>
+                    ) : null}
                   </span>
-                  {canConvert || canChange || canCancel ? (
+                  {compactActions && (canConvert || canChange || canCancel) ? (
+                    // Polish (Josh, 31 Oct 2026): one button and a More menu on the right, so a booking
+                    // takes two lines instead of three.
+                    <span className={styles.actions}>
+                      {canConvert ? (
+                        <Button
+                          size="sm"
+                          variant="sec"
+                          onClick={() => {
+                            setArrivalCheck(planned);
+                          }}
+                          data-testid={`ward-planned-arrived-${planned.id}`}
+                        >
+                          Arrived
+                        </Button>
+                      ) : null}
+                      {canChange || canCancel ? (
+                        <Menu
+                          label={`More for ${whoText(planned)}`}
+                          align="end"
+                          items={[
+                            ...(canChange
+                              ? [{ id: "change", label: "Change booking", onSelect: () => openChange(planned) }]
+                              : []),
+                            ...(canCancel
+                              ? [{ id: "cancel", label: "Cancel booking", onSelect: () => openCancel(planned) }]
+                              : []),
+                          ]}
+                          trigger={(props) => (
+                            <button
+                              type="button"
+                              {...props}
+                              aria-label={`More for ${whoText(planned)}`}
+                              className={buttonClass({ variant: "ghost", size: "sm" })}
+                            >
+                              <MoreHorizontal size={15} aria-hidden="true" />
+                            </button>
+                          )}
+                        />
+                      ) : null}
+                    </span>
+                  ) : canConvert || canChange || canCancel ? (
                     <span className={styles.actions}>
                       {canConvert ? (
                         <Button
@@ -904,6 +967,6 @@ export function PlannedAdmissionsPanel({ now }: { now: Instant }) {
         }}
         testId="ward-planned-arrival-identity"
       />
-    </WardPanel>
+    </CapacityPanel>
   );
 }

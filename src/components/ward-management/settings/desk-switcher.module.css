@@ -1,0 +1,81 @@
+/* Go to a desk: the folding health service rows and quiet zeros (built from the pop-desk mock-up, 31 Oct 2026). The rest is workstation-switcher.module.css. */
+.serviceHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-h-lg);
+  padding: 6px var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.serviceHead:hover:not(:disabled) {
+  background: var(--wf-hover);
+}
+
+.serviceHead:disabled {
+  cursor: default;
+}
+
+.serviceHead:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The chevron turns as on every other group here (down when shut, up when open). */
+.serviceName {
+  font-size: var(--wf-fs-14);
+}
+
+.serviceMeta {
+  margin-right: auto;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* The hospitals of an open service sit as one joined list under its row. */
+.serviceBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-left: var(--wf-s-3);
+  padding-left: var(--wf-s-2);
+  border-left: 2px solid var(--wf-line);
+}
+
+.serviceBody > * + * {
+  margin-top: 6px;
+}
+
+.none {
+  color: var(--wf-ink-3);
+}
+
+/* A statewide tile's line wraps to a second line rather than cutting off its figure. */
+span.tileLine.tileLine {
+  overflow: visible;
+  white-space: normal;
+}
+
+.pastTarget {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* Desk tile text wraps in full at phone width (no hover on a phone to read a cut line). The tag
+   selector outranks the real `.who > span` nowrap rule without reaching into its class name. */
+span.whoWrap > b,
+span.whoWrap > span {
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}

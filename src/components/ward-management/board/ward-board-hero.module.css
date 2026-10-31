@@ -1,0 +1,196 @@
+/* Stays and discharges: the Ward home hero, its route tabs and tools, the one figures line and the
+   one notice (redesign approved 31 Oct 2026). Tokens only. */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) 0;
+}
+/* Keeps the Ready now figure findable by its old test id without adding a box round it. */
+.statSlot {
+  display: contents;
+}
+.asAt {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-2);
+}
+.heroFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-4);
+}
+.heroNote {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-3);
+}
+
+.also {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2) var(--wf-s-4);
+  margin: var(--wf-s-3) 0 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+.alsoTitle {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+.alsoList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-2);
+}
+.alsoList b {
+  font-family: var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+.alsoNote {
+  color: var(--wf-ink-3);
+}
+
+/* Worth a look and Your part in tomorrow's forecast read as one notice. */
+.oneNotice {
+  margin-top: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+.oneNotice > * {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.oneNotice > * + * {
+  border-top: 1px solid var(--wf-line);
+}
+
+/* ── The hero's route tabs and tools in the kit's style ── */
+.screenNav {
+  flex: 0 0 auto;
+}
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+.sheetButtonOpen.sheetButtonOpen {
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+}
+.sheetButtonOpen svg:last-child {
+  transform: rotate(180deg);
+}
+.switch {
+  position: relative;
+}
+.switchSummary.switchSummary {
+  list-style: none;
+  cursor: pointer;
+}
+.switchSummary::-webkit-details-marker {
+  display: none;
+}
+.switchCount {
+  color: var(--wf-hero-ink-2);
+  font-weight: 500;
+}
+.switch[open] .switchCaret {
+  transform: rotate(180deg);
+}
+.switchBody {
+  position: absolute;
+  z-index: var(--z-popover, 50);
+  top: calc(100% + var(--wf-s-2));
+  right: 0;
+  width: min(24rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3, var(--wf-e1));
+  color: var(--wf-ink-1);
+}
+.switchHeading {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+.switchList {
+  display: grid;
+  max-height: 19rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0 var(--wf-s-2) var(--wf-s-2);
+  list-style: none;
+  scrollbar-width: thin;
+}
+.switchList a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  min-height: 40px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  text-decoration: none;
+}
+.switchList a:hover {
+  background: var(--wf-hover);
+}
+.switchList a[aria-current="page"] {
+  background: var(--wf-track);
+  font-weight: 600;
+}
+.switchList small {
+  flex: none;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+@media (max-width: 48rem) {
+  .screenNav.screenNav {
+    display: flex;
+    width: 100%;
+  }
+  .screenNav.screenNav {
+    padding: 3px;
+    overflow: visible;
+  }
+  /* The kit standard on a phone: 32px options on a 40px track, with a 48px invisible tap area. */
+  .screenNav.screenNav > * {
+    position: relative;
+    flex: 1 1 0;
+    justify-content: center;
+    height: 32px;
+    min-height: 0;
+  }
+  .screenNav.screenNav > *::after {
+    content: "";
+    position: absolute;
+    inset: -8px 0;
+  }
+  /* The printed brief is a laptop tool; Change ward keeps its place as an icon-and-word pill. */
+  .sheetButton.sheetButton {
+    display: none;
+  }
+  .switchCount {
+    display: none;
+  }
+}

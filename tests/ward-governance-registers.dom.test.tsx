@@ -169,9 +169,10 @@ describe("the override and decision registers hold only what this session record
         <Harness />
       </WardFlowProvider>,
     );
-    // Device audit 11 Oct 2026: the hero Record review waits for a chosen event.
+    // Redesign (Josh, 31 Oct 2026): on a wide screen the review pane opens on the newest event
+    // waiting, so Record review is ready on arrival; the form still opens empty.
     const recordReview = screen.getByRole("button", { name: "Record review" });
-    expect(recordReview).toHaveAttribute("aria-disabled", "true");
+    expect(recordReview).not.toHaveAttribute("aria-disabled", "true");
     const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
     expect(firstRow).not.toBeNull();
     fireEvent.click(firstRow!);
@@ -191,7 +192,7 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
         <GovernanceWorkbench movements={seed.movements} units={seed.units} now={NOW} />
       </WardFlowProvider>,
     );
-    fireEvent.click(screen.getByRole("radio", { name: /^Gaps by site/ }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Form gaps by site/ }));
     const table = within(screen.getByRole("region", { name: "Gaps by site" })).getByRole("table");
     const fracs = within(table).getAllByTestId("wf-frac");
     expect(fracs.length).toBeGreaterThan(0);
@@ -335,7 +336,7 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
         "No event has been reviewed yet.",
       );
 
-      fireEvent.click(screen.getByRole("radio", { name: /^Gaps/ }));
+      fireEvent.click(screen.getByRole("radio", { name: /^Form gaps/ }));
       expect(screen.getByRole("region", { name: "Gaps by site" })).toHaveTextContent("A gap is a form step");
       const firstSite = within(screen.getByRole("region", { name: "Gaps by site" })).getAllByRole("button")[0];
       fireEvent.click(firstSite);

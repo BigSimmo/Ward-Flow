@@ -20,8 +20,6 @@ import {
   FORECAST_SHORT_ALERT_BEDS,
   FORECAST_WORSE_ALERT_BEDS,
 } from "@/components/ward-management/ward-operational-defaults";
-import { type WfTone } from "@/components/wf";
-import { SETTINGS_TABS, type SettingsTab } from "./settings-search-index";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 /** 24-hour clock time, `HH:MM`, for the morning count. */
@@ -119,20 +117,6 @@ export function isConfigurationEvent(event: AuditEvent): event is ConfigurationA
   return event.category === "configuration";
 }
 
-export const CHANGE_OUTCOME_TONE: Record<ConfigurationAuditEvent["outcome"], WfTone> = {
-  accepted: "success",
-  partial: "warning",
-  denied: "closed",
-  stale: "closed",
-};
-
-export const CHANGE_OUTCOME_PREFIX: Record<ConfigurationAuditEvent["outcome"], string> = {
-  accepted: "",
-  partial: "Partly applied: ",
-  denied: "Refused: ",
-  stale: "Refused: ",
-};
-
 /** One line for a recorded rule save: the first figure that moved, and how many more did. */
 export function configurationChangeText(before: WardConfiguration | null, after: WardConfiguration | null): string {
   if (!before || !after) return "Coordination rules";
@@ -147,12 +131,6 @@ export function isSurgePreset(value: WardConfiguration): boolean {
     value.edAccessTargetMinutes === ED_ACCESS_TARGET_RANGE_MINUTES.min &&
     value.pullHoldMinutes === 120
   );
-}
-
-export function readTabFromHash(): SettingsTab | null {
-  if (typeof window === "undefined") return null;
-  const hash = window.location.hash.slice(1);
-  return SETTINGS_TABS.some((tab) => tab.id === hash) ? (hash as SettingsTab) : null;
 }
 
 export function maskDiagnosticPatient(patient: DiagnosticPatientInput): { id?: string } {

@@ -6,8 +6,10 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /*
- * All EDs, v10 (10 Oct 2026): the hero carries at most five highlight chips, and the hero chips,
- * the service and status filters and the search all highlight and dim. No ED is ever hidden.
+ * All EDs, v10 (10 Oct 2026): the hero carries at most five highlight chips, and the hero chips and
+ * the service and status filters all highlight and dim. No ED is ever hidden. Since the October
+ * 2026 design review (Josh, 31 Oct 2026) a department with nobody waiting sits on one shared line
+ * (`ed-index-clear-<id>`) rather than as a card, and the keyword box is gone (D-91).
  */
 function renderIndex() {
   return render(
@@ -17,7 +19,8 @@ function renderIndex() {
   );
 }
 
-const cards = () => screen.getAllByTestId(/^ed-index-card-/u);
+/** Every department in the Cards view: a card for each with someone waiting, a clear-line entry for the rest. */
+const cards = () => screen.getAllByTestId(/^ed-index-(card|clear)-/u);
 const solidCards = () => cards().filter((card) => card.getAttribute("data-dim") !== "true");
 
 describe("All EDs — hero chips", () => {
@@ -58,12 +61,25 @@ describe("All EDs — filters highlight and dim, they never hide", () => {
     );
   });
 
-  it("keeps every ED when a search matches nothing, and offers Reset", () => {
+  it("has no keyword box (D-91): the header search finds an ED", () => {
+    renderIndex();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    // "/" is left for the header search.
+    const slash = new KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true });
+    window.dispatchEvent(slash);
+    expect(slash.defaultPrevented).toBe(false);
+  });
+
+  it("keeps every ED when the filters match nothing, and offers Reset", () => {
     renderIndex();
     const total = cards().length;
-    fireEvent.change(screen.getByRole("searchbox", { name: /Highlight emergency departments/u }), {
-      target: { value: "zzzz-no-such-ed" },
-    });
+    fireEvent.click(within(screen.getByRole("radiogroup", { name: "Status" })).getByRole("radio", { name: "Clear" }));
+    // Each service count applies the other filters, so a service at 0 leaves no ED solid.
+    const empty = within(screen.getByRole("radiogroup", { name: "Health service" }))
+      .getAllByRole("radio")
+      .find((radio) => /\D0$/u.test(radio.textContent ?? ""));
+    expect(empty).toBeDefined();
+    fireEvent.click(empty!);
     expect(cards()).toHaveLength(total);
     expect(solidCards()).toHaveLength(0);
     expect(screen.getByText("No match")).toBeInTheDocument();
@@ -106,5 +122,45 @@ describe("All EDs — v10 pass 3: RowSpark, preview and service bars", () => {
     for (const card of solidCards()) expect(card).toHaveAttribute("data-service", "South Metro");
     fireEvent.click(bar);
     expect(solidCards()).toHaveLength(total);
+  });
+});
+
+describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nobody-waiting line", () => {
+  const cardsOnly = () => screen.getAllByTestId(/^ed-index-card-/u);
+  const clearOnly = () => screen.queryAllByTestId(/^ed-index-clear-/u);
+
+  it("counts every department in the title, with the number that have someone waiting beside it", () => {
+    renderIndex();
+    const total = cards().length;
+    const withWaiting = cardsOnly().length;
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading).toHaveTextContent(new RegExp(`\\d+ waiting across ${total} EDs`, "u"));
+    expect(screen.getByText(`${withWaiting} with someone waiting`)).toBeInTheDocument();
+  });
+
+  it("puts each department with nobody waiting on one line, with its own Enter button and no card", () => {
+    renderIndex();
+    const line = screen.getByRole("group", { name: "Departments with no one waiting" });
+    expect(within(line).getByText("No one waiting")).toBeInTheDocument();
+    const clear = clearOnly();
+    expect(clear.length).toBeGreaterThan(0);
+    for (const entry of clear) {
+      expect(line).toContainElement(entry);
+      const id = entry.getAttribute("data-testid")!.replace("ed-index-clear-", "");
+      expect(within(entry).getByRole("link", { name: /^Enter / })).toHaveAttribute("href", `/ward-flow/ed/${id}`);
+      expect(screen.queryByTestId(`ed-index-card-${id}`)).not.toBeInTheDocument();
+    }
+    // Every card has someone waiting, and reads the chip's own words for forms.
+    for (const card of cardsOnly()) expect(card).toHaveTextContent(/\d+ under a form/u);
+  });
+
+  it("dims the nobody-waiting departments with the filters, never hiding them", () => {
+    renderIndex();
+    const clearCount = clearOnly().length;
+    fireEvent.click(
+      within(screen.getByRole("radiogroup", { name: "Status" })).getByRole("radio", { name: "Has waiting" }),
+    );
+    expect(clearOnly()).toHaveLength(clearCount);
+    for (const entry of clearOnly()) expect(entry).toHaveAttribute("data-dim", "true");
   });
 });

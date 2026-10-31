@@ -54,7 +54,7 @@ export function WardSearchCommands({
             data-testid="ward-global-search-cmd-advance-clock"
             onClick={!resultsCurrent || demoOff ? ignoreUnavailableActivation : onAdvanceClock}
           >
-            <span className={styles.commandLabel}>Advance demo clock +15m</span>
+            <span className={styles.commandLabel}>Advance demo clock</span>
             <kbd className={styles.hintKbd}>+15m</kbd>
           </button>
         ) : null}
@@ -126,7 +126,7 @@ export function WardSearchCommands({
           data-testid="ward-global-search-cmd-shortcuts"
           onClick={onToggleShortcuts}
         >
-          <span className={styles.commandLabel}>Keyboard shortcuts (?)</span>
+          <span className={styles.commandLabel}>Keyboard shortcuts</span>
           <kbd className={styles.hintKbd}>?</kbd>
         </button>
       </div>

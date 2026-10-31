@@ -45,9 +45,13 @@ describe("saved print provenance", () => {
     ).toContain(stamp);
     standalone.unmount();
     render(wrap(<WardDailySheetDialog unit={unit} now={now} onClose={() => {}} />));
-    const text = document.querySelector('[data-testid="ward-daily-sheet-dialog-stamp"]')?.textContent;
+    const stampEl = document.querySelector('[data-testid="ward-daily-sheet-dialog-stamp"]');
+    const text = stampEl?.textContent;
     expect(text).toContain(stamp);
-    expect(text).toContain("synthetic figures, not a record of any real day");
+    // Redesign (Josh, 31 Oct 2026): the on-screen stamp is one short line; the full synthetic
+    // notice stays word for word in its tooltip and in the copied brief.
+    expect(text).toContain("synthetic figures");
+    expect(stampEl?.getAttribute("title")).toContain("synthetic figures, not a record of any real day");
   });
 
   it("adds the same provider moment and synthetic notice to the community catchment counts print", () => {

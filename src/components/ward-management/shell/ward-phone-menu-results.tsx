@@ -20,6 +20,8 @@ import {
   type SearchResultItem,
 } from "@/components/ward-management/ward-global-search";
 
+import { useHeaderHelp } from "@/components/ward-management/ward-global-search-help";
+
 import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import type { RailEntry } from "./ward-rail-entries";
@@ -41,7 +43,7 @@ const MENU_RESULTS_FULL = 40;
  * header search. Pages come first from the rail's own role-ordered entries; a screen the engine
  * matches by keyword (for example "beds" for Capacity) joins them rather than being listed twice.
  */
-function useMenuSearch(query: string, entries: RailEntry[]) {
+function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType<typeof useHeaderHelp>["findHelp"]) {
   const canOpenHref = useCanOpenHref();
   const { movements, patients, units, referrals, plannedAdmissions, admissions, leaveBeds, dayZero, configuration } =
     useWardFlowSelect(
@@ -104,9 +106,18 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
     // is "Delays" and redirects there).
     const pageHrefs = new Set(pages.map((entry) => entry.href));
     const pageLabels = new Set(pages.map((entry) => entry.label.toLowerCase()));
+    // The same Help answers as the header search (search and forms review, 31 Oct 2026).
+    const help = refusal ? { items: [] } : findHelp(needle);
     const groups: SearchResultGroup[] = refusal
       ? []
-      : smartSearchGroups(results, needle, units, { patients, referrals, movements, plannedAdmissions }, answer)
+      : smartSearchGroups(
+          results,
+          needle,
+          units,
+          { patients, referrals, movements, plannedAdmissions },
+          answer,
+          help.items,
+        )
           .map((group) =>
             group.key === "views"
               ? {
@@ -124,7 +135,7 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
           .filter((group) => group.items.length > 0);
     const truncatedGroups =
       answer && answer.total > answer.rows.length ? [...results.truncatedGroups, "answers"] : results.truncatedGroups;
-    return { needle, refusal, pages, groups, truncatedGroups };
+    return { needle, refusal, helpNote: help.note, pages, groups, truncatedGroups };
   }, [
     needle,
     isPending,
@@ -140,28 +151,61 @@ function useMenuSearch(query: string, entries: RailEntry[]) {
     configuration,
     now,
     canOpenHref,
+    findHelp,
   ]);
 }
 
-function ResultRow({ item, onGo }: { item: SearchResultItem; onGo: (item: SearchResultItem) => void }) {
+function ResultRow({
+  item,
+  onGo,
+  onHelpResult,
+}: {
+  item: SearchResultItem;
+  onGo: (item: SearchResultItem) => void;
+  onHelpResult: (id: string) => boolean;
+}) {
   const nameFor = usePatientNameDisplay();
   const title = patientResultTitle(item, nameFor);
+  const body = (
+    <>
+      <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
+      <span className={styles.rowText}>
+        <span className={styles.rowLabel}>{title}</span>
+        {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
+      </span>
+      <Chevron />
+    </>
+  );
   return (
     <li>
       {/* Announce the name as shown, so the discreet form is never read out in full. */}
-      <Link
-        href={item.href}
-        className={styles.row}
-        onClick={() => onGo({ ...item, title })}
-        data-testid="ward-phone-menu-result"
-      >
-        <SearchResultIcon kind={item.kind} id={item.id} className={styles.rowIcon} />
-        <span className={styles.rowText}>
-          <span className={styles.rowLabel}>{title}</span>
-          {item.meta ? <span className={styles.rowMeta}>{item.meta}</span> : null}
-        </span>
-        <Chevron />
-      </Link>
+      {item.href === "" ? (
+        // A Help answer with nowhere to go opens in Help itself, so it is a button, never a link.
+        <button
+          type="button"
+          className={styles.row}
+          onClick={() => {
+            onHelpResult(item.id);
+            onGo({ ...item, title });
+          }}
+          data-testid="ward-phone-menu-result"
+        >
+          {body}
+        </button>
+      ) : (
+        <Link
+          href={item.href}
+          className={styles.row}
+          onClick={(event) => {
+            // A Help answer runs Show me or opens in Help rather than following its link.
+            if (item.kind === "help" && onHelpResult(item.id)) event.preventDefault();
+            onGo({ ...item, title });
+          }}
+          data-testid="ward-phone-menu-result"
+        >
+          {body}
+        </Link>
+      )}
     </li>
   );
 }
@@ -170,12 +214,14 @@ function MenuResults({
   search,
   pageRow,
   onGo,
+  onHelpResult,
 }: {
   search: NonNullable<ReturnType<typeof useMenuSearch>>;
   pageRow: PageRowRender;
   onGo: (item: SearchResultItem) => void;
+  onHelpResult: (id: string) => boolean;
 }) {
-  const { needle, refusal, pages, groups, truncatedGroups } = search;
+  const { needle, refusal, helpNote, pages, groups, truncatedGroups } = search;
   // Audit round 2 (S-33): each group shows six, then "Show all N" opens the rest in place. A new
   // query starts short again.
   const [expanded, setExpanded] = useState<{ needle: string; keys: ReadonlySet<string> }>({
@@ -192,7 +238,7 @@ function MenuResults({
         return (
           <Section key={group.key} label={group.heading}>
             {shown.map((item) => (
-              <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} />
+              <ResultRow key={`${item.kind}-${item.id}`} item={item} onGo={onGo} onHelpResult={onHelpResult} />
             ))}
             {shown.length < group.items.length ? (
               <li>
@@ -218,6 +264,7 @@ function MenuResults({
           </Section>
         );
       })}
+      {helpNote && !refusal ? <p className={styles.empty}>{helpNote}</p> : null}
       {refusal ? (
         <p className={styles.empty}>{refusal.sentence}</p>
       ) : pages.length === 0 && groups.length === 0 ? (
@@ -239,7 +286,8 @@ export function MenuSearchResults({
   pageRow: PageRowRender;
   onGo: (item: SearchResultItem) => void;
 }) {
-  const search = useMenuSearch(query, entries);
-  if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onGo} />;
+  const { findHelp, onHelpResult } = useHeaderHelp();
+  const search = useMenuSearch(query, entries, findHelp);
+  if (search) return <MenuResults search={search} pageRow={pageRow} onGo={onGo} onHelpResult={onHelpResult} />;
   return <MenuSearching />;
 }

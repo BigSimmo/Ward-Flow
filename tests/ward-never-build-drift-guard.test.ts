@@ -91,6 +91,13 @@ const PERMANENT: { file: string; text: RegExp; why: string }[] = [
     why: "the sign-in list of things no role can do",
   },
   {
+    file: "src/components/ward-redesign/sign-in/sign-in-data.ts",
+    text: /words: "Read a risk score, an acuity score or a best match"/u,
+    why:
+      "the redesign mock-up's copy of the same sign-in refusal line above (D-89, D-91), word for word; " +
+      "it goes when the sign-in page is built",
+  },
+  {
     file: "src/components/ward-management/out-of-area/out-of-area-side.tsx",
     text: /each nearest ward has confirmed/u,
     why: "names the ward nearest a home region, a fact of the map (D-71 item 6)",
@@ -263,8 +270,12 @@ describe("never-build drift guard", () => {
   it("nothing shares or mails from the app except the fixed team mailbox link", () => {
     expect(hits(/navigator\.share\b/u)).toEqual([]);
     // The one live mailto is a community team's own referral mailbox, with no subject or body.
+    // The redesign mock-up's copy of that panel (D-89, D-91) shows the same fixed link, and passes
+    // only while it is the identical mailbox link with no subject or body.
     const allowedMailto = (text: string, file: string) =>
-      file.endsWith("community/community-screen-panels.tsx") && /mailto:\$\{contact\.referralEmail\}`/u.test(text);
+      (file.endsWith("community/community-screen-panels.tsx") ||
+        file === "src/components/ward-redesign/community-team/community-team-contact.tsx") &&
+      /mailto:\$\{contact\.referralEmail\}`/u.test(text);
     const mailtoUse = (text: string, file: string) =>
       allowedMailto(text, file) ||
       file.endsWith("use-dirty-state-guard.ts") ||

@@ -55,7 +55,7 @@ function renderDrawer(overrides: Partial<Parameters<typeof WardTasksDrawer>[0]> 
       {...overrides}
     />,
   );
-  const drawer = screen.getByRole(overrides.withBackdrop ? "dialog" : "complementary", { name: "Tasks" });
+  const drawer = screen.getByRole(overrides.withBackdrop ? "dialog" : "complementary", { name: "Alerts" });
   return { dispatch, onClose, onSelectMovement, drawer };
 }
 
@@ -75,7 +75,7 @@ describe("the tasks drawer", () => {
         withBackdrop
       />,
     );
-    const drawer = screen.getByRole("dialog", { name: "Tasks" });
+    const drawer = screen.getByRole("dialog", { name: "Alerts" });
     expect(drawer).toHaveAttribute("aria-modal", "true");
   });
 
@@ -128,7 +128,7 @@ describe("the tasks drawer", () => {
       expect(snoozeTrigger).toHaveFocus();
 
       // Pressing Escape while focused inside the complementary drawer honours the visible Esc badge and returns focus to the opener:
-      const closeBtn = within(drawer).getByRole("button", { name: "Close tasks panel" });
+      const closeBtn = within(drawer).getByRole("button", { name: "Close alerts panel" });
       closeBtn.focus();
       fireEvent.keyDown(closeBtn, { key: "Escape" });
       expect(onClose).toHaveBeenCalledTimes(1);
@@ -197,7 +197,7 @@ describe("the tasks drawer", () => {
 
   it("closes on its own control without dispatching anything", () => {
     const { drawer, onClose, dispatch } = renderDrawer();
-    fireEvent.click(within(drawer).getByRole("button", { name: "Close tasks panel" }));
+    fireEvent.click(within(drawer).getByRole("button", { name: "Close alerts panel" }));
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(dispatch).not.toHaveBeenCalled();
   });
@@ -245,22 +245,22 @@ describe("task workspace state filters and actions", () => {
       acknowledgements: { [critical.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }] },
     });
     expect(within(drawer).queryByRole("textbox", { name: "Search tasks" })).toBeNull();
-    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter task state" }), {
+    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter alert state" }), {
       target: { value: "acknowledged" },
     });
     expect(within(drawer).getByTestId(`ward-task-${critical.id}`)).toBeVisible();
     fireEvent.click(within(drawer).getByRole("button", { name: /^Review/u }));
-    expect(within(drawer).getByText("No matching tasks")).toBeVisible();
+    expect(within(drawer).getByText("No matching alerts")).toBeVisible();
     fireEvent.click(within(drawer).getByRole("button", { name: "Clear filters" }));
     expect(within(drawer).getAllByRole("button", { name: "Acknowledge" })).toHaveLength(items.length);
   });
 
   it("offers completed tasks without allowing live facts to be marked done", () => {
     const { drawer } = renderDrawer();
-    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter task state" }), {
+    fireEvent.change(within(drawer).getByRole("combobox", { name: "Filter alert state" }), {
       target: { value: "completed" },
     });
-    expect(within(drawer).getByText("No completed tasks")).toBeVisible();
+    expect(within(drawer).getByText("No completed alerts")).toBeVisible();
     expect(within(drawer).queryByRole("button", { name: "Mark done" })).toBeNull();
   });
 
@@ -270,7 +270,7 @@ describe("task workspace state filters and actions", () => {
     expect(within(drawer).queryByText("Critical facts")).toBeNull();
     expect(within(drawer).getByTestId("ward-tasks-drawer-count")).toHaveTextContent(`${items.length} open`);
     expect(within(drawer).getByRole("button", { name: `All ${items.length}` })).toBeTruthy();
-    const stateFilter = within(drawer).getByRole("combobox", { name: "Filter task state" });
+    const stateFilter = within(drawer).getByRole("combobox", { name: "Filter alert state" });
     expect(stateFilter.parentElement).not.toHaveTextContent(String(items.length));
   });
 
@@ -357,7 +357,7 @@ describe("task workspace state filters and actions", () => {
         [item.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }],
       },
     });
-    const filter = within(drawer).getByRole("combobox", { name: "Filter task state" });
+    const filter = within(drawer).getByRole("combobox", { name: "Filter alert state" });
     fireEvent.change(filter, { target: { value: "unacknowledged" } });
     expect(within(drawer).queryByTestId(`ward-task-${item.id}`)).toBeNull();
     fireEvent.change(filter, { target: { value: "acknowledged" } });

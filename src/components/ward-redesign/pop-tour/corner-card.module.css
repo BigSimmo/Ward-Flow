@@ -1,0 +1,124 @@
+/*
+ * The help corner card (the tour offer and What's new), mock-up for the final round (D-91), from
+ * ward-tour-offer.module.css and ward-whats-new.module.css. Changes, for the build:
+ * - one card for both, one width (the notices mock-up leaves exactly this room at the bottom right);
+ * - on a computer, notices stand to its left (the card carries data-wf-corner-card, which
+ *   notices/notices.module.css listens for);
+ * - on a phone it rests over the dock (from 48rem down, where the dock shows, not 640px) and steps
+ *   back while a notice shows there, unless the person is using it.
+ */
+.card {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: var(--z-overlay, 40);
+  display: grid;
+  gap: var(--wf-s-2);
+  width: min(23rem, calc(100vw - 2rem));
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-font);
+  font-size: var(--wf-fs-13);
+  line-height: 1.45;
+  pointer-events: auto;
+  transition: opacity 160ms ease;
+}
+
+.title {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.list {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: 0;
+  padding-left: 1.125rem;
+  list-style: disc;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-1);
+}
+
+.primary,
+.secondary {
+  position: relative;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--wf-r-ctl, 8px);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid var(--wf-accent);
+  background: var(--wf-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-canvas));
+}
+
+.secondary {
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-2);
+}
+
+.secondary:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 48rem) {
+  .card {
+    right: 12px;
+    bottom: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 12px);
+    width: auto;
+    left: 12px;
+  }
+
+  /* The kit's phone size: 32px, with a 48px invisible tap area. */
+  .primary,
+  .secondary {
+    height: 32px;
+  }
+
+  .primary::after,
+  .secondary::after {
+    position: absolute;
+    inset: -8px 0;
+    content: "";
+  }
+
+  /* A notice has the phone's bottom while it shows: the card steps back, unless it is in use. */
+  :global(html:has([data-wf-toast]:not([data-leaving="true"]))) .card:not(:focus-within) {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}
+
+@media print {
+  .card {
+    display: none !important;
+  }
+}

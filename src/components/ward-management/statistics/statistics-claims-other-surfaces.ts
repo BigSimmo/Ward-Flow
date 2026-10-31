@@ -241,6 +241,11 @@ export const OTHER_SURFACE_CLAIMS: readonly ModelClaim[] = [
   },
   {
     id: "statistics-compare-screen/chooser/a-site-code-may-resolve-to-nothing",
+    retiredPageProse: {
+      date: "2026-10-31",
+      reason:
+        "Compare's own unit chooser was removed (D-91; Josh, 31 Oct 2026, 'Yes to all'); Open a unit links to the one finder on the statistics home page.",
+    },
     renderedIn: COMPARE_SCREEN,
     rendered: 'data-testid="ward-statistics-compare-ward-list"',
     claim: "Site lookup returns nothing rather than a fallback site when a code matches none.",

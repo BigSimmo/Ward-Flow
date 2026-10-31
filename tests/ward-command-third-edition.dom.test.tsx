@@ -74,8 +74,10 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     const atRest = screen.getAllByRole("heading", { level: 2 }).map((heading) => heading.textContent);
     expect(atRest[0]).toMatch(/^\d+ open ED journeys, \d+ beds? ready$/u);
     // Open ED journeys retain accountability through transit; the queue can also contain ward/community origins.
+    // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
+    // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.
     expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
-      /^\d+ still in ED · \d+ in transit or recorded departure · Limited demo coverage$/u,
+      /^\d+ still in ED · \d+ in transit( · \d+\.\d% beds in use)?$/u,
     );
     expect(atRest.slice(1)).toEqual(["ED pressure", "Priority queue", "Beds that fit", "Placement"]);
     expect(screen.queryByTestId("ward-placement-top-of-queue")).not.toBeInTheDocument();

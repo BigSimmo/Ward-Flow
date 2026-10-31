@@ -7,9 +7,8 @@ name: Ward Flow daily release
 # history, checks out nothing and runs no repository code. Rolling back is moving `live` back to the
 # previous `live-*` tag, by hand, with Josh's yes.
 on:
-  schedule:
-    # 22:00 UTC is 6 am in Perth (UTC+8, no daylight saving).
-    - cron: "0 22 * * *"
+  # Paused 31 Oct 2026 while the redesign merges (Josh's build plan): restore the schedule below,
+  # `- cron: "0 22 * * *"` (22:00 UTC is 6 am in Perth), after the final "release now".
   workflow_dispatch:
 
 permissions:

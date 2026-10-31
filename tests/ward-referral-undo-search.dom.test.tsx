@@ -21,6 +21,8 @@ import { ToastProvider } from "@/components/wf/toast-provider";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { searchWardFlow } from "@/components/ward-management/search/ward-smart-search";
 
 function renderBoard() {
   return render(
@@ -104,24 +106,20 @@ describe("Audit 1 (CS-15): a decision names the person and does not open the nex
   });
 });
 
-describe("Referrals v10: search narrows", () => {
-  it("narrows the queue to matching rows and the count line says how many are shown", () => {
+describe("Referrals: no queue filter box (search and forms review, 30 Oct 2026)", () => {
+  it("lists every queued referral with no Filter queue box, and the header search finds one by id", () => {
     renderBoard();
-    const total = queueIds().length;
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter referrals" }), { target: { value: "RF-005" } });
-    expect(queueIds()).toEqual(["RF-005"]);
-    expect(screen.getByTestId("ward-referral-search-note")).toHaveTextContent(`1 of ${total} shown`);
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter referrals" }), { target: { value: "" } });
-    expect(queueIds()).toHaveLength(total);
-  });
-
-  it("says no queued referral matches rather than claiming the queue is empty", () => {
-    renderBoard();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Filter referrals" }), {
-      target: { value: "zzzz-no-such" },
+    expect(screen.queryByRole("searchbox", { name: "Filter referrals" })).not.toBeInTheDocument();
+    expect(queueIds()).toContain("RF-005");
+    // The header search is where a queued referral is found by id, name, UMRN, origin or region.
+    const state = seedWardFlowState();
+    const found = searchWardFlow({
+      query: "RF-005",
+      patients: state.patients,
+      movements: state.movements,
+      units: state.units,
+      referrals: state.referrals,
     });
-    expect(screen.getByTestId("ward-referral-board-queued-empty")).toHaveTextContent(
-      "No queued referral matches the search.",
-    );
+    expect(found.referrals.map((result) => result.referral.id)).toContain("RF-005");
   });
 });

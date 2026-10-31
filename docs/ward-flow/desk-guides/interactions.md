@@ -1,6 +1,6 @@
 # Desk guide: Keys and interactions
 
-<!-- last-checked: 2026-10-28 -->
+<!-- last-checked: 2026-10-31 -->
 
 The keys Ward Flow answers to. Each line is copied from Help in the app, under Keyboard shortcuts.
 
@@ -12,6 +12,7 @@ The keys Ward Flow answers to. Each line is copied from Help in the app, under K
 | `Shift+A` | Open Activity.                                                              | `shell/ward-rail-preferences.ts`                                                           |
 | `Shift+R` | Start a new referral.                                                       | `shell/ward-rail-preferences.ts`                                                           |
 | `[`       | Fold the side menu to icons, or open it again.                              | `shell/ward-rail.tsx`                                                                      |
+| `Alt+N`   | Jump to the newest notice's button, and back. Option+N on a Mac.            | `../wf/toast-keyboard.ts`                                                                  |
 | `Esc`     | Close what is open, or step back.                                           | Each dialog and drawer                                                                     |
 | `?`       | Show these shortcuts. On Handover and Referrals, list that page's own keys. | `help/ward-shortcuts-key.ts`, `handover/handover-page.tsx`, `referrals/referral-board.tsx` |
 

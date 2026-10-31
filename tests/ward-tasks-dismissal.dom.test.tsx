@@ -108,7 +108,7 @@ describe("unsaved escalation dismissal", () => {
         if (route === "Escape") fireEvent.keyDown(input, { key: "Escape" });
         else if (route === "Cancel") fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
         else if (route === "Escalate") fireEvent.click(trigger());
-        else if (route === "Close") fireEvent.click(screen.getByRole("button", { name: "Close tasks panel" }));
+        else if (route === "Close") fireEvent.click(screen.getByRole("button", { name: "Close alerts panel" }));
         else fireEvent.click(screen.getByTestId("ward-tasks-drawer-backdrop"));
       };
       dismiss();
@@ -149,7 +149,7 @@ describe("unsaved escalation dismissal", () => {
     fireEvent.click(
       withBackdrop
         ? screen.getByTestId("ward-tasks-drawer-backdrop")
-        : screen.getByRole("button", { name: "Close tasks panel" }),
+        : screen.getByRole("button", { name: "Close alerts panel" }),
     );
     expect(confirm).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledOnce();
@@ -368,7 +368,7 @@ describe("task draft protection through the real shell Sheet", () => {
     const back = vi.spyOn(window.history, "back");
     const { sheet } = await openShellDraft();
     expect(window.history.state?.wardDrawer).toBeTruthy();
-    fireEvent.click(within(sheet).getByRole("button", { name: "Close tasks panel" }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "Close alerts panel" }));
     await waitFor(() => expect(screen.queryByTestId("ward-bar-tasks-sheet")).toBeNull());
     expect(back).toHaveBeenCalledOnce();
     expect(confirm).toHaveBeenCalledOnce();

@@ -1,0 +1,16 @@
+/* Preview only: the app's pinned banner holder (ward-flow-layout.module.css `.bannerHolder`), which
+   the preview shell does not draw. Pinned under the header; over Home's hero band it takes the
+   band's top colour so header, notice and band read as one surface. */
+.holder {
+  position: sticky;
+  top: var(--wf-header-height, 3.75rem);
+  z-index: 25;
+  flex-shrink: 0;
+  min-height: 0;
+  padding-bottom: 0.25rem;
+  background: var(--wf-hero-1);
+}
+
+.holder:empty {
+  padding-bottom: 0;
+}

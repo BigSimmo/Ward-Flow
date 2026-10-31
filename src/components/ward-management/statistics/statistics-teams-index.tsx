@@ -251,6 +251,7 @@ function TeamsIndexView({
             placeholder="Find a team"
             value={phoneQuery}
             onChange={(event) => setPhoneQuery(event.target.value)}
+            onClear={() => setPhoneQuery("")}
           />
           <Segmented<"active" | "all">
             className={phone.seg}

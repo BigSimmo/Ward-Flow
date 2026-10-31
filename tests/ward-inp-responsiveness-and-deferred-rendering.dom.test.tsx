@@ -116,7 +116,9 @@ describe("INP responsiveness, deferred rendering, and font fallback contract", (
     expect(within(consoleRegion).getAllByText(/UM1000/i).length).toBeGreaterThan(0);
   });
 
-  it("highlights matching HubScreen places when typing Royal Perth or clicking Pulled and memoizes place rows", () => {
+  // Review point 21 (Josh approved 31 Oct 2026): the Places search narrows the list instead of
+  // dimming rows, and the kind and order switches yield through startTransition.
+  it("narrows HubScreen places when typing Royal Perth and memoizes place rows", () => {
     const hubSource = readFileSync(resolve(process.cwd(), "src/components/ward-management/hub/hub-screen.tsx"), "utf8");
     expect(hubSource).toContain("useDeferredValue");
     expect(hubSource).toContain("startTransition");
@@ -136,8 +138,10 @@ describe("INP responsiveness, deferred rendering, and font fallback contract", (
     const searchInput = screen.getByLabelText("Search wards, EDs and community teams") as HTMLInputElement;
     fireEvent.change(searchInput, { target: { value: "Royal Perth" } });
 
-    expect(screen.getByTestId("hub-highlight-note")).toBeTruthy();
-    const dimmedRows = document.querySelectorAll('[data-hub-row][data-dim="true"]');
-    expect(dimmedRows.length).toBeGreaterThan(0);
+    expect(screen.getByTestId("hub-shown-count")).toHaveTextContent(/of \d+ match/u);
+    const rows = Array.from(document.querySelectorAll<HTMLElement>("#hub-results [data-hub-row]"));
+    expect(rows.length).toBeGreaterThan(0);
+    // Every row left on the list is a Royal Perth place: the query narrowed it.
+    for (const row of rows) expect(row.textContent ?? "").toMatch(/royal perth|rph|dabakarn/iu);
   });
 });

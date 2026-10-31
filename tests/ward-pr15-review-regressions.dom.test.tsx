@@ -142,7 +142,7 @@ describe("PR15 recorded facts and unavailable data", () => {
     expect(container.textContent).not.toMatch(/Ready beds and people waiting are separate counts/);
     expect(container.textContent).not.toMatch(/This page does not match which bed suits which person/);
     expect(container.textContent).not.toMatch(/net bed buffer|Net Capacity|Demand Ratio|ED Patients/);
-    expect(screen.getAllByText("Still open:")).toHaveLength(1);
+    expect(screen.getAllByText(/^Still open · /)).toHaveLength(1);
     expect(container.textContent).toContain(`${available.beds} beds`);
   });
 
@@ -239,8 +239,9 @@ it("counts accepted and rejected session events rather than rejections alone", (
       <EventControls />
     </>,
   );
+  // Settings by login (31 Oct 2026): the count is in Demo tools' card meta, "N movements held · N events this session".
   const count = () =>
-    screen.getByText("Events recorded this session").parentElement!.querySelector("strong")!.textContent;
+    /(\d+) events? this session/u.exec(screen.getByTestId("ward-settings-storage-telemetry").textContent ?? "")?.[1];
   expect(count()).toBe("0");
   fireEvent.click(screen.getByRole("button", { name: "Accepted event" }));
   expect(count()).toBe("1");
@@ -383,12 +384,13 @@ describe("PR15 discharge and referral provenance", () => {
     void _authoredIntake;
     renderFlow(<ReferralBoard />, { referrals: [referral] });
     fireEvent.click(screen.getByTestId(`ward-referral-board-select-${referral.id}`));
-    // Option A (9 Oct 2026): the dossier is the Patient tab and the facts are a labelled grid
-    // ("Direct contact" over "Not recorded"), with no colon between label and value.
+    // Referrals redesign (Josh, 31 Oct 2026): the Patient tab's Referrer block names the gap in words,
+    // and "Why referred" carries the time the referral was raised.
     fireEvent.click(screen.getByRole("tab", { name: "Patient" }));
     const detail = screen.getByRole("region", { name: "Selected referral detail" });
-    expect(detail.textContent).toMatch(/Direct contact\s*Not recorded/);
-    expect(detail.textContent).toContain("Referral raised");
+    expect(detail.textContent).toMatch(/ReferrerNot recorded/);
+    expect(detail.textContent).toContain("Direct contact not recorded");
+    expect(detail.textContent).toContain("Why referred");
     expect(detail.textContent).not.toMatch(/Dr\. M\. Lawson|9956 2200|Electronic Triage Receipt/);
   });
 

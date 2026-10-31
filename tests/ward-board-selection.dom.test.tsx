@@ -89,31 +89,33 @@ describe("ward board selection — nothing is chosen for the reader", () => {
     }
   });
 
-  it("selects nobody on first render, and says so rather than showing an empty panel", () => {
+  it("opens on the first bed that needs a look, and Close leaves the panel empty and stated", () => {
     const { container } = renderWardBoard(UNIT_ID);
 
-    // Non-vacuity: there are tiles to have failed to select.
+    // Non-vacuity: there are tiles to have chosen from.
     expect(tileButtons(container).length).toBeGreaterThan(0);
 
     /*
-     * The panel is now PERMANENT and empty rather than absent — owner, 2026-08-30, asking for the
-     * side panels to match the home page's, which keeps its right region always present with an
-     * empty-state sentence.
-     *
-     * The decision this test was written to protect is unchanged and is still asserted below:
-     * nobody is chosen for the reader, and the absence is STATED rather than left as a blank box.
-     * Auto-selecting an occupant would read as the system having picked a person out of the ward;
-     * an unexplained empty column would read as a panel that failed to load. Both are still
-     * refused. What changed is where the sentence lives — it moved INTO the panel it describes,
-     * because the hint and the panel were otherwise carrying the same words a column apart.
+     * CHANGED BY THE OWNER, 31 Oct 2026 (Stays and discharges redesign, point 16, approved "Yes to
+     * all"): the record column still stays on screen (30 August ruling), but on a laptop it now opens
+     * on the first bed that needs a look instead of sitting empty. It is the board's own "needs a
+     * look" filter that picks it, never a person chosen for its own sake, and it happens once: Close
+     * leaves the panel empty for the rest of the visit, with the absence STATED, as before.
      */
+    const pressed = tileButtons(container).filter((button) => button.getAttribute("aria-pressed") === "true");
+    expect(pressed).toHaveLength(1);
+    expect(screen.getByTestId("ward-board-detail")).not.toHaveAttribute("data-detail-kind", "none");
+    const lookFilterCount = Number(
+      (screen.getByRole("radio", { name: /^Needs a look/u }).textContent ?? "").match(/\d+/u)?.[0] ?? "0",
+    );
+    expect(lookFilterCount, "the board opened a bed although none needs a look").toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTestId("ward-board-detail-close"));
     expect(container.querySelector('[data-testid="ward-board-detail-person"]')).toBeNull();
     expect(container.querySelector('[data-testid="ward-board-detail-close"]')).toBeNull();
-    expect(screen.getByTestId("ward-board-select-hint")).toHaveTextContent("Choose a bed to view its record.");
     expect(tileButtons(container).filter((button) => button.getAttribute("aria-pressed") === "true")).toHaveLength(0);
 
-    // The absence is STATED. A blank column reads as a panel that failed to load, and an
-    // auto-selected occupant would read as the system having picked a person out of the ward.
+    // The absence is STATED. A blank column reads as a panel that failed to load.
     const hint = screen.getByTestId("ward-board-select-hint");
     expect(hint).toHaveTextContent("Choose a bed to view its record.");
   });

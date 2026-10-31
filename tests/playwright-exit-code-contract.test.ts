@@ -125,6 +125,7 @@ async function runPhase({
       releaseGateCases,
       requiredReleaseGate: false,
       releaseGateProject: null,
+      releaseGatePart: null,
       readJsonReport: readReport,
       readFileSync: (file: string) => JSON.stringify(readReport(file)),
       keepJourneyFailures: () => null,

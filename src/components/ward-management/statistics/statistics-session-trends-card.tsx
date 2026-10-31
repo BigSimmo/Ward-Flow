@@ -64,47 +64,47 @@ function SessionTrendsView({ now, hours, showTotal = true, trends }: TrendsProps
       aside={<span className={styles.muted}>Last {trends?.hours.length ?? hours ?? 4} hours</span>}
     >
       <CardBody className={styles.bodyStack}>
-        <p className={styles.muted}>
-          Counted from what was recorded in this browser since the demo started. Earlier days are not held yet, and an
-          undone action still counts.
-        </p>
+        {/* With nothing recorded the card is one line, not two paragraphs of method. The
+            method note stays, cut to one line, only above a table it explains. */}
         {trends === null ? (
           <ExecutiveStatisticsUnavailable />
         ) : exactStatisticsCount(trends.counted) === 0 ? (
           <p className={styles.muted} data-testid="ward-statistics-session-trends-empty">
-            Nothing recorded in the last {trends.hours.length} hours. Referrals, decisions, arrivals and departures
-            appear here as they are recorded.
+            Nothing recorded yet
           </p>
         ) : (
-          <div className={styles.tableWrap}>
-            <table className={`${tableClasses.table} ${styles.table}`}>
-              <caption className={styles.srOnly}>Actions recorded this session, by hour</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Recorded</th>
-                  {trends.hours.map((hour) => (
-                    <th scope="col" key={hour}>
-                      {formatInstantWithDay(hour, now)}
-                    </th>
-                  ))}
-                  {showTotal ? <th scope="col">Total</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {trends.rows.map((row) => (
-                  <tr key={row.id} data-testid={`ward-statistics-session-trend-${row.id}`}>
-                    <th scope="row">{row.label}</th>
-                    {row.counts.map((count, index) => (
-                      <td key={trends.hours[index]} className={styles.num}>
-                        {statisticsCountText(count)}
-                      </td>
+          <>
+            <p className={styles.muted}>Recorded in this browser since the demo started. Undone actions still count.</p>
+            <div className={styles.tableWrap}>
+              <table className={`${tableClasses.table} ${styles.table}`}>
+                <caption className={styles.srOnly}>Actions recorded this session, by hour</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Recorded</th>
+                    {trends.hours.map((hour) => (
+                      <th scope="col" key={hour}>
+                        {formatInstantWithDay(hour, now)}
+                      </th>
                     ))}
-                    {showTotal ? <td className={styles.num}>{statisticsCountText(row.total)}</td> : null}
+                    {showTotal ? <th scope="col">Total</th> : null}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {trends.rows.map((row) => (
+                    <tr key={row.id} data-testid={`ward-statistics-session-trend-${row.id}`}>
+                      <th scope="row">{row.label}</th>
+                      {row.counts.map((count, index) => (
+                        <td key={trends.hours[index]} className={styles.num}>
+                          {statisticsCountText(count)}
+                        </td>
+                      ))}
+                      {showTotal ? <td className={styles.num}>{statisticsCountText(row.total)}</td> : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </CardBody>
     </StatCard>

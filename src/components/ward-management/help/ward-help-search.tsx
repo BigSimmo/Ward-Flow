@@ -1,19 +1,25 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { useIsPhone } from "@/components/wf";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
-import { howToHref } from "./ward-help-ask";
+import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
-import { DESK_GUIDES } from "./ward-help-guide";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
+import { HOW_TOS } from "./ward-help-howto";
+import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
+
+/** How-tos whose controls a phone screen does not draw: on a phone they open, not Show me. */
+const COMPUTER_ONLY = new Set(HOW_TOS.filter((howTo) => howTo.computerOnly).map((howTo) => howTo.id));
+import { HELP_BED_MANAGER_NAME } from "./ward-help-roles";
 import styles from "./ward-help-search.module.css";
 
 /** Native fragment navigation keeps the mounted workspace and notifies Settings. */
@@ -22,18 +28,34 @@ function openHelpTab(tab: string) {
 }
 
 function roleLabel(role: WardTourRole): string {
-  return role === "admin" ? "Access admin" : CHROME_ROLE_LABELS[role];
+  if (role === "admin") return "Access admin";
+  if (role === "bed_manager") return HELP_BED_MANAGER_NAME;
+  return CHROME_ROLE_LABELS[role];
 }
 
-function suggested(role: WardTourRole): readonly HelpSearchResult[] {
-  return DESK_GUIDES[role].jobs.slice(0, 3).map((job, index) => ({
-    key: `guide:${role}:${index}`,
-    group: "Guides",
-    title: job.job,
-    detail: job.how,
-    go: job.go,
-    desks: [role],
-  }));
+/**
+ * Before anything is typed: three of this desk's tasks with a Show me, this screen's first, in the
+ * list's own order (grouping only, never ranking).
+ */
+function suggested(
+  role: WardTourRole,
+  pathname: string,
+  home: string | undefined,
+  phone: boolean,
+): readonly HelpSearchResult[] {
+  const tasks = tasksForDesk(role).filter((howTo) => showMeAvailable(howTo, role, home, phone));
+  const here = (go: HelpSearchResult["go"]) => howToHref(go, role, home)?.split("#")[0] === pathname;
+  return [...tasks.filter((howTo) => here(howTo.go)), ...tasks.filter((howTo) => !here(howTo.go))]
+    .slice(0, 3)
+    .map((howTo) => ({
+      key: `howto:${howTo.id}`,
+      group: "Guides",
+      title: howTo.title,
+      detail: howTo.answer,
+      go: howTo.go,
+      desks: howTo.desks === "all" ? undefined : howTo.desks,
+      howToId: howTo.id,
+    }));
 }
 
 /**
@@ -51,6 +73,8 @@ export function WardHelpSearch({
   onNavigate?: () => void;
 }) {
   const router = useRouter();
+  const pathname = usePathname() ?? "";
+  const phone = useIsPhone();
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
   const showMeOn = useWardFeatureFlag("help-ask");
@@ -66,7 +90,7 @@ export function WardHelpSearch({
       : answer.kind === "none"
         ? answer.closest
         : answer.kind === "empty"
-          ? suggested(role)
+          ? suggested(role, pathname, home, phone)
           : [];
 
   const layer = useRef<HTMLDivElement>(null);
@@ -94,9 +118,16 @@ export function WardHelpSearch({
     if (restoreFocus) requestAnimationFrame(() => opener.current?.focus());
   }
 
+  /** Show me plays for this result: this desk's own task, drawn on this device, on a screen it may open. */
+  function walks(result: HelpSearchResult, mine: boolean): boolean {
+    if (!showMeOn || !result.howToId || !mine) return false;
+    if (phone && COMPUTER_ONLY.has(result.howToId)) return false;
+    return !result.go || howToHref(result.go, role, home) !== undefined;
+  }
+
   function act(result: HelpSearchResult) {
     const mine = !result.desks || result.desks.includes(role);
-    if (showMeOn && result.howToId && mine) {
+    if (result.howToId && walks(result, mine)) {
       close(false);
       showWardHowTo(result.howToId);
       return;
@@ -155,7 +186,7 @@ export function WardHelpSearch({
           <strong>{result.title}</strong>
           <span className={styles.detail}>{result.detail}</span>
         </span>
-        {showMeOn && result.howToId && mine ? (
+        {walks(result, mine) ? (
           <span className={styles.action}>Show me</span>
         ) : href ? (
           <span className={styles.action}>Open</span>
@@ -192,7 +223,7 @@ export function WardHelpSearch({
         onClick={() => setOpen(true)}
       >
         <Search size={16} aria-hidden="true" />
-        <span>Search Help: guides, screens, words, shortcuts…</span>
+        <span>Search Help, or ask: how do I pull a bed?</span>
       </button>
       {open && typeof document !== "undefined"
         ? createPortal(

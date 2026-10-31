@@ -58,7 +58,7 @@ function answer(label: string, value: string) {
 function confirmCatchment() {
   fireEvent.click(screen.getByRole("button", { name: "Change" }));
   fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
-  fireEvent.change(screen.getByLabelText("Search catchment"), { target: { value: "Inner City Clinic" } });
+  fireEvent.change(screen.getByLabelText("Catchment team"), { target: { value: "Inner City Clinic" } });
   fireEvent.change(screen.getByLabelText("Home region"), { target: { value: "Perth Metropolitan" } });
   fireEvent.change(screen.getByLabelText("Service area"), { target: { value: "East Metro" } });
   fireEvent.click(screen.getByRole("button", { name: "Confirm catchment" }));

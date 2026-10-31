@@ -1,0 +1,39 @@
+/* The one page search field (parts/search-field.tsx, D-91). Tokens only; the box itself is the
+   kit's TextInput at the kit's control height. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.box {
+  width: 100%;
+}
+
+/* "12 of 40 wards": quiet, under the field, never a second heading. */
+.count {
+  margin: 0;
+  padding-inline: 2px;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 48rem) {
+  /* A phone has no "/" key to press. */
+  .shortcut {
+    display: none;
+  }
+
+  /* Pinned: the field stays at the top of its scrolling list. The band takes the surface it sits on
+     (`--search-field-band`, the page's grey by default) so rows scroll cleanly under it. */
+  .pinned {
+    position: sticky;
+    top: var(--wf-header-height, 3.75rem);
+    z-index: 2;
+    padding-block: var(--wf-s-2);
+    background: var(--search-field-band, var(--wf-surface-2));
+  }
+}

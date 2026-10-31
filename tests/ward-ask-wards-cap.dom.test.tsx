@@ -103,13 +103,14 @@ describe("Ask wards: the cap of wards still waiting warns and never blocks", () 
     expect(ask).not.toHaveAttribute("aria-disabled");
     fireEvent.click(ask);
 
+    // D-91: the one Find a ward list names its asked group by its heading, "Asked 4".
     const asked = screen.getByRole("region", { name: "Ask wards" });
-    expect(within(asked).getByRole("list", { name: "Wards asked" }).children).toHaveLength(4);
+    expect(within(asked).getByRole("list", { name: /^Asked/ }).children).toHaveLength(4);
 
     // A declined ward is no longer waiting.
     fireEvent.click(screen.getByRole("button", { name: "First ward declines" }));
     expect(
-      within(screen.getByRole("region", { name: "Ask wards" })).getByRole("list", { name: "Wards asked" }).children,
+      within(screen.getByRole("region", { name: "Ask wards" })).getByRole("list", { name: /^Asked/ }).children,
     ).toHaveLength(3);
   });
 

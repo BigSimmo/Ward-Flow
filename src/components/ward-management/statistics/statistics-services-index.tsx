@@ -472,7 +472,12 @@ function ServicesIndexView({
               aside={<span className={cx(styles.muted, index.phoneHide)}>Every referral on record</span>}
               data-testid="ward-statistics-services-referrals"
             >
-              <div className={styles.tableWrap}>
+              <div
+                className={styles.tableWrap}
+                tabIndex={0}
+                role="region"
+                aria-label="Where referrals were accepted, scrollable table"
+              >
                 <table className={cx(tableClasses.table, styles.table, index.matrix)}>
                   <caption className={styles.srOnly}>
                     Referrals for a bed, by the referring service (rows) and the service whose ward accepted (columns)

@@ -17,15 +17,14 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/* An urgent buzz pulses the 6% danger tint, not a side stripe (owner ruling, 31 Oct 2026). */
 @keyframes urgentBuzzGlow {
-  0% {
-    box-shadow: inset 3px 0 0 0 var(--wf-danger);
+  0%,
+  100% {
+    background: color-mix(in srgb, var(--wf-danger) 6%, transparent);
   }
   50% {
-    box-shadow: inset 6px 0 0 0 var(--wf-danger);
-  }
-  100% {
-    box-shadow: inset 3px 0 0 0 var(--wf-danger);
+    background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
   }
 }
 
@@ -36,7 +35,7 @@
 @media (prefers-reduced-motion: reduce) {
   .urgentBuzzPulse {
     animation: none;
-    box-shadow: inset 3px 0 0 0 var(--wf-danger);
+    background: color-mix(in srgb, var(--wf-danger) 6%, transparent);
   }
 }
 
@@ -106,4 +105,69 @@
 
 .inSheet .footNote {
   display: none;
+}
+
+/* Redesign (approved 31 Oct 2026): the list item that holds Show more under a long list. */
+.moreRow {
+  list-style: none;
+}
+
+/* Redesign: with the footer sentence gone, the sound switch sits at the end of the footer. */
+.panel .footEnd {
+  justify-content: flex-end;
+}
+
+/* Redesign: notices of the same kind share one row, one line per person (as the Alerts drawer). */
+.groupList {
+  display: grid;
+  margin: 0;
+  padding: 0 0 0 calc(var(--wf-h-sm) + var(--wf-s-3));
+  list-style: none;
+}
+
+.groupMember {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: 6px 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.memberText {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+/* A person's name wraps in full, never cut short; the record number wraps under it when needed. */
+.memberWho {
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  align-items: baseline;
+  column-gap: 6px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.memberWho strong {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.memberWhen {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+/* On a phone the shared rows indent their detail 30 px; the people line up with it. */
+@media (max-width: 48rem) {
+  .groupList {
+    padding-left: 30px;
+  }
 }

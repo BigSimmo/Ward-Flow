@@ -1,0 +1,17 @@
+/* New referral preview: the button that opens the slide-out again once it is closed. */
+.reopen {
+  position: fixed;
+  inset-inline-end: var(--wf-s-4);
+  inset-block-end: var(--wf-s-4);
+  z-index: 10;
+  min-height: 48px;
+  padding: 0 var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
+  font: inherit;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}

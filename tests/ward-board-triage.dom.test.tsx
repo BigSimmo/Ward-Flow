@@ -50,6 +50,24 @@ function releasesFor(): ReturnType<typeof derivedBedReleases> {
 }
 
 const FIGURE_KEYS = ["availableNow", "confirmedToday", "expectedToday", "blockedToday", "held", "onLeave"] as const;
+
+/**
+ * Redesign (Josh, 31 Oct 2026): Ready now sits in the hero (`ward-board-headline`), not on the "Also
+ * on this ward" line, so the line does not say it twice. The other five stay on the line, as a
+ * phrase in running text (first letter lower case).
+ */
+function figureFor(key: (typeof FIGURE_KEYS)[number]): HTMLElement {
+  return screen.getByTestId(key === "availableNow" ? "ward-board-headline" : `ward-board-figure-${key}`);
+}
+
+/**
+ * The shared label as the running-text line prints it: the same words, first letter lower case,
+ * and "Releases" singular for a count of one ("1 release held up", build notes round 2).
+ */
+function runningLabels(label: string): string[] {
+  const lower = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
+  return [label, lower(label), lower(label.replace(/^Releases /u, "Release "))];
+}
 const seededState = seedWardFlowState("standard");
 
 describe("ward board triage bar — the home page's six figures, in the home page's words", () => {
@@ -61,10 +79,15 @@ describe("ward board triage bar — the home page's six figures, in the home pag
     expect(Object.keys(CAPACITY_FIGURE_LABELS)).toHaveLength(6);
 
     for (const key of FIGURE_KEYS) {
-      const figure = within(bar).getByTestId(`ward-board-figure-${key}`);
+      const figure = key === "availableNow" ? figureFor(key) : within(bar).getByTestId(`ward-board-figure-${key}`);
       // The exact string the morning page renders. A board that typed "Available Now" or "Blocked"
       // would satisfy any check written against its own markup and fail this one.
-      expect(figure.textContent).toContain(CAPACITY_FIGURE_LABELS[key]);
+      const text = figure.textContent ?? "";
+      const label = CAPACITY_FIGURE_LABELS[key];
+      expect(
+        runningLabels(label).some((form) => text.includes(form)),
+        `${key}: "${text}"`,
+      ).toBe(true);
     }
   });
 
@@ -77,7 +100,7 @@ describe("ward board triage bar — the home page's six figures, in the home pag
       const breakdown = capacityBreakdown(unit, [...releases], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
 
       for (const key of FIGURE_KEYS) {
-        const figure = screen.getByTestId(`ward-board-figure-${key}`);
+        const figure = figureFor(key);
         const value = Number((figure.textContent ?? "").match(/\d+/)?.[0]);
         expect(value, `${unit.id} ${key}`).toBe(breakdown[key]);
         // POSSIBLE, not merely computed. No capacity figure for one ward can exceed that ward's
@@ -95,11 +118,12 @@ describe("ward board triage bar — the home page's six figures, in the home pag
 
   it("agrees with the headline about how many beds can be filled today", () => {
     renderWardBoard(UNIT_ID);
-    const available = screen.getByTestId("ward-board-figure-availableNow").textContent ?? "";
+    // Ready now is said once now, in the hero; it must still be this ward's own capacity figure.
+    const unit = allUnits.find((candidate) => candidate.id === UNIT_ID)!;
+    const breakdown = capacityBreakdown(unit, [...releasesFor()], [...seededState.leaveBeds], WARD_ADMISSIONS_ANCHOR);
     const headline = screen.getByTestId("ward-board-headline").textContent ?? "";
-    const value = (available.match(/\d+/) ?? [])[0];
-    expect(value).toBeDefined();
-    expect(headline).toContain(value!);
+    expect(headline).toContain(`${breakdown.availableNow}`);
+    expect(screen.queryByTestId("ward-board-figure-availableNow")).toBeNull();
   });
 });
 
@@ -136,16 +160,15 @@ describe("ward board triage bar — the toggle changes emphasis and hides nothin
     const user = userEvent.setup();
     renderWardBoard(UNIT_ID);
 
-    for (const key of FIGURE_KEYS) expect(screen.getByTestId(`ward-board-figure-${key}`)).toBeTruthy();
+    for (const key of FIGURE_KEYS) expect(figureFor(key)).toBeTruthy();
     await user.click(screen.getByTestId("ward-board-basis-expected"));
-    for (const key of FIGURE_KEYS) expect(screen.getByTestId(`ward-board-figure-${key}`)).toBeTruthy();
+    for (const key of FIGURE_KEYS) expect(figureFor(key)).toBeTruthy();
 
     // "Discharges held up" in particular (renamed from "Blocked releases", owner ruling 2026-09-06):
     // the figure a coordinator most needs to chase must never be
     // the one a display control can remove.
-    expect(screen.getByTestId("ward-board-figure-blockedToday").textContent).toContain(
-      CAPACITY_FIGURE_LABELS.blockedToday,
-    );
+    const heldUp = screen.getByTestId("ward-board-figure-blockedToday").textContent ?? "";
+    expect(runningLabels(CAPACITY_FIGURE_LABELS.blockedToday).some((form) => heldUp.includes(form))).toBe(true);
   });
 
   it("says in words which basis is showing, so a printed sheet is not ambiguous", async () => {

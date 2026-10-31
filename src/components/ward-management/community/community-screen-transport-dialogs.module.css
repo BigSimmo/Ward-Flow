@@ -1,0 +1,80 @@
+/*
+ * The community team screen's two transport dialogs on the kit Dialog (redesign, approved
+ * 31 Oct 2026): Log transport booking and Cancel this team's transport booking. Kit tokens only.
+ * Imported only by `community-screen-transport-dialogs.tsx`.
+ */
+
+.who {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.hint {
+  margin: 0;
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
+.error {
+  margin: 0;
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-danger-ink);
+}
+
+/* Keep booking at the left, the one filled button at the right. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-2);
+}
+
+.actions > :last-child {
+  margin-left: auto;
+}
+
+/* Until a reason is chosen, the kit names why Confirm cancel is unavailable. That sentence is long,
+   so it takes its own line above, at the right, and Keep booking and Confirm cancel share the row
+   under it. */
+.actions > span:has(> button) {
+  display: contents;
+}
+
+.actions > span:has(> button) > span {
+  order: -1;
+  flex: 1 1 100%;
+  justify-content: flex-end;
+  /* The whole sentence, wrapped, never cut off. */
+  white-space: normal;
+  overflow: visible;
+  text-align: right;
+}
+
+.actions > span:has(> button) > button {
+  margin-left: auto;
+}
+
+/* Log transport booking: on a phone the dialog sits on the bottom edge of the screen, as a sheet
+   does (the kit dialog leaves an 8px gap under it). The negative margins undo the scrim's phone
+   padding at the sides and bottom; the home indicator keeps its room inside the panel. */
+@media (max-width: 48rem) {
+  .bookPanel.bookPanel {
+    align-self: flex-end;
+    width: calc(100% + 2 * var(--wf-s-2));
+    max-width: none;
+    margin: 0 calc(-1 * var(--wf-s-2)) calc(-1 * max(var(--wf-s-2), env(safe-area-inset-bottom)));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    border-bottom: 0;
+    border-radius: var(--wf-r-xl) var(--wf-r-xl) 0 0;
+  }
+}

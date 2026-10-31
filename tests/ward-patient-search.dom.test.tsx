@@ -32,6 +32,9 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 
+// The Patients census search is the kit's one page search field (D-91, Patients redesign).
+const SEARCH_LABEL = "Find a person by name, UMRN or place";
+
 /** Raises the same `ADVANCE_CLOCK` demo event the real demo controls dispatch, so this suite can
  * move the shared clock without reaching into the reducer directly — mirrors `ClockAdvancer` in
  * ward-handover.dom.test.tsx and ward-escalation.dom.test.tsx. */
@@ -64,7 +67,7 @@ describe("PatientSearchPage", () => {
     renderSearch();
 
     expect(screen.getByTestId("ward-patient-search")).toBeInTheDocument();
-    expect(screen.getByLabelText("Search")).toBeInTheDocument();
+    expect(screen.getByLabelText(SEARCH_LABEL)).toBeInTheDocument();
     expect(screen.getByLabelText("Stage")).toBeInTheDocument();
     expect(screen.getByLabelText("Department")).toBeInTheDocument();
     expect(screen.getByTestId("ward-patient-search-results")).toBeInTheDocument();
@@ -80,8 +83,12 @@ describe("PatientSearchPage", () => {
   it("tells the reader the search finds a person, not only a movement", () => {
     renderSearch();
 
-    expect(screen.getByText(/Find a person by name or (record number|UMRN)/i)).toBeInTheDocument();
-    expect(screen.getByLabelText("Search")).toHaveAttribute("placeholder", expect.stringMatching(/name/i));
+    expect(
+      screen.getByRole("searchbox", {
+        name: /Find a person by name or (record number|UMRN)|Find a person by name, UMRN/i,
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(SEARCH_LABEL)).toHaveAttribute("placeholder", expect.stringMatching(/name/i));
   });
 
   // This page owns its own single search field, a stage select and a department select — never a
@@ -89,7 +96,8 @@ describe("PatientSearchPage", () => {
   // <form> exist anywhere on the rendered page.
   it("owns exactly one search composer: one text input, one form", () => {
     renderSearch();
-    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+    expect(screen.getAllByRole("searchbox")).toHaveLength(1);
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
     expect(document.querySelectorAll("form")).toHaveLength(1);
   });
 
@@ -100,7 +108,7 @@ describe("PatientSearchPage", () => {
   // doc comment for the ruling this closes.
   it("places the existing single query control before results, keeps the Add patient href constant, and hands its typed text off in memory instead", () => {
     renderSearch();
-    const search = screen.getByLabelText("Search");
+    const search = screen.getByLabelText(SEARCH_LABEL);
     const results = screen.getByTestId("ward-patient-search-results-console");
     expect(search.compareDocumentPosition(results) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const add = screen.getByTestId("ward-patient-search-add");
@@ -148,7 +156,7 @@ describe("PatientSearchPage", () => {
     renderSearch();
 
     // Searching the WF number must still find the row — only the visible label changed.
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "wf-003" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "wf-003" } });
 
     const results = screen.getByTestId("ward-patient-search-results");
     expect(screen.getByRole("heading", { name: "1 match" })).toBeInTheDocument();
@@ -173,7 +181,7 @@ describe("PatientSearchPage", () => {
   it('renders the explicit "No matches" note — never a bare empty table — for a query nothing fits', () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "zzz-no-such-movement" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "zzz-no-such-movement" } });
 
     expect(screen.getByTestId("ward-patient-search-empty")).toHaveTextContent("No matches");
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
@@ -187,7 +195,7 @@ describe("PatientSearchPage", () => {
   it("never renders a closed movement, even when the query is the closed movement's own id", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "wf-007" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "wf-007" } });
 
     expect(screen.getByTestId("ward-patient-search-empty")).toHaveTextContent("No matches");
     expect(screen.queryByText("WF-007")).not.toBeInTheDocument();
@@ -237,7 +245,7 @@ describe("what this search refuses", () => {
   it("renders the refusal sentence, announces it, and returns no result rows for a refused query", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "risk score" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "risk score" } });
 
     const sentence =
       "Search does not return a risk or acuity score or a best match. Search by name, identifier, department, ward or owner.";
@@ -261,7 +269,7 @@ describe("what this search refuses", () => {
   it("refuses closed and arrived movements with the other fixed sentence", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "discharged" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "discharged" } });
 
     const sentence =
       "Closed and arrived movements are not searchable here. They are in the Movement screen's register.";
@@ -272,7 +280,7 @@ describe("what this search refuses", () => {
   it("refuses nothing for an ordinary query — the existing results still render", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "wf-003" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "wf-003" } });
 
     expect(screen.queryByTestId("ward-patient-search-refusal")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-patient-search-results")).toBeInTheDocument();
@@ -294,7 +302,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
   it("finds a person by record number even though they have no movement at all", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "UM100001" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "UM100001" } });
 
     const people = screen.getByTestId("ward-patient-search-people-list");
     expect(
@@ -311,7 +319,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
   it("finds the same person by a bare, partial record number — no 'UM' prefix, no full match", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "100001" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "100001" } });
 
     const people = screen.getByTestId("ward-patient-search-people-list");
     expect(within(people).getByText(/Halloway/)).toBeInTheDocument();
@@ -320,7 +328,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
   it("finds related spellings, not just exact ones", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "hallow" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "hallow" } });
 
     const people = screen.getByTestId("ward-patient-search-people-list");
     expect(within(people).getByText(/Halloway, Talia/)).toBeInTheDocument();
@@ -340,7 +348,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
     const { formalName: displayName } = resolveSubjectPatient(movement, seed);
     expect(displayName).toMatch(/Oquinn/i);
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "oquinn" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "oquinn" } });
 
     // The census marks the matched letters inside the name, so the name spans two text nodes.
     const row = screen.getByTestId(`ward-patient-search-case-${movement.id}`);
@@ -350,7 +358,7 @@ describe("search finds PEOPLE, including ones the movement search structurally c
   it("says plainly that nobody is known, rather than showing an empty list", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "zzzznobody" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "zzzznobody" } });
 
     expectSays(screen.getByTestId("ward-patient-search-people-empty"), "the not-in-system note", [
       "Check the spelling or record number",
@@ -895,7 +903,7 @@ describe('"What to show" — the movement-only facet row', () => {
 describe("a refused search never also claims nobody matched", () => {
   it("announces the refusal, and no count or nobody-matches claim beside it", () => {
     renderSearch();
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "risk score" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "risk score" } });
 
     const spoken = screen
       .getAllByRole("status")
@@ -935,7 +943,7 @@ describe("the access record panel", () => {
 
   it("three searches run from the bar produce three rows, newest first — and unmounting and remounting produces none", () => {
     const { unmount } = renderSearch();
-    const search = screen.getByLabelText("Search");
+    const search = screen.getByLabelText(SEARCH_LABEL);
     const form = search.closest("form");
     if (!form) throw new Error("expected the Search field to sit inside the filter bar's own form");
 
@@ -967,7 +975,7 @@ describe("the access record panel", () => {
 
   it("records nothing for an empty query", () => {
     renderSearch();
-    const search = screen.getByLabelText("Search");
+    const search = screen.getByLabelText(SEARCH_LABEL);
     const form = search.closest("form");
     if (!form) throw new Error("expected the Search field to sit inside the filter bar's own form");
 
@@ -1056,7 +1064,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
     const familyName = displayName.split(" ").at(-1) ?? displayName;
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: familyName.slice(0, 5).toLowerCase() } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: familyName.slice(0, 5).toLowerCase() } });
 
     expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toBeInTheDocument();
     expect(Number(screen.getByTestId("ward-patient-search-yield-total").textContent)).toBeGreaterThan(0);
@@ -1068,7 +1076,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
     const { umrn } = resolveSubjectPatient(movement, seed);
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: umrn } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: umrn } });
 
     expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toBeInTheDocument();
   });
@@ -1107,13 +1115,13 @@ describe("Third Edition dropdown filters and yield strip", () => {
     const chip = screen.getByRole("button", { name: /Form 1A/i });
     fireEvent.click(chip);
 
-    expect(screen.getByLabelText("Search")).toHaveValue("Form 1A");
+    expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue("Form 1A");
   });
 
   it("resets all dropdowns and search text when clicking 'Reset filters'", () => {
     renderSearch();
 
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "WF-003" } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "WF-003" } });
     fireEvent.change(screen.getByLabelText("Service"), { target: { value: "East Metro" } });
     fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "transit" } });
     fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Voluntary" } });
@@ -1122,7 +1130,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
     const resetBtn = screen.getByTestId("ward-patient-search-reset-filters");
     fireEvent.click(resetBtn);
 
-    expect(screen.getByLabelText("Search")).toHaveValue("");
+    expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue("");
     expect(screen.getByLabelText("Service")).toHaveValue("all");
     expect(screen.getByLabelText("Setting")).toHaveValue("all");
     expect(screen.getByLabelText("Legal status")).toHaveValue("all");
@@ -1171,7 +1179,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
 
   it("focuses search input when pressing '/' key outside inputs", () => {
     renderSearch();
-    const searchInput = screen.getByLabelText("Search");
+    const searchInput = screen.getByLabelText(SEARCH_LABEL);
     expect(document.activeElement).not.toBe(searchInput);
 
     fireEvent.keyDown(window, { key: "/" });
@@ -1240,7 +1248,7 @@ describe("the highlight chips follow the search (shell-16)", () => {
     const movement = seed.movements.find((m) => isOpen(m) && m.patientId === "PT-006");
     if (!movement) throw new Error("fixture WF-308 / PT-006 is required by this test and is missing");
     const { umrn } = resolveSubjectPatient(movement, seed);
-    fireEvent.change(screen.getByLabelText("Search"), { target: { value: umrn } });
+    fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: umrn } });
 
     expect(chipCount("Tier 1")).toBeLessThanOrEqual(1);
     expect(chipCount("Over 24 hours")).toBeLessThanOrEqual(1);
@@ -1252,7 +1260,7 @@ describe("a UMRN handed over from Person not found (shell-6)", () => {
   it("opens the search with that UMRN typed in, read once from memory", () => {
     handOffPatientSearchText("UM999999");
     renderSearch();
-    expect(screen.getByLabelText("Search")).toHaveValue("UM999999");
+    expect(screen.getByLabelText(SEARCH_LABEL)).toHaveValue("UM999999");
     expect(takeHandedOffPatientSearchText(), "the handoff is read once").toBeUndefined();
   });
 });

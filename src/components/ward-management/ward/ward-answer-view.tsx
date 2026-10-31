@@ -51,10 +51,14 @@ import {
   Stepper,
   StatusGlyph,
   buttonClass,
+  DisabledReason,
   durMinutes,
   useIsPhone,
   PhoneSheet,
+  ShowMoreRow,
+  SrOnly,
 } from "@/components/wf";
+import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "./ward-answer-view.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
@@ -94,10 +98,27 @@ export interface WardAnswerViewProps {
 }
 
 /** A decline reason in the one list's wording (D-78); a value off the list shows as written. */
+/** Why Accept waits: the pull time limit starts with nothing chosen (Josh, 31 Oct 2026). */
+const HOLD_CHOICE_REASON = "Choose a pull time limit first";
+
+/** The census squares and their key are filled by bed state, with the same colour for each. */
+const CENSUS_FILL = {
+  ready: styles.fillReady,
+  pulled: styles.fillPulled,
+  closed: styles.fillClosed,
+  occupied: styles.fillOccupied,
+} as const;
+
 function declineReasonLabel(reason: DeclineReason): string {
   return DECLINE_REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
 }
 
+/**
+ * Redesign (approved by Josh, 31 Oct 2026): with nothing to answer the Bed request panel is one line;
+ * the Census squares are filled by state (ready, pulled, closed, occupied) with a key of the same
+ * counts. Confirm your beds keeps its stepper and Confirm; Recent answers and "writes to this ward
+ * only" stay as they are.
+ */
 export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProps) {
   const [, startTransition] = useTransition();
   const {
@@ -161,6 +182,8 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const extendedHoldFor = (movementId: string | undefined) =>
     movementId !== undefined && holdChoice?.movementId === movementId && holdChoice.extended;
   const chooseHold = (movementId: string, extended: boolean) => setHoldChoice({ movementId, extended });
+  // Nothing pre-selected (Josh, 31 Oct 2026): Accept waits until the ward picks a pull time limit.
+  const holdChosenFor = (movementId: string) => holdChoice?.movementId === movementId;
   const holdChoices = [
     { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
     {
@@ -313,11 +336,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   // Audit 24-1 D-01: a shown or linked request that leaves elsewhere keeps its place (no swap).
   const answeredHere = answerSelection.id === answeredHereId && lastActionRejection?.movementId !== answeredHereId;
   const linked = answerSelection.name ? undefined : movements.find((m) => m.id === (initialMovementId ?? null));
-  const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).displayName);
+  const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).formalName);
   const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
   const pick = (index: number, movement = incoming[index]) =>
-    setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).displayName });
+    setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).formalName });
   if (activeMovement && answerSelection.id !== activeMovement.id) pick(activeAnswerIndex, activeMovement);
   const selectAnswer = (index: number) => {
     setAnsweredHereId(undefined);
@@ -412,7 +435,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
         ...(withExtendedHold ? { extendedHold: true as const } : {}),
       },
       {
-        success: `Accepted ${accepted ? `${resolvePatientIdentity(accepted).displayName} ` : ""}in principle.`,
+        success: `Accepted ${accepted ? `${resolvePatientIdentity(accepted).formalName} ` : ""}in principle.`,
         undo: (at) => ({
           type: "UNDO_ACCEPT_IN_PRINCIPLE",
           role: "ward",
@@ -593,7 +616,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             isPhone
               ? activeMovement
                 ? `Tier ${activeMovement.urgency} · waiting ${elapsedLabel(activeMovement, now).replace(/ waiting$/, "")} · from an ED`
-                : `${recentAnswers[0]?.at !== undefined ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)} · ` : ""}${states.ready} ${states.ready === 1 ? "bed" : "beds"} ready`
+                : // Round 2: the Ready figure below carries the bed count, so the line keeps only the last answer.
+                  recentAnswers[0]?.at !== undefined
+                  ? `Last answer at ${formatInstantWithDay(recentAnswers[0].at, now)}`
+                  : undefined
               : undefined
           }
           stats={
@@ -726,10 +752,16 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
           <section
             ref={awaitingRef}
             aria-label="Awaiting your answer"
-            className={activeMovement ? styles.answerSplit : styles.panel}
+            className={
+              activeMovement
+                ? styles.answerSplit
+                : incoming.length === 0 && !isPhone
+                  ? `${styles.panel} ${styles.allAnsweredPanel}`
+                  : styles.panel
+            }
             data-empty={incoming.length === 0}
           >
-            {activeMovement || isPhone ? null : (
+            {activeMovement || isPhone || incoming.length === 0 ? null : (
               <div className={styles.panelHeader}>
                 <div className={styles.panelHeaderLeft}>
                   <h2 className={styles.panelTitle}>Bed request</h2>
@@ -738,14 +770,13 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               </div>
             )}
 
-            {incoming.length === 0 && isPhone ? (
-              <div className={styles.phoneClear}>
-                <p className={styles.phoneClearTitle}>
-                  <StatusGlyph tone="success" size={12} />
-                  All answered
-                </p>
-                <p className={styles.phoneClearText}>
-                  No referral is currently awaiting an answer from {unit.name}. Requests land here as they are sent.
+            {/* Round 2: the title already says "Nothing to answer", so the notice is one line on every
+                device and says only what happens next. */}
+            {incoming.length === 0 ? (
+              <div className={styles.allAnswered} data-testid="ward-answer-all-answered">
+                <p className={styles.allAnsweredLine}>
+                  <StatusGlyph tone="success" size={10} />
+                  <span>Requests land here as they are sent.</span>
                 </p>
                 {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
@@ -760,16 +791,15 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                   Show request {activeAnswerIndex + 1} of {incoming.length}
                 </button>
               </div>
-            ) : incoming.length === 0 ? (
-              <div className={styles.sbarCard}>
-                <p>No referral is currently awaiting an answer from {unit.name}.</p>
-                {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
-              </div>
             ) : activeMovement ? (
               (() => {
                 // Owner, 26 Sept 2026: no WF journey number. Josh, 22 Oct 2026: the ward does see the
                 // patient's name and UMRN before it answers, never where else they were referred.
                 const blocked = referralAnswerBlocked(activeMovement, unit);
+                // The desk's one-step accept waits for a pull time limit; the phone sheet asks for its own.
+                const holdPending = !isPhone && !blocked && !holdChosenFor(activeMovement.id);
+                // The kit's phone button (40px, with its 48px invisible cover); the desk keeps the small one.
+                const decisionSize = isPhone ? "md" : "sm";
                 const notice = restrictionNotice(activeMovement, unit);
                 const eligibilityIssue = eligibilityWarning(activeMovement, unit, now);
                 const eligibilityVerdict = eligibility(activeMovement, unit, now);
@@ -839,7 +869,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             <span className={styles.phoneFoldText}>
                               {/* Josh, 22 Oct 2026: a ward sees who is coming before it answers. */}
                               <span className={styles.phoneFoldTitle}>
-                                {resolvePatientIdentity(activeMovement).displayName}
+                                {resolvePatientIdentity(activeMovement).formalName}
                               </span>
                               <span className={styles.phonePatientLine}>
                                 {resolvePatientIdentity(activeMovement).umrn}
@@ -866,7 +896,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           <div className={styles.patientDossierBanner}>
                             <div>
                               <div className={styles.patientNameLine}>
-                                {resolvePatientIdentity(activeMovement).displayName} &middot;{" "}
+                                {resolvePatientIdentity(activeMovement).formalName} &middot;{" "}
                                 {resolvePatientIdentity(activeMovement).umrn}
                               </div>
                               <div className={styles.patientMetaLine}>
@@ -950,17 +980,15 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         </dl>
 
                         {isPhone ? (
-                          <button
-                            type="button"
-                            className={styles.phoneLinkRow}
-                            aria-expanded={showAllFacts}
-                            aria-controls="ward-answer-facts"
+                          <ShowMoreRow
+                            expanded={showAllFacts}
+                            controls="ward-answer-facts"
                             onClick={() => setShowAllFacts((open) => !open)}
                           >
                             {showAllFacts
                               ? "Show fewer facts"
                               : `Show all ${activeMovement.gender === activeMovement.sex ? 8 : 9} facts`}
-                          </button>
+                          </ShowMoreRow>
                         ) : null}
                         {isPhone ? (
                           <details className={styles.phoneIsbar}>
@@ -1249,6 +1277,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
                             primary={{
                               label: "Accept in principle",
+                              disabledReason: holdChosenFor(activeMovement.id) ? undefined : HOLD_CHOICE_REASON,
                               onAction: () => {
                                 setPhoneSheet(null);
                                 handleAccept(activeMovement.id, extendedHoldFor(activeMovement.id));
@@ -1284,7 +1313,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                                     <button
                                       key={choice.label}
                                       type="button"
-                                      aria-pressed={extendedHoldFor(activeMovement.id) === choice.extended}
+                                      aria-pressed={
+                                        holdChosenFor(activeMovement.id) &&
+                                        extendedHoldFor(activeMovement.id) === choice.extended
+                                      }
                                       onClick={() => chooseHold(activeMovement.id, choice.extended)}
                                     >
                                       {choice.label}
@@ -1311,9 +1343,18 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             <select
                               id={`ward-accept-hold-${activeMovement.id}`}
                               className={styles.formSelect}
-                              value={extendedHoldFor(activeMovement.id) ? "extended" : "standard"}
+                              value={
+                                holdChosenFor(activeMovement.id)
+                                  ? extendedHoldFor(activeMovement.id)
+                                    ? "extended"
+                                    : "standard"
+                                  : ""
+                              }
                               onChange={(e) => chooseHold(activeMovement.id, e.target.value === "extended")}
                             >
+                              <option value="" disabled>
+                                Choose a time limit
+                              </option>
                               {holdChoices.map((choice) => (
                                 <option key={choice.label} value={choice.extended ? "extended" : "standard"}>
                                   {choice.label}
@@ -1329,20 +1370,31 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           aria-describedby={blocked ? `ward-decline-unavailable-${activeMovement.id}` : undefined}
                           title={blocked ?? undefined}
                           aria-expanded={declineOpen}
-                          className={buttonClass({ variant: "sec", size: "sm" })}
+                          className={buttonClass({ variant: "sec", size: decisionSize })}
                           onClick={blocked ? undefined : () => toggleDecline(activeMovement.id)}
                         >
                           Decline
                         </button>
+                        {holdPending ? (
+                          <DisabledReason id={`ward-accept-hold-reason-${activeMovement.id}`}>
+                            {HOLD_CHOICE_REASON}
+                          </DisabledReason>
+                        ) : null}
                         <button
                           type="button"
                           data-testid={`ward-accept-${activeMovement.id}`}
-                          aria-disabled={blocked ? "true" : undefined}
-                          aria-describedby={blocked ? `ward-accept-unavailable-${activeMovement.id}` : undefined}
+                          aria-disabled={blocked || holdPending ? "true" : undefined}
+                          aria-describedby={
+                            blocked
+                              ? `ward-accept-unavailable-${activeMovement.id}`
+                              : holdPending
+                                ? `ward-accept-hold-reason-${activeMovement.id}`
+                                : undefined
+                          }
                           title={blocked ?? undefined}
-                          className={buttonClass({ variant: "pri", size: "sm" })}
+                          className={buttonClass({ variant: "pri", size: decisionSize })}
                           onClick={() => {
-                            if (blocked) return;
+                            if (blocked || holdPending) return;
                             if (isPhone) {
                               openPhoneAccept();
                               return;
@@ -1423,8 +1475,15 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 </div>
                 <div className={styles.capacityPanelBody}>
                   <dl className={styles.capacityFacts} aria-label={`Current bed facts for ${unit.name}`}>
+                    {/* Round 2: Confirmed free leads (the form below sets it); Ready is the hero's word for
+                        the bed board figure; the discharge figures use the app's labels, as they
+                        count tomorrow too. */}
                     <div>
-                      <dt>Ready now</dt>
+                      <dt>Confirmed free</dt>
+                      <dd>{unit.allocatable.value}</dd>
+                    </div>
+                    <div>
+                      <dt>Ready</dt>
                       <dd>{states.ready}</dd>
                     </div>
                     <div>
@@ -1432,15 +1491,11 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <dd>{unit.empty.value}</dd>
                     </div>
                     <div>
-                      <dt>Confirmed free</dt>
-                      <dd>{unit.allocatable.value}</dd>
-                    </div>
-                    <div>
-                      <dt>Confirmed discharges</dt>
+                      <dt>{CAPACITY_FIGURE_LABELS.confirmedToday}</dt>
                       <dd>{breakdown.confirmedToday}</dd>
                     </div>
                     <div>
-                      <dt>Expected discharges</dt>
+                      <dt>{CAPACITY_FIGURE_LABELS.expectedToday}</dt>
                       <dd>{breakdown.expectedToday}</dd>
                     </div>
                   </dl>
@@ -1523,7 +1578,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           : "Inpatient";
                     const cellClass = `${styles.bedCell} ${
                       isVacant ? styles.vacant : isPulled ? styles.pulled : isClosed ? styles.closed : styles.occupied
-                    }`;
+                    } ${styles.cell} ${CENSUS_FILL[isVacant ? "ready" : isPulled ? "pulled" : isClosed ? "closed" : "occupied"]}`;
                     return (
                       <button
                         type="button"
@@ -1552,26 +1607,42 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                     );
                   })}
                 </div>
+                {/* Redesign: a key to the filled squares, with the same counts the hero shows. */}
+                <ul className={styles.legend} aria-label="Census key">
+                  {(
+                    [
+                      ["ready", states.ready],
+                      ["pulled", states.pulled],
+                      ["closed", states.closed],
+                      ["occupied", states.occupied],
+                    ] as const
+                  ).map(([state, count]) => (
+                    <li key={state} className={styles.legendItem}>
+                      <span className={`${styles.swatch} ${CENSUS_FILL[state]}`} aria-hidden="true" />
+                      {BED_STATE_LABELS[state]} <b className={styles.legendCount}>{count}</b>
+                    </li>
+                  ))}
+                </ul>
                 {/* The reason the greyed beds give (a disabled control always says why). */}
-                <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
-                  Only a ready bed can take a request.
-                </p>
+                {/* Round 2: shown only while a request is open (it explains the greyed squares then);
+                    otherwise it stays for the squares' spoken description. */}
+                {activeMovement ? (
+                  <p id={`ward-answer-bed-reason-${unit.id}`} className={styles.bedGridReason}>
+                    Only a ready bed can take a request.
+                  </p>
+                ) : (
+                  <SrOnly id={`ward-answer-bed-reason-${unit.id}`}>Only a ready bed can take a request.</SrOnly>
+                )}
                 {/* Shift milieu and staffing balance. The ratio ("1 : 3 (Compliant)"), the shift name and a
                   65/35 male-to-female split of the occupied count were typed in here (25 September
                   2026 review). Ward Flow holds no staffing figures and this screen counts no one's
                   sex, so both rows say so rather than show a number. */}
+                {/* Round 2: the "Not recorded: nurse ratio, gender mix" row held nothing, and the expected
+                    discharges figure lives once, in Confirm your beds. */}
                 <div className={styles.milieuList}>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Not recorded</span>
-                    <span className={styles.milieuValue}>nurse ratio, gender mix</span>
-                  </div>
                   <div className={styles.milieuRow}>
                     <span className={styles.milieuLabel}>Constant observation</span>
                     <span className={styles.milieuValue}>{activeSpeciallingCount} active</span>
-                  </div>
-                  <div className={styles.milieuRow}>
-                    <span className={styles.milieuLabel}>Expected out today and tomorrow</span>
-                    <span className={styles.milieuValue}>{breakdown.expectedToday}</span>
                   </div>
                 </div>
               </section>,
@@ -1622,7 +1693,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
       {acceptModalMovement ? (
         <WardAcceptDialog
           movement={acceptModalMovement}
-          patientName={resolvePatientIdentity(acceptModalMovement).displayName}
+          patientName={resolvePatientIdentity(acceptModalMovement).formalName}
           unitName={unit.name}
           now={now}
           extended={extendedHoldFor(acceptModalMovement.id)}

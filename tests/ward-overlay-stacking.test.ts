@@ -64,9 +64,26 @@ describe("overlays use the shared layers, not hard-coded ones", () => {
     ["board/board.module.css", ".toast", "--z-toast"],
     ["board/board.module.css", ".modalBackdrop", "--z-modal"],
     ["ed/ed.module.css", ".modalBackdrop", "--z-modal"],
+    // Notifications pass (30 Oct 2026): the record document dialog sat at 9999, above the toasts it
+    // raised, and two full-screen views fell back to 1000 when the token was missing.
+    ["referrals/upload-forms-modal.module.css", ".scrim", "--z-modal"],
+    ["movements/movement-horizon.module.css", ".fullscreen", "--z-modal"],
+    ["capacity/bed-meeting-sheet.module.css", ".portal", "--z-modal"],
   ])("%s %s uses %s", (file, selector, token) => {
     const values = zIndexOf(css(file), selector);
     expect(values.length).toBeGreaterThan(0);
     for (const value of values) expect(value).toBe(`var(${token})`);
+  });
+});
+
+// Notifications pass (30 Oct 2026): the Board, Ward, Community, Delays and On-call screens drew
+// their own toasts, each with its own timer, corner and look; Board and Community also timed out
+// refusals. They now use the shared toast region (`useActionToast`). On-call's own toast style is
+// gone; the Board, Ward, Community and Delays toast classes stay for now, for work on other branches
+// built on them, and keep their shared layer above.
+describe("screens use the shared toast region, not their own", () => {
+  it.each([["on-call/on-call.module.css", ".toast"]])("%s has no %s rule", (file, selector) => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    expect(css(file)).not.toMatch(new RegExp(`${escaped}(?![\\w-])`));
   });
 });

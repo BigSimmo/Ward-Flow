@@ -35,7 +35,7 @@ export type HelpSearchResult = {
   /** A how-to with Show me steps (`ward-help-howto.ts`). */
   readonly howToId?: string;
   /** Where it is done, as `howToHref` understands it. */
-  readonly go?: string;
+  readonly go?: string | readonly string[];
   /** Roles that do this job; undefined means every desk. */
   readonly desks?: readonly WardTourRole[];
 };

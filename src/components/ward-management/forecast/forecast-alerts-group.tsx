@@ -5,16 +5,19 @@
 // The Alerts screen's Forecast group, between Act now and Waiting (forecasting build, Josh,
 // 23 Oct 2026, screen 6). Coordinators only (decision 3). Each row is a count crossing a line the
 // coordinator set in Settings, Forecast alerts. Nothing here names a patient.
+// Alerts redesign (Josh, 31 Oct 2026): the action stacks under the text on a phone, and the caption
+// is a short Settings link, because each row already names its line in Settings.
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { buttonClass } from "@/components/wf";
-import { edHref } from "@/components/ward-management/shell/ward-facade";
+import { edHref, settingsHref } from "@/components/ward-management/shell/ward-facade";
 import { formatInstantWithDay, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { BED_KIND_LABEL, kindRangeWord } from "./forecast-by-kind";
 import type { ForecastAlert } from "./forecast-alerts";
 import { forecastEdName, useForecastAlerts } from "./use-forecast-model";
 import styles from "./forecast.module.css";
+import group from "./forecast-alerts-group.module.css";
 
 export function ForecastAlertsGroup({
   now,
@@ -39,9 +42,9 @@ export function ForecastAlertsGroup({
         ))}
       </ul>
       <p className={styles.alertCaption}>
-        {readOnly
-          ? "Forecast alerts are counts against the coordinator's lines in Settings, Forecast alerts."
-          : "Forecast alerts are counts against your lines in Settings, Forecast alerts."}
+        <Link href={settingsHref()} className={group.captionLink}>
+          {readOnly ? "Lines set by the coordinator in Settings" : "Set in Settings"}
+        </Link>
       </p>
     </section>
   );
@@ -60,7 +63,7 @@ function bedsWord(count: number): string {
 
 function ForecastAlertRow({ alert, now, readOnly }: { alert: ForecastAlert; now: Instant; readOnly: boolean }) {
   const row = (title: string, body: string, href: string | null, action: string) => (
-    <li className={styles.alertRow} data-testid={`ward-alerts-forecast-${alertKey(alert)}`}>
+    <li className={`${styles.alertRow} ${group.forecastRow}`} data-testid={`ward-alerts-forecast-${alertKey(alert)}`}>
       <span>
         <span className={styles.alertTitle}>{title}</span>
         <span className={styles.sub}>{body}</span>

@@ -87,6 +87,7 @@ describe("a live shared build carries no demo records", () => {
       vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", live ? "true" : "false");
       try {
         const result = config.webpack!({ output: {}, plugins: [] }, {
+          dev: true,
           webpack: { NormalModuleReplacementPlugin },
         } as never) as { plugins: NormalModuleReplacementPlugin[] };
         return result.plugins;

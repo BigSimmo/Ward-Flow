@@ -106,10 +106,13 @@ describe("Update arrival offers the booked CAD number (WT-06)", () => {
     expect(mode).toHaveValue("rfds");
     expect(mode).toHaveAccessibleDescription("From the transport booking");
     expect(screen.getByText(/from the transport booking\)/u)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "+2 hours" })).toHaveAttribute("aria-pressed", "false");
+    // D-91 (31 Oct 2026): the kit's time buttons write into the typed box; none is pressed or filled
+    // before a person picks one (they were toggles with aria-pressed before).
+    expect(screen.getByRole("button", { name: /^\+1h/u })).not.toHaveAttribute("aria-pressed");
+    expect(screen.getByLabelText("Type the ETA")).toHaveValue("");
   });
 
-  it("opens the ETA blank with no booking, takes a typed 1440, and keeps a chosen preset lit", () => {
+  it("opens the ETA blank with no booking, fills the typed box from a time button, and takes a typed 1440", () => {
     const unbooked = {
       ...seedMovement(),
       stage: "pulled",
@@ -122,13 +125,34 @@ describe("Update arrival offers the booked CAD number (WT-06)", () => {
     fireEvent.change(screen.getByLabelText("How they are travelling"), { target: { value: "ambulance" } });
     fireEvent.click(screen.getByTestId("save-arrival-plan-button"));
     expect(screen.getByRole("alert")).toHaveTextContent("Enter the estimated time of arrival.");
-    const preset = screen.getByRole("button", { name: "+1h" });
-    fireEvent.click(preset);
-    expect(preset).toHaveAttribute("aria-pressed", "true");
-    fireEvent.change(screen.getByLabelText("Or type the ETA"), { target: { value: "1440" } });
-    expect(preset).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByLabelText("Or type the ETA")).not.toHaveAttribute("aria-invalid");
-    fireEvent.change(screen.getByLabelText("Or type the ETA"), { target: { value: "144" } });
-    expect(screen.getByLabelText("Or type the ETA")).toHaveAttribute("aria-invalid", "true");
+    // NOW_ANCHOR is 10:42 on the board clock, so +1h writes 11:42 into the typed box (D-91).
+    fireEvent.click(screen.getByRole("button", { name: /^\+1h/u }));
+    expect(screen.getByLabelText("Type the ETA")).toHaveValue("11:42");
+    expect(screen.getByLabelText("Day of the typed ETA")).toHaveValue("today");
+    fireEvent.change(screen.getByLabelText("Type the ETA"), { target: { value: "1440" } });
+    expect(screen.getByLabelText("Type the ETA")).not.toHaveAttribute("aria-invalid");
+    fireEvent.change(screen.getByLabelText("Type the ETA"), { target: { value: "144" } });
+    expect(screen.getByLabelText("Type the ETA")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("sets the day to Tomorrow when a time button lands past midnight (D-91)", () => {
+    const unbooked = {
+      ...seedMovement(),
+      stage: "pulled",
+      arrivalDetails: undefined,
+      transport: undefined,
+    } as Movement;
+    render(
+      <WardFlowProvider initialNow={23 * 60 + 50}>
+        <ArrivalTimeModal isOpen onClose={vi.fn()} movement={unbooked} />
+      </WardFlowProvider>,
+    );
+    expect(screen.getByLabelText("Day of the typed ETA")).toHaveValue("today");
+    fireEvent.click(screen.getByRole("button", { name: /^\+15m/u }));
+    expect(screen.getByLabelText("Type the ETA")).toHaveValue("00:05");
+    expect(screen.getByLabelText("Day of the typed ETA")).toHaveValue("tomorrow");
+    fireEvent.click(screen.getByRole("button", { name: /^Now/u }));
+    expect(screen.getByLabelText("Type the ETA")).toHaveValue("23:50");
+    expect(screen.getByLabelText("Day of the typed ETA")).toHaveValue("today");
   });
 });

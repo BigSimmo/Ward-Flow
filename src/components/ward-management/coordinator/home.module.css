@@ -466,27 +466,16 @@
   background: var(--wf-hover);
 }
 
-/* Selection remains distinct from the inset overdue marker. */
 .queueRowSelected {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-pri-1);
+  /* No side edges (Josh, 31 Oct 2026): selected is the selected tint with a neutral border. */
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
-/* Approved overdue treatment, shared by phone, tablet and desktop. Selection retains
-   its slate stripe; the inset coral marker is a separate status cue. */
+/* Approved overdue treatment, shared by phone, tablet and desktop: the act-now tint. Selection is
+   the selected tint with a neutral border. */
 .queueRow[data-overdue="true"] {
   background: var(--wf-act-tint);
-}
-
-.queueRow[data-overdue="true"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 0.625rem;
-  inset-inline-start: 6px;
-  width: 3px;
-  border-radius: var(--radius-pill, 9999px);
-  background: var(--wf-danger);
-  pointer-events: none;
 }
 
 .queueRow[data-overdue="true"]:hover {
@@ -503,11 +492,6 @@
 }
 
 @media (forced-colors: active) {
-  .queueRow[data-overdue="true"]::before {
-    background: CanvasText;
-    forced-color-adjust: none;
-  }
-
   .queueRowSelected {
     outline: 2px solid Highlight;
     outline-offset: -4px;
@@ -755,7 +739,8 @@
 
 .unitRowSelected {
   background: var(--wf-selected);
-  box-shadow: inset 3px 0 0 var(--wf-pri-1);
+  /* No side edges (Josh, 31 Oct 2026): selected is the selected tint with a neutral border. */
+  box-shadow: inset 0 0 0 1px var(--wf-line-2);
 }
 
 .unitNameLine {
@@ -2072,4 +2057,157 @@ button.registerRow:hover {
 
 .checkingPhone > summary {
   overflow-wrap: anywhere;
+}
+
+/*
+ * Home and Activity design (approved by Josh, 31 Oct 2026). These rules come last in the file so
+ * they settle the earlier ones; each is prefixed with `.screen` to match the review's specificity.
+ */
+
+/* Glyphs sit centred on their text line, 6px from it. */
+.screen .groupHead,
+.screen .edLine,
+.screen .queueWait {
+  align-items: center;
+  gap: 6px;
+}
+
+/* Waiting: the switch never cuts off "Referrals"; Form due wraps under it when space is short. */
+.screen .queueTools {
+  flex-wrap: wrap;
+  row-gap: var(--wf-s-2);
+}
+.screen .queueSeg {
+  flex: none;
+  width: auto;
+  max-width: none;
+  overflow: visible;
+}
+.screen .queueSeg > * {
+  flex: none;
+  height: 30px;
+  min-height: 0;
+  padding-inline: 10px;
+  font-size: var(--wf-fs-13);
+}
+
+/* Each queue row's right side is one line: the wait, then the status glyph. */
+.screen .queueWait {
+  display: inline-flex;
+  flex-direction: row;
+  white-space: nowrap;
+}
+
+/* One Show more row on every list: a centred 600 row. */
+.screen .queueMore {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 40px;
+  min-height: 0;
+  padding: 0 var(--wf-s-4);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: none;
+  color: var(--wf-accent-ink);
+  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  text-align: center;
+  cursor: pointer;
+}
+
+/* Desktop ED strip: departments with nobody waiting go quiet, so those with waits stand out. */
+.screen .edButton[data-waiting="0"],
+.screen .edButton[data-waiting="0"] * {
+  color: var(--wf-ink-3);
+}
+.screen .edButton[data-waiting="0"] * {
+  font-weight: 400;
+}
+
+@media (max-width: 48rem) {
+  .screen .queueSeg {
+    --wf-phone-seg-band: 4px;
+  }
+  .screen .queueSeg > * {
+    position: relative;
+    height: 32px;
+    padding-inline: 8px;
+    font-weight: 600;
+  }
+  .screen .queueMore {
+    height: 48px;
+  }
+  /* The Form due chip stands as tall as the tab track beside it, keeping a 48px hit area. */
+  .screen .queueTools > button {
+    position: relative;
+    height: 40px;
+    min-height: 40px;
+  }
+  .screen .queueTools > button::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+
+  /* Phone ED chips: 34px pills with a hairline border, the count and longest wait on one line, a
+     48px hit area from an invisible cover, and a soft fade on the right edge that says it scrolls. */
+  .screen .edGrid {
+    gap: 6px;
+    padding-block: 7px;
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  }
+  .screen .edButton {
+    position: relative;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    min-height: 0;
+    padding: 0 10px;
+    border-color: var(--wf-line);
+    border-radius: var(--wf-r-ctl);
+    box-shadow: none;
+  }
+  .screen .edButton::after {
+    content: "";
+    position: absolute;
+    inset: -7px -3px;
+  }
+  .screen .edButton[aria-pressed="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-accent-tint);
+  }
+  .screen .edButton .edWaitingValue,
+  .screen .edButton .edMono {
+    line-height: 16px;
+  }
+  .screen .edButton .edLine {
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* Phone hero: the changes line is a pill that reads as a button. */
+  .screen .changesChip.changesChip {
+    position: relative;
+    flex: 0 1 auto;
+    justify-content: center;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 28%, transparent);
+    border-radius: var(--wf-r-ctl);
+    background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+    text-decoration: none;
+  }
+  .screen .changesChip.changesChip::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+/* The hero's changes chip: its count in the figures' typeface. */
+.changesChip b {
+  font-family: var(--wf-mono);
 }

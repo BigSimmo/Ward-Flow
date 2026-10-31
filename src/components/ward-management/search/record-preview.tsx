@@ -32,6 +32,7 @@ import styles from "./record-preview.module.css";
 import searchStyles from "./search.module.css";
 import { isCommunityReferral } from "./community-referral";
 import { movementHref, patientHref, raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
 const NOT_RECORDED = "Not recorded";
 
@@ -255,6 +256,8 @@ export function RecordPreview({
   onClose: () => void;
 }) {
   const flow = useOptionalWardFlow();
+  // Access audit (31 Oct 2026): Raise referral shows only where this desk can open the referral form.
+  const canOpenHref = useCanOpenHref();
   const activeDate = useMemo(() => {
     const activeDayZero = dayZero ?? flow?.dayZero ?? demoDayZero(new Date());
     // `patientAgeYears` reads this instant on the Perth calendar day itself (no browser-local midnight).
@@ -443,13 +446,15 @@ export function RecordPreview({
               <Link className={styles.openLink} href={patientHref(patient.id)}>
                 Open full record
               </Link>
-              <Link
-                className={styles.referLink}
-                href={raiseReferralHref({ patientId: patient.id })}
-                data-testid="ward-patient-preview-raise-referral"
-              >
-                Raise referral for this patient &rarr;
-              </Link>
+              {canOpenHref(raiseReferralHref({ patientId: patient.id })) ? (
+                <Link
+                  className={styles.referLink}
+                  href={raiseReferralHref({ patientId: patient.id })}
+                  data-testid="ward-patient-preview-raise-referral"
+                >
+                  Raise referral for this patient &rarr;
+                </Link>
+              ) : null}
             </div>
           </div>
 

@@ -1,11 +1,15 @@
 "use client";
+// Fork of src/components/ward-management/settings/settings-rows.tsx: a read-only rule shows its value as text.
+// Round 3: a rule away from its default says so, the row and stepper carry this folder's own classes
+// (no `[class*="_x__"]` overrides, which the shareable copy drops), and "Applies now" is plain words.
 
 import type { ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 
 import { SrOnly, StatusGlyph, Stepper, cx } from "@/components/wf";
 
-import styles from "./settings.module.css";
+import styles from "@/components/ward-management/settings/settings.module.css";
+import rx from "./settings-layout.module.css";
 
 /** One line under the band per tab: whether its changes wait for Save or apply at once. */
 export function ScopeLine({ kind }: { kind: "save" | "live" }) {
@@ -15,7 +19,7 @@ export function ScopeLine({ kind }: { kind: "save" | "live" }) {
         // Not a checked chip: nothing is unsaved until a rule changes (device audit 11 Oct 2026).
         <span className={styles.scopeTag}>Save to apply</span>
       ) : (
-        <span className={styles.scopeTag}>
+        <span className={cx(styles.scopeTag, rx.scopeTagPlain)}>
           <StatusGlyph tone="success" size={8} />
           Applies now
         </span>
@@ -111,6 +115,8 @@ export function RuleRow({
   effect,
   usedBy,
   unavailableReason,
+  defaultValue,
+  defaultDisplay,
 }: {
   setting: string;
   title: string;
@@ -133,14 +139,20 @@ export function RuleRow({
   effect?: ReactNode;
   usedBy?: string;
   unavailableReason?: string;
+  /** Round 3: the default, so a rule away from it says "Default 24h" and Show changed only can find it. */
+  defaultValue?: number;
+  /** The default in words ("24h"). */
+  defaultDisplay?: string;
 }) {
   const changed = value !== saved;
+  const atDefault = defaultValue === undefined || value === defaultValue;
   return (
     <div
-      className={cx(styles.ruleRow, changed && styles.ruleChanged)}
+      className={cx(styles.ruleRow, rx.ruleRow, changed && styles.ruleChanged)}
       data-setting={setting}
       data-testid={testId}
       data-changed={changed || undefined}
+      data-at-default={atDefault}
     >
       <span className={styles.rowText}>
         <span className={styles.rowTitle}>{title}</span>
@@ -149,6 +161,7 @@ export function RuleRow({
         </span>
         <span className={styles.rangeWords} data-testid={range.id ? `${range.id}-range` : undefined}>
           Range {range.minLabel} to {range.maxLabel}
+          {!atDefault && defaultDisplay ? <span className={rx.defaultMark}> · Default {defaultDisplay}</span> : null}
         </span>
       </span>
       <span className={styles.resetCell}>
@@ -165,33 +178,43 @@ export function RuleRow({
         ) : null}
       </span>
       <span className={styles.ruleValue}>
-        <Stepper
-          className={styles.ruleStepper}
-          value={value}
-          onChange={(next) => {
-            if (!unavailableReason) onChange(next);
-          }}
-          unavailable={!!unavailableReason}
-          note={unavailableReason}
-          min={range.min}
-          max={max ?? range.max}
-          step={range.step}
-          noun={noun}
-          valueText={display}
-          display={display}
-          valueTestId={displayTestId}
-        />
+        {/* Redesign (Josh, 30 Oct 2026): a rule this desk cannot change was a stepper with greyed
+            buttons and the value lost in a near-empty box. It reads as the value in words now; the
+            reason is on hover and for screen readers, and the band's "Read only" line says it once. */}
+        {unavailableReason ? (
+          <span className={rx.ruleReadValue} data-testid={displayTestId} title={unavailableReason}>
+            {display}
+            <SrOnly>. {unavailableReason}</SrOnly>
+          </span>
+        ) : (
+          <Stepper
+            className={cx(styles.ruleStepper, rx.ruleStepper)}
+            value={value}
+            onChange={(next) => {
+              if (!unavailableReason) onChange(next);
+            }}
+            unavailable={!!unavailableReason}
+            note={unavailableReason}
+            min={range.min}
+            max={max ?? range.max}
+            step={range.step}
+            noun={noun}
+            valueText={display}
+            display={display}
+            valueTestId={displayTestId}
+          />
+        )}
         {changed ? (
           <span className={styles.changedTag}>
             Changed<SrOnly>, saved value {savedDisplay ?? saved}</SrOnly>
           </span>
         ) : null}
       </span>
-      <span className={styles.effectCell}>
+      <span className={cx(styles.effectCell, rx.effectCell)}>
         {/* Site review (12 Oct 2026): plain words, no build notes. */}
-        {effect ? <span className={styles.effectLine}>{effect}</span> : null}
+        {effect ? <span className={cx(styles.effectLine, rx.effectLine)}>{effect}</span> : null}
         {usedBy ? (
-          <span className={styles.usedBy} title={shownOn(usedBy)}>
+          <span className={cx(styles.usedBy, rx.usedBy)} title={shownOn(usedBy)}>
             {shownOn(usedBy)}
           </span>
         ) : null}

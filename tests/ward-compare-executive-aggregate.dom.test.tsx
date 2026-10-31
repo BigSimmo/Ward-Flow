@@ -99,8 +99,10 @@ describe("Compare uses its released aggregate model", () => {
     installMatchMediaStub(false);
     const data = protectedReport();
     render(wrap(<StatisticsCompareScreen />, data));
-    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Blockers" }));
-    const figure = chart("Ward discharge blockers bar chart");
+    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Held up" }));
+    // The chart opens on its first eight wards; Show all lists every one.
+    fireEvent.click(within(wardCard()).getByRole("button", { name: /^Show all/ }));
+    const figure = chart("Ward discharges held up bar chart");
     const spoken = within(figure)
       .getAllByRole("listitem", { hidden: true })
       .map((item) => item.textContent);
@@ -147,6 +149,8 @@ describe("Compare uses its released aggregate model", () => {
     data.wards[0].statistics.averageLengthOfStayDays = null;
     data.emergencyDepartments[0].longestWaitMinutes = null;
     render(wrap(<StatisticsCompareScreen />, data));
+    // The ward chart opens on Occupancy; the unrecorded line belongs to Average stay.
+    fireEvent.click(within(wardCard()).getByRole("radio", { name: "Stay" }));
     expect(screen.getByTestId("ward-statistics-compare-ward-chart-unrecorded")).toHaveTextContent(data.wards[0].name);
     fireEvent.click(within(edCard()).getByRole("radio", { name: "Longest" }));
     const figure = chart("Emergency department longest wait bar chart, in hours");
@@ -176,16 +180,16 @@ describe("Compare uses its released aggregate model", () => {
     fireEvent.change(within(pinned).getByRole("combobox"), { target: { value: data.wards[0].id } });
     const blocker = within(pinned)
       .getAllByRole("row")
-      .find((row) => row.textContent?.startsWith("Blockers"));
+      .find((row) => row.textContent?.startsWith("Discharges held up"));
     expect(blocker).toHaveTextContent("10not shown");
     fireEvent.click(within(pinned).getByRole("button", { name: `Unpin ${data.wards[0].name}` }));
-    expect(pinned).toHaveTextContent("Pick up to three wards");
+    expect(pinned).toHaveTextContent("Pin up to three wards");
     fireEvent.change(within(pinned).getByRole("combobox"), { target: { value: data.wards[0].id } });
     fireEvent.click(within(pinned).getByRole("button", { name: "Clear" }));
-    expect(pinned).toHaveTextContent("Pick up to three wards");
+    expect(pinned).toHaveTextContent("Pin up to three wards");
   });
 
-  it("keeps the chooser and its search while foreign-origin ED details remain plain labels", () => {
+  it("keeps the scoped eyebrow and sends Open a unit to the one finder rather than its own chooser", () => {
     installMatchMediaStub(false);
     const scoped = projectExecutiveReportingFoundation(
       state,
@@ -196,17 +200,16 @@ describe("Compare uses its released aggregate model", () => {
     expect(screen.getByTestId("ward-statistics-section-eyebrow").parentElement).toHaveTextContent(
       report.wards[0].service,
     );
-    const chooser = screen.getByTestId("ward-statistics-compare-chooser");
-    fireEvent.click(within(chooser).getByRole("radio", { name: /^EDs/ }));
-    const foreign = scoped.emergencyDepartments.find((ed) => !scoped.openableEmergencyDepartmentIds.includes(ed.id))!;
-    const own = scoped.emergencyDepartments.find((ed) => scoped.openableEmergencyDepartmentIds.includes(ed.id))!;
-    expect(foreign).toBeDefined();
-    expect(own).toBeDefined();
-    expect(chooser).toHaveTextContent(foreign.name);
-    expect(chooser.querySelector(`a[href="${edStatisticsHref(foreign.id)}"]`)).toBeNull();
-    expect(chooser.querySelector(`a[href="${edStatisticsHref(own.id)}"]`)).not.toBeNull();
-    fireEvent.change(within(chooser).getByRole("searchbox"), { target: { value: own.name } });
-    expect(within(chooser).getByRole("link", { name: new RegExp(own.name) })).toBeVisible();
+    // D-91 (Josh, 31 Oct 2026): the per-unit links, foreign-origin EDs as plain labels included,
+    // live in the one finder on the statistics home page; Compare draws no unit links of its own.
+    expect(screen.queryByTestId("ward-statistics-compare-chooser")).toBeNull();
+    expect(screen.getByTestId("ward-statistics-compare-tool-open-unit")).toHaveAttribute(
+      "href",
+      "/ward-flow/statistics#choose-a-unit",
+    );
+    for (const ed of scoped.emergencyDepartments) {
+      expect(document.querySelector(`a[href="${edStatisticsHref(ed.id)}"]`)).toBeNull();
+    }
   });
 
   it("keeps phone measures and two-ward sheet pickers with protected counts and references", () => {
@@ -214,8 +217,8 @@ describe("Compare uses its released aggregate model", () => {
     const data = protectedReport();
     render(wrap(<StatisticsCompareScreen />, data));
     const phone = screen.getByTestId("ward-statistics-compare-phone");
-    fireEvent.click(within(phone).getByRole("button", { name: "Blockers" }));
-    expect(chart("Ward discharge blockers bar chart")).toHaveTextContent("not shown");
+    fireEvent.click(within(phone).getByRole("button", { name: "Held up" }));
+    expect(chart("Ward discharges held up bar chart")).toHaveTextContent("not shown");
     fireEvent.click(within(phone).getByRole("radio", { name: "EDs" }));
     fireEvent.click(within(phone).getByRole("button", { name: "Urgent" }));
     expect(chart("Emergency department urgent placements bar chart")).toHaveTextContent("not shown");

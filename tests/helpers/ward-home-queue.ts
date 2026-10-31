@@ -4,12 +4,13 @@
 // coordinator would.
 //
 // Home v7, Josh 22 Oct 2026: Home opens on My list, and the priority queue sits behind the
-// "Everyone waiting" switch, so the queue helpers choose it first, as a coordinator would.
+// "Everyone waiting" switch, so the queue helpers choose it first, as a coordinator would. Home and
+// Activity (Josh, 31 Oct 2026) renamed that switch "Waiting", beside My List and Planned.
 import { fireEvent, screen } from "@testing-library/react";
 
-/** Switches Home's list to Everyone waiting (the priority queue); does nothing when it is showing. */
+/** Switches Home's list to Waiting (the priority queue); does nothing when it is showing. */
 export function showEveryoneWaiting(): void {
-  const everyone = screen.queryByRole("radio", { name: /^Everyone waiting/u });
+  const everyone = screen.queryByRole("radio", { name: /^Waiting/u });
   if (everyone && everyone.getAttribute("aria-checked") !== "true") fireEvent.click(everyone);
 }
 

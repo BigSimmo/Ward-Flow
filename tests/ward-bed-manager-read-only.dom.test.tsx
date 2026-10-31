@@ -104,6 +104,8 @@ describe("the site bed manager's Referrals board (D-80)", () => {
     expect(within(detail).queryByRole("tab", { name: /^(Place|Decide)/ })).not.toBeInTheDocument();
     expect(within(detail).getByRole("tab", { name: /^Patient/ })).toHaveAttribute("aria-selected", "true");
     // The owner and call log show, with no Assign, Take this referral or Log a call.
+    // Referrals redesign (31 Oct 2026): Owner and calls folds behind its own row on the Patient tab.
+    fireEvent.click(within(detail).getByRole("button", { name: "Owner and calls" }));
     expect(await within(detail).findByTestId(`ward-referral-owner-${id}`)).toBeInTheDocument();
     expect(within(detail).queryByTestId(`ward-referral-assign-${id}`)).not.toBeInTheDocument();
     expect(within(detail).queryByTestId(`ward-referral-call-log-${id}`)).not.toBeInTheDocument();
@@ -124,6 +126,8 @@ describe("the site bed manager's Referrals board (D-80)", () => {
     expect(within(detail).queryByTestId("ward-referral-read-only")).not.toBeInTheDocument();
     expect(within(detail).getByRole("tab", { name: /^(Place|Decide)/ })).toBeInTheDocument();
     fireEvent.click(within(detail).getByRole("tab", { name: /^Patient/ }));
+    // Referrals redesign (31 Oct 2026): Owner and calls folds behind its own row on the Patient tab.
+    fireEvent.click(within(detail).getByRole("button", { name: "Owner and calls" }));
     expect(await within(detail).findByTestId(`ward-referral-assign-${id}`)).toBeInTheDocument();
   });
 });

@@ -5,6 +5,40 @@
  * fallback moved here: the dialog's hex and rgba fallbacks stay inline in the component, because
  * ward stylesheets may declare no raw colour (tests/ward-raw-colour.test.ts).
  */
+/* The dialog sits on the shared modal rung, under the toast rung, so an outcome pushed while it is
+   open stays in view (notifications pass, 30 Oct 2026; it was a hard-coded 9999). */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--wf-scrim-strong);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+
+.panel {
+  width: 100%;
+  max-width: 32rem;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--wf-line);
+}
+
 .titleGroup {
   display: flex;
   align-items: center;

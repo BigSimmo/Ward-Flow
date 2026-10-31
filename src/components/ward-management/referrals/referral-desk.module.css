@@ -1,0 +1,37 @@
+/* Desk views (Josh, 31 Oct 2026): the Referrals board's per-desk styles. Each rule names its desk. */
+
+/* ROLE BRANCH (ward): the empty ward queue's one link, in the app's link colour. */
+.link {
+  position: relative;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ROLE BRANCH (ward), phone: the link keeps its words on one line, under the sentence when it does not fit beside it. */
+@media (max-width: 30rem) {
+  .link {
+    display: inline-block;
+  }
+}
+
+/* Today's size, with a comfortable touch area that does not show (Josh, 30 Oct 2026: no 48 px controls). */
+.link::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+}
+
+/* ROLE BRANCH (ward): an empty ward queue takes the full width, with no decision pane beside it. */
+[data-referral-layout="queue-panel"] .single.single.single.single.single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* ROLE BRANCH (ward): the hidden decision pane stays hidden over the board's own display rules. */
+[data-referral-layout="queue-panel"] .single.single.single.single.single > [hidden] {
+  display: none;
+}

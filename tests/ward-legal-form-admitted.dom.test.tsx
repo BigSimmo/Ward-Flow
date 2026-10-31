@@ -66,7 +66,11 @@ describe("a person admitted on a form stays on Legal forms (WT-03)", () => {
         <LegalFormsScreen />
       </WardFlowProvider>,
     );
-    expect(screen.queryByTestId("ward-legal-forms-admitted")).toBeNull();
+    // Ward role (redesign, Josh 31 Oct 2026): with nobody admitted on a form the group still shows,
+    // saying where the ward records one, and offers no Record a form.
+    const empty = screen.getByTestId("ward-legal-forms-admitted");
+    expect(empty).toHaveTextContent("The ward records the next form for a person admitted to its bed");
+    expect(within(empty).queryByRole("button", { name: /^Record a form for / })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "drive arrival" }));
     expect(screen.getByTestId("rejections").textContent).toBe("");
     expect(screen.getByTestId("form")).toHaveTextContent("arrived|1A");

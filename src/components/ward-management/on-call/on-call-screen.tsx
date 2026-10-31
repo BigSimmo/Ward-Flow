@@ -3,7 +3,7 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { Fragment, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Search, Star, Users } from "lucide-react";
+import { ChevronDown, Clock, Copy, Mail, MapPin, MoreHorizontal, Printer, Star, Users } from "lucide-react";
 import { minuteOfDay } from "@/components/ward-management/ward-clock";
 import {
   useOptionalWardFlowSelect,
@@ -22,15 +22,14 @@ import {
   HeroChips,
   HeroTrack,
   Icon,
-  Kbd,
   LiveChip,
   Menu,
   PillTabs,
+  SearchField,
   Sheet,
   SrOnly,
   StatusGlyph,
   Tabs,
-  TextInput,
   cx,
   Drawer,
   tableClasses,
@@ -43,7 +42,7 @@ import {
   SERVICE_META,
   availability,
   buildOnCallDirectory,
-  entrySearchFields,
+  entryMatchesQuery,
   hhmm,
   isAnswering,
   keyLineLabel,
@@ -70,6 +69,7 @@ import { PhoneDirectory, PhoneFocal, PhoneSheet } from "./on-call-phone";
 import { readFavourites, saveFavourites, subscribeFavourites } from "./on-call-favourites";
 import styles from "./on-call.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { useActionToast } from "@/components/ward-management/use-action-toast";
 
 export type Highlight = "now" | "soon" | "email" | "due";
 
@@ -78,7 +78,7 @@ const HIGHLIGHTS: { id: Highlight; label: string; test: (entry: DirectoryEntry, 
   { id: "now", label: "Answering", test: (entry, minute) => isAnswering(entry, minute) },
   {
     id: "soon",
-    label: "Ends within the hour",
+    label: "Ending soon",
     test: (entry, minute) => {
       const now = availability(entry, minute);
       return now.kind === "on" && !now.allDay && now.soon;
@@ -111,11 +111,8 @@ const SECTION_LABEL: Record<DirectorySection, string> = {
   statewide: "Statewide",
 };
 
-function matchesQuery(entry: DirectoryEntry, query: string): boolean {
-  const needle = query.trim().toLowerCase();
-  if (!needle) return false;
-  return entrySearchFields(entry).some((value) => value.toLowerCase().includes(needle));
-}
+// Every word, in any order, and numbers with spaces ignored, as the Tools sheet and header search.
+const matchesQuery = entryMatchesQuery;
 
 function rowsForTab(entries: readonly DirectoryEntry[], tab: DirectoryTab, favourites: readonly string[]) {
   return tab === "mine"
@@ -203,11 +200,22 @@ export function OnCallScreen() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isPhone, searchId]);
 
-  const say = useCallback((text: string) => {
-    setNotice(text);
-    if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(() => setNotice(""), 4000);
-  }, []);
+  // Outside a sheet the outcome goes to the shared toast region. A sheet makes the page behind it
+  // inert, so while one is open its feedback stays inside the sheet, beside what was copied.
+  const pushNotice = useActionToast({ testId: "ward-on-call-notice", tone: "info" });
+  const inSheetRef = useRef(false);
+  const say = useCallback(
+    (text: string, warning = false) => {
+      if (!inSheetRef.current) {
+        pushNotice(warning ? { warning: text } : text);
+        return;
+      }
+      setNotice(text);
+      if (noticeTimer.current) clearTimeout(noticeTimer.current);
+      noticeTimer.current = setTimeout(() => setNotice(""), 4000);
+    },
+    [pushNotice],
+  );
 
   const copy = useCallback(
     async (text: string, label: string) => {
@@ -215,7 +223,7 @@ export function OnCallScreen() {
         await copyTextToClipboard(text);
         say(label);
       } catch {
-        say("Copy is unavailable in this browser. Select the text instead.");
+        say("Copy is unavailable in this browser. Select the text instead.", true);
       }
     },
     [say],
@@ -322,7 +330,8 @@ export function OnCallScreen() {
       />
       <HeroChip
         value={endingSoon.length}
-        label="end within the hour"
+        // Redesign: one wording for this state at every width, the phone's "ending soon" (within the hour).
+        label="ending soon"
         tone="warning"
         pressed={highlight === "soon"}
         onPress={() => toggleHighlight("soon")}
@@ -498,22 +507,18 @@ export function OnCallScreen() {
     { id: "mine" as const, label: "Mine", count: tabCounts.mine },
   ];
 
+  // D-91: the one page search field. Its spoken name is the full hint; the placeholder names what
+  // is searched in words that never cut off. The Matches panel and the hit count say how many match.
   const search = (
-    <>
-      <label className={styles.srOnlyLabel} htmlFor={searchId}>
-        Search contacts
-      </label>
-      <TextInput
-        id={searchId}
-        type="search"
-        icon={Search}
-        trailing={isPhone ? undefined : <Kbd>/</Kbd>}
-        placeholder="Role, hospital, ward, team or number"
-        value={query}
-        onChange={(event) => setQuery(event.target.value)}
-        boxClassName={styles.search}
-      />
-    </>
+    <SearchField
+      id={searchId}
+      label="Search by role, hospital, ward, team or number"
+      placeholder="Role, place or number"
+      value={query}
+      onValueChange={setQuery}
+      shortcut={!isPhone}
+      className={styles.search}
+    />
   );
 
   const highlightChips = HIGHLIGHTS.map((item) => (
@@ -560,11 +565,9 @@ export function OnCallScreen() {
 
   // A sheet makes the page behind it inert, so while one is open its feedback shows inside it.
   const sheetOpen = downtimeOpen || Boolean(isPhone && sheetEntry);
-  const noticeLine = sheetOpen ? null : (
-    <p className={cx(styles.toast, notice && styles.toastOn)} role="status" data-testid="ward-on-call-notice">
-      {notice}
-    </p>
-  );
+  useEffect(() => {
+    inSheetRef.current = sheetOpen;
+  }, [sheetOpen]);
   const sheetNotice = sheetOpen ? (
     <p className={styles.sheetNotice} role="status" data-testid="ward-on-call-notice">
       {notice}
@@ -646,7 +649,6 @@ export function OnCallScreen() {
             <StatusGlyph tone="warning" size={9} />
             Synthetic records. Every number is a mock from an unassigned range.
           </p>
-          {noticeLine}
         </main>
         {sheetEntry ? (
           <PhoneSheet entry={sheetEntry} actions={actions} notice={sheetNotice} onClose={() => setSheetId(null)} />
@@ -677,7 +679,8 @@ export function OnCallScreen() {
               {groupByChip}
               {groupByChip ? <span className={styles.divider} aria-hidden="true" /> : null}
               {/* The chip counts are this tab's rows, so they name it: the hero counts the whole page. */}
-              <span className={styles.chipScope}>In {tabItems.find((item) => item.id === tab)?.label}</span>
+              {/* Redesign: says what the counts are, so they are not read against the hero's whole-page figures. */}
+              <span className={styles.chipScope}>Highlight in {tabItems.find((item) => item.id === tab)?.label}</span>
               {highlightChips}
               {highlight || query ? (
                 <Button
@@ -752,7 +755,6 @@ export function OnCallScreen() {
             <ContactCard entry={slideEntry} actions={actions} headingId={`${panelHeadingId}-slide`} />
           </Drawer>
         ) : null}
-        {noticeLine}
         <WardPrototypeFooter
           testId="ward-on-call-governance"
           note="Not approved for clinical use. Synthetic records, mock numbers."

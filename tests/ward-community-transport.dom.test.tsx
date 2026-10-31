@@ -169,6 +169,8 @@ function fillAndConfirmBooking(movementId: string) {
   fireEvent.change(within(dialog).getByTestId(`ward-community-transport-estimated-time-${movementId}`), {
     target: { value: "14:30" },
   });
+  // Josh, 31 Oct 2026: neither Today nor Tomorrow starts chosen.
+  fireEvent.click(within(dialog).getByTestId(`ward-community-transport-estimated-day-today-${movementId}`));
   const confirm = within(dialog).getByTestId(`ward-community-book-transport-confirm-${movementId}`);
   expect(confirm).not.toHaveAttribute("aria-disabled");
   fireEvent.click(confirm);
@@ -221,25 +223,33 @@ describe("community admitted table — transport booking and cancel", () => {
   it("an admission with movementId null shows no booking control", () => {
     renderTeamScreen(null);
 
-    const cell = screen.getByTestId("ward-community-transport-cell-AD-NO-MOVEMENT");
-    expect(
-      within(cell).queryByRole("button", { name: /Log transport booking|Cancel this team's booking/i }),
-    ).toBeNull();
+    // The redesign draws the Transport column only when a row needs transport, so this row may
+    // have no transport cell at all; what matters is that no booking control appears anywhere.
+    expect(screen.queryByRole("button", { name: /Log transport booking|Cancel this team's booking/i })).toBeNull();
     expect(screen.queryByTestId(/ward-community-book-transport-/)).toBeNull();
   });
 
-  it("Actions keeps book beside Open Dossier when the admission has a patientId (owner decision 1)", () => {
+  it("keeps book in the same row as the record button when the admission has a patientId (owner decision 1)", () => {
     const { movementId } = pulledMovementWithoutTransport();
     // A real sample patient: the dossier now reads the record, not a typed table (25 Sept 2026).
     renderTeamScreen(movementId, "PT-010");
 
+    // The redesign (Josh, 31 Oct 2026) opens the record from the person's name button, and the
+    // booking sits in the Transport cell of the same row.
     const cell = screen.getByTestId("ward-community-transport-cell-AD-TRANSPORT-01");
-    expect(within(cell).getByTestId("ward-community-open-dossier-AD-TRANSPORT-01")).toBeTruthy();
+    const open = screen.getByTestId("ward-community-open-dossier-AD-TRANSPORT-01");
+    expect(open.closest("tr")).toBe(cell.closest("tr"));
     expect(within(cell).getByTestId(`ward-community-book-transport-${movementId}`)).toBeTruthy();
     expect(within(cell).queryByTestId(`ward-community-cancel-transport-${movementId}`)).toBeNull();
 
-    fireEvent.click(within(cell).getByTestId("ward-community-open-dossier-AD-TRANSPORT-01"));
-    expect(screen.getByRole("dialog", { name: /Patient record: Davenporton, Farah · UM100010/i })).toBeTruthy();
+    fireEvent.click(open);
+    const dossier = screen.getByRole("dialog", { name: /Patient record: Davenporton, Farah · UM100010/i });
+    // Moved here from the removed team-page search's test (30 Oct 2026): the dossier says what Ward
+    // Flow does not record rather than inventing a clinician, care tier, review date or form.
+    expect(within(dossier).getAllByText("Not recorded in Ward Flow")).toHaveLength(3);
+    for (const invented of ["Dr S. Chen", "Tier 1 Intensive Outreach", "25 Sep 2026", "Form 1A MHA"]) {
+      expect(dossier.textContent, invented).not.toContain(invented);
+    }
   });
 
   it("Actions omits Open Dossier when patientId is null but still offers booking", () => {

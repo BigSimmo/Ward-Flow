@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
+import { renderWithToasts as render } from "./helpers/with-toasts";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -56,7 +57,7 @@ function WardProbe({ unitId, admissionId }: { unitId: string; admissionId: strin
   return (
     <>
       <output data-testid="named-state">{`${named?.state}|${named?.leavingDestination ?? ""}`}</output>
-      <output data-testid="named-name">{resolvePatientIdentity(named).displayName}</output>
+      <output data-testid="named-name">{resolvePatientIdentity(named).formalName}</output>
       <output data-testid="others">{others.map((admission) => `${admission.id}:${admission.state}`).join(" ")}</output>
       <output data-testid="rejections">{rejections.length}</output>
       <output data-testid="last-rejection">{rejections.at(-1)?.reason ?? ""}</output>

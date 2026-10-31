@@ -97,6 +97,54 @@ describe("bot-author PR policy: truncated listings", () => {
     }
   });
 
+  it("reads a PR of 250 or more commits from the paged compare listing", async () => {
+    const { collectPullRequestCommits } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
+    const original = globalThis.fetch;
+    const urls: string[] = [];
+    const commit = (n: number, login: string) => ({ sha: `c${n}`, author: { login }, commit: { author: {} } });
+    globalThis.fetch = (async (url: string) => {
+      urls.push(url);
+      if (url.includes("/compare/b...h?")) {
+        const page = Number(url.match(/page=(\d+)$/u)?.[1]);
+        const count = page <= 3 ? 100 : page === 4 ? 12 : 0;
+        const commits = Array.from({ length: count }, (_, i) => {
+          const n = (page - 1) * 100 + i;
+          return commit(n, n === 311 ? "coderabbitai" : "human");
+        });
+        return json({ total_commits: 312, commits });
+      }
+      if (url.includes("/commits/c311")) return json({ files: [{ filename: "supabase/x.sql" }] });
+      return json({ commits: 312, base: { sha: "b" }, head: { sha: "h" } });
+    }) as never;
+    try {
+      const commits = await collectPullRequestCommits({ repository: "o/r", prNumber: "1", token: "t" });
+      expect(urls.some((url) => url.includes("/pulls/1/commits"))).toBe(false);
+      expect(commits).toEqual([
+        { sha: "c311", author: { login: "coderabbitai", email: "" }, files: ["supabase/x.sql"] },
+      ]);
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it("fails closed when the compare listing is shorter than the PR's commit count", async () => {
+    const { collectPullRequestCommits } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
+    const original = globalThis.fetch;
+    globalThis.fetch = (async (url: string) =>
+      json(
+        url.includes("/compare/")
+          ? { total_commits: 300, commits: [{ sha: "a", author: { login: "x" }, commit: {} }] }
+          : { commits: 300, base: { sha: "b" }, head: { sha: "h" } },
+      )) as never;
+    try {
+      await expect(collectPullRequestCommits({ repository: "o/r", prNumber: "1", token: "t" })).rejects.toThrow(
+        /incomplete/,
+      );
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
   it("reads every page of a bot commit's files", async () => {
     const { collectCommitFiles } = await import("../scripts/ward-ci-public/bot-author-policy.mjs");
     const original = globalThis.fetch;
