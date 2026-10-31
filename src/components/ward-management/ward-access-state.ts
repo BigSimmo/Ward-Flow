@@ -417,6 +417,28 @@ function withinArrivalAllowance(
   return mix;
 }
 
+/**
+ * Bug list row 28: a stay whose referral this desk is not sent keeps its person, not a link it
+ * cannot follow. The patient resolver rightly treats an unresolved referral link as broken and
+ * names nobody, so a ward's own bed read "Name not recorded". The server copy already cuts the
+ * link (`closeReferences`); the browser's own scoping now does the same. Only the link goes: the
+ * stay's `patientId` still names the person, and a referral missing from the WHOLE workspace is
+ * left alone, so a truly broken link still reads as broken.
+ */
+export function withStayReferralsInView<A extends { referralId: string | null }>(
+  admissions: readonly A[],
+  shownReferralIds: ReadonlySet<string>,
+  allReferralIds: ReadonlySet<string>,
+): A[] {
+  return admissions.map((admission) =>
+    admission.referralId !== null &&
+    !shownReferralIds.has(admission.referralId) &&
+    allReferralIds.has(admission.referralId)
+      ? { ...admission, referralId: null }
+      : admission,
+  );
+}
+
 /** A copy without the optional link fields that point at a record the desk is not sent. */
 function withoutLinks<T extends object>(record: T, links: readonly (keyof T)[], present: (id: string) => boolean): T {
   const dangling = links.filter((key) => typeof record[key] === "string" && !present(record[key] as string));

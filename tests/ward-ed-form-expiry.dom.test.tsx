@@ -205,7 +205,8 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
     render(<EdScreen edId="arm-ed" />);
 
     const line = screen.getByTestId(`ward-ed-form-expiry-${PAST_DUE_ID}`);
-    expect(line.textContent ?? "").toMatch(/^Expiry written on the form: .+\(passed .+ ago\)$/);
+    // D-93 (31 Oct 2026): the typed time only, never "(passed 1h 05m ago)".
+    expect(line.textContent ?? "").toMatch(/^Ended .+ as typed$/);
 
     const warning = screen.getByTestId(`ward-ed-form-expiry-warning-${PAST_DUE_ID}`);
     expect(warning).toHaveTextContent("Warning: past the expiry written on the form. Check the form.");
@@ -278,7 +279,7 @@ describe("the ED screen's form-expiry line reads only the typed expiry", () => {
   it("a dueAt well clear of the warning band shows no warning at all", () => {
     render(<EdScreen edId="arm-ed" />);
     expect(screen.getByTestId(`ward-ed-form-expiry-${CLEAR_DUE_ID}`).textContent ?? "").toMatch(
-      /^Expiry written on the form: .+\(\d+.*left\)$/,
+      /^Ends .+ as typed$/, // D-93: never "(3h 20m left)"
     );
     expect(screen.queryByTestId(`ward-ed-form-expiry-warning-${CLEAR_DUE_ID}`)).not.toBeInTheDocument();
   });

@@ -806,7 +806,7 @@ is inferred.
   2. No suggested, ranked, capped or pre-selected ward anywhere: "Suggested destination" goes, wards not yet asked are listed in full in a fixed order, the ED board gives a count only, and the phone accept starts with no ward chosen.
   3. Waiting lists default to wait order. Flags, act-now and form due times are highlights that do not move rows. This restores D-32 (first in, first out), which the Home queue, Waiting, Movements and step-down lists had drifted from.
   4. No points score: "Why this wait" gives plain reasons only.
-  5. "Time left" counted down to an expiry a person typed from the form stays: it computes nothing about the Act (D-70 is unchanged).
+  5. ~~"Time left" counted down to an expiry a person typed from the form stays: it computes nothing about the Act (D-70 is unchanged).~~ **Replaced by D-93** (31 October 2026): a legal form's time shows only as typed, never as a countdown.
   6. Road time "nearest ready beds" stays, captioned "Distance only, not suitability". Make-room chains stay switched off outside local builds. Candidate wards use a fixed order within each fit group, not catchment or free-bed tiers.
   7. Every copy to the clipboard starts with the synthetic line. Whether real names may appear in copied text is decided before any real data.
 - **Why:** The standing never-build rule (19 October 2026) excludes best-match ward suggestions, automatic placement, re-sorting the ED queue and risk scores, and the audit found these built before the rule. Findings and evidence: `/mnt/project-files/audits/2026-10-20-clinical-safety-audit/`.
@@ -1046,3 +1046,11 @@ is inferred.
   - Handover stays off the phone dock for the nurse in charge and the bed manager.
 - **Boundary:** this approves mock-up work and the order of work. It approves no page for building, no merge, release or deployment, and no real data.
 - **Why:** four pull requests changed the same screens in different directions. One design home and one order stop them breaking each other and leaving the mock-ups out of date.
+
+## D-93. Legal form times show only as typed, never as a countdown (31 October 2026)
+
+- **Date:** 31 October 2026 (`2026-10-31`), 4:05 PM AWST (08:05 UTC). **Decided by:** Josh, in the Ward Flow project, approving the parallel build plan, whose legal-fix lane set out this change. His words: "Yes to all except 3…" (question 3 was the live site, not this).
+- **Decision:** replaces D-71 item 5 and extends D-70 to every page. A legal form's time is shown only as the clock time a person typed from the form: "Ends 15:42 as typed", or "Ended 15:42 as typed" once that time has gone by, or with the form's full name, "Form 4C (Transfer order) · ends 15:42 as typed". Nothing is worked out from it: no "3h 20m left", "due in 2h", "passed 1h 05m ago" or "1h 15m overdue", no age since the typed time on an alert, and no bar filling towards it.
+- **Unchanged:** the warning colours from each user's own settings stay, always with their words ("within 1h", "within 3h", "passed"), and lists still order by the typed time without moving rows (D-71 item 3). D5 and D-70 hold: nothing computes a Mental Health Act period. Bed pull limits, transport waits and decision targets are not legal times and keep their own wording.
+- **Where:** Legal forms, the Patient page, Home (queue and placement panel), Movements and the movement drawer, Waiting, the ED board, Patients search, My ward, Alerts (queue, detail and copied text), the Tasks drawer and Home's alert cards. The shared wording lives in `legal-forms/legal-time-as-typed.ts`, and `tests/ward-legal-as-typed-guard.test.ts` fails if a duration formatter is applied to a legal time again.
+- **Why:** staff read the typed time against the paper form. A running figure beside it is a second, unchecked number that can disagree with the form, which the as-typed rule exists to prevent. The mock-ups already show legal times this way (D-91 design master).

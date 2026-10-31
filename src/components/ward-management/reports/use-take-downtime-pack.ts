@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { useOnlineStatus } from "@/components/ward-management/use-online-status";
 
 import { downtimePack, lastDowntimeSyncAt, noteDowntimeSync, rememberDowntimePack } from "./downtime-pack";
@@ -64,10 +65,8 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
         leaveBeds,
         movements,
         now,
-        identify: (movement) => {
-          const person = patientOf(movement);
-          return `${person.displayName} · ${person.umrn}`;
-        },
+        // Surname first (D-83): "Family, Given · UMRN", the one identity line (bug list row 17).
+        identify: (movement) => patientIdentityLine(patientOf(movement)),
       });
       if (!online) pack.offline = { lastSyncAt: lastDowntimeSyncAt(worldGeneration, now) };
       const shiftChangeAt = options?.shiftChangeAt;

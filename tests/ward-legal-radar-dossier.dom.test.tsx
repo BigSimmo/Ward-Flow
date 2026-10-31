@@ -47,14 +47,15 @@ describe("paper legal form time left, one rule", () => {
     expect(formTimeLeft(movement(NOW - 5), NOW, DEFAULT_DUE_SOON_THRESHOLDS)?.standing).toBe("passed");
   });
 
-  it("shows time left and the warning word on the patient's forms register", () => {
+  it("shows the typed expiry and the warning word on the patient's forms register (as typed, D-93)", () => {
     renderTab(NOW + 120);
     const line = screen.getByTestId("dossier-paper-expiry-time-left");
-    expect(line.textContent).toContain("2h 00m left");
+    expect(line.textContent).toMatch(/Ends .+ as typed/u);
+    expect(line.textContent).not.toMatch(/\bleft\b/u);
     expect(line.textContent).toContain(`Within ${SOON / 60}h`);
   });
 
-  it("shows time left on a continued form, where the typed expiry sits on the original row", () => {
+  it("shows the typed expiry on a continued form, where it sits on the original row", () => {
     const continued = movement(NOW + 120);
     continued.legalForm = {
       ...continued.legalForm!,
@@ -69,6 +70,6 @@ describe("paper legal form time left, one rule", () => {
         onRecordDocument={() => undefined}
       />,
     );
-    expect(screen.getByTestId("dossier-paper-expiry-time-left").textContent).toContain("2h 00m left");
+    expect(screen.getByTestId("dossier-paper-expiry-time-left").textContent).toMatch(/Ends .+ as typed/u);
   });
 });
