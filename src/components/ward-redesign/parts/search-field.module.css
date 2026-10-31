@@ -31,7 +31,7 @@
      (`--search-field-band`, the page's grey by default) so rows scroll cleanly under it. */
   .pinned {
     position: sticky;
-    top: 0;
+    top: var(--wf-header-height, 3.75rem);
     z-index: 2;
     padding-block: var(--wf-s-2);
     background: var(--search-field-band, var(--wf-surface-2));
