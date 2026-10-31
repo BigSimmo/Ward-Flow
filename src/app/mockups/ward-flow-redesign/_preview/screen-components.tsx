@@ -72,9 +72,6 @@ const OnCallRedesign = dynamic<MockupPageProps>(() =>
 const SeclusionRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/seclusion/seclusion-redesign").then((module) => module.SeclusionRedesign),
 );
-const BedMeetingTvPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/bed-meeting-tv/bed-meeting-tv-page").then((module) => module.BedMeetingTvPage),
-);
 const DowntimePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/downtime/downtime-page").then((module) => module.DowntimePage),
 );
@@ -120,9 +117,6 @@ const StatisticsWeeklyPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/statistics-weekly/statistics-weekly-page").then(
     (module) => module.StatisticsWeeklyPage,
   ),
-);
-const AgendaRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/agenda/agenda-redesign").then((module) => module.AgendaRedesign),
 );
 const AsWardHomePage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/as-ward-home/as-ward-home-page").then((module) => module.AsWardHomePage),
@@ -305,7 +299,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "out-of-area": OutOfAreaPage,
   "on-call": OnCallRedesign,
   seclusion: SeclusionRedesign,
-  "bed-meeting-tv": BedMeetingTvPage,
   downtime: DowntimePage,
   chronology: ChronologyPage,
   places: PlacesPage,
@@ -320,7 +313,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "statistics-list": StatisticsListPage,
   "statistics-unit": StatisticsUnitPage,
   "statistics-weekly": StatisticsWeeklyPage,
-  agenda: AgendaRedesign,
   "as-ward-home": AsWardHomePage,
   "as-ward-stays": AsWardStaysPage,
   "as-ward-discharges": AsWardDischargesPage,
