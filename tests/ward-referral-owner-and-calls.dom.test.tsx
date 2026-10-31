@@ -132,7 +132,7 @@ describe("referral owner and call log", () => {
     setup();
     expect(screen.queryByRole("combobox", { name: "Assign to" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Take this referral" }));
-    expect(screen.getByTestId("record")).toHaveTextContent("Owner Community clinician");
+    expect(screen.getByTestId("record")).toHaveTextContent("Owner Community team");
     expect(screen.getByRole("button", { name: "Take this referral" })).toHaveAttribute("aria-disabled", "true");
   });
 });

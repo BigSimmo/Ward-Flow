@@ -201,7 +201,7 @@ describe("current plan attribution after release date synchronization", () => {
     const row = within(screen.getByTestId("ward-capacity-beds-forecast-sources-this_shift")).getByText(
       /^14:00 · Current discharge plan/u,
     );
-    expect(row).toHaveTextContent("plan date set by Ward manager, 10:30");
+    expect(row).toHaveTextContent("plan date set by Nurse in charge, 10:30");
     expect(row).toHaveTextContent("release last reported by NUM Original Unit, 09:10");
   });
 });

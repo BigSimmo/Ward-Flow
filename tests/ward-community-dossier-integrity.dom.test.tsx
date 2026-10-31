@@ -210,7 +210,7 @@ describe("community dossiers preserve source facts and actual mutation outcomes"
     fireEvent.click(within(care).getByRole("button", { name: "Record appointment" }));
     expect(screen.getByTestId("recorded-appointments")).toHaveTextContent(String(before + 1));
     expect(care).toHaveTextContent("Dr Alex Taylor");
-    expect(care).toHaveTextContent("Community service");
+    expect(care).toHaveTextContent("Community team");
     fireEvent.change(within(care).getByRole("combobox", { name: "Contact outcome" }), {
       target: { value: "completed" },
     });

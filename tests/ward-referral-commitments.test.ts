@@ -87,8 +87,8 @@ describe("RECORD_REFERRAL_COMMITMENT", () => {
     expect(after.rejections).toHaveLength(f.state.rejections.length);
     expect(entriesIn(after, f.referralId, f.unitId)).toEqual([
       { unitId: f.unitId, step: "response_requested", at: NOW, by: "Bed coordinator" },
-      { unitId: f.unitId, step: "acknowledged", at: NOW + 1, by: "Ward manager" },
-      { unitId: f.unitId, step: "promised", promisedFor: NOW + 60, at: NOW + 2, by: "Ward manager" },
+      { unitId: f.unitId, step: "acknowledged", at: NOW + 1, by: "Nurse in charge" },
+      { unitId: f.unitId, step: "promised", promisedFor: NOW + 60, at: NOW + 2, by: "Nurse in charge" },
       { unitId: f.unitId, nextCallbackAt: NOW + 30, at: NOW + 3, by: "Bed coordinator" },
     ]);
     const arm = referralIn(after, f.referralId).destinations[0]!;

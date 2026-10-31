@@ -61,8 +61,14 @@ describe("recipient-free sender information supplied", () => {
       expect(arm.state).toBe("queued");
       expect(arm.decidedAt).toBeUndefined();
       expect(arm.informationNeeds).toEqual([
-        { need: "bloods_or_ecg", at: NOW_ANCHOR, by: "Ward manager", metAt: NOW_ANCHOR + 1, metBy: "Ward manager" },
-        { need: "drug_screen", at: NOW_ANCHOR, by: "Ward manager" },
+        {
+          need: "bloods_or_ecg",
+          at: NOW_ANCHOR,
+          by: "Nurse in charge",
+          metAt: NOW_ANCHOR + 1,
+          metBy: "Nurse in charge",
+        },
+        { need: "drug_screen", at: NOW_ANCHOR, by: "Nurse in charge" },
       ]);
     }
     expect(state).toEqual(before);
