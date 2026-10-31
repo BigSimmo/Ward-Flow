@@ -35,7 +35,7 @@ export type ToastStackLayout = {
 };
 
 /** A warning or danger notice stays in full view. */
-export function toastStaysInView(toast: { tone: string }) {
+function toastStaysInView(toast: { tone: string }) {
   return toast.tone === "warning" || toast.tone === "danger";
 }
 

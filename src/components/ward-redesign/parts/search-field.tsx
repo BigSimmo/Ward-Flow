@@ -57,7 +57,7 @@ export type SearchFieldProps = Omit<
 };
 
 /** The count line's words: "12 of 40 wards" while filtering, "40 wards" before. */
-export function searchCountText(count: NonNullable<SearchFieldProps["count"]>, filtering: boolean): string {
+function searchCountText(count: NonNullable<SearchFieldProps["count"]>, filtering: boolean): string {
   const noun = count.noun ? ` ${count.noun}` : "";
   return filtering ? `${count.shown} of ${count.total}${noun}` : `${count.total}${noun}`;
 }
