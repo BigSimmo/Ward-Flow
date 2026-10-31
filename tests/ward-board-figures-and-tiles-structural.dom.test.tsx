@@ -60,19 +60,26 @@ const FIGURE_KEYS = [
 describe("the bed board never drops a tile or a figure at the DOM/JS level (item 51, task G1)", () => {
   afterEach(() => cleanup());
 
-  it("has exactly ten figures in the triage band, unconditionally", () => {
+  it("shows all ten figures, unconditionally: eight on the Also on this ward line, two in the hero", () => {
     expect(FIGURE_KEYS.length, "the list above must actually be ten, or this test proves nothing").toBe(10);
 
     renderWardBoard("rph-adult-secure");
+    // Redesign (Josh, 31 Oct 2026): the ten boxes are one "Also on this ward" line, without the two
+    // the hero already shows (Ready now and Pulled, not arrived). Nothing is dropped: those two are
+    // asserted in the hero below.
+    const inHero = new Set<string>(["availableNow", "pulled"]);
+    const lineKeys = FIGURE_KEYS.filter((key) => !inHero.has(key));
     const band = screen.getByTestId("ward-board-triage");
-    for (const key of FIGURE_KEYS) {
+    for (const key of lineKeys) {
       expect(within(band).getByTestId(`ward-board-figure-${key}`), `figure "${key}" is missing`).toBeInTheDocument();
     }
     // No extra or renamed figure either — exactly this set, so a silent rename would fail here too.
     const rendered = within(band)
       .getAllByTestId(new RegExp("^ward-board-figure-"))
       .map((el) => el.getAttribute("data-testid"));
-    expect(rendered.sort()).toEqual(FIGURE_KEYS.map((key) => `ward-board-figure-${key}`).sort());
+    expect(rendered.sort()).toEqual(lineKeys.map((key) => `ward-board-figure-${key}`).sort());
+    expect(screen.getByTestId("ward-board-headline")).toHaveTextContent("Ready now");
+    expect(screen.getByTestId("ward-board-band-stats")).toHaveTextContent("Pulled, not arrived");
   });
 
   it("draws exactly one tile per recorded bed, unfiltered, on more than one ward", () => {

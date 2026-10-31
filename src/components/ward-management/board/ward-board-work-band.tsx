@@ -5,16 +5,18 @@
 // value and passes it in.
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
-import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import styles from "./board.module.css";
 import { type ShiftTileItem } from "./ward-board-model";
+import { WardBoardBlockerDialog } from "./ward-board-blocker-dialog";
 import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 
 export function WardBoardWorkBand({
-  blockerCloseBtnRef,
+  // `blockerCloseBtnRef` and `selectedBlocker` stay in the props so the page passes what it passes
+  // today; the kit Dialog's own close takes first focus, and the dialog holds its own choice.
   blockerDialogItem,
   blockerDialogRef,
   closeBlockerDialog,
@@ -23,7 +25,6 @@ export function WardBoardWorkBand({
   liveBedReleases,
   nameFor,
   raise,
-  selectedBlocker,
   setSelectedBlocker,
   setSelectedKey,
   setShiftExpanded,
@@ -130,140 +131,19 @@ export function WardBoardWorkBand({
           </button>
         ) : null}
         {blockerDialogItem ? (
-          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- a backdrop click closes it for the pointer, and the shared modal focus helper closes it on Escape
-          <div
-            ref={blockerDialogRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="blocker-dialog-title"
-            aria-describedby="blocker-dialog-description"
-            id="ward-board-blocker-dialog"
-            tabIndex={-1}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) closeBlockerDialog();
-            }}
-            className={styles.modalBackdrop}
-          >
-            <div className={styles.blockerDialogPanel}>
-              <div className={styles.modalHeader}>
-                <h3 id="blocker-dialog-title" className={styles.blockerDialogTitle}>
-                  Record a blocker for {blockerDialogItem.label}
-                </h3>
-                <button
-                  ref={blockerCloseBtnRef}
-                  type="button"
-                  onClick={closeBlockerDialog}
-                  aria-label="Close dialog"
-                  className={styles.blockerCloseBtn}
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className={styles.blockerSubjectCard}>
-                <div className={styles.blockerSubjectRow}>
-                  <span className={styles.blockerSubjectLabel}>Bed / Subject: {blockerDialogItem.label}</span>
-                  {blockerDialogItem.chip ? (
-                    <span className={styles.blockerSubjectChip}>{blockerDialogItem.chip}</span>
-                  ) : null}
-                </div>
-                {blockerDialogItem.when ? (
-                  <span className={styles.blockerSubjectWhen}>Timing indicator: {blockerDialogItem.when}</span>
-                ) : null}
-                {blockerDialogItem.text ? (
-                  <span className={styles.blockerSubjectText}>{blockerDialogItem.text}</span>
-                ) : null}
-              </div>
-
-              <div className={styles.blockerReasonGroup}>
-                <p id="blocker-dialog-description" className={styles.blockerReasonPrompt}>
-                  Select the reason preventing bed release:
-                </p>
-                <div
-                  role="radiogroup"
-                  aria-labelledby="blocker-dialog-description"
-                  className={styles.blockerReasonList}
-                >
-                  {BED_RELEASE_BLOCKERS.map((b) => {
-                    const isSelected = selectedBlocker === b;
-                    return (
-                      <button
-                        key={b}
-                        type="button"
-                        role="radio"
-                        aria-checked={isSelected}
-                        onClick={() => setSelectedBlocker(b)}
-                        style={{
-                          minHeight: "var(--ward-tap, 48px)",
-                          minWidth: "var(--ward-tap, 48px)",
-                          padding: "0.625rem 0.875rem",
-                          borderRadius: "var(--r1, 0.25rem)",
-                          border: isSelected
-                            ? "2px solid var(--accent, var(--primary))"
-                            : "1px solid var(--line-strong)",
-                          background: isSelected ? "var(--accent-soft, var(--surface-2))" : "var(--surface)",
-                          color: "var(--ink)",
-                          fontWeight: isSelected ? 600 : 400,
-                          cursor: "pointer",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          justifyContent: "flex-start",
-                          textAlign: "left",
-                          fontVariantNumeric: "tabular-nums",
-                          fontSize: "0.875rem",
-                          lineHeight: "1.3",
-                          boxShadow: isSelected ? "var(--lift)" : "none",
-                        }}
-                      >
-                        {b}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={`${styles.shiftCtl} ${styles.blockerCancelBtn}`}
-                  onClick={closeBlockerDialog}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.shiftCtl} ${styles.blockerConfirmBtn}`}
-                  data-tone="warn"
-                  onClick={() => {
-                    // Walkthrough D3 (25 Sept 2026): a release names its stay (owner ruling),
-                    // so the blocker goes on THIS person's own live release, never the ward's
-                    // first release or a made-up id. With none, nothing is recorded.
-                    const ownRelease = liveBedReleases?.find(
-                      (r) => r.admissionId === blockerDialogItem.selectableKey && r.state !== "discharged",
-                    );
-                    const who = blockerDialogItem.who || nameFor(blockerDialogItem.selectableKey);
-                    if (!ownRelease) {
-                      const msg = `No discharge is recorded for ${who}, so there is nothing to hold up. Nothing was changed.`;
-                      setToastMessage({ warning: msg });
-                    } else {
-                      dispatchAndReport(
-                        () =>
-                          raise("BLOCK_BED_RELEASE", {
-                            releaseId: ownRelease.id,
-                            actingUnitId: unit.id,
-                            blocker: selectedBlocker,
-                          }),
-                        `Blocker recorded for ${who}: ${selectedBlocker}.`,
-                      );
-                    }
-                    closeBlockerDialog();
-                  }}
-                >
-                  Confirm blocker
-                </button>
-              </div>
-            </div>
-          </div>
+          // The kit Dialog, mounted per open so no reason carries over from the last one.
+          <WardBoardBlockerDialog
+            item={blockerDialogItem}
+            blockerDialogRef={blockerDialogRef}
+            closeBlockerDialog={closeBlockerDialog}
+            dispatchAndReport={dispatchAndReport}
+            liveBedReleases={liveBedReleases}
+            nameFor={nameFor}
+            raise={raise}
+            setSelectedBlocker={setSelectedBlocker}
+            setToastMessage={setToastMessage}
+            unit={unit}
+          />
         ) : null}
       </details>
     </section>

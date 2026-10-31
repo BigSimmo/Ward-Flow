@@ -127,9 +127,10 @@ describe("audit metrics rendered regressions", () => {
         <ArrivalFixture stage={stage} eta={eta} />
       </WardFlowProvider>,
     );
-    const badge = screen.queryByTestId("ward-notification-count-badge");
-    if (late) expect(badge).toHaveTextContent("1");
-    else expect(badge).toBeNull();
+    // Redesign (31 Oct 2026): on a desktop the Notices count sits on the More menu's Notices item.
+    fireEvent.click(screen.getByTestId("ward-tools-more"));
+    const notices = screen.getByRole("menuitem", { name: /^Notices/ });
+    expect(notices).toHaveTextContent(late ? /^Notices\s*1$/ : /^Notices$/);
   });
 
   it("R27 labels same-day negative instants with their time and the earlier day as yesterday", () => {
