@@ -503,6 +503,13 @@ scoping, independent decisions, waitlisting and receipt deduplication.
 
 ## `search/` — 13 files
 
+- **Search and forms review (31 October 2026):** `search-text.ts` is the one matcher for search boxes
+  (folded, every word, numbers with spaces ignored; near spellings only for places, screens and
+  contacts, never people). `search-directory.ts` adds on-call contacts and a suburb or postcode's
+  catchment to the header search. Help's answers join it through `ward-global-search-help.tsx`, the
+  caller that knows the desk, so the search stays role-blind; the phone Menu search shows the same.
+  Tests: `ward-search-text.test.ts`, `ward-global-search-help.dom.test.tsx`. The pop-out, page box and
+  quick-time designs are a mock-up at `/mockups/ward-flow-search`, awaiting Josh's approval (D-74).
 - **Header search additions (19 October 2026):** `search-answers.ts` answers a fixed list of common
   questions ("over 24 hours", "no bed yet", "past expected discharge", "Form 1A") from the Patients
   page census and gives the preview each person's "where now" and next step; `search-places.ts`

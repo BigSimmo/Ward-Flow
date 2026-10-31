@@ -22,7 +22,7 @@ export function queryWords(query: string): string[] {
 }
 
 /** Only the digits of `value`. */
-export function digitsOf(value: string): string {
+function digitsOf(value: string): string {
   return value.replace(/\D+/g, "");
 }
 

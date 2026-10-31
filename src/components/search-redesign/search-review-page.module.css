@@ -1,0 +1,90 @@
+/* The search and forms mock-up page (D-74, for Josh's approval). Tokens only. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-6);
+  max-width: 72rem;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: var(--wf-s-6) var(--wf-s-4) var(--wf-s-8);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font-family: var(--wf-font);
+}
+
+.intro h1 {
+  margin: 0 0 var(--wf-s-2);
+  font: 700 var(--wf-fs-28) / var(--wf-lh-28) var(--wf-font);
+}
+
+.intro p {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.eyebrow {
+  margin-bottom: var(--wf-s-2) !important;
+  color: var(--wf-warning-ink) !important;
+  font-weight: 600 !important;
+}
+
+.notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--wf-s-4);
+  margin-bottom: var(--wf-s-4);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.notes h4 {
+  margin: 0 0 var(--wf-s-1);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.notes ul {
+  margin: 0;
+  padding-left: var(--wf-s-4);
+}
+
+.actions {
+  margin-bottom: var(--wf-s-3);
+}
+
+.inlineFrame {
+  max-width: 44rem;
+  max-height: 32rem;
+  overflow: auto;
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.listRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-row-default);
+  align-items: center;
+  border-bottom: 1px solid var(--wf-line);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.listRow span {
+  color: var(--wf-ink-3);
+}
+
+.formDemo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  gap: var(--wf-s-6);
+}
+
+.fieldLabel {
+  margin: 0 0 var(--wf-s-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}

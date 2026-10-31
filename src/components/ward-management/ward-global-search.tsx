@@ -70,7 +70,6 @@ import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 
 export {
-  needsYouMeta,
   patientResultTitle,
   smartSearchGroups,
   type SearchResultGroup,
