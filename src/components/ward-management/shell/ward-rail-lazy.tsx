@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 
 import { useIsPhone } from "@/components/wf";
+import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { useCanOpenHref } from "./ward-access";
 import { closeWardDrawer } from "./ward-drawer-bus";
 import { isTypingTarget, openDrawerForShortcut, useWardDocumentPreferences } from "./ward-rail-preferences";
 // The rail's styles stay in the shell's own stylesheet, in the same order as before, so the
@@ -22,6 +24,7 @@ const RailLoaded = dynamic(() => import("./ward-rail").then((m) => m.WardRail));
 
 function PhonePreferences() {
   useWardDocumentPreferences();
+  const canRefer = useCanOpenHref()(WARD_REFERRAL_INTAKE_HREF);
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
@@ -29,11 +32,11 @@ function PhonePreferences() {
         return;
       }
       if (isTypingTarget(event.target)) return;
-      openDrawerForShortcut(event);
+      openDrawerForShortcut(event, canRefer);
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [canRefer]);
   return null;
 }
 
