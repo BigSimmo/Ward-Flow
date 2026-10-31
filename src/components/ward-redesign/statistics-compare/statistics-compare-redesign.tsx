@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 import { BedDouble, Download, MapPin, Pin, Search, Siren, X } from "lucide-react";
 
 import {
@@ -22,10 +22,7 @@ import {
   useIsPhone,
   type BarListRow,
 } from "@/components/wf";
-import {
-  statisticsSectionById,
-  STATISTICS_UNIT_CHOOSER_ID,
-} from "@/components/ward-management/statistics/statistics-sections";
+import { statisticsSectionById } from "@/components/ward-management/statistics/statistics-sections";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
@@ -49,7 +46,7 @@ import {
   phoneBodyStyles as phone,
 } from "@/components/ward-management/statistics/statistics-phone-parts";
 import compare from "./statistics-compare-redesign.module.css";
-import { UnitChooser } from "./statistics-compare-chooser";
+import { FindUnitLink } from "@/components/ward-redesign/statistics/statistics-view-switch";
 import { FIRST_ROWS, ShowAllRow } from "./statistics-compare-show-all";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
 import {
@@ -67,7 +64,7 @@ import {
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 /**
- * WARD AND ED COMPARISONS — and the chooser that is the only way into the per-unit detail pages.
+ * WARD AND ED COMPARISONS. The way into one unit's detail page is the one unit finder (D-91).
  *
  * **Two comparisons, never one.** Wards are set beside wards and departments beside departments:
  * a ward measure is about beds, and an emergency department in this model has no beds, so one
@@ -77,9 +74,9 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
  * **The Data tables keep the recorded order.** The chart sorts (Highest, Lowest, A to Z); the
  * table is the record, in the order the prototype records units, and never ranks them.
  *
- * **Why the chooser lives here.** The per-unit detail routes are dynamic — one route serving every
- * ward, one serving every emergency department — so this is the one page whose subject is the
- * whole set of units, and `STATISTICS_UNIT_CHOOSER_ID` is the anchor the hub links to.
+ * **The chooser moved (D-91, Josh, 31 Oct 2026).** Compare had its own "Open a unit" (wards and EDs)
+ * beside the Summary's (wards, EDs, services and teams). There is one now, the Summary's, and
+ * "Open a unit" on this tab row links to it, already open.
  *
  * Operational wards come from the provider's live `units`, never a frozen fixture. Executive
  * figures come only from the host-bound aggregate; the common view contains public place
@@ -298,12 +295,6 @@ function executiveComparisonModel(data: ExecutiveReportingFoundation): Compariso
   };
 }
 
-const subscribeToHash = (onChange: () => void) => {
-  window.addEventListener("hashchange", onChange);
-  return () => window.removeEventListener("hashchange", onChange);
-};
-const chooserInHash = () => window.location.hash === `#${STATISTICS_UNIT_CHOOSER_ID}`;
-
 function ComparePresentation({
   model,
   paused,
@@ -331,11 +322,6 @@ function ComparePresentation({
     asAt,
   } = model;
   const isPhone = useIsPhone();
-  // Redesign: Open a unit is one search button on the tab row, showing the chooser in place, rather
-  // than a full grid of every ward under the charts. Arriving at the chooser's anchor opens it.
-  const atChooser = useSyncExternalStore(subscribeToHash, chooserInHash, () => false);
-  const [chooserToggled, setChooserToggled] = useState<boolean | null>(null);
-  const chooserOpen = chooserToggled ?? atChooser;
   const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
 
   const section = statisticsSectionById("compare");
@@ -352,19 +338,8 @@ function ComparePresentation({
       now={now}
       paused={paused}
       onTogglePause={onTogglePause}
-      tools={
-        <button
-          type="button"
-          className={compare.findTool}
-          aria-expanded={chooserOpen}
-          aria-controls={STATISTICS_UNIT_CHOOSER_ID}
-          onClick={() => setChooserToggled(!chooserOpen)}
-          data-testid="ward-statistics-compare-tool-open-unit"
-        >
-          <Search size={14} aria-hidden="true" />
-          Open a unit
-        </button>
-      }
+      // D-91: one unit finder. This tab row's "Open a unit" opens the Summary's, already open.
+      tools={<FindUnitLink testId="ward-statistics-compare-tool-open-unit" />}
       phone={{
         title: `${units.length} ${units.length === 1 ? "ward" : "wards"}, ${emergencyDepartments.length} EDs`,
         sub: `${statisticsCountText(totalLongStays)} ${totalLongStays === 1 ? "stay" : "stays"} over 3 months`,
@@ -407,7 +382,6 @@ function ComparePresentation({
         <ComparePhone wardRows={wardRows} edRows={edRows} />
       ) : (
         <>
-          {chooserOpen ? <UnitChooser units={units} emergencyDepartments={emergencyDepartments} /> : null}
           {/* Redesign: both charts list their first eight, so neither column scrolls inside. Pinned
               wards sits under the ward chart (Josh, 30 Oct 2026), so the two columns end together. */}
           <FlushRow layout="lead2" className={compare.grid}>

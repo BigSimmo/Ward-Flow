@@ -10,7 +10,7 @@
 
 import Link from "next/link";
 import { ChevronDown, FileText, Phone, Plus, Search, Users } from "lucide-react";
-import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, Popover, SrOnly, TextInput } from "@/components/wf";
+import { Button, CheckingFoot, Count, Hero, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
@@ -18,7 +18,6 @@ import { referralWaitLine } from "@/components/ward-management/referrals/referra
 import { WardFigure, WardFigureStrip } from "@/components/ward-management/ward-figure";
 import styles from "@/components/ward-management/community/community.module.css";
 import v6 from "@/components/ward-management/community/community-team-v6.module.css";
-import { communitySearchRenderer } from "@/components/ward-management/community/community-screen-panels";
 import type { CommunityScreenView } from "@/components/ward-management/community/community-screen";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
@@ -63,7 +62,6 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
     activeTab,
     sentReferrals,
   } = view;
-  const renderSearch = communitySearchRenderer(view);
   // Role view (community clinician): a team desk opens its own team only (ROLE_SCREENS community:
   // "own"), so the page offers no way across to the other teams and does not call itself the
   // coordinator's view.
@@ -147,25 +145,7 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
                 </Button>
               )}
             />
-            <Popover
-              label="Search sample patients"
-              align="end"
-              panelClassName={v6.searchPanel}
-              trigger={(props) => (
-                <Button
-                  {...props}
-                  variant="onHero"
-                  size="sm"
-                  iconOnly
-                  icon={Search}
-                  id="ward-community-search-trigger"
-                  aria-label="Search sample patients by name or UMRN"
-                  title="Search sample patients by name or UMRN"
-                />
-              )}
-            >
-              {renderSearch}
-            </Popover>
+            {/* D-91: the sample-patient search popover went; the header search finds a person. */}
           </>
         }
         bar={

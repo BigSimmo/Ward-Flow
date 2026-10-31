@@ -6,7 +6,7 @@ import { readDeclinesByReason } from "@/components/ward-management/statistics/st
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowRight, Lock, Search, TrendingUp, Truck, X } from "lucide-react";
+import { ArrowRight, Lock, TrendingUp, Truck, X } from "lucide-react";
 
 import {
   Badge,
@@ -22,7 +22,6 @@ import {
   StackBar,
   Spinner,
   StatusGlyph,
-  TextInput,
   buttonClass,
   tableClasses,
   useIsPhone,
@@ -65,7 +64,11 @@ import { ED_SEVERE_PRESSURE_WAIT_MINUTES } from "@/components/ward-management/wa
 
 import { FlushRow, Follow } from "@/components/ward-management/statistics/statistics-layout";
 import { useStatisticsView } from "@/components/ward-management/statistics/statistics-view-bar";
-import { StatisticsViewSwitch } from "./bed-manager-statistics-view-switch";
+import {
+  FindUnitTool,
+  StatisticsViewSwitch,
+  useUnitFinder,
+} from "@/components/ward-redesign/statistics/statistics-view-switch";
 import { BedManagerEdCard, SortTh, type EdSortKey } from "./bed-manager-ed-card";
 import { arrivalBandsFor } from "@/components/ward-redesign/statistics/statistics-bands";
 
@@ -619,13 +622,15 @@ function StatisticsSummaryView({
     (best, ed) => (ed.longest !== null && (best === null || (best.longest ?? 0) < ed.longest) ? ed : best),
     null,
   );
-  // Table state
-  const [wardSearchQuery, setWardSearchQuery] = useState("");
+  // Table state. The two tables' typed filters went in the search and forms review (D-91, Josh,
+  // 30 Oct 2026): about 23 wards and 15 EDs sort and show more without one, and the header search
+  // finds either by name.
+  // D-91: the one unit finder, opened from "Open a unit" on the tab row.
+  const unitFinder = useUnitFinder();
   const [wardOverLine, setWardOverLine] = useState(false);
   const [wardShowAll, setWardShowAll] = useState(false);
   const [wardSortCol, setWardSortCol] = useState<WardSortKey>("occ");
   const [wardSortAsc, setWardSortAsc] = useState(false);
-  const [edSearchQuery, setEdSearchQuery] = useState("");
   const [edSortCol, setEdSortCol] = useState<EdSortKey>("waiting");
   const [edSortAsc, setEdSortAsc] = useState(false);
 
@@ -651,9 +656,7 @@ function StatisticsSummaryView({
 
   const filteredAndSortedWards = useMemo(() => {
     if (isPhone) return [];
-    let list = allPressureWards.slice();
-    const q = wardSearchQuery.trim().toLowerCase();
-    if (q) list = list.filter((w) => `${w.name} ${w.hospital} ${w.site}`.toLowerCase().includes(q));
+    const list = allPressureWards.slice();
     const value = (w: (typeof list)[number]): number | string | null =>
       wardSortCol === "name"
         ? w.name
@@ -673,15 +676,13 @@ function StatisticsSummaryView({
       return a.name.localeCompare(b.name);
     });
     return list;
-  }, [isPhone, allPressureWards, wardSearchQuery, wardSortCol, wardSortAsc]);
+  }, [isPhone, allPressureWards, wardSortCol, wardSortAsc]);
 
   const visibleWards = wardShowAll ? filteredAndSortedWards : filteredAndSortedWards.slice(0, PRESSURE_ROWS);
 
   const filteredAndSortedEds = useMemo(() => {
     if (isPhone) return [];
-    let list = emergencyDepts.slice();
-    const q = edSearchQuery.trim().toLowerCase();
-    if (q) list = list.filter((d) => d.name.toLowerCase().includes(q) || d.site.toLowerCase().includes(q));
+    const list = emergencyDepts.slice();
     const value = (d: (typeof list)[number]): number | string | null =>
       edSortCol === "name"
         ? d.site
@@ -703,7 +704,7 @@ function StatisticsSummaryView({
       return a.site.localeCompare(b.site);
     });
     return list;
-  }, [isPhone, emergencyDepts, edSearchQuery, edSortCol, edSortAsc]);
+  }, [isPhone, emergencyDepts, edSortCol, edSortAsc]);
 
   // The finder is desktop only, so the phone skips building and sorting its lists.
   const finderLists = useMemo<Record<FinderKind, FinderEntry[]>>(
@@ -863,19 +864,6 @@ function StatisticsSummaryView({
             is read, so the toolbar goes. */}
         {siteName && allPressureWards.length <= 3 ? null : (
           <div className={styles.toolbar}>
-            {/* Bed manager: its own site's few wards need no filter box. */}
-            {siteName ? null : (
-              <TextInput
-                type="search"
-                icon={Search}
-                boxClassName={styles.search}
-                id="wardSearchInput"
-                placeholder="Filter wards"
-                value={wardSearchQuery}
-                onChange={(e) => setWardSearchQuery(e.target.value)}
-                aria-label="Filter wards or hospitals"
-              />
-            )}
             <FilterChip pressed={wardOverLine} onPressedChange={setWardOverLine} tone="warning" count={overLineCount}>
               {`At or over ${BED_ALERT_THRESHOLD_PERCENT}%`}
             </FilterChip>
@@ -887,7 +875,7 @@ function StatisticsSummaryView({
                 </>
               ) : (
                 <>
-                  <b>{filteredAndSortedWards.length}</b> of {allPressureWards.length}{" "}
+                  <b>{allPressureWards.length}</b> {allPressureWards.length === 1 ? "ward" : "wards"}{" "}
                   <span className={styles.srOnly}>synthetic rows</span>
                 </>
               )}
@@ -986,8 +974,6 @@ function StatisticsSummaryView({
       <BedManagerEdCard
         siteName={siteName}
         longestEd={longestEd}
-        edSearchQuery={edSearchQuery}
-        setEdSearchQuery={setEdSearchQuery}
         edSortCol={edSortCol}
         edSortAsc={edSortAsc}
         handleEdSort={handleEdSort}
@@ -1073,6 +1059,7 @@ function StatisticsSummaryView({
         <StatisticsHero
           section="hub"
           navTestId="ward-statistics-index"
+          tools={siteName ? undefined : <FindUnitTool open={unitFinder.open} onToggle={unitFinder.toggle} />}
           eyebrow={`Statistics · ${scopeLabel} · as at ${formatInstant(now)}`}
           // H-0887: the page heading names the page, not only the count.
           title={
@@ -1146,6 +1133,7 @@ function StatisticsSummaryView({
           // Bed manager: no Open a unit. The finder lists every ward, ED, service and team, and this desk
           // opens only its own site's wards, which its wards table below already lists.
           finder={siteName ? undefined : <StatisticsUnitFinder lists={finderLists} />}
+          finderOpen={unitFinder.open}
         />
 
         {/* Each view's anchor exists whichever view shows, so its link always has a target. */}

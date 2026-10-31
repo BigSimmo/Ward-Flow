@@ -1,0 +1,262 @@
+/* The one suburb lookup card (suburb-lookup-card.tsx, D-91). Tokens only. */
+
+.card {
+  min-width: 0;
+}
+
+.headNote {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.ask {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* `bar`: on a wide screen the question and its answer sit side by side. */
+@media (min-width: 62.5625rem) {
+  .bar {
+    display: grid;
+    grid-template-columns: minmax(18rem, 1fr) minmax(0, 1.4fr);
+    align-items: start;
+    gap: var(--wf-s-4);
+  }
+}
+
+.picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.pick[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  box-shadow: inset 0 0 0 1px var(--wf-accent);
+}
+
+.answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.hint {
+  margin: 0;
+  padding: var(--wf-s-3);
+  border: 1px dashed var(--wf-line);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.postcodeLine {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.num {
+  color: var(--wf-ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* One suburb's answer: a quiet bordered block, its head on one line that wraps in full. */
+.suburb {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.suburbHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line-2);
+  background: var(--wf-surface-2);
+}
+
+.suburbName {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-2);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.alias {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.postcodes {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+.state {
+  margin-left: auto;
+  align-self: center;
+}
+
+.warn {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line-2);
+  background: var(--wf-hold-tint, var(--wf-surface-2));
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.teams,
+.readings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.team {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line-2);
+}
+
+.team:last-child {
+  border-bottom: 0;
+}
+
+.teamName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.teamMeta {
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.teamActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.note,
+.quiet {
+  margin: 0;
+  padding: var(--wf-s-2) var(--wf-s-3) 0;
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.quiet {
+  color: var(--wf-ink-2);
+}
+
+.note:last-child,
+.quiet:last-child {
+  padding-bottom: var(--wf-s-3);
+}
+
+.readings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+}
+
+.reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface-2);
+}
+
+.readingText {
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.readingSource {
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+}
+
+@media (max-width: 48rem) {
+  /* A phone's team buttons sit on their own line under the name, at the kit's 36px face with a
+     48px tap area that does not show (never a 48px face). */
+  .teamActions {
+    flex: 1 1 100%;
+  }
+
+  .teamActions.teamActions > :is(a, button) {
+    position: relative;
+    height: 36px;
+    min-height: 36px;
+  }
+
+  .teamActions.teamActions > :is(a, button)::after {
+    content: "";
+    position: absolute;
+    inset: -6px 0;
+  }
+
+  /* `plainOnPhone`: the page's pane is the card, so no second frame inside it. */
+  .plainOnPhone.plainOnPhone {
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+
+  .plainOnPhone > :first-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .plainOnPhone .body {
+    padding: 0;
+  }
+}

@@ -37,3 +37,35 @@
 .clearEd[data-dim="true"] b {
   color: var(--wf-dim);
 }
+
+/* D-91 phone: the health service chips scroll, with Status and order at their end. */
+.phoneFilterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-width: 0;
+}
+
+.phoneFilterRow > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* The kit's phone size: a 40px face level with the chips, with a 48px tap area that does not show.
+   The source page sets every phone button in its main to a 48px face; this one button opts out. */
+.phoneFilterRow.phoneFilterRow > button[aria-haspopup][data-testid] {
+  position: relative;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: var(--wf-r-ctl);
+}
+
+.phoneFilterRow.phoneFilterRow > button[aria-haspopup][data-testid]::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}

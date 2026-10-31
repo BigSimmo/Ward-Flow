@@ -44,9 +44,10 @@ import { wardReferralTally } from "@/components/ward-management/statistics/stati
 import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
-  STATISTICS_UNIT_CHOOSER_HREF,
   STATISTICS_WARDS_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+// D-91: the one unit finder, on the Summary page.
+import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-redesign/statistics/statistics-view-switch";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
@@ -348,8 +349,8 @@ function OperationalWardScreen({
               because a page showing the wrong ward under the right heading is worse than a page showing nothing.
             </p>
             <p>
-              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ward-chooser-link">
-                Choose a ward from the comparisons page
+              <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ward-chooser-link">
+                Choose a ward with Open a unit
               </Link>{" "}
               to reach one that does exist.
             </p>

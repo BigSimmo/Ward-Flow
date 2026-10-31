@@ -1,14 +1,12 @@
 // Forked from src/components/ward-redesign/community-team/community-team-redesign.tsx (role view: community clinician).
 "use client";
 
-import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { currentCareContactCompleted } from "@/components/ward-management/ward-care-journey";
 import type { DischargeOpenHandle } from "@/components/ward-management/ward-discharge-records";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsPhone, useOptionalToast } from "@/components/wf";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import {
   admissionBelongsToTeam,
@@ -50,7 +48,7 @@ import {
   type PatientResolutionSubject,
 } from "@/components/ward-management/ward-patient-resolver";
 import type { CommunityDeclineReason } from "@/components/ward-management/ward-model";
-import { findPatients, type Patient } from "@/components/ward-management/ward-patients";
+import type { Patient } from "@/components/ward-management/ward-patients";
 import styles from "@/components/ward-management/community/community.module.css";
 import { useCommunityContactSave } from "@/components/ward-management/community/use-community-contact-save";
 import { CommunityAboutThisData, CommunityWorthAttention, type CommunityPhoneListId } from "./community-team-phone";
@@ -279,6 +277,10 @@ type CommunityScreenProps = {
   referrals?: CommunityScopedReferral[];
 };
 
+/** Type bridge only (D-91): the team page has no patient search. Delete with the three view fields. */
+const NO_SEARCH = () => {};
+const NO_SEARCH_RESULTS: Patient[] = [];
+
 function useCommunityScreenView({ teamId, admissions, referrals, demonstration = false }: CommunityScreenProps) {
   usePrintableDisclosures();
   // Phone only (8 Oct 2026): the provenance and coverage disclosure starts closed under 48rem so
@@ -413,12 +415,9 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const [showCareEditor, setShowCareEditor] = useState(false);
   const [careAccess, setCareAccess] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
   const [triageFilter, setTriageFilter] = useState<"all" | "p1" | "p2" | "p3" | "ed">("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
   const [caseloadFilter, setCaseloadFilter] = useState<CaseloadFilter>("all");
-  // The search and the dossier read the patient records themselves. Until 25 Sept 2026 both read a
-  // typed table: three fixed search hits whatever was typed, and a dossier whose clinician, care
-  // tier and review date belonged to nobody's record.
-  const searchResults = findPatients(patients, searchQuery);
+  // The dossier reads the patient record itself. Until 25 Sept 2026 it read a typed table, with a
+  // clinician, care tier and review date that belonged to nobody's record.
   const selectedPatient: Patient | undefined = patients.find((patient) => patient.id === selectedPatientId);
   const contactSave = useCommunityContactSave({
     dispatch,
@@ -488,32 +487,12 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
       setActiveModalType(null);
       setActiveDrawer(null);
     }
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "/" && areCharacterShortcutsEnabled()) {
-        // An open sheet or dialog keeps the keys: the shortcut must not reach the page behind it.
-        if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || hasOpenSheet()) return;
-        const target = e.target;
-        const inEditable =
-          target instanceof HTMLElement &&
-          (target.tagName === "INPUT" ||
-            target.tagName === "TEXTAREA" ||
-            target.tagName === "SELECT" ||
-            target.isContentEditable);
-        if (inEditable) return;
-        e.preventDefault();
-        // Claimed here, on the document, before the shared header's window listener takes it
-        // for the global search (as `community-index.tsx` does). WardRail owns the bracket shortcut.
-        e.stopPropagation();
-        // The hero's search popover opens from its own trigger and focuses its input itself.
-        if (!document.getElementById("q")) document.getElementById("ward-community-search-trigger")?.click();
-        document.getElementById("q")?.focus();
-      }
-    }
+    // D-91: "/" is the header search's own key here. The team page's sample-patient search, its
+    // popover, the phone's Find a person chip and this key's binding went as a copy of the header
+    // search (search and forms review, Josh, 30 Oct 2026).
     window.addEventListener("keydown", handleEscape);
-    document.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
@@ -1036,11 +1015,13 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     setCareAccess,
     triageFilter,
     setTriageFilter,
-    searchQuery,
-    setSearchQuery,
+    // Type bridge (D-91): the page draws no patient search. Until #1123 merges, the real
+    // `CommunityScreenView` still names these three fields, so they stay here, empty and unused.
+    searchQuery: "",
+    setSearchQuery: NO_SEARCH,
     caseloadFilter,
     setCaseloadFilter,
-    searchResults,
+    searchResults: NO_SEARCH_RESULTS,
     selectedPatient,
     contactRecord,
     contactSaveMessage,

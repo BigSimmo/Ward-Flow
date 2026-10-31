@@ -48,15 +48,12 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { mapClinicToServiceAndHospital } from "@/components/ward-management/tools/ward-catchment-mapping";
-import {
-  S2015_CATCHMENT_ROWS,
-  lookupCatchment,
-  parseFollowUpClinicSet,
-} from "@/components/ward-management/ward-catchment";
+import { S2015_CATCHMENT_ROWS, parseFollowUpClinicSet } from "@/components/ward-management/ward-catchment";
 import { downloadCsv } from "@/components/ward-management/statistics/statistics-csv";
 
 import guideStyles from "./community-guide.module.css";
 import styles from "./community-redesign.module.css";
+import { SuburbLookupCard } from "./suburb-lookup-card";
 import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
 
 /**
@@ -142,7 +139,8 @@ import phoneRows from "@/components/ward-redesign/parts/phone-rows.module.css";
  *
  * ⚠️ **THIS PAGE STILL COMPUTES NO "READS ALIKE" GROUPING OF ITS OWN.** Every marker, family and
  * count reads `communityNameCollisions()` and `communityNamesInCollisions()` from
- * `community-vocabulary.ts`. The suburb lookup reads `lookupCatchment()` and states its own note
+ * `community-vocabulary.ts`. The suburb lookup is the one shared card (`suburb-lookup-card.tsx`,
+ * D-91): it reads `lookupCatchment()`, takes a suburb, alias or postcode, and states its own note
  * when a suburb is contested, unreviewed or unknown; it never picks a team for a reader.
  *
  * **A row carries catchment facts and nothing about people.** The service code comes from the
@@ -202,6 +200,15 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
   // The family card is deliberately NOT scoped to the `teams` prop: it is the same derivation
   // whichever subset a caller renders, so an override to `[]` still gets the real families.
   const familyGroups = useMemo(() => communityNameCollisions(), []);
+
+  // The lookup's quick picks: the suburbs whose own row names more than one team, read off the rows.
+  const contestedPicks = useMemo(() => {
+    const names = new Set<string>();
+    for (const row of S2015_CATCHMENT_ROWS) {
+      if (parseFollowUpClinicSet(row.followUpClinicVerbatim).length > 1) names.add(row.suburb);
+    }
+    return [...names].sort((left, right) => left.localeCompare(right));
+  }, []);
 
   // Suburbs per clinic key, from the catchment rows. Feeds search, the row figure, the lookup and
   // the side-by-side families, so all four read one map.
@@ -597,12 +604,43 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
         <div className={styles.layout} data-phone-pane={isPhone ? phonePane : undefined}>
           {/* Redesign: the suburb lookup, the most common job, is a full-width bar above the list. */}
           <div data-pane="suburb" className={`${styles.paneWrap} ${styles.suburbBar}`}>
-            <SuburbLookup
-              teamByKey={teamByKey}
-              factsFor={factsFor}
-              onShowInList={(name) => {
-                setPhonePane("az");
-                showInList(name);
+            {/* D-91: the one suburb lookup card, shared with the ward's Discharges tab and Tools. */}
+            <SuburbLookupCard
+              layout="bar"
+              plainOnPhone
+              picks={contestedPicks}
+              picksLabel="Suburbs whose row names more than one team"
+              initialQuery={contestedPicks[0] ?? ""}
+              teamMeta={(clinic) => {
+                const facts = factsFor(clinic);
+                return `${facts.service} · ${facts.suburbs} suburbs`;
+              }}
+              teamActions={(clinic) => {
+                const team = teamByKey.get(clinicKey(clinic));
+                return team ? (
+                  <>
+                    {/* Redesign: each team the suburb names gets its own button to its page. */}
+                    <Link
+                      href={communityTeamHref(team)}
+                      className={buttonClass({ variant: "sec", size: "sm" })}
+                      onClick={() => recordVisit(team.name)}
+                      aria-label={`Open ${clinic}`}
+                    >
+                      Open
+                      <Icon icon={ChevronRight} size={14} />
+                    </Link>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setPhonePane("az");
+                        showInList(team);
+                      }}
+                    >
+                      Show in list
+                    </Button>
+                  </>
+                ) : null;
               }}
             />
           </div>
@@ -890,7 +928,7 @@ export function CommunityRedesign({ teams = COMMUNITY_TEAM_PAGES }: { teams?: re
                   setPhonePane("suburb");
                   requestAnimationFrame(() =>
                     document
-                      .querySelector<HTMLInputElement>('[data-pane="suburb"] input[aria-label="Suburb"]')
+                      .querySelector<HTMLInputElement>('[data-pane="suburb"] input[aria-label="Suburb or postcode"]')
                       ?.focus(),
                   );
                 }}
@@ -1318,137 +1356,6 @@ function ServiceBars({ serviceCounts }: { serviceCounts: ReadonlyMap<string, { t
         </ul>
       </SrOnly>
     </>
-  );
-}
-
-/**
- * The suburb lookup: which team or teams the catchment table names for a suburb. It reads
- * `lookupCatchment()` and states its note when the answer is contested, unreviewed or unknown; it
- * never picks one team for a reader. The quick picks are the suburbs whose own row names more than
- * one team, read off the rows.
- */
-function SuburbLookup({
-  teamByKey,
-  factsFor,
-  onShowInList,
-}: {
-  teamByKey: ReadonlyMap<string, CommunityTeam>;
-  factsFor: (name: string) => TeamFacts;
-  onShowInList: (team: CommunityTeam) => void;
-}) {
-  const picks = useMemo(() => {
-    const names = new Set<string>();
-    for (const row of S2015_CATCHMENT_ROWS) {
-      if (parseFollowUpClinicSet(row.followUpClinicVerbatim).length > 1) names.add(row.suburb);
-    }
-    return [...names].sort((left, right) => left.localeCompare(right));
-  }, []);
-  const [suburb, setSuburb] = useState(() => picks[0] ?? "");
-  const trimmed = suburb.trim();
-  const lookup = useMemo(() => (trimmed ? lookupCatchment(trimmed) : null), [trimmed]);
-
-  const answers = lookup && lookup.state !== "unknown" ? lookup.answers : [];
-  const clinics = [...new Set(answers.flatMap((answer) => answer.clinics))];
-  const postcodes = [...new Set(answers.flatMap((answer) => answer.postcodes))];
-  const named = lookup?.suburb ?? trimmed;
-
-  return (
-    <Card className={styles.sideCard} aria-labelledby="community-suburb-lookup-title">
-      <CardHead
-        id="community-suburb-lookup-title"
-        title="Suburb lookup"
-        eyebrow
-        aside={<span className={styles.headNote}>Which team covers it</span>}
-      />
-      <CardBody className={styles.lookupBody}>
-        <div className={styles.lookupSearch}>
-          <TextInput
-            icon={MapPin}
-            aria-label="Suburb"
-            placeholder="Suburb"
-            autoComplete="off"
-            value={suburb}
-            onChange={(event) => setSuburb(event.target.value)}
-            onClear={() => setSuburb("")}
-            trailing={postcodes.length > 0 ? <span className={styles.mono}>{postcodes.join(", ")} WA</span> : undefined}
-          />
-          {picks.length > 0 ? (
-            <div
-              className={`${styles.picks} ${phoneRows.chipRow}`}
-              role="group"
-              aria-label="Suburbs whose row names more than one team"
-            >
-              {picks.map((pick) => (
-                <button
-                  key={pick}
-                  type="button"
-                  className={`${buttonClass({ variant: "sec", size: "sm" })} ${phoneRows.chip}`}
-                  aria-pressed={pick === trimmed}
-                  onClick={() => setSuburb(pick)}
-                >
-                  {pick}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-        {lookup === null ? null : (
-          <div className={styles.lookupResult} aria-live="polite">
-            {/* Redesign: the "two teams" warning leads the answer, above the teams it names. */}
-            {lookup.state === "reviewed" ? (
-              clinics.length > 1 ? (
-                <p className={`${styles.lookupNote} ${styles.lookupWarn}`}>
-                  <StatusGlyph tone="warning" size={9} />
-                  <span>
-                    {clinics.length} teams name {named}. Check the right one.
-                  </span>
-                </p>
-              ) : null
-            ) : (
-              <p className={styles.lookupNote}>{lookup.note}</p>
-            )}
-            {clinics.length > 0 ? (
-              <ul className={styles.lookupList}>
-                {clinics.map((clinic) => {
-                  const team = teamByKey.get(clinicKey(clinic));
-                  const facts = factsFor(clinic);
-                  return (
-                    <li key={clinic} className={styles.lookupRow}>
-                      <span className={styles.lookupName}>
-                        {clinic}
-                        <span className={styles.lookupMeta}>
-                          {facts.service} · {facts.suburbs} suburbs
-                        </span>
-                      </span>
-                      <span className={styles.lookupAside}>
-                        {/* Round 2: no per-row "One of 2"; the line above the teams says it once. */}
-                        {team ? (
-                          <>
-                            {/* Redesign: each team the suburb names gets its own button to its page. */}
-                            <Link
-                              href={communityTeamHref(team)}
-                              className={buttonClass({ variant: "sec", size: "sm" })}
-                              onClick={() => recordVisit(team.name)}
-                              aria-label={`Open ${clinic}`}
-                            >
-                              Open
-                              <Icon icon={ChevronRight} size={14} />
-                            </Link>
-                            <Button variant="ghost" size="sm" onClick={() => onShowInList(team)}>
-                              Show in list
-                            </Button>
-                          </>
-                        ) : null}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : null}
-          </div>
-        )}
-      </CardBody>
-    </Card>
   );
 }
 

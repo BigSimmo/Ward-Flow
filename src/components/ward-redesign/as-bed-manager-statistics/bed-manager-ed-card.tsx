@@ -3,9 +3,9 @@
 // Moved out of bed-manager-statistics-redesign.tsx so that fork stays under the 1,500-line cap: the
 // sortable column head, the wait formats and the Open ED journeys card.
 
-import { ChevronDown, ChevronUp, Search, Siren } from "lucide-react";
+import { ChevronDown, ChevronUp, Siren } from "lucide-react";
 
-import { Badge, CardBody, Icon, StatusGlyph, TextInput, durMinutes, tableClasses } from "@/components/wf";
+import { Badge, CardBody, Icon, StatusGlyph, durMinutes, tableClasses } from "@/components/wf";
 import {
   ED_ELEVATED_PRESSURE_WAIT_MINUTES,
   ED_SEVERE_PRESSURE_WAIT_MINUTES,
@@ -62,8 +62,6 @@ export function SortTh<K extends string>({
 export function BedManagerEdCard({
   siteName,
   longestEd,
-  edSearchQuery,
-  setEdSearchQuery,
   edSortCol,
   edSortAsc,
   handleEdSort,
@@ -77,8 +75,6 @@ export function BedManagerEdCard({
 }: {
   siteName: string | undefined;
   longestEd: SummaryEd | null;
-  edSearchQuery: string;
-  setEdSearchQuery: (query: string) => void;
   edSortCol: EdSortKey;
   edSortAsc: boolean;
   handleEdSort: (col: EdSortKey) => void;
@@ -151,19 +147,7 @@ export function BedManagerEdCard({
       }
     >
       <div className={styles.toolbar}>
-        {/* Bed manager: one ED, its own site's, so no filter box. */}
-        {siteName ? null : (
-          <TextInput
-            type="search"
-            icon={Search}
-            boxClassName={styles.search}
-            id="edSearchInput"
-            placeholder="Filter departments"
-            value={edSearchQuery}
-            onChange={(e) => setEdSearchQuery(e.target.value)}
-            aria-label="Filter emergency departments"
-          />
-        )}
+        {/* The ED table's typed filter went in the search and forms review (D-91): 15 EDs need none. */}
         <span className={styles.toolbarEnd} id="edFilterCount">
           {`Marked from ${hoursLabel(ED_ELEVATED_PRESSURE_WAIT_MINUTES)} and ${hoursLabel(ED_SEVERE_PRESSURE_WAIT_MINUTES)}, as the side rail`}
         </span>

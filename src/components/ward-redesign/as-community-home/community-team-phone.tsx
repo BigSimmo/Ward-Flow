@@ -2,7 +2,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type RefObject } from "react";
-import { Info, Phone, Plus, Search, Shapes, Users, type LucideIcon } from "lucide-react";
+import { Info, Phone, Plus, Shapes, Users, type LucideIcon } from "lucide-react";
 
 import {
   Button,
@@ -90,7 +90,7 @@ export type CommunityPhoneTool = {
   onPress: () => void;
 };
 
-type InfoSheet = "reach" | "duty" | "search" | "samples";
+type InfoSheet = "reach" | "duty" | "samples";
 
 const ATTENTION_SHOWN = 2;
 
@@ -110,7 +110,6 @@ export function CommunityTeamPhone({
   howToReach,
   onDuty,
   coverage,
-  search,
   samples,
   actions,
   attention,
@@ -133,8 +132,6 @@ export function CommunityTeamPhone({
   onDuty: ReactNode;
   /** Provenance, coverage limits and team facts. Inside About this data. */
   coverage: ReactNode;
-  /** The sample patient search, given a close callback for when a hit is chosen. */
-  search: (close: () => void) => ReactNode;
   samples: { id: string; label: string; onPress: () => void }[];
   /** The team's own actions, as chips after the two sheets (Record contact, CTO register, MDT). */
   actions: CommunityPhoneTool[];
@@ -157,7 +154,6 @@ export function CommunityTeamPhone({
   ];
   const intakeChip: CommunityPhoneTool = { id: "intake", label: "Refer from team", icon: Plus, onPress: onIntake };
   const tailChips: CommunityPhoneTool[] = [
-    { id: "search", label: "Find a person", icon: Search, onPress: () => setSheet("search") },
     { id: "samples", label: "Samples", icon: Shapes, onPress: () => setSheet("samples") },
   ];
 
@@ -256,9 +252,6 @@ export function CommunityTeamPhone({
       </PhoneSheet>
       <PhoneSheet open={sheet === "duty"} onClose={close} title="On duty today" description="Sample roster">
         <div className={css.sheetBody}>{onDuty}</div>
-      </PhoneSheet>
-      <PhoneSheet open={sheet === "search"} onClose={close} title="Find a person" description="Sample patients">
-        <div className={css.sheetBody}>{search(close)}</div>
       </PhoneSheet>
       <PhoneSheet open={sheet === "samples"} onClose={close} title="Samples" description="Illustrative only">
         <div className={css.sheetBody}>

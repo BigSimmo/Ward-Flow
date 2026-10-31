@@ -38,8 +38,9 @@ import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
   STATISTICS_EDS_HREF,
-  STATISTICS_UNIT_CHOOSER_HREF,
 } from "@/components/ward-management/statistics/statistics-sections";
+// D-91: the one unit finder, on the Summary page.
+import { STATISTICS_UNIT_FINDER_HREF } from "@/components/ward-redesign/statistics/statistics-view-switch";
 import { edStatisticsHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { isClockBreached, splitDuration } from "@/components/ward-management/ward-clock";
@@ -140,8 +141,8 @@ function OperationalStatisticsEdScreen({
               page showing nothing.
             </p>
             <p>
-              <Link href={STATISTICS_UNIT_CHOOSER_HREF} data-testid="ward-statistics-ed-chooser-link">
-                Choose an emergency department from the comparisons page
+              <Link href={STATISTICS_UNIT_FINDER_HREF} data-testid="ward-statistics-ed-chooser-link">
+                Choose an emergency department with Open a unit
               </Link>{" "}
               to reach one that does exist.
             </p>

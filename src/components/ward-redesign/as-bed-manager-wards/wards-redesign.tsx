@@ -640,7 +640,7 @@ export function AsBedManagerWards({ units: unitsOverride }: { units?: Unit[] }) 
               type="search"
               id="wardSearchInput"
               icon={Search}
-              placeholder="Ward, hospital or suburb"
+              placeholder="Ward, hospital or service"
               aria-label="Filter wards by keyword"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
