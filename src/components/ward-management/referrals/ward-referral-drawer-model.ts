@@ -312,7 +312,8 @@ export function sampleProfile(
   const movementSexOrGender = patient?.sex ?? patient?.gender ?? movement.sex;
   return {
     ...blank,
-    name: info.displayName,
+    // Surname first in the header and Before you send list (D-83, bug list row 18).
+    name: info.formalName,
     age: Number.isFinite(years) && years >= 0 ? String(years) : "",
     gender:
       movementSexOrGender && movementSexOrGender !== "Not recorded" ? movementSexOrGender.charAt(0).toUpperCase() : "",
