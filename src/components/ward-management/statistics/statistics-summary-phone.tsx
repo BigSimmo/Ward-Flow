@@ -18,7 +18,7 @@ import {
   ShowMoreRow,
 } from "@/components/wf";
 import { edStatisticsHref, wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useStatisticsCounts } from "@/components/ward-management/shell/ward-access";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
@@ -224,8 +224,10 @@ function StatisticsSummaryPhoneView({
 }) {
   const access = useEffectiveWardAccess();
   // Role view (site bed manager, D-80): one hospital, which the hero names, so its wards are listed
-  // straight away with no Hospitals and Wards switch, and the closed Services page is not linked.
+  // straight away with no Hospitals and Wards switch.
   const siteDesk = access.role === "bed_manager";
+  // Rows link only where this desk may open the page (access audit, 31 Oct 2026).
+  const canOpen = useCanOpenHref();
   // Role view (executive): a withheld count reads "not shown", which says nothing at a glance, so the
   // hero leaves it out and one sentence under the hero explains the small number rule instead.
   const executive = access.role === "executive";
@@ -272,7 +274,7 @@ function StatisticsSummaryPhoneView({
           {ward.ready} <small className={styles.rowUnit}>ready</small>
         </>
       }
-      href={wardStatisticsHref(ward.id)}
+      href={canOpen(wardStatisticsHref(ward.id)) ? wardStatisticsHref(ward.id) : undefined}
     />
   );
 
@@ -469,7 +471,11 @@ function StatisticsSummaryPhoneView({
                         }
                         value={statisticsCountText(ed.waiting)}
                         time="open ED journeys"
-                        href={ed.openable === false ? undefined : edStatisticsHref(ed.id)}
+                        href={
+                          ed.openable === false || !canOpen(edStatisticsHref(ed.id))
+                            ? undefined
+                            : edStatisticsHref(ed.id)
+                        }
                       />
                     ))}
                   </ul>
@@ -517,7 +523,7 @@ function StatisticsSummaryPhoneView({
             <ChevronRight size={16} aria-hidden="true" className={styles.navGo} />
           </button>
           {/* Each health service's figures, also the Services chip above (phone review F-12). */}
-          {siteDesk ? null : (
+          {!canOpen(STATISTICS_SERVICES_HREF) ? null : (
             <Link className={styles.navRow} href={STATISTICS_SERVICES_HREF}>
               <IconTile icon={Building2} />
               <span className={styles.navText}>

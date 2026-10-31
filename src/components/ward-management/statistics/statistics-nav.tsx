@@ -17,6 +17,7 @@ import {
   STATISTICS_WARDS_HREF,
 } from "./statistics-sections";
 import { WEEKLY_REPORT_HREF } from "@/components/ward-management/reports/report-routes";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { statisticsHeldToOwnPlace } from "@/components/ward-management/ward-role-access";
 import { useStatisticsSamples, setStatisticsSamples } from "./statistics-samples";
@@ -145,17 +146,20 @@ export function StatisticsNav({
     { id: "community", label: "Teams", count: COMMUNITY_TEAM_PAGES.length, href: STATISTICS_TEAMS_HREF },
     { id: "weekly", label: "Weekly", href: WEEKLY_REPORT_HREF },
   ] satisfies Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }>;
-  // Role view (site bed manager, D-80): only the sections it may open (its site, Wards and Weekly;
-  // `BED_MANAGER_STATISTICS`). The first tab is the desk's own site, not the network, and Wards
+  // Every desk sees only the sections its access opens (access audit, 31 Oct 2026), by the same
+  // table the menu reads, so no tab leads to "Not part of your role".
+  const canOpen = useCanOpenHref();
+  const openable = allItems.filter((item) => canOpen(item.href));
+  // Role view (site bed manager, D-80): its sections are its site, Wards and Weekly
+  // (`BED_MANAGER_STATISTICS`). The first tab is the desk's own site, not the network, and Wards
   // carries no count: the network's ward total is not its list.
   const items: Array<{ id: StatisticsNavSection; label: string; href: string; count?: number }> =
     access.role === "bed_manager"
-      ? allItems
-          .filter((item) => item.id === "hub" || item.id === "ward" || item.id === "weekly")
-          .map((item) => ({ ...item, count: undefined, label: item.id === "hub" ? "Site" : item.label }))
-      : allItems;
+      ? openable.map((item) => ({ ...item, count: undefined, label: item.id === "hub" ? "Site" : item.label }))
+      : openable;
 
-  if (ownPlaceOnly) return withSamples && variant !== "chips" ? <StatisticsSamplesSwitch /> : null;
+  // A desk with one section or none has nowhere to move to, so no track or row of one is drawn.
+  if (ownPlaceOnly || items.length < 2) return withSamples && variant !== "chips" ? <StatisticsSamplesSwitch /> : null;
 
   if (variant === "chips") {
     // Phone review F-12 (15 Oct 2026): every statistics screen shows the same eight chips, in the
