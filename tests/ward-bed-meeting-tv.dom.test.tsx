@@ -350,6 +350,8 @@ describe("the bed meeting TV view", () => {
 
   it("is a desktop page: a phone gets the larger screen card", () => {
     expect(isPhoneDesktopOnlyPath(WARD_BED_MEETING_TV_HREF)).toBe(true);
+    // The agenda below it has its own phone layout, so the larger screen card leaves it alone.
+    expect(isPhoneDesktopOnlyPath(`${WARD_BED_MEETING_TV_HREF}/agenda`)).toBe(false);
   });
 });
 
