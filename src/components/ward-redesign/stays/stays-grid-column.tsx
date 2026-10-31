@@ -10,7 +10,6 @@ import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import styles from "@/components/ward-management/board/board.module.css";
-import redesign from "./stays-redesign.module.css";
 import {
   BAND_CLASS,
   BOARD_FILTERS,
@@ -27,7 +26,7 @@ import {
 } from "@/components/ward-management/board/ward-board-model";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { Button } from "@/components/wf";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 
 /** Redesign (Josh, 30 Oct): a phone opens on this many beds, then Show more (owner rule: long lists fold). */
 const PHONE_TILE_CAP = 8;
@@ -399,11 +398,9 @@ export function WardBoardGridColumn({
         })}
       </ul>
       {foldedCount > 0 ? (
-        <div className={redesign.moreBeds}>
-          <Button variant="ghost" size="sm" onClick={() => setShowAllBeds(true)} data-testid="ward-board-beds-more">
-            Show {foldedCount} more {foldedCount === 1 ? "bed" : "beds"}
-          </Button>
-        </div>
+        <ShowMoreRow onClick={() => setShowAllBeds(true)}>
+          Show {foldedCount} more {foldedCount === 1 ? "bed" : "beds"}
+        </ShowMoreRow>
       ) : null}
       {filteredTiles.length === 0 && <p className={styles.filterEmpty}>No bed matches this filter.</p>}
 

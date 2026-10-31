@@ -281,8 +281,10 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
   const stepLabels = ["Accepted", "En route", "Collected", "Arrived at ward"] as const;
   // Redesign: the booking facts the call did not record, named once on one line.
   const transportLoggedRecorded = transportLegalStatusLabel(transport) !== "Not recorded";
+  // Final check (30 Oct 2026): each fact is named in full ("the transport's legal status"), not by
+  // its field label, so the line reads as a sentence.
   const notRecorded = [
-    transportLoggedRecorded ? null : "transport logged as",
+    transportLoggedRecorded ? null : "the transport's legal status",
     transport.estimatedAt === undefined ? "estimated time" : null,
   ].filter((fact): fact is string => fact !== null);
   const phoneTop = (
@@ -464,7 +466,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         {/* Redesign: facts the booking did not record share one line instead of a box each. */}
         {notRecorded.length > 0 ? (
           <p className={detail.notRecorded} data-testid={`ward-officer-not-recorded-${movement.id}`}>
-            Not recorded: {notRecorded.join(", ")}
+            Not recorded: {notRecorded.join(" and ")}
           </p>
         ) : null}
         <dl className={styles.facts}>
@@ -549,11 +551,13 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         </dl>
         {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
         {cadNumberToFollow(transport) && !movement.closure ? (
-          <TransportCadToFollow
-            movementId={movement.id}
-            role="officer"
-            testId={`ward-officer-cad-to-follow-${movement.id}`}
-          />
+          <div className={detail.cadFit}>
+            <TransportCadToFollow
+              movementId={movement.id}
+              role="officer"
+              testId={`ward-officer-cad-to-follow-${movement.id}`}
+            />
+          </div>
         ) : null}
       </section>
 

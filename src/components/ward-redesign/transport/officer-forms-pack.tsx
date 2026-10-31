@@ -30,11 +30,10 @@ import styles from "@/components/ward-management/officer/officer.module.css";
  * Uploading reuses `UPLOAD_PATIENT_FORM`: the file name and size are recorded, never its contents.
  * Sending the pack to a transport officer has no event yet, so it is a Preview control.
  */
-export type { PackSlotKey };
 
 type PackSlot = { key: PackSlotKey; label: string; codes: string[]; hint: string };
 
-export const PACK_SLOTS: PackSlot[] = [
+const PACK_SLOTS: PackSlot[] = [
   { key: "legal", label: "Referral or order", codes: ["1A", "1B", "3D"], hint: "Form 1A, 1B or 3D" },
   { key: "order", label: "Transport order", codes: ["4A"], hint: "Form 4A" },
   { key: "risk", label: "Risk assessment", codes: [], hint: "Signed risk assessment" },
@@ -43,9 +42,8 @@ export const PACK_SLOTS: PackSlot[] = [
 const SLOT_PATTERN = PACK_SLOT_PATTERN;
 
 /** The latest recorded form that fills a slot, if any (`ward-transport-checks.ts`). */
-export { packForm };
 
-export function packCount(movement: Movement): number {
+function packCount(movement: Movement): number {
   return PACK_SLOTS.filter((slot) => packForm(movement, slot.key) !== undefined).length;
 }
 
@@ -55,19 +53,6 @@ export function packCount(movement: Movement): number {
  */
 export function packRequired(movement: Movement): boolean {
   return packRequirement(movement) !== "not_required";
-}
-
-/** A required pack with at least one slot still empty (includes a job with no status recorded). */
-export function packOutstanding(movement: Movement): boolean {
-  return packRequired(movement) && packCount(movement) < PACK_SLOTS.length;
-}
-
-/**
- * Audit A4-12: the hero's "Need forms" counts only jobs whose recorded status truly needs the pack.
- * A job with no status recorded anywhere is counted apart, never hidden.
- */
-export function packNeedsForms(movement: Movement): boolean {
-  return packRequirement(movement) === "required" && packCount(movement) < PACK_SLOTS.length;
 }
 
 function formNameFor(slot: PackSlot, code: string | undefined): string {

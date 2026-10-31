@@ -25,7 +25,6 @@ import {
   stayDayNumber,
   type Admission,
 } from "@/components/ward-management/ward-admissions";
-import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { arrowTargets, sinceYesterday } from "@/components/ward-management/ward-board-derivations";
 import { releaseBand } from "@/components/ward-management/ward-bed-availability";
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
@@ -64,7 +63,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
  *  here so this component states exactly what it reads rather than importing a wider type and
  *  quietly gaining fields. Nothing in it identifies a person: the record holds no name, no date of
  *  birth and no bed, and the sheet must never look as though it does. */
-export type DailySheetPerson = {
+type DailySheetPerson = {
   key: string;
   days: number | null;
   /** Which day of the stay today is, arrival day = Day 1. An ORDINAL, unlike `days`. */
@@ -75,8 +74,6 @@ export type DailySheetPerson = {
   /** `null` for an admission created by an ED arrival - Task 17, 2026-08-30. The sheet says so in
    *  words; it never omits the person and never guesses a region. */
   homeRegion: string | null;
-  /** Already phrased by `tentativeDiagnosisPhrase`, never a bare block code. */
-  tentativeDiagnosis: string | null;
   /**
    * Whole hours at an emergency department, or `null` while the person is on the ward.
    *
@@ -94,7 +91,7 @@ export type DailySheetPerson = {
   blockReason: string | null;
 };
 
-export type DailySheetGroups = {
+type DailySheetGroups = {
   /** Recorded as held up by something — `BED_RELEASE_BLOCKERS`, an owner-approved list about the
    *  BED, never about the person. */
   heldUp: DailySheetPerson[];
@@ -135,7 +132,7 @@ export type DailySheetGroups = {
  * already sorted soonest-expected-out first — a stable, total order, so the sheet does not
  * reshuffle between two prints of the same picture.
  */
-export function dailySheetGroups(people: readonly DailySheetPerson[]): DailySheetGroups {
+function dailySheetGroups(people: readonly DailySheetPerson[]): DailySheetGroups {
   return {
     heldUp: people.filter((person) => person.blockReason !== null),
     overdue: people.filter((person) => person.pastDate),
@@ -146,7 +143,7 @@ export function dailySheetGroups(people: readonly DailySheetPerson[]): DailyShee
 
 /** The sheet's person rows for one ward, from its occupied beds. Shared with the ward TV view so
  *  the two read the same rows. */
-export function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
+function dailySheetPeople(admissions: readonly Admission[], unitId: string, now: Instant): DailySheetPerson[] {
   return admissionsForUnit(admissions, unitId)
     .filter(bedIsOccupied)
     .map((admission) => ({
@@ -157,7 +154,6 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
       pastDate: isPastExpectedDischarge(admission, now),
       sex: admission.sex,
       homeRegion: admission.homeRegion,
-      tentativeDiagnosis: tentativeDiagnosisPhrase(admission.tentativeDiagnosis),
       awayAtEdHours:
         admission.awayAtEmergencyDepartmentSince === null
           ? null
@@ -175,7 +171,7 @@ export function dailySheetPeople(admissions: readonly Admission[], unitId: strin
  * year and AWST on saved output. Standalone consumers retain the demonstration-day fallback
  * when no valid calendar origin is available. Never substitute the wall clock for this instant.
  */
-export function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; dayNote: string } {
+function asAtStamp(now: Instant, dayZero?: Date): { time: string | null; dayNote: string } {
   const time = Number.isFinite(now)
     ? dayZero !== undefined && Number.isFinite(dayZero.getTime())
       ? formatSheetMoment(now, dayZero, { includeYearAndZone: true })
@@ -228,7 +224,7 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
         </p>
         {/*
          * DIRECTLY AFTER THE LEAD, and above everything else about them, because it changes what
-         * every line below it means: a day count, a discharge plan and a diagnosis all read
+         * every line below it means: a day count and a discharge plan both read
          * differently about somebody who is not on the ward. Only for the people it applies to, and
          * it says the bed is still theirs in the same breath: "away" on a bed sheet otherwise reads
          * as "so the bed is free", and it is not — the ward is holding it.
@@ -241,17 +237,8 @@ function SheetPerson({ person, testId, tone }: { person: DailySheetPerson; testI
           </p>
         )}
         <p className={styles.rowLine}>{personFacts(person)}</p>
-        {/* "Tentative" leads the line, as it does on the board's own panel and for the same reason: a
-          reader scanning a column takes the first words of each row, so a qualification at the end is
-          the half that gets skipped. Both states are stated; silence would leave a reader unable to
-          tell "nobody wrote one down" from "this sheet does not show them". */}
-        {/* Josh, 30 Oct 2026: tentative diagnoses stay on screen but never print (privacy: the paper
-            leaves the room). */}
-        <p className={`${styles.rowLine} ${mock.screenOnly}`}>
-          {person.tentativeDiagnosis !== null
-            ? `Tentative diagnosis: ${person.tentativeDiagnosis}.`
-            : "Tentative diagnosis: none recorded."}
-        </p>
+        {/* Mock-up (Josh, 30 Oct 2026): no tentative diagnosis on the shift brief, because the brief is
+          printed and a printed sheet can be left lying around. The board's own panel still shows it. */}
         {person.blockReason !== null && <p className={styles.rowLine}>Held up by: {person.blockReason}.</p>}
         {person.pastDate && person.expectedDays !== null && (
           <p className={styles.rowLine}>
@@ -340,7 +327,7 @@ function outgoingTileLabel(basis: string): string {
   return /\s*today$/iu.test(basis) ? `${basis.replace(/\s*today$/iu, "")} free today` : `${basis} to free`;
 }
 
-export type WardDailySheetProps = {
+type WardDailySheetProps = {
   /** `sinceYesterday`, already scoped to this ward by the board. */
   movement?: { discharged: number; pulled: number; datesMoved: number };
   /** How many people are recorded as coming in — the board's own `buildIncoming` length, split by
@@ -409,7 +396,7 @@ function personFacts(person: DailySheetPerson): string {
   return `${person.sex}, ${person.homeRegion === null ? "home region not recorded" : `from ${person.homeRegion}`}`;
 }
 
-export function WardDailySheet({
+function WardDailySheet({
   movement,
   incomingPulled,
   incomingWaitlisted,

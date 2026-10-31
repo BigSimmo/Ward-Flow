@@ -42,6 +42,8 @@ import { movementHref, unitHref } from "@/components/ward-management/shell/ward-
 import styles from "@/components/ward-management/delays/delays-board.module.css";
 import { ago, originLabel } from "@/components/ward-management/delays/delays-board-rows";
 import { standingSuffix, typedTimeStanding } from "@/components/ward-redesign/legal-forms/typed-time-words";
+import redesign from "@/components/ward-redesign/waiting/waiting-redesign.module.css";
+import local from "./as-ed-waiting.module.css";
 
 export function PersonPanel({
   row,
@@ -85,6 +87,43 @@ export function PersonPanel({
   const pullHolder = units.find((unit) => unit.id === movement.acceptedUnitId);
   const legalForm = movement.legalForm;
 
+  // Josh, 30 Oct 2026: on a desktop or tablet Escalate and Journey sit at the top of the panel, not
+  // below every candidate ward; the phone sheet keeps them pinned at its foot.
+  const actions = (
+    <div className={isPhonePanel ? styles.acts : `${styles.acts} ${redesign.actsTop} ${local.actsWrap}`}>
+      {escalation !== undefined ? (
+        <button
+          type="button"
+          className={`${styles.btn} ${styles.btnOff}`}
+          aria-disabled="true"
+          onClick={ignoreUnavailableActivation}
+        >
+          {`Escalated ${ago(now - escalation.at)}`}
+        </button>
+      ) : (
+        <button
+          type="button"
+          className={`${styles.btn} ${escalationGate.allowed ? styles.btnPri : styles.btnOff}`}
+          {...escalationGate.buttonProps}
+          onClick={() => {
+            if (!escalationGate.allowed) return;
+            onEscalate(movement);
+          }}
+          data-testid={`delays-escalate-${movement.id}`}
+          title="Escalate to State bed coordination desk"
+        >
+          {/* Audit 11 Oct 2026: a short label beside Journey; the toast names the desk. */}
+          Escalate
+          <span className="sr-only"> to State bed coordination desk</span>
+        </button>
+      )}
+      {escalation === undefined ? escalationGate.note : null}
+      <Link className={styles.btn} href={movementHref(movement.id)}>
+        Journey
+      </Link>
+    </div>
+  );
+
   return (
     <section
       className={`${styles.card} ${styles.side}`}
@@ -117,6 +156,7 @@ export function PersonPanel({
           <X size={14} aria-hidden="true" />
         </button>
       </div>
+      {isPhonePanel ? null : actions}
       <div className={styles.sideB}>
         {isPhonePanel ? (
           <div className={styles.phJourney} data-testid={`delays-phone-journey-${movement.id}`}>
@@ -151,7 +191,7 @@ export function PersonPanel({
         <div className={`${styles.inset} ${styles.causeInset}`}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
           <div className={styles.grow}>
-            <b className={styles.ellBlock}>{words.causeTitle(cause)}</b>
+            <b className={redesign.wrapTitle}>{words.causeTitle(cause)}</b>
             <span className={styles.mute}>{`${words.ownerName(row.owner)} to clear`}</span>
           </div>
           <span
@@ -351,38 +391,7 @@ export function PersonPanel({
           </Link>
         ) : null}
       </div>
-      <div className={styles.acts}>
-        {escalation !== undefined ? (
-          <button
-            type="button"
-            className={`${styles.btn} ${styles.btnOff}`}
-            aria-disabled="true"
-            onClick={ignoreUnavailableActivation}
-          >
-            {`Escalated ${ago(now - escalation.at)}`}
-          </button>
-        ) : (
-          <button
-            type="button"
-            className={`${styles.btn} ${escalationGate.allowed ? styles.btnPri : styles.btnOff}`}
-            {...escalationGate.buttonProps}
-            onClick={() => {
-              if (!escalationGate.allowed) return;
-              onEscalate(movement);
-            }}
-            data-testid={`delays-escalate-${movement.id}`}
-            title="Escalate to State bed coordination desk"
-          >
-            {/* Audit 11 Oct 2026: a short label beside Journey; the toast names the desk. */}
-            Escalate
-            <span className="sr-only"> to State bed coordination desk</span>
-          </button>
-        )}
-        {escalation === undefined ? escalationGate.note : null}
-        <Link className={styles.btn} href={movementHref(movement.id)}>
-          Journey
-        </Link>
-      </div>
+      {isPhonePanel ? actions : null}
       {/* Q-12: delays with no named person are never dropped, so the note stays while a person is open. */}
       <section aria-label="Delays with no named person" className={styles.personSystem}>
         <NoStatewideDelays />

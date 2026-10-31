@@ -188,7 +188,7 @@ export function PersonPanel({
         <div className={`${styles.inset} ${styles.causeInset}`}>
           <TierTile tier={movement.urgency} label={urgencyTierLabel(movement.urgency)} />
           <div className={styles.grow}>
-            <b className={styles.ellBlock}>{causeTitle(cause)}</b>
+            <b className={redesign.wrapTitle}>{causeTitle(cause)}</b>
             <span className={styles.mute}>{`${ownerName(row.owner)} to clear`}</span>
           </div>
           <span

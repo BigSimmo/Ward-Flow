@@ -3,6 +3,7 @@
 import type { SignOffCheck } from "@/components/ward-management/handover/handover-panels";
 import { Button, StatusGlyph, type SinceItem } from "@/components/wf";
 
+import { ShowMoreRow as OneShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import styles from "./handover-redesign.module.css";
 
 /**
@@ -105,14 +106,10 @@ export function ShowMoreRow({
   return (
     <tr className={styles.moreRow}>
       <td colSpan={span}>
-        <button
-          type="button"
-          aria-expanded={open}
-          aria-label={open ? `Show fewer ${what}` : `Show ${hidden} more ${what}`}
-          onClick={onToggle}
-        >
+        <OneShowMoreRow expanded={open} onClick={onToggle}>
           {open ? "Show fewer" : `Show ${hidden} more`}
-        </button>
+          <span className="sr-only"> {what}</span>
+        </OneShowMoreRow>
       </td>
     </tr>
   );

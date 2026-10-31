@@ -5,7 +5,8 @@ import { useMemo } from "react";
 
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
 import type { DelayCause, DelayOwnerId } from "@/components/ward-management/delays/delays-derivations";
-import { causeTitle } from "@/components/ward-management/delays/delays-board-parts";
+// Josh, 30 Oct 2026: this page's blocker titles ("Form due soon, as typed"), as the coordinator's board.
+import { waitingCauseTitle as causeTitle } from "@/components/ward-redesign/waiting/wait-bands";
 import { ownerName } from "@/components/ward-management/delays/delays-board-model";
 import { waitingViewLabel } from "@/components/ward-management/delays/waiting-views";
 import type { WaitingViewId } from "@/components/ward-management/delays/waiting-href";

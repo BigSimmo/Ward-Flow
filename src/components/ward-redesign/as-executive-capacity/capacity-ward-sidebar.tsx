@@ -24,6 +24,7 @@ import {
   type NetworkWardRow,
 } from "@/components/ward-management/capacity/capacity-derivations";
 import styles from "@/components/ward-management/capacity/capacity.module.css";
+import local from "@/components/ward-redesign/capacity/capacity-redesign.module.css";
 import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
 import { bedKindsServed, isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
@@ -100,15 +101,11 @@ export function CapacityWardSidebar({
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [tab, setTab] = useState("ward");
   const [opened, setOpened] = useState<{ admissionId: string; handle: DischargeOpenHandle } | null>(null);
-  const heading = useRef<HTMLHeadingElement>(null);
   const recordHeading = useRef<HTMLHeadingElement>(null);
   const recordOrigin = useRef<string | null>(null);
   useEffect(() => {
     if (opened) recordHeading.current?.focus();
   }, [opened]);
-  useEffect(() => {
-    heading.current?.focus();
-  }, []);
   const site = siteByCode(row.unit.siteCode);
   const records = readDischargeRecords(recordActor, row.unit.id);
   const detail = opened ? readDischargeRecord(recordActor, opened.admissionId, opened.handle) : null;
@@ -142,13 +139,9 @@ export function CapacityWardSidebar({
           { id: "discharges", label: "Discharges" },
         ]}
       />
+      {/* Redesign (Josh, 30 Oct): the drawer's title names the ward and its close returns to the
+          network, so the panel no longer repeats them. */}
       <div className={styles.wardIdentity}>
-        <button type="button" className={styles.textButton} onClick={onBack}>
-          Back to network
-        </button>
-        <h2 ref={heading} tabIndex={-1}>
-          {row.unit.name}
-        </h2>
         <p>
           {siteLabel(row.unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
         </p>
@@ -254,22 +247,27 @@ export function CapacityWardSidebar({
                 {isConfirmationFresh(row.unit, now) ? "Within" : "Past"} this ward’s{" "}
                 {row.unit.allocatable.staleAfterMinutes} minute confirmation threshold.
               </p>
+              {/* Redesign (Josh, 30 Oct): one name for this request, "Ask the ward", as on the side
+                  card, on the kit's small secondary button. */}
               {recordActor.role === "coordinator" ? (
-                <button
-                  type="button"
-                  className={styles.refreshButton}
+                <Button
+                  size="sm"
+                  variant="sec"
+                  className={local.askWard}
                   onClick={() =>
                     dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: row.unit.id })
                   }
                 >
-                  Request ward update
-                </button>
+                  Ask the ward
+                </Button>
               ) : (
                 <Button
-                  className={styles.refreshButton}
-                  disabledReason="Only the coordinator can request ward updates."
+                  size="sm"
+                  variant="sec"
+                  className={local.askWard}
+                  disabledReason="Only the coordinator can ask the ward."
                 >
-                  Request ward update
+                  Ask the ward
                 </Button>
               )}
               {request ? <p role="status">Update requested {formatInstantWithDay(request.at, now)}.</p> : null}

@@ -112,3 +112,28 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* The person panel's blocker title wraps rather than cutting off ("Form due soon, as typed"). */
+.wrapTitle {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+/* Final check (30 Oct 2026): on a phone the time column fits "no update 10h 00m" on one line
+   instead of splitting the duration. Doubled class: beats the board's own phone grid. */
+@media (max-width: 48rem) {
+  .phoneTimes.phoneTimes tbody > tr {
+    grid-template-columns: auto minmax(0, 1fr) 7rem;
+  }
+  .phoneTimes.phoneTimes tbody > tr > td[data-ward-type-floor="delays-since"] {
+    white-space: nowrap;
+  }
+}
+
+/* Final check (30 Oct 2026): on a desktop the referrals line under the list keeps the card's inset
+   instead of starting on the card's edge. */
+@media (min-width: 48.0625rem) {
+  .referralsLine {
+    padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  }
+}

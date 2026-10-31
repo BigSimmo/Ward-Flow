@@ -36,6 +36,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import thirdEdition from "@/components/ward-management/governance-third-edition.module.css";
+import accessLink from "./governance-link.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { EventFacts } from "@/components/ward-management/governance-event-facts";
@@ -326,7 +327,9 @@ export function GovernancePhone({
                 {adminDesk ? (
                   <>
                     {" "}
-                    <Link href="/ward-flow/settings#access">Open the Access log</Link>
+                    <Link href="/ward-flow/settings#access" className={accessLink.lnk}>
+                      Open the Access log
+                    </Link>
                   </>
                 ) : null}
               </p>

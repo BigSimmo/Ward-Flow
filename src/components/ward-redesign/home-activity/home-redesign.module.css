@@ -155,3 +155,11 @@ button.headLink {
 .sinceFoot.sinceFoot {
   justify-content: space-between;
 }
+
+/* Final check (30 Oct 2026): in the placement region, a referral's "Tier 3 · least urgent" tag uses
+   the normal font on a phone, as on desktop, not the monospace. */
+@media (max-width: 48rem) {
+  .referralPlacement [data-testid^="ward-referral-placement"] [class*="_tierBadge"] {
+    font-family: var(--wf-font);
+  }
+}

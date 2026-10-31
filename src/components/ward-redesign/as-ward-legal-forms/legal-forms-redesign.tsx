@@ -97,6 +97,7 @@ import {
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { PhoneChecklist } from "@/components/ward-management/legal-forms/legal-forms-phone-checklist";
 import styles from "@/components/ward-management/legal-forms/legal-forms.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "@/components/ward-redesign/legal-forms/legal-forms-redesign.module.css";
 import wardPin from "@/components/ward-management/ward-pinned-switch.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
@@ -883,11 +884,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                         ))}
                       </ul>
                       {noDeadline.length > NO_TIME_FIRST ? (
-                        <button type="button" className={redesign.more} onClick={() => setNoTimeAll((all) => !all)}>
+                        <ShowMoreRow expanded={noTimeAll} onClick={() => setNoTimeAll((all) => !all)}>
                           {noTimeAll
                             ? "Show fewer"
                             : `Show ${noDeadline.length - NO_TIME_FIRST} more with no time written`}
-                        </button>
+                        </ShowMoreRow>
                       ) : null}
                     </>
                   )}
@@ -1126,15 +1127,11 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                                 ))}
                               </ul>
                               {noDeadline.length > NO_TIME_FIRST ? (
-                                <button
-                                  type="button"
-                                  className={redesign.more}
-                                  onClick={() => setNoTimeAll((all) => !all)}
-                                >
+                                <ShowMoreRow expanded={noTimeAll} onClick={() => setNoTimeAll((all) => !all)}>
                                   {noTimeAll
                                     ? "Show fewer"
                                     : `Show ${noDeadline.length - NO_TIME_FIRST} more with no time written`}
-                                </button>
+                                </ShowMoreRow>
                               ) : null}
                             </>
                           ) : (

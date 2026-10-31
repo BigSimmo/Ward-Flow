@@ -84,6 +84,7 @@ import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import directory from "@/components/ward-redesign/places/places-redesign.module.css";
 import detail from "./places-detail.module.css";
 
@@ -1070,9 +1071,11 @@ function GroupList({
         {entries.slice(0, limit).map(renderRow)}
       </ul>
       {rest > 0 ? (
-        <button type="button" className={directory.showMore} onClick={() => setLimit((n) => n + GROUP_ROWS * 2)}>
-          Show more <span className={directory.showMoreCount}>{rest} more</span>
-        </button>
+        <ShowMoreRow controls={id} onClick={() => setLimit((n) => n + GROUP_ROWS * 2)}>
+          <span>
+            Show more <span className={directory.showMoreCount}>{rest} more</span>
+          </span>
+        </ShowMoreRow>
       ) : null}
     </>
   );

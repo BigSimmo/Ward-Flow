@@ -6,8 +6,6 @@ import {
   BedDouble,
   Building2,
   CalendarClock,
-  ChevronDown,
-  ChevronUp,
   Clock,
   Download,
   FileText,
@@ -91,6 +89,7 @@ import {
   withheldBar,
 } from "@/components/ward-management/statistics/statistics-small-numbers";
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "@/components/ward-redesign/statistics-unit/statistics-unit.module.css";
 import {
   CompactBedMap,
@@ -954,15 +953,9 @@ function WardPhone({
             </PhoneList>
           )}
           {shown.length > ROSTER_FIRST_ROWS ? (
-            <Button
-              variant="ghost"
-              className={redesign.phoneMore}
-              icon={expanded ? ChevronUp : ChevronDown}
-              aria-expanded={expanded}
-              onClick={() => setExpanded((open) => !open)}
-            >
+            <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
               {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
-            </Button>
+            </ShowMoreRow>
           ) : null}
         </>
       )}
@@ -1434,18 +1427,9 @@ function Roster({
         </table>
       </div>
       {shown.length > ROSTER_FIRST_ROWS ? (
-        <div className={redesign.rosterMore}>
-          <Button
-            size="sm"
-            variant="ghost"
-            icon={expanded ? ChevronUp : ChevronDown}
-            aria-expanded={expanded}
-            onClick={() => setExpanded((open) => !open)}
-            data-testid="ward-statistics-ward-roster-more"
-          >
-            {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
-          </Button>
-        </div>
+        <ShowMoreRow expanded={expanded} onClick={() => setExpanded((open) => !open)}>
+          {expanded ? "Show fewer" : `Show ${shown.length - ROSTER_FIRST_ROWS} more`}
+        </ShowMoreRow>
       ) : null}
     </StatCard>
   );

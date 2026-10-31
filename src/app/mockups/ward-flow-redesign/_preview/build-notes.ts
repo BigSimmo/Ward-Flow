@@ -20,6 +20,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the nurse in charge**, the header reads 'Bed release · Dabakarn' instead of 'all services'.",
     "**Removed:** the Service and Ward filters (one choice each), the ward name under every person, and the second 'Blocked by barrier' panel that repeated the first.",
     "**Round 2:** one barrier panel and the shared Discharges changes (see Discharges).",
+    "**Review round (30 October):** as the coordinator's Discharges: '4 to work now · of 14 open', '4 to work · 1 discharged', Held up as the one word, barrier and day clicks stay on Now, the day chart counts releases (closed wards left out), Chase opens Barriers and Confirm date the date control. Own-ward wording and filters kept.",
   ],
   "as-ward-seclusion": [
     "**As the nurse in charge**, the page opens straight on Dabakarn's record: room status, what is in use and incidents. The one-row rooms-by-ward table is gone.",
@@ -38,12 +39,14 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** destination pills and Refused once (every line is to this ward, and a ward never learns another ward's refusal, FD-23), Next overdue, the Bed meeting list, the waiting runway and the statewide Beds ready figure.",
     "**New:** an empty queue shows one line plus a link to the people already coming and going.",
     "**Round 2:** the empty decision panel goes, so an empty queue takes the full width. The phone hero drops Overdue, Tier 1 and Beds ready for a ward desk, as desktop does. 'No referral or bed offer for Dabakarn.'",
+    "**Review round (30 October):** the coordinator's Referrals fixes, from its own components (Fit in wards, Needs in words, ward names in History, Legal status not recorded, Since referral, one disclosure style, the median's basis); Offered to your ward rows are two lines on a phone.",
   ],
   "as-ward-waiting": [
     "**As the nurse in charge**, the eyebrow reads 'Waiting · coming to Dabakarn', and 'Waiting on you' becomes 'Waiting on the coordinator', because on this board 'you' meant the coordinator.",
     "**New:** the side column opens on the first person, and a short list opens every wait band in full.",
     "**Removed:** whose-move tiles, saved views, the graphs, the registers and Longest quiet (the coordinator's chase list); and from the person panel, other wards' eligibility (FD-23) and Escalate.",
     "**Kept:** legal times as typed.",
+    "**Review round (30 October):** the coordinator's Waiting fixes, said for the ward: '8 to 24 hours · includes 1 in transit', 'Form due soon, as typed', '0 forms past their time' and 'No referrals awaiting your ward's decision'. Journey sits at the top of the person panel on a laptop; on a phone each row puts the ED first.",
   ],
   "as-ward-legal-forms": [
     "**As the nurse in charge**, the title reads '2 forms on moves to Dabakarn'. Times show only as typed; 'Not legally checked' is kept word for word.",
@@ -74,11 +77,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the ED clinician**, Referrals opens on 'Raised from Peel ED' (9 open), because the coordinator's queue was empty for this desk. Rows show tier, surname first, time since referral and where it stands; after 8 rows, Show more.",
     "**Removed:** the Bed meeting list, 'statewide' and the median decision time; the highlight pills and runway show only while an ED review waits on this desk.",
     "**Round 2:** the card reads 'Open referrals'. Journey is a quiet link with the person's name spoken, not eight outlined buttons. The phone figure reads 'Finding a ward', as the table does.",
+    "**Review round (30 October):** the coordinator's Referrals fixes, from its own components; the phone hero says Decision overdue. This desk shows no median, as before.",
   ],
   "as-ed-waiting": [
     "**As the ED clinician**, 'you' in the shared wording means the coordinator, so it now says 'Coordinator' and 'Waiting on the coordinator'.",
     "**Removed:** the ED code on every row, 'ED' in the search box, the Catchment switch and the whose-move grid: with one ED they said nothing new.",
     "**Kept:** Escalate greyed with the app's own reason; legal times as typed.",
+    "**Review round (30 October):** the coordinator's Waiting fixes: the 8 to 24 hours band with who is in transit, 'Form due soon, as typed', nouns on the legal counts, the No update figure filters, and the blocker chips sit two by two on a phone. Escalate and Journey sit at the top of the person panel and wrap beside 'Coordinator only'.",
   ],
   "as-ed-legal-forms": [
     "**As the ED clinician**, the page already lists only Peel ED's people on forms, with times as typed and 'Not legally checked' word for word. Nothing needed changing for this role.",
@@ -104,6 +109,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Removed:** the runway, statewide Beds ready, bed-type highlights and the all-zero decisions chart; 'Open the team's Waiting list' replaces the Bed meeting list.",
     "**Round 2:** decided rows show '30 days ago' (the clock time in the tooltip), so names are not cut on a phone. The decided list shows 8 rows, then Show more. Titles and buttons match at every width.",
     "**For the build:** the shared referral alerts show a literal 'Not recorded' as a legal chip.",
+    "**Review round (30 October):** the coordinator's Referrals fixes in this desk's own sections (Fit in wards, Needs in words, ward names), Legal status not recorded and 'Median time to decide 10d 0h (all 9 decided)'. History stays hidden for this desk.",
   ],
   "as-community-movements": [
     "**As the community clinician**, Midland has no journey in the demo data, so the page shows one panel saying what puts a journey there and that the team books its transport from it (D-76), with Refer from team.",
@@ -139,6 +145,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Round 2:** the hero adds '5 waiting in RPH ED' (counts only, no names), from the All EDs page's own figures. 'Past target in RPH ED' shows only when someone is past target.",
     "**Round 2:** uses Capacity's copied ward panel, Planned admissions and Step down board, so their links are checked against this desk and names are surname first.",
     "**Question for you:** the rail says 'Waiting 6' (every ED this desk covers) beside the hero's '5 waiting in RPH ED'. The hero names its ED so the two read apart. Is that acceptable?",
+    "**Review round (30 October):** as the coordinator's Capacity: the network total shows once, a muted 48-hour range, a stacked phone forecast sheet, and the ward drawer's own title in place of Back to network. Held-up releases count only Royal Perth's (2), so the figure matches this desk's Discharges, named as Discharges names them.",
   ],
   "as-bed-manager-wards": [
     "**As the site bed manager**, All wards leads with Royal Perth's 2 wards in full, then other sites as bed counts only (first 6, then Show all 20).",
@@ -160,11 +167,13 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**As the site bed manager**, Discharges opens on Royal Perth's own releases ('Bed release · Royal Perth Hospital').",
     "**Removed:** the Service filter and the service name after each ward (one site, one service).",
     "**Round 2:** one barrier panel beside the list, as on Discharges.",
+    "**Review round (30 October):** as the coordinator's Discharges: '7 to work now · of 23 open', Held up as the one word, clicks stay on Now, first rows then Show more. Only the ward or the coordinator can change an expected date, so an expected release here offers Open (on Milestones), not Confirm date.",
   ],
   "as-bed-manager-referrals": [
     "**As the site bed manager**, Referrals holds only the lines to Royal Perth's wards and says read only once ('The coordinator and the receiving ward answer each referral.').",
     "**Removed:** the destination chips and statewide Beds ready (placing is the coordinator's job).",
     "**Round 2:** with an empty queue, zero chips, the empty Waiting band and sort notes go; they return when a referral waits. The title reads 'Nothing awaiting a decision', as on the phone. The side pane says 'Read only' and who answers each referral.",
+    "**Review round (30 October):** the coordinator's Referrals fixes, from its own components; the hero reads 'median time to decide … (… decided)' and the phone hero Decision overdue. The desk stays read-only.",
   ],
   "as-bed-manager-statistics": [
     "**As the site bed manager**, Statistics leads with Royal Perth's wards and its own ED; the hero figures are the site's.",
@@ -188,6 +197,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   "as-executive-capacity": [
     "**As the executive**, Capacity keeps the bed picture and leaves out links to pages this desk cannot open.",
     "**Replaced:** Planned admissions listed people with legal status under 'Name not shown'; it is now one card of counts.",
+    "**Review round (30 October):** as the coordinator's Capacity: the network total once, a muted 48-hour range, a stacked phone forecast sheet, held-up releases counted and named as Discharges does (11), and the drawer's own title. This desk has no Discharges, so no link to it; Ask the ward shows disabled, as before.",
   ],
   "as-admin-home": [
     "**As the access admin**, Settings opens on Access as the first tab; Rules and Alerts (no use to this desk) are removed.",
@@ -302,7 +312,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Today's Shift brief dialog, unchanged**, opened for Dabakarn over My ward (where its Shift brief button is), so Copy, Print and Close work as now.",
     "**Still open:** no design changes, because there were no review notes for it. Josh to say what to change.",
     "**Round 2:** tiles say when ('Pulled now', 'Left in 24h', 'Pulled in 24h'), so two figures no longer share a label. The stamp is one short line; the full 'not a record of any real day' wording stays in the brief.",
-    "**Questions for you:** the 'Pulled now' tile and the 'Bed already given away' row show the same figure (recommend dropping one); and should tentative diagnoses appear on a printed brief?",
+    "**Your answer (30 October):** no tentative diagnosis on the printed brief (privacy); the board's own panel still shows it. Still open: the 'Pulled now' tile and the 'Bed already given away' row show the same figure (recommend dropping one).",
   ],
   "pop-desk": [
     "**Built from a copy of today's Go to a desk drawer**, so search, recents, the statewide tiles and opening a desk work as now.",
@@ -336,7 +346,7 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
     "**Kept:** Open Alerts, Acknowledge visible, and the All, Act now, Waiting and Running filters. No 'Chase all' (it needs a new command).",
     "**Still open:** on a phone the bell opens the Alerts page, not this drawer; at 390 px the mock-up shows the drawer's phone layout.",
     "**Round 2:** a bed pull past its limit says 'Past pull limit', because 'overdue' means form times. '12 of 12 alerts' shows only while a filter narrows the list; an empty filter's zero goes grey.",
-    "**Question for you:** legal-form rows still show an elapsed '10m Overdue' worked out from the typed time, as the live app does. Recommend 'Due 10:32 as typed · Not legally checked', with no running figure.",
+    "**Your answer (30 October):** legal-form rows show 'Due 10:32 as typed · Not legally checked', with no running figure, as Waiting does. Today's app counts up an elapsed '10m Overdue' from the typed time.",
   ],
   "pop-activity": [
     "**Home's Activity panel** (Changes, Recent activity and Notices), opened over Home. The separate Activity drawer redesign retired on 30 October so there is one Activity design; see Home's notes for how review works.",

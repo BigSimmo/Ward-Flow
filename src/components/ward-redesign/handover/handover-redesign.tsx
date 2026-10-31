@@ -486,7 +486,17 @@ export function HandoverRedesign() {
   const fitted = fitsCard && !present && !sheetOpen && customColumns === null && density === "std";
   const columnIds =
     customColumns ?? (fitted ? DENSITY_COLUMNS.std.filter((id) => id !== "lo") : DENSITY_COLUMNS[density]);
-  const columns = columnsFor(columnIds);
+  // Final check (30 Oct 2026): Waiting gets 18 units from Next step, so "21:55 yesterday" is not cut
+  // to "yesterd…" at 1440; the fitted table keeps the same total width.
+  const columns = columnsFor(columnIds).map((column) =>
+    !fitted
+      ? column
+      : column.id === "wait"
+        ? { ...column, width: 128 }
+        : column.id === "next"
+          ? { ...column, width: 252 }
+          : column,
+  );
   const wide = present || columnIds.length > 8;
   const compact = customColumns === null && density === "min";
 

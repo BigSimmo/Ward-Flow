@@ -39,8 +39,6 @@ export function heldUpReleases(releases: readonly BedRelease[], now: Instant) {
   };
 }
 
-export type HeldUpReleases = ReturnType<typeof heldUpReleases>;
-
 /** Where the held-up releases are listed: Discharges, whose first group is Held up. It has no
  *  address for that group alone, so the link opens the board. */
 export const HELD_UP_HREF = "/ward-flow/discharges";

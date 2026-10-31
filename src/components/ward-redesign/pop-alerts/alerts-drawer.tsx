@@ -7,12 +7,12 @@ import {
   Bell,
   CheckCircle2,
   ChevronDown,
-  Clock,
   FileText,
   Filter,
   ListChecks,
   Phone,
   RotateCcw,
+  Route,
   Search,
   Send,
   ShieldCheck,
@@ -62,6 +62,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
 
 import styles from "@/components/ward-redesign/pop-alerts/alerts-drawer.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import { originName, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 
 type AlertsDrawerProps = {
@@ -203,8 +204,8 @@ function rowIcon(item: InboxItem) {
 
 /**
  * The value and state shown at the right of a row, read from the movement's own recorded times.
- * Nothing here is a computed deadline: an overdue row counts up from the time the record holds,
- * and a waiting transport counts up from when it was accepted.
+ * Nothing here is a computed deadline: a legal row shows its typed time, a pulled bed counts up from
+ * the time the record holds, and a waiting transport counts up from when it was accepted.
  */
 function rowTiming(
   item: InboxItem,
@@ -222,9 +223,11 @@ function rowTiming(
     };
   }
   if (movement && /legal/i.test(item.title) && movement.legalForm?.dueAt !== undefined) {
-    // Josh, 30 Oct 2026: the typed due time only, never a running figure (D-70).
+    // Mock-up (Josh, 30 Oct 2026): the typed form time, as Waiting shows it; no running figure.
     return {
-      state: `Due ${formatInstantWithDay(movement.legalForm.dueAt, now)} as typed · Not legally checked`,
+      value: `Due ${formatInstantWithDay(movement.legalForm.dueAt, now)}`,
+      word: "as typed",
+      state: "Not legally checked",
       tone: "danger",
       stateTone: "danger",
     };
@@ -587,10 +590,8 @@ export function AlertsDrawer({
           {shown.map((item) => renderGroupMember(item))}
         </ul>
         {long ? (
-          <button
-            type="button"
-            className={`${styles.btn} ${styles.btnGhost} ${styles.groupMore}`}
-            aria-expanded={showAll}
+          <ShowMoreRow
+            expanded={showAll}
             onClick={() =>
               setLongGroupsShown((current) => {
                 const next = new Set(current);
@@ -601,7 +602,7 @@ export function AlertsDrawer({
             }
           >
             {showAll ? "Show fewer" : `Show ${group.items.length - GROUP_SHOW_FIRST} more`}
-          </button>
+          </ShowMoreRow>
         ) : null}
       </li>
     );
@@ -630,7 +631,8 @@ export function AlertsDrawer({
                 {timing.word ? <span className={styles.rowWord}>{timing.word}</span> : null}
               </span>
             ) : null}
-            <span aria-hidden="true">·</span>
+            {/* Mock-up: the dot only joins two parts, so a row with no figure never starts with one. */}
+            {timing.value && timing.state ? <span aria-hidden="true">·</span> : null}
             {timing.state ? (
               <span className={styles.rowState} data-tone={timing.stateTone}>
                 {timing.state}
@@ -975,7 +977,7 @@ export function AlertsDrawer({
             <p className={styles.detailLine}>{detail}</p>
             {movement ? (
               <p className={styles.detailMeta}>
-                <Clock aria-hidden="true" />
+                <Route aria-hidden="true" />
                 <span>{stageCopy[movement.stage].label}</span>
                 <span aria-hidden="true">·</span>
                 <span>{originName(movement) ?? "Origin not recorded"}</span>

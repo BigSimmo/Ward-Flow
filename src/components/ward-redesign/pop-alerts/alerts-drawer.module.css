@@ -1366,11 +1366,6 @@
   gap: 6px;
 }
 
-.groupMore {
-  justify-self: start;
-  margin-left: calc(var(--wf-h-sm) + var(--wf-s-3));
-}
-
 @media (max-width: 48rem) {
   .groupList {
     padding-left: 0;
@@ -1383,9 +1378,5 @@
 
   .memberActions {
     grid-column: 1 / -1;
-  }
-
-  .groupMore {
-    margin-left: 0;
   }
 }

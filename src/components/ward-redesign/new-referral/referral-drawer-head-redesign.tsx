@@ -4,6 +4,7 @@
 import { ChevronRight, Eye, Inbox, Send, X } from "lucide-react";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "@/components/ward-management/referrals/ward-referral-drawer.module.css";
+import redesign from "./new-referral-redesign.module.css";
 import { Select, StatusGlyph } from "@/components/wf";
 import { DESTINATIONS, sectionLabel } from "@/components/ward-management/referrals/ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "@/components/ward-management/referrals/use-ward-referral-drawer-state";
@@ -296,7 +297,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
           </div>
           {/* WT-28: nothing is pre-filled for a patient just added in this form, so no banner says so. */}
           {offersJump(s) && !patientAddedInForm ? (
-            <div className={styles.fastTrackBar} data-testid="ward-referral-fast-track">
+            <div className={`${styles.fastTrackBar} ${redesign.fastTrackInset}`} data-testid="ward-referral-fast-track">
               {/* Redesign: the two Jump buttons beside it already name where they go, so the line
                   says only what happened, with the app's own glyph instead of a typed tick. */}
               <span className={styles.fastTrackText}>

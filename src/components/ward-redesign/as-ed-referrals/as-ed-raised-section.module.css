@@ -85,22 +85,6 @@
 .openLink {
   text-decoration: none;
 }
-.more {
-  display: block;
-  width: 100%;
-  min-height: 44px;
-  border: 0;
-  border-top: 1px solid var(--wf-line);
-  background: transparent;
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-accent);
-  cursor: pointer;
-}
-.more:hover {
-  background: var(--wf-surface-2);
-}
 
 /* Phone: each journey is one card row; the tier and Journey sit beside the name and wait. */
 @media (max-width: 48rem) {

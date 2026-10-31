@@ -298,8 +298,6 @@ function edBoardRowModel(movement: Movement, ctx: EdScreenContext) {
   };
 }
 
-export type EdBoardRowModel = ReturnType<typeof edBoardRowModel>;
-
 /**
  * One board row. On the board table it returns the table row and hands an open person sheet to
  * `onTableSheet`, because A2's sheet renders after the table, never inside a table row; on a phone

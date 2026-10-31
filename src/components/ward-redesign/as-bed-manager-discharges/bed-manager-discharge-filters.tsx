@@ -15,6 +15,7 @@ import {
   BLOCKER_CATEGORIES,
 } from "@/components/ward-management/discharges/discharge-board-model";
 import type { DischargeWorkspaceState } from "@/components/ward-management/discharges/use-discharge-workspace-state";
+import { HELD_UP } from "@/components/ward-redesign/discharges/discharges-parts";
 
 export function BedManagerDischargeFilterCard({
   s,
@@ -43,7 +44,6 @@ export function BedManagerDischargeFilterCard({
     services,
     scopedUnits,
     counts,
-    total,
     clearSelection,
     clearAllFilters,
     filtersActive,
@@ -110,10 +110,12 @@ export function BedManagerDischargeFilterCard({
               clearSelection();
             }}
           >
-            <option value="all">{`All listed · ${total}`}</option>
+            {/* Josh, 30 Oct: "All statuses" with no count, so no third total beside the hero's two; each
+                status keeps its count, and a blocker reads "Held up". */}
+            <option value="all">All statuses</option>
             {WORK_ORDER.map((key) => (
               <option key={key} value={key}>
-                {`${population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
+                {`${key === "blocked" ? HELD_UP : population === "releases" && key === "departed" ? "Discharged · 24h" : WORK_STATUS_LABELS[key]} · ${counts[key]}`}
               </option>
             ))}
           </Select>

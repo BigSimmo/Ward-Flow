@@ -63,6 +63,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import redesign from "@/components/ward-redesign/wards/wards-redesign.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import siteStyles from "./wards-site.module.css";
 import styles from "@/components/ward-management/wards/ward-index.module.css";
 
@@ -948,9 +949,9 @@ function OtherSitesMore({
   if (total <= OTHER_SITE_CARDS) return null;
   if (!open && shown >= total) return null;
   return (
-    <Button variant="ghost" size="sm" onClick={onToggle} aria-expanded={open} className={siteStyles.more}>
+    <ShowMoreRow onClick={onToggle} expanded={open}>
       {open ? "Show fewer other sites" : `Show all ${total} wards at other sites`}
-    </Button>
+    </ShowMoreRow>
   );
 }
 

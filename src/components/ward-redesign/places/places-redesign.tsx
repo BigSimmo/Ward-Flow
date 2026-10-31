@@ -77,6 +77,7 @@ import { KIND_WORD_LONG } from "@/components/ward-management/hub/hub-screen-help
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
 
 import { PlaceRow, SECURITY_WORD } from "./place-row";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import directory from "./places-redesign.module.css";
 
 /** Redesign: a directory orders by service or by name; with no bed figures there is no "Most ready". */
@@ -1015,9 +1016,11 @@ function GroupList({
         {entries.slice(0, limit).map(renderRow)}
       </ul>
       {rest > 0 ? (
-        <button type="button" className={directory.showMore} onClick={() => setLimit((n) => n + GROUP_ROWS * 2)}>
-          Show more <span className={directory.showMoreCount}>{rest} more</span>
-        </button>
+        <ShowMoreRow controls={id} onClick={() => setLimit((n) => n + GROUP_ROWS * 2)}>
+          <span>
+            Show more <span className={directory.showMoreCount}>{rest} more</span>
+          </span>
+        </ShowMoreRow>
       ) : null}
     </>
   );

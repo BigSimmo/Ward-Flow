@@ -44,26 +44,14 @@
   color: var(--wf-ink-3);
 }
 
-.moreRow td {
+/* The one Show more row fills its cell edge to edge (over the table's first- and last-cell padding)
+   and draws the only line above it, so the row before it drops its own. */
+.moreRow.moreRow > td:is(:first-child, :last-child) {
+  height: auto;
   padding: 0;
-  border-top: 1px solid var(--wf-line);
 }
-.moreRow button {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 var(--wf-s-4);
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 600;
-  color: var(--wf-accent-ink);
-  cursor: pointer;
-}
-.moreRow button:hover {
-  background: var(--wf-surface-2);
+tr:has(+ .moreRow) > td {
+  border-bottom-color: transparent;
 }
 
 .signBar {

@@ -10,7 +10,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { wardOffersOutsideQueue } from "@/components/ward-management/referrals/home-ward-offers";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { Count, StatusGlyph, durMinutes } from "@/components/wf";
+import { Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import styles from "@/components/ward-redesign/referrals/referrals-redesign.module.css";
@@ -78,14 +78,24 @@ export function WardOffersTable({
             const wards = movement.referredUnitIds.map(wardName);
             return (
               <tr key={movement.id} data-testid={`ward-referral-board-ward-offer-${movement.id}`}>
-                <th scope="row">
+                <th scope="row" className={styles.offerName}>
                   <Link href={movementHref(movement.id)} className={styles.offerLink}>
                     {nameFor(who.formalName, who.umrn)}
                   </Link>
                 </th>
-                <td>{wards.length <= 2 ? wards.join(", ") : `${wards[0]} and ${wards.length - 1} more`}</td>
-                <td className={styles.mono}>{durMinutes(now - (movement.referredAt ?? movement.openedAt))}</td>
-                <td>
+                <td className={styles.offerWards}>
+                  {wards.length <= 2 ? wards.join(", ") : `${wards[0]} and ${wards.length - 1} more`}
+                  {/* Phone (Josh, 30 Oct 2026): two lines, the answer after the ward on the second. */}
+                  <span className={styles.offerPhoneAnswer}>
+                    {" · "}
+                    {status.tone === "warning" ? <StatusGlyph tone="warning" size={8} /> : null}
+                    {status.text}
+                  </span>
+                </td>
+                <td className={cx(styles.mono, styles.offerWait)}>
+                  {durMinutes(now - (movement.referredAt ?? movement.openedAt))}
+                </td>
+                <td className={styles.offerAnswer}>
                   <StatusGlyph tone={status.tone} size={8} /> {status.text}
                 </td>
               </tr>

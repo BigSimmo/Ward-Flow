@@ -1066,3 +1066,9 @@ a.eventText:hover {
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
 }
+
+/* Final check (30 Oct 2026): the list foot's Call sheet link stays on one line on a phone. */
+.compactList :is([class*="_footLink__"], [class$="_footLink"], [class*="_footLink "]) {
+  flex: none;
+  white-space: nowrap;
+}

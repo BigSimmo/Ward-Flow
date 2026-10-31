@@ -51,6 +51,7 @@ import {
 } from "@/components/wf";
 
 import thirdEdition from "@/components/ward-management/governance-third-edition.module.css";
+import accessLink from "./governance-link.module.css";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { EventDetail, EventTable } from "@/components/ward-management/governance-event-detail";
 import { GovernancePhone } from "./governance-phone";
@@ -867,7 +868,9 @@ function GovernanceSession({
                     ? "Every recorded event has been reviewed."
                     : "No override, refused action or record access this session."}{" "}
                   {/* Role view (access admin): who opened which record lives in Settings, so point there. */}
-                  <Link href="/ward-flow/settings#access">Open the Access log</Link>
+                  <Link href="/ward-flow/settings#access" className={accessLink.lnk}>
+                    Open the Access log
+                  </Link>
                 </p>
               </div>
             ) : (

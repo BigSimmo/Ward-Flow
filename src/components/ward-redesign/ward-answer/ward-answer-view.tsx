@@ -59,6 +59,7 @@ import {
 import { CAPACITY_FIGURE_LABELS } from "@/components/ward-management/ward-morning-rollup";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import styles from "@/components/ward-management/ward/ward-answer-view.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import rx from "./ward-answer-redesign.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
@@ -967,17 +968,15 @@ export function WardAnswerRedesign({ unitId, initialMovementId }: WardAnswerView
                         </dl>
 
                         {isPhone ? (
-                          <button
-                            type="button"
-                            className={styles.phoneLinkRow}
-                            aria-expanded={showAllFacts}
-                            aria-controls="ward-answer-facts"
+                          <ShowMoreRow
+                            expanded={showAllFacts}
+                            controls="ward-answer-facts"
                             onClick={() => setShowAllFacts((open) => !open)}
                           >
                             {showAllFacts
                               ? "Show fewer facts"
                               : `Show all ${activeMovement.gender === activeMovement.sex ? 8 : 9} facts`}
-                          </button>
+                          </ShowMoreRow>
                         ) : null}
                         {isPhone ? (
                           <details className={styles.phoneIsbar}>

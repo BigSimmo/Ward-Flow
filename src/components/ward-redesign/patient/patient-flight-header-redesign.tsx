@@ -156,6 +156,6 @@ export function PatientFlightHeader({
  * the record (not inside the hero) and adds the shared `pinnedSwitch` class, so it sticks under
  * the phone header while the record scrolls (Josh, 12 Oct 2026).
  */
-export function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; className?: string }) {
+function PatientRecordTabsRow({ tabs, className }: { tabs: ReactNode; className?: string }) {
   return <div className={className ? `${styles.v6HeroTabsRow} ${className}` : styles.v6HeroTabsRow}>{tabs}</div>;
 }

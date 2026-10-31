@@ -27,6 +27,7 @@ import { StatisticsNav } from "@/components/ward-management/statistics/statistic
 import { PhoneDotKey } from "@/components/ward-management/statistics/statistics-phone-parts";
 import { STATISTICS_SERVICES_HREF } from "@/components/ward-management/statistics/statistics-sections";
 import styles from "@/components/ward-management/statistics/statistics-phone.module.css";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 import redesign from "@/components/ward-redesign/statistics/statistics-redesign.module.css";
 import {
   useExecutiveStatistics,
@@ -330,15 +331,10 @@ function StatisticsSummaryPhoneView({
                 ))
               : byReady.slice(0, showAll ? undefined : LIST_SHOWN).map(wardRow)}
             {listLength > LIST_SHOWN ? (
-              <li className={styles.showAllItem}>
-                <button
-                  type="button"
-                  className={styles.showAll}
-                  aria-expanded={showAll}
-                  onClick={() => setShowAll((value) => !value)}
-                >
+              <li className={redesign.showMoreItem}>
+                <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
                   {showAll ? "Show fewer" : `Show all ${listLength}`}
-                </button>
+                </ShowMoreRow>
               </li>
             ) : null}
           </ul>

@@ -7,6 +7,7 @@
 }
 
 .registerBody .eventRow {
+  flex-shrink: 0; /* the list scrolls; wrapped rows keep their height instead of spilling into the next */
   align-items: start;
   padding-block: var(--wf-s-2);
 }

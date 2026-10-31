@@ -31,7 +31,7 @@ import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-bu
 
 const DISCHARGES_HREF = "/ward-flow/discharges";
 
-export function CapacityTabs({
+function CapacityTabs({
   id,
   label,
   value,

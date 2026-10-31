@@ -165,6 +165,12 @@
 .actionsRow > :first-child {
   flex: 0 0 auto;
 }
+/* Final check (30 Oct 2026): beside Hand back, More actions' summary is the button's height, not 44px. */
+@media (min-width: 48.0625rem) {
+  .actionsRow > details > summary {
+    min-height: var(--wf-h-sm);
+  }
+}
 
 /* The release row stacks: reason, then the full-width Release with its "why" line under it. */
 .releaseRow {

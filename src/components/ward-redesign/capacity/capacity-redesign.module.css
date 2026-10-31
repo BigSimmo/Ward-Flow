@@ -770,6 +770,18 @@
   text-align: end;
 }
 
+/* Final check (30 Oct 2026): the scenario and bed meeting dialogs open in the overlay layer, outside
+   the page container, so the container rules above never reach them. On a phone they stack. */
+@media (max-width: 48rem) {
+  .sheetCols,
+  .scenarioRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sheetFigures {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ── Phone ── */
 .phoneTabs {
   width: 100%;

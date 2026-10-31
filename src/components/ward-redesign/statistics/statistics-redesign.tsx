@@ -98,6 +98,7 @@ const StatisticsMapView = dynamic(
   },
 );
 import styles from "@/components/ward-management/statistics/statistics-v6.module.css";
+import redesign from "./statistics-redesign.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { StatisticsCapacityChart } from "./statistics-chart-redesign";
 import { StatCard, StatisticsHero, useStatisticsLive } from "@/components/ward-management/statistics/statistics-hero";
@@ -217,7 +218,7 @@ function SiteCodeKey({ sites }: { sites: readonly { code: string; name: string }
   );
   if (named.length === 0) return null;
   return (
-    <p className={`${styles.sub} ${styles.muted}`} data-testid="ward-statistics-site-key">
+    <p className={`${styles.sub} ${styles.muted} ${redesign.siteKey}`} data-testid="ward-statistics-site-key">
       Site codes: {named.map(([code, name]) => `${code} ${name}`).join(" · ")}
     </p>
   );

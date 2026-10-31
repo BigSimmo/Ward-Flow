@@ -865,7 +865,7 @@ function AlertsWorkspace() {
       queued.kind === "single" ? (
         renderEntry(queued.entry)
       ) : queued.kind === "kind" ? (
-        <KindGroup key={queued.key} group={queued} listClassName={listClassName} renderEntry={renderEntry} />
+        <KindGroup key={queued.key} group={queued} now={now} listClassName={listClassName} renderEntry={renderEntry} />
       ) : (
         <LinkedAlertItem
           key={queued.key}
@@ -1409,7 +1409,7 @@ function AlertsWorkspace() {
                       Checking <span className={styles.mono}>{checks.length}</span> conditions
                     </span>
                     <span className={styles.phoneCardMeta}>
-                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
+                      <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> flagged · handover
                       sheets not checked
                     </span>
                   </span>
@@ -1430,7 +1430,7 @@ function AlertsWorkspace() {
                     Checking <span className={styles.mono}>{checks.length}</span> conditions
                   </span>
                   <span className={styles.phoneCardMeta}>
-                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> firing · handover
+                    <b className={styles.mono}>{checks.filter((check) => check.n > 0).length}</b> flagged · handover
                     sheets not checked
                   </span>
                 </span>

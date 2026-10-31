@@ -60,6 +60,7 @@ import phone from "@/components/ward-management/reports/patient-chronology-phone
 import styles from "@/components/ward-management/reports/reports.module.css";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { csvCell } from "@/components/ward-management/statistics/statistics-csv";
+import { ShowMoreRow } from "@/components/ward-redesign/parts/show-more-row";
 
 import redesign from "./chronology-redesign.module.css";
 
@@ -370,17 +371,18 @@ export function ChronologyRedesign({ initialPatientId }: { initialPatientId?: st
         </ul>
         {/* Round 2: one Show more, then the search finds anyone else, rather than about 30 presses. */}
         {shownPeople < people.length ? (
-          <div className={redesign.more}>
-            {shownPeople === START_ROWS ? (
-              <Button variant="ghost" size="sm" onClick={() => setShownPeople(START_ROWS * 3)}>
-                Show more
-              </Button>
-            ) : null}
-            <span className={redesign.moreNote}>
-              {Math.min(shownPeople, people.length)} of {people.length}
-              {shownPeople === START_ROWS ? "" : " · search for anyone else"}
-            </span>
-          </div>
+          shownPeople === START_ROWS ? (
+            // Final check: the shared Show more row (one size everywhere), with the count once.
+            <ShowMoreRow onClick={() => setShownPeople(START_ROWS * 3)} expanded={false}>
+              Show {Math.min(START_ROWS * 2, people.length - START_ROWS)} more of {people.length}
+            </ShowMoreRow>
+          ) : (
+            <div className={redesign.more}>
+              <span className={redesign.moreNote}>
+                {Math.min(shownPeople, people.length)} of {people.length} · search for anyone else
+              </span>
+            </div>
+          )
         ) : null}
       </Card>
       <Card aria-labelledby={`${baseId}-holds`}>

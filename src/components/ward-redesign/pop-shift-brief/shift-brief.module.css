@@ -5,10 +5,3 @@
   font-family: var(--wf-font);
   color: var(--wf-ink-2);
 }
-
-/* Josh, 30 Oct 2026: tentative diagnoses are left off the printed brief (privacy). */
-@media print {
-  .screenOnly {
-    display: none !important;
-  }
-}
