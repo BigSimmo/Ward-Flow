@@ -2,8 +2,12 @@
 
 <!-- last-checked: 2026-10-26 -->
 
+_Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
+
 You work for one community mental health team. You send referrals and answer the ones sent to
 your team.
+
+This desk is **Community clinician**; its recorded role label is **Community service**.
 
 ## What you see first
 

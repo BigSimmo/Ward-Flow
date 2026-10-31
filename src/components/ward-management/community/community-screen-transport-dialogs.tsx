@@ -19,6 +19,7 @@ import { TransportBookingForm } from "@/components/ward-management/transport/tra
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import styles from "./community.module.css";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -61,8 +62,8 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
   }
   if (transportBookFor === undefined) return null;
   const movement = movements.find((candidate) => candidate.id === transportBookFor);
-  // The patient's name, as every other screen shows it. The movement id is never a person's name.
-  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).displayName : "the patient";
+  // The patient's name, surname first as every record shows it. The movement id is never a person's name.
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : "the patient";
   return (
     // A stray tap on the backdrop does not close the booking, because closing clears every answer
     // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape still do.
@@ -114,12 +115,21 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
     closeTransportCancel,
     transportCancelDialogRef,
     submitCancelTransport,
+    movements,
+    umrnLookup,
   } = view;
   const save = useWardFormSave(transportCancelFor ?? "");
+  // A held offline command needs the connection bar's Retry. Once its error is shown,
+  // permit an explicit close while keeping submission locked to the original command.
+  const saving = save.pending && !save.error;
+  useWardModalFocus(transportCancelFor !== undefined, transportCancelDialogRef, () => {
+    if (!saving) closeTransportCancel();
+  });
   if (transportCancelFor === undefined) return null;
+  const movement = movements.find((candidate) => candidate.id === transportCancelFor);
+  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : "the patient";
   return (
-    <div className={styles.modalBackdrop} role="presentation" onClick={closeTransportCancel}>
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- only stops a click inside the dialog reaching the backdrop that closes it */}
+    <div className={styles.modalBackdrop} role="presentation">
       <div
         ref={transportCancelDialogRef}
         className={styles.modalDialog}
@@ -127,16 +137,16 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
         aria-modal="true"
         aria-labelledby={`ward-community-cancel-transport-title-${transportCancelFor}`}
         data-testid={`ward-community-cancel-transport-dialog-${transportCancelFor}`}
-        onClick={(e) => e.stopPropagation()}
       >
         <div className={styles.modalHeader}>
           <h3 id={`ward-community-cancel-transport-title-${transportCancelFor}`} className={styles.modalTitle}>
-            Cancel this team&apos;s transport booking for {transportCancelFor}
+            Cancel this team&apos;s transport booking for {patientName}
           </h3>
           <button
             type="button"
             className={styles.modalCloseBtn}
             onClick={closeTransportCancel}
+            disabled={saving}
             aria-label="Close dialog"
           >
             &times;
@@ -148,7 +158,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               className={styles.declineLabel}
               htmlFor={`ward-community-cancel-transport-reason-${transportCancelFor}`}
             >
-              Why is the job being cancelled? The provider is told.
+              Why is the job being cancelled?
               <select
                 id={`ward-community-cancel-transport-reason-${transportCancelFor}`}
                 className={styles.declineSelect}
@@ -171,6 +181,10 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
                 ))}
               </select>
             </label>
+            <p className={styles.transportHint}>
+              Cancel the booking with the provider by phone. This records the cancellation for the transport officer and
+              receiving ward.
+            </p>
             <button
               type="button"
               className={styles.transportConfirmButton}
@@ -183,7 +197,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               }
               title={cancelTransportBlocked}
               onClick={
-                cancelTransportBlocked === undefined
+                cancelTransportBlocked === undefined && !save.pending
                   ? () => submitCancelTransport(transportCancelFor, save.submit)
                   : ignoreUnavailableActivation
               }
@@ -196,6 +210,11 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
               </span>
             )}
             <TransportSaveAnswer save={save} testId={`ward-community-cancel-transport-failure-${transportCancelFor}`} />
+            {save.pending && save.error ? (
+              <p className={styles.transportHint}>
+                This cancellation may still be confirmed. Close this dialog to use Retry in the connection bar.
+              </p>
+            ) : null}
           </div>
         </div>
       </div>

@@ -382,9 +382,7 @@ describe("community blocked reasons", () => {
   });
   it("blocks a transport cancel until a reason is chosen, with the exact text", () => {
     expect(cancelTransportBlockedReason(undefined)).toBe(CANCEL_TRANSPORT_UNCHOSEN);
-    expect(CANCEL_TRANSPORT_UNCHOSEN).toBe(
-      "Choose why the transport job is being cancelled first. The provider is told.",
-    );
+    expect(CANCEL_TRANSPORT_UNCHOSEN).toBe("Choose why the transport job is being cancelled first.");
     expect(cancelTransportBlockedReason(CANCEL_TRANSPORT_REASONS[0])).toBeUndefined();
   });
 });
