@@ -24,12 +24,16 @@
     border-color var(--wf-t-micro) var(--wf-ease-out);
 }
 
-/* Placement decisions keep a full touch target on phone, tablet and desktop. */
-.b[data-placement-action] {
-  --wf-h-md: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));
+/* Placement decisions (Accept, Pull, Decline) keep a full 48px button on phones and other touch
+   screens: the one exception to "no 48px controls" (Josh, 31 Oct 2026, 10:34). With a mouse they are
+   the same size as every other button (Referrals build check, 31 Oct). */
+@media (max-width: 48rem), (pointer: coarse) {
+  .b[data-placement-action] {
+    --wf-h-md: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));
 
-  min-height: var(--wf-h-md);
-  min-width: var(--wf-h-md);
+    min-height: var(--wf-h-md);
+    min-width: var(--wf-h-md);
+  }
 }
 
 .b:active {

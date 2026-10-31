@@ -34,3 +34,15 @@ describe("kit button with a visible reason", () => {
     expect(reason).not.toMatch(/overflow:\s*hidden/u);
   });
 });
+
+describe("kit placement decisions", () => {
+  it("are a full 48px only on phones and touch screens", () => {
+    // Josh, 31 Oct 2026, 10:34: Accept, Pull and Decline stay 48px on phones, the one exception to
+    // "no 48px controls". With a mouse they match every other button.
+    const touchOnly =
+      /@media \(max-width: 48rem\), \(pointer: coarse\) \{\s*\.b\[data-placement-action\] \{[^}]*max\(3rem/u;
+    expect(css).toMatch(touchOnly);
+    const outside = css.replace(touchOnly, "");
+    expect(outside).not.toMatch(/\.b\[data-placement-action\]\s*\{[^}]*3rem/u);
+  });
+});
