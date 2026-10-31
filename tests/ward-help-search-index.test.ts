@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { GLOSSARY } from "@/components/ward-management/help/ward-help-content";
+import { HOW_TOS } from "@/components/ward-management/help/ward-help-howto";
 import {
   CLINICAL_REPLY,
   isClinicalQuestion,
@@ -24,6 +26,27 @@ describe("searchHelp", () => {
     const top = results(searchHelp("pull a bed", "bed_manager"))[0];
     expect(top.group).toBe("Guides");
     expect(top.title.toLowerCase()).toContain("pull");
+  });
+
+  it("gives a login its own downtime answer even for words only the Handover twin holds", () => {
+    const desks = HOW_TOS.find((howTo) => howTo.id === "downtime-paper")?.desks;
+    const paperOnly = Array.isArray(desks) ? desks[0] : undefined;
+    expect(paperOnly).toBeDefined();
+    if (!paperOnly) return;
+    const paper = HOW_TOS.find((howTo) => howTo.id === "downtime-paper")?.answer;
+    const handover = HOW_TOS.find((howTo) => howTo.id === "downtime")?.answer;
+    const details = results(searchHelp("Ward Flow down last saved", paperOnly)).map((result) => result.detail);
+    expect(details).toContain(paper);
+    expect(details).not.toContain(handover);
+    expect(results(searchHelp("Ward Flow down last saved", "coordinator")).map((r) => r.detail)).toContain(handover);
+  });
+
+  it("searches the sheet's own site directory when one is passed", () => {
+    // Synthetic site code from a fictional network; the default glossary does not know it.
+    const glossary = [...GLOSSARY, { term: "ZQX", meaning: "Zephyr Quay Hospital" }];
+    expect(results(searchHelp("zqx", "coordinator", 12, glossary)).some((r) => r.key === "term:ZQX")).toBe(true);
+    const without = searchHelp("zqx", "coordinator");
+    expect(without.kind === "results" && without.results.some((r) => r.key === "term:ZQX")).toBe(false);
   });
 
   it("searches across groups: settings, shortcuts and glossary", () => {

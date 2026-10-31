@@ -623,7 +623,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "welcome",
           undefined,
           `Welcome, ${tourGreeting(role)}`,
-          `${signedInAs(role, f, "for the whole state")} You review overrides, refused actions and who opened which record.`,
+          `${signedInAs(role, f, "for the whole state")} You give staff access to the right desk and place. Governance also shows overrides, refused actions and who opened which record.`,
         ),
         step(
           "Your daily work",
@@ -925,7 +925,10 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
       ];
     case "admin":
       return [
-        welcome("You review overrides, refused actions and who opened which record.", "for the whole state"),
+        welcome(
+          "You give staff access to the right desk and place. Governance also shows overrides, refused actions and who opened which record.",
+          "for the whole state",
+        ),
         step(
           "Your daily work",
           "review",
