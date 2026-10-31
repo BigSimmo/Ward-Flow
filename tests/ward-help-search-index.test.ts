@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { GLOSSARY } from "@/components/ward-management/help/ward-help-content";
 import {
   CLINICAL_REPLY,
   isClinicalQuestion,
@@ -24,6 +25,14 @@ describe("searchHelp", () => {
     const top = results(searchHelp("pull a bed", "bed_manager"))[0];
     expect(top.group).toBe("Guides");
     expect(top.title.toLowerCase()).toContain("pull");
+  });
+
+  it("searches the sheet's own site directory when one is passed", () => {
+    // Synthetic site code from a fictional network; the default glossary does not know it.
+    const glossary = [...GLOSSARY, { term: "ZQX", meaning: "Zephyr Quay Hospital" }];
+    expect(results(searchHelp("zqx", "coordinator", 12, glossary)).some((r) => r.key === "term:ZQX")).toBe(true);
+    const without = searchHelp("zqx", "coordinator");
+    expect(without.kind === "results" && without.results.some((r) => r.key === "term:ZQX")).toBe(false);
   });
 
   it("searches across groups: settings, shortcuts and glossary", () => {

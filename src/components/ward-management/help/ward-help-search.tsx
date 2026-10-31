@@ -9,6 +9,7 @@ import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feat
 import { useIsPhone } from "@/components/wf";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 
+import type { GlossaryTerm } from "./ward-help-content";
 import { howToHref } from "./ward-help-href";
 import { showWardHowTo } from "./ward-help-events";
 import { CLINICAL_REPLY, HELP_SEARCH_GROUPS, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
@@ -59,10 +60,13 @@ export function WardHelpSearch({
   role,
   home,
   onNavigate,
+  glossary,
 }: {
   role: WardTourRole;
   home: string | undefined;
   onNavigate?: () => void;
+  /** The sheet's own glossary (site directory), so the site codes shown in Words can be found. */
+  glossary?: readonly GlossaryTerm[];
 }) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -75,7 +79,7 @@ export function WardHelpSearch({
   const [active, setActive] = useState(0);
   const input = useRef<HTMLInputElement>(null);
   const opener = useRef<HTMLButtonElement>(null);
-  const answer = useMemo(() => searchHelp(query, role), [query, role]);
+  const answer = useMemo(() => searchHelp(query, role, undefined, glossary), [query, role, glossary]);
   const rows =
     answer.kind === "results"
       ? answer.results

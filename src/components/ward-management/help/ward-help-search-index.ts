@@ -211,11 +211,25 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
   return entries;
 }
 
-let cached: readonly Entry[] | undefined;
-let knownWords: ReadonlySet<string> | undefined;
-function defaultIndex(): readonly Entry[] {
-  cached ??= buildIndex(GLOSSARY);
-  return cached;
+// One index per glossary: the default terms, or a sheet's own site directory (a fictional network or a
+// report's site catalogue), so the site codes shown in Words can be searched too.
+const indexes = new WeakMap<readonly GlossaryTerm[], readonly Entry[]>();
+const vocabularies = new WeakMap<readonly Entry[], ReadonlySet<string>>();
+function indexFor(glossary: readonly GlossaryTerm[]): readonly Entry[] {
+  let index = indexes.get(glossary);
+  if (!index) {
+    index = buildIndex(glossary);
+    indexes.set(glossary, index);
+  }
+  return index;
+}
+function vocabularyFor(index: readonly Entry[]): ReadonlySet<string> {
+  let words = vocabularies.get(index);
+  if (!words) {
+    words = new Set(index.flatMap((item) => [...item.strong, ...item.weak]));
+    vocabularies.set(index, words);
+  }
+  return words;
 }
 
 export type HelpSearchAnswer =
@@ -234,10 +248,15 @@ function strip(item: Entry): HelpSearchResult {
  * words score three, body words one. Ties keep the index order (guides first), so results are stable.
  * With no match, the closest topics are those sharing any one word.
  */
-export function searchHelp(query: string, role: WardTourRole, limit = 12): HelpSearchAnswer {
+export function searchHelp(
+  query: string,
+  role: WardTourRole,
+  limit = 12,
+  glossary: readonly GlossaryTerm[] = GLOSSARY,
+): HelpSearchAnswer {
   if (isClinicalQuestion(query)) return { kind: "clinical" };
-  const index = defaultIndex();
-  const vocabulary = (knownWords ??= new Set(index.flatMap((item) => [...item.strong, ...item.weak])));
+  const index = indexFor(glossary);
+  const vocabulary = vocabularyFor(index);
   // Keep exact words from every indexed reference. Only unknown words need correction against
   // the how-to vocabulary, and correcting before stemming preserves typos such as "thme".
   const words = [

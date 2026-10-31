@@ -91,7 +91,9 @@ function ExecutiveHelpSheet(props: WardHelpSheetProps) {
 }
 function OperationalHelpSheet(props: WardHelpSheetProps) {
   const { sites } = useWardNetwork();
-  return <WardHelpSheetView {...props} termsSource={glossaryForSites(sites)} />;
+  // Kept stable so Help search reuses one index per site directory.
+  const terms = useMemo(() => glossaryForSites(sites), [sites]);
+  return <WardHelpSheetView {...props} termsSource={terms} />;
 }
 function WardHelpSheetView({
   view,
@@ -186,7 +188,7 @@ function WardHelpSheetView({
         {asked ? (
           <WardHelpAsk role={role} home={deskHref} initialQuery={asked} onClose={onClose} termsSource={termsSource} />
         ) : (
-          <WardHelpSearch role={role} home={deskHref} onNavigate={onClose} />
+          <WardHelpSearch role={role} home={deskHref} onNavigate={onClose} glossary={termsSource} />
         )}
       </div>
 
