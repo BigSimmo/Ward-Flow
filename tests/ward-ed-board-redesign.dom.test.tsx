@@ -89,7 +89,7 @@ describe("ED board redesign", () => {
     const capacity = within(foot).getByRole("link", { name: "Statewide capacity" });
     expect(capacity).toHaveAttribute("href", "/ward-flow/capacity");
     expect(capacity).toHaveAttribute("title", "Every unit's beds, on the Capacity page");
-    expect(within(foot).getByRole("link", { name: "Last 24 hours of events" })).toHaveAttribute(
+    expect(within(foot).getByRole("link", { name: "Events in the last 24 hours" })).toHaveAttribute(
       "href",
       "/ward-flow/governance",
     );

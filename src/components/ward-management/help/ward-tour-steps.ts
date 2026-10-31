@@ -82,7 +82,6 @@ const UNIT_CARD: TourTarget = { sel: '[data-testid^="ward-unit-card-"]' };
 const CONFIRM: TourTarget = { sel: '[data-testid^="ward-unit-card-"] button', text: "Confirm numbers" };
 const ED_CARD: TourTarget = { sel: '[data-testid^="ward-ed-card-"]' };
 const ED_ROW: TourTarget = { sel: '[data-testid^="ward-ed-patient-"]' };
-const ED_RAISE: TourTarget = { sel: '[data-testid="ward-ed-raise-referral-toggle"]' };
 const STATS_NAV: TourTarget = { sel: '[data-testid="ward-statistics-nav"]' };
 const TRENDS: TourTarget = { sel: '[data-testid="ward-statistics-session-trends"]' };
 const MISMATCH: TourTarget = { sel: 'section[aria-label="Where the mismatch is"]' };
@@ -391,9 +390,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "raise",
-          ED_RAISE,
-          "Raise a referral",
-          "Raise referral starts a referral for someone on your board, to a ward or a community team.",
+          PRIMARY,
+          "New referral",
+          "New referral, at the top, starts a referral for someone on your board, to a ward or a community team.",
         ),
         step(
           "Finding your way",
@@ -787,13 +786,6 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
                 ed.longest ? ` The longest wait is ${ed.longest} against a ${ed.targetHours}h target.` : ""
               }`
             : "Who is waiting, who has no bed yet, who is under a form and the longest wait against the target.",
-        ),
-        step(
-          "Your daily work",
-          "raise",
-          ED_RAISE,
-          "Raise a referral",
-          "Starts a referral for someone on your board, to a ward or a community team.",
         ),
         step("Your daily work", "row", ED_ROW, "One row per person", "Tier, bay, time in ED and the next step."),
         phoneCreate("New referral, Log a delay and Add patient"),

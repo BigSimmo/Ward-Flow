@@ -175,7 +175,7 @@ export function EdScreen({ edId }: EdScreenProps) {
     },
     {
       href: "/ward-flow/governance",
-      title: "Last 24 hours of events",
+      title: "Events in the last 24 hours",
       sub: "This department's recorded events, in the Governance audit",
     },
   ].filter((link) => canOpen(link.href));
