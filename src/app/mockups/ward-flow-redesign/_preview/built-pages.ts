@@ -23,8 +23,6 @@ export const MOCKUP_PAGE_SLUGS = [
   "seclusion",
   "governance",
   "bed-meeting-tv",
-  "downtime",
-  "chronology",
   "places",
   "community",
   "community-team",

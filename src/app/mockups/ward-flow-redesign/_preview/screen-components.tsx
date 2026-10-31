@@ -74,12 +74,6 @@ const GovernancePage = dynamic<MockupPageProps>(() =>
 const BedMeetingTvPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/bed-meeting-tv/bed-meeting-tv-page").then((module) => module.BedMeetingTvPage),
 );
-const DowntimePage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/downtime/downtime-page").then((module) => module.DowntimePage),
-);
-const ChronologyPage = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/chronology/chronology-page").then((module) => module.ChronologyPage),
-);
 const PlacesPage = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/places/places-page").then((module) => module.PlacesPage),
 );
@@ -318,8 +312,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   seclusion: SeclusionRedesign,
   governance: GovernancePage,
   "bed-meeting-tv": BedMeetingTvPage,
-  downtime: DowntimePage,
-  chronology: ChronologyPage,
   places: PlacesPage,
   community: CommunityPage,
   "community-team": CommunityTeamPage,

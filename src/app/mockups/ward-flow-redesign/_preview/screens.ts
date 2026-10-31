@@ -87,18 +87,6 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     group: "Bed meeting and reports",
     appPath: "/ward-flow/bed-meeting/agenda",
   },
-  {
-    slug: "downtime",
-    label: "Downtime pack",
-    group: "Bed meeting and reports",
-    appPath: "/ward-flow/reports/downtime",
-  },
-  {
-    slug: "chronology",
-    label: "Patient chronology",
-    group: "Bed meeting and reports",
-    appPath: "/ward-flow/reports/chronology",
-  },
   { slug: "places", label: "Places", group: "Places and records", appPath: "/ward-flow/hub" },
   { slug: "community", label: "Community", group: "Places and records", appPath: "/ward-flow/community" },
   {
