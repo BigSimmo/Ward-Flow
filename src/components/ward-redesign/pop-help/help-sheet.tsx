@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 
-import { useIsPhone } from "@/components/wf";
+import { PillTabs, TabPanel, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
 import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 import { railEntries } from "@/components/ward-management/shell/ward-rail-entries";
@@ -21,7 +21,6 @@ import {
   screenHelpFor,
 } from "@/components/ward-management/help/ward-help-content";
 import { useWardNetwork } from "@/components/ward-management/ward-flow-provider";
-import type { HelpView } from "@/components/ward-management/help/ward-help-events";
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "@/components/ward-management/help/ward-help-guide";
 import { useTourRole, type WardTourRole } from "@/components/ward-management/help/ward-help-store";
 import { useTourFacts } from "@/components/ward-management/help/ward-tour-facts";
@@ -35,12 +34,23 @@ import {
 import { WardHelpGlossary } from "@/components/ward-management/help-content/ward-help-glossary-view";
 import { WardHelpReference } from "@/components/ward-management/help-content/ward-help-reference-view";
 
-const VIEWS: readonly { id: Exclude<HelpView, "tour">; label: string }[] = [
-  { id: "desk", label: "Your desk" },
+import { HelpTasks } from "./help-tasks";
+import { HOW_DO_I_NEWS } from "./help-tasks-data";
+
+/** Help's tabs. `tasks` is #1119's How do I…, which the real `HelpView` gains when it is built. */
+export type MockHelpView = "tasks" | "screen" | "desk" | "glossary" | "new";
+
+/** Final round (D-91): How do I… first, then This screen, Your desk, Glossary and What's new. */
+const VIEWS: { id: MockHelpView; label: string }[] = [
+  { id: "tasks", label: "How do I…" },
   { id: "screen", label: "This screen" },
+  { id: "desk", label: "Your desk" },
   { id: "glossary", label: "Glossary" },
   { id: "new", label: "What's new" },
 ];
+
+/** What's new with the How do I… line on top (mock-up only; the real list is whats-new.json). */
+const NEWS = [...WHATS_NEW, HOW_DO_I_NEWS];
 
 type GoLink = { href: string; label: string };
 
@@ -78,11 +88,17 @@ function deskLabel(role: WardTourRole): string {
  * (`ward-tour.tsx`). The glossary filter is held in this component only and is never saved.
  */
 type WardHelpSheetProps = {
-  view: HelpView;
-  onView: (view: HelpView) => void;
+  view: MockHelpView;
+  onView: (view: MockHelpView) => void;
   onClose: () => void;
+  /** Take the tour, at the end of every view. */
+  onTour: () => void;
   /** Redesign: Keyboard shortcuts is a button at the end of Help; it opens the shortcuts sheet. */
   onShortcuts: () => void;
+  /** Show me on a task: Help gives way to the walkthrough over the page. */
+  onShowMe: (id: string) => void;
+  /** A task to open on arrival in How do I… (Show me's Back to Help). */
+  openTask?: string;
 };
 const BASE_GLOSSARY = glossaryForSites([]);
 export function HelpSheet(props: WardHelpSheetProps) {
@@ -112,7 +128,10 @@ function WardHelpSheetView({
   view,
   onView,
   onClose,
+  onTour,
   onShortcuts,
+  onShowMe,
+  openTask,
   termsSource,
 }: WardHelpSheetProps & { termsSource: ReturnType<typeof glossaryForSites> }) {
   const pathname = usePathname() ?? "";
@@ -131,7 +150,7 @@ function WardHelpSheetView({
   }, [entries, pathname, role]);
   const phone = useIsPhone();
 
-  const latest = WHATS_NEW.at(-1);
+  const latest = NEWS.at(-1);
 
   return (
     <Sheet
@@ -177,117 +196,132 @@ function WardHelpSheetView({
       footerClassName={barStyles.drawerFooter}
     >
       <div className={styles.searchDock}>
-        <HelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} />
+        <HelpSearch role={role} home={deskHome ?? home} onNavigate={onClose} onShowMe={onShowMe} />
       </div>
 
-      <div className={`${barStyles.segTrack} ${styles.views}`} role="group" aria-label="Help sections">
-        {VIEWS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={barStyles.segBtn}
-            aria-pressed={view === item.id}
-            onClick={() => onView(item.id)}
-            data-testid={`ward-help-view-${item.id}`}
-          >
-            {item.label}
-          </button>
-        ))}
+      {/* Final round (D-91): the kit's pill tabs at the kit size (parts/kit-standard.css), one row on
+          every width. A laptop fills the row; a phone slides it sideways with a soft fade at the end,
+          never wrapping the five tabs to two rows. */}
+      <div className={local.tabsBox}>
+        <div className={local.tabsRow}>
+          <PillTabs
+            items={VIEWS}
+            value={view}
+            onChange={onView}
+            label="Help sections"
+            idPrefix="ward-help"
+            fill={!phone}
+            className={local.tabs}
+          />
+        </div>
       </div>
 
-      {view === "desk" ? (
-        <section className={styles.stack} aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">
-          <h3 className={local.deskName}>{deskLabel(role)}</h3>
-          <p className={styles.text}>{guide.summary}</p>
-          <div className={styles.group}>
-            <h3 id="ward-help-desk-title" className={styles.groupHeading}>
-              Where you start
-            </h3>
-            <div className={styles.card}>
-              <p className={styles.paragraph}>{guide.startsAt}</p>
-            </div>
-          </div>
-          <div className={styles.group}>
-            <h4 className={styles.groupHeading}>Jobs you do most</h4>
-            <ol className={styles.card}>
-              {guide.jobs.map((item, index) => {
-                const link = goLink(item.go, role, { href: deskHome ?? home, name: guide.homeName }, entries);
-                return (
-                  <li key={item.job} className={styles.row}>
-                    <span className={styles.step} aria-hidden="true">
-                      {index + 1}
-                    </span>
-                    <span className={styles.rowText}>
-                      <strong>{item.job}</strong>
-                      <span>{item.how}</span>
-                      {link ? (
-                        <Link
-                          href={link.href}
-                          className={styles.goLink}
-                          onClick={onClose}
-                          aria-label={`${item.job}: go to ${link.label}`}
-                          data-testid="ward-help-go"
-                        >
-                          Go to {link.label}
-                          <ArrowRight aria-hidden="true" strokeWidth={2} />
-                        </Link>
-                      ) : null}
-                    </span>
-                  </li>
-                );
-              })}
-            </ol>
-          </div>
-          <PointList heading="Good to know" points={guide.limits} />
-          <PointList heading="Is it saved?" points={SAVED_OR_NOT} />
-          <PointList heading="If Ward Flow is down" points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
-        </section>
-      ) : null}
+      <TabPanel idPrefix="ward-help" id={view} className={local.panel}>
+        {view === "tasks" ? (
+          <HelpTasks
+            role={role}
+            home={deskHome ?? home}
+            pathname={pathname}
+            onClose={onClose}
+            onShowMe={onShowMe}
+            openTask={openTask}
+          />
+        ) : null}
 
-      {view === "screen" ? (
-        help ? (
-          <section className={styles.stack} aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
-            {/* Mock-up: a plain heading and line, not a card, for the screen this Help is about. */}
-            <div className={`${styles.screenHead} ${local.screenHead}`}>
-              <h3 id="ward-help-screen-title">{help.title}</h3>
-              <p className={styles.text}>{help.purpose}</p>
-            </div>
-            <PointList heading="Main actions" points={phone ? (help.phoneActions ?? help.actions) : help.actions} />
-            {help.questions?.length ? (
-              <div className={styles.group}>
-                <h4 className={styles.groupHeading}>Questions</h4>
-                <Questions items={help.questions} />
+        {view === "desk" ? (
+          <section className={styles.stack} aria-labelledby="ward-help-desk-title" data-testid="ward-help-desk">
+            <h3 className={local.deskName}>{deskLabel(role)}</h3>
+            <p className={styles.text}>{guide.summary}</p>
+            <div className={styles.group}>
+              <h3 id="ward-help-desk-title" className={styles.groupHeading}>
+                Where you start
+              </h3>
+              <div className={styles.card}>
+                <p className={styles.paragraph}>{guide.startsAt}</p>
               </div>
-            ) : null}
+            </div>
+            <div className={styles.group}>
+              <h4 className={styles.groupHeading}>Jobs you do most</h4>
+              <ol className={styles.card}>
+                {guide.jobs.map((item, index) => {
+                  const link = goLink(item.go, role, { href: deskHome ?? home, name: guide.homeName }, entries);
+                  return (
+                    <li key={item.job} className={styles.row}>
+                      <span className={styles.step} aria-hidden="true">
+                        {index + 1}
+                      </span>
+                      <span className={styles.rowText}>
+                        <strong>{item.job}</strong>
+                        <span>{item.how}</span>
+                        {link ? (
+                          <Link
+                            href={link.href}
+                            className={styles.goLink}
+                            onClick={onClose}
+                            aria-label={`${item.job}: go to ${link.label}`}
+                            data-testid="ward-help-go"
+                          >
+                            Go to {link.label}
+                            <ArrowRight aria-hidden="true" strokeWidth={2} />
+                          </Link>
+                        ) : null}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+            <PointList heading="Good to know" points={guide.limits} />
+            <PointList heading="Is it saved?" points={SAVED_OR_NOT} />
+            <PointList heading="If Ward Flow is down" points={WHEN_IT_IS_DOWN} testId="ward-help-downtime" />
           </section>
-        ) : (
-          <div className={styles.group} data-testid="ward-help-screen-none">
-            <p className={styles.empty}>This screen has no help page of its own yet. Your desk guide covers it.</p>
-            <button type="button" className={styles.linkButton} onClick={() => onView("desk")}>
-              Open your desk guide
-            </button>
-          </div>
-        )
-      ) : null}
+        ) : null}
 
-      {view === "new" ? (
-        <section className={styles.group} aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
-          <h3 id="ward-help-new-title" className={styles.groupHeading}>
-            Recent changes
-          </h3>
-          <ul className={styles.card}>
-            {WHATS_NEW.toReversed().map((entry) => (
-              <li key={entry.id} className={styles.row}>
-                <span className={styles.date}>{formatNewDate(entry.date)}</span>
-                <span className={styles.text}>{entry.line}</span>
-              </li>
-            ))}
-          </ul>
-          <p className={styles.note}>Newest first. The live site updates once a day, early in the morning.</p>
-        </section>
-      ) : null}
+        {view === "screen" ? (
+          help ? (
+            <section className={styles.stack} aria-labelledby="ward-help-screen-title" data-testid="ward-help-screen">
+              {/* Mock-up: a plain heading and line, not a card, for the screen this Help is about. */}
+              <div className={`${styles.screenHead} ${local.screenHead}`}>
+                <h3 id="ward-help-screen-title">{help.title}</h3>
+                <p className={styles.text}>{help.purpose}</p>
+              </div>
+              <PointList heading="Main actions" points={phone ? (help.phoneActions ?? help.actions) : help.actions} />
+              {help.questions?.length ? (
+                <div className={styles.group}>
+                  <h4 className={styles.groupHeading}>Questions</h4>
+                  <Questions items={help.questions} />
+                </div>
+              ) : null}
+            </section>
+          ) : (
+            <div className={styles.group} data-testid="ward-help-screen-none">
+              <p className={styles.empty}>This screen has no help page of its own yet. Your desk guide covers it.</p>
+              <button type="button" className={styles.linkButton} onClick={() => onView("desk")}>
+                Open your desk guide
+              </button>
+            </div>
+          )
+        ) : null}
 
-      {view === "glossary" ? <WardHelpGlossary termsSource={termsSource} /> : null}
+        {view === "new" ? (
+          <section className={styles.group} aria-labelledby="ward-help-new-title" data-testid="ward-help-new">
+            <h3 id="ward-help-new-title" className={styles.groupHeading}>
+              Recent changes
+            </h3>
+            <ul className={styles.card}>
+              {NEWS.toReversed().map((entry) => (
+                <li key={entry.id} className={styles.row}>
+                  <span className={styles.date}>{formatNewDate(entry.date)}</span>
+                  <span className={styles.text}>{entry.line}</span>
+                </li>
+              ))}
+            </ul>
+            <p className={styles.note}>Newest first. The live site updates once a day, early in the morning.</p>
+          </section>
+        ) : null}
+
+        {view === "glossary" ? <WardHelpGlossary termsSource={termsSource} /> : null}
+      </TabPanel>
 
       {/* Mock-up: Reference (colour code, roles, more) is an extra, so it moves from above the content
           to the end of every view, just before the tour and the shortcuts. */}
@@ -298,12 +332,7 @@ function WardHelpSheetView({
       {/* Redesign: the tour and the shortcuts are buttons at the end of every Help view. A phone has
           no keyboard, so it is not offered the shortcuts (HF-14). */}
       <div className={local.endRow}>
-        <button
-          type="button"
-          className={styles.secondaryButton}
-          onClick={() => onView("tour")}
-          data-testid="ward-help-view-tour"
-        >
+        <button type="button" className={styles.secondaryButton} onClick={onTour} data-testid="ward-help-view-tour">
           <Compass aria-hidden="true" strokeWidth={1.75} />
           Take the tour
         </button>

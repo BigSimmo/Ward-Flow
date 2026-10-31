@@ -11,40 +11,51 @@ import {
 
 import styles from "./shortcuts.module.css";
 
-/**
- * Redesign: the keys sort into three columns. Every key still comes from `KEYBOARD_SHORTCUTS`, so
- * the list cannot drift from Help; a key not named here falls into Move around.
- */
-const COLUMNS: readonly { title: string; keys: readonly string[] }[] = [
-  { title: "Find", keys: ["/", "Ctrl+K"] },
-  { title: "Open", keys: ["Shift+T", "Shift+A", "Shift+R", "?"] },
-  { title: "Move around", keys: ["[", "Esc"] },
-];
+/** The columns the keys sort into (#1119's `SHORTCUT_GROUPS`). */
+const GROUPS = ["Find", "Open", "Move around"] as const;
+type Group = (typeof GROUPS)[number];
 
 /**
- * Mock-up: each key's words cut to a short label; the longer sentence (in `KEYBOARD_SHORTCUTS`)
- * stays in Help and is the spoken description. A key not named here shows its Help sentence.
+ * #1119's two new fields on each key in `KEYBOARD_SHORTCUTS`: `short`, the few words the sheet shows
+ * (Help's full sentence, `action`, stays the spoken description and the hover title), and `group`,
+ * its column. The real build takes them from #1119's `ward-help-content.ts`.
  */
-const SHORT_LABELS: Readonly<Record<string, string>> = {
-  "/": "Search",
-  "Ctrl+K": "Search, even with shortcuts off (⌘K on a Mac)",
-  "Shift+T": "Open Alerts or Tasks",
-  "Shift+A": "Open Activity",
-  "Shift+R": "New referral",
-  "[": "Fold or open the side menu",
-  Esc: "Close, or step back",
-  "?": "Show shortcuts",
+const FROM_1119: Readonly<Record<string, { short: string; group: Group }>> = {
+  "/": { short: "Search", group: "Find" },
+  "Ctrl+K": { short: "Search, even with shortcuts off (⌘K on a Mac)", group: "Find" },
+  "Shift+T": { short: "Open Alerts or Tasks", group: "Open" },
+  "Shift+A": { short: "Open Activity", group: "Open" },
+  "Shift+R": { short: "New referral", group: "Open" },
+  "[": { short: "Fold or open the side menu", group: "Move around" },
+  Esc: { short: "Close, or step back", group: "Move around" },
+  "?": { short: "Show shortcuts", group: "Open" },
 };
 
-function columnOf(keys: string): string {
-  return COLUMNS.find((column) => column.keys.includes(keys))?.title ?? "Move around";
-}
+/**
+ * Final round (D-91): the notices' new key (draft PR #1124), listed with the rest. Not yet in the real
+ * `KEYBOARD_SHORTCUTS`; the build adds it there with these words.
+ */
+const NOTICE_KEY = {
+  keys: "Alt+N",
+  action: "Jump to the newest notice. Option+N on a Mac.",
+  short: "Jump to newest notice (⌥N on a Mac)",
+  group: "Move around" as Group,
+};
+
+const SHORTCUTS: readonly { keys: string; action: string; short: string; group: Group }[] = [
+  ...KEYBOARD_SHORTCUTS.map((item) => ({
+    ...item,
+    short: FROM_1119[item.keys]?.short ?? item.action,
+    group: FROM_1119[item.keys]?.group ?? ("Move around" as Group),
+  })),
+  NOTICE_KEY,
+];
 
 /**
  * The keyboard shortcuts sheet mock-up, forked from `WardShortcutsSheet` (P120). Same title, hint,
  * keys and More in Help button; the keys sit in three columns, each beside what it does.
  */
-export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
+export function ShortcutsSheet({ onClose, onHelp }: { onClose: () => void; onHelp?: () => void }) {
   return (
     <Sheet
       open
@@ -52,7 +63,7 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
       // Mock-up: no "Press ? to see these again" line; the ? key is listed under Open.
       title={SHORTCUTS_SHEET_TITLE}
       testId="ward-shortcuts-sheet"
-      contentClassName={`${styles.panel} sm:max-w-4xl`}
+      contentClassName={styles.panel}
       // The strong scrim the other centred dialogs (`Dialog`) sit on, so the page behind dims.
       desktopBackdropClassName={styles.scrim}
       // The list scrolls on short screens: the body takes keyboard focus and is named by the title.
@@ -65,7 +76,9 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
             className={styles.helpButton}
             onClick={() => {
               onClose();
-              openWardHelp("screen");
+              // Inside the Help mock-up, More in Help opens the mock-up's Help; alone, the app's.
+              if (onHelp) onHelp();
+              else openWardHelp("screen");
             }}
             data-testid="ward-shortcuts-help"
           >
@@ -75,12 +88,13 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
       }
     >
       <div className={styles.columns} data-testid="ward-shortcuts-list">
-        {COLUMNS.map((column) => {
-          const items = KEYBOARD_SHORTCUTS.filter((item) => columnOf(item.keys) === column.title);
-          if (items.length === 0) return null;
+        {GROUPS.map((group) => {
+          const items = SHORTCUTS.filter((item) => item.group === group);
           return (
-            <section key={column.title} className={styles.column} aria-label={column.title}>
-              <h3 className={styles.columnTitle}>{column.title}</h3>
+            <section key={group} className={styles.column} aria-labelledby={`ward-shortcuts-${group}`}>
+              <h3 id={`ward-shortcuts-${group}`} className={styles.columnTitle}>
+                {group}
+              </h3>
               <dl className={styles.list}>
                 {items.map((item) => (
                   <div key={item.keys} className={styles.item}>
@@ -101,8 +115,8 @@ export function ShortcutsSheet({ onClose }: { onClose: () => void }) {
                       ])}
                     </dt>
                     <dd className={styles.action} title={item.action}>
-                      {SHORT_LABELS[item.keys] ?? item.action}
-                      {SHORT_LABELS[item.keys] ? <span className="sr-only">. {item.action}</span> : null}
+                      {item.short}
+                      <span className="sr-only">. {item.action}</span>
                     </dd>
                   </div>
                 ))}

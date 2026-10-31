@@ -1,5 +1,7 @@
 /* Redesign: the keyboard shortcuts in three columns, each key beside what it does. */
+/* #1119's width: room for three columns side by side (unlayered, so it outranks the sheet's own). */
 .panel {
+  max-width: min(46rem, calc(100vw - 1rem));
   font-family: var(--wf-font);
 }
 

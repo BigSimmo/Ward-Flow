@@ -53,15 +53,19 @@ export function HelpSearch({
   role,
   home,
   onNavigate,
+  onShowMe,
 }: {
   role: WardTourRole;
   home: string | undefined;
   onNavigate?: () => void;
+  /** Mock-up: Show me plays the mock-up's own walkthrough (the live switch stays off in the app, D-91). */
+  onShowMe?: (id: string) => void;
 }) {
   const router = useRouter();
   const id = useId();
   // Show me plays only when the help-ask flag is on; otherwise a result falls back to Open.
-  const showMeOn = useWardFeatureFlag("help-ask");
+  const flagOn = useWardFeatureFlag("help-ask");
+  const showMeOn = Boolean(onShowMe) || flagOn;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -106,7 +110,8 @@ export function HelpSearch({
     const mine = !result.desks || result.desks.includes(role);
     if (showMeOn && result.howToId && mine) {
       close(false);
-      showWardHowTo(result.howToId);
+      if (onShowMe) onShowMe(result.howToId);
+      else showWardHowTo(result.howToId);
       return;
     }
     const href = mine ? howToHref(result.go, role, home) : undefined;
