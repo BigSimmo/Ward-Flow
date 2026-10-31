@@ -7,6 +7,7 @@
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "@/components/ward-management/referrals/referral-information-needs";
+import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "@/components/ward-management/referrals/referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "@/components/ward-management/referrals/referral-no-reply-flag";
 import { useMemo } from "react";
@@ -23,7 +24,11 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
-import { referralPersonFactsStatingSex, acceptedAddressing } from "@/components/ward-management/ward-referrals";
+import {
+  referralPersonFactsStatingSex,
+  acceptedAddressing,
+  SEX_NOT_HELD,
+} from "@/components/ward-management/ward-referrals";
 import { Button, CardHead, Count, EmptyState, StatusGlyph, TierTile, Timer, cx } from "@/components/wf";
 import { getReferralPriority, referralPriorityLabel } from "@/components/ward-management/referrals/referral-priority";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
@@ -45,7 +50,6 @@ import {
   QUEUED_REFUSED_LEAD,
   decidedWaitLabel,
   presentationDecidedAt,
-  demographicLabel,
   outcomeLabel,
   referralDueAt,
   referralNeedsGenderReview,
@@ -252,7 +256,7 @@ export function QueuedSection({
                           {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
-                          <span className={a.mono}>{patientInfo.umrn}</span> · {demographicLabel(referral)}
+                          <span className={a.mono}>{patientInfo.umrn}</span> · {personLine(referral)}
                         </span>
                       </span>
                       <ReadmissionFlag
@@ -413,7 +417,9 @@ export function QueuedSection({
                       {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}
                       <span className={a.cardFacts} data-testid={`ward-referral-board-card-service-${referral.id}`}>
                         {[
-                          ...referralPersonFactsStatingSex(referral).slice(0, 2),
+                          ...referralPersonFactsStatingSex(referral)
+                            .slice(0, 2)
+                            .filter((fact) => fact !== SEX_NOT_HELD),
                           ...(cardNeeds > 0 ? [`${cardNeeds} ${cardNeeds === 1 ? "need" : "needs"}`] : []),
                         ].join(" · ")}
                         {assignedUnit ? ` · Bed at ${assignedUnit.name}` : ""}
