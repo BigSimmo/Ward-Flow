@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-10-31 - section 6 brings the design rules up to date: 40px phone controls with a 48px tap area, no coloured side edges, visual changes start as an approved mock-up (Josh, 31 Oct); 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -197,12 +197,29 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   made, saving stops. See [current persistence guidance](STATUS.md#remaining-work-and-local-remediation).
 - **Privacy wording.** Never write that something is not stored, private or anonymised unless a test
   proves it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
-- **Design tokens only, no hex.** In Ward Flow v9/v10 (`design/v9/design-system-v9.md`, owner ruling 9 Oct 2026: _"Check the 48px PsychSift knob. Ward is 44"_), standard rows use `--wf-row-default: 44px`, touch/phone rows use `--wf-row-touch: 52px`, and desktop buttons use `--wf-target: 28px`; legacy `--ward-*` surfaces retain `--ward-tap: 48px` (`var(--spacing-tap, 3rem)`).
-  The 17 October handover explicitly requires the migrated Accept, Pull and Decline placement
-  buttons to retain the 48px `--ward-tap` floor on phone and tablet; this is a scoped action change.
-- **Preserve the accepted app design.** Historical edge-bar, typography, card, masthead, punctuation
-  and mockup prescriptions do not authorise reverting it or starting a redesign. Keep synthetic
-  disclosure and understandable status. Compact badges still need meaningful accessible labels.
+- **Design tokens only, no hex.** The written standard is
+  [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md); its section 14 lists the
+  owner rulings in force. Standard rows use `--wf-row-default: 44px`, touch and phone rows
+  `--wf-row-touch: 52px`, and desktop buttons `--wf-target: 28px`.
+- **Control size (Josh, 31 October 2026: "no 48px controls").** On a phone a kit button shows at
+  40px (32px for a small one) and keeps a 48px tap area through an invisible cover above and below
+  it. Phone tabs are 32px inside a 40px track; desktop segmented and pill tabs are 30px at 13px.
+  Never draw a control 48px tall to meet the tap floor: give it the cover. `--ward-tap` and
+  `--spacing-tap` (48px) are now the tap-area value, not a visible height. The one exception
+  (Josh, 31 October 2026, 10:34): placement decisions (Accept, Pull and Decline, marked
+  `data-placement-action`) stay a full 48px on phones, because they are the most important taps on
+  the ward, often made in a hurry. The 12px text floor is unchanged.
+- **No coloured side edges (Josh, 31 October 2026: "it feels tacky").** No coloured left or right
+  edge, stripe, inset bar or tone-coloured border on any row, card, tile or stat box. Show tone with
+  the StatusGlyph before the label or value, or a small tinted tag; selected is the selected tint
+  with a neutral border. `tests/wf-no-side-stripes.test.ts` keeps new ones out, and each page build
+  removes its page's remaining ones. This replaces the 9 October "thin act now edge".
+- **Visual changes start as an approved mock-up.** All visual design lives in the redesign mock-up
+  viewer (D-91). A real page changes its look only when Josh has approved that page's mock-up;
+  until then real-app pull requests carry behaviour and accessibility fixes only. Older drawings,
+  typography, card, masthead and punctuation prescriptions do not authorise a restyle. Keep
+  synthetic disclosure and understandable status. Compact badges still need meaningful accessible
+  labels.
 - **Line caps never change on-screen words (Josh, 26 October 2026, decision list item 36).** When a
   file is at its `max-lines` cap (`eslint-rules/max-lines-baseline.mjs`), make room by moving code
   out or splitting the file, never by shortening, merging or dropping text a person reads. A cap is

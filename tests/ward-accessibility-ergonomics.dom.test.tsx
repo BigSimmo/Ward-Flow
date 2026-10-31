@@ -22,6 +22,7 @@ vi.mock("next/link", () => ({
 import { WardAnswerView } from "@/components/ward-management/ward/ward-answer-view";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { setForceDynamicLoading } from "./setup/jsdom.setup";
+import { TAP_AREA_PX, tapAreaHeight, tapAreaWidth } from "./helpers/css-tap-area";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { ArrivalTimeModal } from "@/components/ward-management/referrals/arrival-time-modal";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
@@ -293,17 +294,23 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
     });
   });
 
-  describe("8. CSS contract: var(--ward-tap, 3rem) touch target minimums", () => {
-    it("enforces touch targets on community close buttons and on-call phone call buttons", () => {
+  describe("8. CSS contract: 48px tap areas (drawn smaller with a cover since 31 Oct 2026)", () => {
+    // Josh, 31 October 2026: "no 48px controls". The tap area stays 48px; a control may meet it with
+    // its own min-height (the older shape) or be drawn at 40px with an ::after cover (the kit shape).
+    it("keeps the tap area on community close buttons and on-call phone call buttons", () => {
       const communityCss = readFileSync("src/components/ward-management/community/community.module.css", "utf8");
-      expect(communityCss).toMatch(/\.drawerClose\s*\{[^}]*min-width:\s*var\(--ward-tap,\s*3rem\);/);
-      expect(communityCss).toMatch(/\.drawerClose\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
-      expect(communityCss).toMatch(/\.modalCloseBtn\s*\{[^}]*min-width:\s*var\(--ward-tap,\s*3rem\);/);
-      expect(communityCss).toMatch(/\.modalCloseBtn\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
+      for (const className of ["drawerClose", "modalCloseBtn"]) {
+        expect(tapAreaHeight(communityCss, className).total ?? 0, `.${className} height`).toBeGreaterThanOrEqual(
+          TAP_AREA_PX,
+        );
+        expect(tapAreaWidth(communityCss, className).total ?? 0, `.${className} width`).toBeGreaterThanOrEqual(
+          TAP_AREA_PX,
+        );
+      }
 
       const onCallCss = readFileSync("src/components/ward-management/on-call/on-call.module.css", "utf8");
       // A1 (9 Oct 2026): the routing links went; the phone call button on every row is the tap target.
-      expect(onCallCss).toMatch(/\.phoneCall\s*\{[^}]*min-height:\s*var\(--ward-tap,\s*3rem\);/);
+      expect(tapAreaHeight(onCallCss, "phoneCall").total ?? 0, ".phoneCall height").toBeGreaterThanOrEqual(TAP_AREA_PX);
       // v6: the service filter is the shared HeroTrack (heights from --wf-h-*, lifted to 44px on
       // coarse pointers); the row's own star control sizes from the same control token.
       expect(onCallCss).toMatch(/\.favouriteButton\s*\{[^}]*height:\s*var\(--wf-h-sm\);/);
