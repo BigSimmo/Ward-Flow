@@ -686,7 +686,7 @@ export function WardGlobalSearch({
    * list is painted with a stale row still marked active, and on a control whose Enter key
    * navigates, that frame is the one where Enter would go to a record nobody is looking at.
    */
-  const optionsKey = useMemo(() => options.map((option) => option.href).join("|"), [options]);
+  const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
   if (optionsKey !== seenOptionsKey) {
     setSeenOptionsKey(optionsKey);
@@ -911,6 +911,9 @@ export function WardGlobalSearch({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    // Enter/Escape/arrows may still belong to an input method's candidate chooser (including Safari's 229).
+    if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
+    if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "Escape") {
       event.preventDefault();
       setQuery("");
@@ -933,11 +936,11 @@ export function WardGlobalSearch({
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex((current) => (current <= 0 ? options.length - 1 : current - 1));
-    } else if (event.key === "Home") {
+    } else if (event.key === "Home" && activeIndex >= 0) {
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(0);
-    } else if (event.key === "End") {
+    } else if (event.key === "End" && activeIndex >= 0) {
       event.preventDefault();
       setHoverIndex(-1);
       setActiveIndex(options.length - 1);
@@ -993,6 +996,7 @@ export function WardGlobalSearch({
           } as CSSProperties
         }
         data-testid="ward-global-search-popup"
+        aria-busy={!resultsCurrent || undefined}
         data-start={isStart || undefined}
         // Clicking inside keeps focus in the header field, so the keyboard contract never breaks
         // and a link's click still lands after the press.
@@ -1422,13 +1426,15 @@ export function WardGlobalSearch({
       <p className="sr-only" role="status" aria-live="polite">
         {preparing
           ? "Preparing workspace. Search will be available shortly."
-          : refusal
-            ? refusal.sentence
-            : trimmed.length === 0
-              ? ""
-              : resultCount === 0
-                ? "No matches."
-                : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
+          : !resultsCurrent
+            ? "Updating search…"
+            : refusal
+              ? refusal.sentence
+              : trimmed.length === 0
+                ? ""
+                : resultCount === 0
+                  ? "No matches."
+                  : `${resultCount} invented ${resultCount === 1 ? "result" : "results"} found.`}
       </p>
       {palette && typeof document !== "undefined" ? createPortal(palette, document.body) : null}
     </div>
