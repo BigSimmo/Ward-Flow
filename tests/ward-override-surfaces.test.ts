@@ -4,6 +4,8 @@ import path from "node:path";
 import { parse } from "@babel/parser";
 import { describe, expect, it } from "vitest";
 
+import { isRedesignFork } from "./helpers/redesign-design-copies";
+
 /**
  * WHAT THIS FILE CHECKS: for every `WardFlowEvent` union member whose body declares an
  * `overrideReason` field (derived from the AST of `ward-flow-events.ts`, never a hand-written
@@ -162,6 +164,10 @@ function listSourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      // The redesign fork copies (D-89, D-91) dispatch inside the mock-up viewer's synthetic world
+      // only: blocked in production, and each deleted when its page is built. A built page lands in
+      // ward-management, where this guard judges it; the real screens they copy are judged now.
+      if (isRedesignFork(path.relative(REPO_ROOT, full) + "/")) continue;
       listSourceFiles(full, out);
     } else if (
       /\.(ts|tsx)$/.test(entry.name) &&
