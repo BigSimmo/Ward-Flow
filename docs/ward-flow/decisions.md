@@ -1012,3 +1012,37 @@ is inferred.
 - **First use:** `src/components/ward-redesign/ward-answer/ward-answer-view.tsx` (1,717 lines), the copy of the Ward answer view, whose real file already has its own entry.
 - **Boundary:** mock-up copies only. It does not raise the default cap, change any real screen (D-74) or approve any page for building.
 - **Why:** each mock-up is a copy of today's screen, so the difference between the two files is exactly the design change to build. Splitting a large copy makes that difference much harder to read and apply.
+
+## D-91. One design home for the redesign, and Josh's answers on Help, Settings, search and notifications (31 October 2026)
+
+- **Date:** 31 October 2026 (`2026-10-31`). **Decided by:** Josh, in the redesign mock-up work (draft PR #1118), answering the 26 questions from the alignment review of #1119, #1122, #1123 and #1124. His words: "Yes to all your recommendations." (D-90 is reserved by draft PR #1119.)
+- **Decision, how the work fits together:**
+  - All visual design lives in the redesign mock-up viewer (`/mockups/ward-flow-redesign`, PR #1118). Until Josh approves a page, the real-app pull requests carry only behaviour and accessibility fixes.
+  - Merge order into `main`, each fixed first and each with Josh's yes: #1120, #1119, the behaviour part of #1124, then #1123.
+  - Clear-cut real-app bugs go in small separate pull requests: restore says nine rules where there are twelve; Settings Export and Import do not match; Community save failures vanish (CT-09).
+  - #1118 stays a draft until Josh approves the design direction. It then merges with the mock-ups still blocked in production, and each page build deletes its own mock-up copy (`docs/mockup-retirement-policy.md`).
+  - Build order after Josh's page-by-page review: the shared frame, control sizes and notice position first, then Home, then one page per pull request.
+- **Help (#1119):** the live switch for Show me stays off until Josh has seen it in the mock-ups. The first tab is "How do I…", and the sidebar's Help opens on it with this screen's tasks first. Phone tabs sit on one sliding row at the kit size.
+- **Settings (#1122):** round 3 merges into the mock-ups after its four conflicts and small fixes. In the new frame, Settings drops its own "Go to a desk", which the sidebar already offers.
+- **Search and forms (#1123):**
+  - Phone search opens full height, like Help. Computers keep today's popover, with matched words highlighted.
+  - Every page search box has one look.
+  - Forms get time buttons (Now, +15m, +30m, +1h) form by form, starting with ED expected arrival and the discharge care dates. Any legal-form time offers Now only (D5, D-70).
+  - The duplicate finders become one each: the two Statistics "Open a unit", the two "Find a ward" lists and the three suburb lookups.
+  - Help answers show in the header search for queries of three letters or more, after people unless the query is a question.
+  - The search box reads "Search Ward Flow".
+  - The search boxes #1123 removed are ratified here: the community team patient search, the record History and Documents filters, the executive phone "Filter pages", the Referrals "Filter queue", the All EDs keyword box, and the Statistics ward and ED table filters. Josh approved them on 30 October without a mock-up.
+- **Notifications (#1124):**
+  - Missed notices go into Activity's "Recent activity" tab, not a separate Recent chip, and clear on idle lock and desk switch.
+  - Notices sit clear of the phone's bottom bar.
+  - The folded stack and the corner-card moves are mocked up before they are built.
+  - Confirmed: each notice is read aloud once; undo windows keep running in a hidden tab; On-call keeps its notice inside its sheet.
+- **The mock-ups:**
+  - The new sidebar and header (`shell-next`) is the default frame, with a switch back to today's.
+  - On computers the bell shows its icon and count. The word "Alerts" is in the phone dock and the button's spoken label.
+  - Waiting's and Patients' phone chips put the count first.
+  - The TV view and printouts keep a small synthetic-data mark.
+  - Pinned pages last for one browser tab; remembering them per person needs a privacy decision before the real build.
+  - Handover stays off the phone dock for the nurse in charge and the bed manager.
+- **Boundary:** this approves mock-up work and the order of work. It approves no page for building, no merge, release or deployment, and no real data.
+- **Why:** four pull requests changed the same screens in different directions. One design home and one order stop them breaking each other and leaving the mock-ups out of date.
